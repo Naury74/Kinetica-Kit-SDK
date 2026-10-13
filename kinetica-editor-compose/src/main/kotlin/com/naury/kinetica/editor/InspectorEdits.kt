@@ -7,4 +7,5 @@ internal class InspectorEdits(
     val style: StyleEdits,
     val effects: EffectEdits,
     val shape: ShapeEdits,
+    val text: TextEdits,
 )

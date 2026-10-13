@@ -180,7 +180,9 @@ private fun PropertiesFor(state: EditorState, edits: PropertyEdits, theme: Studi
     // 모션 편집 중에는 화면에 보이는(재생 위치의) 값을 보여 준다. 고친 값도 그 기준으로 키가 된다.
     val document = remember(base, state.motionEnabled, state.playheadMs) { state.displayed(base) }
     val inspectorEdits =
-        remember(state, edits) { InspectorEdits(edits, LayoutEdits(state), StyleEdits(state), EffectEdits(state), ShapeEdits(state)) }
+        remember(state, edits) {
+            InspectorEdits(edits, LayoutEdits(state), StyleEdits(state), EffectEdits(state), ShapeEdits(state), TextEdits(state))
+        }
     InspectorPanel(selection.selectedIds.singleOrNull()?.let(document::node), inspectorEdits, theme, Modifier.fillMaxWidth())
 }
 

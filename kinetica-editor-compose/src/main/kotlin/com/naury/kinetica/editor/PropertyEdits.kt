@@ -8,6 +8,8 @@ import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.Shadow
+import com.naury.kinetica.core.scene.TextSpan
+import com.naury.kinetica.core.scene.TextSpans
 import com.naury.kinetica.core.scene.sizeOrNull
 import com.naury.kinetica.core.scene.withSize
 
@@ -76,13 +78,15 @@ internal class PropertyEdits(private val state: EditorState) {
 
     /**
      * 글자 노드의 내용을 바꾼다. [unbind]면 내용 데이터 묶음도 같은 실행 취소 단계에서 푼다.
+     * [spans]를 주면 리치 텍스트 구간을 그것으로 바꾸고, 주지 않으면 지금 구간을 바뀐 글자에 맞춰 옮긴다.
      * 상한·유니코드 검사를 통과하지 못하면 `false`이고 문서는 그대로다.
      */
-    fun setText(id: NodeId, text: String, unbind: Boolean = false): Boolean {
+    fun setText(id: NodeId, text: String, unbind: Boolean = false, spans: List<TextSpan>? = null): Boolean {
         val node = state.document.node(id) ?: return false
         val content = node.content as? NodeContent.Text ?: return false
         val bindings = if (unbind) node.bindings - BoundProperty.Text else node.bindings
-        return update(node.copy(content = content.copy(text = text), bindings = bindings))
+        val nextSpans = spans ?: TextSpans.remap(content.spans, content.text, text)
+        return update(node.copy(content = content.copy(text = text, spans = nextSpans), bindings = bindings))
     }
 
     /** 글자 크기(문서 단위). 0 이하는 거부한다. */

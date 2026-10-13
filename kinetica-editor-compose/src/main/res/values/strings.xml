@@ -153,4 +153,14 @@
     <string name="kinetica_section_polygon">Polygon</string>
     <string name="kinetica_field_sides">Points</string>
     <string name="kinetica_field_star_ratio">Star ratio (1 = polygon)</string>
+    <string name="kinetica_text_bold">Bold</string>
+    <string name="kinetica_text_italic">Italic</string>
+    <string name="kinetica_text_underline">Underline</string>
+    <string name="kinetica_text_strike">Strikethrough</string>
+    <string name="kinetica_font_default">Default</string>
+    <string name="kinetica_font_sans">Sans</string>
+    <string name="kinetica_font_serif">Serif</string>
+    <string name="kinetica_font_mono">Monospace</string>
+    <string name="kinetica_font_cursive">Handwriting</string>
+    <string name="kinetica_section_font">Font</string>
 </resources>

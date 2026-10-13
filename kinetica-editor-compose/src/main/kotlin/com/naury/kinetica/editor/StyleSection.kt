@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.naury.kinetica.core.scene.LineCap
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.TextDecoration
 
 /** 채우기(없음·단색·선형·원형 그라디언트). 글자는 글자 색으로 쓴다. */
 @Composable
@@ -187,6 +188,26 @@ internal fun PolygonSection(node: SceneNode, polygon: NodeContent.Polygon, edits
             Modifier.weight(1f),
         ) {
             edits.setInnerRatio(node.id, it)
+        }
+    }
+}
+
+/** 글자 전체의 글꼴·기울임·밑줄·취소선. 일부만 바꾸려면 글자 수정 창에서 고른다. */
+@Composable
+internal fun FontSection(node: SceneNode, text: NodeContent.Text, edits: TextEdits, theme: StudioTheme) {
+    SectionTitle(R.string.kinetica_section_font, theme)
+    Chips {
+        FONT_CHOICES.forEach { (family, label) ->
+            ToggleChip(label, text.fontFamily == family, theme) { edits.setFontFamily(node.id, family) }
+        }
+    }
+    Chips {
+        ToggleChip(R.string.kinetica_text_italic, text.italic, theme) { edits.toggleItalic(node.id) }
+        ToggleChip(R.string.kinetica_text_underline, text.decoration == TextDecoration.Underline, theme) {
+            edits.toggleDecoration(node.id, TextDecoration.Underline)
+        }
+        ToggleChip(R.string.kinetica_text_strike, text.decoration == TextDecoration.Strikethrough, theme) {
+            edits.toggleDecoration(node.id, TextDecoration.Strikethrough)
         }
     }
 }

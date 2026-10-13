@@ -152,4 +152,14 @@
     <string name="kinetica_section_polygon">다각형</string>
     <string name="kinetica_field_sides">꼭짓점</string>
     <string name="kinetica_field_star_ratio">별 비율(1 = 다각형)</string>
+    <string name="kinetica_text_bold">굵게</string>
+    <string name="kinetica_text_italic">기울임</string>
+    <string name="kinetica_text_underline">밑줄</string>
+    <string name="kinetica_text_strike">취소선</string>
+    <string name="kinetica_font_default">기본</string>
+    <string name="kinetica_font_sans">고딕</string>
+    <string name="kinetica_font_serif">명조</string>
+    <string name="kinetica_font_mono">고정폭</string>
+    <string name="kinetica_font_cursive">손글씨</string>
+    <string name="kinetica_section_font">글꼴</string>
 </resources>

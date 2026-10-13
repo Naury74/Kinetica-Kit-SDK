@@ -50,7 +50,10 @@ internal fun InspectorPanel(node: SceneNode?, edits: InspectorEdits, theme: Stud
         AppearanceSection(node, edits.property, theme)
         CornersSection(node, edits.shape, theme)
         (node.content as? NodeContent.Polygon)?.let { PolygonSection(node, it, edits.shape, theme) }
-        (node.content as? NodeContent.Text)?.let { TextSection(node, it, edits.property) }
+        (node.content as? NodeContent.Text)?.let {
+            TextSection(node, it, edits.property)
+            FontSection(node, it, edits.text, theme)
+        }
         FillSection(node, edits.style, edits.property, theme)
         StrokeSection(node, edits.style, theme)
         EffectsSection(node, edits.effects, theme)
