@@ -13,6 +13,7 @@ dependencies {
     implementation(project(":kinetica-gestures"))
     implementation(project(":kinetica-guides"))
     api(project(":kinetica-motion"))
+    implementation(project(":kinetica-presets"))
 
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)

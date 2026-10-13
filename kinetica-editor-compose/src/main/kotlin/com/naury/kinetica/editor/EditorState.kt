@@ -21,6 +21,9 @@ import com.naury.kinetica.gestures.GestureHost
 import com.naury.kinetica.guides.SnapGuide
 import com.naury.kinetica.history.KineticaSession
 import com.naury.kinetica.motion.TimelineEvaluator
+import com.naury.kinetica.presets.PresetParams
+import com.naury.kinetica.presets.PresetRegistry
+import com.naury.kinetica.presets.PresetResult
 import kotlin.math.roundToLong
 
 /**
@@ -150,6 +153,13 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
                     SceneCommand.SetKeyframe(MAIN_TIMELINE, id, property, Keyframe(time, value)),
                 ) is CommandResult.Applied
         }
+    }
+
+    /** 고른 노드에 프리셋을 재생 위치부터 적용한다. 명령 전체가 실행 취소 한 단계이고, 하나라도 거부되면 모두 되돌린다. */
+    fun applyPreset(registry: PresetRegistry, presetId: String): Boolean {
+        val result = registry.apply(presetId, session.document.value, selection, PresetParams(MAIN_TIMELINE, startMs = keyTimeMs))
+        val commands = (result as? PresetResult.Commands)?.commands ?: return false
+        return transaction("preset") { commands.all { session.commands.execute(it) is CommandResult.Applied } }
     }
 
     companion object {

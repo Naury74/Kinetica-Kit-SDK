@@ -61,4 +61,11 @@
     <string name="kinetica_easing_out">천천히 끝</string>
     <string name="kinetica_easing_in_out">천천히 시작·끝</string>
     <string name="kinetica_easing_spring">용수철</string>
+    <string name="kinetica_presets">프리셋</string>
+    <string name="kinetica_preset_fade_in">나타나기</string>
+    <string name="kinetica_preset_card_expand">카드 펼치기</string>
+    <string name="kinetica_preset_stagger_entrance">차례로 등장</string>
+    <string name="kinetica_preset_elastic_pop">튕기며 커지기</string>
+    <string name="kinetica_preset_slide_in_left">왼쪽에서 들어오기</string>
+    <string name="kinetica_preset_parallax">시차 흐름</string>
 </resources>

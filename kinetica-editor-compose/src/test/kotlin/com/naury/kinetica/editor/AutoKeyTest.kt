@@ -13,6 +13,7 @@ import com.naury.kinetica.core.testing.TestScenes.rect
 import com.naury.kinetica.history.KineticaSession
 import com.naury.kinetica.history.SessionOpenResult
 import com.naury.kinetica.motion.TimelineEvaluator
+import com.naury.kinetica.presets.PresetRegistry
 import org.junit.Test
 
 class AutoKeyTest {
@@ -68,6 +69,17 @@ class AutoKeyTest {
         assertThat(key.value).isEqualTo(KeyValue.Scalar(0.25))
         assertThat(key.easing).isEqualTo(EasingSpec.EaseIn)
         assertThat(session.document.value.node(id("a"))!!.style.opacity).isEqualTo(1.0)
+    }
+
+    @Test
+    fun `프리셋은 재생 위치에서 시작하고 실행 취소 한 단계다`() {
+        session.select(listOf(id("a")))
+        state.playheadMs = 200.0
+
+        assertThat(state.applyPreset(PresetRegistry.Default, "fade.in")).isTrue()
+        assertThat(keys(AnimatableProperty.Opacity).map { it.first }).containsExactly(200L, 650L).inOrder()
+        session.history.undo()
+        assertThat(session.document.value).isEqualTo(scene)
     }
 
     @Test

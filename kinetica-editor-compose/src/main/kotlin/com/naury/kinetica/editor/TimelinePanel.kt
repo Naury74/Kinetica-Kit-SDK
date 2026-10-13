@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,6 +47,7 @@ import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.motion.PlaybackController
+import com.naury.kinetica.presets.PresetRegistry
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -75,6 +78,7 @@ internal fun TimelinePanel(state: EditorState, theme: StudioTheme, modifier: Mod
                 color = theme.onPanel,
                 modifier = Modifier.weight(1f),
             )
+            PresetMenu(state, theme, enabled = selection.selectedIds.isNotEmpty())
             selectedKey?.let { key -> KeyActions(state, key, theme) { selectedKey = null } }
         }
         val nodeId = selection.selectedIds.singleOrNull()
@@ -233,6 +237,27 @@ private fun Playhead(timeMs: Double, theme: StudioTheme, modifier: Modifier) {
 }
 
 @Composable
+private fun PresetMenu(state: EditorState, theme: StudioTheme, enabled: Boolean) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = {
+            expanded = true
+        }, enabled = enabled) { Text(stringResource(R.string.kinetica_presets), color = theme.onPanel) }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            PRESETS.forEach { (id, label) ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(label)) },
+                    onClick = {
+                        expanded = false
+                        state.applyPreset(PresetRegistry.Default, id)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun KeyActions(state: EditorState, key: SelectedKey, theme: StudioTheme, onDeleted: () -> Unit) {
     EASINGS.forEach { (easing, label) ->
         TextButton(onClick = {
@@ -260,6 +285,14 @@ private val ANIMATED = listOf(
     AnimatableProperty.ScaleX to R.string.kinetica_property_scale_x,
     AnimatableProperty.ScaleY to R.string.kinetica_property_scale_y,
     AnimatableProperty.Opacity to R.string.kinetica_property_opacity,
+)
+private val PRESETS = listOf(
+    "fade.in" to R.string.kinetica_preset_fade_in,
+    "card.expand" to R.string.kinetica_preset_card_expand,
+    "stagger.entrance" to R.string.kinetica_preset_stagger_entrance,
+    "elastic.pop" to R.string.kinetica_preset_elastic_pop,
+    "slide.in.left" to R.string.kinetica_preset_slide_in_left,
+    "parallax" to R.string.kinetica_preset_parallax,
 )
 private val EASINGS = listOf(
     EasingSpec.Linear to R.string.kinetica_easing_linear,

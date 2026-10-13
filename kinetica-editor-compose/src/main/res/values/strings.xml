@@ -62,4 +62,11 @@
     <string name="kinetica_easing_out">Ease out</string>
     <string name="kinetica_easing_in_out">Ease in-out</string>
     <string name="kinetica_easing_spring">Spring</string>
+    <string name="kinetica_presets">Presets</string>
+    <string name="kinetica_preset_fade_in">Fade in</string>
+    <string name="kinetica_preset_card_expand">Card expand</string>
+    <string name="kinetica_preset_stagger_entrance">Stagger entrance</string>
+    <string name="kinetica_preset_elastic_pop">Elastic pop</string>
+    <string name="kinetica_preset_slide_in_left">Slide in from left</string>
+    <string name="kinetica_preset_parallax">Parallax</string>
 </resources>
