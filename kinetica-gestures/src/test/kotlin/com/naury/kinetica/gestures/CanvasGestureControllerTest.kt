@@ -150,6 +150,30 @@ class CanvasGestureControllerTest {
     }
 
     @Test
+    fun `작은 도형은 손잡이 영역이 몸통을 덮어도 안쪽을 끌면 옮긴다`() {
+        // a: 문서 100x50, 화면 배율 2라 200x100 px. 손잡이 터치 반경 24px.
+        host.select(listOf(id("a")))
+        val small = CanvasGestureController(host, GestureConfig(8.0, 60.0, 8.0, 40.0))
+
+        small.onDown(1, screen(150.0, 125.0))
+        small.onMove(1, screen(170.0, 125.0))
+        small.onUp(1)
+
+        assertThat(host.session.history.state.value.undoLabel).isEqualTo("move")
+        assertThat((host.document.node(id("a"))!!.content as NodeContent.Rectangle).size.height).isEqualTo(50.0)
+        assertThat(translation("a").translationX).isWithin(1e-9).of(120.0)
+    }
+
+    @Test
+    fun `테두리 밖 가까운 곳은 손잡이를 잡는다`() {
+        host.select(listOf(id("a")))
+
+        drag(screen(150.0, 100.0) + Vec2(0.0, -20.0), screen(150.0, 80.0))
+
+        assertThat(host.session.history.state.value.undoLabel).isEqualTo("resize")
+    }
+
+    @Test
     fun `빈 곳에서 끌면 사각 영역에 걸친 최상위 노드를 고른다`() {
         controller.onDown(1, screen(50.0, 50.0))
         controller.onMove(1, screen(320.0, 320.0))

@@ -102,10 +102,8 @@ public class CanvasGestureController(
         val viewport = host.viewport
         val documentPoint = viewport.toDocument(viewportPoint)
         val selected = host.selection
-        val handle = selected.singleOrNull()
-            ?.takeIf { !graph.isEffectivelyLocked(it) }
-            ?.let { SelectionFrame.of(graph, listOf(it)) }
-            ?.let { SelectionHandle.at(it.handles(viewport, config.rotateHandleOffsetPx), viewportPoint, config.handleTouchRadiusPx) }
+        val frame = selected.singleOrNull()?.takeIf { !graph.isEffectivelyLocked(it) }?.let { SelectionFrame.of(graph, listOf(it)) }
+        val handle = frame?.let { pickHandle(it, viewport, viewportPoint, config) }
         val hit = HitTester(graph).hitTest(documentPoint, config.hitSlopPx / viewport.zoom)?.let(graph::topLevelAncestor)
         press = Press(pointerId, viewportPoint, graph, viewport, handle, hit)
         mode = InteractionMode.PressPending
@@ -248,4 +246,23 @@ public class CanvasGestureController(
         const val HALF = 0.5
         const val WHEEL_ZOOM_STEP = 0.1
     }
+}
+
+private const val INSIDE_HANDLE_FACTOR = 0.5
+private const val INSIDE_SIDE_FACTOR = 0.25
+
+/**
+ * 테두리 안에서는 손잡이 가까이(터치 반경의 절반, 그리고 짧은 변의 1/4 이하)를 누를 때만 손잡이로 본다.
+ * 작은 도형에서 손잡이 영역이 몸통을 덮어 옮기려 해도 크기가 바뀌는 일을 막는다. 테두리 밖에서는 터치 반경 전체를 쓴다.
+ */
+private fun pickHandle(frame: SelectionFrame, viewport: Viewport, viewportPoint: Vec2, config: GestureConfig): SelectionHandle? {
+    val handles = frame.handles(viewport, config.rotateHandleOffsetPx)
+    val radius = if (frame.contains(viewport, viewportPoint)) {
+        val corners = frame.corners.map(viewport::toViewport)
+        val shortSide = minOf(corners[0].distanceTo(corners[1]), corners[1].distanceTo(corners[2]))
+        minOf(config.handleTouchRadiusPx * INSIDE_HANDLE_FACTOR, shortSide * INSIDE_SIDE_FACTOR)
+    } else {
+        config.handleTouchRadiusPx
+    }
+    return SelectionHandle.at(handles, viewportPoint, radius)
 }

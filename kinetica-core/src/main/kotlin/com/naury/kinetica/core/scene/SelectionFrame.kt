@@ -42,6 +42,17 @@ public data class SelectionFrame(val corners: List<Vec2>) {
         )
     }
 
+    /** viewport 좌표 [viewportPoint]가 테두리 안(경계 포함)에 있는지. 테두리는 볼록 사각형이다. */
+    public fun contains(viewport: Viewport, viewportPoint: Vec2): Boolean {
+        val points = corners.map(viewport::toViewport)
+        val signs = points.indices.map { i ->
+            val a = points[i]
+            val b = points[(i + 1) % points.size]
+            (b.x - a.x) * (viewportPoint.y - a.y) - (b.y - a.y) * (viewportPoint.x - a.x)
+        }
+        return signs.all { it >= 0.0 } || signs.all { it <= 0.0 }
+    }
+
     public companion object {
         private const val CORNER_COUNT = 4
         private const val HALF = 0.5

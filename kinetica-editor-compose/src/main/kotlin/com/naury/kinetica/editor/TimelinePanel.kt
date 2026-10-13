@@ -97,7 +97,7 @@ internal fun TimelinePanel(state: EditorState, theme: StudioTheme, modifier: Mod
             }
             val scroll = rememberScrollState()
             Box(Modifier.weight(1f).horizontalScroll(scroll)) {
-                val laneWidth = MS_WIDTH * durationMs.toFloat() + LANE_END_PADDING
+                val laneWidth = LANE_START_PADDING + MS_WIDTH * durationMs.toFloat() + LANE_END_PADDING
                 Column(Modifier.width(laneWidth)) {
                     Ruler(state, durationMs, theme)
                     ANIMATED.forEach { (property, label) ->
@@ -146,8 +146,9 @@ private fun TrackLabel(state: EditorState, nodeId: NodeId, property: AnimatableP
 @Composable
 private fun Ruler(state: EditorState, durationMs: Long, theme: StudioTheme) {
     val msWidthPx = with(LocalDensity.current) { MS_WIDTH.toPx() }
+    val startPx = with(LocalDensity.current) { LANE_START_PADDING.toPx() }
     fun seek(x: Float) {
-        state.playheadMs = (x / msWidthPx).toDouble().coerceIn(0.0, durationMs.toDouble())
+        state.playheadMs = ((x - startPx) / msWidthPx).toDouble().coerceIn(0.0, durationMs.toDouble())
     }
     Canvas(
         Modifier
@@ -159,7 +160,7 @@ private fun Ruler(state: EditorState, durationMs: Long, theme: StudioTheme) {
     ) {
         var time = 0L
         while (time <= durationMs) {
-            val x = time * msWidthPx
+            val x = startPx + time * msWidthPx
             val major = time % MAJOR_TICK_MS == 0L
             drawLine(theme.onPanel.copy(alpha = HINT_ALPHA), Offset(x, if (major) 0f else size.height / 2), Offset(x, size.height))
             time += MINOR_TICK_MS
@@ -180,6 +181,7 @@ private fun KeyLane(
 ) {
     val msWidthPx = with(LocalDensity.current) { MS_WIDTH.toPx() }
     val diamondPx = with(LocalDensity.current) { DIAMOND_TOUCH.toPx() }
+    val startPx = with(LocalDensity.current) { LANE_START_PADDING.toPx() }
     val name = stringResource(label)
     Box(Modifier.fillMaxWidth().height(ROW_HEIGHT)) {
         times.forEach { time ->
@@ -188,7 +190,7 @@ private fun KeyLane(
             val description = stringResource(R.string.kinetica_keyframe_description, name, seconds(time.toDouble()))
             Box(
                 Modifier
-                    .offset { IntOffset((time * msWidthPx + dragPx - diamondPx / 2).roundToInt(), 0) }
+                    .offset { IntOffset((startPx + time * msWidthPx + dragPx - diamondPx / 2).roundToInt(), 0) }
                     .size(DIAMOND_TOUCH, ROW_HEIGHT)
                     .semantics { contentDescription = description }
                     .pointerInput(time) {
@@ -230,8 +232,9 @@ private fun KeyLane(
 @Composable
 private fun Playhead(timeMs: Double, theme: StudioTheme, modifier: Modifier) {
     val msWidthPx = with(LocalDensity.current) { MS_WIDTH.toPx() }
+    val startPx = with(LocalDensity.current) { LANE_START_PADDING.toPx() }
     Canvas(modifier) {
-        val x = (timeMs * msWidthPx).toFloat()
+        val x = (startPx + timeMs * msWidthPx).toFloat()
         drawLine(theme.accent, Offset(x, 0f), Offset(x, size.height), strokeWidth = PLAYHEAD_WIDTH.toPx())
     }
 }
@@ -309,6 +312,7 @@ private val RULER_HEIGHT = 32.dp
 private val ROW_HEIGHT = 44.dp
 private val DIAMOND_SIZE = 10.dp
 private val DIAMOND_TOUCH = 32.dp
+private val LANE_START_PADDING = 16.dp
 private val LANE_END_PADDING = 24.dp
 private val PLAYHEAD_WIDTH = 2.dp
 private const val DIAMOND_ROTATION = 45f

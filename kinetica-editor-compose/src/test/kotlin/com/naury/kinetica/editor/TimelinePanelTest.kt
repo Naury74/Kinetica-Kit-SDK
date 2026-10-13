@@ -50,8 +50,8 @@ class TimelinePanelTest {
         assertThat(keyTimes()).containsExactly(0L)
         val before = session.document.value
 
-        // 1초 = 80dp, mdpi라 80px
-        compose.onNodeWithTag(RULER_TAG).performTouchInput { click(Offset(80f, centerY)) }
+        // 시작 여백 16dp + 1초 80dp, mdpi라 96px
+        compose.onNodeWithTag(RULER_TAG).performTouchInput { click(Offset(96f, centerY)) }
         compose.waitForIdle()
         assertThat(session.document.value).isEqualTo(before)
 

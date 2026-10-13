@@ -110,9 +110,7 @@ public fun KineticaEditor(
                     SelectionBar(state, actions, theme, Modifier.align(Alignment.BottomCenter))
                 }
                 if (docked) {
-                    Column(Modifier.width(PANEL_WIDTH).fillMaxHeight().background(theme.panel)) {
-                        Panels(state, edits, theme, Modifier.weight(1f))
-                    }
+                    Panels(state, edits, theme, Modifier.width(PANEL_WIDTH).fillMaxHeight().background(theme.panel))
                 }
             }
             if (state.motionEnabled) TimelinePanel(state, theme, Modifier.fillMaxWidth().heightIn(max = TIMELINE_MAX_HEIGHT))
@@ -125,11 +123,14 @@ internal enum class PanelSheet { Layers, Properties }
 
 @Composable
 private fun Panels(state: EditorState, edits: PropertyEdits, theme: StudioTheme, modifier: Modifier = Modifier) {
-    PanelTitle(R.string.kinetica_layers, theme)
-    LayersFor(state, edits, theme, modifier)
-    HorizontalDivider(color = theme.canvasBackground)
-    PanelTitle(R.string.kinetica_properties, theme)
-    PropertiesFor(state, edits, theme)
+    // 높이를 둘로 나눠, 아래에 timeline이 열려 패널이 낮아져도 레이어 목록이 사라지지 않게 한다. 두 칸 모두 안에서 스크롤된다.
+    Column(modifier) {
+        PanelTitle(R.string.kinetica_layers, theme)
+        LayersFor(state, edits, theme, Modifier.weight(1f))
+        HorizontalDivider(color = theme.canvasBackground)
+        PanelTitle(R.string.kinetica_properties, theme)
+        Box(Modifier.weight(1f)) { PropertiesFor(state, edits, theme) }
+    }
 }
 
 @Composable
@@ -150,8 +151,10 @@ private fun LayersFor(state: EditorState, edits: PropertyEdits, theme: StudioThe
 
 @Composable
 private fun PropertiesFor(state: EditorState, edits: PropertyEdits, theme: StudioTheme) {
-    val document by state.session.document.collectAsStateWithLifecycle()
+    val base by state.session.document.collectAsStateWithLifecycle()
     val selection by state.session.selection.collectAsStateWithLifecycle()
+    // 모션 편집 중에는 화면에 보이는(재생 위치의) 값을 보여 준다. 고친 값도 그 기준으로 키가 된다.
+    val document = remember(base, state.motionEnabled, state.playheadMs) { state.displayed(base) }
     InspectorPanel(selection.selectedIds.singleOrNull()?.let(document::node), edits, theme, Modifier.fillMaxWidth())
 }
 
