@@ -17,12 +17,15 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.core.geometry.Mat3
 import com.naury.kinetica.core.geometry.Rect
@@ -53,9 +56,10 @@ public fun SceneCanvas(
 ) {
     val graph = remember(document) { SceneGraph(document) }
     val textMeasurer = rememberTextMeasurer(cacheSize = TEXT_LAYOUT_CACHE_SIZE)
+    val fonts = LocalSceneFonts.current
     Canvas(modifier) {
         drawRect(artboardOutside)
-        drawScene(graph, viewport, textMeasurer, images)
+        drawScene(graph, viewport, textMeasurer, images, fonts)
     }
 }
 
@@ -63,21 +67,32 @@ public fun SceneCanvas(
  * [graph]의 문서를 이 DrawScope에 [viewport]로 그린다(artboard 배경과 노드). 화면 밖 노드는 그리지 않는다.
  * 화면([SceneCanvas])과 내보내기가 같은 함수를 써서 결과가 같다.
  */
-public fun DrawScope.drawScene(graph: SceneGraph, viewport: Viewport, textMeasurer: TextMeasurer, images: SceneImageProvider): Unit =
-    drawScene(graph, viewport.documentToViewport(), textMeasurer, images)
+public fun DrawScope.drawScene(
+    graph: SceneGraph,
+    viewport: Viewport,
+    textMeasurer: TextMeasurer,
+    images: SceneImageProvider,
+    fonts: SceneFonts = SceneFonts.Default,
+): Unit = drawScene(graph, viewport.documentToViewport(), textMeasurer, images, fonts)
 
 /**
  * 문서 좌표를 이 DrawScope 좌표로 옮기는 [documentToCanvas]로 그린다. 확대 범위 제한이 없어 내보내기 등에 쓴다.
  * 역행렬이 없으면 아무것도 그리지 않는다.
  */
-public fun DrawScope.drawScene(graph: SceneGraph, documentToCanvas: Mat3, textMeasurer: TextMeasurer, images: SceneImageProvider) {
+public fun DrawScope.drawScene(
+    graph: SceneGraph,
+    documentToCanvas: Mat3,
+    textMeasurer: TextMeasurer,
+    images: SceneImageProvider,
+    fonts: SceneFonts = SceneFonts.Default,
+) {
     val canvasToDocument = documentToCanvas.inverseOrNull() ?: return
     val visible = Rect(0.0, 0.0, size.width.toDouble(), size.height.toDouble())
     val visibleDocument = canvasToDocument.mapBounds(visible)
     withTransform({ transform(documentToCanvas.toComposeMatrix()) }) {
         drawArtboard(graph.document)
         planDraw(graph, visibleDocument).forEach { item ->
-            withTransform({ transform(item.world.toComposeMatrix()) }) { drawItem(item, textMeasurer, images) }
+            withTransform({ transform(item.world.toComposeMatrix()) }) { drawItem(item, textMeasurer, images, fonts) }
         }
     }
 }
@@ -90,12 +105,12 @@ private fun DrawScope.drawArtboard(document: SceneDocument) {
     drawRect(background.toColor(), size = Size(document.artboard.width.toFloat(), document.artboard.height.toFloat()))
 }
 
-private fun DrawScope.drawItem(item: DrawItem, textMeasurer: TextMeasurer, images: SceneImageProvider) {
+private fun DrawScope.drawItem(item: DrawItem, textMeasurer: TextMeasurer, images: SceneImageProvider, fonts: SceneFonts) {
     val style = item.node.style
     when (val content = item.node.content) {
         is NodeContent.Group -> Unit
 
-        is NodeContent.Text -> drawTextNode(content, style, item.alpha, textMeasurer)
+        is NodeContent.Text -> drawTextNode(content, style, item.alpha, textMeasurer, fonts)
 
         is NodeContent.Image -> drawImageNode(content, item.alpha, images)
 
@@ -112,16 +127,27 @@ private fun DrawScope.drawItem(item: DrawItem, textMeasurer: TextMeasurer, image
     }
 }
 
-private fun DrawScope.drawTextNode(content: NodeContent.Text, style: NodeStyle, alpha: Float, textMeasurer: TextMeasurer) {
+private fun DrawScope.drawTextNode(
+    content: NodeContent.Text,
+    style: NodeStyle,
+    alpha: Float,
+    textMeasurer: TextMeasurer,
+    fonts: SceneFonts,
+) {
     val width = content.size.width.toFloat().roundToInt().coerceAtLeast(1)
     val height = content.size.height.toFloat().roundToInt().coerceAtLeast(1)
     // 캔버스가 이미 문서 단위로 확대되어 있으므로 글자 크기는 density·글꼴 배율과 무관한 문서 단위여야 한다.
-    val fontSize = (content.fontSize.toFloat() / (density * fontScale))
     val layout = textMeasurer.measure(
-        text = content.text,
+        text = content.annotated(fonts) { unitsToSp(it) },
         style = TextStyle(
             color = style.fill?.toColor() ?: Color.Black,
-            fontSize = fontSize.sp,
+            fontSize = unitsToSp(content.fontSize),
+            fontWeight = FontWeight(content.fontWeight),
+            fontStyle = if (content.italic) FontStyle.Italic else FontStyle.Normal,
+            fontFamily = fonts.resolve(content.fontFamily),
+            textDecoration = content.decoration.toCompose(),
+            lineHeight = if (content.lineHeight > 0.0) unitsToSp(content.lineHeight) else TextUnit.Unspecified,
+            letterSpacing = unitsToSp(content.letterSpacing),
             textAlign = when (content.alignment) {
                 TextAlignment.Start -> TextAlign.Start
                 TextAlignment.Center -> TextAlign.Center

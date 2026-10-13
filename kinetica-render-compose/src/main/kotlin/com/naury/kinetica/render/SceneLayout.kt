@@ -38,6 +38,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -196,10 +197,14 @@ private fun ShapeView(node: SceneNode, content: NodeContent, modifier: Modifier)
 @Composable
 private fun TextView(node: SceneNode, content: NodeContent.Text, modifier: Modifier) {
     val density = LocalDensity.current
+    val fonts = LocalSceneFonts.current
     val base = TextStyle(
         color = node.style.fill?.toColor() ?: Color.Black,
         fontSize = density.unitsToSp(content.fontSize),
         fontWeight = FontWeight(content.fontWeight),
+        fontStyle = if (content.italic) FontStyle.Italic else FontStyle.Normal,
+        fontFamily = fonts.resolve(content.fontFamily),
+        textDecoration = content.decoration.toCompose(),
         lineHeight = if (content.lineHeight > 0.0) density.unitsToSp(content.lineHeight) else TextUnit.Unspecified,
         letterSpacing = density.unitsToSp(content.letterSpacing),
         textAlign = when (content.alignment) {
@@ -214,7 +219,8 @@ private fun TextView(node: SceneNode, content: NodeContent.Text, modifier: Modif
     } else {
         base.copy(brush = gradient.toBrush(androidx.compose.ui.geometry.Size(content.size.width.toFloat(), content.size.height.toFloat())))
     }
-    BasicText(content.text, modifier.requiredSizePx(content.size).clipToBounds(), style = style, overflow = TextOverflow.Clip)
+    val text = remember(content, fonts, density) { content.annotated(fonts) { density.unitsToSp(it) } }
+    BasicText(text, modifier.requiredSizePx(content.size).clipToBounds(), style = style, overflow = TextOverflow.Clip)
 }
 
 @Composable
