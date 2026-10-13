@@ -18,4 +18,5 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.ui.test.manifest)
+    testImplementation(libs.androidx.compose.material3)
 }
