@@ -33,6 +33,8 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.Shadow
 import com.naury.kinetica.core.scene.TextAlignment
+import com.naury.kinetica.core.scene.TextDecoration
+import com.naury.kinetica.core.scene.TextSpan
 import com.naury.kinetica.core.scene.ViolationCode
 import com.naury.kinetica.core.testing.TestScenes
 import kotlinx.serialization.json.JsonObject
@@ -241,11 +243,6 @@ class SceneCodecTest {
                 action = "open_profile",
             ),
             SceneNode(
-                NodeId("styled"),
-                NodeContent.Text(Size(200.0, 60.0), "굵게", fontSize = 20.0, fontWeight = 700, lineHeight = 28.0, letterSpacing = -0.5),
-                bindings = mapOf(BoundProperty.Text to "order.total"),
-            ),
-            SceneNode(
                 NodeId("r"),
                 NodeContent.Rectangle(Size(10.0, 10.0), cornerRadius = 3.0),
                 transform = Transform2D(rotationDegrees = 12.5, pivotX = 5.0),
@@ -254,8 +251,8 @@ class SceneCodecTest {
         )
         return base.copy(
             artboard = Artboard(1080.0, 1920.0, background = ArgbColor(0xFF101216.toInt())),
-            nodes = base.nodes + (extra + uiNodes() + shapeNodes()).associateBy { it.id },
-            rootOrder = base.rootOrder + (extra + uiNodes() + shapeNodes()).filter { it.parentId == null }.map { it.id },
+            nodes = base.nodes + (extra + uiNodes() + shapeNodes() + textNodes()).associateBy { it.id },
+            rootOrder = base.rootOrder + (extra + uiNodes() + shapeNodes() + textNodes()).filter { it.parentId == null }.map { it.id },
             timelines = listOf(richTimeline()),
             extensions = mapOf("host.meta" to "{\"v\":1}"),
         )
@@ -297,6 +294,36 @@ class SceneCodecTest {
             parentId = NodeId("frame"),
             transform = Transform2D(translationX = 99.0, translationY = 10.0),
             layoutFill = true,
+        ),
+    )
+
+    /** 굵기·줄 높이·자간·글꼴·기울임·밑줄과 리치 텍스트 구간. */
+    private fun textNodes(): List<SceneNode> = listOf(
+        SceneNode(
+            NodeId("styled"),
+            NodeContent.Text(
+                Size(200.0, 60.0),
+                "굵게 기울임",
+                fontSize = 20.0,
+                fontWeight = 700,
+                lineHeight = 28.0,
+                letterSpacing = -0.5,
+                fontFamily = "serif",
+                italic = true,
+                decoration = TextDecoration.Underline,
+                spans = listOf(
+                    TextSpan(0, 2, fontWeight = 900, color = ArgbColor(0xFFFF0000.toInt())),
+                    TextSpan(
+                        3,
+                        6,
+                        fontFamily = "monospace",
+                        fontSize = 24.5,
+                        italic = false,
+                        decoration = TextDecoration.Strikethrough,
+                    ),
+                ),
+            ),
+            bindings = mapOf(BoundProperty.Text to "order.total"),
         ),
     )
 

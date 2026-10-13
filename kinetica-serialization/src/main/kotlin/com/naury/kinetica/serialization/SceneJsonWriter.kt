@@ -113,6 +113,7 @@ internal object SceneJsonWriter {
         if (content.fontWeight != DEFAULT_FONT_WEIGHT) put(K.FONT_WEIGHT, content.fontWeight)
         if (content.lineHeight != 0.0) putNumber(K.LINE_HEIGHT, content.lineHeight)
         if (content.letterSpacing != 0.0) putNumber(K.LETTER_SPACING, content.letterSpacing)
+        TextJson.write(this, content)
     }
 
     private fun JsonObjectBuilder.frame(content: NodeContent.Frame) {

@@ -128,6 +128,10 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             fontWeight = json.optional(K.FONT_WEIGHT)?.asInt("$path.${K.FONT_WEIGHT}") ?: DEFAULT_FONT_WEIGHT,
             lineHeight = json.finiteOr(K.LINE_HEIGHT, path, 0.0),
             letterSpacing = json.finiteOr(K.LETTER_SPACING, path, 0.0),
+            fontFamily = json.optional(K.FONT_FAMILY)?.asString("$path.${K.FONT_FAMILY}"),
+            italic = json.booleanOr(K.ITALIC, path, default = false),
+            decoration = TextJson.readDecoration(json, path),
+            spans = TextJson.readSpans(json, path),
         )
 
         NodeKind.Image -> NodeContent.Image(json.size(K.BOUNDS, path), json.string(K.URI, path))
