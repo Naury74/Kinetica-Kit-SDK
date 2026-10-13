@@ -69,4 +69,6 @@
     <string name="kinetica_preset_elastic_pop">Elastic pop</string>
     <string name="kinetica_preset_slide_in_left">Slide in from left</string>
     <string name="kinetica_preset_parallax">Parallax</string>
+    <string name="kinetica_field_text">Text</string>
+    <string name="kinetica_field_font_size">Font size</string>
 </resources>

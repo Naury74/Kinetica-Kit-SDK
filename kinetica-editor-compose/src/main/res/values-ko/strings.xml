@@ -68,4 +68,6 @@
     <string name="kinetica_preset_elastic_pop">튕기며 커지기</string>
     <string name="kinetica_preset_slide_in_left">왼쪽에서 들어오기</string>
     <string name="kinetica_preset_parallax">시차 흐름</string>
+    <string name="kinetica_field_text">내용</string>
+    <string name="kinetica_field_font_size">글자 크기</string>
 </resources>

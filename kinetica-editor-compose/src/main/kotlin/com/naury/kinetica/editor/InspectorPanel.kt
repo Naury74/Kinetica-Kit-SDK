@@ -53,6 +53,25 @@ internal fun InspectorPanel(node: SceneNode?, edits: PropertyEdits, theme: Studi
             NumberInput(node, NumericField.Rotation, R.string.kinetica_field_rotation, edits, Modifier.weight(1f))
             NumberInput(node, NumericField.Opacity, R.string.kinetica_field_opacity, edits, Modifier.weight(1f))
         }
+        (node.content as? NodeContent.Text)?.let { content ->
+            CommitTextField(
+                current = content.text,
+                key = node.id.value + "text" + content.text,
+                label = stringResource(R.string.kinetica_field_text),
+                keyboardType = KeyboardType.Text,
+                enabled = true,
+                singleLine = false,
+                modifier = Modifier.fillMaxWidth(),
+            ) { edits.setText(node.id, it) }
+            CommitTextField(
+                current = formatNumber(content.fontSize),
+                key = node.id.value + "font" + content.fontSize,
+                label = stringResource(R.string.kinetica_field_font_size),
+                keyboardType = KeyboardType.Decimal,
+                enabled = true,
+                modifier = Modifier.fillMaxWidth(),
+            ) { edits.setFontSize(node.id, it) }
+        }
         CommitTextField(
             current = node.style.fill?.toHex().orEmpty(),
             key = node.id.value + node.style.fill,
@@ -86,6 +105,7 @@ private fun CommitTextField(
     keyboardType: KeyboardType,
     enabled: Boolean,
     modifier: Modifier,
+    singleLine: Boolean = true,
     onCommit: (String) -> Boolean,
 ) {
     var text by remember(key) { mutableStateOf(current) }
@@ -103,7 +123,7 @@ private fun CommitTextField(
             invalid = false
         },
         label = { Text(label) },
-        singleLine = true,
+        singleLine = singleLine,
         enabled = enabled,
         isError = invalid,
         supportingText = if (invalid) {
@@ -111,7 +131,7 @@ private fun CommitTextField(
         } else {
             null
         },
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = if (singleLine) ImeAction.Done else ImeAction.Default),
         keyboardActions = KeyboardActions(onDone = { commit() }),
         modifier = modifier.onFocusChanged {
             if (focused && !it.isFocused) commit()

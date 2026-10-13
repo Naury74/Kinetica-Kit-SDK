@@ -5,6 +5,7 @@ import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.NodeContent
+import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.testing.TestScenes
 import com.naury.kinetica.core.testing.TestScenes.document
 import com.naury.kinetica.core.testing.TestScenes.id
@@ -62,6 +63,23 @@ class PropertyEditsTest {
 
         assertThat(node().transform.translationY).isEqualTo(3.5)
         assertThat(node().style.fill).isEqualTo(ArgbColor(0xFFFF0000.toInt()))
+    }
+
+    @Test
+    fun `글자 내용과 크기를 바꾸고 잘못된 값은 거부한다`() {
+        val textScene = document(listOf(SceneNode(id("t"), NodeContent.Text(Size(200.0, 80.0), "글자"))))
+        val textSession = (KineticaSession.create(textScene) as SessionOpenResult.Opened).session
+        val textEdits = PropertyEdits(EditorState(textSession))
+
+        assertThat(textEdits.setText(id("t"), "안녕하세요\n둘째 줄")).isTrue()
+        assertThat(textEdits.setFontSize(id("t"), "36")).isTrue()
+        assertThat(textEdits.setText(id("t"), "깨진\uD800")).isFalse()
+        assertThat(textEdits.setFontSize(id("t"), "0")).isFalse()
+        assertThat(textEdits.setText(id("a-missing"), "x")).isFalse()
+
+        val content = textSession.document.value.node(id("t"))!!.content as NodeContent.Text
+        assertThat(content.text).isEqualTo("안녕하세요\n둘째 줄")
+        assertThat(content.fontSize).isEqualTo(36.0)
     }
 
     @Test

@@ -47,6 +47,21 @@ internal class PropertyEdits(private val state: EditorState) {
         return update(node.copy(style = node.style.copy(fill = color)))
     }
 
+    /** 글자 노드의 내용을 바꾼다. 상한·유니코드 검사를 통과하지 못하면 `false`이고 문서는 그대로다. */
+    fun setText(id: NodeId, text: String): Boolean {
+        val node = state.document.node(id) ?: return false
+        val content = node.content as? NodeContent.Text ?: return false
+        return update(node.copy(content = content.copy(text = text)))
+    }
+
+    /** 글자 크기(문서 단위). 0 이하는 거부한다. */
+    fun setFontSize(id: NodeId, text: String): Boolean {
+        val node = state.document.node(id) ?: return false
+        val content = node.content as? NodeContent.Text ?: return false
+        val size = text.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it > 0.0 } ?: return false
+        return update(node.copy(content = content.copy(fontSize = size)))
+    }
+
     fun toggleVisible(id: NodeId): Boolean = state.document.node(id)?.let { update(it.copy(visible = !it.visible)) } ?: false
 
     fun toggleLocked(id: NodeId): Boolean = state.document.node(id)?.let { update(it.copy(locked = !it.locked)) } ?: false
