@@ -1,0 +1,11 @@
+<resources>
+    <string name="kinetica_add_rectangle">Rectangle</string>
+    <string name="kinetica_add_ellipse">Ellipse</string>
+    <string name="kinetica_add_text">Text</string>
+    <string name="kinetica_default_text">Text</string>
+    <string name="kinetica_delete">Delete</string>
+    <string name="kinetica_undo">Undo</string>
+    <string name="kinetica_redo">Redo</string>
+    <string name="kinetica_fit">Fit</string>
+    <string name="kinetica_canvas_description">Scene canvas. %1$d selected.</string>
+</resources>

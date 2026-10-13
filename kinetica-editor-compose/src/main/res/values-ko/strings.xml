@@ -1,0 +1,11 @@
+<resources>
+    <string name="kinetica_add_rectangle">사각형</string>
+    <string name="kinetica_add_ellipse">타원</string>
+    <string name="kinetica_add_text">글자</string>
+    <string name="kinetica_default_text">글자</string>
+    <string name="kinetica_delete">삭제</string>
+    <string name="kinetica_undo">실행 취소</string>
+    <string name="kinetica_redo">다시 실행</string>
+    <string name="kinetica_fit">화면 맞춤</string>
+    <string name="kinetica_canvas_description">장면 캔버스. %1$d개 선택됨.</string>
+</resources>
