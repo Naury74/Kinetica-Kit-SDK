@@ -6,7 +6,10 @@ import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.scene.AlignMode
 import com.naury.kinetica.core.scene.ArrangeOps
+import com.naury.kinetica.core.scene.AutoLayout
 import com.naury.kinetica.core.scene.DistributeAxis
+import com.naury.kinetica.core.scene.Insets
+import com.naury.kinetica.core.scene.LayoutDirection
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneGraph
@@ -29,6 +32,25 @@ internal class EditorActions(private val state: EditorState) {
     fun group() {
         val groupId = NodeFactory.newId()
         if (session.commands.execute(SceneCommand.Group(selection, groupId)) is CommandResult.Applied) session.select(listOf(groupId))
+    }
+
+    /** 고른 노드를 세로 자동 배치 Frame으로 감싼다(내용 맞춤, 간격·여백 16). 노드들이 옆으로 더 넓게 퍼져 있으면 가로로 놓는다. */
+    fun wrapInAutoLayout() {
+        val bounds = selection.mapNotNull(graph::worldBounds)
+        val wide =
+            bounds.isNotEmpty() &&
+                (bounds.maxOf { it.right } - bounds.minOf { it.left }) > (bounds.maxOf { it.bottom } - bounds.minOf { it.top })
+        val layout = AutoLayout(
+            direction = if (wide) LayoutDirection.Horizontal else LayoutDirection.Vertical,
+            gap = DEFAULT_SPACING,
+            padding = Insets.all(DEFAULT_SPACING),
+            hugWidth = true,
+            hugHeight = true,
+        )
+        val frameId = NodeFactory.newId()
+        if (session.commands.execute(SceneCommand.WrapInFrame(selection, frameId, layout)) is CommandResult.Applied) {
+            session.select(listOf(frameId))
+        }
     }
 
     fun ungroup() {
@@ -78,5 +100,9 @@ internal class EditorActions(private val state: EditorState) {
     private fun move(label: String, transforms: Map<NodeId, Transform2D>) {
         if (transforms.isEmpty()) return
         state.transaction(label) { state.execute(SceneCommand.TransformNodes(transforms)) }
+    }
+
+    private companion object {
+        const val DEFAULT_SPACING = 16.0
     }
 }

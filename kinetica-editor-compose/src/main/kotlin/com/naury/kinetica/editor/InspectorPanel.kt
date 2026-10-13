@@ -36,7 +36,13 @@ import java.util.Locale
  * 입력은 키보드 완료나 포커스를 잃을 때 적용하고, 올바르지 않으면 이전 값으로 되돌리며 오류를 알린다.
  */
 @Composable
-internal fun InspectorPanel(node: SceneNode?, edits: PropertyEdits, theme: StudioTheme, modifier: Modifier = Modifier) {
+internal fun InspectorPanel(
+    node: SceneNode?,
+    edits: PropertyEdits,
+    layoutEdits: LayoutEdits,
+    theme: StudioTheme,
+    modifier: Modifier = Modifier,
+) {
     if (node == null) {
         Text(
             stringResource(R.string.kinetica_properties_empty),
@@ -49,6 +55,8 @@ internal fun InspectorPanel(node: SceneNode?, edits: PropertyEdits, theme: Studi
         TransformSection(node, edits)
         AppearanceSection(node, edits, theme)
         (node.content as? NodeContent.Text)?.let { TextSection(node, it, edits) }
+        (node.content as? NodeContent.Frame)?.let { AutoLayoutSection(node, it, layoutEdits, theme) }
+        if (!layoutEdits.isLaidOut(node)) ConstraintsSection(node, layoutEdits, theme)
         BindingFields(node, edits, theme)
     }
 }
@@ -146,7 +154,7 @@ private fun KeyInput(node: SceneNode, field: String, current: String?, label: In
 }
 
 @Composable
-private fun ToggleChip(label: Int, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
+internal fun ToggleChip(label: Int, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
     FilterChip(
         selected = checked,
         onClick = onToggle,
@@ -159,7 +167,7 @@ private fun ToggleChip(label: Int, checked: Boolean, theme: StudioTheme, onToggl
 }
 
 @Composable
-private fun NumberInput(node: SceneNode, field: NumericField, label: Int, edits: PropertyEdits, modifier: Modifier) {
+internal fun NumberInput(node: SceneNode, field: NumericField, label: Int, edits: PropertyEdits, modifier: Modifier) {
     val value = edits.value(node, field)
     CommitTextField(
         current = value?.let(::formatNumber).orEmpty(),
@@ -173,7 +181,7 @@ private fun NumberInput(node: SceneNode, field: NumericField, label: Int, edits:
 
 /** 입력 중에는 문서를 바꾸지 않고, 완료하거나 포커스를 잃을 때 [onCommit]한다. 실패하면 [current]로 되돌린다. */
 @Composable
-private fun CommitTextField(
+internal fun CommitTextField(
     current: String,
     key: String,
     label: String,
