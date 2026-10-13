@@ -12,6 +12,7 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ```
 
 - 기기: Android 8.0(API 26) 이상. 지금까지는 에뮬레이터(Android 16, 펼친 폴더블)에서만 확인했습니다.
+  그 에뮬레이터에서 1·3·4·5·10·11·12·13·15·16·17(저장까지)·18·19·20·23·24·25를 손으로 확인했고, 사진·글자 수정은 다시 실행 뒤에도 남았습니다.
 - 앱 두 개가 설치됩니다. **Kinetica Studio**(편집기 전체), **Kinetica Gallery**(재생기만 쓰는 앱).
 - 넓은 화면(600dp 이상)은 오른쪽에 레이어·속성 패널이 붙고, 좁은 화면은 도구 줄의 "레이어"·"속성" 버튼으로 아래 시트를 엽니다.
 
