@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -112,7 +113,8 @@ private fun Artboard(document: SceneDocument) {
 /** 자식을 각자의 크기로 재고 원점에 놓는다. 위치는 자식의 graphicsLayer가 정한다. 컨테이너 크기는 [size](없으면 0)다. */
 @Composable
 private fun Children(ids: List<NodeId>, scope: NodeScope, size: Size? = null) {
-    Layout(content = { ids.forEach { id -> scope.document.nodes[id]?.let { NodeView(it, scope) } } }) { measurables, _ ->
+    // 노드 id로 식별해야 순서가 바뀌어도 호스트 뷰의 상태(입력 중인 글, 스크롤 위치 등)가 다른 노드로 넘어가거나 사라지지 않는다.
+    Layout(content = { ids.forEach { id -> key(id) { scope.document.nodes[id]?.let { NodeView(it, scope) } } } }) { measurables, _ ->
         val placeables = measurables.map { it.measure(Constraints()) }
         layout(size?.width?.toInt() ?: 0, size?.height?.toInt() ?: 0) { placeables.forEach { it.place(0, 0) } }
     }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -100,6 +101,34 @@ class SceneLayoutTest {
 
         assertThat(pixels[2, 2]).isEqualTo(Color.Red)
         assertThat(pixels[197, 197]).isEqualTo(Color.Red)
+    }
+
+    @Test
+    fun `순서·위치가 바뀌어도 호스트 뷰를 새로 만들지 않아 상태가 유지된다`() {
+        fun slot(id: String, x: Double) =
+            SceneNode(NodeId(id), NodeContent.HostSlot(Size(50.0, 50.0), id), transform = Transform2D(translationX = x))
+        val document = mutableStateOf(scene(slot("a", 0.0), slot("b", 100.0)))
+        // 키마다 처음 기억한 객체를 남긴다. 위치로 구분하면 순서가 바뀔 때 다른 키의 상태를 이어받는다.
+        val seen = mutableMapOf<String, Any>()
+        val slots: SceneSlots = listOf("a", "b").associateWith { key ->
+            {
+                val state = remember { Any() }
+                seen[key] = state
+                Box(Modifier.fillMaxSize())
+            }
+        }
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box(Modifier.size(200.dp)) { SceneLayout(document.value, Viewport(0.0, 0.0, 1.0), Modifier.fillMaxSize(), slots = slots) }
+            }
+        }
+        compose.waitForIdle()
+        val before = seen.toMap()
+
+        document.value = scene(slot("b", 0.0), slot("a", 120.0), roots = listOf("b", "a"))
+        compose.waitForIdle()
+
+        assertThat(seen).isEqualTo(before)
     }
 
     @Test
