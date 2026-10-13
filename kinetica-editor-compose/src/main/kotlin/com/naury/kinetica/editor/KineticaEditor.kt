@@ -63,6 +63,7 @@ import com.naury.kinetica.guides.SnapConfig
 import com.naury.kinetica.history.KineticaSession
 import com.naury.kinetica.render.SceneCanvas
 import com.naury.kinetica.render.SceneImageProvider
+import com.naury.kinetica.render.rememberSceneImages
 
 /**
  * 문서를 보고 고치는 편집 화면(docs 10).
@@ -75,14 +76,14 @@ import com.naury.kinetica.render.SceneImageProvider
  *
  * 저장소에 접근하지 않는다. 화면이 멈추면(ON_PAUSE) 진행 중인 끌기를 되돌린다.
  *
- * @param images 이미지 노드를 그릴 이미지. 미리 읽어 둔 것만 돌려줘야 한다.
+ * @param images 이미지 노드를 그릴 이미지. `null`이면 [rememberSceneImages]로 `content://` 이미지를 직접 읽는다.
  * @param config 스냅·격자·회전 스냅 설정
  */
 @Composable
 public fun KineticaEditor(
     session: KineticaSession,
     modifier: Modifier = Modifier,
-    images: SceneImageProvider = SceneImageProvider.None,
+    images: SceneImageProvider? = null,
     theme: StudioTheme = StudioTheme(),
     config: StudioConfig = StudioConfig(),
     toolbarEnd: @Composable RowScope.() -> Unit = {},
@@ -98,6 +99,8 @@ public fun KineticaEditor(
     }
     CancelGestureOnPause(controller)
     val paddingPx = with(LocalDensity.current) { CANVAS_PADDING.toPx().toDouble() }
+    val document by session.document.collectAsStateWithLifecycle()
+    val sceneImages = images ?: rememberSceneImages(document)
     BoxWithConstraints(modifier.background(theme.canvasBackground)) {
         val docked = maxWidth >= DOCKED_PANEL_MIN_WIDTH
         var sheet by remember { mutableStateOf<PanelSheet?>(null) }
@@ -106,7 +109,7 @@ public fun KineticaEditor(
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 // 선택 줄은 캔버스 위에 띄워, 고를 때마다 캔버스 크기가 바뀌어 장면이 밀리지 않게 한다.
                 Box(Modifier.weight(1f).fillMaxHeight()) {
-                    EditorCanvas(state, controller, actions, images, theme, paddingPx, Modifier.fillMaxSize())
+                    EditorCanvas(state, controller, actions, sceneImages, theme, paddingPx, Modifier.fillMaxSize())
                     SelectionBar(state, actions, theme, Modifier.align(Alignment.BottomCenter))
                 }
                 if (docked) {

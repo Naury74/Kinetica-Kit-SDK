@@ -15,9 +15,11 @@ import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.naury.kinetica.core.geometry.Mat3
+import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneGraph
 import com.naury.kinetica.motion.TimelineEvaluator
+import com.naury.kinetica.render.ContentImageLoader
 import com.naury.kinetica.render.SceneImageProvider
 import com.naury.kinetica.render.drawScene
 import java.io.File
@@ -36,15 +38,16 @@ import kotlinx.coroutines.withContext
  * 크기 상한과 남은 메모리를 먼저 확인하고, 그림은 [renderDispatcher]에서, 쓰기는 [ioDispatcher]에서 한다.
  * 색 공간은 sRGB, 알파는 premultiplied가 아닌 PNG 표준을 따른다. 출력 위치는 호스트가 정하며 공유는 하지 않는다.
  *
- * @param images 이미지 노드에 쓸 이미지. 내보내기 전에 미리 읽어 둔 것을 돌려줘야 한다.
+ * @param images 이미지 노드에 쓸 이미지. `null`이면 내보내기 전에 문서의 `content://` 이미지를 [ContentImageLoader]로 읽는다.
  */
 public class PngExporter(
     context: Context,
-    private val images: SceneImageProvider = SceneImageProvider.None,
+    private val images: SceneImageProvider? = null,
     private val renderDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val fontResolver = createFontFamilyResolver(context.applicationContext)
+    private val loader = ContentImageLoader(context, ioDispatcher = ioDispatcher)
 
     /** [output]에 PNG를 쓴다. [output]은 닫지 않는다. */
     public suspend fun export(document: SceneDocument, request: ExportRequest, output: OutputStream): ExportResult {
@@ -98,30 +101,44 @@ public class PngExporter(
             ExportResult.Failure(ExportError.WriteFailed)
         }
 
-    private suspend fun render(document: SceneDocument, request: ExportRequest): Rendered = withContext(renderDispatcher) {
-        val artboard = document.artboard
-        val width = request.widthPx
-        val height = (width * artboard.height / artboard.width).roundToInt()
-        val pixels = width.toLong() * height
-        when {
-            width <= 0 || height <= 0 -> return@withContext Rendered.Failed(ExportError.InvalidSize)
-            pixels > request.maxPixels -> return@withContext Rendered.Failed(ExportError.DimensionsExceeded)
-            pixels * BYTES_PER_PIXEL > availableMemory() -> return@withContext Rendered.Failed(ExportError.OutOfMemoryPrevented)
-        }
-        val timeline = document.timelines.firstOrNull()
-        val evaluated = if (timeline == null) document else TimelineEvaluator.evaluate(document, timeline, request.timeMs)
-        val scene = if (request.transparentBackground) evaluated.copy(artboard = artboard.copy(background = null)) else evaluated
-        val image = ImageBitmap(width, height)
-        ensureActive()
-        val density = Density(1f)
-        val measurer = TextMeasurer(fontResolver, density, LayoutDirection.Ltr)
-        CanvasDrawScope().draw(density, LayoutDirection.Ltr, Canvas(image), Size(width.toFloat(), height.toFloat())) {
-            if (!request.transparentBackground && artboard.background == null) drawRect(Color.White)
-            drawScene(SceneGraph(scene), Mat3.scale(width / artboard.width, height / artboard.height), measurer, images)
-        }
-        ensureActive()
-        Rendered.Image(image.asAndroidBitmap())
+    /** 호스트가 이미지를 주지 않았으면 문서의 이미지를 미리 읽어 둔다. 그리기 중에는 입출력을 하지 않는다. */
+    private suspend fun imagesFor(document: SceneDocument): SceneImageProvider {
+        images?.let { return it }
+        val uris = document.nodes.values.mapNotNull { (it.content as? NodeContent.Image)?.uri }.toSet()
+        val loaded = uris.mapNotNull { uri -> loader.load(uri)?.let { uri to it } }.toMap()
+        return SceneImageProvider { loaded[it] }
     }
+
+    private suspend fun render(document: SceneDocument, request: ExportRequest): Rendered {
+        val provider = imagesFor(document)
+        return draw(document, request, provider)
+    }
+
+    private suspend fun draw(document: SceneDocument, request: ExportRequest, images: SceneImageProvider): Rendered =
+        withContext(renderDispatcher) {
+            val artboard = document.artboard
+            val width = request.widthPx
+            val height = (width * artboard.height / artboard.width).roundToInt()
+            val pixels = width.toLong() * height
+            when {
+                width <= 0 || height <= 0 -> return@withContext Rendered.Failed(ExportError.InvalidSize)
+                pixels > request.maxPixels -> return@withContext Rendered.Failed(ExportError.DimensionsExceeded)
+                pixels * BYTES_PER_PIXEL > availableMemory() -> return@withContext Rendered.Failed(ExportError.OutOfMemoryPrevented)
+            }
+            val timeline = document.timelines.firstOrNull()
+            val evaluated = if (timeline == null) document else TimelineEvaluator.evaluate(document, timeline, request.timeMs)
+            val scene = if (request.transparentBackground) evaluated.copy(artboard = artboard.copy(background = null)) else evaluated
+            val image = ImageBitmap(width, height)
+            ensureActive()
+            val density = Density(1f)
+            val measurer = TextMeasurer(fontResolver, density, LayoutDirection.Ltr)
+            CanvasDrawScope().draw(density, LayoutDirection.Ltr, Canvas(image), Size(width.toFloat(), height.toFloat())) {
+                if (!request.transparentBackground && artboard.background == null) drawRect(Color.White)
+                drawScene(SceneGraph(scene), Mat3.scale(width / artboard.width, height / artboard.height), measurer, images)
+            }
+            ensureActive()
+            Rendered.Image(image.asAndroidBitmap())
+        }
 
     private fun availableMemory(): Long {
         val runtime = Runtime.getRuntime()

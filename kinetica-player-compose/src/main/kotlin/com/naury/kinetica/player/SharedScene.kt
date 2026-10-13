@@ -20,7 +20,7 @@ public fun SharedTransitionScope.SharedScenePlayer(
     animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
     playback: PlaybackController? = null,
-    images: SceneImageProvider = SceneImageProvider.None,
+    images: SceneImageProvider? = null,
     background: Color = Color.Transparent,
 ) {
     KineticaPlayer(

@@ -20,6 +20,7 @@ import com.naury.kinetica.motion.PlaybackController
 import com.naury.kinetica.motion.TimelineEvaluator
 import com.naury.kinetica.render.SceneCanvas
 import com.naury.kinetica.render.SceneImageProvider
+import com.naury.kinetica.render.rememberSceneImages
 
 /**
  * 읽기 전용 장면 재생기(docs 00 Player). 편집 도구·실행 취소·저장소에 의존하지 않는다.
@@ -28,15 +29,17 @@ import com.naury.kinetica.render.SceneImageProvider
  * 재생 중에는 화면 프레임마다 [PlaybackController.onFrame]을 부른다. 없으면 정지 장면(timeline 0ms)을 그린다.
  *
  * @param playback 같은 문서의 timeline으로 만든 재생기. [rememberPlaybackController]로 만든다.
+ * @param images 이미지 노드를 그릴 이미지. `null`이면 `content://` 이미지를 직접 읽는다.
  */
 @Composable
 public fun KineticaPlayer(
     document: SceneDocument,
     modifier: Modifier = Modifier,
     playback: PlaybackController? = null,
-    images: SceneImageProvider = SceneImageProvider.None,
+    images: SceneImageProvider? = null,
     background: Color = Color.Transparent,
 ) {
+    val sceneImages = images ?: rememberSceneImages(document)
     val timeline = playback?.timeline ?: document.timelines.firstOrNull()
     val state = playback?.state?.collectAsState()
     val timeMs = state?.value?.timeMs ?: 0.0
@@ -57,7 +60,7 @@ public fun KineticaPlayer(
         if (timeline == null) document else TimelineEvaluator.evaluate(document, timeline, timeMs)
     }
     Box(modifier.onSizeChanged { size = it.width to it.height }) {
-        SceneCanvas(shown, viewport, Modifier.matchParentSize(), images, artboardOutside = background)
+        SceneCanvas(shown, viewport, Modifier.matchParentSize(), sceneImages, artboardOutside = background)
     }
 }
 
