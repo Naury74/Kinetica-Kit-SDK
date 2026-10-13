@@ -37,7 +37,10 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         val start = origin ?: return
         val dx = (local.x - startLocal.x) / frame.zoom
         val dy = (local.y - startLocal.y) / frame.zoom
-        val raw = Rect(start.left + dx, start.top + dy, start.right + dx, start.bottom + dy)
+        // 위젯은 보드 왼쪽·오른쪽·위 밖으로 나가지 않는다. 손가락은 계속 따라가므로 가장자리 분할은 그대로 감지된다.
+        val left = (start.left + dx).coerceIn(0.0, (frame.mapping.displayWidth - start.width).coerceAtLeast(0.0))
+        val top = (start.top + dy).coerceAtLeast(0.0)
+        val raw = Rect(left, top, left + start.width, top + start.height)
         val others = frame.rects.filterKeys { it != key }.values.toList()
         val pointer = Vec2(start.left + local.x / frame.zoom, start.top + local.y / frame.zoom)
         val zone = if (state.arrangement is BoardArrangement.Free) BoardGeometry.zoneAt(pointer, frame.visible, frame.edge) else null

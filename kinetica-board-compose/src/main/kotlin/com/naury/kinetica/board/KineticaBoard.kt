@@ -82,14 +82,22 @@ public fun KineticaBoard(
         }
         val drag = controller.drag
         val rects = drag?.let { stable + (it.key to it.rect) } ?: stable
-        val contentBottom = (rects.values.maxOfOrNull { it.bottom } ?: 0.0) + gap
+        // 편집 중에는 아래 위젯이 위젯 추가 버튼에 가리지 않도록 스크롤할 여유를 둔다.
+        val editRoom = if (editing && permissions.add) EDIT_BOTTOM_ROOM_DP * KineticaBoardState.UNITS else 0.0
+        val contentBottom = (rects.values.maxOfOrNull { it.bottom } ?: 0.0) + gap + editRoom
         val viewportHeight = if (constraints.hasBoundedHeight) constraints.maxHeight.toFloat() else (contentBottom * zoom).toFloat()
         val heightPx = maxOf((contentBottom * zoom).toFloat(), viewportHeight)
         controller.frame = BoardFrame(
             mapping = mapping,
             zoom = zoom,
             rects = stable,
-            visible = Rect(0.0, scroll.value / zoom.toDouble(), mapping.displayWidth, (scroll.value + viewportHeight) / zoom.toDouble()),
+            // 분할 자리는 위젯 추가 버튼 위까지만 써서, 놓은 위젯의 크기 손잡이가 버튼에 가리지 않게 한다.
+            visible = Rect(
+                0.0,
+                scroll.value / zoom.toDouble(),
+                mapping.displayWidth,
+                (scroll.value + viewportHeight) / zoom.toDouble() - editRoom,
+            ),
             edge = EDGE_DP * KineticaBoardState.UNITS,
             snap = SNAP_DP * KineticaBoardState.UNITS,
             minSize = MIN_WIDGET_DP * KineticaBoardState.UNITS,
@@ -98,31 +106,44 @@ public fun KineticaBoard(
         Box(Modifier.fillMaxWidth().verticalScroll(scroll, enabled = drag == null)) {
             Box(Modifier.fillMaxWidth().height(with(LocalDensity.current) { heightPx.toDp() })) {
                 SceneLayout(shown, Viewport(0.0, 0.0, zoom.toDouble()), Modifier.matchParentSize(), slots = slots)
-                if (editing) {
-                    drag?.let {
-                        TargetPreview(it.target, zoom, colors)
-                        DragOutline(it.rect, zoom, colors)
-                    }
-                    stored.rootOrder.forEach { id ->
-                        val key = id.value
-                        val widget = state.catalog.firstOrNull { it.key == key }
-                        WidgetEditFrame(
-                            key = key,
-                            label = widget?.label ?: key,
-                            // 끄는 동안 틀은 제자리에 두어 손가락 위치의 기준이 흔들리지 않게 한다. 움직이는 모습은 DragOutline이 그린다.
-                            rect = stable.getValue(key),
-                            dragging = drag?.key == key,
-                            zoom = zoom,
-                            permissions = permissions.copy(remove = permissions.remove && widget?.removable != false),
-                            colors = colors,
-                            controller = controller,
-                            onRemove = { state.remove(key) },
-                        )
-                    }
-                }
+                if (editing) EditLayer(state, stored, stable, drag, zoom, permissions, colors, controller)
             }
         }
         if (editing && permissions.add) AddWidgetButton(state, stored, colors, Modifier.align(Alignment.BottomEnd).padding(16.dp))
+    }
+}
+
+@Composable
+@Suppress("LongParameterList")
+private fun EditLayer(
+    state: KineticaBoardState,
+    stored: SceneDocument,
+    stable: Map<String, Rect>,
+    drag: BoardDrag?,
+    zoom: Float,
+    permissions: BoardPermissions,
+    colors: BoardColors,
+    controller: BoardDragController,
+) {
+    drag?.let {
+        TargetPreview(it.target, zoom, colors)
+        DragOutline(it.rect, zoom, colors)
+    }
+    stored.rootOrder.forEach { id ->
+        val key = id.value
+        val widget = state.catalog.firstOrNull { it.key == key }
+        WidgetEditFrame(
+            key = key,
+            label = widget?.label ?: key,
+            // 끄는 동안 틀은 제자리에 두어 손가락 위치의 기준이 흔들리지 않게 한다. 움직이는 모습은 DragOutline이 그린다.
+            rect = stable.getValue(key),
+            dragging = drag?.key == key,
+            zoom = zoom,
+            permissions = permissions.copy(remove = permissions.remove && widget?.removable != false),
+            colors = colors,
+            controller = controller,
+            onRemove = { state.remove(key) },
+        )
     }
 }
 
@@ -190,7 +211,7 @@ private fun WidgetEditFrame(
             Box(
                 Modifier
                     .align(Alignment.TopStart)
-                    .padding(4.dp)
+                    .offset(-BADGE_OUTSET, -BADGE_OUTSET)
                     .size(BADGE_SIZE)
                     .background(colors.accent, CircleShape)
                     .semantics { contentDescription = description }
@@ -257,8 +278,10 @@ private fun Modifier.rectPlacement(rect: Rect, zoom: Float): Modifier {
 /** 테스트에서 위젯 편집 틀을 찾을 때 쓰는 tag 앞부분. 뒤에 위젯 키가 붙는다. */
 public const val BOARD_WIDGET_TAG: String = "kinetica-board-widget:"
 
-private const val EDGE_DP = 28.0
+private const val EDGE_DP = 40.0
 private const val SNAP_DP = 8.0
 private const val MIN_WIDGET_DP = 48.0
 private const val EDIT_TINT = 0.08f
+private const val EDIT_BOTTOM_ROOM_DP = 88.0
 private val BADGE_SIZE: Dp = 28.dp
+private val BADGE_OUTSET: Dp = 9.dp

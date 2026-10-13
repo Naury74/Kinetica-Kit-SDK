@@ -72,10 +72,10 @@ class KineticaBoardTest {
 
         val half = state.rectOf("a")!!
         val scale = 400.0 * KineticaBoardState.UNITS / KineticaBoardState.REFERENCE_WIDTH
-        // 보이는 영역 600dp에서 간격 12dp를 두고 나눈 왼쪽 반.
+        // 보이는 영역 600dp에서 위젯 추가 버튼 자리 88dp를 뺀 뒤 간격 12dp를 두고 나눈 왼쪽 반.
         assertThat(half.left * scale).isWithin(0.5).of(12.0 * KineticaBoardState.UNITS)
         assertThat(half.right * scale).isWithin(0.5).of(194.0 * KineticaBoardState.UNITS)
-        assertThat(half.height).isWithin(0.5).of(576.0 * KineticaBoardState.UNITS)
+        assertThat(half.height).isWithin(0.5).of(488.0 * KineticaBoardState.UNITS)
         state.history.undo()
         assertThat(state.rectOf("a")).isEqualTo(before)
     }

@@ -65,6 +65,22 @@ class BoardGeometryTest {
     }
 
     @Test
+    fun `자유 배치에서 놓은 위젯과 겹치는 위젯은 아래로 이어서 밀린다`() {
+        val rects = mapOf(
+            "half" to Rect(500.0, 0.0, 1000.0, 600.0),
+            "chart" to Rect(0.0, 400.0, 1000.0, 700.0),
+            "below" to Rect(0.0, 720.0, 300.0, 800.0),
+            "left" to Rect(0.0, 0.0, 480.0, 300.0),
+        )
+
+        val pushed = BoardGeometry.pushOverlaps(rects, "half", 20.0)
+
+        assertThat(pushed.getValue("chart")).isEqualTo(Rect(0.0, 620.0, 1000.0, 920.0))
+        assertThat(pushed.getValue("below")).isEqualTo(Rect(0.0, 940.0, 300.0, 1020.0))
+        assertThat(pushed.getValue("left")).isEqualTo(rects.getValue("left"))
+    }
+
+    @Test
     fun `첫 빈칸은 위에서 왼쪽부터 찾는다`() {
         val occupied = listOf(GridCell(0, 0, 2, 1), GridCell(2, 0, 2, 1))
 

@@ -54,7 +54,7 @@ public class KineticaBoardState private constructor(
     /** 아직 놓이지 않은 위젯. 위젯 추가 목록에 쓴다. */
     public val availableWidgets: List<BoardWidget> get() = placedKeys.toSet().let { placed -> catalog.filter { it.key !in placed } }
 
-    /** [key] 위젯을 비어 있는 자리(격자는 첫 빈칸, 자유 배치는 맨 아래)에 놓는다. 목록에 없거나 이미 놓였으면 `false`. */
+    /** [key] 위젯을 비어 있는 첫 자리(위에서부터, 같은 줄이면 왼쪽부터)에 놓는다. 목록에 없거나 이미 놓였으면 `false`. */
     public fun add(key: String): Boolean {
         val widget = widgets[key] ?: return false
         if (key in placedKeys) return false
@@ -69,7 +69,8 @@ public class KineticaBoardState private constructor(
     }
 
     /**
-     * [key] 위젯을 기준 폭 좌표 [rect]로 옮기거나 크기를 바꾼다. 격자 배치면 가장 가까운 칸으로 맞추고 겹치는 위젯을 아래로 민다.
+     * [key] 위젯을 기준 폭 좌표 [rect]로 옮기거나 크기를 바꾼다. 겹치는 다른 위젯은 아래로 밀린다(분할 배치 뒤 가려지지 않게).
+     * 격자 배치면 가장 가까운 칸으로 맞춘다.
      * 모든 변경이 실행 취소 한 단계다.
      */
     public fun place(key: String, rect: Rect): Boolean {
@@ -77,7 +78,11 @@ public class KineticaBoardState private constructor(
         if (document.node(NodeId(key)) == null || rect.width <= 0.0 || rect.height <= 0.0) return false
         val grid = arrangement as? BoardArrangement.Grid
         val updates: Map<String, Rect> = if (grid == null) {
-            mapOf(key to rect)
+            val rects = document.rootOrder.mapNotNull { id -> rectOf(document.node(id))?.let { id.value to it } }.toMap() + (key to rect)
+            BoardGeometry.pushOverlaps(rects, key, gapUnits()).filter { (id, target) ->
+                id == key ||
+                    rectOf(document.node(NodeId(id))) != target
+            }
         } else {
             val cells = gridCells(document) + (key to BoardGeometry.nearestCell(rect, REFERENCE_WIDTH, grid, gapUnits()))
             BoardGeometry.resolveOverlaps(cells, key)
@@ -138,8 +143,7 @@ public class KineticaBoardState private constructor(
 
             is BoardArrangement.Free -> {
                 val width = (widget.widthDp * UNITS).coerceAtMost(REFERENCE_WIDTH - 2 * gap)
-                val top = (placed.maxOfOrNull { it.bottom } ?: 0.0) + gap
-                Rect(gap, top, gap + width, top + widget.heightDp * UNITS)
+                BoardGeometry.firstFreeSpot(width, widget.heightDp * UNITS, placed, REFERENCE_WIDTH, gap)
             }
         }
         return withRect(

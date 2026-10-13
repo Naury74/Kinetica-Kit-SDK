@@ -12,12 +12,12 @@ class KineticaBoardStateTest {
     )
 
     @Test
-    fun `저장된 배치가 없으면 기본 위젯을 위에서부터 쌓는다`() {
+    fun `저장된 배치가 없으면 기본 위젯을 위에서부터 빈자리에 채운다`() {
         val state = KineticaBoardState.create(catalog)
 
         assertThat(state.placedKeys).containsExactly("sales", "orders").inOrder()
         assertThat(state.rectOf("sales")).isEqualTo(Rect(33.0, 33.0, 583.0, 308.0))
-        assertThat(state.rectOf("orders")!!.top).isEqualTo(341.0)
+        assertThat(state.rectOf("orders")).isEqualTo(Rect(616.0, 33.0, 946.0, 253.0))
         assertThat(state.availableWidgets.map { it.key }).containsExactly("weather")
         assertThat(state.history.state.value.canUndo).isFalse()
     }

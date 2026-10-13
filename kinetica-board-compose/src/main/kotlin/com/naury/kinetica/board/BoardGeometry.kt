@@ -123,6 +123,51 @@ internal object BoardGeometry {
         return cells.keys.associateWith { placed.getValue(it) }
     }
 
+    /**
+     * 자유 배치에서 [fixed]를 놓은 뒤 겹치는 다른 위젯을 겹치지 않을 때까지 아래로 민다(간격 [gap]). 민 위젯이 또 겹치면 이어서 민다.
+     * 위에 있는 위젯부터 정하므로 결과는 입력 순서와 상관없다.
+     */
+    fun pushOverlaps(rects: Map<String, Rect>, fixed: String, gap: Double): Map<String, Rect> {
+        val placed = linkedMapOf(fixed to rects.getValue(fixed))
+        rects.filterKeys {
+            it != fixed
+        }.entries.sortedWith(compareBy({ it.value.top }, { it.value.left }, { it.key })).forEach { (key, rect) ->
+            var candidate = rect
+            while (true) {
+                val blocking = placed.values.filter { it.intersectsStrictly(candidate) }
+                if (blocking.isEmpty()) break
+                val top = blocking.maxOf { it.bottom } + gap
+                candidate = Rect(candidate.left, top, candidate.right, top + candidate.height)
+            }
+            placed[key] = candidate
+        }
+        return rects.keys.associateWith { placed.getValue(it) }
+    }
+
+    /**
+     * 자유 배치에서 [width]×[height] 위젯이 처음 놓일 자리: 보드 왼쪽 위와 이미 놓인 위젯의 오른쪽·아래 자리 중
+     * 겹치지 않고 보드 폭 안에 드는 가장 위(같으면 가장 왼쪽) 자리. 넓은 화면에서는 옆으로 채운다.
+     */
+    fun firstFreeSpot(width: Double, height: Double, placed: List<Rect>, boardWidth: Double, gap: Double): Rect {
+        val candidates =
+            listOf(gap to gap) + placed.flatMap { listOf(it.right + gap to it.top, gap to it.bottom + gap, it.left to it.bottom + gap) }
+        return candidates
+            .map { (left, top) -> Rect(left, top, left + width, top + height) }
+            .filter { it.right <= boardWidth - gap + EPSILON && placed.none { other -> other.intersectsStrictly(it) } }
+            .minWithOrNull(compareBy({ it.top }, { it.left }))
+            ?: Rect(
+                gap,
+                (placed.maxOfOrNull { it.bottom } ?: 0.0) + gap,
+                gap + width,
+                (placed.maxOfOrNull { it.bottom } ?: 0.0) + gap + height,
+            )
+    }
+
+    private const val EPSILON = 1e-6
+
+    private fun Rect.intersectsStrictly(other: Rect): Boolean =
+        left < other.right && other.left < right && top < other.bottom && other.top < bottom
+
     /** 위젯이 처음 놓일 칸: 위에서부터 왼쪽부터 비어 있는 첫 자리. */
     fun firstFreeCell(occupied: Collection<GridCell>, columnSpan: Int, rowSpan: Int, columns: Int): GridCell {
         val span = columnSpan.coerceAtMost(columns)
