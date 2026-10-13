@@ -15,6 +15,13 @@
 
 <table>
   <tr>
+    <td align="center" width="50%"><img src="docs/images/screen-dashboard.png" width="360" alt="호스트 뷰 배치 편집"><br><b>Host UI 편집</b><br>호스트 위젯·실시간 데이터를 자유 배치</td>
+    <td align="center" width="50%"><img src="docs/images/screen-preview.png" width="360" alt="사용자 화면"><br><b>사용자 화면</b><br>위젯이 실제로 동작하고 동작은 호스트로</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
     <td align="center" width="25%"><img src="docs/images/screen-studio.png" width="240" alt="편집 화면"><br><b>Studio</b><br>레이어·속성 패널</td>
     <td align="center" width="25%"><img src="docs/images/screen-motion.png" width="240" alt="모션 편집"><br><b>Motion</b><br>재생 위치 기준 자동 키</td>
     <td align="center" width="25%"><img src="docs/images/screen-gallery.png" width="240" alt="장면 목록"><br><b>Gallery</b><br>재생기만 쓰는 앱</td>

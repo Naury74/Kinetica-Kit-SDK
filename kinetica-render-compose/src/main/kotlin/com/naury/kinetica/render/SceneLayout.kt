@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -49,8 +50,12 @@ import com.naury.kinetica.core.scene.TextAlignment
 /**
  * 호스트가 [com.naury.kinetica.core.scene.NodeContent.HostSlot]의 키마다 주는 Composable. 키가 없으면 빈 틀을 그린다.
  * 내용은 노드 상자 크기로 배치되며, 호스트 데이터가 바뀌면 그대로 다시 그려진다.
+ * 안에서 dp·sp는 기기 화면 밀도가 아니라 [HOST_VIEW_UNITS_PER_DP]로 문서 단위에 맞춰지므로, 어느 기기·확대 배율에서나 상자 대비 같은 모습이다.
  */
 public typealias SceneSlots = Map<String, @Composable () -> Unit>
+
+/** 호스트 뷰 안에서 1dp가 차지하는 문서 단위. 폭 1080 artboard가 폭 약 393dp 휴대폰 화면에 대응한다. */
+public const val HOST_VIEW_UNITS_PER_DP: Float = 2.75f
 
 /**
  * 문서를 노드마다 실제 Compose 요소로 그린다(docs 30). 호스트 뷰가 실제로 동작하고 그룹 불투명도·Frame 자르기가 레이어로 합성된다.
@@ -217,7 +222,11 @@ private fun HostView(node: SceneNode, content: NodeContent.HostSlot, modifier: M
         Placeholder(content.size, modifier)
         return
     }
-    Box(modifier.requiredSizePx(content.size).boxStyle(node, 0.0).clipToBounds()) { slot() }
+    Box(modifier.requiredSizePx(content.size).boxStyle(node, 0.0).clipToBounds()) {
+        // 바깥 Box는 기기 픽셀(= 문서 단위)로 재고, 안쪽만 문서 단위 밀도로 바꿔 호스트의 dp 배치가 기기마다 달라지지 않게 한다.
+        val fontScale = LocalDensity.current.fontScale
+        CompositionLocalProvider(LocalDensity provides Density(HOST_VIEW_UNITS_PER_DP, fontScale)) { slot() }
+    }
 }
 
 @Composable

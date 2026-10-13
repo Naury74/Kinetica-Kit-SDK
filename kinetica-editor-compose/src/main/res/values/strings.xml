@@ -86,4 +86,6 @@
     <string name="kinetica_field_bind_text">Text data key</string>
     <string name="kinetica_field_bind_visible">Visible data key</string>
     <string name="kinetica_field_action">Tap action</string>
+    <string name="kinetica_text_bound">Bound to data “%1$s”. The app’s value is shown; this text appears only when there is no value.</string>
+    <string name="kinetica_unbind_and_save">Unbind and save</string>
 </resources>

@@ -72,11 +72,15 @@ internal class PropertyEdits(private val state: EditorState) {
         return update(node.copy(style = node.style.copy(fill = color)))
     }
 
-    /** 글자 노드의 내용을 바꾼다. 상한·유니코드 검사를 통과하지 못하면 `false`이고 문서는 그대로다. */
-    fun setText(id: NodeId, text: String): Boolean {
+    /**
+     * 글자 노드의 내용을 바꾼다. [unbind]면 내용 데이터 묶음도 같은 실행 취소 단계에서 푼다.
+     * 상한·유니코드 검사를 통과하지 못하면 `false`이고 문서는 그대로다.
+     */
+    fun setText(id: NodeId, text: String, unbind: Boolean = false): Boolean {
         val node = state.document.node(id) ?: return false
         val content = node.content as? NodeContent.Text ?: return false
-        return update(node.copy(content = content.copy(text = text)))
+        val bindings = if (unbind) node.bindings - BoundProperty.Text else node.bindings
+        return update(node.copy(content = content.copy(text = text), bindings = bindings))
     }
 
     /** 글자 크기(문서 단위). 0 이하는 거부한다. */

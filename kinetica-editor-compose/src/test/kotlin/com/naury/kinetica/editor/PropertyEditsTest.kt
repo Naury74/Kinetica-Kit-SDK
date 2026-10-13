@@ -84,6 +84,22 @@ class PropertyEditsTest {
     }
 
     @Test
+    fun `묶인 글자는 묶음을 풀며 고치면 한 단계로 되돌린다`() {
+        val bound = SceneNode(id("t"), NodeContent.Text(Size(200.0, 80.0), "기본"), bindings = mapOf(BoundProperty.Text to "user.name"))
+        val textScene = document(listOf(bound))
+        val textSession = (KineticaSession.create(textScene) as SessionOpenResult.Opened).session
+        val textEdits = PropertyEdits(EditorState(textSession))
+
+        assertThat(textEdits.setText(id("t"), "직접 쓴 글자", unbind = true)).isTrue()
+
+        val edited = textSession.document.value.node(id("t"))!!
+        assertThat((edited.content as NodeContent.Text).text).isEqualTo("직접 쓴 글자")
+        assertThat(edited.bindings).isEmpty()
+        textSession.history.undo()
+        assertThat(textSession.document.value).isEqualTo(textScene)
+    }
+
+    @Test
     fun `데이터 키·동작·그림자를 바꾸고 틀린 키는 거부한다`() {
         assertThat(edits.setBinding(id("a"), BoundProperty.Visible, " store.open ")).isTrue()
         assertThat(edits.setBinding(id("a"), BoundProperty.Fill, "틀린 키")).isFalse()

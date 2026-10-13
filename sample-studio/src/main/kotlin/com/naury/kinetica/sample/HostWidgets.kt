@@ -13,9 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,10 +49,10 @@ object HostWidgets {
     const val WEATHER = "widget.weather"
 
     val options = listOf(
-        HostViewOption(CLOCK, "시계", 420.0, 180.0),
-        HostViewOption(COUNTER, "카운터", 420.0, 220.0),
-        HostViewOption(SALES_CHART, "매출 그래프", 900.0, 360.0),
-        HostViewOption(WEATHER, "날씨", 420.0, 260.0),
+        HostViewOption(CLOCK, "시계", 470.0, 200.0),
+        HostViewOption(COUNTER, "카운터", 470.0, 260.0),
+        HostViewOption(SALES_CHART, "매출 그래프", 960.0, 380.0),
+        HostViewOption(WEATHER, "날씨", 470.0, 290.0),
     )
 
     /** [sales]는 최근 매출(막대 높이 비율 0..1). 바뀌면 막대가 움직인다. */
@@ -80,21 +78,22 @@ private fun Clock() {
     }
     val time = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
     Box(Modifier.fillMaxSize().background(Color(0xFF101216)), contentAlignment = Alignment.Center) {
-        Text(time, color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
+        Text(time, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
 private fun Counter() {
     var count by rememberSaveable { mutableIntStateOf(0) }
-    Column(
-        Modifier.fillMaxSize().background(Color(0xFFF2F4F8)).padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
+        Modifier.fillMaxSize().background(Color(0xFFF2F4F8)).padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("방문자", color = cardText.copy(alpha = 0.6f))
-        Text("$count", color = cardText, fontSize = 44.sp, fontWeight = FontWeight.Bold)
-        Button(onClick = { count++ }, modifier = Modifier.fillMaxWidth()) { Text("+1") }
+        Column(Modifier.weight(1f)) {
+            Text("방문자", color = cardText.copy(alpha = 0.6f), fontSize = 13.sp)
+            Text("$count", color = cardText, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+        }
+        Button(onClick = { count++ }) { Text("+1") }
     }
 }
 
@@ -121,11 +120,11 @@ private fun SalesChart(sales: List<Float>) {
 @Composable
 private fun Weather() {
     Column(
-        Modifier.fillMaxSize().background(Color(0xFF3EC1D3), RoundedCornerShape(0.dp)).padding(18.dp),
+        Modifier.fillMaxSize().background(Color(0xFF3EC1D3)).padding(14.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("서울", color = Color.White, style = MaterialTheme.typography.titleMedium)
-        Text("21°", color = Color.White, fontSize = 56.sp, fontWeight = FontWeight.Light)
-        Text("맑음 · 최고 24° 최저 15°", color = Color.White.copy(alpha = 0.85f))
+        Text("서울", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text("21°", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Light)
+        Text("맑음 · 최고 24° 최저 15°", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
     }
 }

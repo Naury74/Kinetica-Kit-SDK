@@ -85,4 +85,6 @@
     <string name="kinetica_field_bind_text">내용 데이터 키</string>
     <string name="kinetica_field_bind_visible">보임 데이터 키</string>
     <string name="kinetica_field_action">누르면 실행할 동작</string>
+    <string name="kinetica_text_bound">데이터 “%1$s”에 묶여 있어 앱이 주는 값이 보입니다. 이 글자는 값이 없을 때만 보입니다.</string>
+    <string name="kinetica_unbind_and_save">묶음 풀고 저장</string>
 </resources>
