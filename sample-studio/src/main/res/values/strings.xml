@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">Kinetica Studio</string>
+    <string name="app_name" translatable="false">Kinetica Studio</string>
+    <string name="sample_save">Save</string>
+    <string name="sample_saved">Saved</string>
+    <string name="sample_save_failed">Could not save. The previous file is kept.</string>
+    <string name="sample_load_failed">The saved scene could not be opened. Started a new one; saving will replace it.</string>
 </resources>

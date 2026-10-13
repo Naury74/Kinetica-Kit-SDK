@@ -7,5 +7,7 @@
     <string name="kinetica_undo">실행 취소</string>
     <string name="kinetica_redo">다시 실행</string>
     <string name="kinetica_fit">화면 맞춤</string>
-    <string name="kinetica_canvas_description">장면 캔버스. %1$d개 선택됨.</string>
+    <plurals name="kinetica_canvas_description">
+        <item quantity="other">장면 캔버스. %1$d개 선택됨.</item>
+    </plurals>
 </resources>

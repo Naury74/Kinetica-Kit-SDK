@@ -18,6 +18,14 @@ class KineticaSessionTest {
     private fun open(document: SceneDocument = TestScenes.sample(), config: SessionConfig = SessionConfig()): KineticaSession =
         (KineticaSession.create(document, config) as SessionOpenResult.Opened).session
 
+    private fun undoAll(session: KineticaSession) {
+        while (session.history.undo()) continue
+    }
+
+    private fun redoAll(session: KineticaSession) {
+        while (session.history.redo()) continue
+    }
+
     private fun move(x: Double) = SceneCommand.TransformNodes(mapOf(id("a") to Transform2D(translationX = x)))
 
     @Test
@@ -140,9 +148,9 @@ class KineticaSessionTest {
         }
         val final = session.document.value
 
-        while (session.history.undo()) Unit
+        undoAll(session)
         assertThat(session.document.value).isEqualTo(initial)
-        while (session.history.redo()) Unit
+        redoAll(session)
         assertThat(session.document.value).isEqualTo(final)
     }
 

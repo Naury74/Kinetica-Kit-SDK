@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -85,7 +86,8 @@ private fun EditorCanvas(
 ) {
     val document by state.session.document.collectAsStateWithLifecycle()
     val selection by state.session.selection.collectAsStateWithLifecycle()
-    val description = stringResource(R.string.kinetica_canvas_description, selection.selectedIds.size)
+    val count = selection.selectedIds.size
+    val description = pluralStringResource(R.plurals.kinetica_canvas_description, count, count)
     Box(
         modifier
             .clipToBounds()

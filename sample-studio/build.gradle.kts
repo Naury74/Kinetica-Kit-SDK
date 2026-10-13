@@ -35,11 +35,13 @@ android {
 }
 
 dependencies {
-    implementation(project(":kinetica-core"))
+    implementation(project(":kinetica-editor-compose"))
+    implementation(project(":kinetica-serialization"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
 }
