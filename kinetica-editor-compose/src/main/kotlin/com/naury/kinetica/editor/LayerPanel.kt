@@ -94,6 +94,8 @@ internal fun NodeKind.labelRes(): Int = when (this) {
     NodeKind.Path -> R.string.kinetica_kind_path
     NodeKind.Text -> R.string.kinetica_kind_text
     NodeKind.Image -> R.string.kinetica_kind_image
+    NodeKind.Frame -> R.string.kinetica_kind_frame
+    NodeKind.HostSlot -> R.string.kinetica_kind_host
 }
 
 private val ROW_HEIGHT = 48.dp

@@ -28,6 +28,7 @@ import kotlinx.serialization.json.putJsonObject
 /** 기본값과 같은 선택 필드는 쓰지 않는다. 그래야 같은 문서가 항상 같은 짧은 문자열이 된다. */
 internal object SceneJsonWriter {
     private const val MAX_EXACT_LONG = 9_007_199_254_740_992.0
+    private const val DEFAULT_FONT_WEIGHT = 400
 
     fun write(document: SceneDocument): JsonObject = buildJsonObject {
         put(K.SCHEMA_VERSION, document.schemaVersion)
@@ -53,6 +54,12 @@ internal object SceneJsonWriter {
         if (!node.visible) put(K.VISIBLE, false)
         if (node.locked) put(K.LOCKED, true)
         if (node.metadata.isNotEmpty()) putJsonObject(K.METADATA) { node.metadata.forEach { (key, value) -> put(key, value) } }
+        if (node.bindings.isNotEmpty()) {
+            putJsonObject(K.BINDINGS) {
+                node.bindings.entries.sortedBy { it.key.ordinal }.forEach { (property, key) -> put(property.wireName, key) }
+            }
+        }
+        node.action?.let { put(K.ACTION, it) }
         put(K.TRANSFORM, transform(node.transform))
         content(node.content)
         put(K.STYLE, style(node.style))
@@ -71,18 +78,37 @@ internal object SceneJsonWriter {
 
             is NodeContent.Path -> putJsonArray(K.PATH) { content.commands.forEach { add(pathCommand(it)) } }
 
-            is NodeContent.Text -> {
-                put(K.BOUNDS, size(content.size))
-                put(K.TEXT, content.text)
-                putNumber(K.FONT_SIZE, content.fontSize)
-                if (content.alignment != TextAlignment.Start) put(K.ALIGN, content.alignment.name.lowercase())
-            }
+            is NodeContent.Text -> text(content)
 
             is NodeContent.Image -> {
                 put(K.BOUNDS, size(content.size))
                 put(K.URI, content.uri)
             }
+
+            is NodeContent.Frame -> frame(content)
+
+            is NodeContent.HostSlot -> {
+                put(K.BOUNDS, size(content.size))
+                put(K.KEY, content.key)
+            }
         }
+    }
+
+    private fun JsonObjectBuilder.text(content: NodeContent.Text) {
+        put(K.BOUNDS, size(content.size))
+        put(K.TEXT, content.text)
+        putNumber(K.FONT_SIZE, content.fontSize)
+        if (content.alignment != TextAlignment.Start) put(K.ALIGN, content.alignment.name.lowercase())
+        if (content.fontWeight != DEFAULT_FONT_WEIGHT) put(K.FONT_WEIGHT, content.fontWeight)
+        if (content.lineHeight != 0.0) putNumber(K.LINE_HEIGHT, content.lineHeight)
+        if (content.letterSpacing != 0.0) putNumber(K.LETTER_SPACING, content.letterSpacing)
+    }
+
+    private fun JsonObjectBuilder.frame(content: NodeContent.Frame) {
+        put(K.BOUNDS, size(content.size))
+        if (content.cornerRadius != 0.0) putNumber(K.CORNER_RADIUS, content.cornerRadius)
+        if (!content.clip) put(K.CLIP, false)
+        putJsonArray(K.CHILDREN) { content.childIds.forEach { add(JsonPrimitive(it.value)) } }
     }
 
     private fun transform(transform: Transform2D): JsonObject = buildJsonObject {
@@ -105,6 +131,14 @@ internal object SceneJsonWriter {
         style.stroke?.let { put(K.STROKE, it.toHex()) }
         if (style.strokeWidth != 0.0) putNumber(K.STROKE_WIDTH, style.strokeWidth)
         putNumber(K.OPACITY, style.opacity)
+        style.shadow?.let { shadow ->
+            putJsonObject(K.SHADOW) {
+                put(K.COLOR, shadow.color.toHex())
+                putNumber(K.X, shadow.offsetX)
+                putNumber(K.Y, shadow.offsetY)
+                putNumber(K.BLUR, shadow.blur)
+            }
+        }
     }
 
     private fun pathCommand(command: PathCommand): JsonObject = buildJsonObject {

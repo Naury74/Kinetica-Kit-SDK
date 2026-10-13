@@ -71,4 +71,6 @@
     <string name="kinetica_preset_parallax">Parallax</string>
     <string name="kinetica_field_text">Text</string>
     <string name="kinetica_field_font_size">Font size</string>
+    <string name="kinetica_kind_frame">Frame</string>
+    <string name="kinetica_kind_host">Host view</string>
 </resources>

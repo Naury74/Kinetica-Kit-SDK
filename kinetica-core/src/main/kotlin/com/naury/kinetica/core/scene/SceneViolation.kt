@@ -33,4 +33,5 @@ public enum class ViolationCode {
     InvalidEasing,
     TooManyKeyframes,
     InvalidExtension,
+    InvalidBinding,
 }

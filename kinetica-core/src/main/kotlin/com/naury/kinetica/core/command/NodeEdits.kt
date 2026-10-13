@@ -13,7 +13,7 @@ internal object NodeEdits {
         val error = when {
             document.nodes.containsKey(node.id) -> CommandError.NodeAlreadyExists(node.id)
 
-            (node.content as? NodeContent.Group)?.childIds?.isNotEmpty() == true -> CommandError.StructureChange(node.id)
+            (node.content as? NodeContent.Container)?.childIds?.isNotEmpty() == true -> CommandError.StructureChange(node.id)
 
             else -> parentError(document, parentId)
                 ?: CommandError.IndexOutOfRange(index, siblings.size).takeIf { index !in 0..siblings.size }
@@ -27,9 +27,9 @@ internal object NodeEdits {
         command.ids.firstOrNull { !document.nodes.containsKey(it) }?.let { return rejected(CommandError.NodeNotFound(it)) }
         val removed = withDescendants(document, command.ids)
         val nodes = document.nodes.filterKeys { it !in removed }.mapValues { (_, node) ->
-            val group = node.content as? NodeContent.Group
-            if (group != null && group.childIds.any(removed::contains)) {
-                node.copy(content = NodeContent.Group(group.childIds.filterNot(removed::contains)))
+            val container = node.content as? NodeContent.Container
+            if (container != null && container.childIds.any(removed::contains)) {
+                node.copy(content = container.withChildren(container.childIds.filterNot(removed::contains)))
             } else {
                 node
             }
@@ -43,7 +43,7 @@ internal object NodeEdits {
     fun update(document: SceneDocument, command: SceneCommand.UpdateProperties): CommandResult {
         val node = command.node
         val existing = document.nodes[node.id] ?: return rejected(CommandError.NodeNotFound(node.id))
-        val sameChildren = (existing.content as? NodeContent.Group)?.childIds == (node.content as? NodeContent.Group)?.childIds
+        val sameChildren = (existing.content as? NodeContent.Container)?.childIds == (node.content as? NodeContent.Container)?.childIds
         if (existing.kind != node.kind || existing.parentId != node.parentId || !sameChildren) {
             return rejected(CommandError.StructureChange(node.id))
         }
@@ -72,7 +72,7 @@ internal object NodeEdits {
     private fun parentError(document: SceneDocument, parentId: NodeId?): CommandError? {
         if (parentId == null) return null
         val parent = document.nodes[parentId] ?: return CommandError.NodeNotFound(parentId)
-        return if (parent.content is NodeContent.Group) null else CommandError.StructureChange(parentId)
+        return if (parent.content is NodeContent.Container) null else CommandError.StructureChange(parentId)
     }
 
     private fun withDescendants(document: SceneDocument, roots: Set<NodeId>): Set<NodeId> {
@@ -86,9 +86,10 @@ internal object NodeEdits {
     }
 }
 
-/** [parentId]의 자식 순서를 바꾼 문서. `null`이면 최상위 순서를 바꾼다. 부모는 그룹이어야 한다. */
+/** [parentId]의 자식 순서를 바꾼 문서. `null`이면 최상위 순서를 바꾼다. 부모는 컨테이너(그룹·Frame)여야 한다. */
 internal fun SceneDocument.withChildren(parentId: NodeId?, children: List<NodeId>): SceneDocument {
     if (parentId == null) return copy(rootOrder = children)
     val parent = checkNotNull(nodes[parentId]) { "부모 노드가 있어야 합니다." }
-    return copy(nodes = nodes + (parentId to parent.copy(content = NodeContent.Group(children))))
+    val container = checkNotNull(parent.content as? NodeContent.Container) { "부모는 컨테이너여야 합니다." }
+    return copy(nodes = nodes + (parentId to parent.copy(content = container.withChildren(children))))
 }

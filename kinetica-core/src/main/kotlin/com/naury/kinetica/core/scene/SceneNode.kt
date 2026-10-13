@@ -14,6 +14,8 @@ import com.naury.kinetica.core.geometry.Vec2
  * @property name 레이어 이름. 화면 표시용이며 로그에 남기지 않는다.
  * @property locked 잠긴 노드는 화면 조작으로 선택·변형되지 않는다. 명령으로는 바꿀 수 있다.
  * @property metadata 호스트가 붙이는 문자열 값. SDK는 해석하지 않는다.
+ * @property bindings 속성을 호스트 데이터 키에 묶는다. 데이터에 값이 있으면 저장된 값 대신 쓴다(docs 30).
+ * @property action 사용 모드에서 누르면 호스트에 넘기는 동작 이름. 코드를 실행하지 않는다.
  */
 public data class SceneNode(
     val id: NodeId,
@@ -25,6 +27,8 @@ public data class SceneNode(
     val visible: Boolean = true,
     val locked: Boolean = false,
     val metadata: Map<String, String> = emptyMap(),
+    val bindings: Map<BoundProperty, String> = emptyMap(),
+    val action: String? = null,
 ) {
     public val kind: NodeKind get() = content.kind
 
@@ -40,6 +44,8 @@ public enum class NodeKind(public val wireName: String) {
     Path("path"),
     Text("text"),
     Image("image"),
+    Frame("frame"),
+    HostSlot("host"),
     ;
 
     public companion object {
@@ -53,11 +59,49 @@ public sealed interface NodeContent {
 
     public fun localBounds(): Rect?
 
-    /** 자식 노드를 순서대로 가진다. 목록 순서가 z-order이며 뒤에 있을수록 위에 그려진다. */
-    public data class Group(val childIds: List<NodeId> = emptyList()) : NodeContent {
+    /** 자식을 갖는 노드. 목록 순서가 z-order이며 뒤에 있을수록 위에 그려진다. 자식 좌표는 이 노드의 local 좌표다. */
+    public sealed interface Container : NodeContent {
+        public val childIds: List<NodeId>
+
+        /** 자식 목록만 바꾼 같은 종류의 내용. */
+        public fun withChildren(childIds: List<NodeId>): Container
+    }
+
+    /** 범위 없이 자식만 묶는다. 범위는 자식에서 계산한다. */
+    public data class Group(override val childIds: List<NodeId> = emptyList()) : Container {
         override val kind: NodeKind get() = NodeKind.Group
 
         override fun localBounds(): Rect? = null
+
+        override fun withChildren(childIds: List<NodeId>): Group = copy(childIds = childIds)
+    }
+
+    /**
+     * 크기·배경·모서리·테두리·그림자를 갖는 컨테이너(Figma의 frame). 배경은 `style.fill`, 테두리는 `style.stroke`다.
+     *
+     * @property clip `true`면 자식을 이 상자(모서리 포함) 밖으로 그리지 않는다.
+     */
+    public data class Frame(
+        val size: Size,
+        override val childIds: List<NodeId> = emptyList(),
+        val cornerRadius: Double = 0.0,
+        val clip: Boolean = true,
+    ) : Container {
+        override val kind: NodeKind get() = NodeKind.Frame
+
+        override fun localBounds(): Rect = Rect.fromSize(size)
+
+        override fun withChildren(childIds: List<NodeId>): Frame = copy(childIds = childIds)
+    }
+
+    /**
+     * 호스트 앱이 [key]로 주는 Composable(또는 View)을 [size] 상자에 그린다. 문서에는 키·크기·배치만 저장한다.
+     * 호스트가 키를 모르면 빈 틀로 그린다.
+     */
+    public data class HostSlot(val size: Size, val key: String) : NodeContent {
+        override val kind: NodeKind get() = NodeKind.HostSlot
+
+        override fun localBounds(): Rect = Rect.fromSize(size)
     }
 
     /** `(0, 0)`에서 시작하는 사각형. [cornerRadius]는 문서 단위이며 짧은 변의 절반을 넘으면 절반으로 그린다. */
@@ -88,12 +132,18 @@ public sealed interface NodeContent {
      * [size] 상자 안에 줄을 바꿔 배치하는 글자. 상자를 넘는 줄은 잘린다.
      *
      * @property fontSize 문서 단위 글자 크기
+     * @property fontWeight 100..900(400 보통, 700 굵게)
+     * @property lineHeight 문서 단위 줄 높이. 0이면 글꼴 기본값이다.
+     * @property letterSpacing 문서 단위 자간
      */
     public data class Text(
         val size: Size,
         val text: String,
         val fontSize: Double = 16.0,
         val alignment: TextAlignment = TextAlignment.Start,
+        val fontWeight: Int = 400,
+        val lineHeight: Double = 0.0,
+        val letterSpacing: Double = 0.0,
     ) : NodeContent {
         override val kind: NodeKind get() = NodeKind.Text
 
@@ -142,10 +192,42 @@ public sealed interface PathCommand {
  *
  * @property strokeWidth 문서 단위 선 두께. 0이면 선을 그리지 않는다.
  * @property opacity 0..1. 부모 그룹의 opacity와 곱해진다.
+ * @property shadow 사각형·타원·Frame·HostSlot 아래에 그리는 그림자
  */
 public data class NodeStyle(
     val fill: ArgbColor? = null,
     val stroke: ArgbColor? = null,
     val strokeWidth: Double = 0.0,
     val opacity: Double = 1.0,
+    val shadow: Shadow? = null,
 )
+
+/**
+ * 그림자. 값은 모두 문서 단위다.
+ *
+ * @property blur 0 이상. 클수록 흐리다.
+ */
+public data class Shadow(val color: ArgbColor, val offsetX: Double = 0.0, val offsetY: Double = 4.0, val blur: Double = 12.0)
+
+/** 데이터에 묶을 수 있는 속성. [wireName]은 저장 형식 이름이다. */
+public enum class BoundProperty(public val wireName: String) {
+    /** 글자 노드의 내용. 데이터의 글자·숫자를 쓴다. */
+    Text("text"),
+
+    /** 보임. 데이터의 참·거짓을 쓴다. */
+    Visible("visible"),
+
+    /** 이미지 노드의 URI. 데이터의 글자를 쓴다(이미지 URI 규칙을 그대로 지킨다). */
+    ImageUri("imageUri"),
+
+    /** 채우기 색. 데이터의 색을 쓴다. */
+    Fill("fill"),
+
+    /** 불투명도 0..1. 데이터의 숫자를 쓴다. */
+    Opacity("opacity"),
+    ;
+
+    public companion object {
+        public fun fromWireName(name: String): BoundProperty? = entries.firstOrNull { it.wireName == name }
+    }
+}

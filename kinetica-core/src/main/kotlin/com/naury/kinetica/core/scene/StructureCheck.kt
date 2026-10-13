@@ -16,7 +16,7 @@ internal fun checkStructure(document: SceneDocument, limits: SceneLimits, sink: 
             val parent = nodes[parentId]
             when {
                 parent == null -> sink.add(ViolationCode.MissingNode, "부모 노드가 없습니다.", node.id)
-                parent.content !is NodeContent.Group -> sink.add(ViolationCode.ParentNotGroup, "부모가 그룹이 아닙니다.", node.id)
+                parent.content !is NodeContent.Container -> sink.add(ViolationCode.ParentNotGroup, "부모가 그룹·Frame이 아닙니다.", node.id)
             }
         }
         if (!container.containsKey(node.id)) {
@@ -49,7 +49,7 @@ private fun collectPlacements(document: SceneDocument, sink: ViolationSink): Map
         }
     }
     document.rootOrder.forEach { place(it, null) }
-    nodes.values.forEach { node -> (node.content as? NodeContent.Group)?.childIds?.forEach { place(it, node.id) } }
+    nodes.values.forEach { node -> (node.content as? NodeContent.Container)?.childIds?.forEach { place(it, node.id) } }
     return container
 }
 

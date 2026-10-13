@@ -90,6 +90,10 @@ public object TransformOps {
 
         is NodeContent.Image -> node.copy(content = content.copy(size = size))
 
+        is NodeContent.Frame -> node.copy(content = content.copy(size = size))
+
+        is NodeContent.HostSlot -> node.copy(content = content.copy(size = size))
+
         is NodeContent.Path, is NodeContent.Group ->
             node.copy(transform = node.transform.copy(scaleX = node.transform.scaleX * fx, scaleY = node.transform.scaleY * fy))
     }

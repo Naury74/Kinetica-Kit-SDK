@@ -81,6 +81,8 @@ internal class PropertyEdits(private val state: EditorState) {
             is NodeContent.Ellipse -> content.copy(size = next)
             is NodeContent.Text -> content.copy(size = next)
             is NodeContent.Image -> content.copy(size = next)
+            is NodeContent.Frame -> content.copy(size = next)
+            is NodeContent.HostSlot -> content.copy(size = next)
             is NodeContent.Group, is NodeContent.Path -> return null
         }
         val fx = if (size.width > 0.0) next.width / size.width else 1.0
@@ -105,5 +107,7 @@ internal fun NodeContent.size(): Size? = when (this) {
     is NodeContent.Ellipse -> size
     is NodeContent.Text -> size
     is NodeContent.Image -> size
+    is NodeContent.Frame -> size
+    is NodeContent.HostSlot -> size
     is NodeContent.Group, is NodeContent.Path -> null
 }

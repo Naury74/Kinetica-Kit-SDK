@@ -13,12 +13,14 @@ import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
+import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.Shadow
 import com.naury.kinetica.core.scene.TextAlignment
 import com.naury.kinetica.core.scene.ViolationCode
 import com.naury.kinetica.core.testing.TestScenes
@@ -198,7 +200,23 @@ class SceneCodecTest {
                 NodeContent.Text(Size(300.0, 80.0), "안녕 \"Kinetica\" 😀\n둘째 줄", fontSize = 24.0, alignment = TextAlignment.Center),
                 metadata = mapOf("role" to "title"),
             ),
-            SceneNode(NodeId("i"), NodeContent.Image(Size(64.0, 64.0), "content://media/external/images/1")),
+            SceneNode(
+                NodeId("i"),
+                NodeContent.Image(Size(64.0, 64.0), "content://media/external/images/1"),
+                bindings = mapOf(BoundProperty.ImageUri to "user.avatar", BoundProperty.Visible to "user.show"),
+                action = "open_profile",
+            ),
+            SceneNode(
+                NodeId("frame"),
+                NodeContent.Frame(Size(320.0, 200.0), listOf(NodeId("inner")), cornerRadius = 20.0, clip = false),
+                style = NodeStyle(fill = ArgbColor(0xFFFFFFFF.toInt()), shadow = Shadow(ArgbColor(0x33000000), 0.0, 6.0, 18.0)),
+            ),
+            SceneNode(NodeId("inner"), NodeContent.HostSlot(Size(120.0, 80.0), "widget.weather"), parentId = NodeId("frame")),
+            SceneNode(
+                NodeId("styled"),
+                NodeContent.Text(Size(200.0, 60.0), "굵게", fontSize = 20.0, fontWeight = 700, lineHeight = 28.0, letterSpacing = -0.5),
+                bindings = mapOf(BoundProperty.Text to "order.total"),
+            ),
             SceneNode(
                 NodeId("r"),
                 NodeContent.Rectangle(Size(10.0, 10.0), cornerRadius = 3.0),
@@ -208,7 +226,7 @@ class SceneCodecTest {
         return base.copy(
             artboard = Artboard(1080.0, 1920.0, background = ArgbColor(0xFF101216.toInt())),
             nodes = base.nodes + extra.associateBy { it.id },
-            rootOrder = base.rootOrder + extra.map { it.id },
+            rootOrder = base.rootOrder + extra.filter { it.parentId == null }.map { it.id },
             timelines = listOf(richTimeline()),
             extensions = mapOf("host.meta" to "{\"v\":1}"),
         )

@@ -70,4 +70,6 @@
     <string name="kinetica_preset_parallax">시차 흐름</string>
     <string name="kinetica_field_text">내용</string>
     <string name="kinetica_field_font_size">글자 크기</string>
+    <string name="kinetica_kind_frame">프레임</string>
+    <string name="kinetica_kind_host">호스트 뷰</string>
 </resources>

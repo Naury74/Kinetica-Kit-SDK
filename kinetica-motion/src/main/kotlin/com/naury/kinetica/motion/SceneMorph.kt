@@ -97,6 +97,11 @@ public class SceneMorph private constructor(
 
         a is NodeContent.Image && b is NodeContent.Image -> b.copy(size = lerpSize(a.size, b.size, p))
 
+        a is NodeContent.Frame && b is NodeContent.Frame ->
+            b.copy(size = lerpSize(a.size, b.size, p), cornerRadius = lerp(a.cornerRadius, b.cornerRadius, p), childIds = emptyList())
+
+        a is NodeContent.HostSlot && b is NodeContent.HostSlot -> b.copy(size = lerpSize(a.size, b.size, p))
+
         a is NodeContent.Text && b is NodeContent.Text -> b.copy(
             size = lerpSize(a.size, b.size, p),
             fontSize = lerp(a.fontSize, b.fontSize, p),
@@ -155,7 +160,11 @@ public class SceneMorph private constructor(
                 if (node.content is NodeContent.Group || world == null || !graph.isEffectivelyVisible(id)) return@mapNotNull null
                 val alpha = graph.ancestry(id).fold(1.0) { acc, ancestor -> acc * ancestor.style.opacity }
                 val center = node.localBounds?.center
-                Leaf(node.copy(transform = decompose(world, center?.x ?: 0.0, center?.y ?: 0.0), parentId = null), alpha)
+                val flatContent = (node.content as? NodeContent.Frame)?.copy(childIds = emptyList()) ?: node.content
+                Leaf(
+                    node.copy(content = flatContent, transform = decompose(world, center?.x ?: 0.0, center?.y ?: 0.0), parentId = null),
+                    alpha,
+                )
             }
             return Flattened(leaves)
         }
@@ -175,9 +184,16 @@ public class SceneMorph private constructor(
             }
 
         private fun compatible(a: SceneNode, b: SceneNode): Boolean = when (val content = a.content) {
-            is NodeContent.Rectangle, is NodeContent.Ellipse, is NodeContent.Image -> content::class == b.content::class
+            is NodeContent.Rectangle, is NodeContent.Ellipse, is NodeContent.Image, is NodeContent.Frame ->
+                content::class ==
+                    b.content::class
+
+            is NodeContent.HostSlot -> (b.content as? NodeContent.HostSlot)?.key == content.key
+
             is NodeContent.Text -> (b.content as? NodeContent.Text)?.text == content.text
+
             is NodeContent.Path -> a.content == b.content
+
             is NodeContent.Group -> false
         }
 

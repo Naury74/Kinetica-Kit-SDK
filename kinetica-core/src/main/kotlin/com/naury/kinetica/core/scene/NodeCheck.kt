@@ -5,6 +5,12 @@ import com.naury.kinetica.core.geometry.Vec2
 import kotlin.math.abs
 
 private const val MAX_METADATA_KEY_LENGTH = 64
+private const val MIN_FONT_WEIGHT = 100
+private const val MAX_FONT_WEIGHT = 900
+private val dataKeyPattern = Regex("[A-Za-z0-9._-]{1,128}")
+
+/** 데이터 키·동작 이름·HostSlot 키 형식. 영문자·숫자와 `.` `_` `-`로 된 1..128자. */
+public fun isValidDataKey(key: String): Boolean = dataKeyPattern.matches(key)
 
 /** 노드 하나의 값 범위를 확인한다. 부모·자식 관계는 [checkStructure]가 본다. */
 internal fun checkNode(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
@@ -15,6 +21,16 @@ internal fun checkNode(node: SceneNode, limits: SceneLimits, sink: ViolationSink
     checkTransform(node, limits, sink)
     checkStyle(node, limits, sink)
     checkContent(node, limits, sink)
+    checkBindings(node, sink)
+}
+
+private fun checkBindings(node: SceneNode, sink: ViolationSink) {
+    if (node.bindings.values.any { !isValidDataKey(it) } || node.action?.let(::isValidDataKey) == false) {
+        sink.add(ViolationCode.InvalidBinding, "데이터 키나 동작 이름 형식이 올바르지 않습니다.", node.id)
+    }
+    val textOnly = BoundProperty.Text in node.bindings && node.content !is NodeContent.Text
+    val imageOnly = BoundProperty.ImageUri in node.bindings && node.content !is NodeContent.Image
+    if (textOnly || imageOnly) sink.add(ViolationCode.InvalidBinding, "이 노드 종류에는 묶을 수 없는 속성입니다.", node.id)
 }
 
 private fun checkMetadata(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
@@ -54,6 +70,13 @@ private fun checkStyle(node: SceneNode, limits: SceneLimits, sink: ViolationSink
     if (!style.strokeWidth.isFinite() || style.strokeWidth !in 0.0..limits.maxCoordinateMagnitude) {
         sink.add(ViolationCode.InvalidStyle, "선 두께가 범위를 벗어났습니다.", node.id)
     }
+    val shadow = style.shadow
+    if (shadow != null) {
+        val max = limits.maxCoordinateMagnitude
+        val valid = listOf(shadow.offsetX, shadow.offsetY).all { it.isFinite() && abs(it) <= max } &&
+            shadow.blur.isFinite() && shadow.blur in 0.0..max
+        if (!valid) sink.add(ViolationCode.InvalidStyle, "그림자 값이 범위를 벗어났습니다.", node.id)
+    }
 }
 
 private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
@@ -68,9 +91,7 @@ private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSi
 
         is NodeContent.Rectangle -> {
             requireSize(content.size)
-            if (!content.cornerRadius.isFinite() || content.cornerRadius < 0.0) {
-                sink.add(ViolationCode.InvalidGeometry, "모서리 반지름은 0 이상이어야 합니다.", id)
-            }
+            checkCorner(content.cornerRadius, id, sink)
         }
 
         is NodeContent.Ellipse -> requireSize(content.size)
@@ -86,7 +107,21 @@ private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSi
             requireSize(content.size)
             if (!isAllowedImageUri(content.uri, limits)) sink.add(ViolationCode.InvalidUri, "이미지 URI가 허용되지 않습니다.", id)
         }
+
+        is NodeContent.Frame -> {
+            requireSize(content.size)
+            checkCorner(content.cornerRadius, id, sink)
+        }
+
+        is NodeContent.HostSlot -> {
+            requireSize(content.size)
+            if (!isValidDataKey(content.key)) sink.add(ViolationCode.InvalidBinding, "호스트 뷰 키 형식이 올바르지 않습니다.", id)
+        }
     }
+}
+
+private fun checkCorner(radius: Double, id: NodeId, sink: ViolationSink) {
+    if (!radius.isFinite() || radius < 0.0) sink.add(ViolationCode.InvalidGeometry, "모서리 반지름은 0 이상이어야 합니다.", id)
 }
 
 private fun checkPath(path: NodeContent.Path, id: NodeId, limits: SceneLimits, sink: ViolationSink) {
@@ -112,6 +147,10 @@ private fun checkText(text: NodeContent.Text, id: NodeId, limits: SceneLimits, s
     if (!text.fontSize.isFinite() || text.fontSize <= 0.0 || text.fontSize > limits.maxFontSize) {
         sink.add(ViolationCode.InvalidText, "글자 크기가 범위를 벗어났습니다.", id)
     }
+    val styleOk = text.fontWeight in MIN_FONT_WEIGHT..MAX_FONT_WEIGHT &&
+        text.lineHeight.isFinite() && text.lineHeight in 0.0..limits.maxFontSize * 2 &&
+        text.letterSpacing.isFinite() && abs(text.letterSpacing) <= limits.maxFontSize
+    if (!styleOk) sink.add(ViolationCode.InvalidText, "글자 굵기·줄 높이·자간이 범위를 벗어났습니다.", id)
 }
 
 private fun Vec2.isWithin(max: Double): Boolean = abs(x) <= max && abs(y) <= max

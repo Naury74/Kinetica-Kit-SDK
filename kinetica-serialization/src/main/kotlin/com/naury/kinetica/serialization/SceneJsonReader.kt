@@ -10,6 +10,7 @@ import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.animation.TimelineMarker
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.scene.Artboard
+import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeKind
@@ -18,6 +19,7 @@ import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneLimits
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.Shadow
 import com.naury.kinetica.core.scene.TextAlignment
 import com.naury.kinetica.serialization.JsonKeys as K
 import kotlinx.serialization.json.JsonArray
@@ -74,15 +76,21 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             metadata = json.optional(K.METADATA)?.asObject("$path.${K.METADATA}")
                 ?.mapValues { (key, value) -> value.asString("$path.${K.METADATA}.$key") }
                 .orEmpty(),
+            bindings = readBindings(json, path),
+            action = json.optional(K.ACTION)?.asString("$path.${K.ACTION}"),
         )
     }
 
+    private fun readBindings(json: JsonObject, path: String): Map<BoundProperty, String> {
+        val bindings = json.optional(K.BINDINGS)?.asObject("$path.${K.BINDINGS}") ?: return emptyMap()
+        return bindings.entries.associate { (name, value) ->
+            val property = BoundProperty.fromWireName(name) ?: fail("$path.${K.BINDINGS}", "지원하지 않는 바인딩 속성입니다.")
+            property to value.asString("$path.${K.BINDINGS}.$name")
+        }
+    }
+
     private fun readContent(kind: NodeKind, json: JsonObject, path: String): NodeContent = when (kind) {
-        NodeKind.Group -> NodeContent.Group(
-            json.optional(K.CHILDREN)?.asArray("$path.${K.CHILDREN}")
-                ?.mapIndexed { i, element -> element.asNodeId("$path.${K.CHILDREN}[$i]") }
-                .orEmpty(),
-        )
+        NodeKind.Group -> NodeContent.Group(readChildren(json, path))
 
         NodeKind.Rectangle -> NodeContent.Rectangle(json.size(K.BOUNDS, path), json.finiteOr(K.CORNER_RADIUS, path, 0.0))
 
@@ -99,10 +107,26 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
                 TextAlignment.entries.firstOrNull { it.name.lowercase() == name }
                     ?: fail("$path.${K.ALIGN}", "start·center·end 중 하나여야 합니다.")
             } ?: TextAlignment.Start,
+            fontWeight = json.optional(K.FONT_WEIGHT)?.asInt("$path.${K.FONT_WEIGHT}") ?: DEFAULT_FONT_WEIGHT,
+            lineHeight = json.finiteOr(K.LINE_HEIGHT, path, 0.0),
+            letterSpacing = json.finiteOr(K.LETTER_SPACING, path, 0.0),
         )
 
         NodeKind.Image -> NodeContent.Image(json.size(K.BOUNDS, path), json.string(K.URI, path))
+
+        NodeKind.Frame -> NodeContent.Frame(
+            size = json.size(K.BOUNDS, path),
+            childIds = readChildren(json, path),
+            cornerRadius = json.finiteOr(K.CORNER_RADIUS, path, 0.0),
+            clip = json.booleanOr(K.CLIP, path, default = true),
+        )
+
+        NodeKind.HostSlot -> NodeContent.HostSlot(json.size(K.BOUNDS, path), json.string(K.KEY, path))
     }
+
+    private fun readChildren(json: JsonObject, path: String): List<NodeId> = json.optional(K.CHILDREN)?.asArray("$path.${K.CHILDREN}")
+        ?.mapIndexed { i, element -> element.asNodeId("$path.${K.CHILDREN}[$i]") }
+        .orEmpty()
 
     private fun readTransform(json: JsonObject, path: String): Transform2D = Transform2D(
         translationX = json.finiteOr(K.X, path, 0.0),
@@ -119,6 +143,16 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
         stroke = json.colorOrNull(K.STROKE, path),
         strokeWidth = json.finiteOr(K.STROKE_WIDTH, path, 0.0),
         opacity = json.finiteOr(K.OPACITY, path, 1.0),
+        shadow = json.optional(K.SHADOW)?.let { element ->
+            val shadowPath = "$path.${K.SHADOW}"
+            val shadow = element.asObject(shadowPath)
+            Shadow(
+                color = shadow.required(K.COLOR, shadowPath).asColor("$shadowPath.${K.COLOR}"),
+                offsetX = shadow.finiteOr(K.X, shadowPath, 0.0),
+                offsetY = shadow.finiteOr(K.Y, shadowPath, 0.0),
+                blur = shadow.finiteOr(K.BLUR, shadowPath, 0.0),
+            )
+        },
     )
 
     private fun readPath(array: JsonArray, path: String): List<PathCommand> {
@@ -218,5 +252,6 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
 
     private companion object {
         const val DEFAULT_FONT_SIZE = 16.0
+        const val DEFAULT_FONT_WEIGHT = 400
     }
 }

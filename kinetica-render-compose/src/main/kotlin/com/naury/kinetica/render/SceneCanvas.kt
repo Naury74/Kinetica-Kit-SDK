@@ -97,12 +97,7 @@ private fun DrawScope.drawItem(item: DrawItem, textMeasurer: TextMeasurer, image
     when (val content = item.node.content) {
         is NodeContent.Group -> Unit
 
-        is NodeContent.Rectangle -> {
-            val size = content.size.toCompose()
-            val radius = content.cornerRadius.toFloat().coerceAtMost(minOf(size.width, size.height) / 2f)
-            fill?.let { drawRoundRect(it, size = size, cornerRadius = CornerRadius(radius), alpha = item.alpha) }
-            stroke?.let { drawRoundRect(it, size = size, cornerRadius = CornerRadius(radius), style = strokeStyle, alpha = item.alpha) }
-        }
+        is NodeContent.Rectangle -> drawBox(content.size.toCompose(), content.cornerRadius, fill, stroke, strokeStyle, item.alpha)
 
         is NodeContent.Ellipse -> {
             fill?.let { drawOval(it, size = content.size.toCompose(), alpha = item.alpha) }
@@ -118,6 +113,11 @@ private fun DrawScope.drawItem(item: DrawItem, textMeasurer: TextMeasurer, image
         is NodeContent.Text -> drawTextNode(content, fill ?: Color.Black, item.alpha, textMeasurer)
 
         is NodeContent.Image -> drawImageNode(content, item.alpha, images)
+
+        is NodeContent.Frame -> drawBox(content.size.toCompose(), content.cornerRadius, fill, stroke, strokeStyle, item.alpha)
+
+        // 호스트 뷰는 Compose 요소라 Canvas에는 그릴 수 없다. 내보내기·미리보기에서는 빈 틀로 자리만 보인다.
+        is NodeContent.HostSlot -> drawPlaceholder(content.size.toCompose(), item.alpha)
     }
 }
 
@@ -147,9 +147,7 @@ private fun DrawScope.drawImageNode(content: NodeContent.Image, alpha: Float, im
     val size = content.size.toCompose()
     val image = images.image(content.uri)
     if (image == null) {
-        drawRect(placeholderColor, size = size, style = Stroke(width = Stroke.HairlineWidth), alpha = alpha)
-        drawLine(placeholderColor, Offset.Zero, Offset(size.width, size.height), alpha = alpha)
-        drawLine(placeholderColor, Offset(size.width, 0f), Offset(0f, size.height), alpha = alpha)
+        drawPlaceholder(size, alpha)
         return
     }
     drawImage(
@@ -159,6 +157,19 @@ private fun DrawScope.drawImageNode(content: NodeContent.Image, alpha: Float, im
         dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
         alpha = alpha,
     )
+}
+
+@Suppress("LongParameterList")
+private fun DrawScope.drawBox(size: Size, cornerRadius: Double, fill: Color?, stroke: Color?, strokeStyle: Stroke, alpha: Float) {
+    val radius = CornerRadius(cornerRadius.toFloat().coerceAtMost(minOf(size.width, size.height) / 2f))
+    fill?.let { drawRoundRect(it, size = size, cornerRadius = radius, alpha = alpha) }
+    stroke?.let { drawRoundRect(it, size = size, cornerRadius = radius, style = strokeStyle, alpha = alpha) }
+}
+
+private fun DrawScope.drawPlaceholder(size: Size, alpha: Float) {
+    drawRect(placeholderColor, size = size, style = Stroke(width = Stroke.HairlineWidth), alpha = alpha)
+    drawLine(placeholderColor, Offset.Zero, Offset(size.width, size.height), alpha = alpha)
+    drawLine(placeholderColor, Offset(size.width, 0f), Offset(0f, size.height), alpha = alpha)
 }
 
 private fun List<PathCommand>.toComposePath(): Path = Path().apply {

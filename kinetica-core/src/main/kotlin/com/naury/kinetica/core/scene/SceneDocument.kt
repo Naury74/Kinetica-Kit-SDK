@@ -24,11 +24,11 @@ public data class SceneDocument(
 ) {
     public fun node(id: NodeId): SceneNode? = nodes[id]
 
-    /** [parentId]의 자식 순서. `null`이면 최상위 순서다. 그룹이 아니거나 없으면 빈 목록이다. */
+    /** [parentId]의 자식 순서. `null`이면 최상위 순서다. 컨테이너가 아니거나 없으면 빈 목록이다. */
     public fun childrenOf(parentId: NodeId?): List<NodeId> = if (parentId == null) {
         rootOrder
     } else {
-        (nodes[parentId]?.content as? NodeContent.Group)?.childIds.orEmpty()
+        (nodes[parentId]?.content as? NodeContent.Container)?.childIds.orEmpty()
     }
 
     public companion object {
