@@ -38,6 +38,18 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | 16 | **저장** → 앱 완전 종료 → 다시 실행 | 같은 장면이 열림(실행 취소 기록은 새로 시작) | `FileSceneRepositoryTest` |
 | 17 | **PNG 내보내기** → 위치 고르기 | 1080 px 너비 PNG. 화면과 같은 모습 | `PngExporterTest` |
 
+### 호스트 UI 조립 (ADR-0006)
+
+| # | 해 볼 것 | 기대 결과 | 자동 테스트 |
+| --- | --- | --- | --- |
+| H1 | 도구 줄 **대시보드** | 인사말·매출·주문 카드, 매출 그래프·시계·날씨 위젯, 새로고침 버튼이 있는 화면이 열림 | `DashboardSceneTest` |
+| H2 | 2초 기다리기 | 매출·주문 숫자가 바뀌고 그래프 막대가 움직임(호스트 데이터 → 바인딩) | `HostComposerTest` |
+| H3 | 위젯을 끌어 옮기고 크기·회전 바꾸기 | 위젯이 살아 있는 채로 따라옴. 편집 중에는 위젯 안 버튼이 눌리지 않음 | `HostComposerTest` |
+| H4 | **호스트 뷰** 메뉴 → 카운터 | 카운터 위젯이 들어옴 | `HostComposerTest` |
+| H5 | 글자를 두 번 누르기 | 글자 수정 창이 뜨고, 고친 뒤 실행 취소 한 번에 되돌아감 | `HostComposerTest` |
+| H6 | 속성 패널 **데이터**: 내용 키·보임 키·탭 동작 | 키를 넣으면 그 데이터 값이 보이고, 동작 이름이 저장됨 | `PropertyEditsTest` |
+| H7 | **미리보기** → 카운터 +1, 새로고침 버튼 | 카운터 숫자가 오름(호스트 상태), "호스트가 받은 동작: refresh" 알림과 함께 값이 바뀜 | `PlayerHostTest` |
+
 ### 모션
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |

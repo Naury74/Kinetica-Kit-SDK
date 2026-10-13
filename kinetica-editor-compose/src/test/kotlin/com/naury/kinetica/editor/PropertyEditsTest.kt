@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.scene.ArgbColor
+import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.testing.TestScenes
@@ -80,6 +81,28 @@ class PropertyEditsTest {
         val content = textSession.document.value.node(id("t"))!!.content as NodeContent.Text
         assertThat(content.text).isEqualTo("안녕하세요\n둘째 줄")
         assertThat(content.fontSize).isEqualTo(36.0)
+    }
+
+    @Test
+    fun `데이터 키·동작·그림자를 바꾸고 틀린 키는 거부한다`() {
+        assertThat(edits.setBinding(id("a"), BoundProperty.Visible, " store.open ")).isTrue()
+        assertThat(edits.setBinding(id("a"), BoundProperty.Fill, "틀린 키")).isFalse()
+        assertThat(edits.setAction(id("a"), " refresh ")).isTrue()
+        assertThat(edits.toggleShadow(id("a"))).isTrue()
+
+        assertThat(node().bindings).containsExactly(BoundProperty.Visible, "store.open")
+        assertThat(node().action).isEqualTo("refresh")
+        assertThat(node().style.shadow).isNotNull()
+
+        assertThat(edits.setBinding(id("a"), BoundProperty.Visible, "")).isTrue()
+        assertThat(edits.setAction(id("a"), " ")).isTrue()
+        assertThat(edits.toggleShadow(id("a"))).isTrue()
+        assertThat(node()).isEqualTo(scene.node(id("a")))
+    }
+
+    @Test
+    fun `자르기는 Frame에서만 바뀐다`() {
+        assertThat(edits.toggleClip(id("a"))).isFalse()
     }
 
     @Test
