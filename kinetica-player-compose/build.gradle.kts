@@ -11,6 +11,7 @@ dependencies {
     api(project(":kinetica-render-compose"))
     api(project(":kinetica-motion"))
     implementation(libs.androidx.compose.foundation)
+    api(libs.androidx.compose.animation)
 
     testImplementation(testFixtures(project(":kinetica-core")))
     testImplementation(libs.robolectric)
