@@ -54,6 +54,20 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | H10 | 데이터로 "영업 중"이 숨을 때(2초마다 무작위) | "배달 가능"이 빈자리로 당겨지고 카드 높이가 맞춰짐 | `BindingsTest` |
 | H11 | **미리보기**(폴더블 펼침·접힘, 가로 화면) | 화면 모양대로 펼쳐짐: 카드·위젯은 반씩 채우고, 그래프·버튼은 좌우로 늘고, 버튼은 아래에 붙음 | `LayoutsTest`, `SceneLayoutTest` |
 
+### 위젯 보드 — Kinetica Board 앱 (docs 31)
+
+| # | 해 볼 것 | 기대 결과 | 자동 테스트 |
+| --- | --- | --- | --- |
+| B1 | 앱 실행 | 매출·주문·주간 매출·시계 위젯이 빈자리에 채워지고 숫자가 2초마다 바뀜 | `KineticaBoardStateTest` |
+| B2 | **편집** → 위젯 끌기 | 손가락을 따라오고 다른 위젯·가장자리에 붙음. 위젯 안 버튼은 눌리지 않음 | `KineticaBoardTest`, `BoardGeometryTest` |
+| B3 | 위젯을 화면 오른쪽 끝·모서리·위쪽으로 끌어 놓기 | 반·4분의 1·화면 가득 자리를 미리 보여 주고 그 자리에 들어감. 겹친 위젯은 아래로 밀림 | `KineticaBoardTest`, `BoardGeometryTest` |
+| B4 | 오른쪽 아래 손잡이, 왼쪽 위 −, **+ 위젯 추가** | 크기 바뀜, 빠짐, 메모·공지 추가 | `KineticaBoardTest` |
+| B5 | **되돌리기·다시** | 끌기 한 번이 한 단계 | `KineticaBoardStateTest` |
+| B6 | 메모에 글을 쓰고 다른 위젯 옮기기 | 쓴 글이 그대로 | `SceneLayoutTest` |
+| B7 | **격자 배치** | 칸에 맞춰 놓이고 겹치면 아래로 밀림 | `KineticaBoardStateTest` |
+| B8 | **완료** → 앱 종료 → 다시 실행, 폴더블 접고 펴기 | 같은 배치. 넓은 화면은 가로 비율대로 펼쳐짐 | `KineticaBoardStateTest` |
+| B9 | **XML 화면** | XML View 위젯도 같은 방식으로 편집 | `KineticaBoardViewTest` |
+
 ### 모션
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
