@@ -30,6 +30,7 @@ import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.NodeContent
+import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneGraph
@@ -91,37 +92,27 @@ private fun DrawScope.drawArtboard(document: SceneDocument) {
 
 private fun DrawScope.drawItem(item: DrawItem, textMeasurer: TextMeasurer, images: SceneImageProvider) {
     val style = item.node.style
-    val fill = style.fill?.toColor()
-    val stroke = style.stroke?.toColor()?.takeIf { style.strokeWidth > 0.0 }
-    val strokeStyle = Stroke(width = style.strokeWidth.toFloat())
     when (val content = item.node.content) {
         is NodeContent.Group -> Unit
 
-        is NodeContent.Rectangle -> drawBox(content.size.toCompose(), content.cornerRadius, fill, stroke, strokeStyle, item.alpha)
-
-        is NodeContent.Ellipse -> {
-            fill?.let { drawOval(it, size = content.size.toCompose(), alpha = item.alpha) }
-            stroke?.let { drawOval(it, size = content.size.toCompose(), style = strokeStyle, alpha = item.alpha) }
-        }
-
-        is NodeContent.Path -> {
-            val path = content.commands.toComposePath()
-            fill?.let { drawPath(path, it, alpha = item.alpha) }
-            stroke?.let { drawPath(path, it, style = strokeStyle, alpha = item.alpha) }
-        }
-
-        is NodeContent.Text -> drawTextNode(content, fill ?: Color.Black, item.alpha, textMeasurer)
+        is NodeContent.Text -> drawTextNode(content, style, item.alpha, textMeasurer)
 
         is NodeContent.Image -> drawImageNode(content, item.alpha, images)
 
-        is NodeContent.Frame -> drawBox(content.size.toCompose(), content.cornerRadius, fill, stroke, strokeStyle, item.alpha)
-
         // 호스트 뷰는 Compose 요소라 Canvas에는 그릴 수 없다. 내보내기·미리보기에서는 빈 틀로 자리만 보인다.
         is NodeContent.HostSlot -> drawPlaceholder(content.size.toCompose(), item.alpha)
+
+        else -> {
+            val path = content.outline() ?: return
+            val bounds = content.localBounds() ?: return
+            val size = Size(maxOf(bounds.right, 0.0).toFloat(), maxOf(bounds.bottom, 0.0).toFloat())
+            drawFilledOutline(path, style, size, item.alpha)
+            drawOutlineStroke(path, style, item.alpha, (content as? NodeContent.Path)?.commands)
+        }
     }
 }
 
-private fun DrawScope.drawTextNode(content: NodeContent.Text, color: Color, alpha: Float, textMeasurer: TextMeasurer) {
+private fun DrawScope.drawTextNode(content: NodeContent.Text, style: NodeStyle, alpha: Float, textMeasurer: TextMeasurer) {
     val width = content.size.width.toFloat().roundToInt().coerceAtLeast(1)
     val height = content.size.height.toFloat().roundToInt().coerceAtLeast(1)
     // 캔버스가 이미 문서 단위로 확대되어 있으므로 글자 크기는 density·글꼴 배율과 무관한 문서 단위여야 한다.
@@ -129,7 +120,7 @@ private fun DrawScope.drawTextNode(content: NodeContent.Text, color: Color, alph
     val layout = textMeasurer.measure(
         text = content.text,
         style = TextStyle(
-            color = color,
+            color = style.fill?.toColor() ?: Color.Black,
             fontSize = fontSize.sp,
             textAlign = when (content.alignment) {
                 TextAlignment.Start -> TextAlign.Start
@@ -140,7 +131,8 @@ private fun DrawScope.drawTextNode(content: NodeContent.Text, color: Color, alph
         overflow = TextOverflow.Clip,
         constraints = Constraints(maxWidth = width, maxHeight = height),
     )
-    drawText(layout, alpha = alpha)
+    val brush = style.gradient?.toBrush(Size(width.toFloat(), height.toFloat()))
+    if (brush != null) drawText(layout, brush = brush, alpha = alpha) else drawText(layout, alpha = alpha)
 }
 
 private fun DrawScope.drawImageNode(content: NodeContent.Image, alpha: Float, images: SceneImageProvider) {
@@ -159,44 +151,11 @@ private fun DrawScope.drawImageNode(content: NodeContent.Image, alpha: Float, im
     )
 }
 
-@Suppress("LongParameterList")
-private fun DrawScope.drawBox(size: Size, cornerRadius: Double, fill: Color?, stroke: Color?, strokeStyle: Stroke, alpha: Float) {
-    val radius = CornerRadius(cornerRadius.toFloat().coerceAtMost(minOf(size.width, size.height) / 2f))
-    fill?.let { drawRoundRect(it, size = size, cornerRadius = radius, alpha = alpha) }
-    stroke?.let { drawRoundRect(it, size = size, cornerRadius = radius, style = strokeStyle, alpha = alpha) }
-}
-
 private fun DrawScope.drawPlaceholder(size: Size, alpha: Float) {
     drawRect(placeholderColor, size = size, style = Stroke(width = Stroke.HairlineWidth), alpha = alpha)
     drawLine(placeholderColor, Offset.Zero, Offset(size.width, size.height), alpha = alpha)
     drawLine(placeholderColor, Offset(size.width, 0f), Offset(0f, size.height), alpha = alpha)
 }
-
-private fun List<PathCommand>.toComposePath(): Path = Path().apply {
-    forEach { command ->
-        when (command) {
-            is PathCommand.MoveTo -> moveTo(command.point.xf, command.point.yf)
-
-            is PathCommand.LineTo -> lineTo(command.point.xf, command.point.yf)
-
-            is PathCommand.QuadTo -> quadraticTo(command.control.xf, command.control.yf, command.point.xf, command.point.yf)
-
-            is PathCommand.CubicTo -> cubicTo(
-                command.control1.xf,
-                command.control1.yf,
-                command.control2.xf,
-                command.control2.yf,
-                command.point.xf,
-                command.point.yf,
-            )
-
-            PathCommand.Close -> close()
-        }
-    }
-}
-
-private val Vec2.xf: Float get() = x.toFloat()
-private val Vec2.yf: Float get() = y.toFloat()
 
 private fun com.naury.kinetica.core.geometry.Size.toCompose(): Size = Size(width.toFloat(), height.toFloat())
 

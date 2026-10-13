@@ -8,16 +8,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -123,13 +128,11 @@ private fun Children(ids: List<NodeId>, scope: NodeScope, size: Size? = null) {
 @Composable
 private fun NodeView(node: SceneNode, scope: NodeScope) {
     if (!node.visible || node.style.opacity <= 0.0) return
-    val placed = Modifier.placement(node).actionable(node, scope)
+    val placed = Modifier.placement(node).layerBlur(node.style.blur).actionable(node, scope)
     when (val content = node.content) {
         is NodeContent.Group -> Box(placed) { Children(content.childIds, scope) }
         is NodeContent.Frame -> FrameView(node, content, placed, scope)
-        is NodeContent.Rectangle -> Box(placed.requiredSizePx(content.size).boxStyle(node, content.cornerRadius))
-        is NodeContent.Ellipse -> EllipseView(node, content, placed)
-        is NodeContent.Path -> PathView(node, content, placed)
+        is NodeContent.Rectangle, is NodeContent.Ellipse, is NodeContent.Polygon, is NodeContent.Path -> ShapeView(node, content, placed)
         is NodeContent.Text -> TextView(node, content, placed)
         is NodeContent.Image -> ImageView(content, placed, scope)
         is NodeContent.HostSlot -> HostView(node, content, placed, scope)
@@ -161,41 +164,39 @@ private fun Modifier.actionable(node: SceneNode, scope: NodeScope): Modifier {
 
 @Composable
 private fun FrameView(node: SceneNode, content: NodeContent.Frame, modifier: Modifier, scope: NodeScope) {
-    val shape = cornerShape(content.cornerRadius)
-    val clipped = if (content.clip) Modifier.clip(shape) else Modifier
-    Box(modifier.requiredSizePx(content.size).boxStyle(node, content.cornerRadius).then(clipped)) {
+    val outline = remember(content) { requireNotNull(content.outline()) }
+    // 그림자·채우기는 자르기 전에 그려 그림자가 잘리지 않게 하고, 선은 자식 위에 그린다.
+    val clipped = if (content.clip) Modifier.clip(GenericShape { _, _ -> addPath(outline) }) else Modifier
+    Box(
+        modifier
+            .requiredSizePx(content.size)
+            .drawBehind { drawFilledOutline(outline, node.style, size) }
+            .then(clipped)
+            .drawWithContent {
+                drawContent()
+                drawOutlineStroke(outline, node.style)
+            },
+    ) {
         Children(content.childIds, scope, content.size)
     }
 }
 
+/** 사각형·타원·다각형·경로. 경로는 좌표가 노드 원점 기준이라 원점에서 범위의 오른쪽 아래 끝까지를 크기로 잡는다. */
 @Composable
-private fun EllipseView(node: SceneNode, content: NodeContent.Ellipse, modifier: Modifier) {
-    val fill = node.style.fill?.toColor()
-    val stroke = node.style.stroke?.toColor()?.takeIf { node.style.strokeWidth > 0.0 }
-    Canvas(modifier.requiredSizePx(content.size).shadow(node.style.shadow, content.size.height / 2.0, oval = true)) {
-        fill?.let { drawOval(it) }
-        stroke?.let { drawOval(it, style = Stroke(node.style.strokeWidth.toFloat())) }
-    }
-}
-
-@Composable
-private fun PathView(node: SceneNode, content: NodeContent.Path, modifier: Modifier) {
+private fun ShapeView(node: SceneNode, content: NodeContent, modifier: Modifier) {
     val bounds = content.localBounds() ?: return
-    val fill = node.style.fill?.toColor()
-    val stroke = node.style.stroke?.toColor()?.takeIf { node.style.strokeWidth > 0.0 }
-    // 경로 좌표는 노드 원점 기준이라, 범위의 왼쪽 위까지 그릴 수 있게 원점에서 오른쪽 아래 끝까지를 크기로 잡는다.
+    val outline = remember(content) { content.outline() } ?: return
     val size = Size(maxOf(bounds.right, 0.0), maxOf(bounds.bottom, 0.0))
     Canvas(modifier.requiredSizePx(size)) {
-        val path = content.commands.toPath()
-        fill?.let { drawPath(path, it) }
-        stroke?.let { drawPath(path, it, style = Stroke(node.style.strokeWidth.toFloat())) }
+        drawFilledOutline(outline, node.style, this.size)
+        drawOutlineStroke(outline, node.style, open = (content as? NodeContent.Path)?.commands)
     }
 }
 
 @Composable
 private fun TextView(node: SceneNode, content: NodeContent.Text, modifier: Modifier) {
     val density = LocalDensity.current
-    val style = TextStyle(
+    val base = TextStyle(
         color = node.style.fill?.toColor() ?: Color.Black,
         fontSize = density.unitsToSp(content.fontSize),
         fontWeight = FontWeight(content.fontWeight),
@@ -207,6 +208,12 @@ private fun TextView(node: SceneNode, content: NodeContent.Text, modifier: Modif
             TextAlignment.End -> TextAlign.End
         },
     )
+    val gradient = node.style.gradient
+    val style = if (gradient == null) {
+        base
+    } else {
+        base.copy(brush = gradient.toBrush(androidx.compose.ui.geometry.Size(content.size.width.toFloat(), content.size.height.toFloat())))
+    }
     BasicText(content.text, modifier.requiredSizePx(content.size).clipToBounds(), style = style, overflow = TextOverflow.Clip)
 }
 
@@ -227,7 +234,17 @@ private fun HostView(node: SceneNode, content: NodeContent.HostSlot, modifier: M
         Placeholder(content.size, modifier)
         return
     }
-    Box(modifier.requiredSizePx(content.size).boxStyle(node, 0.0).clipToBounds()) {
+    val outline = remember(content) { requireNotNull(content.outline()) }
+    Box(
+        modifier
+            .requiredSizePx(content.size)
+            .drawBehind { drawFilledOutline(outline, node.style, size) }
+            .clipToBounds()
+            .drawWithContent {
+                drawContent()
+                drawOutlineStroke(outline, node.style)
+            },
+    ) {
         // 바깥 Box는 기기 픽셀(= 문서 단위)로 재고, 안쪽만 문서 단위 밀도로 바꿔 호스트의 dp 배치가 기기마다 달라지지 않게 한다.
         val fontScale = LocalDensity.current.fontScale
         CompositionLocalProvider(LocalDensity provides Density(HOST_VIEW_UNITS_PER_DP, fontScale)) { slot() }
@@ -241,4 +258,11 @@ private fun Placeholder(size: Size, modifier: Modifier) {
         drawLine(PLACEHOLDER, Offset.Zero, Offset(this.size.width, this.size.height))
         drawLine(PLACEHOLDER, Offset(this.size.width, 0f), Offset(0f, this.size.height))
     }
+}
+
+/** 노드 전체 흐림. 문서 단위 = 픽셀이므로 픽셀을 dp로 바꿔 쓴다. API 31 미만에서는 Compose가 흐림 없이 그린다. */
+@Composable
+private fun Modifier.layerBlur(radius: Double): Modifier {
+    if (radius <= 0.0) return this
+    return blur(with(LocalDensity.current) { radius.toFloat().toDp() }, BlurredEdgeTreatment.Unbounded)
 }

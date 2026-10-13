@@ -27,11 +27,16 @@ import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
+import com.naury.kinetica.core.scene.CornerRadii
+import com.naury.kinetica.core.scene.Gradient
+import com.naury.kinetica.core.scene.GradientStop
+import com.naury.kinetica.core.scene.GradientType
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.Shadow
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -129,6 +134,68 @@ class SceneLayoutTest {
         compose.waitForIdle()
 
         assertThat(seen).isEqualTo(before)
+    }
+
+    @Test
+    fun `그라디언트·별·모서리별 반지름·안쪽 그림자를 그린다`() {
+        val gradient = Gradient(GradientType.Linear, listOf(GradientStop(0.0, red), GradientStop(1.0, blue)), angleDegrees = 0.0)
+        val card = SceneNode(
+            NodeId("card"),
+            NodeContent.Rectangle(Size(100.0, 60.0), corners = CornerRadii(30.0, 0.0, 0.0, 0.0)),
+            style = NodeStyle(
+                gradient = gradient,
+                shadows = listOf(Shadow(ArgbColor(0xFF000000.toInt()), blur = 0.0, offsetY = 0.0, spread = 6.0, inner = true)),
+            ),
+        )
+        val star = SceneNode(
+            NodeId("star"),
+            NodeContent.Polygon(Size(80.0, 80.0), sides = 5, innerRatio = 0.4),
+            transform = Transform2D(translationX = 110.0, translationY = 110.0),
+            style = NodeStyle(fill = red),
+        )
+
+        val pixels = capture { SceneLayout(scene(card, star), Viewport(0.0, 0.0, 1.0), Modifier.fillMaxSize()) }
+
+        // 안쪽 그림자(띠 6) 안쪽에서 왼쪽은 빨강에 가깝고 오른쪽은 파랑에 가깝다.
+        assertThat(pixels[12, 30].red).isGreaterThan(pixels[12, 30].blue)
+        assertThat(pixels[88, 30].blue).isGreaterThan(pixels[88, 30].red)
+        // 안쪽 그림자는 가장자리를 검게 칠한다.
+        assertThat(pixels[98, 30].red + pixels[98, 30].blue).isLessThan(0.2f)
+        // 왼쪽 위만 둥글어 그 모서리는 배경(흰색)이고, 오른쪽 위 모서리는 칠해진다.
+        assertThat(pixels[1, 1]).isEqualTo(Color.White)
+        assertThat(pixels[97, 1]).isNotEqualTo(Color.White)
+        // 별: 가운데는 칠하고, 꼭짓점 사이 바깥(정다각형이면 칠해질 자리)은 비운다.
+        assertThat(pixels[150, 150]).isEqualTo(Color.Red)
+        assertThat(pixels[150, 186]).isEqualTo(Color.White)
+    }
+
+    @Test
+    fun `새 모양 효과도 Canvas 렌더러와 같은 자리에 그린다`() {
+        val shapes = scene(
+            SceneNode(
+                NodeId("poly"),
+                NodeContent.Polygon(Size(120.0, 100.0), sides = 6),
+                transform = Transform2D(translationX = 20.0, translationY = 30.0, rotationDegrees = 15.0, pivotX = 60.0, pivotY = 50.0),
+                style = NodeStyle(fill = blue, stroke = red, strokeWidth = 6.0, strokeDash = listOf(10.0, 6.0)),
+            ),
+        )
+        val viewport = Viewport(panX = 4.0, panY = -2.0, zoom = 0.95)
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Column {
+                    Box(Modifier.size(200.dp).testTag("canvas")) { SceneCanvas(shapes, viewport, Modifier.fillMaxSize()) }
+                    Box(Modifier.size(200.dp).testTag("layout")) { SceneLayout(shapes, viewport, Modifier.fillMaxSize()) }
+                }
+            }
+        }
+        val canvas = compose.onNodeWithTag("canvas").captureToImage().toPixelMap()
+        val layout = compose.onNodeWithTag("layout").captureToImage().toPixelMap()
+
+        val pure = listOf(Color.Red, Color.Blue, Color.White)
+        val samples = (2 until 198 step 3).flatMap { x -> (2 until 198 step 3).map { y -> canvas[x, y] to layout[x, y] } }
+            .filter { (a, b) -> a in pure && b in pure }
+        assertThat(samples.size).isGreaterThan(3_000)
+        assertThat(samples.count { (a, b) -> a != b }.toDouble() / samples.size).isLessThan(0.003)
     }
 
     @Test
