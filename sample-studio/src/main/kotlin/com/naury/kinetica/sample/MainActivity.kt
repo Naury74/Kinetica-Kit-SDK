@@ -3,13 +3,18 @@ package com.naury.kinetica.sample
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,14 +28,20 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.naury.kinetica.core.scene.SceneData
 import com.naury.kinetica.editor.KineticaEditor
 import com.naury.kinetica.editor.StudioTheme
+import com.naury.kinetica.player.KineticaPlayer
+import com.naury.kinetica.render.SceneSlots
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,6 +62,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun StudioScreen(viewModel: StudioViewModel = viewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val data by viewModel.data.collectAsStateWithLifecycle()
+    val sales by viewModel.sales.collectAsStateWithLifecycle()
+    val slots = remember(sales) { HostWidgets.slots(sales) }
+    var previewing by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val theme = remember { StudioTheme() }
     val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -69,28 +84,70 @@ private fun StudioScreen(viewModel: StudioViewModel = viewModel()) {
 
             is StudioState.Ready -> {
                 current.message?.let { message ->
-                    val text = stringResource(message)
+                    val text = current.messageArg?.let { stringResource(message, it) } ?: stringResource(message)
                     LaunchedEffect(current) {
                         snackbar.showSnackbar(text)
                         viewModel.messageShown()
                     }
                 }
+                val modifier = Modifier.padding(padding).safeDrawingPadding()
+                if (previewing) {
+                    Preview(current, data, slots, theme, modifier, onAction = viewModel::onAction, onClose = { previewing = false })
+                    return@Scaffold
+                }
                 KineticaEditor(
                     session = current.session,
                     theme = theme,
-                    modifier = Modifier.padding(padding).safeDrawingPadding(),
+                    modifier = modifier,
+                    slots = slots,
+                    hostViews = HostWidgets.options,
+                    data = data,
                     toolbarEnd = {
-                        TextButton(onClick = {
+                        ToolbarButton(R.string.sample_preview, theme) { previewing = true }
+                        ToolbarButton(R.string.sample_dashboard, theme, viewModel::openDashboard)
+                        ToolbarButton(R.string.sample_photo, theme) {
                             photoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        }) { Text(stringResource(R.string.sample_photo), color = theme.accent) }
-                        TextButton(onClick = viewModel::openDemo) { Text(stringResource(R.string.sample_demo), color = theme.accent) }
-                        TextButton(onClick = viewModel::save) { Text(stringResource(R.string.sample_save), color = theme.accent) }
-                        TextButton(onClick = { exportLauncher.launch("kinetica-scene.png") }) {
-                            Text(stringResource(R.string.sample_export), color = theme.accent)
                         }
+                        ToolbarButton(R.string.sample_demo, theme, viewModel::openDemo)
+                        ToolbarButton(R.string.sample_save, theme, viewModel::save)
+                        ToolbarButton(R.string.sample_export, theme) { exportLauncher.launch("kinetica-scene.png") }
                     },
                 )
             }
         }
     }
+}
+
+/** 앱 사용자가 보게 될 화면. 호스트 뷰는 눌리고, 데이터는 실시간이며, 동작은 [onAction]으로 온다. */
+@Composable
+@Suppress("LongParameterList")
+private fun Preview(
+    state: StudioState.Ready,
+    data: SceneData,
+    slots: SceneSlots,
+    theme: StudioTheme,
+    modifier: Modifier,
+    onAction: (String) -> Unit,
+    onClose: () -> Unit,
+) {
+    val document by state.session.document.collectAsStateWithLifecycle()
+    BackHandler(onBack = onClose)
+    Column(modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onClose) { Text(stringResource(R.string.sample_back_to_edit), color = theme.accent) }
+            Text(stringResource(R.string.sample_preview_hint), color = theme.onPanel, style = MaterialTheme.typography.bodySmall)
+        }
+        KineticaPlayer(
+            document = document,
+            modifier = Modifier.fillMaxSize(),
+            data = data,
+            slots = slots,
+            onAction = onAction,
+        )
+    }
+}
+
+@Composable
+private fun ToolbarButton(@StringRes label: Int, theme: StudioTheme, onClick: () -> Unit) {
+    TextButton(onClick = onClick) { Text(stringResource(label), color = theme.accent) }
 }

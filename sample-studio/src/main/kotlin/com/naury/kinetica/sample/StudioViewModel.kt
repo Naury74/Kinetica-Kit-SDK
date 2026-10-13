@@ -12,8 +12,10 @@ import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
+import com.naury.kinetica.core.scene.DataValue
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
+import com.naury.kinetica.core.scene.SceneData
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.export.ExportRequest
@@ -26,7 +28,10 @@ import com.naury.kinetica.serialization.FileSceneRepository
 import com.naury.kinetica.serialization.LoadResult
 import com.naury.kinetica.serialization.SaveResult
 import java.io.File
+import java.util.Locale
 import java.util.UUID
+import kotlin.random.Random
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +46,24 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableState = MutableStateFlow<StudioState>(StudioState.Loading)
     val state: StateFlow<StudioState> = mutableState.asStateFlow()
 
+    private val mutableData = MutableStateFlow(liveData(Random(SEED)))
+    private val mutableSales = MutableStateFlow(List(SALES_DAYS) { Random(it).nextFloat() })
+
+    /** 호스트 데이터. 실제 앱이라면 서버·DB에서 온다. 여기서는 2초마다 바뀌어 바인딩이 실시간으로 반영되는 것을 보여 준다. */
+    val data: StateFlow<SceneData> = mutableData.asStateFlow()
+
+    /** 매출 그래프 위젯(호스트 뷰)에 넘기는 막대 높이 0..1. */
+    val sales: StateFlow<List<Float>> = mutableSales.asStateFlow()
+
     init {
+        viewModelScope.launch {
+            val random = Random(System.currentTimeMillis())
+            while (true) {
+                delay(LIVE_INTERVAL_MS)
+                mutableData.value = liveData(random)
+                mutableSales.value = mutableSales.value.drop(1) + random.nextFloat()
+            }
+        }
         viewModelScope.launch {
             val loaded = repository.load(SCENE_ID)
             val document = (loaded as? LoadResult.Loaded)?.document ?: emptyScene()
@@ -65,12 +87,27 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    /** 지금 장면을 예제 장면으로 바꾼다. 실행 취소 기록은 새로 시작한다. 저장 전까지 파일은 그대로다. */
-    fun openDemo() {
+    /** 호스트 위젯·데이터 바인딩·동작이 있는 대시보드 예제를 연다. */
+    fun openDashboard() = openScene(DashboardScene.create(), R.string.sample_dashboard_opened)
+
+    /** 장면의 동작을 받는다. 예제는 "refresh"만 쓴다. */
+    fun onAction(action: String) {
         val ready = mutableState.value as? StudioState.Ready ?: return
-        val opened = KineticaSession.create(DemoScene.create()) as? SessionOpenResult.Opened ?: return
+        if (action == "refresh") {
+            mutableData.value = liveData(Random(System.nanoTime()))
+            mutableSales.value = List(SALES_DAYS) { Random(System.nanoTime() + it).nextFloat() }
+        }
+        mutableState.value = ready.copy(message = R.string.sample_action_received, messageArg = action)
+    }
+
+    /** 지금 장면을 예제 장면으로 바꾼다. 실행 취소 기록은 새로 시작한다. 저장 전까지 파일은 그대로다. */
+    fun openDemo() = openScene(DemoScene.create(), R.string.sample_demo_opened)
+
+    private fun openScene(document: SceneDocument, message: Int) {
+        val ready = mutableState.value as? StudioState.Ready ?: return
+        val opened = KineticaSession.create(document) as? SessionOpenResult.Opened ?: return
         ready.session.close()
-        mutableState.value = StudioState.Ready(opened.session, R.string.sample_demo_opened)
+        mutableState.value = StudioState.Ready(opened.session, message)
     }
 
     /**
@@ -128,6 +165,13 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
         (mutableState.value as? StudioState.Ready)?.session?.close()
     }
 
+    private fun liveData(random: Random): SceneData = SceneData.of(
+        DashboardScene.SALES_TODAY to DataValue.Text(String.format(Locale.KOREA, "%,d원", BASE_SALES + random.nextInt(SALES_RANGE))),
+        DashboardScene.ORDER_COUNT to DataValue.Number((BASE_ORDERS + random.nextInt(ORDER_RANGE)).toDouble()),
+        DashboardScene.STORE_OPEN to DataValue.Bool(random.nextInt(OPEN_ODDS) != 0),
+        DashboardScene.GREETING to DataValue.Text("안녕하세요, 사장님"),
+    )
+
     private fun emptyScene() = SceneDocument.empty(Artboard(ARTBOARD_WIDTH, ARTBOARD_HEIGHT, ArgbColor(ARTBOARD_COLOR.toInt())), SCENE_ID)
 
     private companion object {
@@ -137,11 +181,19 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
         const val ARTBOARD_COLOR = 0xFF22262F
         const val EXPORT_WIDTH = 1080
         const val PHOTO_WIDTH = 600.0
+        const val SEED = 7
+        const val SALES_DAYS = 7
+        const val LIVE_INTERVAL_MS = 2_000L
+        const val BASE_SALES = 1_200_000
+        const val SALES_RANGE = 400_000
+        const val BASE_ORDERS = 80
+        const val ORDER_RANGE = 40
+        const val OPEN_ODDS = 4
     }
 }
 
 sealed interface StudioState {
     data object Loading : StudioState
 
-    data class Ready(val session: KineticaSession, @StringRes val message: Int?) : StudioState
+    data class Ready(val session: KineticaSession, @StringRes val message: Int?, val messageArg: String? = null) : StudioState
 }

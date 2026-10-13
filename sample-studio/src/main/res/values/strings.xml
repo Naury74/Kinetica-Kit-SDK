@@ -11,4 +11,10 @@
     <string name="sample_photo_failed">Could not open the photo.</string>
     <string name="sample_demo">Example</string>
     <string name="sample_demo_opened">Opened the example scene. Turn on Motion and press Play.</string>
+    <string name="sample_dashboard">Dashboard</string>
+    <string name="sample_dashboard_opened">Opened the dashboard. Numbers come from the host app and change live. Double-tap text to edit it.</string>
+    <string name="sample_preview">Preview</string>
+    <string name="sample_preview_hint">As app users see it. Host views are live.</string>
+    <string name="sample_back_to_edit">Edit</string>
+    <string name="sample_action_received">Action received by host: %1$s</string>
 </resources>
