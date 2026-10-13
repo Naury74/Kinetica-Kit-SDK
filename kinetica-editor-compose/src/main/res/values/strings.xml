@@ -11,4 +11,17 @@
         <item quantity="one">Scene canvas. %1$d selected.</item>
         <item quantity="other">Scene canvas. %1$d selected.</item>
     </plurals>
+    <string name="kinetica_group">Group</string>
+    <string name="kinetica_ungroup">Ungroup</string>
+    <string name="kinetica_bring_forward">Forward</string>
+    <string name="kinetica_send_backward">Backward</string>
+    <string name="kinetica_arrange">Arrange</string>
+    <string name="kinetica_align_left">Align left</string>
+    <string name="kinetica_align_center_horizontal">Align center</string>
+    <string name="kinetica_align_right">Align right</string>
+    <string name="kinetica_align_top">Align top</string>
+    <string name="kinetica_align_center_vertical">Align middle</string>
+    <string name="kinetica_align_bottom">Align bottom</string>
+    <string name="kinetica_distribute_horizontal">Distribute horizontally</string>
+    <string name="kinetica_distribute_vertical">Distribute vertically</string>
 </resources>

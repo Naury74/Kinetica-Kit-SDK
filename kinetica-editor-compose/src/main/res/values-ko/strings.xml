@@ -10,4 +10,17 @@
     <plurals name="kinetica_canvas_description">
         <item quantity="other">장면 캔버스. %1$d개 선택됨.</item>
     </plurals>
+    <string name="kinetica_group">그룹</string>
+    <string name="kinetica_ungroup">그룹 해제</string>
+    <string name="kinetica_bring_forward">앞으로</string>
+    <string name="kinetica_send_backward">뒤로</string>
+    <string name="kinetica_arrange">정렬</string>
+    <string name="kinetica_align_left">왼쪽 맞춤</string>
+    <string name="kinetica_align_center_horizontal">가로 가운데 맞춤</string>
+    <string name="kinetica_align_right">오른쪽 맞춤</string>
+    <string name="kinetica_align_top">위쪽 맞춤</string>
+    <string name="kinetica_align_center_vertical">세로 가운데 맞춤</string>
+    <string name="kinetica_align_bottom">아래쪽 맞춤</string>
+    <string name="kinetica_distribute_horizontal">가로 간격 같게</string>
+    <string name="kinetica_distribute_vertical">세로 간격 같게</string>
 </resources>

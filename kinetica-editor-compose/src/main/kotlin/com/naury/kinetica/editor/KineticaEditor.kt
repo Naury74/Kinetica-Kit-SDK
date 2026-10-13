@@ -13,12 +13,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -36,6 +40,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.naury.kinetica.core.command.CommandResult
 import com.naury.kinetica.core.command.SceneCommand
+import com.naury.kinetica.core.scene.AlignMode
+import com.naury.kinetica.core.scene.DistributeAxis
 import com.naury.kinetica.core.scene.SceneGraph
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.SelectionFrame
@@ -146,6 +152,14 @@ private fun EditorToolbar(state: EditorState, theme: StudioTheme, paddingPx: Dou
         ToolButton(R.string.kinetica_delete, colors, enabled = !selection.isEmpty) {
             state.session.commands.execute(SceneCommand.RemoveNodes(selection.selectedIds.toSet()))
         }
+        val actions = remember(state.session) { EditorActions(state.session) }
+        // 선택이 바뀔 때마다 버튼 활성 상태를 다시 계산한다.
+        val count = selection.selectedIds.size
+        ToolButton(R.string.kinetica_group, colors, enabled = count >= 2 && actions.canGroup, onClick = actions::group)
+        ToolButton(R.string.kinetica_ungroup, colors, enabled = count >= 1 && actions.canUngroup, onClick = actions::ungroup)
+        ToolButton(R.string.kinetica_bring_forward, colors, enabled = count >= 1, onClick = actions::bringForward)
+        ToolButton(R.string.kinetica_send_backward, colors, enabled = count >= 1, onClick = actions::sendBackward)
+        ArrangeMenu(actions, colors, enabled = count >= 1)
         ToolButton(R.string.kinetica_undo, colors, enabled = history.canUndo) { state.session.history.undo() }
         ToolButton(R.string.kinetica_redo, colors, enabled = history.canRedo) { state.session.history.redo() }
         ToolButton(R.string.kinetica_fit, colors) { state.fit(paddingPx) }
@@ -157,6 +171,35 @@ private fun EditorToolbar(state: EditorState, theme: StudioTheme, paddingPx: Dou
 private fun ToolButton(label: Int, colors: ButtonColors, enabled: Boolean = true, onClick: () -> Unit) {
     TextButton(onClick = onClick, enabled = enabled, colors = colors, modifier = Modifier.heightIn(min = MIN_TOUCH_TARGET)) {
         Text(stringResource(label))
+    }
+}
+
+@Composable
+private fun ArrangeMenu(actions: EditorActions, colors: ButtonColors, enabled: Boolean) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        ToolButton(R.string.kinetica_arrange, colors, enabled = enabled) { expanded = true }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            val items = listOf(
+                R.string.kinetica_align_left to { actions.align(AlignMode.Left) },
+                R.string.kinetica_align_center_horizontal to { actions.align(AlignMode.CenterHorizontal) },
+                R.string.kinetica_align_right to { actions.align(AlignMode.Right) },
+                R.string.kinetica_align_top to { actions.align(AlignMode.Top) },
+                R.string.kinetica_align_center_vertical to { actions.align(AlignMode.CenterVertical) },
+                R.string.kinetica_align_bottom to { actions.align(AlignMode.Bottom) },
+                R.string.kinetica_distribute_horizontal to { actions.distribute(DistributeAxis.Horizontal) },
+                R.string.kinetica_distribute_vertical to { actions.distribute(DistributeAxis.Vertical) },
+            )
+            items.forEach { (label, action) ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(label)) },
+                    onClick = {
+                        expanded = false
+                        action()
+                    },
+                )
+            }
+        }
     }
 }
 
