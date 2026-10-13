@@ -21,6 +21,8 @@ public class SceneReducer(limits: SceneLimits = SceneLimits.Default) {
             is SceneCommand.UpdateProperties -> NodeEdits.update(document, command)
             is SceneCommand.TransformNodes -> NodeEdits.transform(document, command)
             is SceneCommand.ReorderNode -> NodeEdits.reorder(document, command)
+            is SceneCommand.Group -> GroupEdits.group(document, command)
+            is SceneCommand.Ungroup -> GroupEdits.ungroup(document, command)
             is SceneCommand.SetArtboard -> CommandResult.Applied(document.copy(artboard = command.artboard))
             is SceneCommand.PutTimeline -> TimelineEdits.put(document, command)
             is SceneCommand.RemoveTimeline -> TimelineEdits.remove(document, command)

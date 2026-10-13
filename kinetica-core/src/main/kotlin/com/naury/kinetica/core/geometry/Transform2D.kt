@@ -1,6 +1,8 @@
 package com.naury.kinetica.core.geometry
 
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.hypot
 
 /**
  * 노드의 local 좌표를 부모 좌표로 옮기는 변환.
@@ -50,4 +52,24 @@ public data class Transform2D(
 
         public val Identity: Transform2D = Transform2D()
     }
+}
+
+/** 기울임(shear)이 이보다 크면 [Transform2D]로 나타낼 수 없다고 본다. */
+private const val SHEAR_TOLERANCE = 1e-6
+
+/**
+ * 행렬 [matrix]를 pivot이 [pivotX]·[pivotY]인 [Transform2D]로 나눈다. 회전·배율·이동만으로 나타낼 수 없으면(기울임,
+ * 특이 행렬) `null`이다. 반전이 있으면 y 배율이 음수가 된다.
+ */
+public fun Transform2D.Companion.fromMatrix(matrix: Mat3, pivotX: Double = 0.0, pivotY: Double = 0.0): Transform2D? {
+    val scaleX = hypot(matrix.a, matrix.b)
+    if (scaleX == 0.0 || matrix.inverseOrNull() == null) return null
+    val unitX = Vec2(matrix.a / scaleX, matrix.b / scaleX)
+    val shear = unitX.x * matrix.c + unitX.y * matrix.d
+    if (abs(shear) > SHEAR_TOLERANCE * maxOf(1.0, scaleX)) return null
+    val scaleY = matrix.determinant / scaleX
+    val rotation = Math.toDegrees(atan2(matrix.b, matrix.a))
+    val linear = Transform2D(scaleX = scaleX, scaleY = scaleY, rotationDegrees = rotation, pivotX = pivotX, pivotY = pivotY)
+    val placed = linear.matrix()
+    return linear.copy(translationX = matrix.tx - placed.tx, translationY = matrix.ty - placed.ty)
 }

@@ -32,6 +32,18 @@ public sealed interface SceneCommand {
     /** 같은 부모 안에서 노드의 순서를 [toIndex]로 옮긴다. 0이 맨 아래다. */
     public data class ReorderNode(val id: NodeId, val toIndex: Int) : SceneCommand
 
+    /**
+     * 같은 부모를 가진 [ids]를 새 그룹 [groupId]로 묶는다. 그룹은 묶인 노드 중 맨 위 노드 자리에 들어가고,
+     * 자식 순서는 원래 형제 순서를 따른다. 그룹 변환은 항등이라 화면 위치는 그대로다.
+     */
+    public data class Group(val ids: List<NodeId>, val groupId: NodeId, val name: String = "") : SceneCommand
+
+    /**
+     * 그룹을 풀어 자식을 그룹 자리(같은 부모, 같은 순서)에 놓는다. 그룹 변환·opacity·숨김·잠금을 자식에게 합쳐 화면 모습을 유지한다.
+     * 그룹 변환을 합친 결과에 기울임이 생기면 거부한다.
+     */
+    public data class Ungroup(val groupId: NodeId) : SceneCommand
+
     public data class SetArtboard(val artboard: Artboard) : SceneCommand
 
     /** 같은 id의 timeline이 있으면 바꾸고 없으면 더한다. */

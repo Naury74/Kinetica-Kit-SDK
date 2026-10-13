@@ -21,6 +21,12 @@ public sealed interface CommandError {
     /** [SceneCommand.UpdateProperties]가 바꿀 수 없는 id·종류·부모·자식 목록을 바꾸려 했다. */
     public data class StructureChange(val id: NodeId) : CommandError
 
+    /** 묶을 노드들의 부모가 서로 다르거나 비었다. */
+    public data class MixedParents(val ids: List<NodeId>) : CommandError
+
+    /** 변환을 합친 결과가 회전·배율·이동만으로 나타낼 수 없다(기울임). */
+    public data class UnrepresentableTransform(val id: NodeId) : CommandError
+
     public data class IndexOutOfRange(val index: Int, val size: Int) : CommandError
 
     public data class TimelineNotFound(val timelineId: String) : CommandError
