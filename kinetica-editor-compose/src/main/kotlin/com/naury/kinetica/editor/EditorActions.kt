@@ -3,12 +3,14 @@ package com.naury.kinetica.editor
 import com.naury.kinetica.core.command.CommandResult
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.geometry.Transform2D
+import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.scene.AlignMode
 import com.naury.kinetica.core.scene.ArrangeOps
 import com.naury.kinetica.core.scene.DistributeAxis
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneGraph
+import com.naury.kinetica.core.scene.TransformOps
 import com.naury.kinetica.history.KineticaSession
 
 /**
@@ -38,6 +40,13 @@ internal class EditorActions(private val session: KineticaSession) {
     fun align(mode: AlignMode) = move("align", ArrangeOps.align(graph, movable(), mode))
 
     fun distribute(axis: DistributeAxis) = move("distribute", ArrangeOps.distribute(graph, movable(), axis))
+
+    fun delete() {
+        if (selection.isNotEmpty()) session.commands.execute(SceneCommand.RemoveNodes(selection.toSet()))
+    }
+
+    /** 고른 노드를 문서 좌표로 [dx]·[dy]만큼 옮긴다. 키보드 화살표 한 번이 실행 취소 한 단계다. */
+    fun nudge(dx: Double, dy: Double) = move("nudge", TransformOps.move(graph, movable(), Vec2(dx, dy)))
 
     /** 고른 노드를 한 칸씩 위(앞)로 옮긴다. 이미 맨 위인 노드는 그대로다. */
     fun bringForward() = reorder(forward = true)

@@ -24,4 +24,24 @@
     <string name="kinetica_align_bottom">Align bottom</string>
     <string name="kinetica_distribute_horizontal">Distribute horizontally</string>
     <string name="kinetica_distribute_vertical">Distribute vertically</string>
+    <string name="kinetica_layers">Layers</string>
+    <string name="kinetica_properties">Properties</string>
+    <string name="kinetica_layers_empty">No layers yet</string>
+    <string name="kinetica_properties_empty">Select one layer to edit its properties</string>
+    <string name="kinetica_visible">Visible</string>
+    <string name="kinetica_locked">Locked</string>
+    <string name="kinetica_field_x">X</string>
+    <string name="kinetica_field_y">Y</string>
+    <string name="kinetica_field_width">W</string>
+    <string name="kinetica_field_height">H</string>
+    <string name="kinetica_field_rotation">Rotation (°)</string>
+    <string name="kinetica_field_opacity">Opacity (%)</string>
+    <string name="kinetica_field_fill">Fill</string>
+    <string name="kinetica_invalid_value">Invalid value. The previous value was kept.</string>
+    <string name="kinetica_kind_group">Group</string>
+    <string name="kinetica_kind_rectangle">Rectangle</string>
+    <string name="kinetica_kind_ellipse">Ellipse</string>
+    <string name="kinetica_kind_path">Path</string>
+    <string name="kinetica_kind_text">Text</string>
+    <string name="kinetica_kind_image">Image</string>
 </resources>

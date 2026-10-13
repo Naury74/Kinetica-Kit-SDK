@@ -23,4 +23,24 @@
     <string name="kinetica_align_bottom">아래쪽 맞춤</string>
     <string name="kinetica_distribute_horizontal">가로 간격 같게</string>
     <string name="kinetica_distribute_vertical">세로 간격 같게</string>
+    <string name="kinetica_layers">레이어</string>
+    <string name="kinetica_properties">속성</string>
+    <string name="kinetica_layers_empty">아직 레이어가 없습니다</string>
+    <string name="kinetica_properties_empty">레이어 하나를 고르면 속성을 고칠 수 있습니다</string>
+    <string name="kinetica_visible">보임</string>
+    <string name="kinetica_locked">잠금</string>
+    <string name="kinetica_field_x">X</string>
+    <string name="kinetica_field_y">Y</string>
+    <string name="kinetica_field_width">너비</string>
+    <string name="kinetica_field_height">높이</string>
+    <string name="kinetica_field_rotation">회전(°)</string>
+    <string name="kinetica_field_opacity">불투명도(%)</string>
+    <string name="kinetica_field_fill">채우기</string>
+    <string name="kinetica_invalid_value">올바르지 않은 값입니다. 이전 값을 유지합니다.</string>
+    <string name="kinetica_kind_group">그룹</string>
+    <string name="kinetica_kind_rectangle">사각형</string>
+    <string name="kinetica_kind_ellipse">타원</string>
+    <string name="kinetica_kind_path">경로</string>
+    <string name="kinetica_kind_text">글자</string>
+    <string name="kinetica_kind_image">이미지</string>
 </resources>
