@@ -67,6 +67,8 @@ internal object SceneJsonWriter {
         put(K.STYLE, style(node.style))
     }
 
+    // 노드 종류마다 한 갈래인 분기다.
+    @Suppress("CyclomaticComplexMethod")
     private fun JsonObjectBuilder.content(content: NodeContent) {
         when (content) {
             is NodeContent.Group -> putJsonArray(K.CHILDREN) { content.childIds.forEach { add(JsonPrimitive(it.value)) } }
@@ -74,6 +76,13 @@ internal object SceneJsonWriter {
             is NodeContent.Rectangle -> {
                 put(K.BOUNDS, size(content.size))
                 if (content.cornerRadius != 0.0) putNumber(K.CORNER_RADIUS, content.cornerRadius)
+                content.corners?.let { put(K.CORNERS, StyleJson.corners(it)) }
+            }
+
+            is NodeContent.Polygon -> {
+                put(K.BOUNDS, size(content.size))
+                put(K.SIDES, content.sides)
+                if (content.innerRatio != 1.0) putNumber(K.INNER_RATIO, content.innerRatio)
             }
 
             is NodeContent.Ellipse -> put(K.BOUNDS, size(content.size))
@@ -110,6 +119,7 @@ internal object SceneJsonWriter {
         put(K.BOUNDS, size(content.size))
         if (content.cornerRadius != 0.0) putNumber(K.CORNER_RADIUS, content.cornerRadius)
         if (!content.clip) put(K.CLIP, false)
+        content.corners?.let { put(K.CORNERS, StyleJson.corners(it)) }
         content.layout?.let { put(K.LAYOUT, LayoutJson.layout(it)) }
         putJsonArray(K.CHILDREN) { content.childIds.forEach { add(JsonPrimitive(it.value)) } }
     }
@@ -134,14 +144,7 @@ internal object SceneJsonWriter {
         style.stroke?.let { put(K.STROKE, it.toHex()) }
         if (style.strokeWidth != 0.0) putNumber(K.STROKE_WIDTH, style.strokeWidth)
         putNumber(K.OPACITY, style.opacity)
-        style.shadow?.let { shadow ->
-            putJsonObject(K.SHADOW) {
-                put(K.COLOR, shadow.color.toHex())
-                putNumber(K.X, shadow.offsetX)
-                putNumber(K.Y, shadow.offsetY)
-                putNumber(K.BLUR, shadow.blur)
-            }
-        }
+        StyleJson.write(this, style)
     }
 
     private fun pathCommand(command: PathCommand): JsonObject = buildJsonObject {

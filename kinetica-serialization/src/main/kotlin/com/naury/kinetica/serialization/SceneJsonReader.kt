@@ -20,7 +20,6 @@ import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneLimits
 import com.naury.kinetica.core.scene.SceneNode
-import com.naury.kinetica.core.scene.Shadow
 import com.naury.kinetica.core.scene.TextAlignment
 import com.naury.kinetica.serialization.JsonKeys as K
 import kotlinx.serialization.json.JsonArray
@@ -96,10 +95,22 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
         }
     }
 
+    // 노드 종류마다 한 갈래인 분기다.
+    @Suppress("CyclomaticComplexMethod")
     private fun readContent(kind: NodeKind, json: JsonObject, path: String): NodeContent = when (kind) {
         NodeKind.Group -> NodeContent.Group(readChildren(json, path))
 
-        NodeKind.Rectangle -> NodeContent.Rectangle(json.size(K.BOUNDS, path), json.finiteOr(K.CORNER_RADIUS, path, 0.0))
+        NodeKind.Rectangle -> NodeContent.Rectangle(
+            json.size(K.BOUNDS, path),
+            json.finiteOr(K.CORNER_RADIUS, path, 0.0),
+            StyleJson.readCorners(json, path),
+        )
+
+        NodeKind.Polygon -> NodeContent.Polygon(
+            json.size(K.BOUNDS, path),
+            json.optional(K.SIDES)?.asInt("$path.${K.SIDES}") ?: DEFAULT_SIDES,
+            json.finiteOr(K.INNER_RATIO, path, 1.0),
+        )
 
         NodeKind.Ellipse -> NodeContent.Ellipse(json.size(K.BOUNDS, path))
 
@@ -126,6 +137,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             childIds = readChildren(json, path),
             cornerRadius = json.finiteOr(K.CORNER_RADIUS, path, 0.0),
             clip = json.booleanOr(K.CLIP, path, default = true),
+            corners = StyleJson.readCorners(json, path),
             layout = json.optional(K.LAYOUT)?.let { LayoutJson.readLayout(it.asObject("$path.${K.LAYOUT}"), "$path.${K.LAYOUT}") },
         )
 
@@ -151,16 +163,12 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
         stroke = json.colorOrNull(K.STROKE, path),
         strokeWidth = json.finiteOr(K.STROKE_WIDTH, path, 0.0),
         opacity = json.finiteOr(K.OPACITY, path, 1.0),
-        shadow = json.optional(K.SHADOW)?.let { element ->
-            val shadowPath = "$path.${K.SHADOW}"
-            val shadow = element.asObject(shadowPath)
-            Shadow(
-                color = shadow.required(K.COLOR, shadowPath).asColor("$shadowPath.${K.COLOR}"),
-                offsetX = shadow.finiteOr(K.X, shadowPath, 0.0),
-                offsetY = shadow.finiteOr(K.Y, shadowPath, 0.0),
-                blur = shadow.finiteOr(K.BLUR, shadowPath, 0.0),
-            )
-        },
+        shadows = StyleJson.readShadows(json, path),
+        gradient = StyleJson.readGradient(json, path),
+        strokeDash = StyleJson.readDash(json, path),
+        blur = json.finiteOr(K.LAYER_BLUR, path, 0.0),
+        startCap = StyleJson.readCap(json, K.START_CAP, path),
+        endCap = StyleJson.readCap(json, K.END_CAP, path),
     )
 
     private fun readPath(array: JsonArray, path: String): List<PathCommand> {
@@ -261,5 +269,6 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
     private companion object {
         const val DEFAULT_FONT_SIZE = 16.0
         const val DEFAULT_FONT_WEIGHT = 400
+        const val DEFAULT_SIDES = 5
     }
 }

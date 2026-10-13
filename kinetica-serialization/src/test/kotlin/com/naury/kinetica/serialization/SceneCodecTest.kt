@@ -15,10 +15,15 @@ import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.AutoLayout
 import com.naury.kinetica.core.scene.BoundProperty
+import com.naury.kinetica.core.scene.CornerRadii
 import com.naury.kinetica.core.scene.CrossAlign
+import com.naury.kinetica.core.scene.Gradient
+import com.naury.kinetica.core.scene.GradientStop
+import com.naury.kinetica.core.scene.GradientType
 import com.naury.kinetica.core.scene.Insets
 import com.naury.kinetica.core.scene.LayoutConstraints
 import com.naury.kinetica.core.scene.LayoutDirection
+import com.naury.kinetica.core.scene.LineCap
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeStyle
@@ -182,6 +187,18 @@ class SceneCodecTest {
     }
 
     @Test
+    fun `예전 형식의 그림자 하나도 읽는다`() {
+        val legacy = codec.encode(TestScenes.sample()).replace(
+            "\"opacity\":1}",
+            "\"opacity\":1,\"shadow\":{\"color\":\"#33000000\",\"x\":0,\"y\":4,\"blur\":12}}",
+        )
+
+        val document = (codec.decode(legacy) as DecodeResult.Success).document
+
+        assertThat(document.nodes.values.first().style.shadows).containsExactly(Shadow(ArgbColor(0x33000000), 0.0, 4.0, 12.0))
+    }
+
+    @Test
     fun `keyframe 총수 상한을 객체를 만들기 전에 확인한다`() {
         val keys = (0 until 20).joinToString(",") { "{\"timeMs\":$it,\"value\":0}" }
         val track = "{\"nodeId\":\"shape-a\",\"property\":\"opacity\",\"keyframes\":[$keys]}"
@@ -237,8 +254,8 @@ class SceneCodecTest {
         )
         return base.copy(
             artboard = Artboard(1080.0, 1920.0, background = ArgbColor(0xFF101216.toInt())),
-            nodes = base.nodes + (extra + uiNodes()).associateBy { it.id },
-            rootOrder = base.rootOrder + (extra + uiNodes()).filter { it.parentId == null }.map { it.id },
+            nodes = base.nodes + (extra + uiNodes() + shapeNodes()).associateBy { it.id },
+            rootOrder = base.rootOrder + (extra + uiNodes() + shapeNodes()).filter { it.parentId == null }.map { it.id },
             timelines = listOf(richTimeline()),
             extensions = mapOf("host.meta" to "{\"v\":1}"),
         )
@@ -260,7 +277,19 @@ class SceneCodecTest {
                     crossAlign = CrossAlign.Center,
                 ),
             ),
-            style = NodeStyle(fill = ArgbColor(0xFFFFFFFF.toInt()), shadow = Shadow(ArgbColor(0x33000000), 0.0, 6.0, 18.0)),
+            style = NodeStyle(
+                fill = ArgbColor(0xFFFFFFFF.toInt()),
+                shadows = listOf(
+                    Shadow(ArgbColor(0x33000000), 0.0, 6.0, 18.0),
+                    Shadow(ArgbColor(0x22000000), 1.0, 2.0, 4.0, spread = -2.0, inner = true),
+                ),
+                gradient = Gradient(
+                    GradientType.Linear,
+                    listOf(GradientStop(0.0, ArgbColor(0xFFFF0000.toInt())), GradientStop(1.0, ArgbColor(0xFF0000FF.toInt()))),
+                    45.0,
+                ),
+                blur = 3.5,
+            ),
         ),
         SceneNode(
             NodeId("inner"),
@@ -268,6 +297,34 @@ class SceneCodecTest {
             parentId = NodeId("frame"),
             transform = Transform2D(translationX = 99.0, translationY = 10.0),
             layoutFill = true,
+        ),
+    )
+
+    /** 다각형·모서리별 반지름·그라디언트·점선·선 끝 모양. */
+    private fun shapeNodes(): List<SceneNode> = listOf(
+        SceneNode(
+            NodeId("star"),
+            NodeContent.Polygon(Size(100.0, 90.0), sides = 6, innerRatio = 0.45),
+            style = NodeStyle(stroke = ArgbColor(0xFF000000.toInt()), strokeWidth = 2.0, strokeDash = listOf(4.0, 2.0)),
+        ),
+        SceneNode(
+            NodeId("card"),
+            NodeContent.Rectangle(Size(80.0, 40.0), corners = CornerRadii(1.0, 2.0, 3.0, 4.0)),
+            style = NodeStyle(
+                gradient = Gradient(
+                    GradientType.Radial,
+                    listOf(
+                        GradientStop(0.0, ArgbColor(0xFFFFFFFF.toInt())),
+                        GradientStop(0.5, ArgbColor(0x80FFFFFF.toInt())),
+                        GradientStop(1.0, ArgbColor(0)),
+                    ),
+                ),
+            ),
+        ),
+        SceneNode(
+            NodeId("arrow"),
+            NodeContent.Path(listOf(PathCommand.MoveTo(Vec2(0.0, 0.0)), PathCommand.LineTo(Vec2(50.0, 10.0)))),
+            style = NodeStyle(stroke = ArgbColor(0xFF000000.toInt()), strokeWidth = 3.0, startCap = LineCap.Circle, endCap = LineCap.Arrow),
         ),
     )
 
