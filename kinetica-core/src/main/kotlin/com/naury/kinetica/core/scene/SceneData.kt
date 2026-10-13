@@ -72,7 +72,8 @@ public object Bindings {
         }
         val content = this.content as? NodeContent.Text
         if (text == null || content == null || !isWellFormedUtf16(text)) return this
-        return copy(content = content.copy(text = clip(text, limits.maxTextBytes)))
+        val clipped = clip(text, limits.maxTextBytes)
+        return copy(content = content.copy(text = clipped, spans = TextSpans.clamp(content.spans, clipped.length)))
     }
 
     private fun SceneNode.withImage(value: DataValue, limits: SceneLimits): SceneNode {

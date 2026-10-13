@@ -7,6 +7,7 @@ import kotlin.math.abs
 private const val MAX_METADATA_KEY_LENGTH = 64
 private const val MIN_FONT_WEIGHT = 100
 private const val MAX_FONT_WEIGHT = 900
+private const val MAX_SPANS = 256
 private val dataKeyPattern = Regex("[A-Za-z0-9._-]{1,128}")
 
 /** 데이터 키·동작 이름·HostSlot 키 형식. 영문자·숫자와 `.` `_` `-`로 된 1..128자. */
@@ -157,6 +158,22 @@ private fun checkText(text: NodeContent.Text, id: NodeId, limits: SceneLimits, s
         text.lineHeight.isFinite() && text.lineHeight in 0.0..limits.maxFontSize * 2 &&
         text.letterSpacing.isFinite() && abs(text.letterSpacing) <= limits.maxFontSize
     if (!styleOk) sink.add(ViolationCode.InvalidText, "글자 굵기·줄 높이·자간이 범위를 벗어났습니다.", id)
+    checkSpans(text, id, limits, sink)
 }
+
+private fun checkSpans(text: NodeContent.Text, id: NodeId, limits: SceneLimits, sink: ViolationSink) {
+    val nameOk = listOfNotNull(text.fontFamily).plus(text.spans.mapNotNull { it.fontFamily }).all(::isValidFontName)
+    val spansOk = text.spans.size <= MAX_SPANS && text.spans.all { span ->
+        span.start in 0 until span.end && span.end <= text.text.length &&
+            (span.fontSize?.let { it.isFinite() && it > 0.0 && it <= limits.maxFontSize } ?: true) &&
+            (span.fontWeight?.let { it in MIN_FONT_WEIGHT..MAX_FONT_WEIGHT } ?: true)
+    }
+    if (!nameOk || !spansOk) sink.add(ViolationCode.InvalidText, "글꼴 이름이나 글자 구간이 범위를 벗어났습니다.", id)
+}
+
+private val fontNamePattern = Regex("[A-Za-z0-9 ._-]{1,64}")
+
+/** 글꼴 이름 형식. 영문자·숫자·공백과 `.` `_` `-`로 된 1..64자. */
+public fun isValidFontName(name: String): Boolean = fontNamePattern.matches(name)
 
 private fun Vec2.isWithin(max: Double): Boolean = abs(x) <= max && abs(y) <= max

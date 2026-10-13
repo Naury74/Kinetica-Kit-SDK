@@ -177,6 +177,9 @@ public sealed interface NodeContent {
      * @property fontWeight 100..900(400 보통, 700 굵게)
      * @property lineHeight 문서 단위 줄 높이. 0이면 글꼴 기본값이다.
      * @property letterSpacing 문서 단위 자간
+     * @property fontFamily 글꼴 이름. `sans`·`serif`·`monospace`·`cursive`는 어디서나 쓰고, 그 밖의 이름은 호스트가 등록한 글꼴이다.
+     * 모르는 이름이면 기본 글꼴로 그린다. `null`이면 기본 글꼴이다.
+     * @property spans 글자 일부의 모양(리치 텍스트). 뒤의 것이 앞의 것을 덮는다.
      */
     public data class Text(
         val size: Size,
@@ -186,6 +189,10 @@ public sealed interface NodeContent {
         val fontWeight: Int = 400,
         val lineHeight: Double = 0.0,
         val letterSpacing: Double = 0.0,
+        val fontFamily: String? = null,
+        val italic: Boolean = false,
+        val decoration: TextDecoration = TextDecoration.None,
+        val spans: List<TextSpan> = emptyList(),
     ) : NodeContent {
         override val kind: NodeKind get() = NodeKind.Text
 
@@ -203,6 +210,35 @@ public sealed interface NodeContent {
 }
 
 public enum class TextAlignment { Start, Center, End }
+
+/** 밑줄·취소선. */
+public enum class TextDecoration(public val wireName: String) {
+    None("none"),
+    Underline("underline"),
+    Strikethrough("strike"),
+    ;
+
+    public companion object {
+        public fun fromWireName(name: String): TextDecoration? = entries.firstOrNull { it.wireName == name }
+    }
+}
+
+/**
+ * 글자 [start]..[end](UTF-16 위치, 끝은 포함하지 않음)의 모양. `null`인 값은 노드 값을 그대로 쓴다.
+ *
+ * @property fontSize 문서 단위 글자 크기
+ * @property fontWeight 100..900
+ */
+public data class TextSpan(
+    val start: Int,
+    val end: Int,
+    val fontFamily: String? = null,
+    val fontSize: Double? = null,
+    val fontWeight: Int? = null,
+    val italic: Boolean? = null,
+    val decoration: TextDecoration? = null,
+    val color: ArgbColor? = null,
+)
 
 /** 경로 명령. 점은 node-local 문서 좌표다. */
 public sealed interface PathCommand {
