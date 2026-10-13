@@ -24,6 +24,9 @@ internal class LayoutEdits(private val state: EditorState) {
     fun setPadding(id: NodeId, text: String): Boolean =
         parse(text)?.let { padding -> setLayout(id) { it?.copy(padding = Insets.all(padding)) } } ?: false
 
+    /** 자동 배치 Frame 안에서 남는 공간을 채울지 바꾼다. */
+    fun toggleFill(id: NodeId): Boolean = state.document.node(id)?.let { update(it.copy(layoutFill = !it.layoutFill)) } ?: false
+
     fun setConstraints(id: NodeId, constraints: LayoutConstraints): Boolean =
         state.document.node(id)?.let { update(it.copy(constraints = constraints)) } ?: false
 

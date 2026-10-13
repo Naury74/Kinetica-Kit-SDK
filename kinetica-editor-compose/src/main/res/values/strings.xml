@@ -115,4 +115,6 @@
     <string name="kinetica_pin_bottom">Bottom</string>
     <string name="kinetica_pin_top_bottom">Top &amp; bottom</string>
     <string name="kinetica_pin_center_v">Center</string>
+    <string name="kinetica_section_layout_child">In auto layout</string>
+    <string name="kinetica_layout_fill">Fill remaining space</string>
 </resources>

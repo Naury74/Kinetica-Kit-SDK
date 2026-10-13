@@ -56,7 +56,7 @@ internal fun InspectorPanel(
         AppearanceSection(node, edits, theme)
         (node.content as? NodeContent.Text)?.let { TextSection(node, it, edits) }
         (node.content as? NodeContent.Frame)?.let { AutoLayoutSection(node, it, layoutEdits, theme) }
-        if (!layoutEdits.isLaidOut(node)) ConstraintsSection(node, layoutEdits, theme)
+        if (layoutEdits.isLaidOut(node)) LayoutChildSection(node, layoutEdits, theme) else ConstraintsSection(node, layoutEdits, theme)
         BindingFields(node, edits, theme)
     }
 }

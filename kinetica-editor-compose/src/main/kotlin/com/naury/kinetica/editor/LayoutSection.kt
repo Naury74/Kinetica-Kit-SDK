@@ -80,6 +80,13 @@ internal fun ConstraintsSection(node: SceneNode, edits: LayoutEdits, theme: Stud
     }
 }
 
+/** 자동 배치 Frame의 자식. 위치는 배치가 정하고, 남는 공간을 채울지만 고른다. */
+@Composable
+internal fun LayoutChildSection(node: SceneNode, edits: LayoutEdits, theme: StudioTheme) {
+    Text(stringResource(R.string.kinetica_section_layout_child), color = theme.onPanel.copy(alpha = SECTION_ALPHA))
+    ToggleChip(R.string.kinetica_layout_fill, node.layoutFill, theme) { edits.toggleFill(node.id) }
+}
+
 @Composable
 private fun SpacingInput(key: String, value: Double, label: Int, modifier: Modifier, onCommit: (String) -> Boolean) {
     CommitTextField(
