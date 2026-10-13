@@ -108,7 +108,7 @@ class PropertyEditsTest {
 
         assertThat(node().bindings).containsExactly(BoundProperty.Visible, "store.open")
         assertThat(node().action).isEqualTo("refresh")
-        assertThat(node().style.shadow).isNotNull()
+        assertThat(node().style.shadows).isNotEmpty()
 
         assertThat(edits.setBinding(id("a"), BoundProperty.Visible, "")).isTrue()
         assertThat(edits.setAction(id("a"), " ")).isTrue()

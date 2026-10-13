@@ -126,7 +126,10 @@ object DashboardScene {
             ),
             name = "새로 고침 버튼",
             transform = Transform2D(translationX = 60.0, translationY = 1560.0),
-            style = NodeStyle(fill = ArgbColor(0xFF7C8CFF.toInt()), shadow = Shadow(ArgbColor(0x557C8CFF), offsetY = 10.0, blur = 30.0)),
+            style = NodeStyle(
+                fill = ArgbColor(0xFF7C8CFF.toInt()),
+                shadows = listOf(Shadow(ArgbColor(0x557C8CFF), offsetY = 10.0, blur = 30.0)),
+            ),
             action = "refresh",
             // 화면이 길어져도 아래에 붙고, 넓어지면 좌우로 늘어난다.
             constraints = LayoutConstraints(Pin.Both, Pin.End),
@@ -156,7 +159,10 @@ object DashboardScene {
         ),
         parentId = NodeId(parent),
         name = id,
-        style = NodeStyle(fill = ArgbColor(0xFFFFFFFF.toInt()), shadow = Shadow(ArgbColor(0x33000000), offsetY = 10.0, blur = 28.0)),
+        style = NodeStyle(
+            fill = ArgbColor(0xFFFFFFFF.toInt()),
+            shadows = listOf(Shadow(ArgbColor(0x33000000), offsetY = 10.0, blur = 28.0)),
+        ),
         layoutFill = true,
     )
 

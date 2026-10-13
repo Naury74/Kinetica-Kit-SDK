@@ -85,7 +85,7 @@ private fun AppearanceSection(node: SceneNode, edits: PropertyEdits, theme: Stud
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (content !is NodeContent.Text && content !is NodeContent.Path && content !is NodeContent.Group) {
-            ToggleChip(R.string.kinetica_field_shadow, node.style.shadow != null, theme) { edits.toggleShadow(node.id) }
+            ToggleChip(R.string.kinetica_field_shadow, node.style.shadows.any { !it.inner }, theme) { edits.toggleShadow(node.id) }
         }
         (content as? NodeContent.Frame)?.let { frame ->
             ToggleChip(R.string.kinetica_field_clip, frame.clip, theme) { edits.toggleClip(node.id) }

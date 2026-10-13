@@ -37,7 +37,7 @@ internal object NodeFactory {
         transform = centered(center, frameSize),
         style = NodeStyle(
             fill = ArgbColor(WHITE.toInt()),
-            shadow = Shadow(ArgbColor(SHADOW_COLOR), offsetY = SHADOW_Y, blur = SHADOW_BLUR),
+            shadows = listOf(Shadow(ArgbColor(SHADOW_COLOR), offsetY = SHADOW_Y, blur = SHADOW_BLUR)),
         ),
     )
 

@@ -117,4 +117,5 @@
     <string name="kinetica_pin_center_v">Center</string>
     <string name="kinetica_section_layout_child">In auto layout</string>
     <string name="kinetica_layout_fill">Fill remaining space</string>
+    <string name="kinetica_kind_polygon">Polygon</string>
 </resources>

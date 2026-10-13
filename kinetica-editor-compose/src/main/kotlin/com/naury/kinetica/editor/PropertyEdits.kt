@@ -8,6 +8,8 @@ import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.Shadow
+import com.naury.kinetica.core.scene.sizeOrNull
+import com.naury.kinetica.core.scene.withSize
 
 /** 속성 패널에서 고칠 수 있는 숫자 값. */
 internal enum class NumericField { X, Y, Width, Height, Rotation, Opacity, CornerRadius, FontWeight }
@@ -107,17 +109,16 @@ internal class PropertyEdits(private val state: EditorState) {
         return update(node.copy(action = action.trim().ifEmpty { null }))
     }
 
-    /** 그림자를 켜고 끈다. 켤 때는 옅은 기본 그림자를 쓴다. */
+    /** 바깥 그림자를 켜고 끈다. 켤 때는 옅은 기본 그림자를 맨 앞에 넣고, 끌 때는 바깥 그림자를 모두 뺀다. */
     fun toggleShadow(id: NodeId): Boolean {
         val node = state.document.node(id) ?: return false
-        val shadow = if (node.style.shadow ==
-            null
-        ) {
-            Shadow(ArgbColor(DEFAULT_SHADOW), offsetY = DEFAULT_SHADOW_Y, blur = DEFAULT_SHADOW_BLUR)
+        val outer = node.style.shadows.filterNot { it.inner }
+        val shadows = if (outer.isEmpty()) {
+            listOf(Shadow(ArgbColor(DEFAULT_SHADOW), offsetY = DEFAULT_SHADOW_Y, blur = DEFAULT_SHADOW_BLUR)) + node.style.shadows
         } else {
-            null
+            node.style.shadows.filter { it.inner }
         }
-        return update(node.copy(style = node.style.copy(shadow = shadow)))
+        return update(node.copy(style = node.style.copy(shadows = shadows)))
     }
 
     /** Frame이 자식을 상자 안으로 자를지 바꾼다. */
@@ -147,27 +148,14 @@ internal class PropertyEdits(private val state: EditorState) {
 
     /** 크기를 바꿔도 pivot이 같은 비율 자리에 있게 한다. 0 이하는 거부한다. */
     private fun resized(node: SceneNode, field: NumericField, value: Double): SceneNode? {
-        val size = node.content.size() ?: return null
+        val size = node.content.sizeOrNull() ?: return null
         if (value <= 0.0) return null
         val next = if (field == NumericField.Width) Size(value, size.height) else Size(size.width, value)
-        val content = when (val content = node.content) {
-            is NodeContent.Rectangle -> content.copy(size = next)
-            is NodeContent.Ellipse -> content.copy(size = next)
-            is NodeContent.Text -> content.copy(size = next)
-            is NodeContent.Image -> content.copy(size = next)
-            is NodeContent.Frame -> content.copy(size = next)
-            is NodeContent.HostSlot -> content.copy(size = next)
-            is NodeContent.Group, is NodeContent.Path -> return null
-        }
         val fx = if (size.width > 0.0) next.width / size.width else 1.0
         val fy = if (size.height > 0.0) next.height / size.height else 1.0
         return node.copy(
-            content = content,
-            transform = node.transform.copy(
-                pivotX = node.transform.pivotX * fx,
-                pivotY =
-                    node.transform.pivotY * fy,
-            ),
+            content = node.content.withSize(next),
+            transform = node.transform.copy(pivotX = node.transform.pivotX * fx, pivotY = node.transform.pivotY * fy),
         )
     }
 
@@ -181,12 +169,4 @@ internal class PropertyEdits(private val state: EditorState) {
     }
 }
 
-internal fun NodeContent.size(): Size? = when (this) {
-    is NodeContent.Rectangle -> size
-    is NodeContent.Ellipse -> size
-    is NodeContent.Text -> size
-    is NodeContent.Image -> size
-    is NodeContent.Frame -> size
-    is NodeContent.HostSlot -> size
-    is NodeContent.Group, is NodeContent.Path -> null
-}
+internal fun NodeContent.size(): Size? = sizeOrNull()

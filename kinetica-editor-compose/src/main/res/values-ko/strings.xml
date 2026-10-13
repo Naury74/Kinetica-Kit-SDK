@@ -116,4 +116,5 @@
     <string name="kinetica_pin_center_v">가운데</string>
     <string name="kinetica_section_layout_child">자동 배치 안</string>
     <string name="kinetica_layout_fill">남는 공간 채우기</string>
+    <string name="kinetica_kind_polygon">다각형</string>
 </resources>

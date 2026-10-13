@@ -91,6 +91,7 @@ internal fun NodeKind.labelRes(): Int = when (this) {
     NodeKind.Group -> R.string.kinetica_kind_group
     NodeKind.Rectangle -> R.string.kinetica_kind_rectangle
     NodeKind.Ellipse -> R.string.kinetica_kind_ellipse
+    NodeKind.Polygon -> R.string.kinetica_kind_polygon
     NodeKind.Path -> R.string.kinetica_kind_path
     NodeKind.Text -> R.string.kinetica_kind_text
     NodeKind.Image -> R.string.kinetica_kind_image
