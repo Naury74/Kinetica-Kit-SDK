@@ -264,9 +264,10 @@ class SceneCodecTest {
         ),
         SceneNode(
             NodeId("inner"),
-            NodeContent.HostSlot(Size(120.0, 80.0), "widget.weather"),
+            NodeContent.HostSlot(Size(120.0, 176.0), "widget.weather"),
             parentId = NodeId("frame"),
             transform = Transform2D(translationX = 99.0, translationY = 10.0),
+            layoutFill = true,
         ),
     )
 

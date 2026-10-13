@@ -84,6 +84,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
                     LayoutJson.readConstraints(it.asObject("$path.${K.CONSTRAINTS}"), "$path.${K.CONSTRAINTS}")
                 }
                     ?: LayoutConstraints.Default,
+            layoutFill = json.booleanOr(K.LAYOUT_FILL, path, default = false),
         )
     }
 

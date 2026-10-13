@@ -61,6 +61,7 @@ internal object SceneJsonWriter {
         }
         node.action?.let { put(K.ACTION, it) }
         if (node.constraints != LayoutConstraints.Default) put(K.CONSTRAINTS, LayoutJson.constraints(node.constraints))
+        if (node.layoutFill) put(K.LAYOUT_FILL, true)
         put(K.TRANSFORM, transform(node.transform))
         content(node.content)
         put(K.STYLE, style(node.style))

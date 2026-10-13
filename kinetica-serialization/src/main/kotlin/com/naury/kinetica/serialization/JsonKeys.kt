@@ -49,6 +49,7 @@ internal object JsonKeys {
     const val HUG_WIDTH = "hugWidth"
     const val HUG_HEIGHT = "hugHeight"
     const val CONSTRAINTS = "constraints"
+    const val LAYOUT_FILL = "fill"
     const val HORIZONTAL = "h"
     const val VERTICAL = "v"
 
