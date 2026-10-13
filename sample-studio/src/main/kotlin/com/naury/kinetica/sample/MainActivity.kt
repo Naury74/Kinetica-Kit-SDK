@@ -3,8 +3,10 @@ package com.naury.kinetica.sample
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -50,6 +52,9 @@ private fun StudioScreen(viewModel: StudioViewModel = viewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val theme = remember { StudioTheme() }
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
+        uri?.let(viewModel::export)
+    }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         containerColor = theme.canvasBackground,
@@ -72,6 +77,9 @@ private fun StudioScreen(viewModel: StudioViewModel = viewModel()) {
                     modifier = Modifier.padding(padding).safeDrawingPadding(),
                     toolbarEnd = {
                         TextButton(onClick = viewModel::save) { Text(stringResource(R.string.sample_save), color = theme.accent) }
+                        TextButton(onClick = { exportLauncher.launch("kinetica-scene.png") }) {
+                            Text(stringResource(R.string.sample_export), color = theme.accent)
+                        }
                     },
                 )
             }

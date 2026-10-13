@@ -37,6 +37,7 @@ android {
 dependencies {
     implementation(project(":kinetica-editor-compose"))
     implementation(project(":kinetica-serialization"))
+    implementation(project(":kinetica-export-android"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

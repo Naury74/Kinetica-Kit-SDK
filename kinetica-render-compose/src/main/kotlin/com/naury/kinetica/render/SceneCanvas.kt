@@ -62,10 +62,18 @@ public fun SceneCanvas(
  * [graph]의 문서를 이 DrawScope에 [viewport]로 그린다(artboard 배경과 노드). 화면 밖 노드는 그리지 않는다.
  * 화면([SceneCanvas])과 내보내기가 같은 함수를 써서 결과가 같다.
  */
-public fun DrawScope.drawScene(graph: SceneGraph, viewport: Viewport, textMeasurer: TextMeasurer, images: SceneImageProvider) {
+public fun DrawScope.drawScene(graph: SceneGraph, viewport: Viewport, textMeasurer: TextMeasurer, images: SceneImageProvider): Unit =
+    drawScene(graph, viewport.documentToViewport(), textMeasurer, images)
+
+/**
+ * 문서 좌표를 이 DrawScope 좌표로 옮기는 [documentToCanvas]로 그린다. 확대 범위 제한이 없어 내보내기 등에 쓴다.
+ * 역행렬이 없으면 아무것도 그리지 않는다.
+ */
+public fun DrawScope.drawScene(graph: SceneGraph, documentToCanvas: Mat3, textMeasurer: TextMeasurer, images: SceneImageProvider) {
+    val canvasToDocument = documentToCanvas.inverseOrNull() ?: return
     val visible = Rect(0.0, 0.0, size.width.toDouble(), size.height.toDouble())
-    val visibleDocument = viewport.viewportToDocument().mapBounds(visible)
-    withTransform({ transform(viewport.documentToViewport().toComposeMatrix()) }) {
+    val visibleDocument = canvasToDocument.mapBounds(visible)
+    withTransform({ transform(documentToCanvas.toComposeMatrix()) }) {
         drawArtboard(graph.document)
         planDraw(graph, visibleDocument).forEach { item ->
             withTransform({ transform(item.world.toComposeMatrix()) }) { drawItem(item, textMeasurer, images) }

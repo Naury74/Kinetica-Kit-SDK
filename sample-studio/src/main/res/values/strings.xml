@@ -4,4 +4,7 @@
     <string name="sample_saved">Saved</string>
     <string name="sample_save_failed">Could not save. The previous file is kept.</string>
     <string name="sample_load_failed">The saved scene could not be opened. Started a new one; saving will replace it.</string>
+    <string name="sample_export">Export PNG</string>
+    <string name="sample_exported">Exported</string>
+    <string name="sample_export_failed">Could not export the image.</string>
 </resources>

@@ -1,12 +1,16 @@
 package com.naury.kinetica.sample
 
 import android.app.Application
+import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.SceneDocument
+import com.naury.kinetica.export.ExportRequest
+import com.naury.kinetica.export.ExportResult
+import com.naury.kinetica.export.PngExporter
 import com.naury.kinetica.history.KineticaSession
 import com.naury.kinetica.history.SessionOpenResult
 import com.naury.kinetica.serialization.FileSceneRepository
@@ -21,6 +25,8 @@ import kotlinx.coroutines.launch
 /** 장면 하나를 앱 전용 폴더에서 열고 저장한다. 세션은 화면 회전에도 유지된다. */
 class StudioViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = FileSceneRepository(File(application.filesDir, "scenes"))
+    private val exporter = PngExporter(application)
+    private val resolver = application.contentResolver
     private val mutableState = MutableStateFlow<StudioState>(StudioState.Loading)
     val state: StateFlow<StudioState> = mutableState.asStateFlow()
 
@@ -48,6 +54,16 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /** 1080 픽셀 너비 PNG로 사용자가 고른 [uri]에 내보낸다. */
+    fun export(uri: Uri) {
+        val ready = mutableState.value as? StudioState.Ready ?: return
+        viewModelScope.launch {
+            val result = exporter.exportToUri(ready.session.document.value, ExportRequest(widthPx = EXPORT_WIDTH), resolver, uri)
+            val message = if (result is ExportResult.Success) R.string.sample_exported else R.string.sample_export_failed
+            mutableState.value = (mutableState.value as? StudioState.Ready ?: ready).copy(message = message)
+        }
+    }
+
     fun messageShown() {
         (mutableState.value as? StudioState.Ready)?.let { mutableState.value = it.copy(message = null) }
     }
@@ -63,6 +79,7 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
         const val ARTBOARD_WIDTH = 1080.0
         const val ARTBOARD_HEIGHT = 1920.0
         const val ARTBOARD_COLOR = 0xFF22262F
+        const val EXPORT_WIDTH = 1080
     }
 }
 
