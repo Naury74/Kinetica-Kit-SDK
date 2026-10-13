@@ -10,8 +10,9 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
             pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
             extensions.getByType<CommonExtension>().buildFeatures.compose = true
             dependencies {
-                // 버전 없이 쓰는 Compose 의존성의 버전을 POM에서도 알 수 있게 BOM을 직접 선언한다.
-                "implementation"(platform(libs.library("androidx-compose-bom")))
+                // 버전 없이 쓰는 Compose 의존성의 버전을 소비자도 알 수 있게 BOM을 api로 내보낸다.
+                // implementation이면 api로 노출한 Compose artifact가 소비자 쪽에서 버전 없이 남는다(소비자 확인 빌드에서 발견).
+                "api"(platform(libs.library("androidx-compose-bom")))
             }
         }
     }

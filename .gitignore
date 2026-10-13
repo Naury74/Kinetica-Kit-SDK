@@ -36,3 +36,9 @@ keystore.properties
 # OS
 .DS_Store
 Thumbs.db
+
+# 소비자 확인 빌드 산출물
+consumer-check/.gradle/
+consumer-check/build/
+consumer-check/app/build/
+consumer-check/.kotlin/
