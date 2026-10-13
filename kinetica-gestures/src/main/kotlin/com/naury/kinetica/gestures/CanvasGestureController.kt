@@ -23,8 +23,14 @@ import kotlin.math.exp
  * - 움직임은 시작 시점 문서에서 절대값으로 계산하고, 노드는 최상위 단위로 고른다. 잠긴·숨긴 노드는 잡지 않는다.
  *
  * 좌표는 모두 viewport 픽셀이다. main 스레드에서만 부른다.
+ *
+ * @param snapping 옮기기에서 이동량을 고칠 때 쓴다(안내선 스냅). `null`이면 손가락을 그대로 따라간다.
  */
-public class CanvasGestureController(private val host: GestureHost, private val config: GestureConfig) {
+public class CanvasGestureController(
+    private val host: GestureHost,
+    private val config: GestureConfig,
+    private val snapping: DragSnapFactory? = null,
+) {
     private val pointers = LinkedHashMap<Long, Vec2>()
     private var press: Press? = null
     private var active: ActiveGesture? = null
@@ -69,6 +75,7 @@ public class CanvasGestureController(private val host: GestureHost, private val 
             InteractionMode.SelectMarquee -> finishMarquee()
             else -> Unit
         }
+        active?.snap?.finish()
         if (mode != InteractionMode.TransformCanvas || pointers.isEmpty()) reset()
         onChange?.invoke()
     }
@@ -76,6 +83,7 @@ public class CanvasGestureController(private val host: GestureHost, private val 
     /** 시스템이 제스처를 가져가거나 화면이 멈출 때 부른다. 확정하지 않은 변경을 되돌린다. */
     public fun onCancel() {
         if (active?.transactional == true) host.rollbackTransaction()
+        active?.snap?.finish()
         pointers.clear()
         reset()
         onChange?.invoke()
@@ -127,7 +135,8 @@ public class CanvasGestureController(private val host: GestureHost, private val 
             return
         }
         mode = nextMode
-        active = ActiveGesture(press, targets, transactional = true).also { update(it, viewportPoint) }
+        val snap = if (nextMode == InteractionMode.DragNode) snapping?.start(press.graph, targets) else null
+        active = ActiveGesture(press, targets, transactional = true, snap).also { update(it, viewportPoint) }
     }
 
     private fun update(gesture: ActiveGesture, viewportPoint: Vec2) {
@@ -136,7 +145,8 @@ public class CanvasGestureController(private val host: GestureHost, private val 
         val documentPoint = press.viewport.toDocument(viewportPoint)
         when (mode) {
             InteractionMode.DragNode -> {
-                val delta = documentPoint - press.viewport.toDocument(press.start)
+                val raw = documentPoint - press.viewport.toDocument(press.start)
+                val delta = gesture.snap?.adjust(raw, press.viewport.zoom) ?: raw
                 host.execute(SceneCommand.TransformNodes(TransformOps.move(graph, gesture.targets, delta)))
             }
 
@@ -189,6 +199,7 @@ public class CanvasGestureController(private val host: GestureHost, private val 
             InteractionMode.DragNode, InteractionMode.ResizeNode, InteractionMode.RotateNode -> host.commitTransaction()
             else -> Unit
         }
+        active?.snap?.finish()
         active = null
         press = null
         marquee = null
@@ -225,7 +236,7 @@ public class CanvasGestureController(private val host: GestureHost, private val 
         val hit: NodeId?,
     )
 
-    private class ActiveGesture(val press: Press, val targets: List<NodeId>, val transactional: Boolean) {
+    private class ActiveGesture(val press: Press, val targets: List<NodeId>, val transactional: Boolean, val snap: DragSnap? = null) {
         val pointerId: Long get() = press.pointerId
         var lastAngle: Double? = null
         var totalRotation: Double = 0.0

@@ -11,6 +11,7 @@ dependencies {
     api(project(":kinetica-history"))
     api(project(":kinetica-render-compose"))
     implementation(project(":kinetica-gestures"))
+    implementation(project(":kinetica-guides"))
 
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)

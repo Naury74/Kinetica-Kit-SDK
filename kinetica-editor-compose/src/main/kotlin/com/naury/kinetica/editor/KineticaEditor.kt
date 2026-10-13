@@ -42,6 +42,7 @@ import com.naury.kinetica.core.scene.SelectionFrame
 import com.naury.kinetica.gestures.CanvasGestureController
 import com.naury.kinetica.gestures.GestureConfig
 import com.naury.kinetica.gestures.canvasGestures
+import com.naury.kinetica.guides.SnapConfig
 import com.naury.kinetica.history.KineticaSession
 import com.naury.kinetica.render.SceneCanvas
 import com.naury.kinetica.render.SceneImageProvider
@@ -53,6 +54,7 @@ import com.naury.kinetica.render.SceneImageProvider
  * 화면이 멈추면(ON_PAUSE) 진행 중인 끌기를 되돌린다.
  *
  * @param images 이미지 노드를 그릴 이미지. 미리 읽어 둔 것만 돌려줘야 한다.
+ * @param config 스냅·격자·회전 스냅 설정
  */
 @Composable
 public fun KineticaEditor(
@@ -60,12 +62,15 @@ public fun KineticaEditor(
     modifier: Modifier = Modifier,
     images: SceneImageProvider = SceneImageProvider.None,
     theme: StudioTheme = StudioTheme(),
+    config: StudioConfig = StudioConfig(),
     toolbarEnd: @Composable RowScope.() -> Unit = {},
 ) {
     val state = remember(session) { EditorState(session) }
     val density = LocalDensity.current.density
-    val controller = remember(state, density) {
-        CanvasGestureController(state, GestureConfig.forDensity(density)).also { it.onChange = { state.gestureTick++ } }
+    val controller = remember(state, density, config) {
+        val snapping = if (config.snapping) GuideSnapping(state, SnapConfig.forDensity(density, config.gridSize)) else null
+        val gestureConfig = GestureConfig.forDensity(density).copy(rotationSnapDegrees = config.rotationSnapDegrees)
+        CanvasGestureController(state, gestureConfig, snapping).also { it.onChange = { state.gestureTick++ } }
     }
     CancelGestureOnPause(controller)
     val paddingPx = with(LocalDensity.current) { CANVAS_PADDING.toPx().toDouble() }
@@ -101,7 +106,15 @@ private fun EditorCanvas(
         val frame = remember(document, selection) { SelectionFrame.of(SceneGraph(document), selection.selectedIds) }
         // gestureTick을 읽어 사각 선택 영역이 바뀔 때마다 표시를 다시 그린다.
         val marquee = state.gestureTick.let { controller.marquee }
-        SelectionOverlay(frame, showHandles = selection.selectedIds.size == 1, marquee, viewport, theme, Modifier.fillMaxSize())
+        SelectionOverlay(
+            frame,
+            showHandles = selection.selectedIds.size == 1,
+            marquee,
+            state.guides,
+            viewport,
+            theme,
+            Modifier.fillMaxSize(),
+        )
     }
 }
 

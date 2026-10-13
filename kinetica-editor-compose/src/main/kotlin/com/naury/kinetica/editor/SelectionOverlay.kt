@@ -14,16 +14,19 @@ import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.core.scene.SelectionFrame
 import com.naury.kinetica.core.scene.SelectionHandle
+import com.naury.kinetica.guides.GuideAxis
+import com.naury.kinetica.guides.SnapGuide
 
 /**
  * 문서 위에 그리는 편집 표시. 문서 렌더러와 분리되어 있으며(docs 11) 크기는 확대와 상관없이 dp로 고정이다.
- * 선택 테두리 1.5dp, 크기 손잡이 10dp 사각형, 회전 손잡이 원(docs 24).
+ * 선택 테두리 1.5dp, 크기 손잡이 10dp 사각형, 회전 손잡이 원, 안내선 1dp(docs 24).
  */
 @Composable
 internal fun SelectionOverlay(
     frame: SelectionFrame?,
     showHandles: Boolean,
     marquee: Rect?,
+    guides: List<SnapGuide>,
     viewport: Viewport,
     theme: StudioTheme,
     modifier: Modifier = Modifier,
@@ -43,6 +46,15 @@ internal fun SelectionOverlay(
                 Size(it.width.toFloat(), it.height.toFloat()),
                 style = Stroke(outline),
             )
+        }
+        guides.forEach { guide ->
+            val (start, end) = when (guide.axis) {
+                GuideAxis.Vertical -> Vec2(guide.position, guide.spanStart) to Vec2(guide.position, guide.spanEnd)
+                GuideAxis.Horizontal -> Vec2(guide.spanStart, guide.position) to Vec2(guide.spanEnd, guide.position)
+            }
+            val a = viewport.toViewport(start)
+            val b = viewport.toViewport(end)
+            drawLine(theme.accent, Offset(a.xf, a.yf), Offset(b.xf, b.yf), strokeWidth = 1.dp.toPx())
         }
         frame ?: return@Canvas
         val corners = frame.corners.map(viewport::toViewport)

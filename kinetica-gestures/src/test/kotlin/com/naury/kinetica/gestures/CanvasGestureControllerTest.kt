@@ -194,6 +194,30 @@ class CanvasGestureControllerTest {
     }
 
     @Test
+    fun `옮기기는 스냅이 고친 이동량을 쓰고 끝나면 스냅을 정리한다`() {
+        var finished = 0
+        val snapping = DragSnapFactory { _, moving ->
+            assertThat(moving).containsExactly(id("a"))
+            object : DragSnap {
+                override fun adjust(documentDelta: Vec2, zoom: Double) = Vec2(Math.round(documentDelta.x / 50.0) * 50.0, 0.0)
+
+                override fun finish() {
+                    finished++
+                }
+            }
+        }
+        val snapped = CanvasGestureController(host, GestureConfig(8.0, 24.0, 8.0, 40.0), snapping)
+
+        snapped.onDown(1, screen(120.0, 120.0))
+        snapped.onMove(1, screen(180.0, 133.0))
+        snapped.onUp(1)
+
+        assertThat(translation("a").translationX).isEqualTo(150.0)
+        assertThat(translation("a").translationY).isEqualTo(100.0)
+        assertThat(finished).isEqualTo(1)
+    }
+
+    @Test
     fun `마우스 휠은 포인터 기준으로 확대한다`() {
         val point = Vec2(321.0, 123.0)
         val anchor = host.viewport.toDocument(point)

@@ -12,6 +12,7 @@ import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.gestures.GestureHost
+import com.naury.kinetica.guides.SnapGuide
 import com.naury.kinetica.history.KineticaSession
 
 /**
@@ -24,6 +25,9 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
         private set
     private var viewportState by mutableStateOf<Viewport?>(null)
     private var created = 0
+
+    /** 옮기는 동안 붙은 안내선. 제스처가 끝나면 비운다. */
+    var guides by mutableStateOf<List<SnapGuide>>(emptyList())
 
     /** 상태 기계가 바뀔 때마다 늘어난다. 표시(사각 선택 등)를 다시 그리는 신호다. */
     var gestureTick by mutableIntStateOf(0)
