@@ -54,13 +54,21 @@ public fun SceneCanvas(
     val textMeasurer = rememberTextMeasurer(cacheSize = TEXT_LAYOUT_CACHE_SIZE)
     Canvas(modifier) {
         drawRect(artboardOutside)
-        val visible = Rect(0.0, 0.0, size.width.toDouble(), size.height.toDouble())
-        val visibleDocument = viewport.viewportToDocument().mapBounds(visible)
-        withTransform({ transform(viewport.documentToViewport().toComposeMatrix()) }) {
-            drawArtboard(document)
-            planDraw(graph, visibleDocument).forEach { item ->
-                withTransform({ transform(item.world.toComposeMatrix()) }) { drawItem(item, textMeasurer, images) }
-            }
+        drawScene(graph, viewport, textMeasurer, images)
+    }
+}
+
+/**
+ * [graph]의 문서를 이 DrawScope에 [viewport]로 그린다(artboard 배경과 노드). 화면 밖 노드는 그리지 않는다.
+ * 화면([SceneCanvas])과 내보내기가 같은 함수를 써서 결과가 같다.
+ */
+public fun DrawScope.drawScene(graph: SceneGraph, viewport: Viewport, textMeasurer: TextMeasurer, images: SceneImageProvider) {
+    val visible = Rect(0.0, 0.0, size.width.toDouble(), size.height.toDouble())
+    val visibleDocument = viewport.viewportToDocument().mapBounds(visible)
+    withTransform({ transform(viewport.documentToViewport().toComposeMatrix()) }) {
+        drawArtboard(graph.document)
+        planDraw(graph, visibleDocument).forEach { item ->
+            withTransform({ transform(item.world.toComposeMatrix()) }) { drawItem(item, textMeasurer, images) }
         }
     }
 }

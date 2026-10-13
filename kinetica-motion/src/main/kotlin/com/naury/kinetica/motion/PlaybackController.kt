@@ -44,7 +44,7 @@ public data class PlaybackState(
  * @param reducedMotion 시스템 동작 줄이기가 켜져 있으면 `true`. 재생하면 애니메이션 없이 바로 끝 상태로 간다.
  */
 public class PlaybackController(
-    private val timeline: Timeline,
+    public val timeline: Timeline,
     private val clock: FrameClock = FrameClock.System,
     private val reducedMotion: Boolean = false,
 ) {
