@@ -1,7 +1,12 @@
 package com.naury.kinetica.core.command
 
+import com.naury.kinetica.core.geometry.Rect
+import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.geometry.fromMatrix
+import com.naury.kinetica.core.scene.Insets
+import com.naury.kinetica.core.scene.LayoutDirection
+import com.naury.kinetica.core.scene.Layouts
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
@@ -32,6 +37,43 @@ internal object GroupEdits {
             (group.id to group)
         val remaining = siblings.filterNot { it in members }.toMutableList().apply { add(insertAt, group.id) }
         return applied(document.copy(nodes = nodes).withChildren(parentId, remaining))
+    }
+
+    fun wrapInFrame(document: SceneDocument, command: SceneCommand.WrapInFrame): CommandResult {
+        val result = group(document, SceneCommand.Group(command.ids, command.frameId, command.name))
+        val grouped = result as? CommandResult.Applied ?: return result
+        val nodes = grouped.document.nodes
+        val group = nodes.getValue(command.frameId)
+        val children = (group.content as NodeContent.Group).childIds
+        val bounds = children.associateWith { Layouts.boundsInParent(nodes, it) }
+        val padding = command.layout?.padding ?: Insets.Zero
+        // 크기가 없는(빈 그룹·한 점 경로) 노드만 감싸면 Frame 크기가 0이 되어 받을 수 없다.
+        val union = bounds.values.filterNotNull().reduceOrNull(Rect::union)
+            ?.takeIf { it.width + padding.left + padding.right > 0.0 && it.height + padding.top + padding.bottom > 0.0 }
+            ?: return rejected(CommandError.StructureChange(command.frameId))
+        val originX = union.left - padding.left
+        val originY = union.top - padding.top
+        val size = Size(union.width + padding.left + padding.right, union.height + padding.top + padding.bottom)
+        val ordered = command.layout?.let { layout ->
+            children.sortedBy { id ->
+                val rect = bounds[id]
+                if (layout.direction == LayoutDirection.Horizontal) rect?.left else rect?.top
+            }
+        } ?: children
+        val frame = group.copy(
+            content = NodeContent.Frame(size, ordered, clip = false, layout = command.layout),
+            transform = Transform2D(translationX = originX, translationY = originY),
+        )
+        val shifted = children.associateWith { id ->
+            val child = nodes.getValue(id)
+            child.copy(
+                transform = child.transform.copy(
+                    translationX = child.transform.translationX - originX,
+                    translationY = child.transform.translationY - originY,
+                ),
+            )
+        }
+        return applied(grouped.document.copy(nodes = nodes + shifted + (frame.id to frame)))
     }
 
     fun ungroup(document: SceneDocument, command: SceneCommand.Ungroup): CommandResult {

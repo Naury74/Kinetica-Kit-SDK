@@ -6,6 +6,7 @@ import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.scene.Artboard
+import com.naury.kinetica.core.scene.AutoLayout
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneNode
 
@@ -37,6 +38,13 @@ public sealed interface SceneCommand {
      * 자식 순서는 원래 형제 순서를 따른다. 그룹 변환은 항등이라 화면 위치는 그대로다.
      */
     public data class Group(val ids: List<NodeId>, val groupId: NodeId, val name: String = "") : SceneCommand
+
+    /**
+     * 같은 부모를 가진 [ids]를 새 Frame [frameId]로 감싼다. Frame은 노드들의 범위에 [layout]의 여백을 더한 크기이며 화면 위치는 그대로다.
+     * [layout]이 있으면 자식 순서를 배치 방향의 위치 순서로 바꾸고 자동 배치한다.
+     */
+    public data class WrapInFrame(val ids: List<NodeId>, val frameId: NodeId, val layout: AutoLayout? = null, val name: String = "") :
+        SceneCommand
 
     /**
      * 그룹을 풀어 자식을 그룹 자리(같은 부모, 같은 순서)에 놓는다. 그룹 변환·opacity·숨김·잠금을 자식에게 합쳐 화면 모습을 유지한다.

@@ -110,13 +110,25 @@ private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSi
 
         is NodeContent.Frame -> {
             requireSize(content.size)
-            checkCorner(content.cornerRadius, id, sink)
+            checkFrame(content, id, limits, sink)
         }
 
         is NodeContent.HostSlot -> {
             requireSize(content.size)
             if (!isValidDataKey(content.key)) sink.add(ViolationCode.InvalidBinding, "호스트 뷰 키 형식이 올바르지 않습니다.", id)
         }
+    }
+}
+
+private fun checkFrame(frame: NodeContent.Frame, id: NodeId, limits: SceneLimits, sink: ViolationSink) {
+    checkCorner(frame.cornerRadius, id, sink)
+    frame.layout?.let { checkLayout(it, id, limits, sink) }
+}
+
+private fun checkLayout(layout: AutoLayout, id: NodeId, limits: SceneLimits, sink: ViolationSink) {
+    val values = layout.padding.values + layout.gap
+    if (values.any { !it.isFinite() || it < 0.0 || it > limits.maxCoordinateMagnitude }) {
+        sink.add(ViolationCode.InvalidGeometry, "자동 배치 간격·여백은 0 이상 상한 이하여야 합니다.", id)
     }
 }
 

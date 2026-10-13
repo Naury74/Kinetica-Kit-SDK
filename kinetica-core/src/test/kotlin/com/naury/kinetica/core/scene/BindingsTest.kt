@@ -60,6 +60,26 @@ class BindingsTest {
     }
 
     @Test
+    fun `데이터로 숨긴 노드의 자리는 자동 배치가 메운다`() {
+        val row = SceneNode(
+            id("row"),
+            NodeContent.Frame(
+                Size(400.0, 60.0),
+                listOf(id("chip"), id("next")),
+                layout = AutoLayout(LayoutDirection.Horizontal, gap = 10.0),
+            ),
+        )
+        val chip = rect("chip", parent = "row").copy(bindings = mapOf(BoundProperty.Visible to "store.open"))
+        val next = rect("next", parent = "row", transform = com.naury.kinetica.core.geometry.Transform2D(translationX = 110.0))
+        val laid = document(listOf(row, chip, next))
+
+        val closed = Bindings.apply(laid, SceneData.of("store.open" to DataValue.Bool(false)))
+
+        assertThat(closed.node(id("next"))!!.transform.translationX).isEqualTo(0.0)
+        assertThat(Bindings.apply(laid, SceneData.of("store.open" to DataValue.Bool(true)))).isEqualTo(laid)
+    }
+
+    @Test
     fun `너무 긴 글자는 바이트 상한으로 자른다`() {
         val long = "가".repeat(30_000)
 

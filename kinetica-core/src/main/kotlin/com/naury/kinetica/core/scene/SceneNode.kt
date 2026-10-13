@@ -16,6 +16,7 @@ import com.naury.kinetica.core.geometry.Vec2
  * @property metadata 호스트가 붙이는 문자열 값. SDK는 해석하지 않는다.
  * @property bindings 속성을 호스트 데이터 키에 묶는다. 데이터에 값이 있으면 저장된 값 대신 쓴다(docs 30).
  * @property action 사용 모드에서 누르면 호스트에 넘기는 동작 이름. 코드를 실행하지 않는다.
+ * @property constraints 부모(Frame·artboard) 크기가 바뀔 때 따라가는 방식. 자동 배치 Frame의 자식이면 쓰지 않는다.
  */
 public data class SceneNode(
     val id: NodeId,
@@ -29,6 +30,7 @@ public data class SceneNode(
     val metadata: Map<String, String> = emptyMap(),
     val bindings: Map<BoundProperty, String> = emptyMap(),
     val action: String? = null,
+    val constraints: LayoutConstraints = LayoutConstraints.Default,
 ) {
     public val kind: NodeKind get() = content.kind
 
@@ -80,12 +82,14 @@ public sealed interface NodeContent {
      * 크기·배경·모서리·테두리·그림자를 갖는 컨테이너(Figma의 frame). 배경은 `style.fill`, 테두리는 `style.stroke`다.
      *
      * @property clip `true`면 자식을 이 상자(모서리 포함) 밖으로 그리지 않는다.
+     * @property layout 자식 자동 배치. `null`이면 자식은 각자 위치에 있고 [SceneNode.constraints]로 Frame 크기를 따라간다.
      */
     public data class Frame(
         val size: Size,
         override val childIds: List<NodeId> = emptyList(),
         val cornerRadius: Double = 0.0,
         val clip: Boolean = true,
+        val layout: AutoLayout? = null,
     ) : Container {
         override val kind: NodeKind get() = NodeKind.Frame
 

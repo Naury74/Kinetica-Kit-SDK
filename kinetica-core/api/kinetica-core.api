@@ -547,6 +547,24 @@ public final class com/naury/kinetica/core/command/SceneCommand$UpdateProperties
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/naury/kinetica/core/command/SceneCommand$WrapInFrame : com/naury/kinetica/core/command/SceneCommand {
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Lcom/naury/kinetica/core/scene/AutoLayout;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Lcom/naury/kinetica/core/scene/AutoLayout;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2-alf_8MM ()Ljava/lang/String;
+	public final fun component3 ()Lcom/naury/kinetica/core/scene/AutoLayout;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy-tdherlE (Ljava/util/List;Ljava/lang/String;Lcom/naury/kinetica/core/scene/AutoLayout;Ljava/lang/String;)Lcom/naury/kinetica/core/command/SceneCommand$WrapInFrame;
+	public static synthetic fun copy-tdherlE$default (Lcom/naury/kinetica/core/command/SceneCommand$WrapInFrame;Ljava/util/List;Ljava/lang/String;Lcom/naury/kinetica/core/scene/AutoLayout;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$WrapInFrame;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFrameId-alf_8MM ()Ljava/lang/String;
+	public final fun getIds ()Ljava/util/List;
+	public final fun getLayout ()Lcom/naury/kinetica/core/scene/AutoLayout;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/naury/kinetica/core/command/SceneReducer {
 	public fun <init> ()V
 	public fun <init> (Lcom/naury/kinetica/core/scene/SceneLimits;)V
@@ -795,6 +813,31 @@ public final class com/naury/kinetica/core/scene/Artboard {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/naury/kinetica/core/scene/AutoLayout {
+	public fun <init> ()V
+	public fun <init> (Lcom/naury/kinetica/core/scene/LayoutDirection;DLcom/naury/kinetica/core/scene/Insets;Lcom/naury/kinetica/core/scene/MainAlign;Lcom/naury/kinetica/core/scene/CrossAlign;ZZ)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/LayoutDirection;DLcom/naury/kinetica/core/scene/Insets;Lcom/naury/kinetica/core/scene/MainAlign;Lcom/naury/kinetica/core/scene/CrossAlign;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/LayoutDirection;
+	public final fun component2 ()D
+	public final fun component3 ()Lcom/naury/kinetica/core/scene/Insets;
+	public final fun component4 ()Lcom/naury/kinetica/core/scene/MainAlign;
+	public final fun component5 ()Lcom/naury/kinetica/core/scene/CrossAlign;
+	public final fun component6 ()Z
+	public final fun component7 ()Z
+	public final fun copy (Lcom/naury/kinetica/core/scene/LayoutDirection;DLcom/naury/kinetica/core/scene/Insets;Lcom/naury/kinetica/core/scene/MainAlign;Lcom/naury/kinetica/core/scene/CrossAlign;ZZ)Lcom/naury/kinetica/core/scene/AutoLayout;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/AutoLayout;Lcom/naury/kinetica/core/scene/LayoutDirection;DLcom/naury/kinetica/core/scene/Insets;Lcom/naury/kinetica/core/scene/MainAlign;Lcom/naury/kinetica/core/scene/CrossAlign;ZZILjava/lang/Object;)Lcom/naury/kinetica/core/scene/AutoLayout;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCrossAlign ()Lcom/naury/kinetica/core/scene/CrossAlign;
+	public final fun getDirection ()Lcom/naury/kinetica/core/scene/LayoutDirection;
+	public final fun getGap ()D
+	public final fun getHugHeight ()Z
+	public final fun getHugWidth ()Z
+	public final fun getMainAlign ()Lcom/naury/kinetica/core/scene/MainAlign;
+	public final fun getPadding ()Lcom/naury/kinetica/core/scene/Insets;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/naury/kinetica/core/scene/Bindings {
 	public static final field INSTANCE Lcom/naury/kinetica/core/scene/Bindings;
 	public final fun apply (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/SceneData;Lcom/naury/kinetica/core/scene/SceneLimits;)Lcom/naury/kinetica/core/scene/SceneDocument;
@@ -816,6 +859,22 @@ public final class com/naury/kinetica/core/scene/BoundProperty : java/lang/Enum 
 
 public final class com/naury/kinetica/core/scene/BoundProperty$Companion {
 	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/BoundProperty;
+}
+
+public final class com/naury/kinetica/core/scene/CrossAlign : java/lang/Enum {
+	public static final field Center Lcom/naury/kinetica/core/scene/CrossAlign;
+	public static final field Companion Lcom/naury/kinetica/core/scene/CrossAlign$Companion;
+	public static final field End Lcom/naury/kinetica/core/scene/CrossAlign;
+	public static final field Start Lcom/naury/kinetica/core/scene/CrossAlign;
+	public static final field Stretch Lcom/naury/kinetica/core/scene/CrossAlign;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/CrossAlign;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/CrossAlign;
+}
+
+public final class com/naury/kinetica/core/scene/CrossAlign$Companion {
+	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/CrossAlign;
 }
 
 public abstract interface class com/naury/kinetica/core/scene/DataValue {
@@ -881,6 +940,92 @@ public final class com/naury/kinetica/core/scene/HitTester {
 	public static synthetic fun nodesIntersecting$default (Lcom/naury/kinetica/core/scene/HitTester;Lcom/naury/kinetica/core/geometry/Rect;ZILjava/lang/Object;)Ljava/util/List;
 }
 
+public final class com/naury/kinetica/core/scene/Insets {
+	public static final field Companion Lcom/naury/kinetica/core/scene/Insets$Companion;
+	public fun <init> ()V
+	public fun <init> (DDDD)V
+	public synthetic fun <init> (DDDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun copy (DDDD)Lcom/naury/kinetica/core/scene/Insets;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/Insets;DDDDILjava/lang/Object;)Lcom/naury/kinetica/core/scene/Insets;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBottom ()D
+	public final fun getLeft ()D
+	public final fun getRight ()D
+	public final fun getTop ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/Insets$Companion {
+	public final fun all (D)Lcom/naury/kinetica/core/scene/Insets;
+	public final fun getZero ()Lcom/naury/kinetica/core/scene/Insets;
+}
+
+public final class com/naury/kinetica/core/scene/LayoutConstraints {
+	public static final field Companion Lcom/naury/kinetica/core/scene/LayoutConstraints$Companion;
+	public fun <init> ()V
+	public fun <init> (Lcom/naury/kinetica/core/scene/Pin;Lcom/naury/kinetica/core/scene/Pin;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/Pin;Lcom/naury/kinetica/core/scene/Pin;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/Pin;
+	public final fun component2 ()Lcom/naury/kinetica/core/scene/Pin;
+	public final fun copy (Lcom/naury/kinetica/core/scene/Pin;Lcom/naury/kinetica/core/scene/Pin;)Lcom/naury/kinetica/core/scene/LayoutConstraints;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/LayoutConstraints;Lcom/naury/kinetica/core/scene/Pin;Lcom/naury/kinetica/core/scene/Pin;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/LayoutConstraints;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHorizontal ()Lcom/naury/kinetica/core/scene/Pin;
+	public final fun getVertical ()Lcom/naury/kinetica/core/scene/Pin;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/LayoutConstraints$Companion {
+	public final fun getDefault ()Lcom/naury/kinetica/core/scene/LayoutConstraints;
+}
+
+public final class com/naury/kinetica/core/scene/LayoutDirection : java/lang/Enum {
+	public static final field Companion Lcom/naury/kinetica/core/scene/LayoutDirection$Companion;
+	public static final field Horizontal Lcom/naury/kinetica/core/scene/LayoutDirection;
+	public static final field Vertical Lcom/naury/kinetica/core/scene/LayoutDirection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/LayoutDirection;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/LayoutDirection;
+}
+
+public final class com/naury/kinetica/core/scene/LayoutDirection$Companion {
+	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/LayoutDirection;
+}
+
+public final class com/naury/kinetica/core/scene/Layouts {
+	public static final field INSTANCE Lcom/naury/kinetica/core/scene/Layouts;
+	public final fun apply (Lcom/naury/kinetica/core/scene/SceneDocument;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun resizeArtboard (Lcom/naury/kinetica/core/scene/SceneDocument;DD)Lcom/naury/kinetica/core/scene/SceneDocument;
+}
+
+public final class com/naury/kinetica/core/scene/LayoutsKt {
+	public static final fun sizeOrNull (Lcom/naury/kinetica/core/scene/NodeContent;)Lcom/naury/kinetica/core/geometry/Size;
+	public static final fun withSize (Lcom/naury/kinetica/core/scene/NodeContent;Lcom/naury/kinetica/core/geometry/Size;)Lcom/naury/kinetica/core/scene/NodeContent;
+}
+
+public final class com/naury/kinetica/core/scene/MainAlign : java/lang/Enum {
+	public static final field Center Lcom/naury/kinetica/core/scene/MainAlign;
+	public static final field Companion Lcom/naury/kinetica/core/scene/MainAlign$Companion;
+	public static final field End Lcom/naury/kinetica/core/scene/MainAlign;
+	public static final field SpaceBetween Lcom/naury/kinetica/core/scene/MainAlign;
+	public static final field Start Lcom/naury/kinetica/core/scene/MainAlign;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/MainAlign;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/MainAlign;
+}
+
+public final class com/naury/kinetica/core/scene/MainAlign$Companion {
+	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/MainAlign;
+}
+
 public final class com/naury/kinetica/core/scene/NodeCheckKt {
 	public static final fun isValidDataKey (Ljava/lang/String;)Z
 }
@@ -909,19 +1054,21 @@ public final class com/naury/kinetica/core/scene/NodeContent$Ellipse : com/naury
 }
 
 public final class com/naury/kinetica/core/scene/NodeContent$Frame : com/naury/kinetica/core/scene/NodeContent$Container {
-	public fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/util/List;DZ)V
-	public synthetic fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/util/List;DZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/util/List;DZLcom/naury/kinetica/core/scene/AutoLayout;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/util/List;DZLcom/naury/kinetica/core/scene/AutoLayout;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Size;
 	public final fun component2 ()Ljava/util/List;
 	public final fun component3 ()D
 	public final fun component4 ()Z
-	public final fun copy (Lcom/naury/kinetica/core/geometry/Size;Ljava/util/List;DZ)Lcom/naury/kinetica/core/scene/NodeContent$Frame;
-	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Frame;Lcom/naury/kinetica/core/geometry/Size;Ljava/util/List;DZILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Frame;
+	public final fun component5 ()Lcom/naury/kinetica/core/scene/AutoLayout;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Size;Ljava/util/List;DZLcom/naury/kinetica/core/scene/AutoLayout;)Lcom/naury/kinetica/core/scene/NodeContent$Frame;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Frame;Lcom/naury/kinetica/core/geometry/Size;Ljava/util/List;DZLcom/naury/kinetica/core/scene/AutoLayout;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Frame;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getChildIds ()Ljava/util/List;
 	public final fun getClip ()Z
 	public final fun getCornerRadius ()D
 	public fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public final fun getLayout ()Lcom/naury/kinetica/core/scene/AutoLayout;
 	public final fun getSize ()Lcom/naury/kinetica/core/geometry/Size;
 	public fun hashCode ()I
 	public fun localBounds ()Lcom/naury/kinetica/core/geometry/Rect;
@@ -1179,6 +1326,23 @@ public final class com/naury/kinetica/core/scene/PathFlattening$Polyline {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/naury/kinetica/core/scene/Pin : java/lang/Enum {
+	public static final field Both Lcom/naury/kinetica/core/scene/Pin;
+	public static final field Center Lcom/naury/kinetica/core/scene/Pin;
+	public static final field Companion Lcom/naury/kinetica/core/scene/Pin$Companion;
+	public static final field End Lcom/naury/kinetica/core/scene/Pin;
+	public static final field Scale Lcom/naury/kinetica/core/scene/Pin;
+	public static final field Start Lcom/naury/kinetica/core/scene/Pin;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/Pin;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/Pin;
+}
+
+public final class com/naury/kinetica/core/scene/Pin$Companion {
+	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/Pin;
+}
+
 public final class com/naury/kinetica/core/scene/SceneData {
 	public static final field Companion Lcom/naury/kinetica/core/scene/SceneData$Companion;
 	public fun <init> ()V
@@ -1295,11 +1459,12 @@ public final class com/naury/kinetica/core/scene/SceneLimits$Companion {
 }
 
 public final class com/naury/kinetica/core/scene/SceneNode {
-	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Ljava/util/Map;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Ljava/util/Map;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Ljava/util/Map;Ljava/lang/String;Lcom/naury/kinetica/core/scene/LayoutConstraints;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Ljava/util/Map;Ljava/lang/String;Lcom/naury/kinetica/core/scene/LayoutConstraints;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-alf_8MM ()Ljava/lang/String;
 	public final fun component10 ()Ljava/util/Map;
 	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Lcom/naury/kinetica/core/scene/LayoutConstraints;
 	public final fun component2 ()Lcom/naury/kinetica/core/scene/NodeContent;
 	public final fun component3-0Y_iG_k ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
@@ -1308,11 +1473,12 @@ public final class com/naury/kinetica/core/scene/SceneNode {
 	public final fun component7 ()Z
 	public final fun component8 ()Z
 	public final fun component9 ()Ljava/util/Map;
-	public final fun copy-kaXIt6k (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Ljava/util/Map;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneNode;
-	public static synthetic fun copy-kaXIt6k$default (Lcom/naury/kinetica/core/scene/SceneNode;Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneNode;
+	public final fun copy-0d8KaQA (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Ljava/util/Map;Ljava/lang/String;Lcom/naury/kinetica/core/scene/LayoutConstraints;)Lcom/naury/kinetica/core/scene/SceneNode;
+	public static synthetic fun copy-0d8KaQA$default (Lcom/naury/kinetica/core/scene/SceneNode;Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Ljava/util/Map;Ljava/lang/String;Lcom/naury/kinetica/core/scene/LayoutConstraints;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneNode;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAction ()Ljava/lang/String;
 	public final fun getBindings ()Ljava/util/Map;
+	public final fun getConstraints ()Lcom/naury/kinetica/core/scene/LayoutConstraints;
 	public final fun getContent ()Lcom/naury/kinetica/core/scene/NodeContent;
 	public final fun getId-alf_8MM ()Ljava/lang/String;
 	public final fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;

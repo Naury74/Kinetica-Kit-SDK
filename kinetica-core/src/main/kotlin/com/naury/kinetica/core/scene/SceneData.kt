@@ -34,6 +34,7 @@ public data class SceneData(val values: Map<String, DataValue> = emptyMap()) {
  * - 데이터에 키가 없거나 값 종류가 속성과 맞지 않으면 저장된 값을 그대로 쓴다.
  * - 글자는 [limits]의 바이트 상한을 넘으면 잘라 쓰고, 이미지 URI는 허용 규칙을 통과할 때만 쓴다.
  * - 숫자 글자는 소수점 아래 0을 지운 형태로 쓴다(기기 언어와 상관없이 `.`).
+ * - 데이터가 보임을 바꾸면 자동 배치 Frame이 그 자리를 메우도록 다시 배치한다.
  */
 public object Bindings {
     public fun apply(document: SceneDocument, data: SceneData, limits: SceneLimits = SceneLimits.Default): SceneDocument {
@@ -44,7 +45,10 @@ public object Bindings {
                 data[key]?.let { value -> current.with(property, value, limits) } ?: current
             }
         }
-        return document.copy(nodes = nodes)
+        val bound = document.copy(nodes = nodes)
+        // 데이터로 보임이 바뀐 노드가 있으면 자동 배치를 다시 해 빈자리를 메운다. 그 밖에는 애니메이션 위치를 덮지 않도록 다시 하지 않는다.
+        val visibilityChanged = nodes.any { (id, node) -> document.nodes.getValue(id).visible != node.visible }
+        return if (visibilityChanged) Layouts.apply(bound) else bound
     }
 
     private fun SceneNode.with(property: BoundProperty, value: DataValue, limits: SceneLimits): SceneNode = when (property) {
