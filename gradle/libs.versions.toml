@@ -1,0 +1,46 @@
+[versions]
+androidGradlePlugin = "9.4.1"
+kotlin = "2.4.21"
+
+compileSdk = "37"
+targetSdk = "37"
+minSdk = "26"
+
+androidxActivity = "1.13.0"
+androidxComposeBom = "2026.09.00"
+androidxCore = "1.19.1"
+androidxLifecycle = "2.11.0"
+
+junit4 = "4.13.2"
+truth = "1.4.5"
+
+ktlint = "1.8.0"
+detekt = "1.23.8"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
+
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidxComposeBom" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+truth = { module = "com.google.truth:truth", version.ref = "truth" }
+
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
+detekt-cli = { module = "io.gitlab.arturbosch.detekt:detekt-cli", version.ref = "detekt" }
+
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-compiler-gradle-plugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kinetica-jvm-library = { id = "kinetica.jvm.library" }
+kinetica-android-library = { id = "kinetica.android.library" }
+kinetica-android-compose = { id = "kinetica.android.compose" }
+kinetica-quality = { id = "kinetica.quality" }
