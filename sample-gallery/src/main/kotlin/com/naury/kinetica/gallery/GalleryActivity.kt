@@ -89,7 +89,12 @@ private fun Gallery() {
 @Composable
 private fun SceneGrid(shared: SharedTransitionScope, visibility: AnimatedVisibilityScope, onOpen: (GalleryItem) -> Unit) {
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        Text(stringResource(R.string.gallery_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(16.dp))
+        Text(
+            stringResource(R.string.gallery_title),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(16.dp),
+        )
         LazyVerticalGrid(columns = GridCells.Adaptive(160.dp), contentPadding = PaddingValues(12.dp)) {
             items(GalleryScenes.items, key = { it.id }) { item ->
                 val description = stringResource(R.string.gallery_open, item.title)

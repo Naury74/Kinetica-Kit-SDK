@@ -10,6 +10,17 @@
 - **Transitions**: 같은 `morphKey` 노드를 잇는 장면 morph, 끌어서 닫기, Compose 공유 전환 연결
 - **Headless**: Android 없이 쓰는 문서·좌표·keyframe 평가(Kotlin JVM)
 
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="docs/images/screen-studio.png" width="240" alt="편집 화면"><br><b>Studio</b><br>레이어·속성 패널</td>
+    <td align="center" width="25%"><img src="docs/images/screen-motion.png" width="240" alt="모션 편집"><br><b>Motion</b><br>재생 위치 기준 자동 키</td>
+    <td align="center" width="25%"><img src="docs/images/screen-gallery.png" width="240" alt="장면 목록"><br><b>Gallery</b><br>재생기만 쓰는 앱</td>
+    <td align="center" width="25%"><img src="docs/images/screen-transition.png" width="240" alt="장면 전환"><br><b>Transition</b><br>morphKey 장면 morph</td>
+  </tr>
+</table>
+
+화면은 `sample-studio`·`sample-gallery` debug 빌드를 Android 에뮬레이터(펼친 폴더블, 한국어)에서 실행한 실제 화면입니다.
+
 ## 지금 되는 것 (0.1.0-SNAPSHOT)
 
 - **문서**: 그룹·사각형·타원·경로·글자·이미지 노드, 불변 문서, 명령으로만 수정, 모든 결과를 검증(id·순환·깊이·유한값·상한·URI)
