@@ -13,11 +13,17 @@ import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
+import com.naury.kinetica.core.scene.AutoLayout
 import com.naury.kinetica.core.scene.BoundProperty
+import com.naury.kinetica.core.scene.CrossAlign
+import com.naury.kinetica.core.scene.Insets
+import com.naury.kinetica.core.scene.LayoutConstraints
+import com.naury.kinetica.core.scene.LayoutDirection
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.PathCommand
+import com.naury.kinetica.core.scene.Pin
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.Shadow
@@ -165,6 +171,17 @@ class SceneCodecTest {
     }
 
     @Test
+    fun `자동 배치가 덜 된 문서는 열 때 배치하고 잘못된 배치 값은 거부한다`() {
+        val raw = codec.encode(richDocument()).replace("\"x\":99", "\"x\":0")
+        val opened = codec.decode(raw) as DecodeResult.Success
+        val bad = codec.encode(richDocument()).replace("\"direction\":\"column\"", "\"direction\":\"diagonal\"")
+
+        assertThat(raw).isNotEqualTo(codec.encode(richDocument()))
+        assertThat(opened.document.nodes.getValue(NodeId("inner")).transform.translationX).isEqualTo(99.0)
+        assertThat(codec.decode(bad)).isInstanceOf(DecodeResult.Failure::class.java)
+    }
+
+    @Test
     fun `keyframe 총수 상한을 객체를 만들기 전에 확인한다`() {
         val keys = (0 until 20).joinToString(",") { "{\"timeMs\":$it,\"value\":0}" }
         val track = "{\"nodeId\":\"shape-a\",\"property\":\"opacity\",\"keyframes\":[$keys]}"
@@ -207,12 +224,6 @@ class SceneCodecTest {
                 action = "open_profile",
             ),
             SceneNode(
-                NodeId("frame"),
-                NodeContent.Frame(Size(320.0, 200.0), listOf(NodeId("inner")), cornerRadius = 20.0, clip = false),
-                style = NodeStyle(fill = ArgbColor(0xFFFFFFFF.toInt()), shadow = Shadow(ArgbColor(0x33000000), 0.0, 6.0, 18.0)),
-            ),
-            SceneNode(NodeId("inner"), NodeContent.HostSlot(Size(120.0, 80.0), "widget.weather"), parentId = NodeId("frame")),
-            SceneNode(
                 NodeId("styled"),
                 NodeContent.Text(Size(200.0, 60.0), "굵게", fontSize = 20.0, fontWeight = 700, lineHeight = 28.0, letterSpacing = -0.5),
                 bindings = mapOf(BoundProperty.Text to "order.total"),
@@ -221,16 +232,43 @@ class SceneCodecTest {
                 NodeId("r"),
                 NodeContent.Rectangle(Size(10.0, 10.0), cornerRadius = 3.0),
                 transform = Transform2D(rotationDegrees = 12.5, pivotX = 5.0),
+                constraints = LayoutConstraints(Pin.Both, Pin.End),
             ),
         )
         return base.copy(
             artboard = Artboard(1080.0, 1920.0, background = ArgbColor(0xFF101216.toInt())),
-            nodes = base.nodes + extra.associateBy { it.id },
-            rootOrder = base.rootOrder + extra.filter { it.parentId == null }.map { it.id },
+            nodes = base.nodes + (extra + uiNodes()).associateBy { it.id },
+            rootOrder = base.rootOrder + (extra + uiNodes()).filter { it.parentId == null }.map { it.id },
             timelines = listOf(richTimeline()),
             extensions = mapOf("host.meta" to "{\"v\":1}"),
         )
     }
+
+    /** Frame·자동 배치·호스트 뷰. 위치는 배치가 끝난 값이라 읽어도 그대로다. */
+    private fun uiNodes(): List<SceneNode> = listOf(
+        SceneNode(
+            NodeId("frame"),
+            NodeContent.Frame(
+                Size(320.0, 200.0),
+                listOf(NodeId("inner")),
+                cornerRadius = 20.0,
+                clip = false,
+                layout = AutoLayout(
+                    LayoutDirection.Vertical,
+                    gap = 8.0,
+                    padding = Insets(10.0, 10.0, 12.0, 14.0),
+                    crossAlign = CrossAlign.Center,
+                ),
+            ),
+            style = NodeStyle(fill = ArgbColor(0xFFFFFFFF.toInt()), shadow = Shadow(ArgbColor(0x33000000), 0.0, 6.0, 18.0)),
+        ),
+        SceneNode(
+            NodeId("inner"),
+            NodeContent.HostSlot(Size(120.0, 80.0), "widget.weather"),
+            parentId = NodeId("frame"),
+            transform = Transform2D(translationX = 99.0, translationY = 10.0),
+        ),
+    )
 
     private fun richTimeline(): Timeline = Timeline(
         id = "intro",

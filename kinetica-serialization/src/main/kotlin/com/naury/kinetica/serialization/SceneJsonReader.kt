@@ -11,6 +11,7 @@ import com.naury.kinetica.core.animation.TimelineMarker
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.BoundProperty
+import com.naury.kinetica.core.scene.LayoutConstraints
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeKind
@@ -78,6 +79,11 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
                 .orEmpty(),
             bindings = readBindings(json, path),
             action = json.optional(K.ACTION)?.asString("$path.${K.ACTION}"),
+            constraints =
+                json.optional(K.CONSTRAINTS)?.let {
+                    LayoutJson.readConstraints(it.asObject("$path.${K.CONSTRAINTS}"), "$path.${K.CONSTRAINTS}")
+                }
+                    ?: LayoutConstraints.Default,
         )
     }
 
@@ -119,6 +125,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             childIds = readChildren(json, path),
             cornerRadius = json.finiteOr(K.CORNER_RADIUS, path, 0.0),
             clip = json.booleanOr(K.CLIP, path, default = true),
+            layout = json.optional(K.LAYOUT)?.let { LayoutJson.readLayout(it.asObject("$path.${K.LAYOUT}"), "$path.${K.LAYOUT}") },
         )
 
         NodeKind.HostSlot -> NodeContent.HostSlot(json.size(K.BOUNDS, path), json.string(K.KEY, path))

@@ -1,5 +1,6 @@
 package com.naury.kinetica.serialization
 
+import com.naury.kinetica.core.scene.Layouts
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneLimits
 import com.naury.kinetica.core.scene.SceneValidator
@@ -52,7 +53,10 @@ public class SceneCodec(
     private fun decodeChecked(text: String): DecodeResult = try {
         val document = SceneJsonReader(limits).read(upgrade(parse(text)))
         val violations = validator.validate(document)
-        if (violations.isEmpty()) DecodeResult.Success(document) else DecodeResult.Failure(SceneLoadError.Invalid(violations))
+        // 다른 작성기가 만든 문서도 자동 배치가 끝난 상태로 연다. 배치가 만든 값도 다시 검사한다.
+        val laidOut = if (violations.isEmpty()) Layouts.apply(document) else document
+        val finalViolations = if (laidOut === document) violations else validator.validate(laidOut)
+        if (finalViolations.isEmpty()) DecodeResult.Success(laidOut) else DecodeResult.Failure(SceneLoadError.Invalid(finalViolations))
     } catch (failure: LoadFailure) {
         DecodeResult.Failure(failure.error)
     }

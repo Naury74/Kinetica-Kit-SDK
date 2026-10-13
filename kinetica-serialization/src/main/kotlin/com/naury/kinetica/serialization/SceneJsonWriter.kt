@@ -6,6 +6,7 @@ import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
+import com.naury.kinetica.core.scene.LayoutConstraints
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.PathCommand
@@ -27,7 +28,6 @@ import kotlinx.serialization.json.putJsonObject
 
 /** 기본값과 같은 선택 필드는 쓰지 않는다. 그래야 같은 문서가 항상 같은 짧은 문자열이 된다. */
 internal object SceneJsonWriter {
-    private const val MAX_EXACT_LONG = 9_007_199_254_740_992.0
     private const val DEFAULT_FONT_WEIGHT = 400
 
     fun write(document: SceneDocument): JsonObject = buildJsonObject {
@@ -60,6 +60,7 @@ internal object SceneJsonWriter {
             }
         }
         node.action?.let { put(K.ACTION, it) }
+        if (node.constraints != LayoutConstraints.Default) put(K.CONSTRAINTS, LayoutJson.constraints(node.constraints))
         put(K.TRANSFORM, transform(node.transform))
         content(node.content)
         put(K.STYLE, style(node.style))
@@ -108,6 +109,7 @@ internal object SceneJsonWriter {
         put(K.BOUNDS, size(content.size))
         if (content.cornerRadius != 0.0) putNumber(K.CORNER_RADIUS, content.cornerRadius)
         if (!content.clip) put(K.CLIP, false)
+        content.layout?.let { put(K.LAYOUT, LayoutJson.layout(it)) }
         putJsonArray(K.CHILDREN) { content.childIds.forEach { add(JsonPrimitive(it.value)) } }
     }
 
@@ -230,10 +232,8 @@ internal object SceneJsonWriter {
         }
     }
 
-    /** 정수인 값은 `120.0`이 아닌 `120`으로 쓴다. */
     private fun JsonObjectBuilder.putNumber(key: String, value: Double) {
-        val isExactInteger = value == Math.rint(value) && kotlin.math.abs(value) < MAX_EXACT_LONG
-        put(key, if (isExactInteger) JsonPrimitive(value.toLong()) else JsonPrimitive(value))
+        put(key, numberPrimitive(value))
     }
 
     /** 확장 값은 JSON 문자열이어야 한다. JSON이 아니면 문자열 값 하나로 쓴다. */
