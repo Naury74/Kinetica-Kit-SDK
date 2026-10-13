@@ -242,6 +242,29 @@ class CanvasGestureControllerTest {
     }
 
     @Test
+    fun `같은 노드를 빠르게 두 번 누르면 그룹 안이어도 그 노드를 알린다`() {
+        var now = 1_000L
+        val doubleTapped = mutableListOf<NodeId>()
+        val timed = CanvasGestureController(host, GestureConfig(8.0, 24.0, 8.0, 40.0), uptimeMillis = { now })
+        timed.onDoubleTap = { doubleTapped += it }
+        fun tapAt(x: Double, y: Double) {
+            timed.onDown(1, screen(x, y))
+            timed.onUp(1)
+        }
+
+        tapAt(310.0, 310.0)
+        now += 200
+        tapAt(312.0, 311.0)
+        now += 1_000
+        tapAt(120.0, 120.0)
+        now += 500
+        tapAt(120.0, 120.0)
+
+        assertThat(doubleTapped).containsExactly(id("c"))
+        assertThat(host.selection).containsExactly(id("a"))
+    }
+
+    @Test
     fun `마우스 휠은 포인터 기준으로 확대한다`() {
         val point = Vec2(321.0, 123.0)
         val anchor = host.viewport.toDocument(point)

@@ -30,6 +30,7 @@ public class CanvasGestureController(
     private val host: GestureHost,
     private val config: GestureConfig,
     private val snapping: DragSnapFactory? = null,
+    private val uptimeMillis: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
 ) {
     private val pointers = LinkedHashMap<Long, Vec2>()
     private var press: Press? = null
@@ -45,6 +46,14 @@ public class CanvasGestureController(
 
     /** 상태가 바뀔 때 불린다. 화면은 이때 [mode]·[marquee]를 다시 읽는다. */
     public var onChange: (() -> Unit)? = null
+
+    /**
+     * 같은 노드를 짧은 간격([DOUBLE_TAP_MILLIS])으로 두 번 눌렀을 때 불린다. 그룹 안이어도 실제로 누른 노드(맨 아래 노드)를 넘긴다.
+     * 글자 편집 등에 쓴다.
+     */
+    public var onDoubleTap: ((NodeId) -> Unit)? = null
+
+    private var lastTap: LastTap? = null
 
     public fun onDown(pointerId: Long, viewportPoint: Vec2) {
         pointers[pointerId] = viewportPoint
@@ -104,8 +113,8 @@ public class CanvasGestureController(
         val selected = host.selection
         val frame = selected.singleOrNull()?.takeIf { !graph.isEffectivelyLocked(it) }?.let { SelectionFrame.of(graph, listOf(it)) }
         val handle = frame?.let { pickHandle(it, viewport, viewportPoint, config) }
-        val hit = HitTester(graph).hitTest(documentPoint, config.hitSlopPx / viewport.zoom)?.let(graph::topLevelAncestor)
-        press = Press(pointerId, viewportPoint, graph, viewport, handle, hit)
+        val leaf = HitTester(graph).hitTest(documentPoint, config.hitSlopPx / viewport.zoom)
+        press = Press(pointerId, viewportPoint, graph, viewport, handle, leaf)
         mode = InteractionMode.PressPending
     }
 
@@ -177,7 +186,14 @@ public class CanvasGestureController(
     }
 
     private fun tap(press: Press) {
+        val now = uptimeMillis()
+        val previous = lastTap
+        val leaf = press.leaf
+        val isDouble = leaf != null && previous != null && previous.leaf == leaf &&
+            now - previous.time <= DOUBLE_TAP_MILLIS && previous.point.distanceTo(press.start) <= config.handleTouchRadiusPx * 2
+        lastTap = if (isDouble) null else leaf?.let { LastTap(it, now, press.start) }
         when {
+            isDouble -> onDoubleTap?.invoke(checkNotNull(leaf))
             press.handle != null -> Unit
             press.hit != null -> host.select(listOf(press.hit))
             else -> host.select(emptyList())
@@ -231,8 +247,13 @@ public class CanvasGestureController(
         val graph: SceneGraph,
         val viewport: Viewport,
         val handle: SelectionHandle?,
-        val hit: NodeId?,
-    )
+        val leaf: NodeId?,
+    ) {
+        /** 고르기·옮기기 단위인 최상위 노드. */
+        val hit: NodeId? = leaf?.let(graph::topLevelAncestor)
+    }
+
+    private class LastTap(val leaf: NodeId, val time: Long, val point: Vec2)
 
     private class ActiveGesture(val press: Press, val targets: List<NodeId>, val transactional: Boolean, val snap: DragSnap? = null) {
         val pointerId: Long get() = press.pointerId
@@ -242,9 +263,12 @@ public class CanvasGestureController(
 
     private class CanvasStart(val viewport: Viewport, val centroid: Vec2, val distance: Double)
 
-    private companion object {
-        const val HALF = 0.5
-        const val WHEEL_ZOOM_STEP = 0.1
+    public companion object {
+        /** 두 번 누르기로 보는 최대 간격(ms). */
+        public const val DOUBLE_TAP_MILLIS: Long = 300L
+        private const val HALF = 0.5
+        private const val NANOS_PER_MILLI = 1_000_000L
+        private const val WHEEL_ZOOM_STEP = 0.1
     }
 }
 
