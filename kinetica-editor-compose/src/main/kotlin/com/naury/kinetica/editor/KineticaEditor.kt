@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.naury.kinetica.core.command.CommandResult
 import com.naury.kinetica.core.command.SceneCommand
+import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.scene.AlignMode
 import com.naury.kinetica.core.scene.Bindings
 import com.naury.kinetica.core.scene.DistributeAxis
@@ -178,8 +179,9 @@ private fun PropertiesFor(state: EditorState, edits: PropertyEdits, theme: Studi
     val selection by state.session.selection.collectAsStateWithLifecycle()
     // 모션 편집 중에는 화면에 보이는(재생 위치의) 값을 보여 준다. 고친 값도 그 기준으로 키가 된다.
     val document = remember(base, state.motionEnabled, state.playheadMs) { state.displayed(base) }
-    val layoutEdits = remember(state) { LayoutEdits(state) }
-    InspectorPanel(selection.selectedIds.singleOrNull()?.let(document::node), edits, layoutEdits, theme, Modifier.fillMaxWidth())
+    val inspectorEdits =
+        remember(state, edits) { InspectorEdits(edits, LayoutEdits(state), StyleEdits(state), EffectEdits(state), ShapeEdits(state)) }
+    InspectorPanel(selection.selectedIds.singleOrNull()?.let(document::node), inspectorEdits, theme, Modifier.fillMaxWidth())
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -269,6 +271,7 @@ private fun EditorToolbar(
     ToolRow(theme) {
         ToolButton(R.string.kinetica_add_rectangle, colors) { add(NodeFactory.rectangle(state.visibleCenter(), state.nextSequence())) }
         ToolButton(R.string.kinetica_add_ellipse, colors) { add(NodeFactory.ellipse(state.visibleCenter(), state.nextSequence())) }
+        ShapeMenu(colors) { make -> add(make(state.visibleCenter(), state.nextSequence())) }
         ToolButton(R.string.kinetica_add_text, colors) { add(NodeFactory.text(state.visibleCenter(), defaultText)) }
         ToolButton(R.string.kinetica_add_frame, colors) { add(NodeFactory.frame(state.visibleCenter())) }
         if (hostViews.isNotEmpty()) HostViewMenu(hostViews, colors) { add(NodeFactory.hostView(state.visibleCenter(), it)) }
@@ -336,6 +339,32 @@ private fun HostViewMenu(options: List<HostViewOption>, colors: ButtonColors, on
                     onClick = {
                         expanded = false
                         onPick(option)
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** 다각형·별·선·화살표. */
+@Composable
+private fun ShapeMenu(colors: ButtonColors, onPick: (make: (Vec2, Int) -> SceneNode) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val items = listOf<Pair<Int, (Vec2, Int) -> SceneNode>>(
+        R.string.kinetica_add_polygon to NodeFactory::polygon,
+        R.string.kinetica_add_star to NodeFactory::star,
+        R.string.kinetica_add_line to { center, sequence -> NodeFactory.line(center, sequence, arrow = false) },
+        R.string.kinetica_add_arrow to { center, sequence -> NodeFactory.line(center, sequence, arrow = true) },
+    )
+    Box {
+        ToolButton(R.string.kinetica_more_shapes, colors) { expanded = true }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            items.forEach { (label, make) ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(label)) },
+                    onClick = {
+                        expanded = false
+                        onPick(make)
                     },
                 )
             }

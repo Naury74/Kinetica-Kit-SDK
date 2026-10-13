@@ -36,13 +36,7 @@ import java.util.Locale
  * 입력은 키보드 완료나 포커스를 잃을 때 적용하고, 올바르지 않으면 이전 값으로 되돌리며 오류를 알린다.
  */
 @Composable
-internal fun InspectorPanel(
-    node: SceneNode?,
-    edits: PropertyEdits,
-    layoutEdits: LayoutEdits,
-    theme: StudioTheme,
-    modifier: Modifier = Modifier,
-) {
+internal fun InspectorPanel(node: SceneNode?, edits: InspectorEdits, theme: StudioTheme, modifier: Modifier = Modifier) {
     if (node == null) {
         Text(
             stringResource(R.string.kinetica_properties_empty),
@@ -52,12 +46,17 @@ internal fun InspectorPanel(
         return
     }
     Column(modifier.verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        TransformSection(node, edits)
-        AppearanceSection(node, edits, theme)
-        (node.content as? NodeContent.Text)?.let { TextSection(node, it, edits) }
-        (node.content as? NodeContent.Frame)?.let { AutoLayoutSection(node, it, layoutEdits, theme) }
-        if (layoutEdits.isLaidOut(node)) LayoutChildSection(node, layoutEdits, theme) else ConstraintsSection(node, layoutEdits, theme)
-        BindingFields(node, edits, theme)
+        TransformSection(node, edits.property)
+        AppearanceSection(node, edits.property, theme)
+        CornersSection(node, edits.shape, theme)
+        (node.content as? NodeContent.Polygon)?.let { PolygonSection(node, it, edits.shape, theme) }
+        (node.content as? NodeContent.Text)?.let { TextSection(node, it, edits.property) }
+        FillSection(node, edits.style, edits.property, theme)
+        StrokeSection(node, edits.style, theme)
+        EffectsSection(node, edits.effects, theme)
+        (node.content as? NodeContent.Frame)?.let { AutoLayoutSection(node, it, edits.layout, theme) }
+        if (edits.layout.isLaidOut(node)) LayoutChildSection(node, edits.layout, theme) else ConstraintsSection(node, edits.layout, theme)
+        BindingFields(node, edits.property, theme)
     }
 }
 
@@ -83,22 +82,9 @@ private fun AppearanceSection(node: SceneNode, edits: PropertyEdits, theme: Stud
     if (content is NodeContent.Rectangle || content is NodeContent.Frame) {
         NumberInput(node, NumericField.CornerRadius, R.string.kinetica_field_corner, edits, Modifier.fillMaxWidth())
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (content !is NodeContent.Text && content !is NodeContent.Path && content !is NodeContent.Group) {
-            ToggleChip(R.string.kinetica_field_shadow, node.style.shadows.any { !it.inner }, theme) { edits.toggleShadow(node.id) }
-        }
-        (content as? NodeContent.Frame)?.let { frame ->
-            ToggleChip(R.string.kinetica_field_clip, frame.clip, theme) { edits.toggleClip(node.id) }
-        }
+    (content as? NodeContent.Frame)?.let { frame ->
+        ToggleChip(R.string.kinetica_field_clip, frame.clip, theme) { edits.toggleClip(node.id) }
     }
-    CommitTextField(
-        current = node.style.fill?.toHex().orEmpty(),
-        key = node.id.value + node.style.fill,
-        label = stringResource(R.string.kinetica_field_fill),
-        keyboardType = KeyboardType.Ascii,
-        enabled = content !is NodeContent.Image && content !is NodeContent.HostSlot,
-        modifier = Modifier.fillMaxWidth(),
-    ) { edits.setFill(node.id, it) }
 }
 
 @Composable
