@@ -2,6 +2,7 @@ package com.naury.kinetica.sample
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
@@ -31,7 +32,11 @@ import com.naury.kinetica.editor.StudioTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // 편집 화면은 항상 어두운 색이라 시스템 막대 아이콘을 밝게 둔다.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+        )
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 StudioScreen()
