@@ -1,0 +1,195 @@
+public final class com/naury/kinetica/motion/Easing {
+	public static final field INSTANCE Lcom/naury/kinetica/motion/Easing;
+	public final fun evaluate (Lcom/naury/kinetica/core/animation/EasingSpec;DD)D
+}
+
+public abstract interface class com/naury/kinetica/motion/FrameClock {
+	public static final field Companion Lcom/naury/kinetica/motion/FrameClock$Companion;
+	public abstract fun timeNanos ()J
+}
+
+public final class com/naury/kinetica/motion/FrameClock$Companion {
+	public final fun getSystem ()Lcom/naury/kinetica/motion/FrameClock;
+}
+
+public final class com/naury/kinetica/motion/FrameUpdate {
+	public fun <init> (Lcom/naury/kinetica/motion/PlaybackState;Ljava/util/List;)V
+	public final fun component1 ()Lcom/naury/kinetica/motion/PlaybackState;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Lcom/naury/kinetica/motion/PlaybackState;Ljava/util/List;)Lcom/naury/kinetica/motion/FrameUpdate;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/motion/FrameUpdate;Lcom/naury/kinetica/motion/PlaybackState;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/motion/FrameUpdate;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCrossedMarkers ()Ljava/util/List;
+	public final fun getState ()Lcom/naury/kinetica/motion/PlaybackState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/naury/kinetica/motion/MorphResult {
+}
+
+public final class com/naury/kinetica/motion/MorphResult$AmbiguousMapping : com/naury/kinetica/motion/MorphResult {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun copy-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/motion/MorphResult$AmbiguousMapping;
+	public static synthetic fun copy-VNJttGw$default (Lcom/naury/kinetica/motion/MorphResult$AmbiguousMapping;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/motion/MorphResult$AmbiguousMapping;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/motion/MorphResult$Ready : com/naury/kinetica/motion/MorphResult {
+	public fun <init> (Lcom/naury/kinetica/motion/SceneMorph;)V
+	public final fun component1 ()Lcom/naury/kinetica/motion/SceneMorph;
+	public final fun copy (Lcom/naury/kinetica/motion/SceneMorph;)Lcom/naury/kinetica/motion/MorphResult$Ready;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/motion/MorphResult$Ready;Lcom/naury/kinetica/motion/SceneMorph;ILjava/lang/Object;)Lcom/naury/kinetica/motion/MorphResult$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMorph ()Lcom/naury/kinetica/motion/SceneMorph;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/motion/MorphResult$UnknownNode : com/naury/kinetica/motion/MorphResult {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun copy-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/motion/MorphResult$UnknownNode;
+	public static synthetic fun copy-VNJttGw$default (Lcom/naury/kinetica/motion/MorphResult$UnknownNode;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/motion/MorphResult$UnknownNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/motion/PlaybackController {
+	public fun <init> (Lcom/naury/kinetica/core/animation/Timeline;Lcom/naury/kinetica/motion/FrameClock;Z)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/animation/Timeline;Lcom/naury/kinetica/motion/FrameClock;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun getTimeline ()Lcom/naury/kinetica/core/animation/Timeline;
+	public final fun onFrame ()Lcom/naury/kinetica/motion/FrameUpdate;
+	public final fun pause ()V
+	public final fun play ()V
+	public final fun seek (D)V
+	public final fun setRate (D)V
+	public final fun setRepeat (Lcom/naury/kinetica/motion/RepeatMode;)V
+	public final fun setReversed (Z)V
+}
+
+public final class com/naury/kinetica/motion/PlaybackState {
+	public static final field Companion Lcom/naury/kinetica/motion/PlaybackState$Companion;
+	public static final field MAX_RATE D
+	public static final field MIN_RATE D
+	public fun <init> ()V
+	public fun <init> (DZZDLcom/naury/kinetica/motion/RepeatMode;Z)V
+	public synthetic fun <init> (DZZDLcom/naury/kinetica/motion/RepeatMode;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()D
+	public final fun component5 ()Lcom/naury/kinetica/motion/RepeatMode;
+	public final fun component6 ()Z
+	public final fun copy (DZZDLcom/naury/kinetica/motion/RepeatMode;Z)Lcom/naury/kinetica/motion/PlaybackState;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/motion/PlaybackState;DZZDLcom/naury/kinetica/motion/RepeatMode;ZILjava/lang/Object;)Lcom/naury/kinetica/motion/PlaybackState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRate ()D
+	public final fun getRepeat ()Lcom/naury/kinetica/motion/RepeatMode;
+	public final fun getReversed ()Z
+	public final fun getTimeMs ()D
+	public fun hashCode ()I
+	public final fun isFinished ()Z
+	public final fun isPlaying ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/motion/PlaybackState$Companion {
+}
+
+public final class com/naury/kinetica/motion/RepeatMode : java/lang/Enum {
+	public static final field Loop Lcom/naury/kinetica/motion/RepeatMode;
+	public static final field Once Lcom/naury/kinetica/motion/RepeatMode;
+	public static final field PingPong Lcom/naury/kinetica/motion/RepeatMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/motion/RepeatMode;
+	public static fun values ()[Lcom/naury/kinetica/motion/RepeatMode;
+}
+
+public final class com/naury/kinetica/motion/RepeatModeKt {
+	public static final fun timelineTimeAt (DJLcom/naury/kinetica/motion/RepeatMode;Z)D
+}
+
+public final class com/naury/kinetica/motion/SceneMorph {
+	public static final field Companion Lcom/naury/kinetica/motion/SceneMorph$Companion;
+	public static final field MORPH_KEY Ljava/lang/String;
+	public final fun frame (D)Lcom/naury/kinetica/core/scene/SceneDocument;
+}
+
+public final class com/naury/kinetica/motion/SceneMorph$Companion {
+	public final fun create (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/util/List;)Lcom/naury/kinetica/motion/MorphResult;
+	public static synthetic fun create$default (Lcom/naury/kinetica/motion/SceneMorph$Companion;Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/motion/MorphResult;
+}
+
+public final class com/naury/kinetica/motion/TimelineEvaluator {
+	public static final field INSTANCE Lcom/naury/kinetica/motion/TimelineEvaluator;
+	public final fun evaluate (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/animation/Timeline;D)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun valueAt (Lcom/naury/kinetica/core/animation/PropertyTrack;D)Lcom/naury/kinetica/core/animation/KeyValue;
+}
+
+public final class com/naury/kinetica/motion/TransitionDriver {
+	public static final field Companion Lcom/naury/kinetica/motion/TransitionDriver$Companion;
+	public static final field DEFAULT_PROJECTION_SECONDS D
+	public static final field DEFAULT_SETTLE_MS D
+	public static final field DEFAULT_THRESHOLD D
+	public fun <init> ()V
+	public fun <init> (Lcom/naury/kinetica/motion/FrameClock;DLcom/naury/kinetica/core/animation/EasingSpec;DDLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/motion/FrameClock;DLcom/naury/kinetica/core/animation/EasingSpec;DDLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun animateTo (Z)V
+	public final fun drag (D)V
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun isCompleted ()Z
+	public final fun onFrame ()Lcom/naury/kinetica/motion/TransitionState;
+	public final fun release (D)V
+	public final fun startDrag ()V
+}
+
+public final class com/naury/kinetica/motion/TransitionDriver$Companion {
+	public final fun projectedVelocity (DDDDD)D
+}
+
+public final class com/naury/kinetica/motion/TransitionEnd : java/lang/Enum {
+	public static final field Canceled Lcom/naury/kinetica/motion/TransitionEnd;
+	public static final field Completed Lcom/naury/kinetica/motion/TransitionEnd;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/motion/TransitionEnd;
+	public static fun values ()[Lcom/naury/kinetica/motion/TransitionEnd;
+}
+
+public final class com/naury/kinetica/motion/TransitionMapping {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun component2-alf_8MM ()Ljava/lang/String;
+	public final fun copy-bOX_hRg (Ljava/lang/String;Ljava/lang/String;)Lcom/naury/kinetica/motion/TransitionMapping;
+	public static synthetic fun copy-bOX_hRg$default (Lcom/naury/kinetica/motion/TransitionMapping;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/motion/TransitionMapping;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSourceId-alf_8MM ()Ljava/lang/String;
+	public final fun getTargetId-alf_8MM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/motion/TransitionState {
+	public fun <init> ()V
+	public fun <init> (DZZ)V
+	public synthetic fun <init> (DZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun copy (DZZ)Lcom/naury/kinetica/motion/TransitionState;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/motion/TransitionState;DZZILjava/lang/Object;)Lcom/naury/kinetica/motion/TransitionState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProgress ()D
+	public fun hashCode ()I
+	public final fun isDragging ()Z
+	public final fun isSettling ()Z
+	public fun toString ()Ljava/lang/String;
+}
+

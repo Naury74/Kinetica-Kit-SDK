@@ -1,0 +1,1294 @@
+public final class com/naury/kinetica/core/animation/AnimatableProperty : java/lang/Enum {
+	public static final field Companion Lcom/naury/kinetica/core/animation/AnimatableProperty$Companion;
+	public static final field Fill Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field Opacity Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field RotationDegrees Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field ScaleX Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field ScaleY Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field StrokeWidth Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field TranslationX Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field TranslationY Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValueType ()Lcom/naury/kinetica/core/animation/KeyValueType;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static fun values ()[Lcom/naury/kinetica/core/animation/AnimatableProperty;
+}
+
+public final class com/naury/kinetica/core/animation/AnimatableProperty$Companion {
+	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/animation/AnimatableProperty;
+}
+
+public abstract interface class com/naury/kinetica/core/animation/EasingSpec {
+	public static final field Companion Lcom/naury/kinetica/core/animation/EasingSpec$Companion;
+}
+
+public final class com/naury/kinetica/core/animation/EasingSpec$Companion {
+	public final fun getEaseIn ()Lcom/naury/kinetica/core/animation/EasingSpec$CubicBezier;
+	public final fun getEaseInOut ()Lcom/naury/kinetica/core/animation/EasingSpec$CubicBezier;
+	public final fun getEaseOut ()Lcom/naury/kinetica/core/animation/EasingSpec$CubicBezier;
+}
+
+public final class com/naury/kinetica/core/animation/EasingSpec$CubicBezier : com/naury/kinetica/core/animation/EasingSpec {
+	public fun <init> (DDDD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun copy (DDDD)Lcom/naury/kinetica/core/animation/EasingSpec$CubicBezier;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/EasingSpec$CubicBezier;DDDDILjava/lang/Object;)Lcom/naury/kinetica/core/animation/EasingSpec$CubicBezier;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getX1 ()D
+	public final fun getX2 ()D
+	public final fun getY1 ()D
+	public final fun getY2 ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/animation/EasingSpec$Linear : com/naury/kinetica/core/animation/EasingSpec {
+	public static final field INSTANCE Lcom/naury/kinetica/core/animation/EasingSpec$Linear;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/animation/EasingSpec$Spring : com/naury/kinetica/core/animation/EasingSpec {
+	public fun <init> (DD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun copy (DD)Lcom/naury/kinetica/core/animation/EasingSpec$Spring;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/EasingSpec$Spring;DDILjava/lang/Object;)Lcom/naury/kinetica/core/animation/EasingSpec$Spring;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDampingRatio ()D
+	public final fun getStiffness ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/animation/EasingSpec$Steps : com/naury/kinetica/core/animation/EasingSpec {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lcom/naury/kinetica/core/animation/EasingSpec$Steps;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/EasingSpec$Steps;IILjava/lang/Object;)Lcom/naury/kinetica/core/animation/EasingSpec$Steps;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/naury/kinetica/core/animation/KeyValue {
+}
+
+public final class com/naury/kinetica/core/animation/KeyValue$Color : com/naury/kinetica/core/animation/KeyValue {
+	public synthetic fun <init> (ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-VCHL7K8 ()I
+	public final fun copy-EyzNjpo (I)Lcom/naury/kinetica/core/animation/KeyValue$Color;
+	public static synthetic fun copy-EyzNjpo$default (Lcom/naury/kinetica/core/animation/KeyValue$Color;IILjava/lang/Object;)Lcom/naury/kinetica/core/animation/KeyValue$Color;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColor-VCHL7K8 ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/animation/KeyValue$Scalar : com/naury/kinetica/core/animation/KeyValue {
+	public fun <init> (D)V
+	public final fun component1 ()D
+	public final fun copy (D)Lcom/naury/kinetica/core/animation/KeyValue$Scalar;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/KeyValue$Scalar;DILjava/lang/Object;)Lcom/naury/kinetica/core/animation/KeyValue$Scalar;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/animation/KeyValueType : java/lang/Enum {
+	public static final field Color Lcom/naury/kinetica/core/animation/KeyValueType;
+	public static final field Scalar Lcom/naury/kinetica/core/animation/KeyValueType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/animation/KeyValueType;
+	public static fun values ()[Lcom/naury/kinetica/core/animation/KeyValueType;
+}
+
+public final class com/naury/kinetica/core/animation/Keyframe {
+	public fun <init> (JLcom/naury/kinetica/core/animation/KeyValue;Lcom/naury/kinetica/core/animation/EasingSpec;)V
+	public synthetic fun <init> (JLcom/naury/kinetica/core/animation/KeyValue;Lcom/naury/kinetica/core/animation/EasingSpec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()Lcom/naury/kinetica/core/animation/KeyValue;
+	public final fun component3 ()Lcom/naury/kinetica/core/animation/EasingSpec;
+	public final fun copy (JLcom/naury/kinetica/core/animation/KeyValue;Lcom/naury/kinetica/core/animation/EasingSpec;)Lcom/naury/kinetica/core/animation/Keyframe;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/Keyframe;JLcom/naury/kinetica/core/animation/KeyValue;Lcom/naury/kinetica/core/animation/EasingSpec;ILjava/lang/Object;)Lcom/naury/kinetica/core/animation/Keyframe;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEasing ()Lcom/naury/kinetica/core/animation/EasingSpec;
+	public final fun getTimeMs ()J
+	public final fun getValue ()Lcom/naury/kinetica/core/animation/KeyValue;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/animation/PropertyTrack {
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun component2 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy-6Xg5hXQ (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Ljava/util/List;)Lcom/naury/kinetica/core/animation/PropertyTrack;
+	public static synthetic fun copy-6Xg5hXQ$default (Lcom/naury/kinetica/core/animation/PropertyTrack;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/core/animation/PropertyTrack;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeyframes ()Ljava/util/List;
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/animation/Timeline {
+	public static final field Companion Lcom/naury/kinetica/core/animation/Timeline$Companion;
+	public static final field DEFAULT_FPS I
+	public fun <init> (Ljava/lang/String;JLjava/util/List;Ljava/util/List;I)V
+	public synthetic fun <init> (Ljava/lang/String;JLjava/util/List;Ljava/util/List;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()I
+	public final fun copy (Ljava/lang/String;JLjava/util/List;Ljava/util/List;I)Lcom/naury/kinetica/core/animation/Timeline;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/Timeline;Ljava/lang/String;JLjava/util/List;Ljava/util/List;IILjava/lang/Object;)Lcom/naury/kinetica/core/animation/Timeline;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getFpsHint ()I
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMarkers ()Ljava/util/List;
+	public final fun getTracks ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun track-Jw1WtvE (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;)Lcom/naury/kinetica/core/animation/PropertyTrack;
+}
+
+public final class com/naury/kinetica/core/animation/Timeline$Companion {
+}
+
+public final class com/naury/kinetica/core/animation/TimelineMarker {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun copy (Ljava/lang/String;J)Lcom/naury/kinetica/core/animation/TimelineMarker;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/TimelineMarker;Ljava/lang/String;JILjava/lang/Object;)Lcom/naury/kinetica/core/animation/TimelineMarker;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTimeMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/naury/kinetica/core/command/CommandError {
+}
+
+public final class com/naury/kinetica/core/command/CommandError$IndexOutOfRange : com/naury/kinetica/core/command/CommandError {
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lcom/naury/kinetica/core/command/CommandError$IndexOutOfRange;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/CommandError$IndexOutOfRange;IIILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$IndexOutOfRange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIndex ()I
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$InvalidResult : com/naury/kinetica/core/command/CommandError {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/naury/kinetica/core/command/CommandError$InvalidResult;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/CommandError$InvalidResult;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$InvalidResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getViolations ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$KeyframeCollision : com/naury/kinetica/core/command/CommandError {
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun component2 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun component3 ()J
+	public final fun copy-6Xg5hXQ (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;J)Lcom/naury/kinetica/core/command/CommandError$KeyframeCollision;
+	public static synthetic fun copy-6Xg5hXQ$default (Lcom/naury/kinetica/core/command/CommandError$KeyframeCollision;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$KeyframeCollision;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun getTimeMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$KeyframeNotFound : com/naury/kinetica/core/command/CommandError {
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun component2 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun component3 ()J
+	public final fun copy-6Xg5hXQ (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;J)Lcom/naury/kinetica/core/command/CommandError$KeyframeNotFound;
+	public static synthetic fun copy-6Xg5hXQ$default (Lcom/naury/kinetica/core/command/CommandError$KeyframeNotFound;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$KeyframeNotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun getTimeMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$MixedParents : com/naury/kinetica/core/command/CommandError {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/naury/kinetica/core/command/CommandError$MixedParents;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/CommandError$MixedParents;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$MixedParents;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIds ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$NodeAlreadyExists : com/naury/kinetica/core/command/CommandError {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun copy-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/command/CommandError$NodeAlreadyExists;
+	public static synthetic fun copy-VNJttGw$default (Lcom/naury/kinetica/core/command/CommandError$NodeAlreadyExists;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$NodeAlreadyExists;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId-alf_8MM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$NodeNotFound : com/naury/kinetica/core/command/CommandError {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun copy-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/command/CommandError$NodeNotFound;
+	public static synthetic fun copy-VNJttGw$default (Lcom/naury/kinetica/core/command/CommandError$NodeNotFound;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$NodeNotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId-alf_8MM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$StructureChange : com/naury/kinetica/core/command/CommandError {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun copy-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/command/CommandError$StructureChange;
+	public static synthetic fun copy-VNJttGw$default (Lcom/naury/kinetica/core/command/CommandError$StructureChange;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$StructureChange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId-alf_8MM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$TimelineNotFound : com/naury/kinetica/core/command/CommandError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/naury/kinetica/core/command/CommandError$TimelineNotFound;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/CommandError$TimelineNotFound;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$TimelineNotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTimelineId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$TrackNotFound : com/naury/kinetica/core/command/CommandError {
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun component2 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun copy-Jw1WtvE (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;)Lcom/naury/kinetica/core/command/CommandError$TrackNotFound;
+	public static synthetic fun copy-Jw1WtvE$default (Lcom/naury/kinetica/core/command/CommandError$TrackNotFound;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$TrackNotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$TransactionState : com/naury/kinetica/core/command/CommandError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/naury/kinetica/core/command/CommandError$TransactionState;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/CommandError$TransactionState;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$TransactionState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandError$UnrepresentableTransform : com/naury/kinetica/core/command/CommandError {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun copy-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/command/CommandError$UnrepresentableTransform;
+	public static synthetic fun copy-VNJttGw$default (Lcom/naury/kinetica/core/command/CommandError$UnrepresentableTransform;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandError$UnrepresentableTransform;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId-alf_8MM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/naury/kinetica/core/command/CommandResult {
+}
+
+public final class com/naury/kinetica/core/command/CommandResult$Applied : com/naury/kinetica/core/command/CommandResult {
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneDocument;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun copy (Lcom/naury/kinetica/core/scene/SceneDocument;)Lcom/naury/kinetica/core/command/CommandResult$Applied;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/CommandResult$Applied;Lcom/naury/kinetica/core/scene/SceneDocument;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandResult$Applied;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDocument ()Lcom/naury/kinetica/core/scene/SceneDocument;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/CommandResult$Rejected : com/naury/kinetica/core/command/CommandResult {
+	public fun <init> (Lcom/naury/kinetica/core/command/CommandError;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/command/CommandError;
+	public final fun copy (Lcom/naury/kinetica/core/command/CommandError;)Lcom/naury/kinetica/core/command/CommandResult$Rejected;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/CommandResult$Rejected;Lcom/naury/kinetica/core/command/CommandError;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/CommandResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/naury/kinetica/core/command/CommandError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/naury/kinetica/core/command/SceneCommand {
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$AddNode : com/naury/kinetica/core/command/SceneCommand {
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneNode;Ljava/lang/Integer;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/SceneNode;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/SceneNode;
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun copy (Lcom/naury/kinetica/core/scene/SceneNode;Ljava/lang/Integer;)Lcom/naury/kinetica/core/command/SceneCommand$AddNode;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/SceneCommand$AddNode;Lcom/naury/kinetica/core/scene/SceneNode;Ljava/lang/Integer;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$AddNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIndex ()Ljava/lang/Integer;
+	public final fun getNode ()Lcom/naury/kinetica/core/scene/SceneNode;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$DeleteKeyframes : com/naury/kinetica/core/command/SceneCommand {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Ljava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2-alf_8MM ()Ljava/lang/String;
+	public final fun component3 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun copy-tdherlE (Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Ljava/util/Set;)Lcom/naury/kinetica/core/command/SceneCommand$DeleteKeyframes;
+	public static synthetic fun copy-tdherlE$default (Lcom/naury/kinetica/core/command/SceneCommand$DeleteKeyframes;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Ljava/util/Set;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$DeleteKeyframes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun getTimelineId ()Ljava/lang/String;
+	public final fun getTimesMs ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$Group : com/naury/kinetica/core/command/SceneCommand {
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2-alf_8MM ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy-lYf7Kd4 (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)Lcom/naury/kinetica/core/command/SceneCommand$Group;
+	public static synthetic fun copy-lYf7Kd4$default (Lcom/naury/kinetica/core/command/SceneCommand$Group;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$Group;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGroupId-alf_8MM ()Ljava/lang/String;
+	public final fun getIds ()Ljava/util/List;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$MoveKeyframe : com/naury/kinetica/core/command/SceneCommand {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2-alf_8MM ()Ljava/lang/String;
+	public final fun component3 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun copy-7cexHE0 (Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JJ)Lcom/naury/kinetica/core/command/SceneCommand$MoveKeyframe;
+	public static synthetic fun copy-7cexHE0$default (Lcom/naury/kinetica/core/command/SceneCommand$MoveKeyframe;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JJILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$MoveKeyframe;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFromTimeMs ()J
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun getTimelineId ()Ljava/lang/String;
+	public final fun getToTimeMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$PutTimeline : com/naury/kinetica/core/command/SceneCommand {
+	public fun <init> (Lcom/naury/kinetica/core/animation/Timeline;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/animation/Timeline;
+	public final fun copy (Lcom/naury/kinetica/core/animation/Timeline;)Lcom/naury/kinetica/core/command/SceneCommand$PutTimeline;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/SceneCommand$PutTimeline;Lcom/naury/kinetica/core/animation/Timeline;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$PutTimeline;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTimeline ()Lcom/naury/kinetica/core/animation/Timeline;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$RemoveNodes : com/naury/kinetica/core/command/SceneCommand {
+	public fun <init> (Ljava/util/Set;)V
+	public final fun component1 ()Ljava/util/Set;
+	public final fun copy (Ljava/util/Set;)Lcom/naury/kinetica/core/command/SceneCommand$RemoveNodes;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/SceneCommand$RemoveNodes;Ljava/util/Set;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$RemoveNodes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIds ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$RemoveTimeline : com/naury/kinetica/core/command/SceneCommand {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/naury/kinetica/core/command/SceneCommand$RemoveTimeline;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/SceneCommand$RemoveTimeline;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$RemoveTimeline;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTimelineId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$ReorderNode : com/naury/kinetica/core/command/SceneCommand {
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun copy-Jw1WtvE (Ljava/lang/String;I)Lcom/naury/kinetica/core/command/SceneCommand$ReorderNode;
+	public static synthetic fun copy-Jw1WtvE$default (Lcom/naury/kinetica/core/command/SceneCommand$ReorderNode;Ljava/lang/String;IILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$ReorderNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId-alf_8MM ()Ljava/lang/String;
+	public final fun getToIndex ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$SetArtboard : com/naury/kinetica/core/command/SceneCommand {
+	public fun <init> (Lcom/naury/kinetica/core/scene/Artboard;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/Artboard;
+	public final fun copy (Lcom/naury/kinetica/core/scene/Artboard;)Lcom/naury/kinetica/core/command/SceneCommand$SetArtboard;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/SceneCommand$SetArtboard;Lcom/naury/kinetica/core/scene/Artboard;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$SetArtboard;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArtboard ()Lcom/naury/kinetica/core/scene/Artboard;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$SetKeyframe : com/naury/kinetica/core/command/SceneCommand {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Lcom/naury/kinetica/core/animation/Keyframe;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2-alf_8MM ()Ljava/lang/String;
+	public final fun component3 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun component4 ()Lcom/naury/kinetica/core/animation/Keyframe;
+	public final fun copy-tdherlE (Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Lcom/naury/kinetica/core/animation/Keyframe;)Lcom/naury/kinetica/core/command/SceneCommand$SetKeyframe;
+	public static synthetic fun copy-tdherlE$default (Lcom/naury/kinetica/core/command/SceneCommand$SetKeyframe;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;Lcom/naury/kinetica/core/animation/Keyframe;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$SetKeyframe;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeyframe ()Lcom/naury/kinetica/core/animation/Keyframe;
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun getTimelineId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$SetKeyframeEasing : com/naury/kinetica/core/command/SceneCommand {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JLcom/naury/kinetica/core/animation/EasingSpec;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2-alf_8MM ()Ljava/lang/String;
+	public final fun component3 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun component4 ()J
+	public final fun component5 ()Lcom/naury/kinetica/core/animation/EasingSpec;
+	public final fun copy-7cexHE0 (Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JLcom/naury/kinetica/core/animation/EasingSpec;)Lcom/naury/kinetica/core/command/SceneCommand$SetKeyframeEasing;
+	public static synthetic fun copy-7cexHE0$default (Lcom/naury/kinetica/core/command/SceneCommand$SetKeyframeEasing;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JLcom/naury/kinetica/core/animation/EasingSpec;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$SetKeyframeEasing;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEasing ()Lcom/naury/kinetica/core/animation/EasingSpec;
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun getTimeMs ()J
+	public final fun getTimelineId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$TransformNodes : com/naury/kinetica/core/command/SceneCommand {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lcom/naury/kinetica/core/command/SceneCommand$TransformNodes;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/SceneCommand$TransformNodes;Ljava/util/Map;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$TransformNodes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTransforms ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$Ungroup : com/naury/kinetica/core/command/SceneCommand {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun copy-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/command/SceneCommand$Ungroup;
+	public static synthetic fun copy-VNJttGw$default (Lcom/naury/kinetica/core/command/SceneCommand$Ungroup;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$Ungroup;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGroupId-alf_8MM ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneCommand$UpdateProperties : com/naury/kinetica/core/command/SceneCommand {
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneNode;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/SceneNode;
+	public final fun copy (Lcom/naury/kinetica/core/scene/SceneNode;)Lcom/naury/kinetica/core/command/SceneCommand$UpdateProperties;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/SceneCommand$UpdateProperties;Lcom/naury/kinetica/core/scene/SceneNode;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$UpdateProperties;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNode ()Lcom/naury/kinetica/core/scene/SceneNode;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/command/SceneReducer {
+	public fun <init> ()V
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneLimits;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/SceneLimits;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun apply (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/command/SceneCommand;)Lcom/naury/kinetica/core/command/CommandResult;
+}
+
+public final class com/naury/kinetica/core/geometry/AnglesKt {
+	public static final fun normalizeDegrees (D)D
+	public static final fun shortestDeltaDegrees (DD)D
+}
+
+public final class com/naury/kinetica/core/geometry/Mat3 {
+	public static final field Companion Lcom/naury/kinetica/core/geometry/Mat3$Companion;
+	public static final field SINGULAR_DETERMINANT D
+	public fun <init> (DDDDDD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun component5 ()D
+	public final fun component6 ()D
+	public final fun copy (DDDDDD)Lcom/naury/kinetica/core/geometry/Mat3;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/geometry/Mat3;DDDDDDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Mat3;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getA ()D
+	public final fun getB ()D
+	public final fun getC ()D
+	public final fun getD ()D
+	public final fun getDeterminant ()D
+	public final fun getTx ()D
+	public final fun getTy ()D
+	public fun hashCode ()I
+	public final fun inverseOrNull ()Lcom/naury/kinetica/core/geometry/Mat3;
+	public final fun map (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun mapBounds (Lcom/naury/kinetica/core/geometry/Rect;)Lcom/naury/kinetica/core/geometry/Rect;
+	public final fun mapVector (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun times (Lcom/naury/kinetica/core/geometry/Mat3;)Lcom/naury/kinetica/core/geometry/Mat3;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/geometry/Mat3$Companion {
+	public final fun getIdentity ()Lcom/naury/kinetica/core/geometry/Mat3;
+	public final fun rotationDegrees (D)Lcom/naury/kinetica/core/geometry/Mat3;
+	public final fun scale (DD)Lcom/naury/kinetica/core/geometry/Mat3;
+	public final fun translation (DD)Lcom/naury/kinetica/core/geometry/Mat3;
+}
+
+public final class com/naury/kinetica/core/geometry/Rect {
+	public static final field Companion Lcom/naury/kinetica/core/geometry/Rect$Companion;
+	public fun <init> (DDDD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun contains (Lcom/naury/kinetica/core/geometry/Vec2;)Z
+	public final fun copy (DDDD)Lcom/naury/kinetica/core/geometry/Rect;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/geometry/Rect;DDDDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Rect;
+	public final fun corners ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBottom ()D
+	public final fun getCenter ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun getHeight ()D
+	public final fun getLeft ()D
+	public final fun getRight ()D
+	public final fun getTop ()D
+	public final fun getWidth ()D
+	public fun hashCode ()I
+	public final fun inflate (D)Lcom/naury/kinetica/core/geometry/Rect;
+	public final fun intersects (Lcom/naury/kinetica/core/geometry/Rect;)Z
+	public fun toString ()Ljava/lang/String;
+	public final fun union (Lcom/naury/kinetica/core/geometry/Rect;)Lcom/naury/kinetica/core/geometry/Rect;
+}
+
+public final class com/naury/kinetica/core/geometry/Rect$Companion {
+	public final fun enclosing (Ljava/util/List;)Lcom/naury/kinetica/core/geometry/Rect;
+	public final fun fromSize (Lcom/naury/kinetica/core/geometry/Size;)Lcom/naury/kinetica/core/geometry/Rect;
+}
+
+public final class com/naury/kinetica/core/geometry/Size {
+	public fun <init> (DD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun copy (DD)Lcom/naury/kinetica/core/geometry/Size;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/geometry/Size;DDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Size;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeight ()D
+	public final fun getWidth ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/geometry/Transform2D {
+	public static final field Companion Lcom/naury/kinetica/core/geometry/Transform2D$Companion;
+	public static final field MIN_SCALE_MAGNITUDE D
+	public fun <init> ()V
+	public fun <init> (DDDDDDD)V
+	public synthetic fun <init> (DDDDDDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun component5 ()D
+	public final fun component6 ()D
+	public final fun component7 ()D
+	public final fun copy (DDDDDDD)Lcom/naury/kinetica/core/geometry/Transform2D;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/geometry/Transform2D;DDDDDDDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Transform2D;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPivot ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun getPivotX ()D
+	public final fun getPivotY ()D
+	public final fun getRotationDegrees ()D
+	public final fun getScaleX ()D
+	public final fun getScaleY ()D
+	public final fun getTranslation ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun getTranslationX ()D
+	public final fun getTranslationY ()D
+	public fun hashCode ()I
+	public final fun isDegenerate ()Z
+	public final fun isFlipped ()Z
+	public final fun matrix ()Lcom/naury/kinetica/core/geometry/Mat3;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/geometry/Transform2D$Companion {
+	public final fun getIdentity ()Lcom/naury/kinetica/core/geometry/Transform2D;
+}
+
+public final class com/naury/kinetica/core/geometry/Transform2DKt {
+	public static final fun fromMatrix (Lcom/naury/kinetica/core/geometry/Transform2D$Companion;Lcom/naury/kinetica/core/geometry/Mat3;DD)Lcom/naury/kinetica/core/geometry/Transform2D;
+	public static synthetic fun fromMatrix$default (Lcom/naury/kinetica/core/geometry/Transform2D$Companion;Lcom/naury/kinetica/core/geometry/Mat3;DDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Transform2D;
+}
+
+public final class com/naury/kinetica/core/geometry/Vec2 {
+	public static final field Companion Lcom/naury/kinetica/core/geometry/Vec2$Companion;
+	public fun <init> (DD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun copy (DD)Lcom/naury/kinetica/core/geometry/Vec2;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/geometry/Vec2;DDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun distanceTo (Lcom/naury/kinetica/core/geometry/Vec2;)D
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getX ()D
+	public final fun getY ()D
+	public fun hashCode ()I
+	public final fun length ()D
+	public final fun minus (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun plus (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun times (D)Lcom/naury/kinetica/core/geometry/Vec2;
+	public fun toString ()Ljava/lang/String;
+	public final fun unaryMinus ()Lcom/naury/kinetica/core/geometry/Vec2;
+}
+
+public final class com/naury/kinetica/core/geometry/Vec2$Companion {
+	public final fun getZero ()Lcom/naury/kinetica/core/geometry/Vec2;
+}
+
+public final class com/naury/kinetica/core/geometry/Viewport {
+	public static final field Companion Lcom/naury/kinetica/core/geometry/Viewport$Companion;
+	public static final field MAX_ZOOM D
+	public static final field MIN_ZOOM D
+	public fun <init> ()V
+	public fun <init> (DDD)V
+	public synthetic fun <init> (DDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun copy (DDD)Lcom/naury/kinetica/core/geometry/Viewport;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/geometry/Viewport;DDDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Viewport;
+	public final fun documentToViewport ()Lcom/naury/kinetica/core/geometry/Mat3;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPanX ()D
+	public final fun getPanY ()D
+	public final fun getZoom ()D
+	public fun hashCode ()I
+	public final fun panBy (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/geometry/Viewport;
+	public final fun toDocument (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/geometry/Vec2;
+	public fun toString ()Ljava/lang/String;
+	public final fun toViewport (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun viewportToDocument ()Lcom/naury/kinetica/core/geometry/Mat3;
+	public final fun zoomedAround (Lcom/naury/kinetica/core/geometry/Vec2;D)Lcom/naury/kinetica/core/geometry/Viewport;
+}
+
+public final class com/naury/kinetica/core/geometry/Viewport$Companion {
+	public final fun clampZoom (D)D
+	public final fun fitting (Lcom/naury/kinetica/core/geometry/Rect;DDD)Lcom/naury/kinetica/core/geometry/Viewport;
+	public static synthetic fun fitting$default (Lcom/naury/kinetica/core/geometry/Viewport$Companion;Lcom/naury/kinetica/core/geometry/Rect;DDDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Viewport;
+}
+
+public final class com/naury/kinetica/core/scene/AlignMode : java/lang/Enum {
+	public static final field Bottom Lcom/naury/kinetica/core/scene/AlignMode;
+	public static final field CenterHorizontal Lcom/naury/kinetica/core/scene/AlignMode;
+	public static final field CenterVertical Lcom/naury/kinetica/core/scene/AlignMode;
+	public static final field Left Lcom/naury/kinetica/core/scene/AlignMode;
+	public static final field Right Lcom/naury/kinetica/core/scene/AlignMode;
+	public static final field Top Lcom/naury/kinetica/core/scene/AlignMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/AlignMode;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/AlignMode;
+}
+
+public final class com/naury/kinetica/core/scene/ArgbColor {
+	public static final field Companion Lcom/naury/kinetica/core/scene/ArgbColor$Companion;
+	public static final synthetic fun box-impl (I)Lcom/naury/kinetica/core/scene/ArgbColor;
+	public static fun constructor-impl (I)I
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public static final fun getAlpha-impl (I)I
+	public final fun getArgb ()I
+	public static final fun getBlue-impl (I)I
+	public static final fun getGreen-impl (I)I
+	public static final fun getRed-impl (I)I
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public static final fun toHex-impl (I)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class com/naury/kinetica/core/scene/ArgbColor$Companion {
+	public final fun fromChannels-c_a4IYM (IIII)I
+	public final fun parseHexOrNull-kBm7qlc (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/ArgbColor;
+}
+
+public final class com/naury/kinetica/core/scene/ArrangeOps {
+	public static final field INSTANCE Lcom/naury/kinetica/core/scene/ArrangeOps;
+	public final fun align (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/List;Lcom/naury/kinetica/core/scene/AlignMode;)Ljava/util/Map;
+	public final fun distribute (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/List;Lcom/naury/kinetica/core/scene/DistributeAxis;)Ljava/util/Map;
+}
+
+public final class com/naury/kinetica/core/scene/Artboard {
+	public synthetic fun <init> (DDLcom/naury/kinetica/core/scene/ArgbColor;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (DDLcom/naury/kinetica/core/scene/ArgbColor;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun component3-AGb972o ()Lcom/naury/kinetica/core/scene/ArgbColor;
+	public final fun copy-ob_-SOQ (DDLcom/naury/kinetica/core/scene/ArgbColor;)Lcom/naury/kinetica/core/scene/Artboard;
+	public static synthetic fun copy-ob_-SOQ$default (Lcom/naury/kinetica/core/scene/Artboard;DDLcom/naury/kinetica/core/scene/ArgbColor;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/Artboard;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackground-AGb972o ()Lcom/naury/kinetica/core/scene/ArgbColor;
+	public final fun getHeight ()D
+	public final fun getWidth ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/DistributeAxis : java/lang/Enum {
+	public static final field Horizontal Lcom/naury/kinetica/core/scene/DistributeAxis;
+	public static final field Vertical Lcom/naury/kinetica/core/scene/DistributeAxis;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/DistributeAxis;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/DistributeAxis;
+}
+
+public final class com/naury/kinetica/core/scene/HitTester {
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneGraph;)V
+	public final fun hitTest-8yNsNNE (Lcom/naury/kinetica/core/geometry/Vec2;DZ)Ljava/lang/String;
+	public static synthetic fun hitTest-8yNsNNE$default (Lcom/naury/kinetica/core/scene/HitTester;Lcom/naury/kinetica/core/geometry/Vec2;DZILjava/lang/Object;)Ljava/lang/String;
+	public final fun nodesIntersecting (Lcom/naury/kinetica/core/geometry/Rect;Z)Ljava/util/List;
+	public static synthetic fun nodesIntersecting$default (Lcom/naury/kinetica/core/scene/HitTester;Lcom/naury/kinetica/core/geometry/Rect;ZILjava/lang/Object;)Ljava/util/List;
+}
+
+public abstract interface class com/naury/kinetica/core/scene/NodeContent {
+	public abstract fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public abstract fun localBounds ()Lcom/naury/kinetica/core/geometry/Rect;
+}
+
+public final class com/naury/kinetica/core/scene/NodeContent$Ellipse : com/naury/kinetica/core/scene/NodeContent {
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Size;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Size;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Size;)Lcom/naury/kinetica/core/scene/NodeContent$Ellipse;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Ellipse;Lcom/naury/kinetica/core/geometry/Size;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Ellipse;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public final fun getSize ()Lcom/naury/kinetica/core/geometry/Size;
+	public fun hashCode ()I
+	public fun localBounds ()Lcom/naury/kinetica/core/geometry/Rect;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/NodeContent$Group : com/naury/kinetica/core/scene/NodeContent {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/naury/kinetica/core/scene/NodeContent$Group;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Group;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Group;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildIds ()Ljava/util/List;
+	public fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public fun hashCode ()I
+	public fun localBounds ()Lcom/naury/kinetica/core/geometry/Rect;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/NodeContent$Image : com/naury/kinetica/core/scene/NodeContent {
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Size;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/NodeContent$Image;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Image;Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Image;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public final fun getSize ()Lcom/naury/kinetica/core/geometry/Size;
+	public final fun getUri ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun localBounds ()Lcom/naury/kinetica/core/geometry/Rect;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/NodeContent$Path : com/naury/kinetica/core/scene/NodeContent {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/naury/kinetica/core/scene/NodeContent$Path;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Path;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Path;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommands ()Ljava/util/List;
+	public fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public fun hashCode ()I
+	public fun localBounds ()Lcom/naury/kinetica/core/geometry/Rect;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/NodeContent$Rectangle : com/naury/kinetica/core/scene/NodeContent {
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Size;D)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/geometry/Size;DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Size;
+	public final fun component2 ()D
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Size;D)Lcom/naury/kinetica/core/scene/NodeContent$Rectangle;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Rectangle;Lcom/naury/kinetica/core/geometry/Size;DILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Rectangle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCornerRadius ()D
+	public fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public final fun getSize ()Lcom/naury/kinetica/core/geometry/Size;
+	public fun hashCode ()I
+	public fun localBounds ()Lcom/naury/kinetica/core/geometry/Rect;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/NodeContent$Text : com/naury/kinetica/core/scene/NodeContent {
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Size;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()D
+	public final fun component4 ()Lcom/naury/kinetica/core/scene/TextAlignment;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;)Lcom/naury/kinetica/core/scene/NodeContent$Text;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Text;Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlignment ()Lcom/naury/kinetica/core/scene/TextAlignment;
+	public final fun getFontSize ()D
+	public fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public final fun getSize ()Lcom/naury/kinetica/core/geometry/Size;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun localBounds ()Lcom/naury/kinetica/core/geometry/Rect;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/NodeId {
+	public static final field Companion Lcom/naury/kinetica/core/scene/NodeId$Companion;
+	public static final field MAX_LENGTH I
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/NodeId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/NodeId$Companion {
+	public final fun isValid (Ljava/lang/String;)Z
+	public final fun parseOrNull-xiczR70 (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/NodeKind : java/lang/Enum {
+	public static final field Companion Lcom/naury/kinetica/core/scene/NodeKind$Companion;
+	public static final field Ellipse Lcom/naury/kinetica/core/scene/NodeKind;
+	public static final field Group Lcom/naury/kinetica/core/scene/NodeKind;
+	public static final field Image Lcom/naury/kinetica/core/scene/NodeKind;
+	public static final field Path Lcom/naury/kinetica/core/scene/NodeKind;
+	public static final field Rectangle Lcom/naury/kinetica/core/scene/NodeKind;
+	public static final field Text Lcom/naury/kinetica/core/scene/NodeKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/NodeKind;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/NodeKind;
+}
+
+public final class com/naury/kinetica/core/scene/NodeKind$Companion {
+	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/NodeKind;
+}
+
+public final class com/naury/kinetica/core/scene/NodeStyle {
+	public fun <init> ()V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/ArgbColor;Lcom/naury/kinetica/core/scene/ArgbColor;DDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/ArgbColor;Lcom/naury/kinetica/core/scene/ArgbColor;DDLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-AGb972o ()Lcom/naury/kinetica/core/scene/ArgbColor;
+	public final fun component2-AGb972o ()Lcom/naury/kinetica/core/scene/ArgbColor;
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun copy-YjtKWKg (Lcom/naury/kinetica/core/scene/ArgbColor;Lcom/naury/kinetica/core/scene/ArgbColor;DD)Lcom/naury/kinetica/core/scene/NodeStyle;
+	public static synthetic fun copy-YjtKWKg$default (Lcom/naury/kinetica/core/scene/NodeStyle;Lcom/naury/kinetica/core/scene/ArgbColor;Lcom/naury/kinetica/core/scene/ArgbColor;DDILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeStyle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFill-AGb972o ()Lcom/naury/kinetica/core/scene/ArgbColor;
+	public final fun getOpacity ()D
+	public final fun getStroke-AGb972o ()Lcom/naury/kinetica/core/scene/ArgbColor;
+	public final fun getStrokeWidth ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/naury/kinetica/core/scene/PathCommand {
+	public abstract fun getPoints ()Ljava/util/List;
+}
+
+public final class com/naury/kinetica/core/scene/PathCommand$Close : com/naury/kinetica/core/scene/PathCommand {
+	public static final field INSTANCE Lcom/naury/kinetica/core/scene/PathCommand$Close;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getPoints ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/PathCommand$CubicTo : com/naury/kinetica/core/scene/PathCommand {
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun component2 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun component3 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/scene/PathCommand$CubicTo;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/PathCommand$CubicTo;Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/PathCommand$CubicTo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getControl1 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun getControl2 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun getPoint ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public fun getPoints ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/PathCommand$LineTo : com/naury/kinetica/core/scene/PathCommand {
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Vec2;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/scene/PathCommand$LineTo;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/PathCommand$LineTo;Lcom/naury/kinetica/core/geometry/Vec2;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/PathCommand$LineTo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPoint ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public fun getPoints ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/PathCommand$MoveTo : com/naury/kinetica/core/scene/PathCommand {
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Vec2;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/scene/PathCommand$MoveTo;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/PathCommand$MoveTo;Lcom/naury/kinetica/core/geometry/Vec2;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/PathCommand$MoveTo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPoint ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public fun getPoints ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/PathCommand$QuadTo : com/naury/kinetica/core/scene/PathCommand {
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun component2 ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;)Lcom/naury/kinetica/core/scene/PathCommand$QuadTo;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/PathCommand$QuadTo;Lcom/naury/kinetica/core/geometry/Vec2;Lcom/naury/kinetica/core/geometry/Vec2;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/PathCommand$QuadTo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getControl ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun getPoint ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public fun getPoints ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/PathFlattening {
+	public static final field INSTANCE Lcom/naury/kinetica/core/scene/PathFlattening;
+	public static final field SEGMENTS_PER_CURVE I
+	public final fun polylines (Ljava/util/List;)Ljava/util/List;
+}
+
+public final class com/naury/kinetica/core/scene/PathFlattening$Polyline {
+	public fun <init> (Ljava/util/List;Z)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/util/List;Z)Lcom/naury/kinetica/core/scene/PathFlattening$Polyline;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/PathFlattening$Polyline;Ljava/util/List;ZILjava/lang/Object;)Lcom/naury/kinetica/core/scene/PathFlattening$Polyline;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClosed ()Z
+	public final fun getPoints ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/SceneDocument {
+	public static final field CURRENT_SCHEMA_VERSION I
+	public static final field Companion Lcom/naury/kinetica/core/scene/SceneDocument$Companion;
+	public fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;I)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun childrenOf-FPeF7hQ (Ljava/lang/String;)Ljava/util/List;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/naury/kinetica/core/scene/Artboard;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/util/Map;
+	public final fun component7 ()I
+	public final fun copy (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;I)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;IILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArtboard ()Lcom/naury/kinetica/core/scene/Artboard;
+	public final fun getDocumentId ()Ljava/lang/String;
+	public final fun getExtensions ()Ljava/util/Map;
+	public final fun getNodes ()Ljava/util/Map;
+	public final fun getRootOrder ()Ljava/util/List;
+	public final fun getSchemaVersion ()I
+	public final fun getTimelines ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun node-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneNode;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/SceneDocument$Companion {
+	public final fun empty (Lcom/naury/kinetica/core/scene/Artboard;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public static synthetic fun empty$default (Lcom/naury/kinetica/core/scene/SceneDocument$Companion;Lcom/naury/kinetica/core/scene/Artboard;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneDocument;
+}
+
+public final class com/naury/kinetica/core/scene/SceneGraph {
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneDocument;)V
+	public final fun ancestry-VNJttGw (Ljava/lang/String;)Ljava/util/List;
+	public final fun getDocument ()Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun getDrawOrder ()Ljava/util/List;
+	public final fun isEffectivelyLocked-VNJttGw (Ljava/lang/String;)Z
+	public final fun isEffectivelyVisible-VNJttGw (Ljava/lang/String;)Z
+	public final fun topLevelAncestor-RhxpIEU (Ljava/lang/String;)Ljava/lang/String;
+	public final fun worldBounds-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/geometry/Rect;
+	public final fun worldMatrix-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/geometry/Mat3;
+}
+
+public final class com/naury/kinetica/core/scene/SceneLimits {
+	public static final field Companion Lcom/naury/kinetica/core/scene/SceneLimits$Companion;
+	public static final field HARD_MAX_DEPTH I
+	public fun <init> ()V
+	public fun <init> (IIIIIIIIIIJIDDZLjava/util/Set;)V
+	public synthetic fun <init> (IIIIIIIIIIJIDDZLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component10 ()I
+	public final fun component11 ()J
+	public final fun component12 ()I
+	public final fun component13 ()D
+	public final fun component14 ()D
+	public final fun component15 ()Z
+	public final fun component16 ()Ljava/util/Set;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun component8 ()I
+	public final fun component9 ()I
+	public final fun copy (IIIIIIIIIIJIDDZLjava/util/Set;)Lcom/naury/kinetica/core/scene/SceneLimits;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/SceneLimits;IIIIIIIIIIJIDDZLjava/util/Set;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneLimits;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllowFlip ()Z
+	public final fun getAllowedImageUriSchemes ()Ljava/util/Set;
+	public final fun getMaxCoordinateMagnitude ()D
+	public final fun getMaxDepth ()I
+	public final fun getMaxExtensionBytes ()I
+	public final fun getMaxFontSize ()D
+	public final fun getMaxMetadataEntries ()I
+	public final fun getMaxMetadataValueLength ()I
+	public final fun getMaxNameLength ()I
+	public final fun getMaxNodes ()I
+	public final fun getMaxPathCommands ()I
+	public final fun getMaxTextBytes ()I
+	public final fun getMaxTimelineDurationMs ()J
+	public final fun getMaxTimelines ()I
+	public final fun getMaxTotalKeyframes ()I
+	public final fun getMaxUriLength ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/SceneLimits$Companion {
+	public final fun getDefault ()Lcom/naury/kinetica/core/scene/SceneLimits;
+}
+
+public final class com/naury/kinetica/core/scene/SceneNode {
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun component2 ()Lcom/naury/kinetica/core/scene/NodeContent;
+	public final fun component3-0Y_iG_k ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lcom/naury/kinetica/core/geometry/Transform2D;
+	public final fun component6 ()Lcom/naury/kinetica/core/scene/NodeStyle;
+	public final fun component7 ()Z
+	public final fun component8 ()Z
+	public final fun component9 ()Ljava/util/Map;
+	public final fun copy-JwaA-YA (Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;)Lcom/naury/kinetica/core/scene/SceneNode;
+	public static synthetic fun copy-JwaA-YA$default (Lcom/naury/kinetica/core/scene/SceneNode;Ljava/lang/String;Lcom/naury/kinetica/core/scene/NodeContent;Ljava/lang/String;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Transform2D;Lcom/naury/kinetica/core/scene/NodeStyle;ZZLjava/util/Map;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Lcom/naury/kinetica/core/scene/NodeContent;
+	public final fun getId-alf_8MM ()Ljava/lang/String;
+	public final fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
+	public final fun getLocalBounds ()Lcom/naury/kinetica/core/geometry/Rect;
+	public final fun getLocked ()Z
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getParentId-0Y_iG_k ()Ljava/lang/String;
+	public final fun getStyle ()Lcom/naury/kinetica/core/scene/NodeStyle;
+	public final fun getTransform ()Lcom/naury/kinetica/core/geometry/Transform2D;
+	public final fun getVisible ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/SceneValidator {
+	public static final field Companion Lcom/naury/kinetica/core/scene/SceneValidator$Companion;
+	public static final field MAX_REPORTED_VIOLATIONS I
+	public fun <init> ()V
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneLimits;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/SceneLimits;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun isValid (Lcom/naury/kinetica/core/scene/SceneDocument;)Z
+	public final fun validate (Lcom/naury/kinetica/core/scene/SceneDocument;)Ljava/util/List;
+}
+
+public final class com/naury/kinetica/core/scene/SceneValidator$Companion {
+}
+
+public final class com/naury/kinetica/core/scene/SceneViolation {
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/ViolationCode;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/ViolationCode;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/ViolationCode;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3-0Y_iG_k ()Ljava/lang/String;
+	public final fun copy-VhoS9WI (Lcom/naury/kinetica/core/scene/ViolationCode;Ljava/lang/String;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneViolation;
+	public static synthetic fun copy-VhoS9WI$default (Lcom/naury/kinetica/core/scene/SceneViolation;Lcom/naury/kinetica/core/scene/ViolationCode;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneViolation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Lcom/naury/kinetica/core/scene/ViolationCode;
+	public final fun getDetail ()Ljava/lang/String;
+	public final fun getNodeId-0Y_iG_k ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/SelectionFrame {
+	public static final field Companion Lcom/naury/kinetica/core/scene/SelectionFrame$Companion;
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/naury/kinetica/core/scene/SelectionFrame;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/SelectionFrame;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SelectionFrame;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCenter ()Lcom/naury/kinetica/core/geometry/Vec2;
+	public final fun getCorners ()Ljava/util/List;
+	public final fun handles (Lcom/naury/kinetica/core/geometry/Viewport;D)Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/SelectionFrame$Companion {
+	public final fun of (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/List;)Lcom/naury/kinetica/core/scene/SelectionFrame;
+}
+
+public final class com/naury/kinetica/core/scene/SelectionHandle : java/lang/Enum {
+	public static final field Bottom Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static final field BottomLeft Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static final field BottomRight Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static final field Companion Lcom/naury/kinetica/core/scene/SelectionHandle$Companion;
+	public static final field Left Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static final field Right Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static final field Rotate Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static final field Top Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static final field TopLeft Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static final field TopRight Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SelectionHandle;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/SelectionHandle;
+}
+
+public final class com/naury/kinetica/core/scene/SelectionHandle$Companion {
+	public final fun at (Ljava/util/Map;Lcom/naury/kinetica/core/geometry/Vec2;D)Lcom/naury/kinetica/core/scene/SelectionHandle;
+}
+
+public final class com/naury/kinetica/core/scene/TextAlignment : java/lang/Enum {
+	public static final field Center Lcom/naury/kinetica/core/scene/TextAlignment;
+	public static final field End Lcom/naury/kinetica/core/scene/TextAlignment;
+	public static final field Start Lcom/naury/kinetica/core/scene/TextAlignment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/TextAlignment;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/TextAlignment;
+}
+
+public final class com/naury/kinetica/core/scene/TransformOps {
+	public static final field INSTANCE Lcom/naury/kinetica/core/scene/TransformOps;
+	public static final field MIN_EXTENT D
+	public final fun move (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/Collection;Lcom/naury/kinetica/core/geometry/Vec2;)Ljava/util/Map;
+	public final fun resize-7cexHE0 (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;Lcom/naury/kinetica/core/scene/SelectionHandle;Lcom/naury/kinetica/core/geometry/Vec2;Z)Lcom/naury/kinetica/core/scene/SceneNode;
+	public static synthetic fun resize-7cexHE0$default (Lcom/naury/kinetica/core/scene/TransformOps;Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;Lcom/naury/kinetica/core/scene/SelectionHandle;Lcom/naury/kinetica/core/geometry/Vec2;ZILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneNode;
+	public final fun rotate-tdherlE (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;DD)Lcom/naury/kinetica/core/geometry/Transform2D;
+	public static synthetic fun rotate-tdherlE$default (Lcom/naury/kinetica/core/scene/TransformOps;Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;DDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Transform2D;
+}
+
+public final class com/naury/kinetica/core/scene/ViolationCode : java/lang/Enum {
+	public static final field Cycle Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field DuplicateChild Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidArtboard Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidDocumentId Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidEasing Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidExtension Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidGeometry Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidKeyframe Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidMetadata Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidName Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidStyle Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidText Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidTimeline Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidTrack Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidTransform Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field InvalidUri Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field MissingNode Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field NodeKeyMismatch Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field ParentMismatch Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field ParentNotGroup Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field TooDeep Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field TooManyKeyframes Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field TooManyNodes Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field UnreachableNode Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static final field UnsupportedSchemaVersion Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/ViolationCode;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/ViolationCode;
+}
+

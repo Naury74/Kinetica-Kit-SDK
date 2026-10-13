@@ -1,0 +1,12 @@
+public final class com/naury/kinetica/java/Kinetica {
+	public static final field INSTANCE Lcom/naury/kinetica/java/Kinetica;
+	public static final fun add (Lcom/naury/kinetica/history/KineticaSession;Lcom/naury/kinetica/core/scene/SceneNode;)Z
+	public static final fun decode (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public static final fun document (Lcom/naury/kinetica/history/KineticaSession;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public static final fun emptyDocument (Ljava/lang/String;DD)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public static final fun encode (Lcom/naury/kinetica/core/scene/SceneDocument;)Ljava/lang/String;
+	public static final fun moveBy (Lcom/naury/kinetica/history/KineticaSession;Ljava/lang/String;DD)Z
+	public static final fun openSession (Lcom/naury/kinetica/core/scene/SceneDocument;)Lcom/naury/kinetica/history/KineticaSession;
+	public static final fun rectangle (Ljava/lang/String;DDDDI)Lcom/naury/kinetica/core/scene/SceneNode;
+}
+

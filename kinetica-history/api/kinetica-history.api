@@ -1,0 +1,127 @@
+public abstract interface class com/naury/kinetica/history/CommandDispatcher {
+	public abstract fun beginTransaction (Ljava/lang/String;)Z
+	public abstract fun commitTransaction ()Z
+	public abstract fun execute (Lcom/naury/kinetica/core/command/SceneCommand;)Lcom/naury/kinetica/core/command/CommandResult;
+	public abstract fun isInTransaction ()Z
+	public abstract fun rollbackTransaction ()Z
+}
+
+public abstract interface class com/naury/kinetica/history/HistoryController {
+	public abstract fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public abstract fun redo ()Z
+	public abstract fun undo ()Z
+}
+
+public final class com/naury/kinetica/history/HistoryState {
+	public fun <init> ()V
+	public fun <init> (ZZLjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (ZZLjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (ZZLjava/lang/String;Ljava/lang/String;)Lcom/naury/kinetica/history/HistoryState;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/history/HistoryState;ZZLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/history/HistoryState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCanRedo ()Z
+	public final fun getCanUndo ()Z
+	public final fun getRedoLabel ()Ljava/lang/String;
+	public final fun getUndoLabel ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/history/KineticaSession {
+	public static final field Companion Lcom/naury/kinetica/history/KineticaSession$Companion;
+	public final fun clearSelection ()V
+	public final fun close ()V
+	public final fun getCommands ()Lcom/naury/kinetica/history/CommandDispatcher;
+	public final fun getDocument ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun getHistory ()Lcom/naury/kinetica/history/HistoryController;
+	public final fun getSelection ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun select (Ljava/util/Collection;)V
+}
+
+public final class com/naury/kinetica/history/KineticaSession$Companion {
+	public final fun create (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/history/SessionConfig;)Lcom/naury/kinetica/history/SessionOpenResult;
+	public static synthetic fun create$default (Lcom/naury/kinetica/history/KineticaSession$Companion;Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/history/SessionConfig;ILjava/lang/Object;)Lcom/naury/kinetica/history/SessionOpenResult;
+}
+
+public final class com/naury/kinetica/history/SceneHistory {
+	public static final field Companion Lcom/naury/kinetica/history/SceneHistory$Companion;
+	public static final field DEFAULT_CAPACITY I
+	public static final field DEFAULT_MAX_CHANGED_NODES I
+	public fun <init> ()V
+	public fun <init> (II)V
+	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clear ()V
+	public final fun getCanRedo ()Z
+	public final fun getCanUndo ()Z
+	public final fun getRedoLabel ()Ljava/lang/String;
+	public final fun getUndoDepth ()I
+	public final fun getUndoLabel ()Ljava/lang/String;
+	public final fun record (Ljava/lang/String;Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/SceneDocument;)Z
+	public final fun redo (Lcom/naury/kinetica/core/scene/SceneDocument;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun undo (Lcom/naury/kinetica/core/scene/SceneDocument;)Lcom/naury/kinetica/core/scene/SceneDocument;
+}
+
+public final class com/naury/kinetica/history/SceneHistory$Companion {
+}
+
+public final class com/naury/kinetica/history/SelectionState {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun contains-VNJttGw (Ljava/lang/String;)Z
+	public final fun copy (Ljava/util/List;)Lcom/naury/kinetica/history/SelectionState;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/history/SelectionState;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/history/SelectionState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSelectedIds ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/history/SessionConfig {
+	public fun <init> ()V
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneLimits;II)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/SceneLimits;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/SceneLimits;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun copy (Lcom/naury/kinetica/core/scene/SceneLimits;II)Lcom/naury/kinetica/history/SessionConfig;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/history/SessionConfig;Lcom/naury/kinetica/core/scene/SceneLimits;IIILjava/lang/Object;)Lcom/naury/kinetica/history/SessionConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHistoryCapacity ()I
+	public final fun getHistoryMaxChangedNodes ()I
+	public final fun getLimits ()Lcom/naury/kinetica/core/scene/SceneLimits;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/naury/kinetica/history/SessionOpenResult {
+}
+
+public final class com/naury/kinetica/history/SessionOpenResult$Opened : com/naury/kinetica/history/SessionOpenResult {
+	public fun <init> (Lcom/naury/kinetica/history/KineticaSession;)V
+	public final fun component1 ()Lcom/naury/kinetica/history/KineticaSession;
+	public final fun copy (Lcom/naury/kinetica/history/KineticaSession;)Lcom/naury/kinetica/history/SessionOpenResult$Opened;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/history/SessionOpenResult$Opened;Lcom/naury/kinetica/history/KineticaSession;ILjava/lang/Object;)Lcom/naury/kinetica/history/SessionOpenResult$Opened;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSession ()Lcom/naury/kinetica/history/KineticaSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/history/SessionOpenResult$Rejected : com/naury/kinetica/history/SessionOpenResult {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/naury/kinetica/history/SessionOpenResult$Rejected;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/history/SessionOpenResult$Rejected;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/history/SessionOpenResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getViolations ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

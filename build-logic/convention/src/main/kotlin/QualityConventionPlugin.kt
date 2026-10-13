@@ -64,6 +64,8 @@ class QualityConventionPlugin : Plugin<Project> {
             }
             tasks.matching { it.name == "check" }.configureEach {
                 dependsOn(ktlintCheck, detektCheck)
+                // 공개 API가 바뀌었는데 dump를 갱신하지 않았으면 check가 실패한다.
+                dependsOn(tasks.matching { it.name == "checkKotlinAbi" })
             }
         }
     }

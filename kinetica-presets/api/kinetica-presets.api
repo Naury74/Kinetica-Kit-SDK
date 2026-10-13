@@ -1,0 +1,84 @@
+public abstract interface class com/naury/kinetica/presets/MotionPreset {
+	public abstract fun keys (Ljava/util/List;Lcom/naury/kinetica/presets/PresetParams;)Ljava/util/List;
+}
+
+public final class com/naury/kinetica/presets/PresetKey {
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JDLcom/naury/kinetica/core/animation/EasingSpec;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-alf_8MM ()Ljava/lang/String;
+	public final fun component2 ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun component3 ()J
+	public final fun component4 ()D
+	public final fun component5 ()Lcom/naury/kinetica/core/animation/EasingSpec;
+	public final fun copy-cH3AU9M (Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JDLcom/naury/kinetica/core/animation/EasingSpec;)Lcom/naury/kinetica/presets/PresetKey;
+	public static synthetic fun copy-cH3AU9M$default (Lcom/naury/kinetica/presets/PresetKey;Ljava/lang/String;Lcom/naury/kinetica/core/animation/AnimatableProperty;JDLcom/naury/kinetica/core/animation/EasingSpec;ILjava/lang/Object;)Lcom/naury/kinetica/presets/PresetKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEasing ()Lcom/naury/kinetica/core/animation/EasingSpec;
+	public final fun getNodeId-alf_8MM ()Ljava/lang/String;
+	public final fun getProperty ()Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public final fun getTimeMs ()J
+	public final fun getValue ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/presets/PresetParams {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;JJ)V
+	public synthetic fun <init> (Ljava/lang/String;JJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun copy (Ljava/lang/String;JJ)Lcom/naury/kinetica/presets/PresetParams;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/presets/PresetParams;Ljava/lang/String;JJILjava/lang/Object;)Lcom/naury/kinetica/presets/PresetParams;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getStartMs ()J
+	public final fun getTimelineId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/presets/PresetRegistry {
+	public static final field Companion Lcom/naury/kinetica/presets/PresetRegistry$Companion;
+	public fun <init> (Ljava/util/Map;)V
+	public final fun apply (Ljava/lang/String;Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/util/List;Lcom/naury/kinetica/presets/PresetParams;)Lcom/naury/kinetica/presets/PresetResult;
+	public static synthetic fun apply$default (Lcom/naury/kinetica/presets/PresetRegistry;Ljava/lang/String;Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/util/List;Lcom/naury/kinetica/presets/PresetParams;ILjava/lang/Object;)Lcom/naury/kinetica/presets/PresetResult;
+	public final fun getIds ()Ljava/util/List;
+}
+
+public final class com/naury/kinetica/presets/PresetRegistry$Companion {
+	public final fun getDefault ()Lcom/naury/kinetica/presets/PresetRegistry;
+}
+
+public abstract interface class com/naury/kinetica/presets/PresetResult {
+}
+
+public final class com/naury/kinetica/presets/PresetResult$Commands : com/naury/kinetica/presets/PresetResult {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/naury/kinetica/presets/PresetResult$Commands;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/presets/PresetResult$Commands;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/presets/PresetResult$Commands;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommands ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/presets/PresetResult$NoTargets : com/naury/kinetica/presets/PresetResult {
+	public static final field INSTANCE Lcom/naury/kinetica/presets/PresetResult$NoTargets;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/presets/PresetResult$UnknownPreset : com/naury/kinetica/presets/PresetResult {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/naury/kinetica/presets/PresetResult$UnknownPreset;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/presets/PresetResult$UnknownPreset;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/presets/PresetResult$UnknownPreset;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

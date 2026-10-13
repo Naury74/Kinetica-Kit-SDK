@@ -6,6 +6,7 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 class JvmLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -18,6 +19,9 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             }
             extensions.configure<KotlinJvmProjectExtension> {
                 compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+                // 공개 API 바이너리 호환 dump(docs 03). 바뀌면 api/ 아래 파일을 updateKotlinAbi로 갱신해 함께 올린다.
+                @OptIn(ExperimentalAbiValidation::class)
+                abiValidation { }
             }
             configureSdkKotlin()
             dependencies {
