@@ -6,4 +6,8 @@
     <string name="sample_export">PNG 내보내기</string>
     <string name="sample_exported">내보냈습니다</string>
     <string name="sample_export_failed">그림을 내보내지 못했습니다.</string>
+    <string name="sample_photo">사진</string>
+    <string name="sample_photo_failed">사진을 열 수 없습니다.</string>
+    <string name="sample_demo">예제</string>
+    <string name="sample_demo_opened">예제 장면을 열었습니다. 모션을 켜고 재생을 눌러 보세요.</string>
 </resources>

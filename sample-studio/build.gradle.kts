@@ -45,4 +45,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
+
+    testImplementation(libs.junit4)
+    testImplementation(libs.truth)
 }

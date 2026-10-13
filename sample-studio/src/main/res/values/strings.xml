@@ -7,4 +7,8 @@
     <string name="sample_export">Export PNG</string>
     <string name="sample_exported">Exported</string>
     <string name="sample_export_failed">Could not export the image.</string>
+    <string name="sample_photo">Photo</string>
+    <string name="sample_photo_failed">Could not open the photo.</string>
+    <string name="sample_demo">Example</string>
+    <string name="sample_demo_opened">Opened the example scene. Turn on Motion and press Play.</string>
 </resources>
