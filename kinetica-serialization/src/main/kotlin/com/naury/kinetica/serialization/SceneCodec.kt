@@ -25,7 +25,7 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 public class SceneCodec(
     private val limits: SceneLimits = SceneLimits.Default,
-    private val maxJsonBytes: Int = DEFAULT_MAX_JSON_BYTES,
+    public val maxJsonBytes: Int = DEFAULT_MAX_JSON_BYTES,
     private val migrations: SceneMigrations = SceneMigrations.None,
 ) {
     init {
