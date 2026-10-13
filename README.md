@@ -28,6 +28,7 @@
 - **실행 취소**: 제스처 하나가 한 단계, 바뀐 노드만 담는 기록, 단계 수·메모리 상한
 - **모션**: keyframe(이동·배율·회전·불투명도·색·선 두께), easing(Bezier·steps·용수철), 시계 기준 재생(배속·반복·왕복·역방향·marker·동작 줄이기), timeline 편집 화면, 재생 위치 기준 자동 키, 프리셋 6종
 - **전환**: 장면 morph(같은 종류는 보간, 다른 종류는 dissolve), 끌어서 닫기(속도 반영, 끝 알림 한 번), Compose `sharedBounds` 연결
+- **이미지**: 사진 선택기로 고른 `content://` 이미지를 크기 제한해 읽는 기본 로더(호스트가 따로 줄 수도 있음)
 - **저장·내보내기**: 형식 버전이 있는 JSON(크기·중첩 상한, migration 틀), 원자적 교체로 저장하는 파일 저장소, 화면과 같은 그리기로 PNG 내보내기
 - **샘플**: `sample-studio`(편집·저장·내보내기), `sample-gallery`(재생기만 쓰는 장면 전환, View 화면 연결)
 
@@ -94,7 +95,7 @@ setContent {
 | `kinetica-player-compose` | Android | `KineticaPlayer`, 전환 그리기·끌어서 닫기 |
 | `kinetica-export-android` | Android | PNG 내보내기 |
 
-의존 방향과 데이터 흐름, 좌표계는 [docs/architecture.md](docs/architecture.md)에 있습니다.
+의존 방향과 데이터 흐름, 좌표계는 [docs/architecture.md](docs/architecture.md)에 있습니다. 기능을 하나씩 확인하는 순서는 [docs/evaluation.md](docs/evaluation.md).
 
 ## 보안과 개인정보
 
@@ -111,7 +112,8 @@ JVM(Apple M5) 기준으로 노드 2,000개에서 명령 적용 p95 약 0.4 ms, t
 ## 알려진 제한
 
 - 실기기 프레임 시간, API 26 기기 동작은 아직 확인하지 않았습니다.
-- 이미지 파일을 읽어 주는 기본 구현(`MediaResolver`)이 없습니다. 호스트가 이미지를 넘기지 않으면 빈 틀로 그립니다.
+- 이미지는 `content://`·`android.resource://`만 읽습니다(웹 URL은 열지 않음). API 26·27에서는 EXIF 회전을 반영하지 않습니다.
+- 캔버스에서 글자를 바로 고칠 수 없고 속성 패널에서 고칩니다.
 - 그룹은 자식을 자르지 않고, 그룹 opacity는 레이어로 합성하지 않고 자식마다 곱합니다(겹친 자식은 더 진하게 보일 수 있음).
 - 여러 노드를 한꺼번에 크기 조절·회전할 수 없습니다. 캔버스에서는 최상위 단위로 고릅니다(그룹 안 노드는 레이어 패널에서).
 - 회전 보간은 가장 짧은 방향만 지원합니다. timeline 확대·키 여러 개 끌기·그래프 편집기는 없습니다.
