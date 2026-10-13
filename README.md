@@ -1,2 +1,123 @@
-# Kinetica-Kit-SDK
-Kinetica SDK Development Kit
+# Kinetica
+
+> **WIP**: 아직 배포 전입니다. Maven Central에 올라가 있지 않고, 공개 API는 0.x 동안 바뀔 수 있습니다.
+
+**Kinetica**는 정밀하게 편집할 수 있는 2D 장면(scene graph)과 시간 기반 애니메이션, 장면 전환을 묶은 Android SDK입니다.
+포스터·주석·발표용 편집기, 화이트보드, 움직이는 대시보드처럼 **앱 안에 넣는 2D 편집기와 재생기**를 직접 만들지 않고 쓰는 것이 목표입니다. Figma를 대신하려는 것이 아닙니다.
+
+- **Studio**: 캔버스·도구·레이어·속성·timeline이 있는 편집 화면 `KineticaEditor`
+- **Player**: 편집 의존성 없이 장면을 재생하는 `KineticaPlayer`
+- **Transitions**: 같은 `morphKey` 노드를 잇는 장면 morph, 끌어서 닫기, Compose 공유 전환 연결
+- **Headless**: Android 없이 쓰는 문서·좌표·keyframe 평가(Kotlin JVM)
+
+## 지금 되는 것 (0.1.0-SNAPSHOT)
+
+- **문서**: 그룹·사각형·타원·경로·글자·이미지 노드, 불변 문서, 명령으로만 수정, 모든 결과를 검증(id·순환·깊이·유한값·상한·URI)
+- **편집**: 고르기·옮기기·크기·회전(회전·중첩된 노드에서도 반대쪽 손잡이 고정), 사각 선택, 두 손가락 이동·확대, 안내선 스냅(8dp/12dp hysteresis), 그룹·그룹 해제(화면 위치 유지), 정렬·분배, 순서, 속성·레이어 패널, 키보드 단축키
+- **실행 취소**: 제스처 하나가 한 단계, 바뀐 노드만 담는 기록, 단계 수·메모리 상한
+- **모션**: keyframe(이동·배율·회전·불투명도·색·선 두께), easing(Bezier·steps·용수철), 시계 기준 재생(배속·반복·왕복·역방향·marker·동작 줄이기), timeline 편집 화면, 재생 위치 기준 자동 키, 프리셋 6종
+- **전환**: 장면 morph(같은 종류는 보간, 다른 종류는 dissolve), 끌어서 닫기(속도 반영, 끝 알림 한 번), Compose `sharedBounds` 연결
+- **저장·내보내기**: 형식 버전이 있는 JSON(크기·중첩 상한, migration 틀), 원자적 교체로 저장하는 파일 저장소, 화면과 같은 그리기로 PNG 내보내기
+- **샘플**: `sample-studio`(편집·저장·내보내기), `sample-gallery`(재생기만 쓰는 장면 전환, View 화면 연결)
+
+아직 없는 것과 제한은 [알려진 제한](#알려진-제한)을 보세요.
+
+## 연동
+
+배포 전이라 지금은 `./gradlew publishToMavenLocal`로 로컬 저장소에 올려 씁니다. 좌표는 `com.naurylab:<모듈>:0.1.0-SNAPSHOT`입니다.
+
+```kotlin
+dependencies {
+    implementation("com.naurylab:kinetica-player-compose:0.1.0-SNAPSHOT")   // 재생만
+    implementation("com.naurylab:kinetica-editor-compose:0.1.0-SNAPSHOT")   // 편집 화면(선택)
+    implementation("com.naurylab:kinetica-serialization:0.1.0-SNAPSHOT")    // JSON·파일 저장(선택)
+    implementation("com.naurylab:kinetica-export-android:0.1.0-SNAPSHOT")   // PNG 내보내기(선택)
+}
+```
+
+재생기:
+
+```kotlin
+val box = SceneNode(NodeId("box"), NodeContent.Rectangle(Size(400.0, 400.0)), style = NodeStyle(fill = ArgbColor(0xFF7C8CFF.toInt())))
+val fade = Timeline("main", 1_000, listOf(PropertyTrack(box.id, AnimatableProperty.Opacity,
+    listOf(Keyframe(0, KeyValue.Scalar(0.0)), Keyframe(1_000, KeyValue.Scalar(1.0))))))
+val scene = SceneDocument("hello", Artboard(1080.0, 1920.0), mapOf(box.id to box), listOf(box.id), listOf(fade))
+
+setContent {
+    val playback = rememberPlaybackController(fade).also { it.play() }
+    KineticaPlayer(scene, Modifier.fillMaxSize(), playback)
+}
+```
+
+편집기와 저장:
+
+```kotlin
+val repository = FileSceneRepository(File(filesDir, "scenes"))
+val document = (repository.load("studio") as? LoadResult.Loaded)?.document ?: SceneDocument.empty(Artboard(1080.0, 1920.0))
+val session = (KineticaSession.create(document) as SessionOpenResult.Opened).session
+
+setContent {
+    val scope = rememberCoroutineScope()
+    KineticaEditor(session, Modifier.fillMaxSize(), toolbarEnd = {
+        TextButton(onClick = { scope.launch { repository.save("studio", session.document.value) } }) { Text("저장") }
+    })
+}
+```
+
+세션은 화면 회전에도 유지되도록 ViewModel에 두고, 화면을 닫을 때 `session.close()`를 부릅니다. View 화면·Java·내보내기·전환은 [docs/integration.md](docs/integration.md)를 보세요.
+
+## 모듈
+
+| 모듈 | 종류 | 내용 |
+| --- | --- | --- |
+| `kinetica-core` | Kotlin JVM | 장면 문서·노드, 행렬·viewport, 명령·reducer, 검증, hit test, 변형 계산 |
+| `kinetica-history` | Kotlin JVM | `KineticaSession`, 트랜잭션, 실행 취소 |
+| `kinetica-motion` | Kotlin JVM | keyframe 평가, easing, 재생 제어, 장면 morph, 전환 진행률 |
+| `kinetica-guides` | Kotlin JVM | 안내선 스냅 |
+| `kinetica-presets` | Kotlin JVM | 모션 프리셋 |
+| `kinetica-serialization` | Kotlin JVM | JSON 읽기·쓰기, migration, 파일 저장소 |
+| `kinetica-java` | Kotlin JVM | Java 호스트용 정적 입구(선택) |
+| `kinetica-render-compose` | Android | Compose Canvas 그리기 |
+| `kinetica-gestures` | Android | 캔버스 포인터 상태 기계 |
+| `kinetica-editor-compose` | Android | `KineticaEditor` |
+| `kinetica-player-compose` | Android | `KineticaPlayer`, 전환 그리기·끌어서 닫기 |
+| `kinetica-export-android` | Android | PNG 내보내기 |
+
+의존 방향과 데이터 흐름, 좌표계는 [docs/architecture.md](docs/architecture.md)에 있습니다.
+
+## 보안과 개인정보
+
+- SDK는 네트워크 권한이 없고 문서·이미지·사용 기록을 밖으로 보내지 않습니다.
+- 외부에서 받은 문서는 크기(기본 10 MiB)·JSON 중첩(64단계)·노드 수·글자 길이·keyframe 수·유한한 숫자·URI scheme을 확인한 뒤에만 문서가 됩니다. 실패해도 예외 대신 이유를 돌려주고, 이유에는 사용자 글자를 담지 않습니다.
+- 이미지 노드는 `content://`·`android.resource://`만 기본 허용하며 SDK가 직접 열지 않습니다. 호스트가 `SceneImageProvider`로 미리 읽은 이미지를 줍니다.
+
+자세한 정책은 [SECURITY.md](SECURITY.md)에 있습니다.
+
+## 성능
+
+JVM(Apple M5) 기준으로 노드 2,000개에서 명령 적용 p95 약 0.4 ms, timeline 평가 약 0.14 ms입니다. 실기기 프레임 시간은 아직 재지 않았습니다. 측정 방법과 전체 표는 [docs/performance.md](docs/performance.md).
+
+## 알려진 제한
+
+- 실기기 프레임 시간, API 26 기기 동작은 아직 확인하지 않았습니다.
+- 이미지 파일을 읽어 주는 기본 구현(`MediaResolver`)이 없습니다. 호스트가 이미지를 넘기지 않으면 빈 틀로 그립니다.
+- 그룹은 자식을 자르지 않고, 그룹 opacity는 레이어로 합성하지 않고 자식마다 곱합니다(겹친 자식은 더 진하게 보일 수 있음).
+- 여러 노드를 한꺼번에 크기 조절·회전할 수 없습니다. 캔버스에서는 최상위 단위로 고릅니다(그룹 안 노드는 레이어 패널에서).
+- 회전 보간은 가장 짧은 방향만 지원합니다. timeline 확대·키 여러 개 끌기·그래프 편집기는 없습니다.
+- SVG·MP4 내보내기, 협업, 문자 shaping 세부 제어는 범위 밖입니다(docs의 v1.1 이후).
+- Android 모듈의 공개 API dump는 AGP 9 내장 Kotlin 제약으로 아직 없습니다([ADR-0005](docs/adr/0005-abi-dumps.md)).
+
+## 빌드
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+./gradlew check :sample-studio:assembleDebug :sample-studio:assembleRelease :sample-gallery:assembleRelease
+```
+
+`check`는 단위·Robolectric 테스트, Android Lint, ktlint, detekt, 공개 API 검사(`checkKotlinAbi`), gallery release 런타임 검사(`verifyReleaseClasspath`)를 실행합니다.
+배포된 artifact만으로 빌드되는지는 `./gradlew publishToMavenLocal && ./gradlew -p consumer-check :app:assembleRelease`로 확인합니다.
+기여 방법은 [CONTRIBUTING.md](CONTRIBUTING.md), 변경 내역은 [CHANGELOG.md](CHANGELOG.md), 설계 결정은 [docs/adr](docs/adr).
+
+## 라이선스
+
+아직 정하지 않았습니다. 외부 배포 전에 정합니다.
