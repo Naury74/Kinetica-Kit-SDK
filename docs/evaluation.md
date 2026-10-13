@@ -49,6 +49,10 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | H5 | 글자를 두 번 누르기 | 글자 수정 창이 뜨고, 고친 뒤 실행 취소 한 번에 되돌아감 | `HostComposerTest` |
 | H6 | 속성 패널 **데이터**: 내용 키·보임 키·탭 동작 | 키를 넣으면 그 데이터 값이 보이고, 동작 이름이 저장됨 | `PropertyEditsTest` |
 | H7 | **미리보기** → 카운터 +1, 새로고침 버튼 | 카운터 숫자가 오름(호스트 상태), "호스트가 받은 동작: refresh" 알림과 함께 값이 바뀜 | `PlayerHostTest` |
+| H8 | 대시보드에서 "widgets" 레이어 고르기 → 속성 **자동 배치** 가로↔세로 | 위젯이 줄·열로 다시 쌓임. 실행 취소 한 번에 되돌아감 | `AutoLayoutEditorTest`, `LayoutsTest` |
+| H9 | 도형 두 개 고르기 → 선택 줄 **자동 배치** | 위치 순서대로 쌓인 Frame으로 감싸지고, 간격·여백·정렬을 속성에서 바꿈 | `AutoLayoutEditorTest`, `LayoutsTest` |
+| H10 | 데이터로 "영업 중"이 숨을 때(2초마다 무작위) | "배달 가능"이 빈자리로 당겨지고 카드 높이가 맞춰짐 | `BindingsTest` |
+| H11 | **미리보기**(폴더블 펼침·접힘, 가로 화면) | 화면 모양대로 펼쳐짐: 카드·위젯은 반씩 채우고, 그래프·버튼은 좌우로 늘고, 버튼은 아래에 붙음 | `LayoutsTest`, `SceneLayoutTest` |
 
 ### 모션
 

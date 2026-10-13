@@ -41,6 +41,7 @@ import com.naury.kinetica.core.scene.SceneData
 import com.naury.kinetica.editor.KineticaEditor
 import com.naury.kinetica.editor.StudioTheme
 import com.naury.kinetica.player.KineticaPlayer
+import com.naury.kinetica.player.SceneFit
 import com.naury.kinetica.render.SceneSlots
 
 class MainActivity : ComponentActivity() {
@@ -143,6 +144,8 @@ private fun Preview(
             data = data,
             slots = slots,
             onAction = onAction,
+            // 화면 모양대로 펼쳐, 아래 붙은 버튼·좌우로 늘어나는 그래프 같은 제약을 실제 기기 크기에서 보여 준다.
+            fit = SceneFit.Responsive,
         )
     }
 }

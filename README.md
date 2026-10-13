@@ -33,6 +33,7 @@
 
 ## 지금 되는 것 (0.1.0-SNAPSHOT)
 
+- **자동 배치·화면 크기 대응**: Frame 가로·세로 자동 배치(간격·여백·정렬·늘이기·내용 맞춤·남는 공간 채우기), 고른 노드를 자동 배치로 감싸기, 노드 제약(왼쪽·오른쪽·좌우·가운데·비율), 재생기 `SceneFit.Responsive`로 기기 화면 모양에 맞춰 펼치기
 - **호스트 UI 조립**: 호스트 뷰 자리(HostSlot)·Frame(모서리·자르기)·그림자·글자 굵기, 데이터 바인딩(글자·보임·이미지·채우기·불투명도), 탭 동작, 노드마다 실제 Compose 요소로 그리는 `SceneLayout`, 글자를 두 번 눌러 바로 고치기
 - **문서**: 그룹·사각형·타원·경로·글자·이미지 노드, 불변 문서, 명령으로만 수정, 모든 결과를 검증(id·순환·깊이·유한값·상한·URI)
 - **편집**: 고르기·옮기기·크기·회전(회전·중첩된 노드에서도 반대쪽 손잡이 고정), 사각 선택, 두 손가락 이동·확대, 안내선 스냅(8dp/12dp hysteresis), 그룹·그룹 해제(화면 위치 유지), 정렬·분배, 순서, 속성·레이어 패널, 키보드 단축키
@@ -95,7 +96,7 @@ val hostViews = listOf(HostViewOption("widget.sales_chart", "매출 그래프", 
 val data = SceneData.of("sales.today" to DataValue.Text("1,284,000원"))           // 글자 노드의 Text 바인딩 키
 
 KineticaEditor(session, slots = slots, hostViews = hostViews, data = data)        // 운영자·사용자가 배치
-KineticaPlayer(document, slots = slots, data = data, onAction = { action -> /* "refresh" 등 */ })
+KineticaPlayer(document, slots = slots, data = data, fit = SceneFit.Responsive, onAction = { action -> /* "refresh" 등 */ })
 ```
 
 세션은 화면 회전에도 유지되도록 ViewModel에 두고, 화면을 닫을 때 `session.close()`를 부릅니다. View 화면·Java·내보내기·전환은 [docs/integration.md](docs/integration.md)를 보세요.
