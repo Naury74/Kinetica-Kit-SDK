@@ -62,23 +62,8 @@ private fun checkTransform(node: SceneNode, limits: SceneLimits, sink: Violation
     }
 }
 
-private fun checkStyle(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
-    val style = node.style
-    if (!style.opacity.isFinite() || style.opacity !in 0.0..1.0) {
-        sink.add(ViolationCode.InvalidStyle, "opacity는 0..1 범위여야 합니다.", node.id)
-    }
-    if (!style.strokeWidth.isFinite() || style.strokeWidth !in 0.0..limits.maxCoordinateMagnitude) {
-        sink.add(ViolationCode.InvalidStyle, "선 두께가 범위를 벗어났습니다.", node.id)
-    }
-    val shadow = style.shadow
-    if (shadow != null) {
-        val max = limits.maxCoordinateMagnitude
-        val valid = listOf(shadow.offsetX, shadow.offsetY).all { it.isFinite() && abs(it) <= max } &&
-            shadow.blur.isFinite() && shadow.blur in 0.0..max
-        if (!valid) sink.add(ViolationCode.InvalidStyle, "그림자 값이 범위를 벗어났습니다.", node.id)
-    }
-}
-
+// 노드 종류마다 한 갈래인 분기다. 나누면 어느 종류를 어디서 검사하는지 오히려 흐려진다.
+@Suppress("CyclomaticComplexMethod")
 private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
     val id = node.id
     fun requireSize(size: Size) {
@@ -92,9 +77,17 @@ private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSi
         is NodeContent.Rectangle -> {
             requireSize(content.size)
             checkCorner(content.cornerRadius, id, sink)
+            content.corners?.values?.forEach { checkCorner(it, id, sink) }
         }
 
         is NodeContent.Ellipse -> requireSize(content.size)
+
+        is NodeContent.Polygon -> {
+            requireSize(content.size)
+            val valid = content.sides in NodeContent.Polygon.MIN_SIDES..NodeContent.Polygon.MAX_SIDES &&
+                content.innerRatio.isFinite() && content.innerRatio > 0.0 && content.innerRatio <= 1.0
+            if (!valid) sink.add(ViolationCode.InvalidGeometry, "다각형 꼭짓점 수나 별 비율이 범위를 벗어났습니다.", id)
+        }
 
         is NodeContent.Path -> checkPath(content, id, limits, sink)
 
@@ -122,6 +115,7 @@ private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSi
 
 private fun checkFrame(frame: NodeContent.Frame, id: NodeId, limits: SceneLimits, sink: ViolationSink) {
     checkCorner(frame.cornerRadius, id, sink)
+    frame.corners?.values?.forEach { checkCorner(it, id, sink) }
     frame.layout?.let { checkLayout(it, id, limits, sink) }
 }
 

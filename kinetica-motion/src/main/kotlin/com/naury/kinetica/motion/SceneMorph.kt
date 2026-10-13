@@ -89,11 +89,15 @@ public class SceneMorph private constructor(
         return b.copy(transform = transform, style = style, content = blendContent(a.content, b.content, p))
     }
 
+    // 노드 종류마다 한 갈래인 분기다.
+    @Suppress("CyclomaticComplexMethod")
     private fun blendContent(a: NodeContent, b: NodeContent, p: Double): NodeContent = when {
         a is NodeContent.Rectangle && b is NodeContent.Rectangle ->
             b.copy(size = lerpSize(a.size, b.size, p), cornerRadius = lerp(a.cornerRadius, b.cornerRadius, p))
 
         a is NodeContent.Ellipse && b is NodeContent.Ellipse -> b.copy(size = lerpSize(a.size, b.size, p))
+
+        a is NodeContent.Polygon && b is NodeContent.Polygon -> b.copy(size = lerpSize(a.size, b.size, p))
 
         a is NodeContent.Image && b is NodeContent.Image -> b.copy(size = lerpSize(a.size, b.size, p))
 
@@ -189,6 +193,12 @@ public class SceneMorph private constructor(
                     b.content::class
 
             is NodeContent.HostSlot -> (b.content as? NodeContent.HostSlot)?.key == content.key
+
+            is NodeContent.Polygon -> (b.content as? NodeContent.Polygon)?.let {
+                it.sides == content.sides &&
+                    it.innerRatio == content.innerRatio
+            } ==
+                true
 
             is NodeContent.Text -> (b.content as? NodeContent.Text)?.text == content.text
 

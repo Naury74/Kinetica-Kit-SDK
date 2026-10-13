@@ -86,6 +86,8 @@ public object TransformOps {
 
         is NodeContent.Ellipse -> node.copy(content = content.copy(size = size))
 
+        is NodeContent.Polygon -> node.copy(content = content.copy(size = size))
+
         is NodeContent.Text -> node.copy(content = content.copy(size = size))
 
         is NodeContent.Image -> node.copy(content = content.copy(size = size))

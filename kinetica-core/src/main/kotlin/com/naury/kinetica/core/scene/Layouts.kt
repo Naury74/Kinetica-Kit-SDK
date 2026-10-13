@@ -245,6 +245,7 @@ public object Layouts {
 public fun NodeContent.sizeOrNull(): Size? = when (this) {
     is NodeContent.Rectangle -> size
     is NodeContent.Ellipse -> size
+    is NodeContent.Polygon -> size
     is NodeContent.Text -> size
     is NodeContent.Image -> size
     is NodeContent.Frame -> size
@@ -256,6 +257,7 @@ public fun NodeContent.sizeOrNull(): Size? = when (this) {
 public fun NodeContent.withSize(size: Size): NodeContent = when (this) {
     is NodeContent.Rectangle -> copy(size = size)
     is NodeContent.Ellipse -> copy(size = size)
+    is NodeContent.Polygon -> copy(size = size)
     is NodeContent.Text -> copy(size = size)
     is NodeContent.Image -> copy(size = size)
     is NodeContent.Frame -> copy(size = size)
