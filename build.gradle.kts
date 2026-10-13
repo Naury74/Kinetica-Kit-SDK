@@ -18,6 +18,7 @@ val sdkModules = mapOf(
     "kinetica-gestures" to "캔버스 포인터 상태 기계",
     "kinetica-editor-compose" to "장면 편집 화면 KineticaEditor",
     "kinetica-player-compose" to "읽기 전용 재생기와 전환",
+    "kinetica-board-compose" to "호스트 화면에 넣는 자유 배치·분할 보드와 제자리 편집",
     "kinetica-export-android" to "PNG 내보내기",
 )
 
