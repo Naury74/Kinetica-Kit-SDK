@@ -27,6 +27,7 @@ rootProject.name = "Kinetica"
 
 include(":sample-studio")
 include(":sample-gallery")
+include(":sample-board")
 include(":kinetica-core")
 include(":kinetica-history")
 include(":kinetica-motion")

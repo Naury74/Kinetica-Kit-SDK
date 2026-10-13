@@ -1,0 +1,4 @@
+<resources>
+    <style name="Theme.KineticaBoardSample" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.KineticaBoardSample.Xml" parent="android:Theme.Material.Light" />
+</resources>
