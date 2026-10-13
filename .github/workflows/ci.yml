@@ -27,7 +27,7 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v5
-      - run: ./gradlew check :sample-studio:assembleDebug :sample-studio:assembleRelease
+      - run: ./gradlew check :sample-studio:assembleDebug :sample-studio:assembleRelease :sample-gallery:assembleRelease
       - if: always()
         uses: actions/upload-artifact@v4
         with:

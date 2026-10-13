@@ -26,6 +26,7 @@ dependencyResolutionManagement {
 rootProject.name = "Kinetica"
 
 include(":sample-studio")
+include(":sample-gallery")
 include(":kinetica-core")
 include(":kinetica-history")
 include(":kinetica-motion")

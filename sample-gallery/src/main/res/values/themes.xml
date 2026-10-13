@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.KineticaGallery" parent="android:Theme.Material.NoActionBar" />
+</resources>

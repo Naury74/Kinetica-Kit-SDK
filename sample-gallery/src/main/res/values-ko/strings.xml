@@ -1,0 +1,5 @@
+<resources>
+    <string name="gallery_title">장면</string>
+    <string name="gallery_hint">아래로 끌거나 뒤로 가기를 누르면 닫힙니다</string>
+    <string name="gallery_open">%1$s 열기</string>
+</resources>
