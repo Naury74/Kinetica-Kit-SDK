@@ -10,6 +10,7 @@ androidxActivity = "1.13.0"
 androidxComposeBom = "2026.09.00"
 androidxCore = "1.19.1"
 androidxLifecycle = "2.11.0"
+kotlinxSerialization = "1.11.0"
 
 junit4 = "4.13.2"
 truth = "1.4.5"
@@ -24,6 +25,8 @@ androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-ru
 
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidxComposeBom" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }

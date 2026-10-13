@@ -1,0 +1,131 @@
+package com.naury.kinetica.serialization
+
+import com.naury.kinetica.core.scene.SceneDocument
+import com.naury.kinetica.core.scene.SceneLimits
+import com.naury.kinetica.core.scene.SceneValidator
+import com.naury.kinetica.core.scene.SceneViolation
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
+
+/**
+ * scene 문서를 JSON(UTF-8)으로 쓰고 읽는다.
+ *
+ * 읽기는 외부 입력을 믿지 않는다. 크기 상한 → JSON 문법 → 형식 버전과 migration → 필드 형식·유한한 숫자 →
+ * [SceneValidator] 순서로 확인하고, 모두 통과해야 문서를 돌려준다. 실패는 예외가 아닌 [DecodeResult.Failure]다.
+ *
+ * 알 수 없는 필드는 무시하고 버린다. 다른 버전과 주고받으며 보존해야 하는 값은 문서의 `extensions`에 둔다.
+ *
+ * @param maxJsonBytes 읽을 수 있는 JSON의 최대 UTF-8 바이트 수(기본 10 MiB)
+ * @param migrations 예전 형식 버전을 현재 버전으로 올리는 단계들
+ */
+public class SceneCodec(
+    private val limits: SceneLimits = SceneLimits.Default,
+    private val maxJsonBytes: Int = DEFAULT_MAX_JSON_BYTES,
+    private val migrations: SceneMigrations = SceneMigrations.None,
+) {
+    init {
+        require(maxJsonBytes > 0) { "maxJsonBytes는 0보다 커야 합니다." }
+    }
+
+    private val validator = SceneValidator(limits)
+    private val json = Json
+
+    /** 문서를 한 줄 JSON으로 쓴다. 같은 문서는 항상 같은 문자열이 된다. */
+    public fun encode(document: SceneDocument): String = SceneJsonWriter.write(document).toString()
+
+    public fun decode(bytes: ByteArray): DecodeResult {
+        if (bytes.size > maxJsonBytes) return DecodeResult.Failure(SceneLoadError.TooLarge(bytes.size.toLong(), maxJsonBytes))
+        return decodeChecked(bytes.toString(Charsets.UTF_8))
+    }
+
+    public fun decode(text: String): DecodeResult {
+        val bytes = utf8Size(text)
+        if (bytes > maxJsonBytes) return DecodeResult.Failure(SceneLoadError.TooLarge(bytes, maxJsonBytes))
+        return decodeChecked(text)
+    }
+
+    private fun decodeChecked(text: String): DecodeResult = try {
+        val document = SceneJsonReader(limits).read(upgrade(parse(text)))
+        val violations = validator.validate(document)
+        if (violations.isEmpty()) DecodeResult.Success(document) else DecodeResult.Failure(SceneLoadError.Invalid(violations))
+    } catch (failure: LoadFailure) {
+        DecodeResult.Failure(failure.error)
+    }
+
+    private fun parse(text: String): JsonObject {
+        val root = try {
+            json.parseToJsonElement(text)
+        } catch (error: SerializationException) {
+            fail("$", "JSON 문법 오류(${error::class.simpleName})")
+        }
+        return root as? JsonObject ?: fail("$", "최상위 값은 객체여야 합니다.")
+    }
+
+    private fun upgrade(root: JsonObject): JsonObject {
+        val version = (root[SCHEMA_VERSION_KEY] as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull
+            ?: fail(SCHEMA_VERSION_KEY, "정수여야 합니다.")
+        val current = SceneDocument.CURRENT_SCHEMA_VERSION
+        val migrated = migrations.upgrade(root, from = version, to = current).takeIf { version <= current }
+            ?: throw LoadFailure(SceneLoadError.UnsupportedSchema(version))
+        check(migrated[SCHEMA_VERSION_KEY]?.jsonPrimitive?.int == current) { "migration은 schemaVersion을 $current 로 바꿔야 합니다." }
+        return migrated
+    }
+
+    public companion object {
+        public const val DEFAULT_MAX_JSON_BYTES: Int = 10_485_760
+        internal const val SCHEMA_VERSION_KEY = "schemaVersion"
+    }
+}
+
+public sealed interface DecodeResult {
+    public data class Success(val document: SceneDocument) : DecodeResult
+
+    public data class Failure(val error: SceneLoadError) : DecodeResult
+}
+
+/** 문서를 읽지 못한 이유. 사용자 콘텐츠를 담지 않으므로 로그에 남겨도 된다. */
+public sealed interface SceneLoadError {
+    /** 입력이 [maxBytes]를 넘는다. 내용을 해석하지 않았다. */
+    public data class TooLarge(val bytes: Long, val maxBytes: Int) : SceneLoadError
+
+    /** JSON 문법이나 필드 형식이 틀렸다. [path]는 `nodes[3].transform.x` 같은 위치다. */
+    public data class Malformed(val path: String, val reason: String) : SceneLoadError
+
+    /** 이 SDK가 읽을 수 없는 형식 버전이다. */
+    public data class UnsupportedSchema(val schemaVersion: Int) : SceneLoadError
+
+    /** 형식은 맞지만 문서 규칙을 어긴다. */
+    public data class Invalid(val violations: List<SceneViolation>) : SceneLoadError
+}
+
+private const val ONE_BYTE_LIMIT = 0x80
+private const val TWO_BYTE_LIMIT = 0x800
+private const val THREE_BYTES = 3L
+private const val FOUR_BYTES = 4L
+
+private fun utf8Size(text: String): Long {
+    var bytes = 0L
+    var index = 0
+    while (index < text.length) {
+        val char = text[index]
+        bytes += when {
+            char.code < ONE_BYTE_LIMIT -> 1L
+
+            char.code < TWO_BYTE_LIMIT -> 2L
+
+            char.isHighSurrogate() && index + 1 < text.length && text[index + 1].isLowSurrogate() -> {
+                index++
+                FOUR_BYTES
+            }
+
+            else -> THREE_BYTES
+        }
+        index++
+    }
+    return bytes
+}

@@ -27,3 +27,4 @@ rootProject.name = "Kinetica"
 
 include(":sample-studio")
 include(":kinetica-core")
+include(":kinetica-serialization")

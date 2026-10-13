@@ -14,6 +14,11 @@ naming:
   FunctionNaming:
     ignoreAnnotated: ['Composable']
 complexity:
+  TooManyFunctions:
+    # 저장 형식 변환은 필드 묶음마다 작은 함수 하나를 두는 편이 읽기 쉽다. ADR-0001 참고.
+    thresholdInFiles: 20
+    thresholdInClasses: 15
+    thresholdInObjects: 15
   LongParameterList:
     ignoreAnnotated: ['Composable']
     excludes: ['**/test/**', '**/testFixtures/**', '**/androidTest/**']
