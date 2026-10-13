@@ -58,6 +58,8 @@ public class SceneCodec(
     }
 
     private fun parse(text: String): JsonObject {
+        // kotlinx JSON 파서는 중첩마다 재귀하므로, 아주 깊은 입력이 stack을 넘기 전에 먼저 거른다.
+        if (nestingDepth(text) > MAX_JSON_DEPTH) fail("$", "JSON 중첩이 $MAX_JSON_DEPTH 단계를 넘습니다.")
         val root = try {
             json.parseToJsonElement(text)
         } catch (error: SerializationException) {
@@ -78,6 +80,9 @@ public class SceneCodec(
 
     public companion object {
         public const val DEFAULT_MAX_JSON_BYTES: Int = 10_485_760
+
+        /** 허용하는 JSON 중첩 깊이. 형식 버전 1은 7단계면 충분하고 나머지는 확장 데이터 몫이다. */
+        public const val MAX_JSON_DEPTH: Int = 64
         internal const val SCHEMA_VERSION_KEY = "schemaVersion"
     }
 }
@@ -128,4 +133,31 @@ private fun utf8Size(text: String): Long {
         index++
     }
     return bytes
+}
+
+/** 문자열 안을 건너뛰며 괄호 중첩의 최대 깊이를 잰다. 재귀하지 않는다. */
+private fun nestingDepth(text: String): Int {
+    var depth = 0
+    var deepest = 0
+    var inString = false
+    var escaped = false
+    for (char in text) {
+        when {
+            escaped -> escaped = false
+
+            inString && char == '\\' -> escaped = true
+
+            char == '"' -> inString = !inString
+
+            inString -> Unit
+
+            char == '{' || char == '[' -> {
+                depth++
+                if (depth > deepest) deepest = depth
+            }
+
+            char == '}' || char == ']' -> depth--
+        }
+    }
+    return deepest
 }
