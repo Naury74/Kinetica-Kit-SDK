@@ -9,11 +9,11 @@ style:
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
     ignoreNamedArgument: true
-    excludes: ['**/test/**', '**/androidTest/**']
+    excludes: ['**/test/**', '**/testFixtures/**', '**/androidTest/**']
 naming:
   FunctionNaming:
     ignoreAnnotated: ['Composable']
 complexity:
   LongParameterList:
     ignoreAnnotated: ['Composable']
-    excludes: ['**/test/**', '**/androidTest/**']
+    excludes: ['**/test/**', '**/testFixtures/**', '**/androidTest/**']
