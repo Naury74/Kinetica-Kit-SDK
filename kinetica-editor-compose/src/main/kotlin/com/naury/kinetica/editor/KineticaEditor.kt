@@ -43,6 +43,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -87,8 +88,8 @@ public fun KineticaEditor(
     toolbarEnd: @Composable RowScope.() -> Unit = {},
 ) {
     val state = remember(session) { EditorState(session) }
-    val actions = remember(session) { EditorActions(session) }
-    val edits = remember(session) { PropertyEdits(session) }
+    val actions = remember(state) { EditorActions(state) }
+    val edits = remember(state) { PropertyEdits(state) }
     val density = LocalDensity.current.density
     val controller = remember(state, density, config) {
         val snapping = if (config.snapping) GuideSnapping(state, SnapConfig.forDensity(density, config.gridSize)) else null
@@ -114,6 +115,7 @@ public fun KineticaEditor(
                     }
                 }
             }
+            if (state.motionEnabled) TimelinePanel(state, theme, Modifier.fillMaxWidth().heightIn(max = TIMELINE_MAX_HEIGHT))
         }
         if (!docked) sheet?.let { PanelBottomSheet(it, state, edits, theme) { sheet = null } }
     }
@@ -186,8 +188,9 @@ private fun EditorCanvas(
     paddingPx: Double,
     modifier: Modifier,
 ) {
-    val document by state.session.document.collectAsStateWithLifecycle()
+    val base by state.session.document.collectAsStateWithLifecycle()
     val selection by state.session.selection.collectAsStateWithLifecycle()
+    val document = remember(base, state.motionEnabled, state.playheadMs) { state.displayed(base) }
     val count = selection.selectedIds.size
     val description = pluralStringResource(R.plurals.kinetica_canvas_description, count, count)
     val focus = remember { FocusRequester() }
@@ -237,6 +240,7 @@ private fun EditorToolbar(
         ToolButton(R.string.kinetica_undo, colors, enabled = history.canUndo) { state.session.history.undo() }
         ToolButton(R.string.kinetica_redo, colors, enabled = history.canRedo) { state.session.history.redo() }
         ToolButton(R.string.kinetica_fit, colors) { state.fit(paddingPx) }
+        ToolToggle(R.string.kinetica_motion, state.motionEnabled, colors, theme) { state.motionEnabled = !state.motionEnabled }
         if (showPanelButtons) {
             ToolButton(R.string.kinetica_layers, colors) { onOpenSheet(PanelSheet.Layers) }
             ToolButton(R.string.kinetica_properties, colors, enabled = selection.selectedIds.size == 1) {
@@ -319,6 +323,19 @@ private fun ToolButton(label: Int, colors: ButtonColors, enabled: Boolean = true
 }
 
 @Composable
+private fun ToolToggle(label: Int, checked: Boolean, colors: ButtonColors, theme: StudioTheme, onToggle: () -> Unit) {
+    TextButton(
+        onClick = onToggle,
+        colors = colors,
+        modifier = Modifier
+            .heightIn(min = MIN_TOUCH_TARGET)
+            .semantics { stateDescription = if (checked) "on" else "off" },
+    ) {
+        Text(stringResource(label), color = if (checked) theme.accent else theme.onPanel)
+    }
+}
+
+@Composable
 private fun CancelGestureOnPause(controller: CanvasGestureController) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, controller) {
@@ -335,5 +352,6 @@ private val MIN_TOUCH_TARGET = 48.dp
 private val DOCKED_PANEL_MIN_WIDTH = 600.dp
 private val PANEL_WIDTH = 300.dp
 private val SHEET_MAX_HEIGHT = 480.dp
+private val TIMELINE_MAX_HEIGHT = 340.dp
 private const val DISABLED_ALPHA = 0.38f
 private const val SELECTION_BAR_ALPHA = 0.92f

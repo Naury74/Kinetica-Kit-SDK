@@ -43,4 +43,22 @@
     <string name="kinetica_kind_path">경로</string>
     <string name="kinetica_kind_text">글자</string>
     <string name="kinetica_kind_image">이미지</string>
+    <string name="kinetica_motion">모션</string>
+    <string name="kinetica_play">재생</string>
+    <string name="kinetica_pause">일시 정지</string>
+    <string name="kinetica_add_key">%1$s 키 추가</string>
+    <string name="kinetica_delete_key">키 삭제</string>
+    <string name="kinetica_keyframe_description">%2$s초의 %1$s 키</string>
+    <string name="kinetica_motion_select_hint">레이어 하나를 고르면 움직임을 만들 수 있습니다</string>
+    <string name="kinetica_property_x">X</string>
+    <string name="kinetica_property_y">Y</string>
+    <string name="kinetica_property_rotation">회전</string>
+    <string name="kinetica_property_scale_x">가로 배율</string>
+    <string name="kinetica_property_scale_y">세로 배율</string>
+    <string name="kinetica_property_opacity">불투명도</string>
+    <string name="kinetica_easing_linear">일정하게</string>
+    <string name="kinetica_easing_in">천천히 시작</string>
+    <string name="kinetica_easing_out">천천히 끝</string>
+    <string name="kinetica_easing_in_out">천천히 시작·끝</string>
+    <string name="kinetica_easing_spring">용수철</string>
 </resources>

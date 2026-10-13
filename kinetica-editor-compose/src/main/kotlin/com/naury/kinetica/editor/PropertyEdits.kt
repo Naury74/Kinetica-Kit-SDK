@@ -1,22 +1,21 @@
 package com.naury.kinetica.editor
 
-import com.naury.kinetica.core.command.CommandResult
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneNode
-import com.naury.kinetica.history.KineticaSession
 
 /** 속성 패널에서 고칠 수 있는 숫자 값. */
 internal enum class NumericField { X, Y, Width, Height, Rotation, Opacity }
 
 /**
- * 속성 패널 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계다.
+ * 속성 패널 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계다. 모션 편집 중이면 보이는 값을 기준으로 고치고
+ * 애니메이션 속성은 keyframe이 된다([EditorState.execute]).
  * 숫자가 아니거나 유한하지 않거나 범위를 벗어나면 문서를 바꾸지 않고 `false`를 돌려준다.
  */
-internal class PropertyEdits(private val session: KineticaSession) {
+internal class PropertyEdits(private val state: EditorState) {
     /** 지금 값. 크기가 없는 노드(경로·그룹)의 너비·높이는 `null`이다. opacity는 0..100(%)이다. */
     fun value(node: SceneNode, field: NumericField): Double? = when (field) {
         NumericField.X -> node.transform.translationX
@@ -28,7 +27,7 @@ internal class PropertyEdits(private val session: KineticaSession) {
     }
 
     fun setNumber(id: NodeId, field: NumericField, text: String): Boolean {
-        val node = session.document.value.node(id) ?: return false
+        val node = state.document.node(id) ?: return false
         val number = text.trim().replace(',', '.').toDoubleOrNull()?.takeIf(Double::isFinite) ?: return false
         val updated = when (field) {
             NumericField.X -> node.copy(transform = node.transform.copy(translationX = number))
@@ -42,19 +41,19 @@ internal class PropertyEdits(private val session: KineticaSession) {
 
     /** `#RRGGBB` 또는 `#AARRGGBB`. `#`는 빼도 된다. */
     fun setFill(id: NodeId, text: String): Boolean {
-        val node = session.document.value.node(id) ?: return false
+        val node = state.document.node(id) ?: return false
         val hex = text.trim().let { if (it.startsWith("#")) it else "#$it" }
         val color = ArgbColor.parseHexOrNull(hex) ?: return false
         return update(node.copy(style = node.style.copy(fill = color)))
     }
 
-    fun toggleVisible(id: NodeId): Boolean = session.document.value.node(id)?.let { update(it.copy(visible = !it.visible)) } ?: false
+    fun toggleVisible(id: NodeId): Boolean = state.document.node(id)?.let { update(it.copy(visible = !it.visible)) } ?: false
 
-    fun toggleLocked(id: NodeId): Boolean = session.document.value.node(id)?.let { update(it.copy(locked = !it.locked)) } ?: false
+    fun toggleLocked(id: NodeId): Boolean = state.document.node(id)?.let { update(it.copy(locked = !it.locked)) } ?: false
 
     private fun update(node: SceneNode): Boolean {
-        if (session.document.value.node(node.id) == node) return true
-        return session.commands.execute(SceneCommand.UpdateProperties(node)) is CommandResult.Applied
+        if (state.document.node(node.id) == node) return true
+        return state.execute(SceneCommand.UpdateProperties(node))
     }
 
     /** 크기를 바꿔도 pivot이 같은 비율 자리에 있게 한다. 0 이하는 거부한다. */

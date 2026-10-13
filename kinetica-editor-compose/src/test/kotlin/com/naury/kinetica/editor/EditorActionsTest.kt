@@ -26,7 +26,7 @@ class EditorActionsTest {
         },
     )
     private val session = (KineticaSession.create(scene) as SessionOpenResult.Opened).session
-    private val actions = EditorActions(session)
+    private val actions = EditorActions(EditorState(session))
 
     private fun order() = session.document.value.rootOrder.map { it.value }
 

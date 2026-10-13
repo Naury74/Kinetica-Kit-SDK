@@ -16,7 +16,7 @@ import org.junit.Test
 class PropertyEditsTest {
     private val scene = document(listOf(rect("a", size = Size(100.0, 50.0), transform = Transform2D(pivotX = 50.0, pivotY = 25.0))))
     private val session = (KineticaSession.create(scene) as SessionOpenResult.Opened).session
-    private val edits = PropertyEdits(session)
+    private val edits = PropertyEdits(EditorState(session))
     private fun node() = session.document.value.node(id("a"))!!
 
     @Test

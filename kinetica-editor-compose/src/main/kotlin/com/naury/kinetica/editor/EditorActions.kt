@@ -17,9 +17,10 @@ import com.naury.kinetica.history.KineticaSession
  * 도구 줄 동작. 명령이 여러 개인 동작은 트랜잭션 하나로 묶어 실행 취소 한 단계로 만든다.
  * 잠긴 노드는 옮기지 않는다.
  */
-internal class EditorActions(private val session: KineticaSession) {
+internal class EditorActions(private val state: EditorState) {
+    private val session: KineticaSession get() = state.session
     private val selection: List<NodeId> get() = session.selection.value.selectedIds
-    private val graph: SceneGraph get() = SceneGraph(session.document.value)
+    private val graph: SceneGraph get() = SceneGraph(state.document)
 
     val canGroup: Boolean get() = selection.size >= 2
     val canUngroup: Boolean
@@ -33,7 +34,7 @@ internal class EditorActions(private val session: KineticaSession) {
     fun ungroup() {
         val groups = selection.filter { session.document.value.node(it)?.content is NodeContent.Group }
         val released = groups.flatMap { session.document.value.childrenOf(it) }
-        transaction("ungroup") { groups.forEach { session.commands.execute(SceneCommand.Ungroup(it)) } }
+        state.transaction("ungroup") { groups.all { session.commands.execute(SceneCommand.Ungroup(it)) is CommandResult.Applied } }
         session.select(released)
     }
 
@@ -56,7 +57,7 @@ internal class EditorActions(private val session: KineticaSession) {
     private fun reorder(forward: Boolean) {
         val document = session.document.value
         val byParent = selection.mapNotNull(document::node).groupBy { it.parentId }
-        transaction(if (forward) "bring-forward" else "send-backward") {
+        state.transaction(if (forward) "bring-forward" else "send-backward") {
             byParent.forEach { (parentId, nodes) ->
                 val siblings = document.childrenOf(parentId)
                 val indices = nodes.map { siblings.indexOf(it.id) }.sorted()
@@ -68,6 +69,7 @@ internal class EditorActions(private val session: KineticaSession) {
                     limit = target
                 }
             }
+            true
         }
     }
 
@@ -75,12 +77,6 @@ internal class EditorActions(private val session: KineticaSession) {
 
     private fun move(label: String, transforms: Map<NodeId, Transform2D>) {
         if (transforms.isEmpty()) return
-        transaction(label) { session.commands.execute(SceneCommand.TransformNodes(transforms)) }
-    }
-
-    private inline fun transaction(label: String, block: () -> Unit) {
-        if (!session.commands.beginTransaction(label)) return
-        block()
-        session.commands.commitTransaction()
+        state.transaction(label) { state.execute(SceneCommand.TransformNodes(transforms)) }
     }
 }

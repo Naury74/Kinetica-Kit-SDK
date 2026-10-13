@@ -44,4 +44,22 @@
     <string name="kinetica_kind_path">Path</string>
     <string name="kinetica_kind_text">Text</string>
     <string name="kinetica_kind_image">Image</string>
+    <string name="kinetica_motion">Motion</string>
+    <string name="kinetica_play">Play</string>
+    <string name="kinetica_pause">Pause</string>
+    <string name="kinetica_add_key">Add key for %1$s</string>
+    <string name="kinetica_delete_key">Delete key</string>
+    <string name="kinetica_keyframe_description">%1$s key at %2$s seconds</string>
+    <string name="kinetica_motion_select_hint">Select one layer to animate it</string>
+    <string name="kinetica_property_x">X</string>
+    <string name="kinetica_property_y">Y</string>
+    <string name="kinetica_property_rotation">Rotation</string>
+    <string name="kinetica_property_scale_x">Scale X</string>
+    <string name="kinetica_property_scale_y">Scale Y</string>
+    <string name="kinetica_property_opacity">Opacity</string>
+    <string name="kinetica_easing_linear">Linear</string>
+    <string name="kinetica_easing_in">Ease in</string>
+    <string name="kinetica_easing_out">Ease out</string>
+    <string name="kinetica_easing_in_out">Ease in-out</string>
+    <string name="kinetica_easing_spring">Spring</string>
 </resources>
