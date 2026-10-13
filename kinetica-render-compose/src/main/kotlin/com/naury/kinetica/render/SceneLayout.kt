@@ -7,10 +7,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -79,7 +81,8 @@ public fun SceneLayout(
     val scope = NodeScope(document, images, slots, if (interactive) onAction else null)
     Box(modifier.clipToBounds()) {
         Box(
-            Modifier.graphicsLayer {
+            // artboard가 영역보다 크면 Compose가 가운데로 맞춰 밀어내므로, 제약 없이 재고 왼쪽 위에 둔다(위치는 viewport가 정한다).
+            Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).graphicsLayer {
                 transformOrigin = TransformOrigin(0f, 0f)
                 translationX = viewport.panX.toFloat()
                 translationY = viewport.panY.toFloat()

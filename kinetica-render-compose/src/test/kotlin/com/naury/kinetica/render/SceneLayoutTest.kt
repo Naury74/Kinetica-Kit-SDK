@@ -93,6 +93,16 @@ class SceneLayoutTest {
     }
 
     @Test
+    fun `영역보다 큰 artboard도 왼쪽 위부터 viewport대로 그린다`() {
+        val wide = scene().copy(artboard = Artboard(400.0, 400.0, red))
+
+        val pixels = capture { SceneLayout(wide, Viewport(panX = 0.0, panY = 0.0, zoom = 0.5), Modifier.fillMaxSize()) }
+
+        assertThat(pixels[2, 2]).isEqualTo(Color.Red)
+        assertThat(pixels[197, 197]).isEqualTo(Color.Red)
+    }
+
+    @Test
     fun `레이어 렌더러는 Canvas 렌더러와 같은 자리에 그린다`() {
         val viewport = Viewport(panX = 5.0, panY = -3.0, zoom = 0.9)
         compose.setContent {
