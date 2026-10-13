@@ -1,5 +1,6 @@
 package com.naury.kinetica.player
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,11 +16,14 @@ import androidx.compose.ui.layout.onSizeChanged
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Rect
 import com.naury.kinetica.core.geometry.Viewport
+import com.naury.kinetica.core.scene.Bindings
+import com.naury.kinetica.core.scene.SceneData
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.motion.PlaybackController
 import com.naury.kinetica.motion.TimelineEvaluator
-import com.naury.kinetica.render.SceneCanvas
 import com.naury.kinetica.render.SceneImageProvider
+import com.naury.kinetica.render.SceneLayout
+import com.naury.kinetica.render.SceneSlots
 import com.naury.kinetica.render.rememberSceneImages
 
 /**
@@ -30,6 +34,9 @@ import com.naury.kinetica.render.rememberSceneImages
  *
  * @param playback 같은 문서의 timeline으로 만든 재생기. [rememberPlaybackController]로 만든다.
  * @param images 이미지 노드를 그릴 이미지. `null`이면 `content://` 이미지를 직접 읽는다.
+ * @param data 바인딩에 쓸 호스트 데이터. 바뀌면 바로 다시 그린다.
+ * @param slots 호스트 뷰 노드에 그릴 Composable(키 → 내용). 실제로 동작한다.
+ * @param onAction 동작이 있는 노드를 누르면 동작 이름으로 불린다.
  */
 @Composable
 public fun KineticaPlayer(
@@ -38,6 +45,9 @@ public fun KineticaPlayer(
     playback: PlaybackController? = null,
     images: SceneImageProvider? = null,
     background: Color = Color.Transparent,
+    data: SceneData = SceneData.Empty,
+    slots: SceneSlots = emptyMap(),
+    onAction: (String) -> Unit = {},
 ) {
     val sceneImages = images ?: rememberSceneImages(document)
     val timeline = playback?.timeline ?: document.timelines.firstOrNull()
@@ -56,11 +66,20 @@ public fun KineticaPlayer(
         val artboard = document.artboard
         Viewport.fitting(Rect(0.0, 0.0, artboard.width, artboard.height), size.first.toDouble(), size.second.toDouble())
     }
-    val shown = remember(document, timeline, timeMs) {
-        if (timeline == null) document else TimelineEvaluator.evaluate(document, timeline, timeMs)
+    val shown = remember(document, timeline, timeMs, data) {
+        val evaluated = if (timeline == null) document else TimelineEvaluator.evaluate(document, timeline, timeMs)
+        Bindings.apply(evaluated, data)
     }
     Box(modifier.onSizeChanged { size = it.width to it.height }) {
-        SceneCanvas(shown, viewport, Modifier.matchParentSize(), sceneImages, artboardOutside = background)
+        SceneLayout(
+            shown,
+            viewport,
+            Modifier.matchParentSize().background(background),
+            sceneImages,
+            slots,
+            interactive = true,
+            onAction = onAction,
+        )
     }
 }
 

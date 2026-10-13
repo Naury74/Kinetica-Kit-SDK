@@ -73,4 +73,17 @@
     <string name="kinetica_field_font_size">Font size</string>
     <string name="kinetica_kind_frame">Frame</string>
     <string name="kinetica_kind_host">Host view</string>
+    <string name="kinetica_add_frame">Frame</string>
+    <string name="kinetica_add_host_view">Host view</string>
+    <string name="kinetica_edit_text">Edit text</string>
+    <string name="kinetica_ok">OK</string>
+    <string name="kinetica_cancel">Cancel</string>
+    <string name="kinetica_field_corner">Corner radius</string>
+    <string name="kinetica_field_font_weight">Font weight (100–900)</string>
+    <string name="kinetica_field_shadow">Shadow</string>
+    <string name="kinetica_field_clip">Clip content</string>
+    <string name="kinetica_section_data">Data</string>
+    <string name="kinetica_field_bind_text">Text data key</string>
+    <string name="kinetica_field_bind_visible">Visible data key</string>
+    <string name="kinetica_field_action">Tap action</string>
 </resources>

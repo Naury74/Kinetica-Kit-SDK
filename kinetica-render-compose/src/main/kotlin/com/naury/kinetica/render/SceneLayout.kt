@@ -150,32 +150,32 @@ private fun Modifier.actionable(node: SceneNode, scope: NodeScope): Modifier {
 }
 
 @Composable
-private fun FrameView(node: SceneNode, content: NodeContent.Frame, placed: Modifier, scope: NodeScope) {
+private fun FrameView(node: SceneNode, content: NodeContent.Frame, modifier: Modifier, scope: NodeScope) {
     val shape = cornerShape(content.cornerRadius)
     val clipped = if (content.clip) Modifier.clip(shape) else Modifier
-    Box(placed.requiredSizePx(content.size).boxStyle(node, content.cornerRadius).then(clipped)) {
+    Box(modifier.requiredSizePx(content.size).boxStyle(node, content.cornerRadius).then(clipped)) {
         Children(content.childIds, scope, content.size)
     }
 }
 
 @Composable
-private fun EllipseView(node: SceneNode, content: NodeContent.Ellipse, placed: Modifier) {
+private fun EllipseView(node: SceneNode, content: NodeContent.Ellipse, modifier: Modifier) {
     val fill = node.style.fill?.toColor()
     val stroke = node.style.stroke?.toColor()?.takeIf { node.style.strokeWidth > 0.0 }
-    Canvas(placed.requiredSizePx(content.size).shadow(node.style.shadow, content.size.height / 2.0, oval = true)) {
+    Canvas(modifier.requiredSizePx(content.size).shadow(node.style.shadow, content.size.height / 2.0, oval = true)) {
         fill?.let { drawOval(it) }
         stroke?.let { drawOval(it, style = Stroke(node.style.strokeWidth.toFloat())) }
     }
 }
 
 @Composable
-private fun PathView(node: SceneNode, content: NodeContent.Path, placed: Modifier) {
+private fun PathView(node: SceneNode, content: NodeContent.Path, modifier: Modifier) {
     val bounds = content.localBounds() ?: return
     val fill = node.style.fill?.toColor()
     val stroke = node.style.stroke?.toColor()?.takeIf { node.style.strokeWidth > 0.0 }
     // 경로 좌표는 노드 원점 기준이라, 범위의 왼쪽 위까지 그릴 수 있게 원점에서 오른쪽 아래 끝까지를 크기로 잡는다.
     val size = Size(maxOf(bounds.right, 0.0), maxOf(bounds.bottom, 0.0))
-    Canvas(placed.requiredSizePx(size)) {
+    Canvas(modifier.requiredSizePx(size)) {
         val path = content.commands.toPath()
         fill?.let { drawPath(path, it) }
         stroke?.let { drawPath(path, it, style = Stroke(node.style.strokeWidth.toFloat())) }
@@ -183,7 +183,7 @@ private fun PathView(node: SceneNode, content: NodeContent.Path, placed: Modifie
 }
 
 @Composable
-private fun TextView(node: SceneNode, content: NodeContent.Text, placed: Modifier) {
+private fun TextView(node: SceneNode, content: NodeContent.Text, modifier: Modifier) {
     val density = LocalDensity.current
     val style = TextStyle(
         color = node.style.fill?.toColor() ?: Color.Black,
@@ -197,32 +197,32 @@ private fun TextView(node: SceneNode, content: NodeContent.Text, placed: Modifie
             TextAlignment.End -> TextAlign.End
         },
     )
-    BasicText(content.text, placed.requiredSizePx(content.size).clipToBounds(), style = style, overflow = TextOverflow.Clip)
+    BasicText(content.text, modifier.requiredSizePx(content.size).clipToBounds(), style = style, overflow = TextOverflow.Clip)
 }
 
 @Composable
-private fun ImageView(content: NodeContent.Image, placed: Modifier, scope: NodeScope) {
+private fun ImageView(content: NodeContent.Image, modifier: Modifier, scope: NodeScope) {
     val image = scope.images.image(content.uri)
     if (image == null) {
-        Placeholder(content.size, placed)
+        Placeholder(content.size, modifier)
     } else {
-        Image(image, contentDescription = null, modifier = placed.requiredSizePx(content.size), contentScale = ContentScale.FillBounds)
+        Image(image, contentDescription = null, modifier = modifier.requiredSizePx(content.size), contentScale = ContentScale.FillBounds)
     }
 }
 
 @Composable
-private fun HostView(node: SceneNode, content: NodeContent.HostSlot, placed: Modifier, scope: NodeScope) {
+private fun HostView(node: SceneNode, content: NodeContent.HostSlot, modifier: Modifier, scope: NodeScope) {
     val slot = scope.slots[content.key]
     if (slot == null) {
-        Placeholder(content.size, placed)
+        Placeholder(content.size, modifier)
         return
     }
-    Box(placed.requiredSizePx(content.size).boxStyle(node, 0.0).clipToBounds()) { slot() }
+    Box(modifier.requiredSizePx(content.size).boxStyle(node, 0.0).clipToBounds()) { slot() }
 }
 
 @Composable
-private fun Placeholder(size: Size, placed: Modifier) {
-    Canvas(placed.requiredSizePx(size)) {
+private fun Placeholder(size: Size, modifier: Modifier) {
+    Canvas(modifier.requiredSizePx(size)) {
         drawRect(PLACEHOLDER, style = Stroke(Stroke.HairlineWidth))
         drawLine(PLACEHOLDER, Offset.Zero, Offset(this.size.width, this.size.height))
         drawLine(PLACEHOLDER, Offset(this.size.width, 0f), Offset(0f, this.size.height))

@@ -1,5 +1,6 @@
 package com.naury.kinetica.player
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -21,8 +22,9 @@ import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.motion.SceneMorph
 import com.naury.kinetica.motion.TransitionDriver
 import com.naury.kinetica.motion.TransitionEnd
-import com.naury.kinetica.render.SceneCanvas
 import com.naury.kinetica.render.SceneImageProvider
+import com.naury.kinetica.render.SceneLayout
+import com.naury.kinetica.render.SceneSlots
 
 /**
  * 두 장면 사이 전환([SceneMorph])을 [progress](0..1)에서 그린다. 대상 장면의 artboard를 영역에 맞춘다.
@@ -34,6 +36,7 @@ public fun SceneTransition(
     modifier: Modifier = Modifier,
     images: SceneImageProvider = SceneImageProvider.None,
     background: Color = Color.Transparent,
+    slots: SceneSlots = emptyMap(),
 ) {
     val frame = remember(morph, progress) { morph.frame(progress) }
     var size by remember { mutableStateOf(0 to 0) }
@@ -41,7 +44,7 @@ public fun SceneTransition(
         Viewport.fitting(Rect(0.0, 0.0, frame.artboard.width, frame.artboard.height), size.first.toDouble(), size.second.toDouble())
     }
     Box(modifier.onSizeChanged { size = it.width to it.height }) {
-        SceneCanvas(frame, viewport, Modifier.matchParentSize(), images, artboardOutside = background)
+        SceneLayout(frame, viewport, Modifier.matchParentSize().background(background), images, slots)
     }
 }
 

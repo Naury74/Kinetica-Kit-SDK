@@ -8,6 +8,7 @@ import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.Shadow
 import java.util.UUID
 
 /** 도구로 새로 만드는 노드. 가운데가 [center](문서 좌표)에 오고 pivot은 가운데다. */
@@ -17,12 +18,38 @@ internal object NodeFactory {
     private val textSize = Size(360.0, 80.0)
     private const val TEXT_FONT_SIZE = 48.0
     private const val WHITE = 0xFFFFFFFF
+    private val frameSize = Size(360.0, 240.0)
+    private const val FRAME_RADIUS = 28.0
+    private const val SHADOW_COLOR = 0x33000000
+    private const val SHADOW_Y = 8.0
+    private const val SHADOW_BLUR = 24.0
 
     fun newId(): NodeId = NodeId("n-" + UUID.randomUUID())
 
     fun rectangle(center: Vec2, sequence: Int): SceneNode = shape(NodeContent.Rectangle(shapeSize, cornerRadius = 24.0), center, sequence)
 
     fun ellipse(center: Vec2, sequence: Int): SceneNode = shape(NodeContent.Ellipse(shapeSize), center, sequence)
+
+    /** 흰 배경·둥근 모서리·옅은 그림자의 카드 모양 Frame. */
+    fun frame(center: Vec2): SceneNode = SceneNode(
+        id = newId(),
+        content = NodeContent.Frame(frameSize, cornerRadius = FRAME_RADIUS),
+        transform = centered(center, frameSize),
+        style = NodeStyle(
+            fill = ArgbColor(WHITE.toInt()),
+            shadow = Shadow(ArgbColor(SHADOW_COLOR), offsetY = SHADOW_Y, blur = SHADOW_BLUR),
+        ),
+    )
+
+    fun hostView(center: Vec2, option: HostViewOption): SceneNode {
+        val size = Size(option.width, option.height)
+        return SceneNode(
+            id = newId(),
+            content = NodeContent.HostSlot(size, option.key),
+            name = option.label,
+            transform = centered(center, size),
+        )
+    }
 
     fun text(center: Vec2, text: String): SceneNode = SceneNode(
         id = newId(),

@@ -46,6 +46,9 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
     /** 상태 기계가 바뀔 때마다 늘어난다. 표시(사각 선택 등)를 다시 그리는 신호다. */
     var gestureTick by mutableIntStateOf(0)
 
+    /** 글자 편집 창을 연 노드. 없으면 `null`. */
+    var editingText by mutableStateOf<NodeId?>(null)
+
     /** 모션 편집 중인지. 켜져 있으면 캔버스가 [playheadMs]의 모습을 보여 준다. */
     var motionEnabled by mutableStateOf(false)
 

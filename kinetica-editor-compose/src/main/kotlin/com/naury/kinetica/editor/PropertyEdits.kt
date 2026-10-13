@@ -3,12 +3,14 @@ package com.naury.kinetica.editor
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.scene.ArgbColor
+import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.Shadow
 
 /** 속성 패널에서 고칠 수 있는 숫자 값. */
-internal enum class NumericField { X, Y, Width, Height, Rotation, Opacity }
+internal enum class NumericField { X, Y, Width, Height, Rotation, Opacity, CornerRadius, FontWeight }
 
 /**
  * 속성 패널 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계다. 모션 편집 중이면 보이는 값을 기준으로 고치고
@@ -19,11 +21,24 @@ internal class PropertyEdits(private val state: EditorState) {
     /** 지금 값. 크기가 없는 노드(경로·그룹)의 너비·높이는 `null`이다. opacity는 0..100(%)이다. */
     fun value(node: SceneNode, field: NumericField): Double? = when (field) {
         NumericField.X -> node.transform.translationX
+
         NumericField.Y -> node.transform.translationY
+
         NumericField.Width -> node.content.size()?.width
+
         NumericField.Height -> node.content.size()?.height
+
         NumericField.Rotation -> node.transform.rotationDegrees
+
         NumericField.Opacity -> node.style.opacity * PERCENT
+
+        NumericField.CornerRadius -> when (val content = node.content) {
+            is NodeContent.Rectangle -> content.cornerRadius
+            is NodeContent.Frame -> content.cornerRadius
+            else -> null
+        }
+
+        NumericField.FontWeight -> (node.content as? NodeContent.Text)?.fontWeight?.toDouble()
     }
 
     fun setNumber(id: NodeId, field: NumericField, text: String): Boolean {
@@ -31,10 +46,20 @@ internal class PropertyEdits(private val state: EditorState) {
         val number = text.trim().replace(',', '.').toDoubleOrNull()?.takeIf(Double::isFinite) ?: return false
         val updated = when (field) {
             NumericField.X -> node.copy(transform = node.transform.copy(translationX = number))
+
             NumericField.Y -> node.copy(transform = node.transform.copy(translationY = number))
+
             NumericField.Rotation -> node.copy(transform = node.transform.copy(rotationDegrees = number))
+
             NumericField.Opacity -> node.copy(style = node.style.copy(opacity = number / PERCENT)).takeIf { number in 0.0..PERCENT }
+
             NumericField.Width, NumericField.Height -> resized(node, field, number)
+
+            NumericField.CornerRadius -> withCorner(node, number)
+
+            NumericField.FontWeight -> (node.content as? NodeContent.Text)
+                ?.takeIf { number == Math.rint(number) && number in MIN_WEIGHT..MAX_WEIGHT }
+                ?.let { node.copy(content = it.copy(fontWeight = number.toInt())) }
         } ?: return false
         return update(updated)
     }
@@ -62,6 +87,42 @@ internal class PropertyEdits(private val state: EditorState) {
         return update(node.copy(content = content.copy(fontSize = size)))
     }
 
+    /**
+     * [property]를 데이터 키 [key]에 묶는다. 빈 글자면 묶음을 푼다. 키 형식이 틀리면 `false`이고 문서는 그대로다.
+     */
+    fun setBinding(id: NodeId, property: BoundProperty, key: String): Boolean {
+        val node = state.document.node(id) ?: return false
+        val trimmed = key.trim()
+        val bindings = if (trimmed.isEmpty()) node.bindings - property else node.bindings + (property to trimmed)
+        return update(node.copy(bindings = bindings))
+    }
+
+    /** 누르면 호스트에 넘길 동작 이름. 빈 글자면 지운다. */
+    fun setAction(id: NodeId, action: String): Boolean {
+        val node = state.document.node(id) ?: return false
+        return update(node.copy(action = action.trim().ifEmpty { null }))
+    }
+
+    /** 그림자를 켜고 끈다. 켤 때는 옅은 기본 그림자를 쓴다. */
+    fun toggleShadow(id: NodeId): Boolean {
+        val node = state.document.node(id) ?: return false
+        val shadow = if (node.style.shadow ==
+            null
+        ) {
+            Shadow(ArgbColor(DEFAULT_SHADOW), offsetY = DEFAULT_SHADOW_Y, blur = DEFAULT_SHADOW_BLUR)
+        } else {
+            null
+        }
+        return update(node.copy(style = node.style.copy(shadow = shadow)))
+    }
+
+    /** Frame이 자식을 상자 안으로 자를지 바꾼다. */
+    fun toggleClip(id: NodeId): Boolean {
+        val node = state.document.node(id) ?: return false
+        val frame = node.content as? NodeContent.Frame ?: return false
+        return update(node.copy(content = frame.copy(clip = !frame.clip)))
+    }
+
     fun toggleVisible(id: NodeId): Boolean = state.document.node(id)?.let { update(it.copy(visible = !it.visible)) } ?: false
 
     fun toggleLocked(id: NodeId): Boolean = state.document.node(id)?.let { update(it.copy(locked = !it.locked)) } ?: false
@@ -69,6 +130,15 @@ internal class PropertyEdits(private val state: EditorState) {
     private fun update(node: SceneNode): Boolean {
         if (state.document.node(node.id) == node) return true
         return state.execute(SceneCommand.UpdateProperties(node))
+    }
+
+    private fun withCorner(node: SceneNode, radius: Double): SceneNode? {
+        if (radius < 0.0) return null
+        return when (val content = node.content) {
+            is NodeContent.Rectangle -> node.copy(content = content.copy(cornerRadius = radius))
+            is NodeContent.Frame -> node.copy(content = content.copy(cornerRadius = radius))
+            else -> null
+        }
     }
 
     /** 크기를 바꿔도 pivot이 같은 비율 자리에 있게 한다. 0 이하는 거부한다. */
@@ -99,6 +169,11 @@ internal class PropertyEdits(private val state: EditorState) {
 
     private companion object {
         const val PERCENT = 100.0
+        const val MIN_WEIGHT = 100.0
+        const val MAX_WEIGHT = 900.0
+        const val DEFAULT_SHADOW = 0x33000000
+        const val DEFAULT_SHADOW_Y = 8.0
+        const val DEFAULT_SHADOW_BLUR = 24.0
     }
 }
 

@@ -52,7 +52,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.naury.kinetica.core.command.CommandResult
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.scene.AlignMode
+import com.naury.kinetica.core.scene.Bindings
 import com.naury.kinetica.core.scene.DistributeAxis
+import com.naury.kinetica.core.scene.NodeContent
+import com.naury.kinetica.core.scene.SceneData
 import com.naury.kinetica.core.scene.SceneGraph
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.SelectionFrame
@@ -61,8 +64,9 @@ import com.naury.kinetica.gestures.GestureConfig
 import com.naury.kinetica.gestures.canvasGestures
 import com.naury.kinetica.guides.SnapConfig
 import com.naury.kinetica.history.KineticaSession
-import com.naury.kinetica.render.SceneCanvas
 import com.naury.kinetica.render.SceneImageProvider
+import com.naury.kinetica.render.SceneLayout
+import com.naury.kinetica.render.SceneSlots
 import com.naury.kinetica.render.rememberSceneImages
 
 /**
@@ -78,6 +82,9 @@ import com.naury.kinetica.render.rememberSceneImages
  *
  * @param images 이미지 노드를 그릴 이미지. `null`이면 [rememberSceneImages]로 `content://` 이미지를 직접 읽는다.
  * @param config 스냅·격자·회전 스냅 설정
+ * @param slots 호스트 뷰 노드에 그릴 Composable(키 → 내용). 편집 중에는 눌리지 않고 배치만 바뀐다.
+ * @param hostViews "호스트 뷰" 메뉴에 보일 항목. 비어 있으면 메뉴를 숨긴다.
+ * @param data 바인딩에 쓸 호스트 데이터. 바뀌면 화면에 바로 반영된다(문서는 바뀌지 않음).
  */
 @Composable
 public fun KineticaEditor(
@@ -86,6 +93,9 @@ public fun KineticaEditor(
     images: SceneImageProvider? = null,
     theme: StudioTheme = StudioTheme(),
     config: StudioConfig = StudioConfig(),
+    slots: SceneSlots = emptyMap(),
+    hostViews: List<HostViewOption> = emptyList(),
+    data: SceneData = SceneData.Empty,
     toolbarEnd: @Composable RowScope.() -> Unit = {},
 ) {
     val state = remember(session) { EditorState(session) }
@@ -97,6 +107,7 @@ public fun KineticaEditor(
         val gestureConfig = GestureConfig.forDensity(density).copy(rotationSnapDegrees = config.rotationSnapDegrees)
         CanvasGestureController(state, gestureConfig, snapping).also { it.onChange = { state.gestureTick++ } }
     }
+    controller.onDoubleTap = { id -> if (state.document.node(id)?.content is NodeContent.Text) state.editingText = id }
     CancelGestureOnPause(controller)
     val paddingPx = with(LocalDensity.current) { CANVAS_PADDING.toPx().toDouble() }
     val document by session.document.collectAsStateWithLifecycle()
@@ -105,11 +116,19 @@ public fun KineticaEditor(
         val docked = maxWidth >= DOCKED_PANEL_MIN_WIDTH
         var sheet by remember { mutableStateOf<PanelSheet?>(null) }
         Column(Modifier.fillMaxSize()) {
-            EditorToolbar(state, theme, paddingPx, showPanelButtons = !docked, onOpenSheet = { sheet = it }, toolbarEnd = toolbarEnd)
+            EditorToolbar(state, theme, paddingPx, !docked, hostViews, onOpenSheet = { sheet = it }, toolbarEnd = toolbarEnd)
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 // 선택 줄은 캔버스 위에 띄워, 고를 때마다 캔버스 크기가 바뀌어 장면이 밀리지 않게 한다.
                 Box(Modifier.weight(1f).fillMaxHeight()) {
-                    EditorCanvas(state, controller, actions, sceneImages, theme, paddingPx, Modifier.fillMaxSize())
+                    EditorCanvas(
+                        state,
+                        controller,
+                        actions,
+                        SceneSources(sceneImages, slots, data),
+                        theme,
+                        paddingPx,
+                        Modifier.fillMaxSize(),
+                    )
                     SelectionBar(state, actions, theme, Modifier.align(Alignment.BottomCenter))
                 }
                 if (docked) {
@@ -119,6 +138,7 @@ public fun KineticaEditor(
             if (state.motionEnabled) TimelinePanel(state, theme, Modifier.fillMaxWidth().heightIn(max = TIMELINE_MAX_HEIGHT))
         }
         if (!docked) sheet?.let { PanelBottomSheet(it, state, edits, theme) { sheet = null } }
+        state.editingText?.let { id -> TextEditDialog(state, edits, id) { state.editingText = null } }
     }
 }
 
@@ -184,42 +204,47 @@ private fun PanelTitle(label: Int, theme: StudioTheme) {
     Text(stringResource(label), color = theme.onPanel, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
 }
 
+/** 캔버스가 그릴 때 쓰는 호스트 자원. */
+internal class SceneSources(val images: SceneImageProvider, val slots: SceneSlots, val data: SceneData)
+
 @Composable
 private fun EditorCanvas(
     state: EditorState,
     controller: CanvasGestureController,
     actions: EditorActions,
-    images: SceneImageProvider,
+    sources: SceneSources,
     theme: StudioTheme,
     paddingPx: Double,
     modifier: Modifier,
 ) {
     val base by state.session.document.collectAsStateWithLifecycle()
     val selection by state.session.selection.collectAsStateWithLifecycle()
-    val document = remember(base, state.motionEnabled, state.playheadMs) { state.displayed(base) }
+    val document =
+        remember(base, state.motionEnabled, state.playheadMs, sources.data) { Bindings.apply(state.displayed(base), sources.data) }
     val count = selection.selectedIds.size
     val description = pluralStringResource(R.plurals.kinetica_canvas_description, count, count)
     val focus = remember { FocusRequester() }
-    Box(
-        modifier
-            .clipToBounds()
-            .onSizeChanged { state.onCanvasSize(it.width, it.height, paddingPx) }
-            .pointerInput(focus) {
-                awaitPointerEventScope { while (true) if (awaitPointerEvent().changes.any { it.pressed }) focus.requestFocus() }
-            }
-            .canvasGestures(controller)
-            .focusRequester(focus)
-            .editorShortcuts(state.session, actions)
-            .focusable()
-            .semantics { contentDescription = description }
-            .testTag(CANVAS_TAG),
-    ) {
+    Box(modifier.clipToBounds().background(theme.canvasBackground).onSizeChanged { state.onCanvasSize(it.width, it.height, paddingPx) }) {
         val viewport = state.viewport
-        SceneCanvas(document, viewport, Modifier.fillMaxSize(), images, artboardOutside = theme.canvasBackground)
+        SceneLayout(document, viewport, Modifier.fillMaxSize(), sources.images, sources.slots, interactive = false)
         val frame = remember(document, selection) { SelectionFrame.of(SceneGraph(document), selection.selectedIds) }
         // gestureTick을 읽어 사각 선택 영역이 바뀔 때마다 표시를 다시 그린다.
         val marquee = state.gestureTick.let { controller.marquee }
         SelectionOverlay(frame, showHandles = count == 1, marquee, state.guides, viewport, theme, Modifier.fillMaxSize())
+        // 맨 위 투명 층이 포인터를 모두 가져가, 편집 중에는 호스트 뷰가 눌리지 않고 배치만 바뀐다.
+        Box(
+            Modifier
+                .matchParentSize()
+                .pointerInput(focus) {
+                    awaitPointerEventScope { while (true) if (awaitPointerEvent().changes.any { it.pressed }) focus.requestFocus() }
+                }
+                .canvasGestures(controller)
+                .focusRequester(focus)
+                .editorShortcuts(state.session, actions)
+                .focusable()
+                .semantics { contentDescription = description }
+                .testTag(CANVAS_TAG),
+        )
     }
 }
 
@@ -229,6 +254,7 @@ private fun EditorToolbar(
     theme: StudioTheme,
     paddingPx: Double,
     showPanelButtons: Boolean,
+    hostViews: List<HostViewOption>,
     onOpenSheet: (PanelSheet) -> Unit,
     toolbarEnd: @Composable RowScope.() -> Unit,
 ) {
@@ -243,6 +269,8 @@ private fun EditorToolbar(
         ToolButton(R.string.kinetica_add_rectangle, colors) { add(NodeFactory.rectangle(state.visibleCenter(), state.nextSequence())) }
         ToolButton(R.string.kinetica_add_ellipse, colors) { add(NodeFactory.ellipse(state.visibleCenter(), state.nextSequence())) }
         ToolButton(R.string.kinetica_add_text, colors) { add(NodeFactory.text(state.visibleCenter(), defaultText)) }
+        ToolButton(R.string.kinetica_add_frame, colors) { add(NodeFactory.frame(state.visibleCenter())) }
+        if (hostViews.isNotEmpty()) HostViewMenu(hostViews, colors) { add(NodeFactory.hostView(state.visibleCenter(), it)) }
         ToolButton(R.string.kinetica_undo, colors, enabled = history.canUndo) { state.session.history.undo() }
         ToolButton(R.string.kinetica_redo, colors, enabled = history.canRedo) { state.session.history.redo() }
         ToolButton(R.string.kinetica_fit, colors) { state.fit(paddingPx) }
@@ -267,6 +295,8 @@ private fun SelectionBar(state: EditorState, actions: EditorActions, theme: Stud
     val colors = toolColors(theme)
     ToolRow(theme, alpha = SELECTION_BAR_ALPHA, modifier = modifier) {
         ToolButton(R.string.kinetica_delete, colors, onClick = actions::delete)
+        val editableText = selection.selectedIds.singleOrNull()?.takeIf { document.node(it)?.content is NodeContent.Text }
+        if (editableText != null) ToolButton(R.string.kinetica_edit_text, colors) { state.editingText = editableText }
         ToolButton(R.string.kinetica_group, colors, enabled = count >= 2, onClick = actions::group)
         ToolButton(R.string.kinetica_ungroup, colors, enabled = document.let { actions.canUngroup }, onClick = actions::ungroup)
         ToolButton(R.string.kinetica_bring_forward, colors, onClick = actions::bringForward)
@@ -291,6 +321,25 @@ private fun ToolRow(theme: StudioTheme, modifier: Modifier = Modifier, alpha: Fl
 @Composable
 private fun toolColors(theme: StudioTheme): ButtonColors =
     ButtonDefaults.textButtonColors(contentColor = theme.onPanel, disabledContentColor = theme.onPanel.copy(alpha = DISABLED_ALPHA))
+
+@Composable
+private fun HostViewMenu(options: List<HostViewOption>, colors: ButtonColors, onPick: (HostViewOption) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        ToolButton(R.string.kinetica_add_host_view, colors) { expanded = true }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label) },
+                    onClick = {
+                        expanded = false
+                        onPick(option)
+                    },
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun ArrangeMenu(actions: EditorActions, colors: ButtonColors) {

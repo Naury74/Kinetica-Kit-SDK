@@ -72,4 +72,17 @@
     <string name="kinetica_field_font_size">글자 크기</string>
     <string name="kinetica_kind_frame">프레임</string>
     <string name="kinetica_kind_host">호스트 뷰</string>
+    <string name="kinetica_add_frame">프레임</string>
+    <string name="kinetica_add_host_view">호스트 뷰</string>
+    <string name="kinetica_edit_text">글자 수정</string>
+    <string name="kinetica_ok">확인</string>
+    <string name="kinetica_cancel">취소</string>
+    <string name="kinetica_field_corner">모서리</string>
+    <string name="kinetica_field_font_weight">굵기(100–900)</string>
+    <string name="kinetica_field_shadow">그림자</string>
+    <string name="kinetica_field_clip">안쪽만 보이기</string>
+    <string name="kinetica_section_data">데이터</string>
+    <string name="kinetica_field_bind_text">내용 데이터 키</string>
+    <string name="kinetica_field_bind_visible">보임 데이터 키</string>
+    <string name="kinetica_field_action">누르면 실행할 동작</string>
 </resources>
