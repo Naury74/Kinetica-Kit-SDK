@@ -111,6 +111,42 @@ class LayoutsTest {
     }
 
     @Test
+    fun `늘이기는 내용에 맞추는 자식 Frame을 늘이지 않는다`() {
+        val outer = AutoLayout(LayoutDirection.Vertical, crossAlign = CrossAlign.Stretch)
+        val chip = AutoLayout(LayoutDirection.Horizontal, padding = Insets.all(4.0), hugWidth = true, hugHeight = true)
+        val scene = document(
+            listOf(
+                frame("outer", listOf("chip"), outer),
+                frame("chip", listOf("label"), chip, size = Size(10.0, 10.0), parent = "outer", transform = Transform2D.Identity),
+                rect("label", parent = "chip"),
+            ),
+        )
+
+        val laid = Layouts.apply(scene)
+
+        assertThat(laid.size("chip")).isEqualTo(Size(108.0, 58.0))
+        assertThat(Layouts.apply(laid)).isSameInstanceAs(laid)
+    }
+
+    @Test
+    fun `채움 자식은 남는 공간을 똑같이 나눈다`() {
+        val row = AutoLayout(LayoutDirection.Horizontal, gap = 20.0, padding = Insets.all(10.0))
+        val scene = document(
+            listOf(
+                frame("row", listOf("fixed", "a", "b"), row),
+                rect("fixed", parent = "row", size = Size(60.0, 40.0)),
+                rect("a", parent = "row").copy(layoutFill = true),
+                rect("b", parent = "row").copy(layoutFill = true),
+            ),
+        )
+
+        val laid = Layouts.apply(scene)
+
+        assertThat(laid.size("a")).isEqualTo(Size(140.0, 50.0))
+        assertThat(laid.x("b")).isEqualTo(250.0)
+    }
+
+    @Test
     fun `artboard 크기를 바꾸면 최상위 노드가 제약대로 움직인다`() {
         val bottomBar = rect("bar", size = Size(1080.0, 120.0), transform = Transform2D(translationY = 1800.0))
             .copy(constraints = LayoutConstraints(Pin.Both, Pin.End))

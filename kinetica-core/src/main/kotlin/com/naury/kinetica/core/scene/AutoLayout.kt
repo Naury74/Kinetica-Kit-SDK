@@ -43,7 +43,10 @@ public enum class MainAlign(public val wireName: String) {
     }
 }
 
-/** 교차 방향 정렬. [Stretch]는 크기가 있고 회전·배율이 없는 자식을 Frame 안쪽 폭(높이)까지 늘인다. */
+/**
+ * 교차 방향 정렬. [Stretch]는 크기가 있고 회전·배율이 없는 자식을 Frame 안쪽 폭(높이)까지 늘인다.
+ * 그 축을 내용에 맞추는 자동 배치 Frame 자식은 늘이지 않고 시작에 둔다.
+ */
 public enum class CrossAlign(public val wireName: String) {
     Start("start"),
     Center("center"),

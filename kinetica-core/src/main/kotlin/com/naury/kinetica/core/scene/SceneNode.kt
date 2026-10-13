@@ -17,6 +17,7 @@ import com.naury.kinetica.core.geometry.Vec2
  * @property bindings 속성을 호스트 데이터 키에 묶는다. 데이터에 값이 있으면 저장된 값 대신 쓴다(docs 30).
  * @property action 사용 모드에서 누르면 호스트에 넘기는 동작 이름. 코드를 실행하지 않는다.
  * @property constraints 부모(Frame·artboard) 크기가 바뀔 때 따라가는 방식. 자동 배치 Frame의 자식이면 쓰지 않는다.
+ * @property layoutFill 자동 배치 Frame의 자식일 때 배치 방향의 남는 공간을 다른 채움 자식과 똑같이 나눠 차지한다(Figma의 Fill container).
  */
 public data class SceneNode(
     val id: NodeId,
@@ -31,6 +32,7 @@ public data class SceneNode(
     val bindings: Map<BoundProperty, String> = emptyMap(),
     val action: String? = null,
     val constraints: LayoutConstraints = LayoutConstraints.Default,
+    val layoutFill: Boolean = false,
 ) {
     public val kind: NodeKind get() = content.kind
 

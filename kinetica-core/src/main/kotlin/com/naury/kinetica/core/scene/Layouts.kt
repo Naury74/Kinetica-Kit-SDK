@@ -94,12 +94,33 @@ public object Layouts {
         fun run(): Boolean {
             val innerCross = innerCross()
             val stretched = layout.crossAlign == CrossAlign.Stretch && innerCross > 0.0 && stretch(innerCross)
+            val filled = !hugMain && fill()
             val bounds = items.mapNotNull { child -> boundsInParent(nodes, child)?.let { child to it } }
             val totalMain = bounds.sumOf { axis.main(it.second.width, it.second.height) } + layout.gap * (bounds.size - 1).coerceAtLeast(0)
             val frameMain = if (hugMain) padStart + totalMain + padEnd else axis.main(frame.size.width, frame.size.height)
             val resized = resizeFrame(frameMain, innerCross)
             val placed = place(bounds, frameMain - padStart - padEnd - totalMain, innerCross)
-            return stretched || resized || placed
+            return stretched || filled || resized || placed
+        }
+
+        /** 채움 자식이 배치 방향의 남는 공간을 똑같이 나눈다. 내용에 맞추는 Frame에서는 남는 공간이 없어 쓰지 않는다. */
+        private fun fill(): Boolean {
+            val fillers = items.filter { child ->
+                nodes.getValue(child).let {
+                    it.layoutFill && it.isAxisAligned() &&
+                        it.content.sizeOrNull() != null
+                }
+            }
+            if (fillers.isEmpty()) return false
+            val fixed = (items - fillers.toSet()).mapNotNull { boundsInParent(nodes, it) }.sumOf { axis.main(it.width, it.height) }
+            val placed = items.count { boundsInParent(nodes, it) != null }
+            val inner = axis.main(frame.size.width, frame.size.height) - padStart - padEnd - layout.gap * (placed - 1).coerceAtLeast(0)
+            val share = ((inner - fixed) / fillers.size).coerceAtLeast(MIN_LENGTH)
+            return fillers.fold(false) { changed, child ->
+                val size = nodes.getValue(child).content.sizeOrNull() ?: return@fold changed
+                val next = if (axis.horizontal) Size(share, size.height) else Size(size.width, share)
+                resize(nodes, child, next) || changed
+            }
         }
 
         private fun innerCross(): Double {
@@ -109,9 +130,15 @@ public object Layouts {
 
         private fun stretch(innerCross: Double): Boolean = items.fold(false) { changed, child ->
             val node = nodes.getValue(child)
-            val size = node.content.sizeOrNull()?.takeIf { node.isAxisAligned() } ?: return@fold changed
+            val size = node.content.sizeOrNull()?.takeIf { node.isAxisAligned() && !hugsCross(node) } ?: return@fold changed
             val next = if (axis.horizontal) Size(size.width, innerCross) else Size(innerCross, size.height)
             resize(nodes, child, next) || changed
+        }
+
+        // 자식 Frame이 이 축을 내용에 맞추고 있으면 늘이지 않는다. 늘이면 두 규칙이 번갈아 크기를 바꾼다.
+        private fun hugsCross(node: SceneNode): Boolean {
+            val childLayout = (node.content as? NodeContent.Frame)?.layout ?: return false
+            return if (axis.horizontal) childLayout.hugHeight else childLayout.hugWidth
         }
 
         private fun resizeFrame(frameMain: Double, innerCross: Double): Boolean {
