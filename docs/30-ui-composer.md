@@ -42,3 +42,24 @@ SceneNode.constraints          // 자동 배치 밖: 부모 크기가 바뀔 때
 - 데이터가 보임을 바꾸면 그 자리만 다시 배치한다. 애니메이션 위치는 덮지 않는다.
 - 재생기 `SceneFit.Responsive`: artboard를 화면 모양(문서 단위 = `HOST_VIEW_UNITS_PER_DP` × dp)으로 바꾸고 최상위 노드를 제약대로 옮긴다.
 - 남은 것: 줄 바꿈(wrap), 최소·최대 크기, 글자 내용에 맞춘 크기(글자 측정이 core 밖이라 렌더러 협력 필요), 끌어서 자동 배치 안 순서 바꾸기.
+
+## 컴포넌트·토큰 (3단계)
+
+```text
+SceneNode.component: String?     // 컴포넌트 원본 이름
+SceneNode.instanceOf: InstanceOf? // 원본 id + 덮어쓴 값(자식 id 기준)
+SceneDocument.tokens: Map<String, ArgbColor>
+NodeStyle.fillToken·strokeToken  // 토큰에 이은 색
+```
+
+- 명령마다 덮어쓴 값 기록 → 직접 고친 색의 토큰 연결 끊기 → 토큰 색 반영 → 인스턴스 다시 맞추기 → 자동 배치 순으로 정리한다.
+- 인스턴스 자식 id는 인스턴스 id와 원본 자식 id로 만든 고정 값이라 다시 맞춰도 Compose 상태가 유지된다.
+- 편집기 사용법은 [docs/32](32-studio.md#컴포넌트디자인-토큰).
+
+## 서버 주도 재생 (4단계)
+
+- `RemoteSceneLoader(fetcher, cache, fallback, accept)`: 호스트가 받은 JSON을 `SceneCodec`으로 검증한다. 처음에는 캐시를 먼저 보여 주고,
+  받기 실패·형식 오류·`accept` 거절이면 지금 문서를 유지하며 이유만 `lastError`에 남긴다. etag는 메모리에만 둔다.
+- `RemoteKineticaPlayer(loader, refreshKey, data, slots, onAction, …)`: 보여 줄 문서가 없을 때만 `placeholder`.
+- 남은 것: etag 저장, 문서 서명 확인, 여러 화면 묶음 받기.
+

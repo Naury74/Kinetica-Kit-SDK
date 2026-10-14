@@ -10,7 +10,7 @@
 - **Host UI**: `slots`(키 → Compose 뷰)·`hostViews`(편집기 메뉴)·`SceneData`(실시간 값)·`onAction`(누름)
 
 - **Studio**: 캔버스·도구·레이어·속성·timeline이 있는 편집 화면 `KineticaEditor`
-- **Player**: 편집 의존성 없이 장면을 재생하는 `KineticaPlayer`
+- **Player**: 편집 의존성 없이 장면을 재생하는 `KineticaPlayer`, 서버가 내려준 화면을 재생하는 `RemoteKineticaPlayer`
 - **Transitions**: 같은 `morphKey` 노드를 잇는 장면 morph, 끌어서 닫기, Compose 공유 전환 연결
 - **Headless**: Android 없이 쓰는 문서·좌표·keyframe 평가(Kotlin JVM)
 
@@ -36,15 +36,17 @@
 
 - **디자인**: 사각형·타원·다각형·별·선·화살표, 단색·선형·원형 그라디언트, 바깥·안쪽 그림자 여러 개(퍼짐), 레이어 흐림, 점선, 모서리별 반지름, 리치 텍스트(구간별 굵기·기울임·밑줄·크기·색·글꼴, 호스트 글꼴), 기기 틀 목업 PNG([docs/32](docs/32-studio.md))
 - **자동 배치·화면 크기 대응**: Frame 가로·세로 자동 배치(간격·여백·정렬·늘이기·내용 맞춤·남는 공간 채우기), 고른 노드를 자동 배치로 감싸기, 노드 제약(왼쪽·오른쪽·좌우·가운데·비율), 재생기 `SceneFit.Responsive`로 기기 화면 모양에 맞춰 펼치기
+- **컴포넌트·디자인 토큰**: Frame을 컴포넌트로 만들고 인스턴스를 넣으면 원본을 고칠 때 함께 바뀜(인스턴스에서 바꾼 값은 유지·되돌리기·분리), 색 토큰에 채우기·선을 이어 토큰 하나로 전체 색 바꾸기, 기본 키트(버튼·보조 버튼·칩·카드·토글·입력·목록 항목·탭 바)
+- **서버 주도 화면**: 호스트가 받은 장면 JSON을 같은 검증으로 읽어 재생(`RemoteSceneLoader`·`RemoteKineticaPlayer`). 캐시·앱에 넣은 기본 문서·etag, 실패하거나 호스트가 거절하면 지금 화면 유지. 배치가 바뀌어도 호스트 뷰 상태·데이터·동작은 이어짐
 - **호스트 UI 조립**: 호스트 뷰 자리(HostSlot)·Frame(모서리·자르기)·그림자·글자 굵기, 데이터 바인딩(글자·보임·이미지·채우기·불투명도), 탭 동작, 노드마다 실제 Compose 요소로 그리는 `SceneLayout`, 글자를 두 번 눌러 바로 고치기
 - **문서**: 그룹·사각형·타원·경로·글자·이미지 노드, 불변 문서, 명령으로만 수정, 모든 결과를 검증(id·순환·깊이·유한값·상한·URI)
 - **편집**: 고르기·옮기기·크기·회전(회전·중첩된 노드에서도 반대쪽 손잡이 고정), 사각 선택, 두 손가락 이동·확대, 안내선 스냅(8dp/12dp hysteresis), 그룹·그룹 해제(화면 위치 유지), 정렬·분배, 순서, 속성·레이어 패널, 키보드 단축키
 - **실행 취소**: 제스처 하나가 한 단계, 바뀐 노드만 담는 기록, 단계 수·메모리 상한
-- **모션**: keyframe(이동·배율·회전·불투명도·색·선 두께), easing(Bezier·steps·용수철), 시계 기준 재생(배속·반복·왕복·역방향·marker·동작 줄이기), timeline 편집 화면, 재생 위치 기준 자동 키, 프리셋 6종
+- **모션**: keyframe(이동·배율·회전·불투명도·색·선 두께·너비·높이·모서리·선 색·흐림·그림자 흐림·그림자 Y), easing(Bezier·steps·용수철), 시계 기준 재생(배속·반복·왕복·역방향·marker·동작 줄이기), timeline 편집 화면, 재생 위치 기준 자동 키, 프리셋 6종
 - **전환**: 장면 morph(같은 종류는 보간, 다른 종류는 dissolve), 끌어서 닫기(속도 반영, 끝 알림 한 번), Compose `sharedBounds` 연결
 - **이미지**: 사진 선택기로 고른 `content://` 이미지를 크기 제한해 읽는 기본 로더(호스트가 따로 줄 수도 있음)
 - **저장·내보내기**: 형식 버전이 있는 JSON(크기·중첩 상한, migration 틀), 원자적 교체로 저장하는 파일 저장소, 화면과 같은 그리기로 PNG 내보내기
-- **샘플**: `sample-board`(평범한 가게 앱 홈 화면에서 편집·자유/격자 배치·XML 화면), `sample-studio`(편집·저장·내보내기, **대시보드** 예제의 호스트 위젯·실시간 데이터·**미리보기**), `sample-gallery`(재생기만 쓰는 장면 전환, View 화면 연결)
+- **샘플**: `sample-board`(평범한 가게 앱 홈 화면에서 길게 눌러 편집·자유/격자 배치·XML 화면), `sample-studio`(편집·저장·내보내기, **대시보드** 예제의 호스트 위젯·실시간 데이터·**미리보기**), `sample-gallery`(재생기만 쓰는 장면 전환, View 화면 연결, 가짜 서버로 바꾸는 **서버 화면**)
 
 아직 없는 것과 제한은 [알려진 제한](#알려진-제한)을 보세요.
 
@@ -111,20 +113,21 @@ KineticaPlayer(document, slots = slots, data = data, fit = SceneFit.Responsive, 
 | `kinetica-history` | Kotlin JVM | `KineticaSession`, 트랜잭션, 실행 취소 |
 | `kinetica-motion` | Kotlin JVM | keyframe 평가, easing, 재생 제어, 장면 morph, 전환 진행률 |
 | `kinetica-guides` | Kotlin JVM | 안내선 스냅 |
-| `kinetica-presets` | Kotlin JVM | 모션 프리셋 |
-| `kinetica-serialization` | Kotlin JVM | JSON 읽기·쓰기, migration, 파일 저장소 |
+| `kinetica-presets` | Kotlin JVM | 모션 프리셋, 기본 컴포넌트 키트(`UiKit`) |
+| `kinetica-serialization` | Kotlin JVM | JSON 읽기·쓰기, migration, 파일 저장소, 서버 문서 받기(`RemoteSceneLoader`) |
 | `kinetica-java` | Kotlin JVM | Java 호스트용 정적 입구(선택) |
 | `kinetica-render-compose` | Android | Compose Canvas 그리기 |
 | `kinetica-gestures` | Android | 캔버스 포인터 상태 기계 |
 | `kinetica-editor-compose` | Android | `KineticaEditor` |
-| `kinetica-player-compose` | Android | `KineticaPlayer`, 전환 그리기·끌어서 닫기 |
+| `kinetica-player-compose` | Android | `KineticaPlayer`·`RemoteKineticaPlayer`, 전환 그리기·끌어서 닫기 |
+| `kinetica-board-compose` | Android | 위젯 보드 `KineticaBoard`·`KineticaBoardView` |
 | `kinetica-export-android` | Android | PNG 내보내기 |
 
 의존 방향과 데이터 흐름, 좌표계는 [docs/architecture.md](docs/architecture.md)에 있습니다. 기능을 하나씩 확인하는 순서는 [docs/evaluation.md](docs/evaluation.md).
 
 ## 보안과 개인정보
 
-- SDK는 네트워크 권한이 없고 문서·이미지·사용 기록을 밖으로 보내지 않습니다.
+- SDK는 네트워크 권한이 없고 문서·이미지·사용 기록을 밖으로 보내지 않습니다. 서버 화면도 받는 일은 호스트의 `SceneFetcher`가 하고, SDK는 받은 바이트를 검증만 합니다. 문서 안의 동작·데이터·호스트 뷰 키는 이름일 뿐 코드를 실행하지 않습니다.
 - 외부에서 받은 문서는 크기(기본 10 MiB)·JSON 중첩(64단계)·노드 수·글자 길이·keyframe 수·유한한 숫자·URI scheme을 확인한 뒤에만 문서가 됩니다. 실패해도 예외 대신 이유를 돌려주고, 이유에는 사용자 글자를 담지 않습니다.
 - 이미지 노드는 `content://`·`android.resource://`만 기본 허용하며 SDK가 직접 열지 않습니다. 호스트가 `SceneImageProvider`로 미리 읽은 이미지를 줍니다.
 
@@ -138,7 +141,6 @@ JVM(Apple M5) 기준으로 노드 2,000개에서 명령 적용 p95 약 0.4 ms, t
 
 - 실기기 프레임 시간, API 26 기기 동작은 아직 확인하지 않았습니다.
 - 이미지는 `content://`·`android.resource://`만 읽습니다(웹 URL은 열지 않음). API 26·27에서는 EXIF 회전을 반영하지 않습니다.
-- 캔버스에서 글자를 바로 고칠 수 없고 속성 패널에서 고칩니다.
 - 그룹은 자식을 자르지 않고, 그룹 opacity는 레이어로 합성하지 않고 자식마다 곱합니다(겹친 자식은 더 진하게 보일 수 있음).
 - 여러 노드를 한꺼번에 크기 조절·회전할 수 없습니다. 캔버스에서는 최상위 단위로 고릅니다(그룹 안 노드는 레이어 패널에서).
 - 회전 보간은 가장 짧은 방향만 지원합니다. timeline 확대·키 여러 개 끌기·그래프 편집기는 없습니다.

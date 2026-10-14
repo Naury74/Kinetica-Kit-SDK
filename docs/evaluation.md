@@ -67,6 +67,9 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | B7 | **격자 배치** | 칸에 맞춰 놓이고 겹치면 아래로 밀림 | `KineticaBoardStateTest` |
 | B8 | **완료** → 앱 종료 → 다시 실행, 폴더블 접고 펴기 | 같은 배치. 넓은 화면은 가로 비율대로 펼쳐짐 | `KineticaBoardStateTest` |
 | B9 | **XML 화면** | XML View 위젯도 같은 방식으로 편집 | `KineticaBoardViewTest` |
+| B10 | 편집 아닐 때 위젯을 길게 누르기 | 편집 모드가 켜짐. 짧게 누르거나 스크롤하면 그대로 동작 | `KineticaBoardTest` |
+| B11 | 편집 중 위젯을 화면 아래 끝으로 끌고 머물기 | 보드가 아래로 스크롤되고 위젯이 따라감 | `KineticaBoardTest` |
+| B12 | TalkBack 켜고 편집 중 위젯의 동작 메뉴 | 옮기기·크게·작게·빼기 | `KineticaBoardTest` |
 
 ### 디자인 — Kinetica Studio (docs 32)
 
@@ -79,6 +82,10 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | D5 | 글자 **글자 수정** → 일부 고르고 굵게·색 | 고른 부분만 바뀌고, 이어 쓰면 구간이 늘어남. 실행 취소 한 번에 되돌아감 | `RichTextTest`, `TextSpansTest` |
 | D6 | 속성 **글꼴** 명조·기울임·밑줄 | 글자 전체 모양이 바뀜 | `RichTextTest` |
 | D7 | **목업 내보내기** | 휴대폰 틀 안에 장면이 든 PNG | `PngExporterTest` |
+| D8 | 빈 곳 눌러 선택 해제 → **기본 키트 넣기**, 토큰 `color.brand` 색 바꾸기 | 키트 8종이 artboard 오른쪽에 생기고 버튼·토글 색이 함께 바뀜 | `ComponentEditorTest`, `UiKitTest` |
+| D9 | 카드 원본 **넣기** → 인스턴스 글자 고치기 → 원본 색 바꾸기 | 인스턴스 글자는 유지되고 색은 따라감. **덮어쓴 값 되돌리기**로 원래 글자 | `ComponentsTest` |
+| D10 | Frame 고르고 **컴포넌트로** | 원본이 되고 **넣기**로 인스턴스를 넣을 수 있음 | `ComponentEditorTest` |
+| D11 | 흐림을 준 도형을 PNG로 내보내기 | 내보낸 그림에도 흐림이 보임 | `SceneCanvasTest` |
 
 ### 모션
 
@@ -86,6 +93,7 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | --- | --- | --- | --- |
 | 18 | 예제 장면에서 **모션** 켜기 → **재생** | 글자가 올라오며 나타나고, 카드가 튕기며 커지고, 원이 돌며 색이 바뀌고, 칩이 차례로 올라옴 | `TimelineEvaluatorTest`, `EasingTest` |
 | 19 | 눈금자를 누르거나 끌기 | 그 시각의 장면이 보임(캔버스는 움직이지 않음) | `TimelinePanelTest` |
+| 20a | 도형을 고르고 timeline **너비**·**모서리** 키 → 다른 시각에서 값 바꾸기 | 재생하면 크기·둥글기가 바뀜 | `StyleAnimationTest` |
 | 20 | 도형을 고르고 **X +** → 눈금자 1초 → 캔버스에서 도형 끌기 | 1초에 X 키가 자동으로 생기고, 재생하면 두 키 사이를 움직임 | `AutoKeyTest`, `TimelinePanelTest` |
 | 21 | 키 다이아몬드 끌기, 누른 뒤 easing·**키 삭제** | 시간 이동(같은 시각과 겹치면 거부), 곡선 변경, 삭제 | `TimelineCommandTest` |
 | 22 | 여러 도형 선택 → **프리셋** → 차례로 등장 | 재생 위치부터 80 ms씩 늦게 나타남. 실행 취소 한 번에 사라짐 | `PresetRegistryTest`, `AutoKeyTest` |
@@ -99,25 +107,26 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | 25 | 크게 아래로 끌기 / 빠르게 튕기기 / 뒤로 가기 | 닫히고 목록으로 돌아감(한 번만) | `TransitionDriverTest`(80%·속도), `SceneTransitionTest` |
 | 26 | 오른쪽 위 **View 화면 예** | Compose가 아닌 View Activity 안에서 재생기가 그려짐 | — (수동) |
 | 27 | 회전·다른 앱 다녀오기 | 보던 화면 유지 | — (수동) |
+| 28 | **서버 화면 예** → 서버 B → 새로 고침 | 배너·장바구니 자리가 바뀌고 장바구니 숫자(호스트 뷰 상태)는 유지 | `RemoteKineticaPlayerTest` |
+| 29 | 깨진 JSON·오프라인 → 새로 고침 | 화면은 그대로, 아래에 이유 표시. 다시 켜면 캐시가 먼저 보임 | `RemoteSceneLoaderTest` |
 
 ## 3. SDK로서 쓸 만한지
 
 | 관점 | 확인 방법 | 지금 상태 |
 | --- | --- | --- |
 | 연동 난이도 | [README 연동](../README.md#연동)의 재생기 예를 새 앱에 붙여 보기 | 의존성 1줄 + 코드 10줄 안팎. `consumer-check/`가 같은 코드를 배포 artifact만으로 빌드 |
-| 필요한 것만 쓰기 | `./gradlew :sample-gallery:verifyReleaseClasspath` | 재생만 쓰면 core·motion·render·player 4개만 들어감 |
+| 필요한 것만 쓰기 | `./gradlew :sample-gallery:verifyReleaseClasspath` | 재생만 쓰면 core·motion·render·serialization·player 5개만 들어감 |
 | 앱 크기 | `consumer-check` release APK | 약 680 KB(Compose 런타임 포함, R8). Kinetica만의 몫은 따로 재지 않음 |
 | R8·난독화 | `./gradlew -p consumer-check :app:assembleRelease` | 추가 keep 규칙 없이 빌드됨(리플렉션 없음) |
 | 설계 문서 | [architecture.md](architecture.md), [integration.md](integration.md), [adr/](adr) | 모듈 경계·좌표계·데이터 흐름·결정 이유 |
-| 공개 API 관리 | `<모듈>/api/*.api` | JVM 7개 모듈은 자동 검사. Android 5개 모듈은 아직 없음(ADR-0005) |
-| 안정성 | `./gradlew check` | 테스트 250개(단위·Robolectric 화면·적대적 입력 fuzz) |
-| 안전 | [SECURITY.md](../SECURITY.md) | 네트워크 없음, 외부 문서 상한·검증, 웹·파일 URI 거부 |
+| 공개 API 관리 | `<모듈>/api/*.api` | JVM 7개 모듈은 자동 검사. Android 6개 모듈은 아직 없음(ADR-0005) |
+| 안정성 | `./gradlew check` | 테스트 340여 개(단위·Robolectric 화면·적대적 입력 fuzz) |
+| 안전 | [SECURITY.md](../SECURITY.md) | SDK 자체 네트워크 없음(서버 화면은 호스트가 받음), 외부 문서 상한·검증, 웹·파일 URI 거부 |
 | 성능 | [performance.md](performance.md) | JVM에서 노드 2,000개 명령 p95 약 0.4 ms. 실기기 미측정 |
 | Java | [integration.md#java](integration.md#java) | `kinetica-java` 정적 입구, Java 테스트 있음 |
 
 ## 4. 알려진 제한 (검증 때 막힐 수 있는 것)
 
-- 캔버스에서 글자를 바로 고칠 수 없고 속성 패널에서 고칩니다.
 - 그룹 안 도형은 캔버스에서 하나만 고를 수 없습니다(레이어 패널에서 고름).
 - 여러 도형을 한꺼번에 크기 조절·회전할 수 없습니다.
 - timeline 확대, 여러 키 한꺼번에 끌기, easing 곡선 편집기가 없습니다.
