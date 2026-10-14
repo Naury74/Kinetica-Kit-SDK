@@ -52,18 +52,19 @@ val storeCatalog = listOf(
     BoardWidget("orders", "최근 주문", widthDp = 176f, heightDp = 150f, rowSpan = 2),
     BoardWidget("chart", "주간 매출", widthDp = 360f, heightDp = 170f, columnSpan = 2),
     BoardWidget("clock", "시계", widthDp = 176f, heightDp = 96f),
-    BoardWidget("memo", "메모", widthDp = 176f, heightDp = 150f, placedByDefault = false),
+    BoardWidget("memo", "메모", widthDp = 176f, heightDp = 150f, placedByDefault = false, multiple = true),
     BoardWidget("notice", "공지", widthDp = 360f, heightDp = 110f, columnSpan = 2, placedByDefault = false, removable = true),
 )
 
+/** [key]는 위젯 키, [id]는 놓인 자리 id(메모처럼 여러 개 놓는 위젯은 자리마다 다름). */
 @Composable
-fun StoreWidget(key: String, data: StoreData) {
+fun StoreWidget(key: String, id: String, data: StoreData) {
     when (key) {
         "sales" -> Sales(data)
         "orders" -> Orders(data)
         "chart" -> Chart(data.week)
         "clock" -> Clock()
-        "memo" -> Memo()
+        "memo" -> Memo(id)
         "notice" -> Notice()
     }
 }
@@ -129,9 +130,9 @@ private fun Clock() {
 
 /** 입력 중인 글이 배치를 바꿔도 남아 있는지 보여 준다. */
 @Composable
-private fun Memo() = Card(Color(0xFFFFF7D6)) {
+private fun Memo(id: String) = Card(Color(0xFFFFF7D6)) {
     var text by rememberSaveable { mutableStateOf("") }
-    Text("메모", color = muted, fontSize = 13.sp)
+    Text("메모 " + id.substringAfter("memo.", "1"), color = muted, fontSize = 13.sp)
     OutlinedTextField(text, { text = it }, modifier = Modifier.fillMaxWidth().weight(1f), placeholder = { Text("오늘 할 일") })
 }
 

@@ -104,7 +104,7 @@ private fun StoreHome(viewModel: StoreViewModel = viewModel()) {
             Modifier.weight(1f).fillMaxWidth(),
             editing = editing,
             onLongPress = { editing = true },
-        ) { key -> StoreWidget(key, data) }
+        ) { id -> StoreWidget(state.widgetKeyOf(id) ?: id, id, data) }
     }
 }
 
