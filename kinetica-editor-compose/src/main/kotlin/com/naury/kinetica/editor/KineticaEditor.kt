@@ -21,6 +21,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -102,6 +103,25 @@ public fun KineticaEditor(
     hostViews: List<HostViewOption> = emptyList(),
     data: SceneData = SceneData.Empty,
     toolbarEnd: @Composable RowScope.() -> Unit = {},
+) {
+    // 입력란·칩·시트가 호스트 MaterialTheme이 아니라 편집기 색을 따르게 한다.
+    MaterialTheme(colorScheme = remember(theme) { theme.colorScheme() }) {
+        EditorContent(session, modifier, images, theme, config, slots, hostViews, data, toolbarEnd)
+    }
+}
+
+@Composable
+@Suppress("LongParameterList", "LongMethod")
+private fun EditorContent(
+    session: KineticaSession,
+    modifier: Modifier,
+    images: SceneImageProvider?,
+    theme: StudioTheme,
+    config: StudioConfig,
+    slots: SceneSlots,
+    hostViews: List<HostViewOption>,
+    data: SceneData,
+    toolbarEnd: @Composable RowScope.() -> Unit,
 ) {
     val context = LocalContext.current
     val fonts = LocalSceneFonts.current

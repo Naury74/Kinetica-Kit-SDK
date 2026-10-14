@@ -3,6 +3,9 @@
 디자이너·운영자가 앱 화면과 목업을 만드는 편집기(`KineticaEditor`)의 모양·글자·내보내기 기능이다. 화면 렌더러(`SceneLayout`)와
 내보내기 렌더러(`drawScene`)가 같은 내부 그리기 코드(ShapeStyle.kt)를 써서 결과가 같다.
 
+편집기 색은 `StudioTheme`이다. 기본은 어두운 테마이고 `StudioTheme.light()`·`StudioTheme.system()`(시스템 어두운 모드 따름)을 쓸 수 있다.
+편집기 안의 입력란·칩·시트는 호스트 앱의 MaterialTheme이 아니라 이 색을 따른다.
+
 ## 도형
 
 | 도형 | 넣는 곳 | 속성 |
