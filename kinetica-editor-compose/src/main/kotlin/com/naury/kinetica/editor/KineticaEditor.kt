@@ -310,7 +310,9 @@ private fun SelectionBar(state: EditorState, actions: EditorActions, theme: Stud
         val editableText = selection.selectedIds.singleOrNull()?.takeIf { document.node(it)?.content is NodeContent.Text }
         if (editableText != null) ToolButton(R.string.kinetica_edit_text, colors) { state.editingText = editableText }
         ToolButton(R.string.kinetica_auto_layout, colors, onClick = actions::wrapInAutoLayout)
-        ToolButton(R.string.kinetica_make_component, colors) { ComponentEdits(state).makeComponent(selection.selectedIds) }
+        val linked =
+            selection.selectedIds.singleOrNull()?.let(document::node)?.let { it.component != null || it.instanceOf != null } == true
+        if (!linked) ToolButton(R.string.kinetica_make_component, colors) { ComponentEdits(state).makeComponent(selection.selectedIds) }
         ToolButton(R.string.kinetica_group, colors, enabled = count >= 2, onClick = actions::group)
         ToolButton(R.string.kinetica_ungroup, colors, enabled = document.let { actions.canUngroup }, onClick = actions::ungroup)
         ToolButton(R.string.kinetica_bring_forward, colors, onClick = actions::bringForward)
