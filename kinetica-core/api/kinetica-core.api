@@ -1300,6 +1300,7 @@ public final class com/naury/kinetica/core/scene/NodeAccessibility$Companion {
 }
 
 public final class com/naury/kinetica/core/scene/NodeCheckKt {
+	public static final fun isValidAction (Ljava/lang/String;)Z
 	public static final fun isValidDataKey (Ljava/lang/String;)Z
 	public static final fun isValidFontName (Ljava/lang/String;)Z
 }

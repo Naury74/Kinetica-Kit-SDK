@@ -135,6 +135,8 @@ KineticaEditor(session, slots = slots, hostViews = hostViews, data = data)      
 KineticaPlayer(document, slots = slots, data = data, fit = SceneFit.Responsive, onAction = { action -> /* "refresh" 등 */ })
 ```
 
+서버 화면 JSON 형식은 [docs/34](docs/34-scene-json.md), 받기(OkHttp·ETag)·XML 재생기는 [docs/integration.md](docs/integration.md)에 있습니다.
+
 세션은 화면 회전에도 유지되도록 ViewModel에 두고, 화면을 닫을 때 `session.close()`를 부릅니다. View 화면·Java·내보내기·전환은 [docs/integration.md](docs/integration.md)를 보세요.
 
 ## 모듈

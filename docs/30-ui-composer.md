@@ -19,6 +19,8 @@ SceneNode.action: String?                        // 누르면 onAction(action)
 - `BoundProperty`: `Text`, `Visible`, `ImageUri`, `Fill`, `Opacity`, `Variant`(컴포넌트 변형 이름).
 - 호스트 데이터는 `SceneData`(키 → `DataValue`: 글자·숫자·참거짓·색)이며 `StateFlow`로 바뀌면 바로 다시 그린다.
 - 값이 없거나 종류가 맞지 않으면 문서에 저장된 값을 쓴다. 식·코드 실행은 없다.
+- 동작은 `이름` 또는 `이름?키=값&키=값`(URL 안전 글자) 글자 하나다. 호스트는 `SceneAction.parse(action)`으로 이름과 값을 나눈다(예: `open_order?id=42`).
+- 숫자를 묶은 글자는 `NodeContent.Text.numberFormat`(앞·뒤 글자, 천 단위, 소수 자리)으로 `1,284,000원`처럼 보인다. 편집기는 글자 속성의 **숫자 형식**.
 - 재생기(`KineticaPlayer`·`RemoteKineticaPlayer`)는 숫자 값이 바뀌면 600ms 동안 올라가거나 내려가며 바꾼다(`numberAnimationMs`, 0이면 바로).
   시스템 "애니메이션 삭제"가 켜져 있으면 바로 바꾼다. 다른 화면에서는 `animateSceneNumbers(data)`로 같은 값을 얻는다.
 

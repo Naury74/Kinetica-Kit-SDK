@@ -33,6 +33,12 @@
 - 장면·서버 화면 안의 숫자 글자는 재생기가 알아서 올라가게 한다(`KineticaPlayer(numberAnimationMs = …)`, [docs/30](30-ui-composer.md)).
 - `animateNumberAsState(target)`: 값이 바뀌면 지금 보이는 숫자에서 새 값까지 올라가거나 내려간다(대시보드 매출·카운터). 큰 수도 Double로 계산한다.
 
+## 어디에 붙일까
+
+- 보드 위젯은 `BoardWidget(effects = …)` 하나만 쓴다. 같은 위젯 안 내용에도 `Modifier.kineticaEffects`의 나타나기를 붙이면 두 번 나타난다.
+  위젯 안의 버튼처럼 일부에만 줄 누름 효과는 내용에 붙인다.
+- 장면 노드는 문서의 `effects`(편집기 **움직임 효과**), 호스트 Compose는 `Modifier.kineticaEffects`, XML View는 `ViewEffects.apply`.
+
 ## 규칙
 
 - 누름 효과는 손가락을 관찰만 하고 소비하지 않는다. 호스트 뷰의 클릭·스크롤·입력은 그대로 동작한다.

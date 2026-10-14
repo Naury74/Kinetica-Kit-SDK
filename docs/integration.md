@@ -25,17 +25,52 @@ val cache = mutableStateMapOf<String, ImageBitmap>()
 KineticaEditor(session, images = SceneImageProvider { uri -> cache[uri] })
 ```
 
-## View 화면
+## 서버 화면
+
+서버 JSON 형식은 [docs/34](34-scene-json.md)입니다. 받기는 호스트가 정합니다(OkHttp 예):
 
 ```kotlin
-val player = ComposeView(context).apply {
-    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
-    setContent { KineticaPlayer(document) }
+val fetcher = SceneFetcher { etag ->                       // etag: 지난번 응답의 ETag(처음·캐시 없음이면 null)
+    withContext(Dispatchers.IO) {
+        val request = Request.Builder().url("https://api.example.com/screens/promo")
+            .apply { etag?.let { header("If-None-Match", it) } }.build()
+        client.newCall(request).execute().use { response ->
+            when {
+                response.code == 304 -> SceneFetch.NotModified
+                response.isSuccessful -> SceneFetch.Body(response.body!!.bytes(), etag = response.header("ETag"))
+                else -> SceneFetch.Failed                   // 이유는 호스트가 기록. SDK는 지금 화면을 유지
+            }
+        }
+    }
 }
-container.addView(player)
+val loader = RemoteSceneLoader(
+    fetcher,
+    cache = RemoteSceneCache(FileSceneRepository(File(filesDir, "remote"))),   // 선택: 다시 켜면 먼저 보여 줄 마지막 문서
+    fallback = bundledPromo,                                                    // 선택: 받기 전·실패할 때 보여 줄 문서
+)
 ```
 
-`sample-gallery`의 `ViewHostActivity`가 같은 예입니다.
+- `RemoteKineticaPlayer`는 처음 보일 때와 `refreshKey`가 바뀔 때 `refresh()`를 부릅니다. 당겨서 새로 고침은 `refreshKey`를 바꾸거나 직접 `loader.refresh()`.
+- 던진 예외는 네트워크 실패로 다룹니다. 서명 확인·JSON 읽기는 화면 스레드가 아닌 곳에서 합니다.
+- 로더는 화면보다 오래 살도록 ViewModel이나 앱 단위로 둡니다.
+
+## View 화면
+
+XML 화면은 `KineticaPlayerView`를 씁니다.
+
+```xml
+<com.naury.kinetica.player.KineticaPlayerView android:id="@+id/promo" android:layout_width="match_parent" android:layout_height="300dp" />
+```
+
+```kotlin
+val player = findViewById<KineticaPlayerView>(R.id.promo)
+player.setLoader(loader)                                   // 또는 player.setDocument(document)
+player.setHostViews { key, context -> chartView(context) } // 호스트 뷰 노드(key)에 넣을 View
+player.setOnActionListener { raw -> handle(SceneAction.parse(raw)) }
+player.data = SceneData.of("sales.today" to DataValue.Number(1_284_000.0))
+```
+
+보드는 `KineticaBoardView`·`BoardStates.obtain`([docs/31](31-board.md)), 효과는 `ViewEffects.apply`([docs/33](33-effects.md))입니다.
 
 ## PNG 내보내기
 

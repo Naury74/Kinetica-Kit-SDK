@@ -13,6 +13,12 @@ private val dataKeyPattern = Regex("[A-Za-z0-9._-]{1,128}")
 /** 데이터 키·동작 이름·HostSlot 키 형식. 영문자·숫자와 `.` `_` `-`로 된 1..128자. */
 public fun isValidDataKey(key: String): Boolean = dataKeyPattern.matches(key)
 
+private val actionQueryPattern = Regex("[A-Za-z0-9._~%=&+-]{0,512}")
+
+/** 동작 이름 형식: 데이터 키와 같은 이름에, `?` 뒤로 URL 안전 글자의 값(최대 512자)을 붙일 수 있다([SceneAction]). */
+public fun isValidAction(action: String): Boolean =
+    isValidDataKey(action.substringBefore('?')) && actionQueryPattern.matches(action.substringAfter('?', ""))
+
 /** 노드 하나의 값 범위를 확인한다. 부모·자식 관계는 [checkStructure]가 본다. */
 internal fun checkNode(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
     val id = node.id
@@ -43,7 +49,7 @@ private fun checkSizeLimits(node: SceneNode, limits: SceneLimits, sink: Violatio
 }
 
 private fun checkBindings(node: SceneNode, sink: ViolationSink) {
-    if (node.bindings.values.any { !isValidDataKey(it) } || node.action?.let(::isValidDataKey) == false) {
+    if (node.bindings.values.any { !isValidDataKey(it) } || node.action?.let(::isValidAction) == false) {
         sink.add(ViolationCode.InvalidBinding, "데이터 키나 동작 이름 형식이 올바르지 않습니다.", node.id)
     }
     val textOnly = BoundProperty.Text in node.bindings && node.content !is NodeContent.Text

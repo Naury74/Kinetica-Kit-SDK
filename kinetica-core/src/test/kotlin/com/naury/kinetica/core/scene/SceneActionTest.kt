@@ -15,4 +15,13 @@ class SceneActionTest {
         assertThat(SceneAction.parse("refresh")).isEqualTo(SceneAction("refresh"))
         assertThat(SceneAction.parse("bad?x=%zz")["x"]).isEqualTo("%zz")
     }
+
+    @Test
+    fun `문서 검증은 이름에 URL 안전 값을 붙인 동작을 받고 공백·따옴표는 거부한다`() {
+        assertThat(isValidAction("open_order?id=42&title=%EC%BF%A0")).isTrue()
+        assertThat(isValidAction("refresh")).isTrue()
+        assertThat(isValidAction("open order")).isFalse()
+        assertThat(isValidAction("open?x=<script>")).isFalse()
+        assertThat(isValidAction("?id=1")).isFalse()
+    }
 }
