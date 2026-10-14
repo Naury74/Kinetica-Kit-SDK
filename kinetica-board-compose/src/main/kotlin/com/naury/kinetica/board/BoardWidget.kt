@@ -5,7 +5,7 @@ import com.naury.kinetica.core.scene.isValidDataKey
 /**
  * 보드에 놓을 수 있는 호스트 위젯 하나. 보드는 [key]와 배치만 저장하고, 내용은 호스트가 [key]로 그린다.
  *
- * @property key 위젯 키. 영문자·숫자와 `.` `_` `-`로 된 1..128자이며 보드 안에서 하나만 놓인다.
+ * @property key 위젯 키. 영문자·숫자와 `.` `_` `-`로 된 1..128자. [multiple]이 아니면 보드 안에서 하나만 놓인다.
  * @property label 위젯 추가 목록에 보이는 이름
  * @property widthDp 처음 놓을 때 너비(dp, 0보다 큼). 격자 배치에서는 [columnSpan]을 쓴다.
  * @property heightDp 처음 놓을 때 높이(dp, 0보다 큼). 격자 배치에서는 [rowSpan]을 쓴다.
@@ -13,6 +13,7 @@ import com.naury.kinetica.core.scene.isValidDataKey
  * @property rowSpan 격자 배치에서 차지하는 행 수(1 이상)
  * @property placedByDefault 저장된 배치가 없거나 앱 업데이트로 새로 생긴 위젯일 때 보드에 바로 놓을지
  * @property removable `false`면 사용자가 보드에서 뺄 수 없다(필수 위젯)
+ * @property multiple `true`면 같은 위젯을 여러 개 놓을 수 있다(메모 등). 놓인 자리마다 id가 다르다([KineticaBoardState.placedKeys]).
  * @throws IllegalArgumentException 키 형식이나 크기가 범위를 벗어날 때
  */
 public data class BoardWidget @JvmOverloads constructor(
@@ -24,6 +25,7 @@ public data class BoardWidget @JvmOverloads constructor(
     val rowSpan: Int = 1,
     val placedByDefault: Boolean = true,
     val removable: Boolean = true,
+    val multiple: Boolean = false,
 ) {
     init {
         require(isValidDataKey(key)) { "위젯 키 형식이 올바르지 않습니다." }

@@ -12,9 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.viewinterop.AndroidView
 
-/** XML View 화면에서 위젯 키마다 호스트 [View]를 만든다. 같은 키로는 보드가 살아 있는 동안 한 번만 부른다. */
+/**
+ * XML View 화면에서 놓인 자리마다 호스트 [View]를 만든다. [id]는 자리 id이며(한 번만 놓는 위젯은 위젯 키와 같음)
+ * 위젯 키는 [KineticaBoardState.widgetKeyOf]로 얻는다. 같은 자리로는 보드가 살아 있는 동안 한 번만 부른다.
+ */
 public fun interface BoardViewFactory {
-    public fun create(key: String, context: Context): View
+    public fun create(id: String, context: Context): View
 }
 
 /**

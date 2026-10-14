@@ -83,4 +83,29 @@ class KineticaBoardStateTest {
         assertThat(state.remove("core")).isFalse()
         assertThat(state.placedKeys).containsExactly("core")
     }
+
+    @Test
+    fun `여러 개 놓는 위젯은 자리마다 id가 다르고 저장 뒤에도 유지된다`() {
+        val withMemo = catalog + BoardWidget("memo", "메모", multiple = true, placedByDefault = false)
+        val state = KineticaBoardState.create(withMemo)
+
+        val first = state.addItem("memo")
+        val second = state.addItem("memo")
+        val single = state.addItem("weather")
+
+        assertThat(first).isEqualTo("memo")
+        assertThat(second).isEqualTo("memo.2")
+        assertThat(single).isEqualTo("weather")
+        assertThat(state.addItem("weather")).isNull()
+        assertThat(state.availableWidgets.map { it.key }).containsExactly("memo")
+        assertThat(state.widgetKeyOf("memo.2")).isEqualTo("memo")
+
+        val reopened = KineticaBoardState.create(withMemo, saved = state.toJson())
+        assertThat(reopened.placedKeys).containsAtLeast("memo", "memo.2")
+        assertThat(reopened.widgetKeyOf("memo.2")).isEqualTo("memo")
+        assertThat(reopened.remove("memo.2")).isTrue()
+        assertThat(reopened.placedKeys).doesNotContain("memo.2")
+        // 목록에서 위젯이 사라지면 그 위젯의 모든 자리가 빠진다.
+        assertThat(KineticaBoardState.create(catalog, saved = state.toJson()).placedKeys).containsNoneOf("memo", "memo.2")
+    }
 }

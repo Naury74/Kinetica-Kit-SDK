@@ -66,7 +66,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  *
  * @param permissions 편집 모드에서 허용할 일
  * @param onLongPress 사용 모드에서 위젯을 길게 누르면 불린다(보통 편집 모드로 바꾼다). 그 누름은 위젯에 전달하지 않는다.
- * @param content 위젯 키마다 호스트가 그릴 내용. 보드가 정한 크기를 꽉 채우도록 그린다.
+ * @param content 놓인 자리마다 호스트가 그릴 내용. 인자는 자리 id로, 한 번만 놓는 위젯은 위젯 키와 같고
+ *   여러 개 놓는 위젯([BoardWidget.multiple])은 자리마다 다르다(위젯 키는 [KineticaBoardState.widgetKeyOf]). 보드가 정한 크기를 꽉 채우도록 그린다.
  */
 @Composable
 public fun KineticaBoard(
@@ -76,14 +77,15 @@ public fun KineticaBoard(
     permissions: BoardPermissions = BoardPermissions(),
     colors: BoardColors = BoardColors(),
     onLongPress: (() -> Unit)? = null,
-    content: @Composable (key: String) -> Unit,
+    content: @Composable (id: String) -> Unit,
 ) {
     val stored by state.document.collectAsState()
     val density = LocalDensity.current.density
     val zoom = (density / KineticaBoardState.UNITS).toFloat()
     val scroll = rememberScrollState()
     val controller = remember(state) { BoardDragController(state) }
-    val slots: SceneSlots = remember(state.catalog, content) { state.catalog.associate { widget -> widget.key to { content(widget.key) } } }
+    val placedIds = stored.rootOrder
+    val slots: SceneSlots = remember(placedIds, content) { placedIds.associate { id -> id.value to { content(id.value) } } }
     BoxWithConstraints(modifier.clipToBounds()) {
         val gap = gapDp(state.arrangement) * KineticaBoardState.UNITS
         val mapping = BoardMapping(state.arrangement, constraints.maxWidth / zoom.toDouble(), gap)
@@ -152,7 +154,7 @@ private fun EditLayer(
     }
     stored.rootOrder.forEach { id ->
         val key = id.value
-        val widget = state.catalog.firstOrNull { it.key == key }
+        val widget = state.widgetKeyOf(key)?.let { widgetKey -> state.catalog.firstOrNull { it.key == widgetKey } }
         WidgetEditFrame(
             key = key,
             label = widget?.label ?: key,
@@ -345,8 +347,8 @@ private fun WidgetEditFrame(
 @Composable
 private fun AddWidgetButton(state: KineticaBoardState, document: SceneDocument, colors: BoardColors, modifier: Modifier) {
     var open by remember { mutableStateOf(false) }
-    val placed = document.rootOrder.map(NodeId::value).toSet()
-    val available = state.catalog.filter { it.key !in placed }
+    // document를 받아 배치가 바뀔 때마다 다시 계산한다.
+    val available = remember(document) { state.availableWidgets }
     Box(modifier) {
         TextButton(onClick = { open = true }, modifier = Modifier.background(colors.accent, RoundedCornerShape(24.dp))) {
             Text("+ " + stringResource(R.string.kinetica_board_add), color = colors.onAccent)

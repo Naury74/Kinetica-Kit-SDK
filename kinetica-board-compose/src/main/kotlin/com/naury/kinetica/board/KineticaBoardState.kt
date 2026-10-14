@@ -43,29 +43,45 @@ public class KineticaBoardState private constructor(
 ) {
     private val widgets = catalog.associateBy { it.key }
 
-    /** 기준 폭 기준 배치 문서. 위젯마다 키를 id로 쓰는 호스트 뷰 노드 하나다. */
+    /** 기준 폭 기준 배치 문서. 놓인 자리마다 그 id를 노드 id·호스트 뷰 키로 쓰는 호스트 뷰 노드 하나다. */
     public val document: StateFlow<SceneDocument> get() = session.document
 
     public val history: HistoryController get() = session.history
 
-    /** 보드에 놓인 위젯 키(그리기 순서). */
+    /**
+     * 보드에 놓인 자리 id(그리기 순서). 한 번만 놓는 위젯은 위젯 키와 같고, [BoardWidget.multiple] 위젯은 `memo`, `memo.2`처럼 자리마다 다르다.
+     * 자리 id는 옮기거나 저장해도 바뀌지 않으므로 호스트가 자리마다 데이터를 둘 때 키로 쓴다. 위젯 키는 [widgetKeyOf].
+     */
     public val placedKeys: List<String> get() = session.document.value.rootOrder.map { it.value }
 
-    /** 아직 놓이지 않은 위젯. 위젯 추가 목록에 쓴다. */
-    public val availableWidgets: List<BoardWidget> get() = placedKeys.toSet().let { placed -> catalog.filter { it.key !in placed } }
+    /** 더 놓을 수 있는 위젯(아직 놓이지 않았거나 여러 개 놓을 수 있는 것). 위젯 추가 목록에 쓴다. */
+    public val availableWidgets: List<BoardWidget>
+        get() {
+            val placed = placedKeys.mapNotNull(::widgetKeyOf).toSet()
+            return catalog.filter { it.multiple || it.key !in placed }
+        }
 
-    /** [key] 위젯을 비어 있는 첫 자리(위에서부터, 같은 줄이면 왼쪽부터)에 놓는다. 목록에 없거나 이미 놓였으면 `false`. */
-    public fun add(key: String): Boolean {
-        val widget = widgets[key] ?: return false
-        if (key in placedKeys) return false
-        val node = placementFor(widget, session.document.value)
-        return session.commands.execute(SceneCommand.AddNode(node)) is CommandResult.Applied
+    /** 놓인 자리 [id]의 위젯 키. 놓여 있지 않으면 `null`. */
+    public fun widgetKeyOf(id: String): String? = NodeId.parseOrNull(id)?.let(session.document.value::node)?.let(::widgetKeyOf)
+
+    /** [key] 위젯을 비어 있는 첫 자리(위에서부터, 같은 줄이면 왼쪽부터)에 놓는다. 목록에 없거나 이미 놓인 한 개짜리 위젯이면 `false`. */
+    public fun add(key: String): Boolean = addItem(key) != null
+
+    /** [add]와 같고, 놓은 자리 id를 돌려준다. 놓지 못하면 `null`. */
+    public fun addItem(key: String): String? {
+        val widget = widgets[key] ?: return null
+        if (widget !in availableWidgets) return null
+        val document = session.document.value
+        val id = newItemId(key, document, widgets.keys)
+        val node = placementFor(widget, document, id)
+        return id.takeIf { session.commands.execute(SceneCommand.AddNode(node)) is CommandResult.Applied }
     }
 
-    /** [key] 위젯을 보드에서 뺀다. 놓여 있지 않거나 [BoardWidget.removable]이 `false`면 `false`. */
-    public fun remove(key: String): Boolean {
-        if (widgets[key]?.removable == false || key !in placedKeys) return false
-        return session.commands.execute(SceneCommand.RemoveNodes(setOf(NodeId(key)))) is CommandResult.Applied
+    /** 놓인 자리 [id]를 보드에서 뺀다. 놓여 있지 않거나 [BoardWidget.removable]이 `false`면 `false`. */
+    public fun remove(id: String): Boolean {
+        val key = widgetKeyOf(id) ?: return false
+        if (widgets[key]?.removable == false) return false
+        return session.commands.execute(SceneCommand.RemoveNodes(setOf(NodeId(id)))) is CommandResult.Applied
     }
 
     /**
@@ -79,14 +95,14 @@ public class KineticaBoardState private constructor(
         val grid = arrangement as? BoardArrangement.Grid
         val updates: Map<String, Rect> = if (grid == null) {
             val rects = document.rootOrder.mapNotNull { id -> rectOf(document.node(id))?.let { id.value to it } }.toMap() + (key to rect)
-            BoardGeometry.pushOverlaps(rects, key, gapUnits()).filter { (id, target) ->
+            BoardGeometry.pushOverlaps(rects, key, arrangement.gapUnits()).filter { (id, target) ->
                 id == key ||
                     rectOf(document.node(NodeId(id))) != target
             }
         } else {
-            val cells = gridCells(document) + (key to BoardGeometry.nearestCell(rect, REFERENCE_WIDTH, grid, gapUnits()))
+            val cells = gridCells(document) + (key to BoardGeometry.nearestCell(rect, REFERENCE_WIDTH, grid, arrangement.gapUnits()))
             BoardGeometry.resolveOverlaps(cells, key)
-                .mapValues { (_, cell) -> BoardGeometry.cellRect(cell, REFERENCE_WIDTH, grid, gapUnits()) }
+                .mapValues { (_, cell) -> BoardGeometry.cellRect(cell, REFERENCE_WIDTH, grid, arrangement.gapUnits()) }
                 .filter { (id, target) -> rectOf(document.node(NodeId(id))) != target }
         }
         if (!session.commands.beginTransaction("place")) return false
@@ -122,8 +138,9 @@ public class KineticaBoardState private constructor(
     /** dp 이동량을 기준 폭 단위로 바꾼다. 격자 배치는 방향만 보고 한 칸씩 움직인다. */
     private fun step(dxDp: Float, dyDp: Float): Pair<Double, Double> {
         val grid = arrangement as? BoardArrangement.Grid ?: return dxDp * UNITS to dyDp * UNITS
-        val width = BoardGeometry.cellWidth(REFERENCE_WIDTH, grid.columns, gapUnits())
-        return Math.signum(dxDp) * (width + gapUnits()) to Math.signum(dyDp) * (width * grid.rowHeightRatio + gapUnits())
+        val width = BoardGeometry.cellWidth(REFERENCE_WIDTH, grid.columns, arrangement.gapUnits())
+        return Math.signum(dxDp) * (width + arrangement.gapUnits()) to
+            Math.signum(dyDp) * (width * grid.rowHeightRatio + arrangement.gapUnits())
     }
 
     /** 위젯 하나를 맨 위로 올린다(겹칠 때 위에 그려진다). */
@@ -147,20 +164,16 @@ public class KineticaBoardState private constructor(
 
     public fun close(): Unit = session.close()
 
-    private fun gapUnits(): Double = when (val arrangement = arrangement) {
-        is BoardArrangement.Free -> arrangement.gapDp * UNITS
-        is BoardArrangement.Grid -> arrangement.gapDp * UNITS
-    }
-
     private fun gridCells(document: SceneDocument): Map<String, GridCell> {
         val grid = arrangement as? BoardArrangement.Grid ?: return emptyMap()
         return document.rootOrder.mapNotNull(document::node).associate { node ->
-            node.id.value to BoardGeometry.nearestCell(rectOf(node) ?: Rect(0.0, 0.0, 1.0, 1.0), REFERENCE_WIDTH, grid, gapUnits())
+            node.id.value to
+                BoardGeometry.nearestCell(rectOf(node) ?: Rect(0.0, 0.0, 1.0, 1.0), REFERENCE_WIDTH, grid, arrangement.gapUnits())
         }
     }
 
-    private fun placementFor(widget: BoardWidget, document: SceneDocument): SceneNode {
-        val gap = gapUnits()
+    private fun placementFor(widget: BoardWidget, document: SceneDocument, id: String): SceneNode {
+        val gap = arrangement.gapUnits()
         val placed = document.rootOrder.mapNotNull { rectOf(document.node(it)) }
         val rect = when (val arrangement = arrangement) {
             is BoardArrangement.Grid -> {
@@ -176,10 +189,11 @@ public class KineticaBoardState private constructor(
         }
         return withRect(
             SceneNode(
-                id = NodeId(widget.key),
-                content = NodeContent.HostSlot(Size(rect.width, rect.height), widget.key),
+                id = NodeId(id),
+                content = NodeContent.HostSlot(Size(rect.width, rect.height), id),
                 name = widget.label,
                 constraints = LayoutConstraints(horizontal = Pin.Scale),
+                metadata = if (id == widget.key) emptyMap() else mapOf(WIDGET_KEY to widget.key),
             ),
             rect,
         )
@@ -192,6 +206,7 @@ public class KineticaBoardState private constructor(
         internal const val UNITS: Double = HOST_VIEW_UNITS_PER_DP.toDouble()
         private const val MIN_SIZE_DP = 48.0
         private const val EXTENSION_KEY = "kinetica.board"
+        private const val WIDGET_KEY = "kinetica.widget"
         private const val KNOWN = "known"
         private val codec = SceneCodec()
 
@@ -212,7 +227,10 @@ public class KineticaBoardState private constructor(
             val keys = catalog.map { it.key }.toSet()
             val known = restored?.let(::knownKeys)
             val base = restored?.let { document ->
-                val kept = document.rootOrder.filter { it.value in keys && document.node(it)?.content is NodeContent.HostSlot }
+                val kept = document.rootOrder.filter { id ->
+                    val node = document.node(id)
+                    node?.content is NodeContent.HostSlot && widgetKeyOf(node) in keys
+                }
                 document.copy(
                     nodes = kept.associateWith {
                         document.nodes.getValue(it).copy(parentId = null)
@@ -225,7 +243,9 @@ public class KineticaBoardState private constructor(
                 ?: (KineticaSession.create(emptyBoard()) as SessionOpenResult.Opened)
             // 처음 배치·목록 맞춤은 사용자가 되돌릴 일이 아니므로, 임시 세션에서 놓은 결과로 기록 없는 세션을 연다.
             val draft = KineticaBoardState(catalog, arrangement, opened.session)
-            catalog.filter { widget -> widget.placedByDefault && (known == null || widget.key !in known) }.forEach { draft.add(it.key) }
+            val placed = base.rootOrder.mapNotNull { base.node(it)?.let(::widgetKeyOf) }.toSet()
+            catalog.filter { widget -> widget.placedByDefault && widget.key !in placed && (known == null || widget.key !in known) }
+                .forEach { draft.add(it.key) }
             val initial = draft.document.value
             draft.close()
             val state = KineticaBoardState(catalog, arrangement, (KineticaSession.create(initial) as SessionOpenResult.Opened).session)
@@ -243,6 +263,8 @@ public class KineticaBoardState private constructor(
             val raw = document.extensions[EXTENSION_KEY] ?: return null
             Json.parseToJsonElement(raw).jsonObject[KNOWN]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }?.toSet()
         }.getOrNull()
+
+        private fun widgetKeyOf(node: SceneNode): String = node.metadata[WIDGET_KEY] ?: node.id.value
 
         internal fun rectOf(node: SceneNode?): Rect? {
             val size = (node?.content as? NodeContent.HostSlot)?.size ?: return null
@@ -262,4 +284,14 @@ public class KineticaBoardState private constructor(
             )
         }
     }
+}
+
+// 첫 자리는 위젯 키 그대로(예전 저장본과 같은 id), 그다음은 `.2`, `.3`… 다른 위젯 키와 겹치지 않는 첫 번호를 쓴다.
+private fun newItemId(key: String, document: SceneDocument, widgetKeys: Set<String>): String = generateSequence(1) { it + 1 }
+    .map { if (it == 1) key else "$key.$it" }
+    .first { id -> document.node(NodeId(id)) == null && (id == key || id !in widgetKeys) }
+
+private fun BoardArrangement.gapUnits(): Double = when (this) {
+    is BoardArrangement.Free -> gapDp * KineticaBoardState.UNITS
+    is BoardArrangement.Grid -> gapDp * KineticaBoardState.UNITS
 }
