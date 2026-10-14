@@ -59,6 +59,29 @@ class KineticaBoardStateTest {
         val state = KineticaBoardState.create(catalog, saved = "{broken")
 
         assertThat(state.placedKeys).containsExactly("sales", "orders")
+        assertThat(state.restoreFailed).isTrue()
+        assertThat(KineticaBoardState.create(catalog).restoreFailed).isFalse()
+    }
+
+    @Test
+    fun `읽지 못한 저장본은 사용자가 바꾸기 전까지 덮어쓰지 않는다`() {
+        val saves = mutableListOf<String>()
+        val storage = object : BoardStorage {
+            override fun load() = "{broken"
+
+            override fun save(json: String) {
+                saves += json
+            }
+        }
+        val holder = BoardStateHolder(KineticaBoardState.create(catalog, saved = storage.load()), storage)
+
+        holder.save()
+        assertThat(saves).isEmpty()
+        holder.state.add("weather")
+        holder.save()
+
+        assertThat(saves).hasSize(1)
+        assertThat(KineticaBoardState.create(catalog, saved = saves.single()).placedKeys).contains("weather")
     }
 
     @Test

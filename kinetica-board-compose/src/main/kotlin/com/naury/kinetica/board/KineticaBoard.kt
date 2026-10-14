@@ -73,6 +73,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  *   편집 중에는 위젯 안이 눌리지 않는다. 변경은 [KineticaBoardState]에 실행 취소 한 단계씩 남는다.
  *
  * @param permissions 편집 모드에서 허용할 일
+ * @param colors 편집 표시 색. 기본은 지금 MaterialTheme의 primary를 따른다.
  * @param stackAutoAdvanceMs 0보다 크면 사용 모드에서 위젯 묶음이 이 간격(ms)마다 다음 위젯으로 넘어간다. 사용자가 넘기면 그때부터 다시 잰다.
  *   편집 중이거나 시스템 애니메이션이 꺼져 있으면 넘어가지 않는다.
  * @param onLongPress 사용 모드에서 위젯을 길게 누르면 불린다(보통 편집 모드로 바꾼다). 그 누름은 위젯에 전달하지 않는다.
@@ -85,7 +86,7 @@ public fun KineticaBoard(
     modifier: Modifier = Modifier,
     editing: Boolean = false,
     permissions: BoardPermissions = BoardPermissions(),
-    colors: BoardColors = BoardColors(),
+    colors: BoardColors = BoardColors.fromMaterialTheme(),
     onLongPress: (() -> Unit)? = null,
     stackAutoAdvanceMs: Long = 0L,
     content: @Composable (id: String) -> Unit,
@@ -122,12 +123,9 @@ public fun KineticaBoard(
             zoom = zoom,
             rects = stable,
             // 분할 자리는 위젯 추가 버튼 위까지만 써서, 놓은 위젯의 크기 손잡이가 버튼에 가리지 않게 한다.
-            visible = Rect(
-                0.0,
-                scroll.value / zoom.toDouble(),
-                mapping.displayWidth,
-                (scroll.value + viewportHeight) / zoom.toDouble() - editRoom,
-            ),
+            viewportHeight = viewportHeight / zoom.toDouble(),
+            bottomInset = editRoom,
+            scrollTop = { scroll.value / zoom.toDouble() },
             edge = EDGE_DP * KineticaBoardState.UNITS,
             snap = SNAP_DP * KineticaBoardState.UNITS,
             minSize = MIN_WIDGET_DP * KineticaBoardState.UNITS,
@@ -181,7 +179,7 @@ private fun EditLayer(
             controller = controller,
             actions = accessibilityActions(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)) +
                 unstackActions(state, key, members),
-            keys = Modifier.keyboardEditing(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)),
+            modifier = Modifier.keyboardEditing(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)),
             onRemove = { state.remove(key) },
         )
         if (members.isNotEmpty()) StackBadge(stable.getValue(key), zoom, members.size, colors) { state.unstack(key) }
@@ -338,7 +336,7 @@ private fun WidgetEditFrame(
     colors: BoardColors,
     controller: BoardDragController,
     actions: List<CustomAccessibilityAction>,
-    keys: Modifier,
+    modifier: Modifier,
     onRemove: () -> Unit,
 ) {
     val outline = if (dragging) Color.Transparent else colors.outline
@@ -354,7 +352,7 @@ private fun WidgetEditFrame(
                 customActions = actions
             }
             .onFocusChanged { focused = it.isFocused }
-            .then(keys)
+            .then(modifier)
             .dragToMove(key, permissions.move, controller),
     ) {
         if (permissions.remove) {

@@ -32,7 +32,8 @@ import kotlinx.serialization.json.jsonPrimitive
  * 보드 하나의 배치 상태. 위젯 추가·빼기·옮기기·크기 바꾸기는 실행 취소 한 단계씩이며, [toJson]으로 저장해 [create]로 되살린다.
  *
  * 배치는 기준 폭([REFERENCE_WIDTH] 문서 단위, 약 393dp)으로 저장하고, 화면 폭이 다르면 가로 위치·너비를 비율대로 펼쳐 보여 준다.
- * 그래서 폴더블을 접고 펴거나 화면을 돌려도 저장된 배치와 실행 취소 기록이 그대로다. 격자 배치는 칸 위치로 저장한다.
+ * 그래서 폴더블을 접고 펴도 배치가 그대로다. 격자 배치는 칸 위치로 저장한다. 화면을 돌려도 실행 취소 기록까지 지키려면 상태를
+ * 화면보다 오래 사는 곳(ViewModel)에 둔다. [rememberKineticaBoardState]가 그렇게 하고 저장까지 맡는다.
  *
  * 스레드: 메인 스레드에서 쓴다. 다 쓰면 [close]한다.
  */
@@ -47,6 +48,13 @@ public class KineticaBoardState private constructor(
     public val document: StateFlow<SceneDocument> get() = session.document
 
     public val history: HistoryController get() = session.history
+
+    /**
+     * [create]에 준 저장본을 읽지 못해 기본 배치로 시작했는지. `true`면 그 저장본을 바로 덮어쓰지 말고 따로 보관하거나 알린다.
+     * 저장본이 없었으면 `false`다.
+     */
+    public var restoreFailed: Boolean = false
+        private set
 
     internal val commands get() = session.commands
 
@@ -268,6 +276,7 @@ public class KineticaBoardState private constructor(
             val initial = draft.document.value
             draft.close()
             val state = KineticaBoardState(catalog, arrangement, (KineticaSession.create(initial) as SessionOpenResult.Opened).session)
+            state.restoreFailed = saved != null && restored == null
             return state
         }
 

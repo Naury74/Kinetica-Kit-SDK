@@ -22,6 +22,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
@@ -86,7 +87,7 @@ internal fun StackBadge(rect: Rect, zoom: Float, count: Int, colors: BoardColors
 @Composable
 internal fun stackLabel(state: KineticaBoardState, members: List<String>): String {
     val first = state.widgetKeyOf(members.first())?.let { key -> state.catalog.firstOrNull { it.key == key }?.label } ?: members.first()
-    return stringResource(R.string.kinetica_board_stack_label, first, members.size - 1)
+    return pluralStringResource(R.plurals.kinetica_board_stack_label, members.size - 1, first, members.size - 1)
 }
 
 /** 묶음이면 TalkBack 동작에 "묶음 풀기"를 더한다. */

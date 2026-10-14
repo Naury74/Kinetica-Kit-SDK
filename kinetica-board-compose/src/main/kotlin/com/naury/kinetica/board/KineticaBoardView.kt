@@ -1,6 +1,8 @@
 package com.naury.kinetica.board
 
 import android.content.Context
+import android.os.Parcel
+import android.os.Parcelable
 import android.util.AttributeSet
 import android.view.View
 import android.widget.FrameLayout
@@ -21,19 +23,25 @@ public fun interface BoardViewFactory {
     public fun create(id: String, context: Context): View
 }
 
+/** 사용 모드에서 위젯을 길게 눌렀을 때. 보통 편집 모드로 바꾼다. */
+public fun interface OnBoardLongPressListener {
+    public fun onLongPress()
+}
+
 /**
  * [KineticaBoard]를 XML·View 화면에 넣는 [FrameLayout]. Compose를 쓰지 않는 앱도 기존 View를 그대로 위젯으로 쓴다.
  *
  * ```kotlin
  * val board = findViewById<KineticaBoardView>(R.id.board)
- * board.setBoard(KineticaBoardState.create(catalog, saved = prefs.getString("board", null))) { key, context ->
- *     layoutInflater.inflate(layoutFor(key), null)
+ * board.setBoard(KineticaBoardState.create(catalog, saved = prefs.getString("board", null))) { id, context ->
+ *     layoutInflater.inflate(layoutFor(state.widgetKeyOf(id)), null)
  * }
  * editButton.setOnClickListener { board.isEditing = !board.isEditing }
  * ```
  *
- * 화면이 끝나면 저장([KineticaBoardState.toJson])하고 [KineticaBoardState.close]한다. 보드를 그리려면 창에 붙어 있어야 하며
- * Activity·Fragment처럼 lifecycle이 있는 창이어야 한다(Compose 요구 사항).
+ * XML 속성: `app:kinetica_editing`, `app:kinetica_stackAutoAdvanceMs`, `app:kinetica_accentColor`.
+ * View에 id가 있으면 화면을 돌려도 편집 모드가 유지된다. 배치는 화면이 가려질 때(`onStop`) [KineticaBoardState.toJson]으로 저장하고,
+ * 화면이 끝나면 [KineticaBoardState.close]한다. 보드를 그리려면 Activity·Fragment처럼 lifecycle이 있는 창에 붙어 있어야 한다(Compose 요구 사항).
  */
 public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     FrameLayout(context, attrs, defStyleAttr) {
@@ -41,6 +49,8 @@ public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs
     private var editingState by mutableStateOf(false)
     private var permissionsState by mutableStateOf(BoardPermissions())
     private var stackAdvanceState by mutableLongStateOf(0L)
+    private var colorsState by mutableStateOf<BoardColors?>(null)
+    private var longPressState by mutableStateOf<OnBoardLongPressListener?>(null)
 
     /** 편집 모드. 켜면 위젯을 옮기고 크기를 바꾸고 빼고 추가할 수 있다. */
     public var isEditing: Boolean
@@ -63,19 +73,40 @@ public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs
             permissionsState = value
         }
 
+    /** 편집 표시 색. `null`이면 창의 MaterialTheme 기본 색을 쓴다. */
+    public var colors: BoardColors?
+        get() = colorsState
+        set(value) {
+            colorsState = value
+        }
+
     init {
+        context.obtainStyledAttributes(attrs, R.styleable.KineticaBoardView, defStyleAttr, 0).apply {
+            try {
+                editingState = getBoolean(R.styleable.KineticaBoardView_kinetica_editing, false)
+                stackAdvanceState = getInt(R.styleable.KineticaBoardView_kinetica_stackAutoAdvanceMs, 0).toLong()
+                if (hasValue(R.styleable.KineticaBoardView_kinetica_accentColor)) {
+                    colorsState = BoardColors.fromAccent(getColor(R.styleable.KineticaBoardView_kinetica_accentColor, 0))
+                }
+            } finally {
+                recycle()
+            }
+        }
         addView(
             ComposeView(context).apply {
                 setContent {
                     board?.let { (state, factory) ->
+                        val listener = longPressState
                         KineticaBoard(
                             state,
                             Modifier.fillMaxSize(),
                             editing = editingState,
                             permissions = permissionsState,
+                            colors = colorsState ?: BoardColors.fromMaterialTheme(),
+                            onLongPress = listener?.let { { it.onLongPress() } },
                             stackAutoAdvanceMs = stackAdvanceState,
-                        ) { key ->
-                            AndroidView(factory = { viewContext -> factory.create(key, viewContext) }, modifier = Modifier.fillMaxSize())
+                        ) { id ->
+                            AndroidView(factory = { viewContext -> factory.create(id, viewContext) }, modifier = Modifier.fillMaxSize())
                         }
                     }
                 }
@@ -87,5 +118,44 @@ public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs
     /** 보여 줄 보드와 위젯 View를 만드는 방법을 정한다. 다시 부르면 바꾼다. */
     public fun setBoard(state: KineticaBoardState, factory: BoardViewFactory) {
         board = state to factory
+    }
+
+    /** 사용 모드에서 위젯을 길게 누르면 불린다. `null`이면 길게 눌러도 아무 일도 없다. */
+    public fun setOnLongPressListener(listener: OnBoardLongPressListener?) {
+        longPressState = listener
+    }
+
+    override fun onSaveInstanceState(): Parcelable = SavedState(super.onSaveInstanceState(), editingState)
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        val saved = state as? SavedState
+        super.onRestoreInstanceState(saved?.superState ?: state)
+        saved?.let { editingState = it.editing }
+    }
+
+    private class SavedState : BaseSavedState {
+        val editing: Boolean
+
+        constructor(superState: Parcelable?, editing: Boolean) : super(superState) {
+            this.editing = editing
+        }
+
+        constructor(parcel: Parcel) : super(parcel) {
+            editing = parcel.readInt() != 0
+        }
+
+        override fun writeToParcel(out: Parcel, flags: Int) {
+            super.writeToParcel(out, flags)
+            out.writeInt(if (editing) 1 else 0)
+        }
+
+        companion object {
+            @JvmField
+            val CREATOR: Parcelable.Creator<SavedState> = object : Parcelable.Creator<SavedState> {
+                override fun createFromParcel(source: Parcel): SavedState = SavedState(source)
+
+                override fun newArray(size: Int): Array<SavedState?> = arrayOfNulls(size)
+            }
+        }
     }
 }

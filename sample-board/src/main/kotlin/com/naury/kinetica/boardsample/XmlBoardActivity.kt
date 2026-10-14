@@ -22,7 +22,9 @@ class XmlBoardActivity : ComponentActivity() {
         val board = findViewById<KineticaBoardView>(R.id.board)
         val edit = findViewById<Button>(R.id.edit)
         state = KineticaBoardState.create(catalog, saved = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY, null))
-        board.setBoard(state) { key, context ->
+        board.setBoard(state) { id, context ->
+            // 자리 id로 위젯 키를 찾는다(여러 개 놓는 위젯은 자리마다 id가 다르다).
+            val key = state.widgetKeyOf(id) ?: id
             TextView(context).apply {
                 text = catalog.first { it.key == key }.label
                 gravity = Gravity.CENTER
@@ -35,11 +37,20 @@ class XmlBoardActivity : ComponentActivity() {
                 setOnClickListener { text = "${catalog.first { it.key == key }.label} ✓" }
             }
         }
-        edit.setOnClickListener {
+        fun toggle() {
             board.isEditing = !board.isEditing
             edit.setText(if (board.isEditing) R.string.board_done else R.string.board_edit)
             if (!board.isEditing) save()
         }
+        edit.setOnClickListener { toggle() }
+        board.setOnLongPressListener { if (!board.isEditing) toggle() }
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        // 보드 View가 편집 모드를 되살린 뒤 버튼 글자를 맞춘다.
+        val board = findViewById<KineticaBoardView>(R.id.board)
+        findViewById<Button>(R.id.edit).setText(if (board.isEditing) R.string.board_done else R.string.board_edit)
     }
 
     override fun onStop() {

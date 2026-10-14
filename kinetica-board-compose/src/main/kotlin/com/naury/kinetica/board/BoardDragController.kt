@@ -139,17 +139,27 @@ internal class BoardDragController(private val state: KineticaBoardState) {
 /**
  * 한 번 그릴 때의 화면 정보(문서 단위). [visible]은 스크롤된 보이는 영역, [edge]는 분할 자리로 보는 가장자리 폭,
  * [snap]은 붙는 거리, [minSize]는 가장 작은 위젯 크기, [scrollBand]는 가장자리 안쪽 자동 스크롤 띠 폭이다.
+ *
+ * 스크롤 위치는 끄는 동안 읽을 때마다 [scrollTop]에서 가져온다. 구성 단계에서 읽으면 스크롤 한 칸마다 보드 전체를 다시 구성한다.
  */
 internal data class BoardFrame(
     val mapping: BoardMapping,
     val zoom: Float,
     val rects: Map<String, Rect>,
-    val visible: Rect,
     val edge: Double,
     val snap: Double,
     val minSize: Double,
     val scrollBand: Double = 0.0,
-)
+    val viewportHeight: Double = 0.0,
+    val bottomInset: Double = 0.0,
+    val scrollTop: () -> Double = { 0.0 },
+) {
+    val visible: Rect
+        get() {
+            val top = scrollTop()
+            return Rect(0.0, top, mapping.displayWidth, top + viewportHeight - bottomInset)
+        }
+}
 
 /** 가운데 [fraction] 비율 영역. */
 private fun Rect.center(fraction: Double): Rect {

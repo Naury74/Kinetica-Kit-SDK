@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- KineticaBoardView XML 속성. 코드의 같은 이름 속성과 같다. -->
+    <declare-styleable name="KineticaBoardView">
+        <!-- 처음부터 편집 모드로 연다. -->
+        <attr name="kinetica_editing" format="boolean" />
+        <!-- 0보다 크면 사용 모드에서 위젯 묶음이 이 간격(ms)마다 넘어간다. -->
+        <attr name="kinetica_stackAutoAdvanceMs" format="integer" />
+        <!-- 편집 표시 강조색. -->
+        <attr name="kinetica_accentColor" format="color" />
+    </declare-styleable>
+</resources>
