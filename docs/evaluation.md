@@ -86,7 +86,7 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | D5 | 글자 **글자 수정** → 일부 고르고 굵게·색 | 고른 부분만 바뀌고, 이어 쓰면 구간이 늘어남. 실행 취소 한 번에 되돌아감 | `RichTextTest`, `TextSpansTest` |
 | D6 | 속성 **글꼴** 명조·기울임·밑줄 | 글자 전체 모양이 바뀜 | `RichTextTest` |
 | D7 | **목업 내보내기** | 휴대폰 틀 안에 장면이 든 PNG | `PngExporterTest` |
-| D8 | 빈 곳 눌러 선택 해제 → **기본 키트 넣기**, 토큰 `color.brand` 색 바꾸기 | 키트 8종이 artboard 오른쪽에 생기고 버튼·토글 색이 함께 바뀜 | `ComponentEditorTest`, `UiKitTest` |
+| D8 | 빈 곳 눌러 선택 해제 → **기본 키트 넣기**, 토큰 `color.brand` 색 바꾸기 | 키트 9종이 artboard 오른쪽에 생기고 버튼·토글 색이 함께 바뀜 | `ComponentEditorTest`, `UiKitTest` |
 | D9 | 카드 원본 **넣기** → 인스턴스 글자 고치기 → 원본 색 바꾸기 | 인스턴스 글자는 유지되고 색은 따라감. **덮어쓴 값 되돌리기**로 원래 글자 | `ComponentsTest` |
 | D10 | Frame 고르고 **컴포넌트로** | 원본이 되고 **넣기**로 인스턴스를 넣을 수 있음 | `ComponentEditorTest` |
 | D11 | 흐림을 준 도형을 PNG로 내보내기 | 내보낸 그림에도 흐림이 보임 | `SceneCanvasTest` |

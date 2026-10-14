@@ -23,8 +23,10 @@ import com.naury.kinetica.core.scene.TextAlignment
 public data class UiKitInsert(val tokens: Map<String, ArgbColor>, val nodes: List<SceneNode>, val roots: List<NodeId>)
 
 /**
- * 앱 화면을 빨리 조립하는 기본 컴포넌트(버튼·보조 버튼·칩·카드·토글·입력·목록 항목·탭 바). 모두 자동 배치 Frame이고 색은 디자인 토큰에
+ * 앱 화면을 빨리 조립하는 기본 컴포넌트(버튼·칩·카드·토글·입력·목록 항목·탭 바). 모두 자동 배치 Frame이고 색은 디자인 토큰에
  * 연결되어 있어, 토큰을 바꾸면 키트 전체 색이 바뀐다. 원본은 [origin]부터 아래로 놓으므로 artboard 밖에 두면 재생기에는 보이지 않는다.
+ * 버튼은 `Button` 세트의 변형(Primary·Secondary·Disabled)이라 인스턴스에서 변형을 바꾸거나 데이터로 고를 수 있다
+ * ([com.naury.kinetica.core.scene.ComponentVariants]).
  */
 public object UiKit {
     /** 토큰 이름. 호스트가 같은 이름으로 브랜드 색을 정하면 키트가 따른다. */
@@ -57,8 +59,9 @@ public object UiKit {
         val palette = defaultTokens + tokens.filterKeys { it in defaultTokens }
         val builder = KitBuilder(prefix, palette)
         val components = listOf(
-            builder.button("button", "Button", "확인", Token.BRAND, Token.ON_BRAND),
+            builder.button("button", "Button / Primary", "확인", Token.BRAND, Token.ON_BRAND),
             builder.button("button-secondary", "Button / Secondary", "취소", Token.SURFACE_ALT, Token.BRAND),
+            builder.button("button-disabled", "Button / Disabled", "확인", Token.SURFACE_ALT, Token.TEXT_MUTED),
             builder.chip(),
             builder.card(),
             builder.toggle(),

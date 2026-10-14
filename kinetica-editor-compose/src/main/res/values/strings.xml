@@ -177,6 +177,8 @@
     <string name="kinetica_go_to_main">Go to main</string>
     <string name="kinetica_reset_overrides">Reset overrides (%1$d)</string>
     <string name="kinetica_detach">Detach</string>
+    <string name="kinetica_add_variant">Add variant</string>
+    <string name="kinetica_field_bind_variant">Variant data key</string>
     <string name="kinetica_property_fill">Fill</string>
     <string name="kinetica_property_width">W</string>
     <string name="kinetica_property_height">H</string>

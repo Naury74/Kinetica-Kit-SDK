@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.naury.kinetica.core.scene.ComponentVariants
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 
@@ -100,7 +101,7 @@ private fun NewToken(edits: ComponentEdits) {
 
 /** 컴포넌트 원본이면 이름, 인스턴스면 원본으로 가기·덮어쓴 값 되돌리기·분리. */
 @Composable
-internal fun ComponentNodeSection(node: SceneNode, edits: ComponentEdits, theme: StudioTheme) {
+internal fun ComponentNodeSection(node: SceneNode, document: SceneDocument, edits: ComponentEdits, theme: StudioTheme) {
     val component = node.component
     val link = node.instanceOf
     when {
@@ -114,10 +115,22 @@ internal fun ComponentNodeSection(node: SceneNode, edits: ComponentEdits, theme:
                 enabled = true,
                 modifier = Modifier.fillMaxWidth(),
             ) { edits.rename(node.id, it) }
+            TextButton(onClick = { edits.variants.addVariant(node.id) }) {
+                Text("+ " + stringResource(R.string.kinetica_add_variant), color = theme.accent)
+            }
         }
 
         link != null -> {
             Title(R.string.kinetica_section_instance, theme)
+            val variants = ComponentVariants.variantsOf(document, link.main)
+            if (variants.size > 1) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    variants.forEach { variant ->
+                        val label = variant.component?.let(ComponentVariants::variantName).orEmpty()
+                        ToggleChip(label, variant.id == link.main, theme) { edits.variants.swapVariant(node.id, variant.id) }
+                    }
+                }
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 TextButton(onClick = {
                     edits.selectMain(node.id)

@@ -934,6 +934,7 @@ public final class com/naury/kinetica/core/scene/BoundProperty : java/lang/Enum 
 	public static final field ImageUri Lcom/naury/kinetica/core/scene/BoundProperty;
 	public static final field Opacity Lcom/naury/kinetica/core/scene/BoundProperty;
 	public static final field Text Lcom/naury/kinetica/core/scene/BoundProperty;
+	public static final field Variant Lcom/naury/kinetica/core/scene/BoundProperty;
 	public static final field Visible Lcom/naury/kinetica/core/scene/BoundProperty;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getWireName ()Ljava/lang/String;
@@ -943,6 +944,15 @@ public final class com/naury/kinetica/core/scene/BoundProperty : java/lang/Enum 
 
 public final class com/naury/kinetica/core/scene/BoundProperty$Companion {
 	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/BoundProperty;
+}
+
+public final class com/naury/kinetica/core/scene/ComponentVariants {
+	public static final field INSTANCE Lcom/naury/kinetica/core/scene/ComponentVariants;
+	public final fun setName (Ljava/lang/String;)Ljava/lang/String;
+	public final fun swap-lYf7Kd4 (Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/lang/String;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/InstanceOf;
+	public final fun swapTo-SNY7u2o (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/InstanceOf;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/InstanceOf;
+	public final fun variantName (Ljava/lang/String;)Ljava/lang/String;
+	public final fun variantsOf-km_GAPE (Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/lang/String;)Ljava/util/List;
 }
 
 public final class com/naury/kinetica/core/scene/Components {

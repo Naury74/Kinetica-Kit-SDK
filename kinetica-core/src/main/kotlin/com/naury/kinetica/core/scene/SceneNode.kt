@@ -407,6 +407,9 @@ public enum class BoundProperty(public val wireName: String) {
 
     /** 불투명도 0..1. 데이터의 숫자를 쓴다. */
     Opacity("opacity"),
+
+    /** 컴포넌트 인스턴스의 변형([ComponentVariants]). 데이터의 글자(변형 이름)를 쓰며 같은 세트에 없는 이름이면 그대로 둔다. */
+    Variant("variant"),
     ;
 
     public companion object {

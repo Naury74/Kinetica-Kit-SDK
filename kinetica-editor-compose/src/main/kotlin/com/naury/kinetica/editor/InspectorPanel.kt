@@ -51,7 +51,7 @@ internal fun InspectorPanel(
         return
     }
     Column(modifier.verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        ComponentNodeSection(node, edits.component, theme)
+        ComponentNodeSection(node, document, edits.component, theme)
         TransformSection(node, edits.property)
         AppearanceSection(node, edits.property, theme)
         CornersSection(node, edits.shape, theme)
@@ -134,6 +134,11 @@ private fun BindingFields(node: SceneNode, edits: PropertyEdits, theme: StudioTh
     }
     KeyInput(node, "visible", node.bindings[BoundProperty.Visible], R.string.kinetica_field_bind_visible) {
         edits.setBinding(node.id, BoundProperty.Visible, it)
+    }
+    if (node.instanceOf != null) {
+        KeyInput(node, "variant", node.bindings[BoundProperty.Variant], R.string.kinetica_field_bind_variant) {
+            edits.setBinding(node.id, BoundProperty.Variant, it)
+        }
     }
     KeyInput(node, "action", node.action, R.string.kinetica_field_action) { edits.setAction(node.id, it) }
 }

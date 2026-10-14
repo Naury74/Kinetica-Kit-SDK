@@ -35,6 +35,7 @@ public data class SceneData(val values: Map<String, DataValue> = emptyMap()) {
  * - 글자는 [limits]의 바이트 상한을 넘으면 잘라 쓰고, 이미지 URI는 허용 규칙을 통과할 때만 쓴다.
  * - 숫자 글자는 소수점 아래 0을 지운 형태로 쓴다(기기 언어와 상관없이 `.`).
  * - 데이터가 보임을 바꾸면 자동 배치 Frame이 그 자리를 메우도록 다시 배치한다.
+ * - 데이터가 인스턴스 변형을 바꾸면 그 인스턴스의 자식을 새 원본으로 다시 만든다.
  */
 public object Bindings {
     /** @param measurer 있으면 바인딩으로 바뀐 글자 중 글자에 맞춰 크기가 바뀌는 노드를 다시 재고 배치한다. */
@@ -46,19 +47,22 @@ public object Bindings {
         measurer: TextMeasurer? = null,
     ): SceneDocument {
         if (data.values.isEmpty() || document.nodes.values.none { it.bindings.isNotEmpty() }) return document
-        val nodes = LinkedHashMap(document.nodes)
-        document.nodes.values.filter { it.bindings.isNotEmpty() }.forEach { node ->
+        // 변형을 먼저 바꿔 인스턴스 자식을 새 원본으로 만든 뒤, 그 자식에도 나머지 바인딩을 적용한다.
+        val source = withVariants(document, data)
+        val nodes = LinkedHashMap(source.nodes)
+        source.nodes.values.filter { it.bindings.isNotEmpty() }.forEach { node ->
             nodes[node.id] = node.bindings.entries.fold(node) { current, (property, key) ->
                 data[key]?.let { value -> current.with(property, value, limits) } ?: current
             }
         }
-        val bound = document.copy(nodes = nodes)
+        val bound = source.copy(nodes = nodes)
         // 데이터로 보임이 바뀐 노드가 있으면 자동 배치를 다시 해 빈자리를 메운다. 그 밖에는 애니메이션 위치를 덮지 않도록 다시 하지 않는다.
-        val visibilityChanged = nodes.any { (id, node) -> document.nodes.getValue(id).visible != node.visible }
+        val visibilityChanged = nodes.any { (id, node) -> source.nodes.getValue(id).visible != node.visible }
         val autoTextChanged = measurer != null && nodes.any { (id, node) ->
-            (node.content as? NodeContent.Text)?.autoSize?.let { it != TextAutoSize.Fixed } == true && document.nodes.getValue(id) != node
+            (node.content as? NodeContent.Text)?.autoSize?.let { it != TextAutoSize.Fixed } == true && source.nodes.getValue(id) != node
         }
-        return if (visibilityChanged || autoTextChanged) Layouts.apply(bound, measurer) else bound
+        val relayout = source !== document || visibilityChanged || autoTextChanged
+        return if (relayout) Layouts.apply(bound, measurer) else bound
     }
 
     private fun SceneNode.with(property: BoundProperty, value: DataValue, limits: SceneLimits): SceneNode = when (property) {
@@ -72,6 +76,19 @@ public object Bindings {
 
         BoundProperty.Opacity -> (value as? DataValue.Number)?.value?.takeIf { it.isFinite() }
             ?.let { copy(style = style.copy(opacity = it.coerceIn(0.0, 1.0))) } ?: this
+
+        // 변형은 문서 전체(같은 세트의 원본)를 봐야 하므로 withVariants가 따로 처리한다.
+        BoundProperty.Variant -> this
+    }
+
+    /** 변형에 묶인 인스턴스의 원본을 데이터의 변형으로 바꾸고 자식을 다시 만든다. 바꾼 것이 없으면 [document] 그대로다. */
+    private fun withVariants(document: SceneDocument, data: SceneData): SceneDocument {
+        val swapped = document.nodes.values.filter { BoundProperty.Variant in it.bindings }.mapNotNull { node ->
+            val name = (data[node.bindings.getValue(BoundProperty.Variant)] as? DataValue.Text)?.value
+            val link = name?.let { ComponentVariants.swap(document, node.id, it) }
+            if (link == null || link == node.instanceOf) null else node.id to node.copy(instanceOf = link)
+        }
+        return if (swapped.isEmpty()) document else Components.sync(document.copy(nodes = document.nodes + swapped))
     }
 
     private fun SceneNode.withText(value: DataValue, limits: SceneLimits): SceneNode {

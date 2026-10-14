@@ -23,12 +23,13 @@ class UiKitTest {
     )
 
     @Test
-    fun `기본 키트는 규칙을 지키는 컴포넌트 원본 8개이고 artboard 밖 한 줄에 놓인다`() {
+    fun `기본 키트는 규칙을 지키는 컴포넌트 원본 9개이고 artboard 밖 한 줄에 놓인다`() {
         assertThat(SceneValidator().validate(document)).isEmpty()
         val roots = kit.roots.map { document.node(it)!! }
         assertThat(roots.map { it.component }).containsExactly(
-            "Button",
+            "Button / Primary",
             "Button / Secondary",
+            "Button / Disabled",
             "Chip",
             "Card",
             "Toggle",
@@ -37,6 +38,9 @@ class UiKitTest {
             "Tab bar",
         ).inOrder()
         assertThat(roots.all { it.transform.translationX == 1200.0 }).isTrue()
+        val buttons = com.naury.kinetica.core.scene.ComponentVariants.variantsOf(document, kit.roots.first())
+        assertThat(buttons.map { com.naury.kinetica.core.scene.ComponentVariants.variantName(it.component!!) })
+            .containsExactly("Primary", "Secondary", "Disabled").inOrder()
         assertThat(roots.zipWithNext().all { (a, b) -> a.transform.translationY < b.transform.translationY }).isTrue()
     }
 

@@ -14,6 +14,8 @@ import com.naury.kinetica.presets.UiKit
 
 /** 컴포넌트·인스턴스·디자인 토큰 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이며, 받을 수 없는 값이면 `false`다. */
 internal class ComponentEdits(private val state: EditorState) {
+    val variants = VariantEdits(state)
+
     /**
      * 고른 노드를 컴포넌트 원본으로 만든다. Frame 하나면 그대로, 아니면 Frame으로 감싼 뒤 원본으로 만든다.
      * 이미 원본·인스턴스이거나 고른 것이 없으면 `false`.
@@ -111,25 +113,8 @@ internal class ComponentEdits(private val state: EditorState) {
         return state.transaction("kit") {
             kit.tokens.filterKeys { it !in document.tokens }.all { (name, color) ->
                 state.session.commands.execute(SceneCommand.SetToken(name, color)) is CommandResult.Applied
-            } && kit.roots.all { root -> addSubtree(kit.nodes, root) }
+            } && kit.roots.all { root -> state.addSubtree(kit.nodes, root, null) }
         }
-    }
-
-    /** 부모부터 자식 순서로 넣는다. AddNode는 부모가 먼저 있어야 받는다. */
-    private fun addSubtree(nodes: List<SceneNode>, rootId: NodeId): Boolean {
-        val byId = nodes.associateBy { it.id }
-        fun add(id: NodeId, parent: NodeId?): Boolean {
-            val node = byId.getValue(id)
-            val children = (node.content as? NodeContent.Container)?.childIds.orEmpty()
-            val empty = when (val content = node.content) {
-                is NodeContent.Frame -> node.copy(content = content.copy(childIds = emptyList()))
-                is NodeContent.Group -> node.copy(content = content.copy(childIds = emptyList()))
-                else -> node
-            }
-            val added = state.session.commands.execute(SceneCommand.AddNode(empty.copy(parentId = parent))) is CommandResult.Applied
-            return added && children.all { add(it, id) }
-        }
-        return add(rootId, null)
     }
 
     private fun update(node: SceneNode): Boolean {

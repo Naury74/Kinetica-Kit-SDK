@@ -46,7 +46,8 @@ private fun checkBindings(node: SceneNode, sink: ViolationSink) {
     }
     val textOnly = BoundProperty.Text in node.bindings && node.content !is NodeContent.Text
     val imageOnly = BoundProperty.ImageUri in node.bindings && node.content !is NodeContent.Image
-    if (textOnly || imageOnly) sink.add(ViolationCode.InvalidBinding, "이 노드 종류에는 묶을 수 없는 속성입니다.", node.id)
+    val instanceOnly = BoundProperty.Variant in node.bindings && node.instanceOf == null
+    if (textOnly || imageOnly || instanceOnly) sink.add(ViolationCode.InvalidBinding, "이 노드 종류에는 묶을 수 없는 속성입니다.", node.id)
 }
 
 private fun checkMetadata(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {

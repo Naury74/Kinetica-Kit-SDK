@@ -53,7 +53,7 @@ class ComponentEditorTest {
 
         compose.onNodeWithText("+ Insert starter kit").performScrollTo().performClick()
         compose.waitForIdle()
-        assertThat(session.document.value.nodes.values.count { it.component != null }).isEqualTo(8)
+        assertThat(session.document.value.nodes.values.count { it.component != null }).isEqualTo(9)
 
         compose.onNodeWithText(UiKit.Token.BRAND).performScrollTo().performTextReplacement("#FFFF0000")
         compose.onNodeWithText(UiKit.Token.BRAND).performImeAction()
@@ -85,5 +85,44 @@ class ComponentEditorTest {
         )!!
         assertThat(session.document.value.node(NodeId("card"))!!.component).isNotNull()
         assertThat((copy.content as NodeContent.Text).text).isEqualTo("Changed")
+    }
+
+    @Test
+    fun `변형을 추가하고 인스턴스에서 변형을 고르면 덮어쓴 글자를 지닌 채 바뀐다`() {
+        val card = SceneNode(
+            NodeId("card"),
+            NodeContent.Frame(Size(200.0, 100.0), listOf(NodeId("title"))),
+            component = "Card",
+        )
+        val title = SceneNode(NodeId("title"), NodeContent.Text(Size(180.0, 40.0), "Title"), parentId = NodeId("card"), name = "title")
+        val session = session(card, title)
+        compose.setContent { KineticaEditor(session) }
+        session.select(listOf(NodeId("card")))
+        compose.waitForIdle()
+
+        compose.onNodeWithText("+ Add variant").performScrollTo().performClick()
+        compose.waitForIdle()
+        val mains = session.document.value.nodes.values.filter { it.component != null }
+        assertThat(mains.map { it.component }).containsExactly("Card/Default", "Card/Variant 2")
+        val variant = mains.single { it.component == "Card/Variant 2" }
+        assertThat(session.document.value.childrenOf(variant.id)).hasSize(1)
+
+        val state = EditorState(session)
+        state.session.clearSelection()
+        assertThat(ComponentEdits(state).insertInstance(NodeId("card"), com.naury.kinetica.core.geometry.Vec2(300.0, 600.0))).isTrue()
+        val instanceId = session.document.value.nodes.values.single { it.instanceOf != null }.id
+        PropertyEdits(state).setText(
+            com.naury.kinetica.core.scene.Components.childId(instanceId, NodeId("title")),
+            "Buy",
+        )
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Variant 2").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        val instance = session.document.value.node(instanceId)!!
+        assertThat(instance.instanceOf!!.main).isEqualTo(variant.id)
+        val copy = session.document.value.node((instance.content as NodeContent.Frame).childIds.single())!!
+        assertThat((copy.content as NodeContent.Text).text).isEqualTo("Buy")
     }
 }
