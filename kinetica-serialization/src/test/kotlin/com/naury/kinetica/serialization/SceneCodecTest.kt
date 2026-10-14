@@ -15,18 +15,21 @@ import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.AutoLayout
 import com.naury.kinetica.core.scene.BoundProperty
+import com.naury.kinetica.core.scene.Components
 import com.naury.kinetica.core.scene.CornerRadii
 import com.naury.kinetica.core.scene.CrossAlign
 import com.naury.kinetica.core.scene.Gradient
 import com.naury.kinetica.core.scene.GradientStop
 import com.naury.kinetica.core.scene.GradientType
 import com.naury.kinetica.core.scene.Insets
+import com.naury.kinetica.core.scene.InstanceOf
 import com.naury.kinetica.core.scene.LayoutConstraints
 import com.naury.kinetica.core.scene.LayoutDirection
 import com.naury.kinetica.core.scene.LineCap
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeStyle
+import com.naury.kinetica.core.scene.Override
 import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.Pin
 import com.naury.kinetica.core.scene.SceneDocument
@@ -186,6 +189,39 @@ class SceneCodecTest {
         assertThat(raw).isNotEqualTo(codec.encode(richDocument()))
         assertThat(opened.document.nodes.getValue(NodeId("inner")).transform.translationX).isEqualTo(99.0)
         assertThat(codec.decode(bad)).isInstanceOf(DecodeResult.Failure::class.java)
+    }
+
+    @Test
+    fun `토큰·컴포넌트·인스턴스와 덮어쓴 값이 왕복하고 열 때 인스턴스를 원본에 맞춘다`() {
+        val blue = ArgbColor(0xFF2255FF.toInt())
+        val main = SceneNode(
+            NodeId("btn"),
+            NodeContent.Frame(Size(200.0, 60.0), listOf(NodeId("lbl"))),
+            component = "Button",
+            style = NodeStyle(fill = blue, fillToken = "brand"),
+        )
+        val label = SceneNode(NodeId("lbl"), NodeContent.Text(Size(180.0, 40.0), "OK"), parentId = NodeId("btn"))
+        val instance = SceneNode(
+            NodeId("buy"),
+            NodeContent.Frame(Size(200.0, 60.0)),
+            instanceOf = InstanceOf(NodeId("btn"), mapOf(NodeId("lbl") to Override(text = "Buy", visible = true))),
+        )
+        val raw = SceneDocument(
+            documentId = "kit",
+            artboard = Artboard(400.0, 400.0),
+            nodes = listOf(main, label, instance).associateBy { it.id },
+            rootOrder = listOf(main.id, instance.id),
+            tokens = mapOf("brand" to blue),
+        )
+
+        val opened = decoded(codec.encode(raw))
+        val copy = opened.node(Components.childId(NodeId("buy"), NodeId("lbl")))!!
+
+        assertThat(opened.tokens).isEqualTo(raw.tokens)
+        assertThat(opened.node(NodeId("btn"))).isEqualTo(main)
+        assertThat(opened.node(NodeId("buy"))!!.instanceOf).isEqualTo(instance.instanceOf)
+        assertThat((copy.content as NodeContent.Text).text).isEqualTo("Buy")
+        assertThat(decoded(codec.encode(opened))).isEqualTo(opened)
     }
 
     @Test

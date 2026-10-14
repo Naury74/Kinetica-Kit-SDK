@@ -44,6 +44,7 @@ internal object SceneJsonWriter {
         if (document.extensions.isNotEmpty()) {
             putJsonObject(K.EXTENSIONS) { document.extensions.forEach { (key, raw) -> put(key, extensionValue(raw)) } }
         }
+        if (document.tokens.isNotEmpty()) put(K.TOKENS, ComponentJson.tokens(document.tokens))
     }
 
     private fun node(node: SceneNode): JsonObject = buildJsonObject {
@@ -62,6 +63,8 @@ internal object SceneJsonWriter {
         node.action?.let { put(K.ACTION, it) }
         if (node.constraints != LayoutConstraints.Default) put(K.CONSTRAINTS, LayoutJson.constraints(node.constraints))
         if (node.layoutFill) put(K.LAYOUT_FILL, true)
+        node.component?.let { put(K.COMPONENT, it) }
+        node.instanceOf?.let { put(K.INSTANCE_OF, ComponentJson.instance(it)) }
         put(K.TRANSFORM, transform(node.transform))
         content(node.content)
         put(K.STYLE, style(node.style))

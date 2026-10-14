@@ -24,6 +24,8 @@ internal object StyleJson {
         if (style.blur != 0.0) put(K.LAYER_BLUR, numberPrimitive(style.blur))
         if (style.startCap != LineCap.None) put(K.START_CAP, style.startCap.wireName)
         if (style.endCap != LineCap.None) put(K.END_CAP, style.endCap.wireName)
+        style.fillToken?.let { put(K.FILL_TOKEN, it) }
+        style.strokeToken?.let { put(K.STROKE_TOKEN, it) }
     }
 
     /** 예전 형식의 그림자 하나(`shadow`)도 읽는다. */

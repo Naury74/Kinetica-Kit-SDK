@@ -46,6 +46,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             },
             timelines = readTimelines(root.optional(K.ANIMATIONS)?.asArray(K.ANIMATIONS)),
             extensions = root.optional(K.EXTENSIONS)?.asObject(K.EXTENSIONS)?.mapValues { (_, value) -> value.toString() }.orEmpty(),
+            tokens = ComponentJson.readTokens(root),
             schemaVersion = SceneDocument.CURRENT_SCHEMA_VERSION,
         )
     }
@@ -84,6 +85,10 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
                 }
                     ?: LayoutConstraints.Default,
             layoutFill = json.booleanOr(K.LAYOUT_FILL, path, default = false),
+            component = json.optional(K.COMPONENT)?.asString("$path.${K.COMPONENT}"),
+            instanceOf = json.optional(K.INSTANCE_OF)?.let {
+                ComponentJson.readInstance(it.asObject("$path.${K.INSTANCE_OF}"), "$path.${K.INSTANCE_OF}")
+            },
         )
     }
 
@@ -173,6 +178,8 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
         blur = json.finiteOr(K.LAYER_BLUR, path, 0.0),
         startCap = StyleJson.readCap(json, K.START_CAP, path),
         endCap = StyleJson.readCap(json, K.END_CAP, path),
+        fillToken = json.optional(K.FILL_TOKEN)?.asString("$path.${K.FILL_TOKEN}"),
+        strokeToken = json.optional(K.STROKE_TOKEN)?.asString("$path.${K.STROKE_TOKEN}"),
     )
 
     private fun readPath(array: JsonArray, path: String): List<PathCommand> {
