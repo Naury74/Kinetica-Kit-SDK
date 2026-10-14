@@ -110,4 +110,23 @@ class AutoLayoutEditorTest {
         assertThat(a.sizeLimits.minWidth).isEqualTo(150.0)
         assertThat((a.content as NodeContent.Rectangle).size.width).isEqualTo(150.0)
     }
+
+    @Test
+    fun `움직임 효과에서 리플·튕기며·반짝임을 고르면 노드에 저장되고 한 번씩 되돌린다`() {
+        compose.setContent { KineticaEditor(session) }
+        session.select(listOf(NodeId("a")))
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Ripple").performScrollTo().performClick()
+        compose.onNodeWithText("Pop").performScrollTo().performClick()
+        compose.onNodeWithText("Shimmer").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        val effects = session.document.value.node(NodeId("a"))!!.effects
+        assertThat(effects.press.map { it.kind }).containsExactly(com.naury.kinetica.core.scene.PressKind.Ripple)
+        assertThat(effects.appear?.kind).isEqualTo(com.naury.kinetica.core.scene.AppearKind.Pop)
+        assertThat(effects.loop?.kind).isEqualTo(com.naury.kinetica.core.scene.LoopKind.Shimmer)
+        session.history.undo()
+        assertThat(session.document.value.node(NodeId("a"))!!.effects.loop).isNull()
+    }
 }

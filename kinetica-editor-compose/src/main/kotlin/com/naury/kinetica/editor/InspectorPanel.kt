@@ -67,6 +67,7 @@ internal fun InspectorPanel(
         (node.content as? NodeContent.Frame)?.let { AutoLayoutSection(node, it, edits.layout, theme) }
         if (edits.layout.isLaidOut(node)) LayoutChildSection(node, edits.layout, theme) else ConstraintsSection(node, edits.layout, theme)
         SizeLimitsSection(node, edits.layout, theme)
+        MotionSection(node, edits.motion, theme)
         BindingFields(node, edits.property, theme)
     }
 }
