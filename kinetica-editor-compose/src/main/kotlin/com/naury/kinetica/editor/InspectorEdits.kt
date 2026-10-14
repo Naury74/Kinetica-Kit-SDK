@@ -9,4 +9,5 @@ internal class InspectorEdits(val property: PropertyEdits, state: EditorState) {
     val text = TextEdits(state)
     val component = ComponentEdits(state)
     val motion = MotionEdits(state)
+    val accessibility = AccessibilityEdits(state)
 }

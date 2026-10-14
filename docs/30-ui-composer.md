@@ -16,7 +16,7 @@ SceneNode.bindings: Map<BoundProperty, String>   // 속성 → 데이터 키
 SceneNode.action: String?                        // 누르면 onAction(action)
 ```
 
-- `BoundProperty`: `Text`, `Visible`, `ImageUri`, `Fill`, `Opacity`.
+- `BoundProperty`: `Text`, `Visible`, `ImageUri`, `Fill`, `Opacity`, `Variant`(컴포넌트 변형 이름).
 - 호스트 데이터는 `SceneData`(키 → `DataValue`: 글자·숫자·참거짓·색)이며 `StateFlow`로 바뀌면 바로 다시 그린다.
 - 값이 없거나 종류가 맞지 않으면 문서에 저장된 값을 쓴다. 식·코드 실행은 없다.
 
@@ -27,6 +27,9 @@ SceneNode.action: String?                        // 누르면 onAction(action)
 - 문서 단위 1 = 1 px(배율 1). 편집기는 viewport 배율을, 재생기는 화면 폭에 맞춘 배율을 바깥 레이어에 적용한다.
 - 편집 모드: 편집 제스처 층이 맨 위에서 포인터를 가져간다. 사용 모드: 노드의 동작과 호스트 뷰가 포인터를 받는다.
 - 호스트 뷰 안의 dp·sp는 기기 밀도가 아니라 `HOST_VIEW_UNITS_PER_DP`(문서 2.75 단위 = 1dp)로 계산한다. 그래서 같은 문서가 기기 밀도·편집 배율과 상관없이 상자 대비 같은 모습이다.
+- 화면 읽기(TalkBack): 글자 노드는 그 글자를 읽는다. 이미지·아이콘·모양에는 `SceneNode.accessibility`(`label`·`role`(`button`·`image`·`heading`))를 붙이고,
+  장식이면 `hidden = true`로 읽지 않게 한다. 동작이 있는 노드는 버튼으로 알린다. JSON은 `"accessibility": {"label": "…", "role": "image"}`이며
+  모르는 역할은 무시한다. 편집기 속성 패널 **접근성**에서 정한다.
 - 글자 내용이 데이터에 묶여 있으면 글자 수정 창이 그 사실을 알리고, 묶음을 풀며 저장(실행 취소 한 단계)할 수 있다.
 
 ## 자동 배치와 화면 크기 대응 (2단계)

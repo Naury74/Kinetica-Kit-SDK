@@ -423,4 +423,32 @@ class SceneCodecTest {
             ),
         ),
     )
+
+    @Test
+    fun `접근성 이름·역할·숨김이 왕복하고 모르는 역할은 버린다`() {
+        val image = SceneNode(
+            NodeId("logo"),
+            NodeContent.Rectangle(Size(40.0, 40.0)),
+            accessibility = com.naury.kinetica.core.scene.NodeAccessibility("회사 로고", com.naury.kinetica.core.scene.NodeRole.Image),
+        )
+        val deco = SceneNode(
+            NodeId("deco"),
+            NodeContent.Rectangle(Size(10.0, 10.0)),
+            accessibility = com.naury.kinetica.core.scene.NodeAccessibility(hidden = true),
+        )
+        val raw = SceneDocument(
+            documentId = "a11y",
+            artboard = Artboard(100.0, 100.0),
+            nodes = listOf(image, deco).associateBy { it.id },
+            rootOrder = listOf(image.id, deco.id),
+        )
+
+        val encoded = codec.encode(raw)
+        val opened = decoded(encoded)
+
+        assertThat(opened.node(NodeId("logo"))!!.accessibility).isEqualTo(image.accessibility)
+        assertThat(opened.node(NodeId("deco"))!!.accessibility.hidden).isTrue()
+        val future = decoded(encoded.replace("\"role\":\"image\"", "\"role\":\"slider\""))
+        assertThat(future.node(NodeId("logo"))!!.accessibility.role).isNull()
+    }
 }

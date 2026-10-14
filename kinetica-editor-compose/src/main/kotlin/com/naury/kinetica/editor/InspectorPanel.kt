@@ -69,6 +69,7 @@ internal fun InspectorPanel(
         SizeLimitsSection(node, edits.layout, theme)
         MotionSection(node, edits.motion, theme)
         BindingFields(node, edits.property, theme)
+        AccessibilityFields(node, edits.accessibility, theme)
     }
 }
 
@@ -120,6 +121,23 @@ private fun TextSection(node: SceneNode, content: NodeContent.Text, edits: Prope
             modifier = Modifier.weight(1f),
         ) { edits.setFontSize(node.id, it) }
         NumberInput(node, NumericField.FontWeight, R.string.kinetica_field_font_weight, edits, Modifier.weight(1f))
+    }
+}
+
+/** 화면 읽기 이름과 장식(읽지 않음) 표시. */
+@Composable
+private fun AccessibilityFields(node: SceneNode, edits: AccessibilityEdits, theme: StudioTheme) {
+    Text(stringResource(R.string.kinetica_section_accessibility), color = theme.onPanel.copy(alpha = HINT_ALPHA))
+    CommitTextField(
+        current = node.accessibility.label.orEmpty(),
+        key = node.id.value + "a11y" + node.accessibility.label,
+        label = stringResource(R.string.kinetica_field_accessibility_label),
+        keyboardType = KeyboardType.Text,
+        enabled = !node.accessibility.hidden,
+        modifier = Modifier.fillMaxWidth(),
+    ) { edits.set(node.id, label = it) }
+    ToggleChip(R.string.kinetica_accessibility_hidden, node.accessibility.hidden, theme) {
+        edits.set(node.id, hidden = !node.accessibility.hidden)
     }
 }
 

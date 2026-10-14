@@ -12,10 +12,12 @@ import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.LayoutConstraints
+import com.naury.kinetica.core.scene.NodeAccessibility
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeEffects
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeKind
+import com.naury.kinetica.core.scene.NodeRole
 import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
@@ -92,10 +94,22 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             } ?: SizeLimits.None,
             effects = json.optional(K.EFFECTS)?.let { EffectsJson.read(it.asObject("$path.${K.EFFECTS}"), "$path.${K.EFFECTS}") }
                 ?: NodeEffects.None,
+            accessibility = readAccessibility(json, path),
             component = json.optional(K.COMPONENT)?.asString("$path.${K.COMPONENT}"),
             instanceOf = json.optional(K.INSTANCE_OF)?.let {
                 ComponentJson.readInstance(it.asObject("$path.${K.INSTANCE_OF}"), "$path.${K.INSTANCE_OF}")
             },
+        )
+    }
+
+    // 모르는 역할은 버린다. 서버가 새 역할을 보내도 화면 전체를 거부하지 않게 한다.
+    private fun readAccessibility(node: JsonObject, nodePath: String): NodeAccessibility {
+        val path = "$nodePath.${K.ACCESSIBILITY}"
+        val json = node.optional(K.ACCESSIBILITY)?.asObject(path) ?: return NodeAccessibility.Default
+        return NodeAccessibility(
+            label = json.optional(K.LABEL)?.asString("$path.${K.LABEL}"),
+            role = json.optional(K.ROLE)?.asString("$path.${K.ROLE}")?.let(NodeRole::fromWireName),
+            hidden = json.booleanOr(K.HIDDEN, path, default = false),
         )
     }
 

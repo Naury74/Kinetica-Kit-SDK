@@ -41,6 +41,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +60,7 @@ import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
+import com.naury.kinetica.core.scene.NodeRole
 import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
@@ -154,7 +161,9 @@ private fun Children(ids: List<NodeId>, scope: NodeScope, size: Size? = null) {
 @Composable
 private fun NodeView(node: SceneNode, scope: NodeScope) {
     if (!node.visible || node.style.opacity <= 0.0) return
-    val placed = Modifier.placement(node).effects(node, scope.effects).layerBlur(node.style.blur).actionable(node, scope)
+    val placed = Modifier.placement(
+        node,
+    ).effects(node, scope.effects).layerBlur(node.style.blur).actionable(node, scope).accessibility(node)
     when (val content = node.content) {
         is NodeContent.Group -> Box(placed) { Children(content.childIds, scope) }
         is NodeContent.Frame -> FrameView(node, content, placed, scope)
@@ -194,7 +203,24 @@ private fun Modifier.actionable(node: SceneNode, scope: NodeScope): Modifier {
     val action = node.action ?: return this
     // 동작 함수는 누를 때 읽는다. 구성 중에 읽으면 호스트가 넘긴 람다가 바뀔 때마다 동작 노드를 모두 다시 구성한다.
     if (!scope.interactive) return this
-    return clickable { scope.onAction?.invoke(action) }
+    val role = if (node.accessibility.role == null || node.accessibility.role == NodeRole.Button) Role.Button else null
+    return clickable(role = role) { scope.onAction?.invoke(action) }
+}
+
+/** 화면 읽기 정보([SceneNode.accessibility]). 장식이면 이 노드와 자손을 읽지 않는다. */
+private fun Modifier.accessibility(node: SceneNode): Modifier {
+    val info = node.accessibility
+    if (info.hidden) return clearAndSetSemantics {}
+    if (info.label == null && info.role == null) return this
+    return semantics(mergeDescendants = info.label != null) {
+        info.label?.let { contentDescription = it }
+        when (info.role) {
+            NodeRole.Image -> role = Role.Image
+            NodeRole.Heading -> heading()
+            NodeRole.Button -> role = Role.Button
+            null -> Unit
+        }
+    }
 }
 
 @Composable

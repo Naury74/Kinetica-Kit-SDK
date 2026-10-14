@@ -241,4 +241,7 @@
     <string name="kinetica_loop_heartbeat">Heartbeat</string>
     <string name="kinetica_loop_wiggle">Wiggle</string>
     <string name="kinetica_loop_ping">Ping</string>
+    <string name="kinetica_section_accessibility">Accessibility</string>
+    <string name="kinetica_field_accessibility_label">Screen reader label</string>
+    <string name="kinetica_accessibility_hidden">Decorative (not read)</string>
 </resources>

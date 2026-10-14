@@ -258,4 +258,11 @@ private fun JsonObjectBuilder.layout(node: SceneNode) {
     if (node.layoutFill) put(K.LAYOUT_FILL, true)
     if (node.sizeLimits != SizeLimits.None) put(K.SIZE_LIMITS, LayoutJson.sizeLimits(node.sizeLimits))
     if (!node.effects.isEmpty) put(K.EFFECTS, EffectsJson.write(node.effects))
+    if (!node.accessibility.isDefault) {
+        putJsonObject(K.ACCESSIBILITY) {
+            node.accessibility.label?.let { put(K.LABEL, it) }
+            node.accessibility.role?.let { put(K.ROLE, it.wireName) }
+            if (node.accessibility.hidden) put(K.HIDDEN, true)
+        }
+    }
 }

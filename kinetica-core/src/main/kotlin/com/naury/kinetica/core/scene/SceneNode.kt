@@ -21,6 +21,7 @@ import com.naury.kinetica.core.geometry.Vec2
  * @property instanceOf 이 Frame이 컴포넌트 인스턴스이며 자식은 원본에서 만든다([Components]). 자식의 글자·색·보임·이미지를 고치면 덮어쓴 값으로 남는다.
  * @property effects 누를 때·나타날 때·반복하는 미리 만든 움직임 효과. 호스트 뷰 자리에도 붙는다.
  * @property sizeLimits 크기 최소·최대. 자동 배치·제약이 크기를 바꿀 때 이 범위를 지킨다. 크기가 없는 노드에는 쓰지 않는다.
+ * @property accessibility 화면 읽기(TalkBack)에 알리는 이름·역할. 장식이면 읽지 않게 숨긴다.
  * @property layoutFill 자동 배치 Frame의 자식일 때 배치 방향의 남는 공간을 다른 채움 자식과 똑같이 나눠 차지한다(Figma의 Fill container).
  */
 public data class SceneNode(
@@ -41,6 +42,7 @@ public data class SceneNode(
     val instanceOf: InstanceOf? = null,
     val sizeLimits: SizeLimits = SizeLimits.None,
     val effects: NodeEffects = NodeEffects.None,
+    val accessibility: NodeAccessibility = NodeAccessibility.Default,
 ) {
     public val kind: NodeKind get() = content.kind
 

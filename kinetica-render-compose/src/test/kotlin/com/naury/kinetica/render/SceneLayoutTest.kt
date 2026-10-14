@@ -14,10 +14,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -306,4 +312,32 @@ class SceneLayoutTest {
 
     private fun Color.toArgbInt(): Int =
         (alpha * 255).toInt() shl 24 or ((red * 255).toInt() shl 16) or ((green * 255).toInt() shl 8) or (blue * 255).toInt()
+
+    @Test
+    fun `화면 읽기에 이름·역할을 알리고 장식은 숨기며 동작 노드는 버튼으로 알린다`() {
+        val logo = SceneNode(
+            NodeId("logo"),
+            NodeContent.Rectangle(Size(40.0, 40.0)),
+            accessibility = com.naury.kinetica.core.scene.NodeAccessibility("회사 로고", com.naury.kinetica.core.scene.NodeRole.Image),
+        )
+        val deco = SceneNode(
+            NodeId("deco"),
+            NodeContent.Text(Size(80.0, 20.0), "장식 글자"),
+            transform = Transform2D(translationY = 50.0),
+            accessibility = com.naury.kinetica.core.scene.NodeAccessibility(hidden = true),
+        )
+        val buy = SceneNode(
+            NodeId("buy"),
+            NodeContent.Text(Size(80.0, 20.0), "구매"),
+            transform = Transform2D(translationY = 100.0),
+            action = "buy",
+        )
+        compose.setContent {
+            SceneLayout(scene(logo, deco, buy), Viewport(0.0, 0.0, 1.0), Modifier.size(200.dp), interactive = true)
+        }
+
+        compose.onNodeWithContentDescription("회사 로고").assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Image))
+        compose.onNodeWithText("장식 글자").assertDoesNotExist()
+        compose.onNodeWithText("구매").assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+    }
 }
