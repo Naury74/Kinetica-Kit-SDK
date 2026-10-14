@@ -13,6 +13,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Rect
@@ -24,9 +25,11 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.motion.PlaybackController
 import com.naury.kinetica.motion.TimelineEvaluator
 import com.naury.kinetica.render.HOST_VIEW_UNITS_PER_DP
+import com.naury.kinetica.render.LocalSceneFonts
 import com.naury.kinetica.render.SceneImageProvider
 import com.naury.kinetica.render.SceneLayout
 import com.naury.kinetica.render.SceneSlots
+import com.naury.kinetica.render.SceneTextMeasurer
 import com.naury.kinetica.render.rememberSceneImages
 
 /**
@@ -81,9 +84,13 @@ public fun KineticaPlayer(
         val artboard = fitted.artboard
         Viewport.fitting(Rect(0.0, 0.0, artboard.width, artboard.height), size.first.toDouble(), size.second.toDouble())
     }
-    val shown = remember(fitted, timeline, timeMs, data) {
+    val context = LocalContext.current
+    val fonts = LocalSceneFonts.current
+    val measurer = remember(context, fonts) { SceneTextMeasurer(context, fonts) }
+    val shown = remember(fitted, timeline, timeMs, data, measurer) {
         val evaluated = if (timeline == null) fitted else TimelineEvaluator.evaluate(fitted, timeline, timeMs)
-        Bindings.apply(evaluated, data)
+        // 데이터로 글자가 바뀌면 이 기기 글꼴로 다시 재 글자에 맞춘 상자와 자동 배치가 따라간다.
+        Bindings.apply(evaluated, data, measurer = measurer)
     }
     Box(modifier.onSizeChanged { size = it.width to it.height }) {
         SceneLayout(
