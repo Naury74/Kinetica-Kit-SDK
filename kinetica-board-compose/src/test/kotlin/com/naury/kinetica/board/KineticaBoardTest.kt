@@ -9,10 +9,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -113,4 +115,67 @@ class KineticaBoardTest {
 
         assertThat(state.placedKeys).containsExactly("a", "b")
     }
+
+    @Test
+    fun `사용 모드에서 길게 누르면 편집 요청이 오고 그 누름은 위젯에 가지 않는다`() {
+        val clicks = mutableListOf<String>()
+        var requested = 0
+        val state = KineticaBoardState.create(catalog)
+        compose.setContent {
+            Box(Modifier.size(400.dp, 600.dp)) {
+                KineticaBoard(state, Modifier.fillMaxSize(), onLongPress = { requested++ }) { key ->
+                    TextButton(onClick = { clicks += key }, modifier = Modifier.fillMaxSize()) { Text("widget $key") }
+                }
+            }
+        }
+
+        compose.onNodeWithText("widget a").performTouchInput { longClick() }
+        compose.waitForIdle()
+
+        assertThat(requested).isEqualTo(1)
+        assertThat(clicks).isEmpty()
+    }
+
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    @Test
+    fun `접근성 동작으로 위젯을 옮기고 크게 만든다`() {
+        val state = KineticaBoardState.create(catalog)
+        show(state, editing = true)
+        val before = state.rectOf("a")!!
+
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").performCustomAccessibilityActionWithLabel("Move down")
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").performCustomAccessibilityActionWithLabel("Make larger")
+
+        val after = state.rectOf("a")!!
+        assertThat(after.top).isGreaterThan(before.top)
+        assertThat(after.width).isGreaterThan(before.width)
+    }
+
+    @Test
+    fun `아래쪽 띠에 머물면 보드가 스크롤되며 위젯을 더 아래로 놓는다`() {
+        val tall = (0 until 8).map { BoardWidget("w$it", "W$it", widthDp = 360f, heightDp = 120f) }
+        val state = KineticaBoardState.create(tall)
+        compose.setContent {
+            Box(Modifier.size(400.dp, 400.dp)) { KineticaBoard(state, Modifier.fillMaxSize(), editing = true) { BasicBox() } }
+        }
+        val before = state.rectOf("w0")!!
+
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "w0").performTouchInput {
+            down(center)
+            moveTo(Offset(center.x, center.y + 40f))
+            // 보이는 영역 아래 끝에서 70dp 위(분할 자리 40dp 바로 안쪽의 자동 스크롤 띠)에 머문다.
+            moveTo(Offset(center.x, 400f - 70f - 12f))
+        }
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "w0").performTouchInput { up() }
+        compose.waitForIdle()
+
+        // 스크롤 없이 놓았다면 약 300dp 아래가 최대지만, 스크롤된 만큼 더 내려간다.
+        assertThat((state.rectOf("w0")!!.top - before.top) / KineticaBoardState.UNITS).isGreaterThan(330.0)
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun BasicBox() {
+    Box(Modifier.fillMaxSize())
 }

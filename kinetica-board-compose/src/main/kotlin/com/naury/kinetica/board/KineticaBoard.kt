@@ -3,7 +3,10 @@ package com.naury.kinetica.board
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,11 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -46,6 +52,8 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.render.SceneLayout
 import com.naury.kinetica.render.SceneSlots
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * 호스트 위젯을 사용자가 배치하는 보드. 호스트 화면 아무 곳에나 넣는다.
@@ -56,6 +64,7 @@ import kotlin.math.roundToInt
  *   편집 중에는 위젯 안이 눌리지 않는다. 변경은 [KineticaBoardState]에 실행 취소 한 단계씩 남는다.
  *
  * @param permissions 편집 모드에서 허용할 일
+ * @param onLongPress 사용 모드에서 위젯을 길게 누르면 불린다(보통 편집 모드로 바꾼다). 그 누름은 위젯에 전달하지 않는다.
  * @param content 위젯 키마다 호스트가 그릴 내용. 보드가 정한 크기를 꽉 채우도록 그린다.
  */
 @Composable
@@ -65,6 +74,7 @@ public fun KineticaBoard(
     editing: Boolean = false,
     permissions: BoardPermissions = BoardPermissions(),
     colors: BoardColors = BoardColors(),
+    onLongPress: (() -> Unit)? = null,
     content: @Composable (key: String) -> Unit,
 ) {
     val stored by state.document.collectAsState()
@@ -84,8 +94,15 @@ public fun KineticaBoard(
         val rects = drag?.let { stable + (it.key to it.rect) } ?: stable
         // 편집 중에는 아래 위젯이 위젯 추가 버튼에 가리지 않도록 스크롤할 여유를 둔다.
         val editRoom = if (editing && permissions.add) EDIT_BOTTOM_ROOM_DP * KineticaBoardState.UNITS else 0.0
-        val contentBottom = (rects.values.maxOfOrNull { it.bottom } ?: 0.0) + gap + editRoom
-        val viewportHeight = if (constraints.hasBoundedHeight) constraints.maxHeight.toFloat() else (contentBottom * zoom).toFloat()
+        val stableBottom = stable.values.maxOfOrNull { it.bottom } ?: 0.0
+        val viewportHeight = if (constraints.hasBoundedHeight) {
+            constraints.maxHeight.toFloat()
+        } else {
+            ((stableBottom + gap + editRoom) * zoom).toFloat()
+        }
+        // 끄는 위젯을 따라 보드를 늘리되 지금 내용 아래 한 화면까지만 늘려, 자동 스크롤이 끝없이 이어지지 않게 한다.
+        val dragBottom = drag?.rect?.bottom?.coerceAtMost(stableBottom + viewportHeight / zoom) ?: 0.0
+        val contentBottom = maxOf(stableBottom, dragBottom) + gap + editRoom
         val heightPx = maxOf((contentBottom * zoom).toFloat(), viewportHeight)
         controller.frame = BoardFrame(
             mapping = mapping,
@@ -101,9 +118,12 @@ public fun KineticaBoard(
             edge = EDGE_DP * KineticaBoardState.UNITS,
             snap = SNAP_DP * KineticaBoardState.UNITS,
             minSize = MIN_WIDGET_DP * KineticaBoardState.UNITS,
+            scrollBand = SCROLL_BAND_DP * KineticaBoardState.UNITS,
         )
+        AutoScroll(controller, scroll, drag?.key)
         val shown = displayDocument(stored, rects, mapping.displayWidth, contentBottom)
-        Box(Modifier.fillMaxWidth().verticalScroll(scroll, enabled = drag == null)) {
+        val longPress = if (!editing && onLongPress != null) Modifier.longPressToEdit(onLongPress) else Modifier
+        Box(Modifier.fillMaxWidth().verticalScroll(scroll, enabled = drag == null).then(longPress)) {
             Box(Modifier.fillMaxWidth().height(with(LocalDensity.current) { heightPx.toDp() })) {
                 SceneLayout(shown, Viewport(0.0, 0.0, zoom.toDouble()), Modifier.matchParentSize(), slots = slots)
                 if (editing) EditLayer(state, stored, stable, drag, zoom, permissions, colors, controller)
@@ -142,8 +162,78 @@ private fun EditLayer(
             permissions = permissions.copy(remove = permissions.remove && widget?.removable != false),
             colors = colors,
             controller = controller,
+            actions = accessibilityActions(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)),
             onRemove = { state.remove(key) },
         )
+    }
+}
+
+/** TalkBack 등에서 끌기 없이 옮기고 크기를 바꾸고 빼는 동작. 허용된 것만 준다. */
+@Composable
+private fun accessibilityActions(state: KineticaBoardState, key: String, permissions: BoardPermissions): List<CustomAccessibilityAction> {
+    val moves = listOf(
+        R.string.kinetica_board_move_up to (0f to -NUDGE_DP),
+        R.string.kinetica_board_move_down to (0f to NUDGE_DP),
+        R.string.kinetica_board_move_left to (-NUDGE_DP to 0f),
+        R.string.kinetica_board_move_right to (NUDGE_DP to 0f),
+    ).map { (label, delta) -> stringResource(label) to delta }
+    val larger = stringResource(R.string.kinetica_board_larger)
+    val smaller = stringResource(R.string.kinetica_board_smaller)
+    val remove = stringResource(R.string.kinetica_board_remove_action)
+    return buildList {
+        if (permissions.move) {
+            moves.forEach { (label, delta) ->
+                add(CustomAccessibilityAction(label) { state.moveBy(key, delta.first, delta.second) })
+            }
+        }
+        if (permissions.resize) {
+            add(CustomAccessibilityAction(larger) { state.resizeBy(key, NUDGE_DP * 2, NUDGE_DP * 2) })
+            add(CustomAccessibilityAction(smaller) { state.resizeBy(key, -NUDGE_DP * 2, -NUDGE_DP * 2) })
+        }
+        if (permissions.remove) add(CustomAccessibilityAction(remove) { state.remove(key) })
+    }
+}
+
+/** 끄는 동안 손가락이 위·아래 자동 스크롤 띠에 있으면 매 프레임 보드를 스크롤하고 끄는 위치를 맞춘다. */
+@Composable
+private fun AutoScroll(controller: BoardDragController, scroll: androidx.compose.foundation.ScrollState, dragging: String?) {
+    val speed = with(LocalDensity.current) { AUTO_SCROLL_DP_PER_FRAME.dp.toPx() }
+    androidx.compose.runtime.LaunchedEffect(dragging) {
+        val key = dragging ?: return@LaunchedEffect
+        // 띠 안에 있을 때만 프레임마다 스크롤하고, 끝까지 스크롤되면 멈춘다(쉬는 동안 프레임을 요청하지 않는다).
+        androidx.compose.runtime.snapshotFlow { controller.scrollDirection }.collectLatest { direction ->
+            while (direction != 0) {
+                androidx.compose.runtime.withFrameNanos { }
+                val moved = scroll.scrollBy(direction * speed)
+                if (moved == 0f) break
+                controller.scrolled(key, moved)
+            }
+        }
+    }
+}
+
+/**
+ * 길게 누르면 [onLongPress]를 부르고 그 누름의 나머지는 가로챈다. 짧게 누르거나 움직이면 아무것도 하지 않아 위젯·스크롤이 평소대로 받는다.
+ */
+private fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointerInput(onLongPress) {
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        val released = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+            var ended = false
+            while (!ended) {
+                val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id }
+                ended = change == null || !change.pressed || (change.position - down.position).getDistance() > viewConfiguration.touchSlop
+            }
+            true
+        }
+        if (released == null) {
+            onLongPress()
+            // 손을 뗄 때까지 위젯이 누름·뗌을 받지 않게 가로챈다.
+            do {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                event.changes.forEach { it.consume() }
+            } while (event.changes.any { it.pressed })
+        }
     }
 }
 
@@ -184,6 +274,7 @@ private fun WidgetEditFrame(
     permissions: BoardPermissions,
     colors: BoardColors,
     controller: BoardDragController,
+    actions: List<CustomAccessibilityAction>,
     onRemove: () -> Unit,
 ) {
     val outline = if (dragging) Color.Transparent else colors.outline
@@ -193,6 +284,7 @@ private fun WidgetEditFrame(
             .border(2.dp, outline, RoundedCornerShape(8.dp))
             .background(outline.copy(alpha = EDIT_TINT))
             .testTag("$BOARD_WIDGET_TAG$key")
+            .semantics { customActions = actions }
             .pointerInput(key, permissions.move) {
                 if (!permissions.move) return@pointerInput
                 detectDragGestures(
@@ -283,5 +375,8 @@ private const val SNAP_DP = 8.0
 private const val MIN_WIDGET_DP = 48.0
 private const val EDIT_TINT = 0.08f
 private const val EDIT_BOTTOM_ROOM_DP = 88.0
+private const val SCROLL_BAND_DP = 48.0
+private const val AUTO_SCROLL_DP_PER_FRAME = 8
+private const val NUDGE_DP = 8f
 private val BADGE_SIZE: Dp = 28.dp
 private val BADGE_OUTSET: Dp = 9.dp

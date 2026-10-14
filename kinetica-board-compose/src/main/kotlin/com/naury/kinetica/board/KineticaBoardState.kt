@@ -98,6 +98,34 @@ public class KineticaBoardState private constructor(
         return ok
     }
 
+    /**
+     * 위젯을 [dxDp]·[dyDp]만큼 옮긴다(접근성 동작·키보드용). 보드 밖으로는 나가지 않고, 격자 배치면 가장 가까운 칸으로 맞춘다.
+     */
+    public fun moveBy(key: String, dxDp: Float, dyDp: Float): Boolean {
+        val rect = rectOf(key) ?: return false
+        val (stepX, stepY) = step(dxDp, dyDp)
+        val dx = stepX.coerceIn(-rect.left, REFERENCE_WIDTH - rect.right)
+        val dy = stepY.coerceAtLeast(-rect.top)
+        return place(key, Rect(rect.left + dx, rect.top + dy, rect.right + dx, rect.bottom + dy))
+    }
+
+    /** 위젯 크기를 [dwDp]·[dhDp]만큼 바꾼다. 왼쪽 위는 그대로이고 48dp보다 작아지지 않는다. */
+    public fun resizeBy(key: String, dwDp: Float, dhDp: Float): Boolean {
+        val rect = rectOf(key) ?: return false
+        val min = MIN_SIZE_DP * UNITS
+        val (stepW, stepH) = step(dwDp, dhDp)
+        val right = (rect.right + stepW).coerceIn(rect.left + min, REFERENCE_WIDTH)
+        val bottom = (rect.bottom + stepH).coerceAtLeast(rect.top + min)
+        return place(key, Rect(rect.left, rect.top, right, bottom))
+    }
+
+    /** dp 이동량을 기준 폭 단위로 바꾼다. 격자 배치는 방향만 보고 한 칸씩 움직인다. */
+    private fun step(dxDp: Float, dyDp: Float): Pair<Double, Double> {
+        val grid = arrangement as? BoardArrangement.Grid ?: return dxDp * UNITS to dyDp * UNITS
+        val width = BoardGeometry.cellWidth(REFERENCE_WIDTH, grid.columns, gapUnits())
+        return Math.signum(dxDp) * (width + gapUnits()) to Math.signum(dyDp) * (width * grid.rowHeightRatio + gapUnits())
+    }
+
     /** 위젯 하나를 맨 위로 올린다(겹칠 때 위에 그려진다). */
     public fun bringToFront(key: String): Boolean {
         val last = placedKeys.lastIndex
@@ -162,6 +190,7 @@ public class KineticaBoardState private constructor(
         public const val REFERENCE_WIDTH: Double = 1080.0
 
         internal const val UNITS: Double = HOST_VIEW_UNITS_PER_DP.toDouble()
+        private const val MIN_SIZE_DP = 48.0
         private const val EXTENSION_KEY = "kinetica.board"
         private const val KNOWN = "known"
         private val codec = SceneCodec()

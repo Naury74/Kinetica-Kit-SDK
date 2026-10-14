@@ -3,4 +3,11 @@
     <string name="kinetica_board_remove">%1$s 빼기</string>
     <string name="kinetica_board_resize">%1$s 크기 바꾸기</string>
     <string name="kinetica_board_nothing_to_add">모든 위젯이 보드에 있습니다</string>
+    <string name="kinetica_board_move_up">위로 옮기기</string>
+    <string name="kinetica_board_move_down">아래로 옮기기</string>
+    <string name="kinetica_board_move_left">왼쪽으로 옮기기</string>
+    <string name="kinetica_board_move_right">오른쪽으로 옮기기</string>
+    <string name="kinetica_board_larger">크게</string>
+    <string name="kinetica_board_smaller">작게</string>
+    <string name="kinetica_board_remove_action">보드에서 빼기</string>
 </resources>

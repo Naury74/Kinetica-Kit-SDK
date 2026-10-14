@@ -3,4 +3,11 @@
     <string name="kinetica_board_remove">Remove %1$s</string>
     <string name="kinetica_board_resize">Resize %1$s</string>
     <string name="kinetica_board_nothing_to_add">All widgets are on the board</string>
+    <string name="kinetica_board_move_up">Move up</string>
+    <string name="kinetica_board_move_down">Move down</string>
+    <string name="kinetica_board_move_left">Move left</string>
+    <string name="kinetica_board_move_right">Move right</string>
+    <string name="kinetica_board_larger">Make larger</string>
+    <string name="kinetica_board_smaller">Make smaller</string>
+    <string name="kinetica_board_remove_action">Remove from board</string>
 </resources>
