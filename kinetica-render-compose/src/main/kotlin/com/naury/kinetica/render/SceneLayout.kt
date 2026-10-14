@@ -6,6 +6,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
@@ -38,6 +41,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
@@ -86,6 +90,8 @@ public const val HOST_VIEW_UNITS_PER_DP: Float = 2.75f
  * - [clipToArtboard]가 `true`면 artboard 밖은 그리지 않는다(재생기). 편집기는 밖에 둔 컴포넌트 원본도 보이도록 `false`다.
  * - [interactive]가 `true`면 동작([SceneNode.action])이 있는 노드를 누를 때 [onAction]을 부르고, 노드의 움직임 효과([SceneNode.effects])를 보여 준다.
  *   `false`면(편집 모드) 누르기를 처리하지 않고 효과도 움직이지 않는다.
+ * - [onPressChange]는 동작이 있는 컴포넌트 인스턴스를 누르기 시작할 때(`true`)와 뗄 때·취소될 때(`false`) 그 노드 id로 불린다.
+ *   재생기는 이것으로 누르는 동안 눌림 변형을 보여 준다.
  *
  * 바인딩이나 애니메이션은 이 함수 밖에서 적용한 문서를 넘긴다.
  */
@@ -99,11 +105,14 @@ public fun SceneLayout(
     interactive: Boolean = false,
     onAction: (String) -> Unit = {},
     clipToArtboard: Boolean = false,
+    onPressChange: (NodeId, Boolean) -> Unit = { _, _ -> },
 ) {
     // 스코프는 같은 객체로 두고 문서·동작은 상태로 읽는다. 바뀌지 않은 노드는 같은 인자라 다시 구성하지 않는다(끌기·애니메이션 중 성능).
     val documentState = rememberUpdatedState(document)
     val actionState = rememberUpdatedState(if (interactive) onAction else null)
-    val scope = remember(images, slots, interactive) { NodeScope(documentState, images, slots, actionState, effects = interactive) }
+    val pressState = rememberUpdatedState(onPressChange)
+    val scope =
+        remember(images, slots, interactive) { NodeScope(documentState, images, slots, actionState, pressState, effects = interactive) }
     Box(modifier.clipToBounds()) {
         Box(
             // artboard가 영역보다 크면 Compose가 가운데로 맞춰 밀어내므로, 제약 없이 재고 왼쪽 위에 둔다(위치는 viewport가 정한다).
@@ -133,8 +142,11 @@ private class NodeScope(
     val images: SceneImageProvider,
     val slots: SceneSlots,
     private val actionState: State<((String) -> Unit)?>,
+    private val pressState: State<(NodeId, Boolean) -> Unit>,
     val effects: Boolean,
 ) {
+    fun pressChanged(id: NodeId, pressed: Boolean) = pressState.value(id, pressed)
+
     /** 사용 모드(누르면 동작·효과). */
     val interactive: Boolean get() = effects
 
@@ -204,7 +216,20 @@ private fun Modifier.actionable(node: SceneNode, scope: NodeScope): Modifier {
     // 동작 함수는 누를 때 읽는다. 구성 중에 읽으면 호스트가 넘긴 람다가 바뀔 때마다 동작 노드를 모두 다시 구성한다.
     if (!scope.interactive) return this
     val role = if (node.accessibility.role == null || node.accessibility.role == NodeRole.Button) Role.Button else null
-    return clickable(role = role) { scope.onAction?.invoke(action) }
+    val clickable = clickable(role = role) { scope.onAction?.invoke(action) }
+    if (node.instanceOf == null) return clickable
+    // 누르는 동안을 알린다. 손가락은 관찰만 하므로 누르기·스크롤은 그대로다.
+    return clickable.pointerInput(node.id) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false)
+            scope.pressChanged(node.id, true)
+            try {
+                waitForUpOrCancellation()
+            } finally {
+                scope.pressChanged(node.id, false)
+            }
+        }
+    }
 }
 
 /** 화면 읽기 정보([SceneNode.accessibility]). 장식이면 이 노드와 자손을 읽지 않는다. */

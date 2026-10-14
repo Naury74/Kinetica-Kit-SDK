@@ -19,7 +19,9 @@ import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Rect
 import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.core.scene.Bindings
+import com.naury.kinetica.core.scene.ComponentVariants
 import com.naury.kinetica.core.scene.Layouts
+import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneData
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.motion.PlaybackController
@@ -75,15 +77,7 @@ public fun KineticaPlayer(
     }
     var size by remember { mutableStateOf(0 to 0) }
     val density = LocalDensity.current.density
-    val fitted = remember(document, size, fit, density) {
-        val width = size.first / density * HOST_VIEW_UNITS_PER_DP
-        val height = size.second / density * HOST_VIEW_UNITS_PER_DP
-        if (fit == SceneFit.Responsive && width > 0f && height > 0f) {
-            Layouts.resizeArtboard(document, width.toDouble(), height.toDouble())
-        } else {
-            document
-        }
-    }
+    val fitted = remember(document, size, fit, density) { fitted(document, size, fit, density) }
     val viewport = remember(fitted.artboard, size) {
         val artboard = fitted.artboard
         Viewport.fitting(Rect(0.0, 0.0, artboard.width, artboard.height), size.first.toDouble(), size.second.toDouble())
@@ -92,7 +86,8 @@ public fun KineticaPlayer(
     val fonts = LocalSceneFonts.current
     val measurer = remember(context, fonts) { SceneTextMeasurer(context, fonts) }
     // 변형은 타임라인 평가 전에 한 번만 바꿔, 프레임마다 인스턴스를 다시 만들거나 키 값을 덮지 않게 한다.
-    val resolved = remember(fitted, data) { Bindings.resolveVariants(fitted, data) }
+    var pressed by remember { mutableStateOf<NodeId?>(null) }
+    val resolved = remember(fitted, data, pressed) { withVariants(fitted, data, pressed) }
     val shown = remember(resolved, timeline, timeMs, data, measurer) {
         val evaluated = if (timeline == null) resolved else TimelineEvaluator.evaluate(resolved, timeline, timeMs)
         // 데이터로 글자가 바뀌면 이 기기 글꼴로 다시 재 글자에 맞춘 상자와 자동 배치가 따라간다.
@@ -108,6 +103,7 @@ public fun KineticaPlayer(
             interactive = true,
             onAction = onAction,
             clipToArtboard = true,
+            onPressChange = { id, down -> pressed = if (down) id else pressed?.takeIf { it != id } },
         )
     }
 }
@@ -128,5 +124,22 @@ public fun rememberSystemReducedMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
     return remember(resolver) {
         android.provider.Settings.Global.getFloat(resolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    }
+}
+
+/** 데이터가 고른 변형으로 바꾸고, 누르고 있는 인스턴스는 눌림 변형으로 바꾼다. 바인딩보다 먼저 바꿔야 묶인 글자가 그대로다. */
+private fun withVariants(document: SceneDocument, data: SceneData, pressed: NodeId?): SceneDocument {
+    val chosen = Bindings.resolveVariants(document, data)
+    return pressed?.let { ComponentVariants.pressed(chosen, it) } ?: chosen
+}
+
+/** [SceneFit.Responsive]면 artboard를 영역 크기(문서 단위)로 바꾼 문서. 그 밖에는 [document] 그대로다. */
+private fun fitted(document: SceneDocument, size: Pair<Int, Int>, fit: SceneFit, density: Float): SceneDocument {
+    val width = size.first / density * HOST_VIEW_UNITS_PER_DP
+    val height = size.second / density * HOST_VIEW_UNITS_PER_DP
+    return if (fit == SceneFit.Responsive && width > 0f && height > 0f) {
+        Layouts.resizeArtboard(document, width.toDouble(), height.toDouble())
+    } else {
+        document
     }
 }

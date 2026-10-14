@@ -6,8 +6,12 @@ package com.naury.kinetica.core.scene
  *
  * 인스턴스를 같은 세트의 다른 변형으로 바꾸면([swap]) 덮어쓴 값은 원본 안에서 레이어 이름 경로가 같은 노드로 옮긴다.
  * 인스턴스에 [BoundProperty.Variant]를 묶으면 호스트 데이터의 글자(변형 이름)로 고른다.
+ * 세트에 [PRESSED_NAMES] 이름의 변형이 있으면, 재생기는 그 인스턴스를 누르는 동안 그 변형으로 보여 준다([pressed]).
  */
 public object ComponentVariants {
+    /** 누르는 동안 보여 줄 변형 이름(대소문자 무시). */
+    public val PRESSED_NAMES: Set<String> = setOf("pressed", "눌림")
+
     /** 컴포넌트 이름 [component]의 세트 이름. 세트가 없으면 `null`. */
     public fun setName(component: String): String? = component.substringBeforeLast('/', "").trim().takeIf { it.isNotEmpty() }
 
@@ -31,6 +35,21 @@ public object ComponentVariants {
         val wanted = variant.trim()
         val target = variantsOf(document, link.main).firstOrNull { it.component?.let(::variantName) == wanted } ?: return null
         return swapTo(document, link, target.id)
+    }
+
+    /**
+     * 인스턴스 [instanceId]를 누르는 동안 보일 문서. 세트에 눌림 변형([PRESSED_NAMES])이 없거나 이미 그 변형이면 `null`.
+     * 그리기 전용이며, 데이터로 고르는 변형 바인딩은 누르는 동안 쓰지 않는다.
+     */
+    public fun pressed(document: SceneDocument, instanceId: NodeId): SceneDocument? {
+        val node = document.node(instanceId) ?: return null
+        val link = node.instanceOf ?: return null
+        val target = variantsOf(document, link.main).firstOrNull { main ->
+            main.component?.let(::variantName)?.lowercase() in PRESSED_NAMES
+        } ?: return null
+        if (target.id == link.main) return null
+        val swapped = node.copy(instanceOf = swapTo(document, link, target.id), bindings = node.bindings - BoundProperty.Variant)
+        return Layouts.apply(Components.sync(document.copy(nodes = document.nodes + (instanceId to swapped))))
     }
 
     /** [link]의 원본을 [mainId]로 바꾼 연결. 덮어쓴 값은 이름 경로로 옮긴다. */

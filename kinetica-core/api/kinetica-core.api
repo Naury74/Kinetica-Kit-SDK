@@ -950,6 +950,8 @@ public final class com/naury/kinetica/core/scene/BoundProperty$Companion {
 
 public final class com/naury/kinetica/core/scene/ComponentVariants {
 	public static final field INSTANCE Lcom/naury/kinetica/core/scene/ComponentVariants;
+	public final fun getPRESSED_NAMES ()Ljava/util/Set;
+	public final fun pressed-km_GAPE (Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneDocument;
 	public final fun setName (Ljava/lang/String;)Ljava/lang/String;
 	public final fun swap-lYf7Kd4 (Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/lang/String;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/InstanceOf;
 	public final fun swapTo-SNY7u2o (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/InstanceOf;Ljava/lang/String;)Lcom/naury/kinetica/core/scene/InstanceOf;

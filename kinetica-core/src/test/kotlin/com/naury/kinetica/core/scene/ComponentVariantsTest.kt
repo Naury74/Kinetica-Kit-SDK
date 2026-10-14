@@ -168,4 +168,22 @@ class ComponentVariantsTest {
         val withoutMain = document.apply(SceneCommand.RemoveNodes(setOf(id("normal"))))
         assertThat(withoutMain.node(id("buy"))!!.bindings).doesNotContainKey(BoundProperty.Variant)
     }
+
+    @Test
+    fun `눌림 변형이 있으면 누르는 동안 그 변형이고 덮어쓴 글자는 남으며 없으면 null이다`() {
+        val red = ArgbColor(0xFFFF0000.toInt())
+        val base = withInstance()
+        val withPressed = base.copy(
+            nodes = base.nodes + variant("down", "버튼/Pressed", red, 10.0).associateBy { it.id },
+            rootOrder = base.rootOrder + id("down"),
+        )
+
+        val pressed = ComponentVariants.pressed(withPressed, id("buy"))!!
+
+        assertThat(pressed.node(id("buy"))!!.instanceOf!!.main).isEqualTo(id("down"))
+        assertThat(pressed.node(id("buy"))!!.style.fill).isEqualTo(red)
+        assertThat((pressed.labelOf("buy", "down-label").content as NodeContent.Text).text).isEqualTo("구매")
+        assertThat(pressed.node(id("buy"))!!.bindings).doesNotContainKey(BoundProperty.Variant)
+        assertThat(ComponentVariants.pressed(base, id("buy"))).isNull()
+    }
 }
