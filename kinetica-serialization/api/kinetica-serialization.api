@@ -397,12 +397,17 @@ public abstract interface class com/naury/kinetica/serialization/SceneRepository
 
 public abstract interface class com/naury/kinetica/serialization/SceneVerifier {
 	public static final field Companion Lcom/naury/kinetica/serialization/SceneVerifier$Companion;
+	public static fun anyOf (Ljava/util/List;)Lcom/naury/kinetica/serialization/SceneVerifier;
+	public static fun anyOf (Ljava/util/List;Ljava/lang/String;)Lcom/naury/kinetica/serialization/SceneVerifier;
 	public static fun signature (Ljava/security/PublicKey;)Lcom/naury/kinetica/serialization/SceneVerifier;
 	public static fun signature (Ljava/security/PublicKey;Ljava/lang/String;)Lcom/naury/kinetica/serialization/SceneVerifier;
 	public abstract fun verify ([B[B)Z
 }
 
 public final class com/naury/kinetica/serialization/SceneVerifier$Companion {
+	public final fun anyOf (Ljava/util/List;)Lcom/naury/kinetica/serialization/SceneVerifier;
+	public final fun anyOf (Ljava/util/List;Ljava/lang/String;)Lcom/naury/kinetica/serialization/SceneVerifier;
+	public static synthetic fun anyOf$default (Lcom/naury/kinetica/serialization/SceneVerifier$Companion;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/serialization/SceneVerifier;
 	public final fun signature (Ljava/security/PublicKey;)Lcom/naury/kinetica/serialization/SceneVerifier;
 	public final fun signature (Ljava/security/PublicKey;Ljava/lang/String;)Lcom/naury/kinetica/serialization/SceneVerifier;
 	public static synthetic fun signature$default (Lcom/naury/kinetica/serialization/SceneVerifier$Companion;Ljava/security/PublicKey;Ljava/lang/String;ILjava/lang/Object;)Lcom/naury/kinetica/serialization/SceneVerifier;

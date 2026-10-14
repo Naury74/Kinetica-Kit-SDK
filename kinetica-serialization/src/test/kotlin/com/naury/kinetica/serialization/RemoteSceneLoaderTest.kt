@@ -118,4 +118,24 @@ class RemoteSceneLoaderTest {
         assertThat(loader.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Fallback, RemoteSceneError.Unverified))
         assertThat(loader.refresh()).isEqualTo(RemoteSceneState.Ready(second, SceneOrigin.Network))
     }
+
+    @Test
+    fun `키를 바꾸는 동안에는 옛 키와 새 키 서명을 모두 받고 모르는 키는 거절한다`() {
+        fun keys() = java.security.KeyPairGenerator.getInstance("EC").apply { initialize(256) }.generateKeyPair()
+        val old = keys()
+        val new = keys()
+        val stranger = keys()
+        val bytes = codec.encode(first).toByteArray()
+        fun sign(pair: java.security.KeyPair) = java.security.Signature.getInstance("SHA256withECDSA").run {
+            initSign(pair.private)
+            update(bytes)
+            sign()
+        }
+        val verifier = SceneVerifier.anyOf(listOf(old.public, new.public))
+
+        assertThat(verifier.verify(bytes, sign(old))).isTrue()
+        assertThat(verifier.verify(bytes, sign(new))).isTrue()
+        assertThat(verifier.verify(bytes, sign(stranger))).isFalse()
+        assertThat(SceneVerifier.anyOf(emptyList()).verify(bytes, sign(old))).isFalse()
+    }
 }

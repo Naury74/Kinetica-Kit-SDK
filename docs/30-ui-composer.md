@@ -68,5 +68,5 @@ NodeStyle.fillToken·strokeToken  // 토큰에 이은 색
 - 여러 화면 묶음: `{"bundleVersion":1,"scenes":{"home":{…},"promo":{…}}}`(`SceneBundleCodec`, 기본 20 MiB·64화면).
   `RemoteSceneBundleLoader`가 화면마다 따로 검증·캐시하고, 깨지거나 거절된 화면만 이전 문서를 유지한다. 화면 여러 개가 함께 열려도
   받기는 한 번이며 2초 안의 새로 고침은 다시 받지 않는다(`refresh(force = true)`는 받음). 재생은 `RemoteKineticaPlayer(bundle, "home")`.
-- 남은 것: 키 교체(여러 공개 키) 정책.
+- 키 교체: `SceneVerifier.anyOf(listOf(oldKey, newKey))`로 옛 키·새 키 서명을 모두 받는다. 새 키를 넣은 앱을 먼저 배포하고, 서버가 새 키로 서명을 바꾼 뒤, 다음 앱에서 옛 키를 뺀다.
 

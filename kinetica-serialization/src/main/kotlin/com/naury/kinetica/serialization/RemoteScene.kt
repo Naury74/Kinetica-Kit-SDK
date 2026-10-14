@@ -58,6 +58,17 @@ public fun interface SceneVerifier {
                     }
                 }.getOrDefault(false)
             }
+
+        /**
+         * 공개 키를 바꾸는 동안 쓴다. [publicKeys] 중 하나로라도 서명이 맞으면 받는다. 새 키로 서명을 시작하기 전에 앱에 새 키를 더해 배포하고,
+         * 모든 사용자가 새 앱을 받은 뒤 옛 키를 뺀다. 빈 목록이면 모든 본문을 거절한다.
+         */
+        @JvmStatic
+        @JvmOverloads
+        public fun anyOf(publicKeys: List<java.security.PublicKey>, algorithm: String = "SHA256withECDSA"): SceneVerifier {
+            val verifiers = publicKeys.map { signature(it, algorithm) }
+            return SceneVerifier { bytes, signature -> verifiers.any { it.verify(bytes, signature) } }
+        }
     }
 }
 
