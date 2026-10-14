@@ -12,6 +12,7 @@ import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.SizeLimits
 import com.naury.kinetica.core.scene.TextAlignment
 import com.naury.kinetica.serialization.JsonKeys as K
 import kotlinx.serialization.SerializationException
@@ -63,6 +64,7 @@ internal object SceneJsonWriter {
         node.action?.let { put(K.ACTION, it) }
         if (node.constraints != LayoutConstraints.Default) put(K.CONSTRAINTS, LayoutJson.constraints(node.constraints))
         if (node.layoutFill) put(K.LAYOUT_FILL, true)
+        if (node.sizeLimits != SizeLimits.None) put(K.SIZE_LIMITS, LayoutJson.sizeLimits(node.sizeLimits))
         node.component?.let { put(K.COMPONENT, it) }
         node.instanceOf?.let { put(K.INSTANCE_OF, ComponentJson.instance(it)) }
         put(K.TRANSFORM, transform(node.transform))

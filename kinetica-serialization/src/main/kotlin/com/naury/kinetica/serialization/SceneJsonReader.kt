@@ -20,6 +20,7 @@ import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneLimits
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.SizeLimits
 import com.naury.kinetica.core.scene.TextAlignment
 import com.naury.kinetica.serialization.JsonKeys as K
 import kotlinx.serialization.json.JsonArray
@@ -85,6 +86,9 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
                 }
                     ?: LayoutConstraints.Default,
             layoutFill = json.booleanOr(K.LAYOUT_FILL, path, default = false),
+            sizeLimits = json.optional(K.SIZE_LIMITS)?.let {
+                LayoutJson.readSizeLimits(it.asObject("$path.${K.SIZE_LIMITS}"), "$path.${K.SIZE_LIMITS}")
+            } ?: SizeLimits.None,
             component = json.optional(K.COMPONENT)?.asString("$path.${K.COMPONENT}"),
             instanceOf = json.optional(K.INSTANCE_OF)?.let {
                 ComponentJson.readInstance(it.asObject("$path.${K.INSTANCE_OF}"), "$path.${K.INSTANCE_OF}")

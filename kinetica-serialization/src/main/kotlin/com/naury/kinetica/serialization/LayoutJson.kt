@@ -7,6 +7,7 @@ import com.naury.kinetica.core.scene.LayoutConstraints
 import com.naury.kinetica.core.scene.LayoutDirection
 import com.naury.kinetica.core.scene.MainAlign
 import com.naury.kinetica.core.scene.Pin
+import com.naury.kinetica.core.scene.SizeLimits
 import com.naury.kinetica.serialization.JsonKeys as K
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -28,7 +29,23 @@ internal object LayoutJson {
         if (layout.crossAlign != CrossAlign.Start) put(K.CROSS_ALIGN, layout.crossAlign.wireName)
         if (layout.hugWidth) put(K.HUG_WIDTH, true)
         if (layout.hugHeight) put(K.HUG_HEIGHT, true)
+        if (layout.wrap) put(K.WRAP, true)
+        if (layout.lineGap != 0.0) put(K.LINE_GAP, numberPrimitive(layout.lineGap))
     }
+
+    fun sizeLimits(limits: SizeLimits): JsonObject = buildJsonObject {
+        limits.minWidth?.let { put(K.MIN_WIDTH, numberPrimitive(it)) }
+        limits.maxWidth?.let { put(K.MAX_WIDTH, numberPrimitive(it)) }
+        limits.minHeight?.let { put(K.MIN_HEIGHT, numberPrimitive(it)) }
+        limits.maxHeight?.let { put(K.MAX_HEIGHT, numberPrimitive(it)) }
+    }
+
+    fun readSizeLimits(json: JsonObject, path: String): SizeLimits = SizeLimits(
+        minWidth = json.optional(K.MIN_WIDTH)?.asFinite("$path.${K.MIN_WIDTH}"),
+        maxWidth = json.optional(K.MAX_WIDTH)?.asFinite("$path.${K.MAX_WIDTH}"),
+        minHeight = json.optional(K.MIN_HEIGHT)?.asFinite("$path.${K.MIN_HEIGHT}"),
+        maxHeight = json.optional(K.MAX_HEIGHT)?.asFinite("$path.${K.MAX_HEIGHT}"),
+    )
 
     fun constraints(constraints: LayoutConstraints): JsonObject = buildJsonObject {
         if (constraints.horizontal != Pin.Start) put(K.HORIZONTAL, constraints.horizontal.wireName)
@@ -50,6 +67,8 @@ internal object LayoutJson {
                 json.optional(K.CROSS_ALIGN)?.let { wire(it, "$path.${K.CROSS_ALIGN}", CrossAlign::fromWireName) } ?: CrossAlign.Start,
             hugWidth = json.booleanOr(K.HUG_WIDTH, path, default = false),
             hugHeight = json.booleanOr(K.HUG_HEIGHT, path, default = false),
+            wrap = json.booleanOr(K.WRAP, path, default = false),
+            lineGap = json.finiteOr(K.LINE_GAP, path, 0.0),
         )
     }
 

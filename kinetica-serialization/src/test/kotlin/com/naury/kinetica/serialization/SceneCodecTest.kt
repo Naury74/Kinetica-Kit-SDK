@@ -35,6 +35,7 @@ import com.naury.kinetica.core.scene.Pin
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.Shadow
+import com.naury.kinetica.core.scene.SizeLimits
 import com.naury.kinetica.core.scene.TextAlignment
 import com.naury.kinetica.core.scene.TextDecoration
 import com.naury.kinetica.core.scene.TextSpan
@@ -308,6 +309,8 @@ class SceneCodecTest {
                     gap = 8.0,
                     padding = Insets(10.0, 10.0, 12.0, 14.0),
                     crossAlign = CrossAlign.Center,
+                    wrap = true,
+                    lineGap = 6.0,
                 ),
             ),
             style = NodeStyle(
@@ -330,6 +333,7 @@ class SceneCodecTest {
             parentId = NodeId("frame"),
             transform = Transform2D(translationX = 99.0, translationY = 10.0),
             layoutFill = true,
+            sizeLimits = SizeLimits(minWidth = 50.0, maxHeight = 500.0),
         ),
     )
 
