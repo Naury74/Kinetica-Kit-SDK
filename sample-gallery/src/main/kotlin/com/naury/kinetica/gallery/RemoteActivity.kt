@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Button
@@ -47,9 +49,11 @@ import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.player.RemoteKineticaPlayer
 import com.naury.kinetica.player.SceneFit
 import com.naury.kinetica.serialization.FileSceneRepository
+import com.naury.kinetica.serialization.RemoteSceneBundleLoader
 import com.naury.kinetica.serialization.RemoteSceneCache
 import com.naury.kinetica.serialization.RemoteSceneLoader
 import com.naury.kinetica.serialization.RemoteSceneState
+import com.naury.kinetica.serialization.SceneBundleCodec
 import com.naury.kinetica.serialization.SceneCodec
 import com.naury.kinetica.serialization.SceneFetch
 import com.naury.kinetica.serialization.SceneFetcher
@@ -72,12 +76,18 @@ class RemoteActivity : ComponentActivity() {
             // 앱이 그릴 수 없는 호스트 뷰를 요구하는 문서는 쓰지 않는다.
             accept = { document -> document.slotKeys().all { it in RemoteLayouts.SLOTS } },
         )
-        setContent { MaterialTheme(colorScheme = darkColorScheme()) { RemoteScreen(loader, server) } }
+        // 두 화면을 한 번에 받는 묶음. 같은 가짜 서버 모드를 따른다.
+        val bundle =
+            RemoteSceneBundleLoader(
+                fetcher = FakeBundleServer(server),
+                cache = RemoteSceneCache(FileSceneRepository(File(cacheDir, "remote")), "pair"),
+            )
+        setContent { MaterialTheme(colorScheme = darkColorScheme()) { RemoteScreen(loader, bundle, server) } }
     }
 }
 
 @Composable
-private fun RemoteScreen(loader: RemoteSceneLoader, server: FakeServer) {
+private fun RemoteScreen(loader: RemoteSceneLoader, bundle: RemoteSceneBundleLoader, server: FakeServer) {
     var refresh by remember { mutableIntStateOf(0) }
     var cart by remember { mutableIntStateOf(0) }
     var coupons by remember { mutableIntStateOf(0) }
@@ -101,6 +111,20 @@ private fun RemoteScreen(loader: RemoteSceneLoader, server: FakeServer) {
             placeholder = { Text(stringResource(R.string.remote_loading)) },
         )
         Text(state.describe() + " · " + stringResource(R.string.remote_coupons, coupons), color = Color(0x99FFFFFF))
+        // 한 번 받은 묶음에서 두 화면을 각자 그린다.
+        Row(Modifier.fillMaxWidth().height(150.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(RemoteLayouts.PAIR_FIRST, RemoteLayouts.PAIR_SECOND).forEach { id ->
+                RemoteKineticaPlayer(
+                    bundle,
+                    id,
+                    Modifier.weight(1f).fillMaxSize(),
+                    refreshKey = refresh,
+                    data = SceneData.of(RemoteLayouts.USER_NAME to DataValue.Text(id)),
+                    slots = mapOf(RemoteLayouts.SLOT_CART to { Box(Modifier.fillMaxSize().background(Color(0xFF2E3440))) }),
+                    placeholder = { Text(stringResource(R.string.remote_loading)) },
+                )
+            }
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ServerMode.entries.forEach { mode ->
                 FilterChip(
@@ -150,9 +174,37 @@ private class FakeServer : SceneFetcher {
     }
 }
 
+/** 가짜 서버 모드에 따라 두 화면 묶음을 돌려준다. 깨진 모드면 두 번째 화면만 깨뜨린다. */
+private class FakeBundleServer(private val server: FakeServer) : SceneFetcher {
+    private val bundles = SceneBundleCodec()
+    private val codec = SceneCodec()
+
+    override suspend fun fetch(etag: String?): SceneFetch {
+        delay(400)
+        return when (server.mode) {
+            ServerMode.Offline -> SceneFetch.Failed
+
+            ServerMode.Broken -> {
+                val first = codec.encode(RemoteLayouts.promoTop)
+                val scenes = "\"${RemoteLayouts.PAIR_FIRST}\":$first,\"${RemoteLayouts.PAIR_SECOND}\":{}"
+                SceneFetch.Body("{\"bundleVersion\":1,\"scenes\":{$scenes}}".toByteArray())
+            }
+
+            ServerMode.LayoutA -> SceneFetch.Body(pair(RemoteLayouts.promoTop, RemoteLayouts.cartTop))
+
+            ServerMode.LayoutB -> SceneFetch.Body(pair(RemoteLayouts.cartTop, RemoteLayouts.promoTop))
+        }
+    }
+
+    private fun pair(first: SceneDocument, second: SceneDocument) =
+        bundles.encode(mapOf(RemoteLayouts.PAIR_FIRST to first, RemoteLayouts.PAIR_SECOND to second)).toByteArray()
+}
+
 /** 서버가 내려줄 법한 배치들. 같은 키(호스트 뷰·데이터·동작)를 다른 모양·위치로 쓴다. */
 private object RemoteLayouts {
     const val SLOT_CART = "cart"
+    const val PAIR_FIRST = "first"
+    const val PAIR_SECOND = "second"
     const val USER_NAME = "user.name"
     const val ACTION_COUPON = "coupon"
     val SLOTS = setOf(SLOT_CART)

@@ -82,12 +82,15 @@ private fun EffectsScreen() {
         AndroidView(
             factory = { context ->
                 TextView(context).apply {
-                    text = "XML 버튼 (리플 + 눌림)"
+                    text = "XML 버튼 (리플 + 눌림, 둥근 모서리)"
                     gravity = Gravity.CENTER
                     setTextColor(android.graphics.Color.WHITE)
-                    setBackgroundColor(0xFF5B6CFF.toInt())
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(0xFF5B6CFF.toInt())
+                        cornerRadius = 16f * resources.displayMetrics.density
+                    }
                     setOnClickListener { taps++ }
-                    ViewEffects.apply(this, EffectPresets.button)
+                    ViewEffects.apply(this, EffectPresets.button, cornerRadiusDp = 16f)
                 }
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
