@@ -1,5 +1,6 @@
 package com.naury.kinetica.board
 
+import com.naury.kinetica.core.scene.NodeEffects
 import com.naury.kinetica.core.scene.isValidDataKey
 
 /**
@@ -13,6 +14,8 @@ import com.naury.kinetica.core.scene.isValidDataKey
  * @property rowSpan 격자 배치에서 차지하는 행 수(1 이상)
  * @property placedByDefault 저장된 배치가 없거나 앱 업데이트로 새로 생긴 위젯일 때 보드에 바로 놓을지
  * @property removable `false`면 사용자가 보드에서 뺄 수 없다(필수 위젯)
+ * @property effects 사용 모드에서 위젯에 붙는 움직임 효과(누를 때 리플·눌림, 나타날 때, 계속 반복). 편집 중에는 움직이지 않는다.
+ *   거리 값은 보드 문서 단위(약 2.75단위 = 1dp)다. 저장하지 않으므로 앱 업데이트로 바꾸면 바로 반영된다.
  * @property multiple `true`면 같은 위젯을 여러 개 놓을 수 있다(메모 등). 놓인 자리마다 id가 다르다([KineticaBoardState.placedKeys]).
  * @throws IllegalArgumentException 키 형식이나 크기가 범위를 벗어날 때
  */
@@ -26,6 +29,7 @@ public data class BoardWidget @JvmOverloads constructor(
     val placedByDefault: Boolean = true,
     val removable: Boolean = true,
     val multiple: Boolean = false,
+    val effects: NodeEffects = NodeEffects.None,
 ) {
     init {
         require(isValidDataKey(key)) { "위젯 키 형식이 올바르지 않습니다." }

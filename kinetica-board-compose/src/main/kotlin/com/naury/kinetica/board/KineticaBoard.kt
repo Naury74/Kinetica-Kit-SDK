@@ -132,11 +132,11 @@ public fun KineticaBoard(
             scrollBand = SCROLL_BAND_DP * KineticaBoardState.UNITS,
         )
         AutoScroll(controller, scroll, drag?.key)
-        val shown = displayDocument(stored, rects, mapping.displayWidth, contentBottom)
+        val shown = displayDocument(state, stored, rects, mapping.displayWidth, contentBottom)
         val longPress = if (!editing && onLongPress != null) Modifier.longPressToEdit(onLongPress) else Modifier
         Box(Modifier.fillMaxWidth().verticalScroll(scroll, enabled = drag == null).then(longPress)) {
             Box(Modifier.fillMaxWidth().height(with(LocalDensity.current) { heightPx.toDp() })) {
-                SceneLayout(shown, Viewport(0.0, 0.0, zoom.toDouble()), Modifier.matchParentSize(), slots = slots)
+                SceneLayout(shown, Viewport(0.0, 0.0, zoom.toDouble()), Modifier.matchParentSize(), slots = slots, interactive = !editing)
                 if (editing) EditLayer(state, stored, stable, drag, zoom, permissions, colors, controller)
             }
         }
@@ -285,8 +285,19 @@ private fun gapDp(arrangement: BoardArrangement): Float = when (arrangement) {
 }
 
 /** 저장 문서를 지금 화면 폭 좌표로 바꾼 그리기용 문서. */
-private fun displayDocument(stored: SceneDocument, rects: Map<String, Rect>, width: Double, height: Double): SceneDocument {
-    val nodes = stored.nodes.mapValues { (id, node) -> rects[id.value]?.let { KineticaBoardState.withRect(node, it) } ?: node }
+private fun displayDocument(
+    state: KineticaBoardState,
+    stored: SceneDocument,
+    rects: Map<String, Rect>,
+    width: Double,
+    height: Double,
+): SceneDocument {
+    val effects = state.catalog.associate { it.key to it.effects }
+    val nodes = stored.nodes.mapValues { (id, node) ->
+        val placed = rects[id.value]?.let { KineticaBoardState.withRect(node, it) } ?: node
+        // 효과는 저장하지 않고 위젯 목록에서 가져온다.
+        state.widgetKeyOf(id.value)?.let(effects::get)?.let { placed.copy(effects = it) } ?: placed
+    }
     return stored.copy(artboard = Artboard(width, height.coerceAtLeast(1.0)), nodes = nodes)
 }
 
