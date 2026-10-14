@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,11 +25,13 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -43,6 +46,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -51,6 +55,7 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.core.geometry.Rect
 import com.naury.kinetica.core.geometry.Viewport
@@ -96,10 +101,35 @@ public fun KineticaBoard(
     val zoom = (density / KineticaBoardState.UNITS).toFloat()
     val scroll = rememberScrollState()
     val controller = remember(state) { BoardDragController(state) }
-    val slots = rememberBoardSlots(stored, content, colors, StackAdvance(stackAutoAdvanceMs, editing))
+    // 오른쪽에서 왼쪽으로 쓰는 언어면 화면 좌표를 뒤집는다. 보드 안은 왼쪽 기준 좌표로 그리고, 위젯 내용에는 호스트 방향을 돌려준다.
+    val hostDirection = LocalLayoutDirection.current
+    val mirrored = hostDirection == LayoutDirection.Rtl
+    val slots = rememberBoardSlots(stored, content, colors, StackAdvance(stackAutoAdvanceMs, editing), hostDirection)
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr, LocalBoardMirrored provides mirrored) {
+        BoardBody(state, stored, modifier, editing, permissions, colors, onLongPress, scroll, controller, slots, hostDirection, zoom)
+    }
+}
+
+@Composable
+@Suppress("LongParameterList", "LongMethod")
+private fun BoardBody(
+    state: KineticaBoardState,
+    stored: SceneDocument,
+    modifier: Modifier,
+    editing: Boolean,
+    permissions: BoardPermissions,
+    colors: BoardColors,
+    onLongPress: (() -> Unit)?,
+    scroll: androidx.compose.foundation.ScrollState,
+    controller: BoardDragController,
+    slots: SceneSlots,
+    hostDirection: LayoutDirection,
+    zoom: Float,
+) {
+    val mirrored = LocalBoardMirrored.current
     BoxWithConstraints(modifier.clipToBounds()) {
         val gap = gapDp(state.arrangement) * KineticaBoardState.UNITS
-        val mapping = BoardMapping(state.arrangement, constraints.maxWidth / zoom.toDouble(), gap)
+        val mapping = BoardMapping(state.arrangement, constraints.maxWidth / zoom.toDouble(), gap, mirrored)
         val stable = stored.rootOrder.associate { id ->
             id.value to
                 mapping.toDisplay(requireNotNull(KineticaBoardState.rectOf(stored.node(id))))
@@ -142,8 +172,17 @@ public fun KineticaBoard(
                 if (editing) EditLayer(state, stored, stable, drag, zoom, permissions, colors, controller)
             }
         }
-        if (editing && permissions.add) AddWidgetButton(state, stored, colors, Modifier.align(Alignment.BottomEnd).padding(16.dp))
+        if (editing && permissions.add) {
+            AddWidgetCorner(hostDirection, mirrored) { AddWidgetButton(state, stored, colors, it) }
+        }
     }
+}
+
+/** 위젯 추가 버튼을 끝쪽 아래(오른쪽에서 왼쪽으로 쓰면 왼쪽 아래)에 두고, 버튼·메뉴 글자는 호스트 방향으로 그린다. */
+@Composable
+private fun BoxScope.AddWidgetCorner(hostDirection: LayoutDirection, mirrored: Boolean, content: @Composable (Modifier) -> Unit) {
+    val corner = Modifier.align(if (mirrored) Alignment.BottomStart else Alignment.BottomEnd).padding(16.dp)
+    CompositionLocalProvider(LocalLayoutDirection provides hostDirection) { content(corner) }
 }
 
 @Composable
@@ -179,60 +218,15 @@ private fun EditLayer(
             controller = controller,
             actions = accessibilityActions(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)) +
                 unstackActions(state, key, members),
-            modifier = Modifier.keyboardEditing(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)),
+            modifier = Modifier.keyboardEditing(
+                state,
+                key,
+                permissions.copy(remove = permissions.remove && widget?.removable != false),
+                LocalBoardMirrored.current,
+            ),
             onRemove = { state.remove(key) },
         )
         if (members.isNotEmpty()) StackBadge(stable.getValue(key), zoom, members.size, colors) { state.unstack(key) }
-    }
-}
-
-/**
- * 키보드로 고른(초점이 있는) 위젯을 다룬다: 방향키로 옮기기, Shift+방향키로 크기, Delete·Backspace로 빼기.
- * 격자 배치에서는 한 칸씩 움직인다.
- */
-private fun Modifier.keyboardEditing(state: KineticaBoardState, key: String, permissions: BoardPermissions): Modifier =
-    onPreviewKeyEvent { event ->
-        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-        val delta = arrowDelta(event.key)
-        when {
-            event.key == Key.Delete || event.key == Key.Backspace -> permissions.remove && state.remove(key)
-            delta == null -> false
-            event.isShiftPressed -> permissions.resize && state.resizeBy(key, delta.first, delta.second)
-            else -> permissions.move && state.moveBy(key, delta.first, delta.second)
-        }
-    }.focusable()
-
-private fun arrowDelta(key: Key): Pair<Float, Float>? = when (key) {
-    Key.DirectionLeft -> -NUDGE_DP to 0f
-    Key.DirectionRight -> NUDGE_DP to 0f
-    Key.DirectionUp -> 0f to -NUDGE_DP
-    Key.DirectionDown -> 0f to NUDGE_DP
-    else -> null
-}
-
-/** TalkBack 등에서 끌기 없이 옮기고 크기를 바꾸고 빼는 동작. 허용된 것만 준다. */
-@Composable
-private fun accessibilityActions(state: KineticaBoardState, key: String, permissions: BoardPermissions): List<CustomAccessibilityAction> {
-    val moves = listOf(
-        R.string.kinetica_board_move_up to (0f to -NUDGE_DP),
-        R.string.kinetica_board_move_down to (0f to NUDGE_DP),
-        R.string.kinetica_board_move_left to (-NUDGE_DP to 0f),
-        R.string.kinetica_board_move_right to (NUDGE_DP to 0f),
-    ).map { (label, delta) -> stringResource(label) to delta }
-    val larger = stringResource(R.string.kinetica_board_larger)
-    val smaller = stringResource(R.string.kinetica_board_smaller)
-    val remove = stringResource(R.string.kinetica_board_remove_action)
-    return buildList {
-        if (permissions.move) {
-            moves.forEach { (label, delta) ->
-                add(CustomAccessibilityAction(label) { state.moveBy(key, delta.first, delta.second) })
-            }
-        }
-        if (permissions.resize) {
-            add(CustomAccessibilityAction(larger) { state.resizeBy(key, NUDGE_DP * 2, NUDGE_DP * 2) })
-            add(CustomAccessibilityAction(smaller) { state.resizeBy(key, -NUDGE_DP * 2, -NUDGE_DP * 2) })
-        }
-        if (permissions.remove) add(CustomAccessibilityAction(remove) { state.remove(key) })
     }
 }
 
@@ -434,7 +428,7 @@ private const val EDIT_TINT = 0.08f
 private const val EDIT_BOTTOM_ROOM_DP = 88.0
 private const val SCROLL_BAND_DP = 48.0
 private const val AUTO_SCROLL_DP_PER_FRAME = 8
-private const val NUDGE_DP = 8f
+internal const val NUDGE_DP = 8f
 private val FOCUS_BORDER = 4.dp
 
 private fun Modifier.dragToMove(key: String, enabled: Boolean, controller: BoardDragController): Modifier = pointerInput(key, enabled) {
@@ -463,15 +457,23 @@ private fun rememberBoardSlots(
     content: @Composable (String) -> Unit,
     colors: BoardColors,
     advance: StackAdvance,
+    direction: LayoutDirection,
 ): SceneSlots {
     // 편집 중에는 묶음이 저절로 넘어가지 않는다.
     val autoAdvanceMs = if (advance.editing) 0L else advance.intervalMs
-    return remember(stored.rootOrder, stored, content, autoAdvanceMs) {
+    return remember(stored.rootOrder, stored, content, autoAdvanceMs, direction) {
         stored.rootOrder.associate { id ->
             val members = stored.node(id)?.stackMembers()?.map { it.id }.orEmpty()
-            id.value to { if (members.isEmpty()) content(id.value) else StackPager(members, content, colors, autoAdvanceMs) }
+            id.value to {
+                CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                    if (members.isEmpty()) content(id.value) else StackPager(members, content, colors, autoAdvanceMs)
+                }
+            }
         }
     }
 }
 
 private class StackAdvance(val intervalMs: Long, val editing: Boolean)
+
+/** 보드 화면 좌표가 좌우로 뒤집혀 있는지(오른쪽에서 왼쪽으로 쓰는 언어). */
+internal val LocalBoardMirrored = staticCompositionLocalOf { false }

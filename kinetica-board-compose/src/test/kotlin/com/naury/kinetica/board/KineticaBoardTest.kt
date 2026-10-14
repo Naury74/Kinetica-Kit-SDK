@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -23,6 +26,7 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.withKeyDown
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -277,6 +281,29 @@ class KineticaBoardTest {
         compose.mainClock.advanceTimeBy(2_000)
 
         compose.onNodeWithText("widget b").assertIsDisplayed()
+    }
+
+    @Test
+    fun `오른쪽에서 왼쪽으로 쓰는 언어에서는 첫 위젯이 오른쪽에 놓이고 방향키 왼쪽은 화면 왼쪽으로 옮긴다`() {
+        val state = KineticaBoardState.create(catalog)
+        val saved = state.rectOf("a")
+        compose.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(Modifier.size(400.dp, 600.dp)) {
+                    KineticaBoard(state, Modifier.fillMaxSize(), editing = true) { key -> Text("widget $key", Modifier.testTag("w-$key")) }
+                }
+            }
+        }
+        val first = compose.onNodeWithTag("w-a").fetchSemanticsNode().boundsInRoot
+
+        assertThat(first.left).isGreaterThan(200f)
+        assertThat(state.rectOf("a")).isEqualTo(saved)
+
+        compose.onNodeWithContentDescription("A").requestFocus().performKeyInput { pressKey(Key.DirectionLeft) }
+        compose.waitForIdle()
+
+        assertThat(state.rectOf("a")!!.left).isGreaterThan(saved!!.left)
+        assertThat(compose.onNodeWithTag("w-a").fetchSemanticsNode().boundsInRoot.left).isLessThan(first.left)
     }
 }
 
