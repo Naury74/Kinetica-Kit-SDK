@@ -59,6 +59,8 @@ class RemoteKineticaPlayerTest {
                 placeholder = { Text("loading") },
             )
         }
+        // 본문 읽기는 다른 스레드에서 하므로 상태가 바뀔 때까지 기다린다.
+        compose.waitUntil(5_000) { loader.state.value is RemoteSceneState.Ready }
         compose.waitForIdle()
 
         compose.onNodeWithText("server promo").assertIsDisplayed()

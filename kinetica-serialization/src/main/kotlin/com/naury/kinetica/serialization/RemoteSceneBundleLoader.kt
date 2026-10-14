@@ -4,6 +4,7 @@ import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.SceneDocument
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.completeWith
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -135,8 +137,13 @@ public class RemoteSceneBundleLoader(
     }
 
     private suspend fun receive(body: SceneFetch.Body) {
-        if (settings.verifier?.verify(body.bytes, body.signature) == false) return failAll(RemoteSceneError.Unverified)
-        val decoded = when (val result = settings.codec.decode(body.bytes)) {
+        // 서명 확인과 읽기는 화면 스레드가 아닌 곳에서 한다.
+        val (verified, decodedResult) = withContext(Dispatchers.Default) {
+            val ok = settings.verifier?.verify(body.bytes, body.signature) != false
+            ok to if (ok) settings.codec.decode(body.bytes) else null
+        }
+        if (!verified) return failAll(RemoteSceneError.Unverified)
+        val decoded = when (val result = requireNotNull(decodedResult)) {
             is BundleDecodeResult.Success -> result.scenes
             is BundleDecodeResult.Failure -> return failAll(RemoteSceneError.Invalid(result.error))
         }

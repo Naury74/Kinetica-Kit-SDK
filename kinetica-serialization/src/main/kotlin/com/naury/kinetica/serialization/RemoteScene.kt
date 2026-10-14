@@ -2,11 +2,13 @@ package com.naury.kinetica.serialization
 
 import com.naury.kinetica.core.scene.SceneDocument
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * 서버에서 장면 JSON을 받아 오는 호스트 구현. SDK는 HTTP 클라이언트를 고르지 않으므로 호스트가 OkHttp·Ktor 등으로 만든다.
@@ -127,7 +129,8 @@ public sealed interface RemoteSceneError {
  * - 받은 문서는 버전 표시(etag)와 함께 [cache]에 저장하므로, 앱을 다시 켜도 같은 내용이면 서버가 본문을 다시 보내지 않아도 된다.
  * - 문서 안의 동작·데이터 키·호스트 뷰 키는 이름일 뿐이며 코드를 실행하지 않는다. 처리 여부는 호스트의 `onAction`·`slots`가 정한다.
  *
- * [refresh]는 동시에 여러 번 불러도 차례로 실행한다.
+ * [refresh]는 동시에 여러 번 불러도 차례로 실행한다. 어느 스레드에서 불러도 되며, 서명 확인·JSON 읽기는 [Dispatchers.Default]에서 한다.
+ * 받기([SceneFetcher])와 캐시 저장이 쓰는 스레드는 그 구현이 정한다.
  *
  */
 public class RemoteSceneLoader(
@@ -180,8 +183,13 @@ public class RemoteSceneLoader(
     }
 
     private suspend fun receive(body: SceneFetch.Body) {
-        if (verifier?.verify(body.bytes, body.signature) == false) return fail(RemoteSceneError.Unverified)
-        val document = when (val decoded = codec.decode(body.bytes)) {
+        // 서명 확인과 읽기는 큰 본문이면 오래 걸리므로 화면 스레드가 아닌 곳에서 한다(재생기는 화면에서 refresh를 부른다).
+        val (verified, decodedResult) = withContext(Dispatchers.Default) {
+            val ok = verifier?.verify(body.bytes, body.signature) != false
+            ok to if (ok) codec.decode(body.bytes) else null
+        }
+        if (!verified) return fail(RemoteSceneError.Unverified)
+        val document = when (val decoded = requireNotNull(decodedResult)) {
             is DecodeResult.Success -> decoded.document
             is DecodeResult.Failure -> return fail(RemoteSceneError.Invalid(decoded.error))
         }
