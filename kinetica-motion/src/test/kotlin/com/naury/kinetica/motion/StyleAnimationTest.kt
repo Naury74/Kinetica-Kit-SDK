@@ -132,7 +132,7 @@ class StyleAnimationTest {
     }
 
     @Test
-    fun `모서리별 반지름이 있으면 전체 모서리 애니메이션이 네 모서리를 함께 바꾼다`() {
+    fun `모서리별 반지름이 있으면 전체 모서리 애니메이션이 모양을 지킨 채 네 모서리를 함께 옮긴다`() {
         val rounded = card.copy(
             content = NodeContent.Rectangle(Size(100.0, 50.0), corners = com.naury.kinetica.core.scene.CornerRadii(0.0, 10.0, 0.0, 10.0)),
         )
@@ -140,7 +140,9 @@ class StyleAnimationTest {
 
         val half = TimelineEvaluator.evaluate(document(listOf(rounded), timelines = listOf(timeline)), timeline, 500.0).node(id("card"))!!
 
-        assertThat((half.content as NodeContent.Rectangle).corners).isEqualTo(com.naury.kinetica.core.scene.CornerRadii.all(10.0))
+        assertThat(
+            (half.content as NodeContent.Rectangle).corners,
+        ).isEqualTo(com.naury.kinetica.core.scene.CornerRadii(10.0, 20.0, 10.0, 20.0))
     }
 
     @Test

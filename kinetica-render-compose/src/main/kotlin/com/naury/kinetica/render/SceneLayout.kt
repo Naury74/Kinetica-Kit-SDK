@@ -128,6 +128,9 @@ private class NodeScope(
     private val actionState: State<((String) -> Unit)?>,
     val effects: Boolean,
 ) {
+    /** 사용 모드(누르면 동작·효과). */
+    val interactive: Boolean get() = effects
+
     val document: SceneDocument get() = documentState.value
     val onAction: ((String) -> Unit)? get() = actionState.value
 }
@@ -189,8 +192,9 @@ private fun Modifier.placement(node: SceneNode): Modifier {
 
 private fun Modifier.actionable(node: SceneNode, scope: NodeScope): Modifier {
     val action = node.action ?: return this
-    val onAction = scope.onAction ?: return this
-    return clickable { onAction(action) }
+    // 동작 함수는 누를 때 읽는다. 구성 중에 읽으면 호스트가 넘긴 람다가 바뀔 때마다 동작 노드를 모두 다시 구성한다.
+    if (!scope.interactive) return this
+    return clickable { scope.onAction?.invoke(action) }
 }
 
 @Composable

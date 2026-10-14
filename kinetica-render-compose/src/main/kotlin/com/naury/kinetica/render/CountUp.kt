@@ -14,7 +14,8 @@ import androidx.compose.runtime.setValue
 
 /**
  * 숫자가 [target]으로 바뀔 때 지금 보이는 값에서 [target]까지 올라가거나 내려가며 바뀌는 값(대시보드 매출·카운터).
- * 처음 값은 움직이지 않고 그대로 보인다. 큰 수(Long 범위)도 자릿수를 잃지 않도록 Double로 계산한다.
+ * 처음 값은 움직이지 않고 그대로 보인다. Double로 계산하므로 2^53(약 9천조)까지의 정수는 정확하다.
+ * 유한하지 않은 값(NaN·무한대)은 무시하고 지금 값을 둔다.
  *
  * ```kotlin
  * val sales by animateNumberAsState(data.sales)
@@ -25,11 +26,12 @@ import androidx.compose.runtime.setValue
  */
 @Composable
 public fun animateNumberAsState(target: Double, durationMs: Int = DEFAULT_COUNT_MS): State<Double> {
-    var from by remember { mutableDoubleStateOf(target) }
-    var to by remember { mutableDoubleStateOf(target) }
+    val start = if (target.isFinite()) target else 0.0
+    var from by remember { mutableDoubleStateOf(start) }
+    var to by remember { mutableDoubleStateOf(start) }
     val progress = remember { Animatable(1f) }
     LaunchedEffect(target) {
-        if (target == to) return@LaunchedEffect
+        if (target == to || !target.isFinite()) return@LaunchedEffect
         // 움직이는 도중 값이 또 바뀌면 지금 보이는 값에서 이어 간다.
         from += (to - from) * progress.value
         to = target

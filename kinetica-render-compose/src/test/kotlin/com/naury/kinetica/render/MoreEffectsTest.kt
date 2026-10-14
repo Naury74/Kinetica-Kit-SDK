@@ -132,4 +132,38 @@ class MoreEffectsTest {
         compose.onNodeWithText("page 1").assertExists()
         compose.onNodeWithText("page 0").assertDoesNotExist()
     }
+
+    @Test
+    fun `끌다가 뗀 것(스크롤)은 터지지 않는다`() {
+        showBox(NodeEffects(press = listOf(PressEffect(PressKind.Burst))))
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+
+        compose.onNodeWithTag("box").performTouchInput {
+            down(center)
+            moveBy(androidx.compose.ui.geometry.Offset(0f, 25f))
+            up()
+        }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(150)
+
+        assertThat(compose.onNodeWithTag("area").captureToImage().toPixelMap().paintedAboveBox()).isFalse()
+    }
+
+    @Test
+    fun `숫자가 아닌 값은 무시하고 지금 값을 둔다`() {
+        val target = androidx.compose.runtime.mutableDoubleStateOf(5.0)
+        var shown = 0.0
+        compose.setContent {
+            val value by animateNumberAsState(target.doubleValue)
+            shown = value
+        }
+        compose.waitForIdle()
+        target.doubleValue = Double.NaN
+        compose.waitForIdle()
+        target.doubleValue = 7.0
+        compose.waitForIdle()
+
+        assertThat(shown).isEqualTo(7.0)
+    }
 }

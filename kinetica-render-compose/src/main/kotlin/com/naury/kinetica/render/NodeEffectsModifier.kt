@@ -80,7 +80,7 @@ internal fun Modifier.nodeEffects(effects: NodeEffects, shape: Shape, enabled: B
     )
     val scope = rememberCoroutineScope()
     val watched = if (effects.press.isEmpty()) this else watchPress(running.press, scope)
-    return watched.graphicsLayer { running.applyTo(this) }.drawWithContent { running.draw(this, shape) }
+    return watched.graphicsLayer { running.applyTo(this, shape) }.drawWithContent { running.draw(this, shape) }
 }
 
 /** 손가락을 관찰만 하고(소비하지 않음) 누름 상태를 바꾼다. */
@@ -88,20 +88,11 @@ private fun Modifier.watchPress(press: PressState, scope: kotlinx.coroutines.Cor
     awaitPointerEventScope {
         while (true) {
             val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull() ?: continue
+            val bounds = androidx.compose.ui.geometry.Size(size.width.toFloat(), size.height.toFloat())
             when {
-                // 상태는 바로 바꾸고 움직임만 코루틴으로 돌린다. 빠른 탭에서 떼기가 누르기 코루틴보다 먼저 와도 놓치지 않는다.
-                change.pressed && !press.down -> {
-                    press.down(change.position, size.width.toFloat(), size.height.toFloat())
-                    press.pressing = scope.launch { press.animatePress() }
-                }
-
-                !change.pressed && press.down -> {
-                    press.up()
-                    // 누르기 움직임이 아직 시작 전이면 떼기 움직임을 덮어쓰므로 먼저 멈춘다.
-                    press.pressing?.cancel()
-                    scope.launch { press.animateRelease() }
-                    if (press.bursts) scope.launch { press.animateBurst() }
-                }
+                change.pressed && !press.down -> press.start(scope, change.position, bounds)
+                change.pressed -> press.track(change.position, viewConfiguration.touchSlop)
+                press.down -> press.finish(scope, change.position, bounds)
             }
         }
     }
@@ -122,7 +113,7 @@ private class RunningEffects(
         press.bursts = PressKind.Burst in kinds
     }
 
-    fun applyTo(layer: androidx.compose.ui.graphics.GraphicsLayerScope) {
+    fun applyTo(layer: androidx.compose.ui.graphics.GraphicsLayerScope, shape: Shape) {
         val transform = EffectTransform().apply {
             applyAppear(effects.appear?.kind, appear.value, unitPx * SLIDE_DISTANCE)
             loop?.let { applyLoop(effects.loop, it.value, unitPx) }
@@ -138,6 +129,15 @@ private class RunningEffects(
             rotationY = transform.rotationY
             rotationZ = transform.rotationZ
             cameraDistance = CAMERA_DISTANCE * density
+            // 떠오르기는 플랫폼 그림자(높이)로 그린다. 모든 API에서 흐린 그림자가 나오고 프레임마다 새로 만들 것이 없다.
+            kinds[PressKind.Lift]?.let { lift ->
+                this.shape = shape
+                shadowElevation = lift.resolvedAmount.toFloat() * unitPx * LIFT_ELEVATION * press.amount.value
+                lift.color?.toColor()?.let {
+                    ambientShadowColor = it
+                    spotShadowColor = it
+                }
+            }
             if (appearBlur && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 val radius = (1f - appear.value) * BLUR_FROM * density
                 renderEffect = if (radius > MIN_BLUR) androidx.compose.ui.graphics.BlurEffect(radius, radius) else null
@@ -152,7 +152,6 @@ private class RunningEffects(
         val t = loop?.value
         if (looping?.kind == LoopKind.Glow && t != null) drawGlow(shape, looping, t, unitPx)
         if (looping?.kind == LoopKind.Ping && t != null) drawPing(shape, looping, t, unitPx)
-        kinds[PressKind.Lift]?.let { lift -> drawLiftShadow(shape, lift, press.amount.value, unitPx) }
         drawContent()
         if (looping?.kind == LoopKind.Shimmer && t != null) drawShimmer(looping, t)
         kinds[PressKind.Dim]?.let { dim ->
@@ -294,14 +293,38 @@ private class PressState {
     var tiltY = 0f
         private set
 
-    fun down(position: Offset, width: Float, height: Float) {
+    /** 누른 뒤 터치 허용 거리 넘게 움직였는지(스크롤). */
+    var moved = false
+
+    /** 누르기 시작. 상태는 바로 바꾸고 움직임만 코루틴으로 돌린다(빠른 탭에서 떼기를 놓치지 않게). */
+    fun start(scope: kotlinx.coroutines.CoroutineScope, position: Offset, bounds: androidx.compose.ui.geometry.Size) {
+        down(position, bounds.width, bounds.height)
+        pressing = scope.launch { animatePress() }
+    }
+
+    /** 터치 허용 거리 넘게 움직였으면 스크롤로 보고 떼어도 터지지 않는다. */
+    fun track(position: Offset, slop: Float) {
+        if ((position - origin).getDistance() > slop) moved = true
+    }
+
+    /** 떼기. 누르기 움직임이 아직 시작 전이면 떼기 움직임을 덮어쓰므로 먼저 멈춘다. 탭일 때만 터진다. */
+    fun finish(scope: kotlinx.coroutines.CoroutineScope, position: Offset, bounds: androidx.compose.ui.geometry.Size) {
+        up()
+        pressing?.cancel()
+        scope.launch { animateRelease() }
+        val inside = position.x in 0f..bounds.width && position.y in 0f..bounds.height
+        if (bursts && !moved && inside) scope.launch { animateBurst() }
+    }
+
+    private fun down(position: Offset, width: Float, height: Float) {
         down = true
+        moved = false
         origin = position
         tiltX = if (width > 0f) (position.x / width - HALF) * 2f else 0f
         tiltY = if (height > 0f) (position.y / height - HALF) * 2f else 0f
     }
 
-    fun up() {
+    private fun up() {
         down = false
     }
 
@@ -376,21 +399,6 @@ private fun heartbeat(t: Float): Float {
     return maxOf(beat(0f), beat(SECOND_BEAT) * SECOND_BEAT_STRENGTH)
 }
 
-private fun ContentDrawScope.drawLiftShadow(shape: Shape, lift: com.naury.kinetica.core.scene.PressEffect, amount: Float, unitPx: Float) {
-    val height = lift.resolvedAmount.toFloat() * unitPx * amount
-    if (height <= 0f) return
-    val path = androidx.compose.ui.graphics.Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawLiftShadow)) }
-    path.translate(Offset(0f, height))
-    val color = lift.color?.toColor() ?: Color.Black
-    drawContext.canvas.nativeCanvas.drawPath(
-        path.asAndroidPath(),
-        android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            this.color = color.copy(alpha = LIFT_SHADOW_ALPHA * amount).toArgb()
-            maskFilter = android.graphics.BlurMaskFilter(height * 2f, android.graphics.BlurMaskFilter.Blur.NORMAL)
-        },
-    )
-}
-
 private fun ContentDrawScope.drawPing(shape: Shape, loop: LoopEffect, t: Float, unitPx: Float) {
     val distance = loop.resolvedAmount.toFloat() * unitPx
     if (distance <= 0f || size.width <= 0f || size.height <= 0f) return
@@ -443,7 +451,7 @@ private const val BLUR_FROM = 16f
 private const val MIN_BLUR = 0.5f
 private const val BLUR_SCALE = 1.04f
 private const val LIFT_SCALE = 0.02f
-private const val LIFT_SHADOW_ALPHA = 0.28f
+private const val LIFT_ELEVATION = 2f
 private const val BEAT_LENGTH = 0.15f
 private const val SECOND_BEAT = 0.22f
 private const val SECOND_BEAT_STRENGTH = 0.8f

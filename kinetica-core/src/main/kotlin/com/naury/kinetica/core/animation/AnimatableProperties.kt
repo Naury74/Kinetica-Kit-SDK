@@ -145,26 +145,22 @@ public object AnimatableProperties {
         else -> null
     }
 
-    private fun withCorner(node: SceneNode, radius: Double): SceneNode? = when (val content = node.content) {
-        is NodeContent.Rectangle -> node.copy(
-            content = content.copy(
-                cornerRadius = radius,
-                corners = content.corners?.let {
-                    CornerRadii.all(radius)
-                },
-            ),
-        )
-
-        is NodeContent.Frame -> node.copy(
-            content = content.copy(
-                cornerRadius = radius,
-                corners = content.corners?.let {
-                    CornerRadii.all(radius)
-                },
-            ),
-        )
-
-        else -> null
+    // 모서리별 반지름이 있으면 왼쪽 위와의 차이만큼 네 모서리를 함께 옮긴다. 키 값이 지금 값이면 모양이 그대로다.
+    private fun withCorner(node: SceneNode, radius: Double): SceneNode? {
+        val shifted = { corners: CornerRadii ->
+            val delta = radius - corners.topLeft
+            CornerRadii(
+                (corners.topLeft + delta).coerceAtLeast(0.0),
+                (corners.topRight + delta).coerceAtLeast(0.0),
+                (corners.bottomRight + delta).coerceAtLeast(0.0),
+                (corners.bottomLeft + delta).coerceAtLeast(0.0),
+            )
+        }
+        return when (val content = node.content) {
+            is NodeContent.Rectangle -> node.copy(content = content.copy(cornerRadius = radius, corners = content.corners?.let(shifted)))
+            is NodeContent.Frame -> node.copy(content = content.copy(cornerRadius = radius, corners = content.corners?.let(shifted)))
+            else -> null
+        }
     }
 
     private fun withOneCorner(node: SceneNode, property: AnimatableProperty, radius: Double): SceneNode? {

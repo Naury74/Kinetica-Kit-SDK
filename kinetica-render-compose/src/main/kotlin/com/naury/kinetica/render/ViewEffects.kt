@@ -79,7 +79,13 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
     private val dim = kinds[PressKind.Dim]?.let { effect ->
         rounded(effect.color?.argb ?: android.graphics.Color.BLACK).apply { alpha = 0 }
     }
-    private val watcher = if (kinds.keys.any { it != PressKind.Ripple }) PressWatcher(::pressed) else null
+    private val watcher = if (kinds.keys.any { it != PressKind.Ripple }) {
+        // 부모가 스크롤로 가로채기 전 아이 View는 터치 허용 거리 가까이까지 움직임을 받으므로 그 절반을 넘으면 스크롤로 본다.
+        PressWatcher(android.view.ViewConfiguration.get(view.context).scaledTouchSlop / 2f, ::pressed)
+    } else {
+        null
+    }
+    private var blur: ValueAnimator? = null
     private val shimmer = effects.loop?.takeIf { it.kind == LoopKind.Shimmer && motion }?.let { ShimmerDrawable(it, corner) }
     private var loop: ValueAnimator? = null
     private var ping: PingDrawable? = null
@@ -98,8 +104,13 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         view.animate().cancel()
         view.foreground = originalForeground
         view.elevation = originalElevation
-        view.translationZ = 0f
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) view.setRenderEffect(null)
+        // 효과가 바꾼 값만 되돌린다. 호스트가 직접 정한 높이·렌더 효과는 건드리지 않는다.
+        if (PressKind.Lift in kinds) view.translationZ = 0f
+        blur?.cancel()
+        blur = null
+        if (effects.appear?.kind == AppearKind.Blur && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            view.setRenderEffect(null)
+        }
         view.scaleX = 1f
         view.scaleY = 1f
         view.alpha = 1f
@@ -121,7 +132,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         ping = null
     }
 
-    private fun pressed(down: Boolean, x: Float, y: Float) {
+    private fun pressed(down: Boolean, x: Float, y: Float, moved: Boolean) {
         // 리플은 View 상태를 직접 따르므로 여기서는 나머지 효과만 움직인다.
         dim?.alpha = if (down) ((kinds[PressKind.Dim]?.resolvedAmount ?: 0.0) * FULL_ALPHA).toInt() else 0
         val animator = view.animate().setDuration(PRESS_MS).setInterpolator(if (down) STANDARD else OvershootInterpolator())
@@ -130,7 +141,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
             animator.scaleX(s).scaleY(s)
         }
         lift(animator, down)
-        if (!down) kinds[PressKind.Burst]?.let(::burst)
+        if (!down) burstIfTap(x, y, moved)
         kinds[PressKind.Tilt]?.let {
             val amount = it.resolvedAmount.toFloat()
             val tiltX = if (view.width > 0) (x / view.width - HALF) * 2f else 0f
@@ -170,7 +181,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
 
     private fun blurIn(appear: AppearEffect) {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) return
-        ValueAnimator.ofFloat(BLUR_FROM_DP * density, 0f).apply {
+        blur = ValueAnimator.ofFloat(BLUR_FROM_DP * density, 0f).apply {
             startDelay = appear.delayMs
             duration = appear.durationMs
             interpolator = STANDARD
@@ -184,8 +195,14 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         }
     }
 
-    /** 손을 뗀 자리(View 가운데)에서 조각이 터진다. 부모 overlay에 잠깐 그렸다가 뗀다. */
-    private fun burst(effect: com.naury.kinetica.core.scene.PressEffect) {
+    /**
+     * 탭이면 View 가운데에서 조각이 터진다. 부모 overlay에 잠깐 그렸다가 뗀다.
+     * 스크롤로 풀린 눌림이나 View 밖에서 뗀 것은 탭이 아니므로 터지지 않는다.
+     */
+    private fun burstIfTap(x: Float, y: Float, moved: Boolean) {
+        val effect = kinds[PressKind.Burst] ?: return
+        val inside = x in 0f..view.width.toFloat() && y in 0f..view.height.toFloat()
+        if (moved || !inside) return
         val overlay = (view.parent as? android.view.ViewGroup)?.overlay ?: return
         val drawable = BurstDrawable(effect, view)
         overlay.add(drawable)
@@ -291,10 +308,13 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
  * View의 눌림 상태를 알려 주는 보이지 않는 foreground 층. 클릭할 수 있는 View는 누르는 동안 drawable 상태에 pressed가 들어오고,
  * 누른 자리는 hotspot으로 들어온다.
  */
-private class PressWatcher(private val onPress: (Boolean, Float, Float) -> Unit) : Drawable() {
+private class PressWatcher(private val slop: Float, private val onPress: (Boolean, Float, Float, Boolean) -> Unit) : Drawable() {
     private var down = false
     private var x = 0f
     private var y = 0f
+    private var startX = 0f
+    private var startY = 0f
+    private var moved = false
 
     override fun isStateful(): Boolean = true
 
@@ -302,7 +322,12 @@ private class PressWatcher(private val onPress: (Boolean, Float, Float) -> Unit)
         val pressed = android.R.attr.state_pressed in state
         if (pressed != down) {
             down = pressed
-            onPress(pressed, x, y)
+            if (pressed) {
+                startX = x
+                startY = y
+                moved = false
+            }
+            onPress(pressed, x, y, moved)
         }
         return false
     }
@@ -310,6 +335,7 @@ private class PressWatcher(private val onPress: (Boolean, Float, Float) -> Unit)
     override fun setHotspot(x: Float, y: Float) {
         this.x = x
         this.y = y
+        if (down && kotlin.math.hypot(x - startX, y - startY) > slop) moved = true
     }
 
     override fun draw(canvas: Canvas) = Unit
