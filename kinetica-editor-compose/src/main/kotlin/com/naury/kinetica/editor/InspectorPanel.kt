@@ -59,6 +59,7 @@ internal fun InspectorPanel(
         (node.content as? NodeContent.Text)?.let {
             TextSection(node, it, edits.property)
             FontSection(node, it, edits.text, theme)
+            NumberFormatFields(node, it, edits.text, theme)
         }
         FillSection(node, edits.style, edits.property, theme)
         FillTokenChips(node, document.tokens.keys, edits.component, theme)

@@ -27,6 +27,7 @@ internal fun checkNode(node: SceneNode, limits: SceneLimits, sink: ViolationSink
     checkSizeLimits(node, limits, sink)
     checkEffects(node.effects, node.id, sink)
     checkAccessibility(node, limits, sink)
+    checkNumberFormat(node, sink)
 }
 
 private fun checkSizeLimits(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {

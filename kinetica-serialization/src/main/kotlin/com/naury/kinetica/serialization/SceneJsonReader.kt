@@ -159,6 +159,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             decoration = TextJson.readDecoration(json, path),
             spans = TextJson.readSpans(json, path),
             autoSize = TextJson.readAutoSize(json, path),
+            numberFormat = TextJson.readNumberFormat(json, path),
         )
 
         NodeKind.Image -> NodeContent.Image(json.size(K.BOUNDS, path), json.string(K.URI, path))

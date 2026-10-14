@@ -110,7 +110,7 @@ public object Bindings {
     private fun SceneNode.withText(value: DataValue, limits: SceneLimits): SceneNode {
         val text = when (value) {
             is DataValue.Text -> value.value
-            is DataValue.Number -> format(value.value)
+            is DataValue.Number -> (content as? NodeContent.Text)?.numberFormat?.format(value.value) ?: format(value.value)
             else -> null
         }
         val content = this.content as? NodeContent.Text

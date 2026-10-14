@@ -468,4 +468,16 @@ class SceneCodecTest {
         assertThat(error!!.message).contains("InvalidTransform(flat)")
         assertThat(codec.validate(bad)).isNotEmpty()
     }
+
+    @Test
+    fun `글자의 숫자 형식이 왕복한다`() {
+        val format = com.naury.kinetica.core.scene.TextNumberFormat(prefix = "₩", suffix = "원", decimals = 1, grouping = false)
+        val label = SceneNode(NodeId("t"), NodeContent.Text(Size(100.0, 40.0), "0", numberFormat = format))
+        val raw = SceneDocument("f", Artboard(100.0, 100.0), mapOf(label.id to label), listOf(label.id))
+
+        val encoded = codec.encode(raw)
+
+        assertThat(encoded).contains("\"numberFormat\":{\"prefix\":\"₩\",\"suffix\":\"원\",\"decimals\":1,\"grouping\":false}")
+        assertThat((decoded(encoded).node(NodeId("t"))!!.content as NodeContent.Text).numberFormat).isEqualTo(format)
+    }
 }

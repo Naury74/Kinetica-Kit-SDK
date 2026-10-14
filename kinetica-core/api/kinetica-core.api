@@ -1457,12 +1457,13 @@ public final class com/naury/kinetica/core/scene/NodeContent$Rectangle : com/nau
 }
 
 public final class com/naury/kinetica/core/scene/NodeContent$Text : com/naury/kinetica/core/scene/NodeContent {
-	public fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;IDDLjava/lang/String;ZLcom/naury/kinetica/core/scene/TextDecoration;Ljava/util/List;Lcom/naury/kinetica/core/scene/TextAutoSize;)V
-	public synthetic fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;IDDLjava/lang/String;ZLcom/naury/kinetica/core/scene/TextDecoration;Ljava/util/List;Lcom/naury/kinetica/core/scene/TextAutoSize;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;IDDLjava/lang/String;ZLcom/naury/kinetica/core/scene/TextDecoration;Ljava/util/List;Lcom/naury/kinetica/core/scene/TextAutoSize;Lcom/naury/kinetica/core/scene/TextNumberFormat;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;IDDLjava/lang/String;ZLcom/naury/kinetica/core/scene/TextDecoration;Ljava/util/List;Lcom/naury/kinetica/core/scene/TextAutoSize;Lcom/naury/kinetica/core/scene/TextNumberFormat;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/naury/kinetica/core/geometry/Size;
 	public final fun component10 ()Lcom/naury/kinetica/core/scene/TextDecoration;
 	public final fun component11 ()Ljava/util/List;
 	public final fun component12 ()Lcom/naury/kinetica/core/scene/TextAutoSize;
+	public final fun component13 ()Lcom/naury/kinetica/core/scene/TextNumberFormat;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()D
 	public final fun component4 ()Lcom/naury/kinetica/core/scene/TextAlignment;
@@ -1471,8 +1472,8 @@ public final class com/naury/kinetica/core/scene/NodeContent$Text : com/naury/ki
 	public final fun component7 ()D
 	public final fun component8 ()Ljava/lang/String;
 	public final fun component9 ()Z
-	public final fun copy (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;IDDLjava/lang/String;ZLcom/naury/kinetica/core/scene/TextDecoration;Ljava/util/List;Lcom/naury/kinetica/core/scene/TextAutoSize;)Lcom/naury/kinetica/core/scene/NodeContent$Text;
-	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Text;Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;IDDLjava/lang/String;ZLcom/naury/kinetica/core/scene/TextDecoration;Ljava/util/List;Lcom/naury/kinetica/core/scene/TextAutoSize;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Text;
+	public final fun copy (Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;IDDLjava/lang/String;ZLcom/naury/kinetica/core/scene/TextDecoration;Ljava/util/List;Lcom/naury/kinetica/core/scene/TextAutoSize;Lcom/naury/kinetica/core/scene/TextNumberFormat;)Lcom/naury/kinetica/core/scene/NodeContent$Text;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/NodeContent$Text;Lcom/naury/kinetica/core/geometry/Size;Ljava/lang/String;DLcom/naury/kinetica/core/scene/TextAlignment;IDDLjava/lang/String;ZLcom/naury/kinetica/core/scene/TextDecoration;Ljava/util/List;Lcom/naury/kinetica/core/scene/TextAutoSize;Lcom/naury/kinetica/core/scene/TextNumberFormat;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/NodeContent$Text;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAlignment ()Lcom/naury/kinetica/core/scene/TextAlignment;
 	public final fun getAutoSize ()Lcom/naury/kinetica/core/scene/TextAutoSize;
@@ -1484,6 +1485,7 @@ public final class com/naury/kinetica/core/scene/NodeContent$Text : com/naury/ki
 	public fun getKind ()Lcom/naury/kinetica/core/scene/NodeKind;
 	public final fun getLetterSpacing ()D
 	public final fun getLineHeight ()D
+	public final fun getNumberFormat ()Lcom/naury/kinetica/core/scene/TextNumberFormat;
 	public final fun getSize ()Lcom/naury/kinetica/core/geometry/Size;
 	public final fun getSpans ()Ljava/util/List;
 	public final fun getText ()Ljava/lang/String;
@@ -2086,6 +2088,32 @@ public final class com/naury/kinetica/core/scene/TextDecoration$Companion {
 
 public abstract interface class com/naury/kinetica/core/scene/TextMeasurer {
 	public abstract fun measure (Lcom/naury/kinetica/core/scene/NodeContent$Text;Ljava/lang/Double;)Lcom/naury/kinetica/core/geometry/Size;
+}
+
+public final class com/naury/kinetica/core/scene/TextNumberFormat {
+	public static final field Companion Lcom/naury/kinetica/core/scene/TextNumberFormat$Companion;
+	public static final field MAX_AFFIX_LENGTH I
+	public static final field MAX_DECIMALS I
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Z)Lcom/naury/kinetica/core/scene/TextNumberFormat;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/TextNumberFormat;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ZILjava/lang/Object;)Lcom/naury/kinetica/core/scene/TextNumberFormat;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun format (D)Ljava/lang/String;
+	public final fun getDecimals ()Ljava/lang/Integer;
+	public final fun getGrouping ()Z
+	public final fun getPrefix ()Ljava/lang/String;
+	public final fun getSuffix ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/TextNumberFormat$Companion {
 }
 
 public final class com/naury/kinetica/core/scene/TextSpan {

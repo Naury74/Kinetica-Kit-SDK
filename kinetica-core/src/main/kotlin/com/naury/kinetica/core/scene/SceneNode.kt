@@ -191,6 +191,7 @@ public sealed interface NodeContent {
      * 모르는 이름이면 기본 글꼴로 그린다. `null`이면 기본 글꼴이다.
      * @property spans 글자 일부의 모양(리치 텍스트). 뒤의 것이 앞의 것을 덮는다.
      * @property autoSize 글자에 맞춰 [size]를 바꾸는 방식. 측정은 [TextMeasurer]가 하며, 측정기가 없으면 저장된 크기를 쓴다.
+     * @property numberFormat 글자에 숫자 데이터를 묶었을 때 보여 주는 형식(예: `1,284,000원`). `null`이면 숫자 그대로다.
      */
     public data class Text(
         val size: Size,
@@ -205,6 +206,7 @@ public sealed interface NodeContent {
         val decoration: TextDecoration = TextDecoration.None,
         val spans: List<TextSpan> = emptyList(),
         val autoSize: TextAutoSize = TextAutoSize.Fixed,
+        val numberFormat: TextNumberFormat? = null,
     ) : NodeContent {
         override val kind: NodeKind get() = NodeKind.Text
 

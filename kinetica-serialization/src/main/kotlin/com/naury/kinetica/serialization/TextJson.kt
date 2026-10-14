@@ -3,6 +3,7 @@ package com.naury.kinetica.serialization
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.TextAutoSize
 import com.naury.kinetica.core.scene.TextDecoration
+import com.naury.kinetica.core.scene.TextNumberFormat
 import com.naury.kinetica.core.scene.TextSpan
 import com.naury.kinetica.serialization.JsonKeys as K
 import kotlinx.serialization.json.JsonObject
@@ -10,6 +11,7 @@ import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 
 /** 글꼴·기울임·밑줄과 리치 텍스트 구간의 JSON. 기본값인 항목은 쓰지 않는다. */
 internal object TextJson {
@@ -19,6 +21,25 @@ internal object TextJson {
         if (text.decoration != TextDecoration.None) put(K.DECORATION, text.decoration.wireName)
         if (text.spans.isNotEmpty()) putJsonArray(K.SPANS) { text.spans.forEach { add(span(it)) } }
         if (text.autoSize != TextAutoSize.Fixed) put(K.AUTO_SIZE, text.autoSize.wireName)
+        text.numberFormat?.let { format ->
+            putJsonObject(K.NUMBER_FORMAT) {
+                if (format.prefix.isNotEmpty()) put(K.PREFIX, format.prefix)
+                if (format.suffix.isNotEmpty()) put(K.SUFFIX, format.suffix)
+                format.decimals?.let { put(K.DECIMALS, it) }
+                if (!format.grouping) put(K.GROUPING, false)
+            }
+        }
+    }
+
+    fun readNumberFormat(json: JsonObject, path: String): TextNumberFormat? {
+        val formatPath = "$path.${K.NUMBER_FORMAT}"
+        val format = json.optional(K.NUMBER_FORMAT)?.asObject(formatPath) ?: return null
+        return TextNumberFormat(
+            prefix = format.optional(K.PREFIX)?.asString("$formatPath.${K.PREFIX}").orEmpty(),
+            suffix = format.optional(K.SUFFIX)?.asString("$formatPath.${K.SUFFIX}").orEmpty(),
+            decimals = format.optional(K.DECIMALS)?.asInt("$formatPath.${K.DECIMALS}"),
+            grouping = format.booleanOr(K.GROUPING, formatPath, default = true),
+        )
     }
 
     fun readAutoSize(json: JsonObject, path: String): TextAutoSize = json.optional(K.AUTO_SIZE)?.let {
