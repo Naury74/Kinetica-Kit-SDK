@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -74,7 +75,8 @@ public const val HOST_VIEW_UNITS_PER_DP: Float = 2.75f
  * - 노드 배치는 문서 변환과 같다: `graphicsLayer(translation, rotation, scale, transformOrigin = pivot)`.
  * - 문서 단위 1 = 픽셀 1(배율 1). [viewport]가 전체를 옮기고 확대한다.
  * - [clipToArtboard]가 `true`면 artboard 밖은 그리지 않는다(재생기). 편집기는 밖에 둔 컴포넌트 원본도 보이도록 `false`다.
- * - [interactive]가 `true`면 동작([SceneNode.action])이 있는 노드를 누를 때 [onAction]을 부른다. `false`면(편집 모드) 누르기를 처리하지 않는다.
+ * - [interactive]가 `true`면 동작([SceneNode.action])이 있는 노드를 누를 때 [onAction]을 부르고, 노드의 움직임 효과([SceneNode.effects])를 보여 준다.
+ *   `false`면(편집 모드) 누르기를 처리하지 않고 효과도 움직이지 않는다.
  *
  * 바인딩이나 애니메이션은 이 함수 밖에서 적용한 문서를 넘긴다.
  */
@@ -89,7 +91,7 @@ public fun SceneLayout(
     onAction: (String) -> Unit = {},
     clipToArtboard: Boolean = false,
 ) {
-    val scope = NodeScope(document, images, slots, if (interactive) onAction else null)
+    val scope = NodeScope(document, images, slots, if (interactive) onAction else null, effects = interactive)
     Box(modifier.clipToBounds()) {
         Box(
             // artboard가 영역보다 크면 Compose가 가운데로 맞춰 밀어내므로, 제약 없이 재고 왼쪽 위에 둔다(위치는 viewport가 정한다).
@@ -119,6 +121,7 @@ private class NodeScope(
     val images: SceneImageProvider,
     val slots: SceneSlots,
     val onAction: ((String) -> Unit)?,
+    val effects: Boolean,
 )
 
 @Composable
@@ -140,7 +143,7 @@ private fun Children(ids: List<NodeId>, scope: NodeScope, size: Size? = null) {
 @Composable
 private fun NodeView(node: SceneNode, scope: NodeScope) {
     if (!node.visible || node.style.opacity <= 0.0) return
-    val placed = Modifier.placement(node).layerBlur(node.style.blur).actionable(node, scope)
+    val placed = Modifier.placement(node).effects(node, scope.effects).layerBlur(node.style.blur).actionable(node, scope)
     when (val content = node.content) {
         is NodeContent.Group -> Box(placed) { Children(content.childIds, scope) }
         is NodeContent.Frame -> FrameView(node, content, placed, scope)
@@ -149,6 +152,14 @@ private fun NodeView(node: SceneNode, scope: NodeScope) {
         is NodeContent.Image -> ImageView(content, placed, scope)
         is NodeContent.HostSlot -> HostView(node, content, placed, scope)
     }
+}
+
+/** 노드 모양을 따라 리플·빛 번짐을 그리고, 장면 안이므로 거리 1단위 = 1 px(문서 단위)다. */
+@Composable
+private fun Modifier.effects(node: SceneNode, enabled: Boolean): Modifier {
+    if (!enabled || node.effects.isEmpty) return this
+    val shape = remember(node.content) { node.content.outline()?.let { path -> GenericShape { _, _ -> addPath(path) } } ?: RectangleShape }
+    return nodeEffects(node.effects, shape, enabled = true, unitPx = 1f)
 }
 
 /** 문서 변환과 같은 배치: translation 뒤 pivot 기준 회전·배율. 불투명도는 레이어로 합성한다. */
