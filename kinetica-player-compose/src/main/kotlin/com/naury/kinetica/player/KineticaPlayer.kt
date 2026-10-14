@@ -108,7 +108,21 @@ public fun KineticaPlayer(
     }
 }
 
-/** [timeline]을 재생하는 [PlaybackController]. 구성이 바뀌어도 같은 timeline이면 유지된다. */
+/**
+ * [timeline]을 재생하는 [PlaybackController]. 다시 구성돼도 같은 timeline이면 유지된다. 화면 회전 같은 구성 변경에서는 새로 만들므로
+ * 재생 위치까지 지키려면 [PlaybackController]를 ViewModel에 둔다.
+ *
+ * @param reducedMotion 움직임 줄이기. 기본은 시스템 "애니메이션 삭제"(애니메이터 배율 0) 설정을 따른다.
+ */
 @Composable
-public fun rememberPlaybackController(timeline: Timeline, reducedMotion: Boolean = false): PlaybackController =
+public fun rememberPlaybackController(timeline: Timeline, reducedMotion: Boolean = rememberSystemReducedMotion()): PlaybackController =
     remember(timeline, reducedMotion) { PlaybackController(timeline, reducedMotion = reducedMotion) }
+
+/** 시스템 "애니메이션 삭제"가 켜져 있는지(애니메이터 배율 0). */
+@Composable
+public fun rememberSystemReducedMotion(): Boolean {
+    val resolver = LocalContext.current.contentResolver
+    return remember(resolver) {
+        android.provider.Settings.Global.getFloat(resolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    }
+}
