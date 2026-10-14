@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -320,26 +321,17 @@ private fun WidgetEditFrame(
     onRemove: () -> Unit,
 ) {
     val outline = if (dragging) Color.Transparent else colors.outline
+    var focused by remember { mutableStateOf(false) }
     Box(
         Modifier
             .rectPlacement(rect, zoom)
-            .border(2.dp, outline, RoundedCornerShape(8.dp))
+            .editOutline(focused, outline, colors.accent)
             .background(outline.copy(alpha = EDIT_TINT))
             .testTag("$BOARD_WIDGET_TAG$key")
             .semantics { customActions = actions }
+            .onFocusChanged { focused = it.isFocused }
             .then(keys)
-            .pointerInput(key, permissions.move) {
-                if (!permissions.move) return@pointerInput
-                detectDragGestures(
-                    onDragStart = { local -> controller.start(key, local) },
-                    onDrag = { change, _ ->
-                        change.consume()
-                        controller.move(key, change.position)
-                    },
-                    onDragEnd = controller::end,
-                    onDragCancel = controller::cancel,
-                )
-            },
+            .dragToMove(key, permissions.move, controller),
     ) {
         if (permissions.remove) {
             val description = stringResource(R.string.kinetica_board_remove, label)
@@ -421,5 +413,23 @@ private const val EDIT_BOTTOM_ROOM_DP = 88.0
 private const val SCROLL_BAND_DP = 48.0
 private const val AUTO_SCROLL_DP_PER_FRAME = 8
 private const val NUDGE_DP = 8f
+private val FOCUS_BORDER = 4.dp
+
+private fun Modifier.dragToMove(key: String, enabled: Boolean, controller: BoardDragController): Modifier = pointerInput(key, enabled) {
+    if (!enabled) return@pointerInput
+    detectDragGestures(
+        onDragStart = { local -> controller.start(key, local) },
+        onDrag = { change, _ ->
+            change.consume()
+            controller.move(key, change.position)
+        },
+        onDragEnd = controller::end,
+        onDragCancel = controller::cancel,
+    )
+}
+
+// 키보드로 고른 위젯이 어느 것인지 보이도록 초점이 있으면 테두리를 굵고 진하게 그린다.
+private fun Modifier.editOutline(focused: Boolean, outline: Color, accent: Color): Modifier =
+    border(if (focused) FOCUS_BORDER else 2.dp, if (focused) accent else outline, RoundedCornerShape(8.dp))
 private val BADGE_SIZE: Dp = 28.dp
 private val BADGE_OUTSET: Dp = 9.dp
