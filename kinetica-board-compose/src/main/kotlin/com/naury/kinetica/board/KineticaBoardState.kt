@@ -110,29 +110,30 @@ public class KineticaBoardState private constructor(
     }
 
     /**
-     * [key] 위젯을 기준 폭 좌표 [rect]로 옮기거나 크기를 바꾼다. 겹치는 다른 위젯은 아래로 밀린다(분할 배치 뒤 가려지지 않게).
+     * 놓인 자리 [id]의 위젯을 기준 폭 좌표 [rect]로 옮기거나 크기를 바꾼다. 겹치는 다른 위젯은 아래로 밀린다(분할 배치 뒤 가려지지 않게).
      * 격자 배치면 가장 가까운 칸으로 맞춘다.
      * 모든 변경이 실행 취소 한 단계다.
      */
-    public fun place(key: String, rect: Rect): Boolean {
+    public fun place(id: String, rect: Rect): Boolean {
         val document = session.document.value
-        if (document.node(NodeId(key)) == null || rect.width <= 0.0 || rect.height <= 0.0) return false
+        if (NodeId.parseOrNull(id)?.let(document::node) == null || rect.width <= 0.0 || rect.height <= 0.0) return false
         val grid = arrangement as? BoardArrangement.Grid
         val updates: Map<String, Rect> = if (grid == null) {
-            val rects = document.rootOrder.mapNotNull { id -> rectOf(document.node(id))?.let { id.value to it } }.toMap() + (key to rect)
-            BoardGeometry.pushOverlaps(rects, key, arrangement.gapUnits()).filter { (id, target) ->
-                id == key ||
-                    rectOf(document.node(NodeId(id))) != target
+            val rects =
+                document.rootOrder.mapNotNull { other -> rectOf(document.node(other))?.let { other.value to it } }.toMap() + (id to rect)
+            BoardGeometry.pushOverlaps(rects, id, arrangement.gapUnits()).filter { (other, target) ->
+                other == id ||
+                    rectOf(document.node(NodeId(other))) != target
             }
         } else {
-            val cells = gridCells(document) + (key to BoardGeometry.nearestCell(rect, REFERENCE_WIDTH, grid, arrangement.gapUnits()))
-            BoardGeometry.resolveOverlaps(cells, key)
+            val cells = gridCells(document) + (id to BoardGeometry.nearestCell(rect, REFERENCE_WIDTH, grid, arrangement.gapUnits()))
+            BoardGeometry.resolveOverlaps(cells, id)
                 .mapValues { (_, cell) -> BoardGeometry.cellRect(cell, REFERENCE_WIDTH, grid, arrangement.gapUnits()) }
-                .filter { (id, target) -> rectOf(document.node(NodeId(id))) != target }
+                .filter { (other, target) -> rectOf(document.node(NodeId(other))) != target }
         }
         if (!session.commands.beginTransaction("place")) return false
-        val ok = updates.all { (id, target) ->
-            val node = document.node(NodeId(id)) ?: return@all true
+        val ok = updates.all { (other, target) ->
+            val node = document.node(NodeId(other)) ?: return@all true
             session.commands.execute(SceneCommand.UpdateProperties(withRect(node, target))) is CommandResult.Applied
         }
         if (ok) session.commands.commitTransaction() else session.commands.rollbackTransaction()
@@ -140,24 +141,24 @@ public class KineticaBoardState private constructor(
     }
 
     /**
-     * 위젯을 [dxDp]·[dyDp]만큼 옮긴다(접근성 동작·키보드용). 보드 밖으로는 나가지 않고, 격자 배치면 가장 가까운 칸으로 맞춘다.
+     * 놓인 자리 [id]의 위젯을 [dxDp]·[dyDp]만큼 옮긴다(접근성 동작·키보드용). 보드 밖으로는 나가지 않고, 격자 배치면 가장 가까운 칸으로 맞춘다.
      */
-    public fun moveBy(key: String, dxDp: Float, dyDp: Float): Boolean {
-        val rect = rectOf(key) ?: return false
+    public fun moveBy(id: String, dxDp: Float, dyDp: Float): Boolean {
+        val rect = rectOf(id) ?: return false
         val (stepX, stepY) = step(dxDp, dyDp)
         val dx = stepX.coerceIn(-rect.left, REFERENCE_WIDTH - rect.right)
         val dy = stepY.coerceAtLeast(-rect.top)
-        return place(key, Rect(rect.left + dx, rect.top + dy, rect.right + dx, rect.bottom + dy))
+        return place(id, Rect(rect.left + dx, rect.top + dy, rect.right + dx, rect.bottom + dy))
     }
 
-    /** 위젯 크기를 [dwDp]·[dhDp]만큼 바꾼다. 왼쪽 위는 그대로이고 48dp보다 작아지지 않는다. */
-    public fun resizeBy(key: String, dwDp: Float, dhDp: Float): Boolean {
-        val rect = rectOf(key) ?: return false
+    /** 놓인 자리 [id]의 위젯 크기를 [dwDp]·[dhDp]만큼 바꾼다. 왼쪽 위는 그대로이고 48dp보다 작아지지 않는다. */
+    public fun resizeBy(id: String, dwDp: Float, dhDp: Float): Boolean {
+        val rect = rectOf(id) ?: return false
         val min = MIN_SIZE_DP * UNITS
         val (stepW, stepH) = step(dwDp, dhDp)
         val right = (rect.right + stepW).coerceIn(rect.left + min, REFERENCE_WIDTH)
         val bottom = (rect.bottom + stepH).coerceAtLeast(rect.top + min)
-        return place(key, Rect(rect.left, rect.top, right, bottom))
+        return place(id, Rect(rect.left, rect.top, right, bottom))
     }
 
     /** dp 이동량을 기준 폭 단위로 바꾼다. 격자 배치는 방향만 보고 한 칸씩 움직인다. */
@@ -168,15 +169,15 @@ public class KineticaBoardState private constructor(
             Math.signum(dyDp) * (width * grid.rowHeightRatio + arrangement.gapUnits())
     }
 
-    /** 위젯 하나를 맨 위로 올린다(겹칠 때 위에 그려진다). */
-    public fun bringToFront(key: String): Boolean {
+    /** 놓인 자리 [id]의 위젯을 맨 위로 올린다(겹칠 때 위에 그려진다). */
+    public fun bringToFront(id: String): Boolean {
         val last = placedKeys.lastIndex
-        if (key !in placedKeys || placedKeys.last() == key) return false
-        return session.commands.execute(SceneCommand.ReorderNode(NodeId(key), last)) is CommandResult.Applied
+        if (id !in placedKeys || placedKeys.last() == id) return false
+        return session.commands.execute(SceneCommand.ReorderNode(NodeId(id), last)) is CommandResult.Applied
     }
 
-    /** 기준 폭 좌표의 위젯 사각형. 없으면 `null`. */
-    public fun rectOf(key: String): Rect? = rectOf(session.document.value.node(NodeId(key)))
+    /** 놓인 자리 [id]의 기준 폭 좌표 사각형. 없으면 `null`. */
+    public fun rectOf(id: String): Rect? = NodeId.parseOrNull(id)?.let { rectOf(session.document.value.node(it)) }
 
     /** 저장용 JSON. 지금 목록의 키를 함께 남겨, 다음에 열 때 새로 생긴 위젯과 사용자가 뺀 위젯을 구분한다. */
     public fun toJson(): String {
@@ -242,6 +243,8 @@ public class KineticaBoardState private constructor(
          *
          * @throws IllegalArgumentException 목록에 같은 키가 두 번 있을 때
          */
+        @JvmStatic
+        @JvmOverloads
         public fun create(
             catalog: List<BoardWidget>,
             arrangement: BoardArrangement = BoardArrangement.Free(),
