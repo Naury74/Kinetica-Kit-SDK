@@ -34,6 +34,7 @@ XML 화면은 `KineticaBoardView`에 `setBoard(state) { key, context -> View }`,
 | 자동 스크롤 | 끄는 손가락이 보이는 영역 위·아래 끝(분할 자리 바로 안쪽 48dp 띠나 그 너머)에 머물면 보드가 스크롤되고 위젯도 따라간다. 지금 내용 아래 한 화면까지만 늘어난다 |
 | 접근성 | 편집 모드에서 위젯마다 TalkBack 동작: 위·아래·왼쪽·오른쪽으로 옮기기(8dp, 격자는 한 칸), 크게·작게, 빼기 |
 | 여러 개 | `BoardWidget(multiple = true)`면 같은 위젯을 여러 번 추가한다. 자리 id는 `memo`, `memo.2`…이며 `content(id)`로 받고, 위젯 키는 `state.widgetKeyOf(id)` |
+| 묶음 | 위젯을 다른 위젯 가운데(가운데 40%)에 놓으면 그 자리에서 넘겨 보는 묶음이 된다(아래 점 표시). 편집 중 오른쪽 위 숫자 배지·TalkBack "묶음 풀기"로 푼다. 코드: `state.stack(a, b)`·`unstack(id)`·`stackMembers(id)`. 필수 위젯이 든 묶음은 뺄 수 없다 |
 | 키보드 | 편집 모드에서 위젯에 초점을 두고 방향키로 옮기기, Shift+방향키로 크기, Delete로 빼기 |
 | 실행 취소 | 끌기·크기·추가·빼기가 한 단계씩. `state.history.undo()/redo()` |
 
@@ -52,4 +53,4 @@ XML 화면은 `KineticaBoardView`에 `setBoard(state) { key, context -> View }`,
 
 ## 남은 것
 
-실기기 TalkBack·하드웨어 키보드 확인, 위젯 그룹(폴더) 묶기.
+실기기 TalkBack·하드웨어 키보드 확인, 묶음 자동 넘김(시간마다).

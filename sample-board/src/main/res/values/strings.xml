@@ -8,7 +8,7 @@
     <string name="board_free">Free</string>
     <string name="board_grid">Grid</string>
     <string name="board_xml">XML screen</string>
-    <string name="board_hint_free">Drag to move. Drop on a screen edge for half, a corner for a quarter, the top for full screen.</string>
+    <string name="board_hint_free">Drag to move. Drop on a screen edge for half, a corner for a quarter, the top for full screen, the middle of another widget to stack.</string>
     <string name="board_hint_grid">Drag to move between cells. Widgets in the way move down.</string>
     <string name="board_effects">Effects</string>
 </resources>

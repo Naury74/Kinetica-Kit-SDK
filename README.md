@@ -6,7 +6,7 @@
 호스트 뷰는 편집 중에도 살아 있고, 글자·보임·이미지·색은 호스트 데이터 키에 묶여 실시간으로 바뀌며, 누르면 동작 이름이 호스트로 돌아옵니다.
 그 아래에는 정밀하게 편집할 수 있는 2D 장면(scene graph), 시간 기반 애니메이션, 장면 전환이 있습니다. 방향과 단계는 [ADR-0006](docs/adr/0006-host-ui-composer.md)과 [UI 조립 계획](docs/30-ui-composer.md)을 보세요.
 
-- **Board**: 호스트 화면에 넣는 위젯 보드 `KineticaBoard`·`KineticaBoardView`(XML). 사용자가 앱 안에서 바로 옮기고·크기 바꾸고·빼고·추가, 가장자리로 끌면 반·4분의 1·전체 분할, 격자 배치, 같은 위젯 여러 개(메모 등), 길게 눌러 편집·자동 스크롤·키보드·TalkBack, 저장·앱 업데이트 맞춤([docs/31](docs/31-board.md))
+- **Board**: 호스트 화면에 넣는 위젯 보드 `KineticaBoard`·`KineticaBoardView`(XML). 사용자가 앱 안에서 바로 옮기고·크기 바꾸고·빼고·추가, 가장자리로 끌면 반·4분의 1·전체 분할, 격자 배치, 같은 위젯 여러 개(메모 등), 위젯 묶음(한 자리에서 넘겨 보기), 길게 눌러 편집·자동 스크롤·키보드·TalkBack, 저장·앱 업데이트 맞춤([docs/31](docs/31-board.md))
 - **Host UI**: `slots`(키 → Compose 뷰)·`hostViews`(편집기 메뉴)·`SceneData`(실시간 값)·`onAction`(누름)
 
 - **Studio**: 캔버스·도구·레이어·속성·timeline이 있는 편집 화면 `KineticaEditor`
