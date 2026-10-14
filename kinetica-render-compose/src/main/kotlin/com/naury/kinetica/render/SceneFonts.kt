@@ -3,12 +3,15 @@ package com.naury.kinetica.render
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import com.naury.kinetica.core.scene.NodeContent
+import com.naury.kinetica.core.scene.TextAlignment
 import com.naury.kinetica.core.scene.TextDecoration
 import com.naury.kinetica.core.scene.TextSpans
 
@@ -68,3 +71,21 @@ internal fun NodeContent.Text.annotated(fonts: SceneFonts, sp: (Double) -> TextU
         )
     }
 }
+
+/** 글자 노드 전체 모양. 화면·내보내기·측정이 같은 값을 써야 크기와 그림이 맞는다. [sp]는 문서 단위를 글자 단위로 바꾼다. */
+internal fun NodeContent.Text.baseStyle(color: androidx.compose.ui.graphics.Color, fonts: SceneFonts, sp: (Double) -> TextUnit): TextStyle =
+    TextStyle(
+        color = color,
+        fontSize = sp(fontSize),
+        fontWeight = FontWeight(fontWeight),
+        fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
+        fontFamily = fonts.resolve(fontFamily),
+        textDecoration = decoration.toCompose(),
+        lineHeight = if (lineHeight > 0.0) sp(lineHeight) else TextUnit.Unspecified,
+        letterSpacing = sp(letterSpacing),
+        textAlign = when (alignment) {
+            TextAlignment.Start -> TextAlign.Start
+            TextAlignment.Center -> TextAlign.Center
+            TextAlignment.End -> TextAlign.End
+        },
+    )

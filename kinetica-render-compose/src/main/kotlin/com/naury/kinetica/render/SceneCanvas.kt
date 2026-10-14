@@ -139,21 +139,7 @@ private fun DrawScope.drawTextNode(
     // 캔버스가 이미 문서 단위로 확대되어 있으므로 글자 크기는 density·글꼴 배율과 무관한 문서 단위여야 한다.
     val layout = textMeasurer.measure(
         text = content.annotated(fonts) { unitsToSp(it) },
-        style = TextStyle(
-            color = style.fill?.toColor() ?: Color.Black,
-            fontSize = unitsToSp(content.fontSize),
-            fontWeight = FontWeight(content.fontWeight),
-            fontStyle = if (content.italic) FontStyle.Italic else FontStyle.Normal,
-            fontFamily = fonts.resolve(content.fontFamily),
-            textDecoration = content.decoration.toCompose(),
-            lineHeight = if (content.lineHeight > 0.0) unitsToSp(content.lineHeight) else TextUnit.Unspecified,
-            letterSpacing = unitsToSp(content.letterSpacing),
-            textAlign = when (content.alignment) {
-                TextAlignment.Start -> TextAlign.Start
-                TextAlignment.Center -> TextAlign.Center
-                TextAlignment.End -> TextAlign.End
-            },
-        ),
+        style = content.baseStyle(style.fill?.toColor() ?: Color.Black, fonts) { unitsToSp(it) },
         overflow = TextOverflow.Clip,
         constraints = Constraints(maxWidth = width, maxHeight = height),
     )

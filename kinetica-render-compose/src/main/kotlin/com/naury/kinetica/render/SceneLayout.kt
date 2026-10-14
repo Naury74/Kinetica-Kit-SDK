@@ -209,21 +209,7 @@ private fun ShapeView(node: SceneNode, content: NodeContent, modifier: Modifier)
 private fun TextView(node: SceneNode, content: NodeContent.Text, modifier: Modifier) {
     val density = LocalDensity.current
     val fonts = LocalSceneFonts.current
-    val base = TextStyle(
-        color = node.style.fill?.toColor() ?: Color.Black,
-        fontSize = density.unitsToSp(content.fontSize),
-        fontWeight = FontWeight(content.fontWeight),
-        fontStyle = if (content.italic) FontStyle.Italic else FontStyle.Normal,
-        fontFamily = fonts.resolve(content.fontFamily),
-        textDecoration = content.decoration.toCompose(),
-        lineHeight = if (content.lineHeight > 0.0) density.unitsToSp(content.lineHeight) else TextUnit.Unspecified,
-        letterSpacing = density.unitsToSp(content.letterSpacing),
-        textAlign = when (content.alignment) {
-            TextAlignment.Start -> TextAlign.Start
-            TextAlignment.Center -> TextAlign.Center
-            TextAlignment.End -> TextAlign.End
-        },
-    )
+    val base = content.baseStyle(node.style.fill?.toColor() ?: Color.Black, fonts) { density.unitsToSp(it) }
     val gradient = node.style.gradient
     val style = if (gradient == null) {
         base
