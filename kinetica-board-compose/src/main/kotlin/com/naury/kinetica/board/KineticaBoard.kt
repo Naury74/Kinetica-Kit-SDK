@@ -1,5 +1,6 @@
 package com.naury.kinetica.board
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,11 +12,14 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -176,13 +181,6 @@ private fun BoardBody(
             AddWidgetCorner(hostDirection, mirrored) { AddWidgetButton(state, stored, colors, it) }
         }
     }
-}
-
-/** 위젯 추가 버튼을 끝쪽 아래(오른쪽에서 왼쪽으로 쓰면 왼쪽 아래)에 두고, 버튼·메뉴 글자는 호스트 방향으로 그린다. */
-@Composable
-private fun BoxScope.AddWidgetCorner(hostDirection: LayoutDirection, mirrored: Boolean, content: @Composable (Modifier) -> Unit) {
-    val corner = Modifier.align(if (mirrored) Alignment.BottomStart else Alignment.BottomEnd).padding(16.dp)
-    CompositionLocalProvider(LocalLayoutDirection provides hostDirection) { content(corner) }
 }
 
 @Composable
@@ -335,6 +333,8 @@ private fun WidgetEditFrame(
 ) {
     val outline = if (dragging) Color.Transparent else colors.outline
     var focused by remember { mutableStateOf(false) }
+    // 빼기 표시는 시작쪽 위, 크기 손잡이는 끝쪽 아래. 보드 안은 왼쪽 기준이므로 뒤집힌 화면이면 직접 바꾼다.
+    val mirrored = LocalBoardMirrored.current
     Box(
         Modifier
             .rectPlacement(rect, zoom)
@@ -353,22 +353,22 @@ private fun WidgetEditFrame(
             val description = stringResource(R.string.kinetica_board_remove, label)
             Box(
                 Modifier
-                    .align(Alignment.TopStart)
-                    .offset(-BADGE_OUTSET, -BADGE_OUTSET)
+                    .align(if (mirrored) Alignment.TopEnd else Alignment.TopStart)
+                    .offset(if (mirrored) BADGE_OUTSET else -BADGE_OUTSET, -BADGE_OUTSET)
                     .size(BADGE_SIZE)
                     .background(colors.accent, CircleShape)
                     .semantics { contentDescription = description }
                     .clickable(onClick = onRemove),
                 contentAlignment = Alignment.Center,
-            ) { Text("−", color = colors.onAccent) }
+            ) { RemoveMark(colors.onAccent) }
         }
         if (permissions.resize) {
             val description = stringResource(R.string.kinetica_board_resize, label)
             Box(
                 Modifier
-                    .align(Alignment.BottomEnd)
+                    .align(if (mirrored) Alignment.BottomStart else Alignment.BottomEnd)
                     .size(BADGE_SIZE)
-                    .background(colors.accent, RoundedCornerShape(topStart = 12.dp))
+                    .background(colors.accent, if (mirrored) RoundedCornerShape(topEnd = 12.dp) else RoundedCornerShape(topStart = 12.dp))
                     .semantics { contentDescription = description }
                     .pointerInput(key) {
                         detectDragGestures(
@@ -382,31 +382,6 @@ private fun WidgetEditFrame(
                         )
                     },
             )
-        }
-    }
-}
-
-@Composable
-private fun AddWidgetButton(state: KineticaBoardState, document: SceneDocument, colors: BoardColors, modifier: Modifier) {
-    var open by remember { mutableStateOf(false) }
-    // document를 받아 배치가 바뀔 때마다 다시 계산한다.
-    val available = remember(document) { state.availableWidgets }
-    Box(modifier) {
-        TextButton(onClick = { open = true }, modifier = Modifier.background(colors.accent, RoundedCornerShape(24.dp))) {
-            Text("+ " + stringResource(R.string.kinetica_board_add), color = colors.onAccent)
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            if (available.isEmpty()) {
-                DropdownMenuItem(text = {
-                    Text(stringResource(R.string.kinetica_board_nothing_to_add))
-                }, onClick = { open = false }, enabled = false)
-            }
-            available.forEach { widget ->
-                DropdownMenuItem(text = { Text(widget.label) }, onClick = {
-                    open = false
-                    state.add(widget.key)
-                })
-            }
         }
     }
 }

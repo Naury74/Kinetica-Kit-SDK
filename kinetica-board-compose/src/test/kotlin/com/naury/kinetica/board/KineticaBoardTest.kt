@@ -121,7 +121,7 @@ class KineticaBoardTest {
         state.remove("b")
         show(state, editing = true)
 
-        compose.onNodeWithText("+ Add widget").performClick()
+        compose.onNodeWithText("Add widget").performClick()
         compose.onNodeWithText("B").performClick()
 
         assertThat(state.placedKeys).containsExactly("a", "b")
@@ -304,6 +304,33 @@ class KineticaBoardTest {
 
         assertThat(state.rectOf("a")!!.left).isGreaterThan(saved!!.left)
         assertThat(compose.onNodeWithTag("w-a").fetchSemanticsNode().boundsInRoot.left).isLessThan(first.left)
+    }
+
+    @Test
+    fun `오른쪽에서 왼쪽으로 쓰면 크기 손잡이가 왼쪽 아래에 있고 왼쪽으로 끌면 넓어진다`() {
+        val state = KineticaBoardState.create(catalog)
+        compose.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(Modifier.size(400.dp, 600.dp)) {
+                    KineticaBoard(state, Modifier.fillMaxSize(), editing = true) { key -> Text("widget $key", Modifier.testTag("w-$key")) }
+                }
+            }
+        }
+        val widget = compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").fetchSemanticsNode().boundsInRoot
+        val handle = compose.onNodeWithContentDescription("Resize A").fetchSemanticsNode().boundsInRoot
+        assertThat(handle.center.x).isLessThan(widget.center.x)
+
+        compose.onNodeWithContentDescription("Resize A").performTouchInput {
+            down(center)
+            moveTo(Offset(center.x - 20f, center.y))
+            moveTo(Offset(center.x - 60f, center.y))
+            up()
+        }
+        compose.waitForIdle()
+
+        val resized = compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").fetchSemanticsNode().boundsInRoot
+        assertThat(resized.width).isGreaterThan(widget.width + 30f)
+        assertThat(resized.right).isWithin(2f).of(widget.right)
     }
 }
 

@@ -11,7 +11,7 @@ internal class BoardMapping(
     private val arrangement: BoardArrangement,
     val displayWidth: Double,
     val gap: Double,
-    private val mirrored: Boolean = false,
+    val mirrored: Boolean = false,
 ) {
     private val scale = displayWidth / KineticaBoardState.REFERENCE_WIDTH
 

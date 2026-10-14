@@ -143,10 +143,10 @@ internal fun EffectsSection(node: SceneNode, edits: EffectEdits, theme: StudioTh
     Chips {
         TextButton(onClick = {
             edits.addShadow(node.id, inner = false)
-        }) { Text("+ " + stringResource(R.string.kinetica_drop_shadow), color = theme.accent) }
+        }) { AddLabel(stringResource(R.string.kinetica_drop_shadow), theme.accent) }
         TextButton(onClick = {
             edits.addShadow(node.id, inner = true)
-        }) { Text("+ " + stringResource(R.string.kinetica_inner_shadow), color = theme.accent) }
+        }) { AddLabel(stringResource(R.string.kinetica_inner_shadow), theme.accent) }
     }
     Field(node, "blur", formatNumber(node.style.blur), R.string.kinetica_field_layer_blur, KeyboardType.Decimal) {
         edits.setBlur(node.id, it)

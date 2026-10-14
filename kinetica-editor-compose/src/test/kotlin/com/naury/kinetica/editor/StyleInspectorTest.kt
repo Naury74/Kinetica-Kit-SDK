@@ -38,7 +38,7 @@ class StyleInspectorTest {
         assertThat((star.content as NodeContent.Polygon).innerRatio).isLessThan(1.0)
 
         compose.onNodeWithText("Linear").performScrollTo().performClick()
-        compose.onNodeWithText("+ Inner shadow").performScrollTo().performClick()
+        compose.onNodeWithText("Inner shadow").performScrollTo().performClick()
         compose.waitForIdle()
 
         val styled = session.document.value.node(star.id)!!.style

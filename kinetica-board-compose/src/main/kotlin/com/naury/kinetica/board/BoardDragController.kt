@@ -73,19 +73,29 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         scrollDirection = directionNow()
     }
 
-    /** 크기 바꾸기. [local]은 손잡이 안의 손가락 위치다. 왼쪽 위는 그대로이고 [frame]의 최소 크기보다 작아지지 않는다. */
+    /**
+     * 크기 바꾸기. [local]은 손잡이 안의 손가락 위치다. 위와 시작쪽(왼쪽, 화면이 뒤집혀 있으면 오른쪽)은 그대로이고
+     * [frame]의 최소 크기보다 작아지지 않는다.
+     */
     fun resize(key: String, local: Offset) {
         val frame = frame ?: return
         val start = origin ?: return
+        val width = frame.mapping.displayWidth
+        // 뒤집힌 화면은 좌우를 뒤집어 같은 계산(오른쪽 아래 손잡이)으로 바꾼 뒤 다시 뒤집는다.
+        val flip = { rect: Rect ->
+            if (frame.mapping.mirrored) Rect(width - rect.right, rect.top, width - rect.left, rect.bottom) else rect
+        }
+        val dx = (local.x - startLocal.x) / frame.zoom * if (frame.mapping.mirrored) -1 else 1
+        val base = flip(start)
         val raw = Rect(
-            start.left,
-            start.top,
-            maxOf(start.left + frame.minSize, start.right + (local.x - startLocal.x) / frame.zoom).coerceAtMost(frame.mapping.displayWidth),
-            maxOf(start.top + frame.minSize, start.bottom + (local.y - startLocal.y) / frame.zoom),
+            base.left,
+            base.top,
+            maxOf(base.left + frame.minSize, base.right + dx).coerceAtMost(width),
+            maxOf(base.top + frame.minSize, base.bottom + (local.y - startLocal.y) / frame.zoom),
         )
-        val others = frame.rects.filterKeys { it != key }.values.toList()
-        val snapped = BoardGeometry.snapResize(raw, others, frame.mapping.displayWidth, frame.mapping.gap, frame.snap)
-        drag = BoardDrag(key, snapped, frame.mapping.cellPreview(raw) ?: snapped, null)
+        val others = frame.rects.filterKeys { it != key }.values.map(flip)
+        val snapped = flip(BoardGeometry.snapResize(raw, others, width, frame.mapping.gap, frame.snap))
+        drag = BoardDrag(key, snapped, frame.mapping.cellPreview(flip(raw)) ?: snapped, null)
     }
 
     /**

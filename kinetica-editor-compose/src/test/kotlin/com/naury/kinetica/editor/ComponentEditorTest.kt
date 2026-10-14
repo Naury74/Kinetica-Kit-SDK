@@ -51,7 +51,7 @@ class ComponentEditorTest {
         val session = session()
         compose.setContent { KineticaEditor(session) }
 
-        compose.onNodeWithText("+ Insert starter kit").performScrollTo().performClick()
+        compose.onNodeWithText("Insert starter kit").performScrollTo().performClick()
         compose.waitForIdle()
         assertThat(session.document.value.nodes.values.count { it.component != null }).isEqualTo(9)
 
@@ -100,7 +100,7 @@ class ComponentEditorTest {
         session.select(listOf(NodeId("card")))
         compose.waitForIdle()
 
-        compose.onNodeWithText("+ Add variant").performScrollTo().performClick()
+        compose.onNodeWithText("Add variant").performScrollTo().performClick()
         compose.waitForIdle()
         val mains = session.document.value.nodes.values.filter { it.component != null }
         assertThat(mains.map { it.component }).containsExactly("Card/Default", "Card/Variant 2")

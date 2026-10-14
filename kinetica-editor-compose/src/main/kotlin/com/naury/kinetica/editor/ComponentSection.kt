@@ -67,7 +67,7 @@ internal fun DocumentPanel(
         }
         TextButton(onClick = {
             edits.insertStarterKit()
-        }) { Text("+ " + stringResource(R.string.kinetica_insert_kit), color = theme.accent) }
+        }) { AddLabel(stringResource(R.string.kinetica_insert_kit), theme.accent) }
     }
 }
 
@@ -116,7 +116,7 @@ internal fun ComponentNodeSection(node: SceneNode, document: SceneDocument, edit
                 modifier = Modifier.fillMaxWidth(),
             ) { edits.rename(node.id, it) }
             TextButton(onClick = { edits.variants.addVariant(node.id) }) {
-                Text("+ " + stringResource(R.string.kinetica_add_variant), color = theme.accent)
+                AddLabel(stringResource(R.string.kinetica_add_variant), theme.accent)
             }
         }
 
