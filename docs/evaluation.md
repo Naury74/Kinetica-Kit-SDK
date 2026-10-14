@@ -70,6 +70,8 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | B10 | 편집 아닐 때 위젯을 길게 누르기 | 편집 모드가 켜짐. 짧게 누르거나 스크롤하면 그대로 동작 | `KineticaBoardTest` |
 | B11 | 편집 중 위젯을 화면 아래 끝으로 끌고 머물기 | 보드가 아래로 스크롤되고 위젯이 따라감 | `KineticaBoardTest` |
 | B12 | TalkBack 켜고 편집 중 위젯의 동작 메뉴 | 옮기기·크게·작게·빼기 | `KineticaBoardTest` |
+| B13 | **+ 위젯 추가** → 메모를 두 번 | 메모 1·메모 2가 따로 생기고 각자 쓴 글이 유지됨 | `KineticaBoardStateTest` |
+| B14 | 키보드 연결 → 편집 중 Tab으로 위젯 고르고 방향키·Shift+방향키·Delete | 옮기기·크기·빼기 | `KineticaBoardTest` |
 
 ### 디자인 — Kinetica Studio (docs 32)
 
@@ -86,6 +88,10 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | D9 | 카드 원본 **넣기** → 인스턴스 글자 고치기 → 원본 색 바꾸기 | 인스턴스 글자는 유지되고 색은 따라감. **덮어쓴 값 되돌리기**로 원래 글자 | `ComponentsTest` |
 | D10 | Frame 고르고 **컴포넌트로** | 원본이 되고 **넣기**로 인스턴스를 넣을 수 있음 | `ComponentEditorTest` |
 | D11 | 흐림을 준 도형을 PNG로 내보내기 | 내보낸 그림에도 흐림이 보임 | `SceneCanvasTest` |
+| D12 | 자동 배치 Frame **줄 바꿈** 켜기 | 폭을 넘는 자식이 다음 줄로 | `LayoutsTest`, `AutoLayoutEditorTest` |
+| D13 | 노드 **크기 제한** 최소 너비 150 | 너비가 150 아래로 줄지 않음 | `LayoutsTest`, `AutoLayoutEditorTest` |
+| D14 | 글자 **너비 자동** 후 글자 늘이기 | 상자가 글자에 맞춰 넓어짐 | `RichTextTest`, `LayoutsTest` |
+| D15 | 레이어 패널로 자동 배치 안 노드를 고르고 캔버스에서 옆으로 끌기 | 형제 순서가 바뀜, 실행 취소 한 번 | `CanvasGestureControllerTest` |
 
 ### 모션
 
@@ -109,6 +115,7 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | 27 | 회전·다른 앱 다녀오기 | 보던 화면 유지 | — (수동) |
 | 28 | **서버 화면 예** → 서버 B → 새로 고침 | 배너·장바구니 자리가 바뀌고 장바구니 숫자(호스트 뷰 상태)는 유지 | `RemoteKineticaPlayerTest` |
 | 29 | 깨진 JSON·오프라인 → 새로 고침 | 화면은 그대로, 아래에 이유 표시. 다시 켜면 캐시가 먼저 보임 | `RemoteSceneLoaderTest` |
+| 30 | (코드) `SceneVerifier.signature(publicKey)` | 서명이 없거나 틀린 본문은 `Unverified`로 거절 | `RemoteSceneLoaderTest` |
 
 ## 3. SDK로서 쓸 만한지
 

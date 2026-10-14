@@ -41,7 +41,11 @@ SceneNode.constraints          // 자동 배치 밖: 부모 크기가 바뀔 때
 - 안쪽 Frame부터 계산하며 늘이기·채움으로 크기가 바뀌면 최대 4번까지 다시 계산한다. 그 축을 내용에 맞추는 자식 Frame은 늘이지 않는다(두 규칙이 번갈아 바뀌지 않게).
 - 데이터가 보임을 바꾸면 그 자리만 다시 배치한다. 애니메이션 위치는 덮지 않는다.
 - 재생기 `SceneFit.Responsive`: artboard를 화면 모양(문서 단위 = `HOST_VIEW_UNITS_PER_DP` × dp)으로 바꾸고 최상위 노드를 제약대로 옮긴다.
-- 남은 것: 줄 바꿈(wrap), 최소·최대 크기, 글자 내용에 맞춘 크기(글자 측정이 core 밖이라 렌더러 협력 필요), 끌어서 자동 배치 안 순서 바꾸기.
+- 줄 바꿈(`wrap`·`lineGap`): 안쪽 길이를 넘는 자식은 다음 줄로. 줄 안에서 교차 정렬, 고정 크기 Frame이면 줄 묶음도 정렬한다. 줄 바꿈 중에는 채움·늘이기를 쓰지 않는다.
+- 크기 최소·최대(`SceneNode.sizeLimits`): 자동 배치·제약·채움·늘이기·직접 바꾼 크기 모두 이 범위로 자른다.
+- 글자 자동 크기(`Text.autoSize`: 고정·높이·너비와 높이): core의 `TextMeasurer`로 재며 렌더러의 `SceneTextMeasurer`가 화면과 같은 글꼴로 잰다.
+  편집기는 세션에 측정기가 없으면 넣고, 재생기는 데이터로 글자가 바뀌면 그 기기 글꼴로 다시 잰다. 측정기가 없으면 저장된 크기를 쓴다.
+- 편집기에서 자동 배치 안 노드(레이어 패널 등으로 고른 것)를 끌면 놓인 자리 순서로 바뀐다(`Layouts.dropIndex`, 실행 취소 한 단계).
 
 ## 컴포넌트·토큰 (3단계)
 
@@ -59,7 +63,7 @@ NodeStyle.fillToken·strokeToken  // 토큰에 이은 색
 ## 서버 주도 재생 (4단계)
 
 - `RemoteSceneLoader(fetcher, cache, fallback, accept)`: 호스트가 받은 JSON을 `SceneCodec`으로 검증한다. 처음에는 캐시를 먼저 보여 주고,
-  받기 실패·형식 오류·`accept` 거절이면 지금 문서를 유지하며 이유만 `lastError`에 남긴다. etag는 메모리에만 둔다.
+  받기 실패·형식 오류·`accept` 거절이면 지금 문서를 유지하며 이유만 `lastError`에 남긴다. etag는 캐시한 문서의 확장 값으로 함께 저장해 다시 켜도 쓴다. `SceneVerifier.signature(publicKey)`를 주면 서명이 맞는 본문만 읽는다.
 - `RemoteKineticaPlayer(loader, refreshKey, data, slots, onAction, …)`: 보여 줄 문서가 없을 때만 `placeholder`.
-- 남은 것: etag 저장, 문서 서명 확인, 여러 화면 묶음 받기.
+- 남은 것: 여러 화면 묶음 받기, 키 교체(여러 공개 키) 정책.
 

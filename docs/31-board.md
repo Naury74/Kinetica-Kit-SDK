@@ -33,6 +33,8 @@ XML 화면은 `KineticaBoardView`에 `setBoard(state) { key, context -> View }`,
 | 처음 배치 | 위에서부터, 같은 줄이면 왼쪽부터 첫 빈자리. 넓은 화면은 옆으로 채운다 |
 | 자동 스크롤 | 끄는 손가락이 보이는 영역 위·아래 끝(분할 자리 바로 안쪽 48dp 띠나 그 너머)에 머물면 보드가 스크롤되고 위젯도 따라간다. 지금 내용 아래 한 화면까지만 늘어난다 |
 | 접근성 | 편집 모드에서 위젯마다 TalkBack 동작: 위·아래·왼쪽·오른쪽으로 옮기기(8dp, 격자는 한 칸), 크게·작게, 빼기 |
+| 여러 개 | `BoardWidget(multiple = true)`면 같은 위젯을 여러 번 추가한다. 자리 id는 `memo`, `memo.2`…이며 `content(id)`로 받고, 위젯 키는 `state.widgetKeyOf(id)` |
+| 키보드 | 편집 모드에서 위젯에 초점을 두고 방향키로 옮기기, Shift+방향키로 크기, Delete로 빼기 |
 | 실행 취소 | 끌기·크기·추가·빼기가 한 단계씩. `state.history.undo()/redo()` |
 
 ## 저장과 화면 크기
@@ -50,4 +52,4 @@ XML 화면은 `KineticaBoardView`에 `setBoard(state) { key, context -> View }`,
 
 ## 남은 것
 
-위젯 여러 개 놓기(같은 키 둘 이상), 키보드로 위젯 옮기기, 실기기 TalkBack 확인.
+실기기 TalkBack·하드웨어 키보드 확인, 위젯 그룹(폴더) 묶기.
