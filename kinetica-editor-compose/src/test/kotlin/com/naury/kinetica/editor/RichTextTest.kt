@@ -82,4 +82,23 @@ class RichTextTest {
         assertThat(content().fontFamily).isEqualTo("serif")
         assertThat(content().italic).isTrue()
     }
+
+    @Test
+    fun `너비 자동을 고르면 편집기가 넣은 측정기로 상자를 글자에 맞추고 글자를 늘리면 넓어진다`() {
+        compose.setContent { KineticaEditor(session) }
+        session.select(listOf(NodeId("title")))
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Auto width").performScrollTo().performClick()
+        compose.waitForIdle()
+        val first = content().size
+        PropertyEdits(EditorState(session)).setText(NodeId("title"), "Hello wide world")
+        val second = content().size
+
+        assertThat(session.textMeasurer).isNotNull()
+        assertThat(content().autoSize).isEqualTo(com.naury.kinetica.core.scene.TextAutoSize.WidthAndHeight)
+        assertThat(first.width).isLessThan(400.0)
+        assertThat(first.height).isLessThan(80.0)
+        assertThat(second.width).isGreaterThan(first.width)
+    }
 }

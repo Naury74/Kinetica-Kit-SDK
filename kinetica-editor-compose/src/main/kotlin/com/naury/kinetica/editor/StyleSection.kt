@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.naury.kinetica.core.scene.LineCap
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.TextAutoSize
 import com.naury.kinetica.core.scene.TextDecoration
 
 /** 채우기(없음·단색·선형·원형 그라디언트). 글자는 글자 색으로 쓴다. */
@@ -210,7 +211,18 @@ internal fun FontSection(node: SceneNode, text: NodeContent.Text, edits: TextEdi
             edits.toggleDecoration(node.id, TextDecoration.Strikethrough)
         }
     }
+    Chips {
+        AUTO_SIZE_CHOICES.forEach { (mode, label) ->
+            ToggleChip(label, text.autoSize == mode, theme) { edits.setAutoSize(node.id, mode) }
+        }
+    }
 }
+
+private val AUTO_SIZE_CHOICES = listOf(
+    TextAutoSize.Fixed to R.string.kinetica_text_size_fixed,
+    TextAutoSize.Height to R.string.kinetica_text_size_height,
+    TextAutoSize.WidthAndHeight to R.string.kinetica_text_size_auto,
+)
 
 @Composable
 private fun SectionTitle(label: Int, theme: StudioTheme) {

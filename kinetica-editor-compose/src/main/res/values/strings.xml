@@ -192,4 +192,7 @@
     <string name="kinetica_field_max_width">Max width</string>
     <string name="kinetica_field_min_height">Min height</string>
     <string name="kinetica_field_max_height">Max height</string>
+    <string name="kinetica_text_size_fixed">Fixed size</string>
+    <string name="kinetica_text_size_height">Auto height</string>
+    <string name="kinetica_text_size_auto">Auto width</string>
 </resources>

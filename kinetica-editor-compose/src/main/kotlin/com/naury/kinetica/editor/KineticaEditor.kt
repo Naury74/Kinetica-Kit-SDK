@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -65,9 +67,11 @@ import com.naury.kinetica.gestures.GestureConfig
 import com.naury.kinetica.gestures.canvasGestures
 import com.naury.kinetica.guides.SnapConfig
 import com.naury.kinetica.history.KineticaSession
+import com.naury.kinetica.render.LocalSceneFonts
 import com.naury.kinetica.render.SceneImageProvider
 import com.naury.kinetica.render.SceneLayout
 import com.naury.kinetica.render.SceneSlots
+import com.naury.kinetica.render.SceneTextMeasurer
 import com.naury.kinetica.render.rememberSceneImages
 
 /**
@@ -99,6 +103,10 @@ public fun KineticaEditor(
     data: SceneData = SceneData.Empty,
     toolbarEnd: @Composable RowScope.() -> Unit = {},
 ) {
+    val context = LocalContext.current
+    val fonts = LocalSceneFonts.current
+    // 호스트가 측정기를 주지 않았으면 화면 글꼴로 재는 측정기를 넣어 글자 자동 크기가 편집기에서 바로 동작하게 한다.
+    LaunchedEffect(session, fonts) { if (session.textMeasurer == null) session.textMeasurer = SceneTextMeasurer(context, fonts) }
     val state = remember(session) { EditorState(session) }
     val actions = remember(state) { EditorActions(state) }
     val edits = remember(state) { PropertyEdits(state) }

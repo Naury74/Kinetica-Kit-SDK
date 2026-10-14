@@ -191,4 +191,7 @@
     <string name="kinetica_field_max_width">최대 너비</string>
     <string name="kinetica_field_min_height">최소 높이</string>
     <string name="kinetica_field_max_height">최대 높이</string>
+    <string name="kinetica_text_size_fixed">고정 크기</string>
+    <string name="kinetica_text_size_height">높이 자동</string>
+    <string name="kinetica_text_size_auto">너비 자동</string>
 </resources>
