@@ -285,4 +285,63 @@ class LayoutsTest {
         assertThat(SceneValidator().validate(scene).map { it.code }).contains(ViolationCode.InvalidGeometry)
         assertThat(SceneValidator().validate(zero).map { it.code }).contains(ViolationCode.InvalidGeometry)
     }
+
+    /** 글자 하나가 너비 10·줄 높이 20인 고정폭 측정기. */
+    private val fixedPitch = TextMeasurer { text, maxWidth ->
+        val perLine = maxWidth?.let { maxOf(1, (it / 10.0).toInt()) } ?: Int.MAX_VALUE
+        val lines = text.text.split('\n').sumOf { maxOf(1, (it.length + perLine - 1) / perLine) }
+        val width = maxWidth ?: (text.text.split('\n').maxOf { it.length } * 10.0)
+        Size(width, lines * 20.0)
+    }
+
+    private fun label(id: String, value: String, autoSize: TextAutoSize, parent: String? = null) = SceneNode(
+        id(id),
+        NodeContent.Text(Size(50.0, 20.0), value, autoSize = autoSize),
+        parentId = parent?.let(::NodeId),
+    )
+
+    @Test
+    fun `글자 자동 크기는 측정기로 높이 또는 너비·높이를 맞추고 내용 맞춤 Frame이 따라간다`() {
+        val scene = document(
+            listOf(
+                frame("f", listOf("t"), AutoLayout(LayoutDirection.Vertical, padding = Insets.all(5.0), hugWidth = true, hugHeight = true)),
+                label("t", "hello world", TextAutoSize.WidthAndHeight, parent = "f"),
+                label("h", "abcdefghijkl", TextAutoSize.Height),
+                label("fixed", "abcdefghijkl", TextAutoSize.Fixed),
+            ),
+            rootOrder = listOf("f", "h", "fixed"),
+        )
+
+        val laid = Layouts.apply(scene, fixedPitch)
+
+        assertThat(laid.size("t")).isEqualTo(Size(110.0, 20.0))
+        assertThat(laid.size("f")).isEqualTo(Size(120.0, 30.0))
+        assertThat(laid.size("h")).isEqualTo(Size(50.0, 60.0))
+        assertThat(laid.size("fixed")).isEqualTo(Size(50.0, 20.0))
+        // 측정기가 없으면 저장된 글자 크기를 그대로 쓴다.
+        assertThat(Layouts.apply(scene).size("t")).isEqualTo(Size(50.0, 20.0))
+    }
+
+    @Test
+    fun `측정기가 있는 reducer는 글자를 고치면 크기를 다시 잰다`() {
+        val reducer = SceneReducer(textMeasurer = fixedPitch)
+        val scene = document(listOf(label("t", "hi", TextAutoSize.WidthAndHeight)))
+        val node = scene.nodes.getValue(id("t"))
+
+        val result = reducer.apply(
+            scene,
+            SceneCommand.UpdateProperties(node.copy(content = (node.content as NodeContent.Text).copy(text = "longer text"))),
+        ) as CommandResult.Applied
+
+        assertThat(result.document.size("t")).isEqualTo(Size(110.0, 20.0))
+    }
+
+    @Test
+    fun `바인딩으로 글자가 바뀌면 측정기로 다시 잰다`() {
+        val scene = document(listOf(label("t", "-", TextAutoSize.WidthAndHeight).copy(bindings = mapOf(BoundProperty.Text to "name"))))
+
+        val bound = Bindings.apply(scene, SceneData.of("name" to DataValue.Text("Kinetica")), measurer = fixedPitch)
+
+        assertThat(bound.size("t")).isEqualTo(Size(80.0, 20.0))
+    }
 }

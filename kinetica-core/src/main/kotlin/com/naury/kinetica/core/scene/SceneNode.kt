@@ -186,6 +186,7 @@ public sealed interface NodeContent {
      * @property fontFamily 글꼴 이름. `sans`·`serif`·`monospace`·`cursive`는 어디서나 쓰고, 그 밖의 이름은 호스트가 등록한 글꼴이다.
      * 모르는 이름이면 기본 글꼴로 그린다. `null`이면 기본 글꼴이다.
      * @property spans 글자 일부의 모양(리치 텍스트). 뒤의 것이 앞의 것을 덮는다.
+     * @property autoSize 글자에 맞춰 [size]를 바꾸는 방식. 측정은 [TextMeasurer]가 하며, 측정기가 없으면 저장된 크기를 쓴다.
      */
     public data class Text(
         val size: Size,
@@ -199,6 +200,7 @@ public sealed interface NodeContent {
         val italic: Boolean = false,
         val decoration: TextDecoration = TextDecoration.None,
         val spans: List<TextSpan> = emptyList(),
+        val autoSize: TextAutoSize = TextAutoSize.Fixed,
     ) : NodeContent {
         override val kind: NodeKind get() = NodeKind.Text
 
@@ -216,6 +218,35 @@ public sealed interface NodeContent {
 }
 
 public enum class TextAlignment { Start, Center, End }
+
+/** 글자 상자 크기를 글자에 맞추는 방식. [wireName]은 저장 형식에서 쓰는 이름이다. */
+public enum class TextAutoSize(public val wireName: String) {
+    /** 저장된 크기 그대로. 넘치는 줄은 잘린다. */
+    Fixed("fixed"),
+
+    /** 너비는 그대로 두고 높이를 줄 수에 맞춘다. */
+    Height("height"),
+
+    /** 줄을 바꾸지 않고 너비·높이를 글자에 맞춘다(줄바꿈 문자로만 줄이 바뀐다). */
+    WidthAndHeight("auto"),
+    ;
+
+    public companion object {
+        public fun fromWireName(name: String): TextAutoSize? = entries.firstOrNull { it.wireName == name }
+    }
+}
+
+/**
+ * 글자 노드가 차지할 크기를 잰다. 렌더러가 화면과 같은 글꼴·규칙으로 구현한다(`kinetica-render-compose`의 `SceneTextMeasurer`).
+ * 같은 입력에는 같은 크기를 돌려줘야 한다.
+ */
+public fun interface TextMeasurer {
+    /**
+     * [text]를 [maxWidth](문서 단위) 안에서 줄을 바꿔 배치한 크기. [maxWidth]가 `null`이면 줄을 바꾸지 않는다.
+     * 결과는 유한한 양수(문서 단위)여야 한다.
+     */
+    public fun measure(text: NodeContent.Text, maxWidth: Double?): Size
+}
 
 /** 밑줄·취소선. */
 public enum class TextDecoration(public val wireName: String) {

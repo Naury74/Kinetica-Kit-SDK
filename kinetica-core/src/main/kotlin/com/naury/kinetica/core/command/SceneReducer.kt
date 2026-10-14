@@ -5,6 +5,7 @@ import com.naury.kinetica.core.scene.Layouts
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneLimits
 import com.naury.kinetica.core.scene.SceneValidator
+import com.naury.kinetica.core.scene.TextMeasurer
 import com.naury.kinetica.core.scene.Tokens
 
 /**
@@ -13,7 +14,12 @@ import com.naury.kinetica.core.scene.Tokens
  * 적용한 결과 문서 전체를 [SceneValidator]로 검사해 규칙을 어기면 거부한다. 거부해도 입력 문서는 바뀌지 않는다.
  * 통과하면 [Layouts]로 자동 배치·크기 제약을 반영한 문서를 돌려준다.
  */
-public class SceneReducer(limits: SceneLimits = SceneLimits.Default) {
+public class SceneReducer
+@JvmOverloads
+constructor(
+    limits: SceneLimits = SceneLimits.Default,
+    private val textMeasurer: TextMeasurer? = null,
+) {
     private val validator = SceneValidator(limits)
 
     // 명령 종류마다 한 갈래인 분기다. 나누면 어느 명령이 어디서 처리되는지 오히려 흐려진다.
@@ -60,7 +66,7 @@ public class SceneReducer(limits: SceneLimits = SceneLimits.Default) {
     // 배치는 검사를 통과한 값으로만 계산하고, 배치가 만든 값(위치·크기)도 다시 검사한다.
     private fun settle(before: SceneDocument, proposed: SceneDocument): CommandResult {
         val violations = validator.validate(proposed)
-        val settled = if (violations.isEmpty()) settleDocument(before, proposed) else proposed
+        val settled = if (violations.isEmpty()) settleDocument(before, proposed, textMeasurer) else proposed
         val finalViolations = if (settled === proposed) violations else validator.validate(settled)
         return if (finalViolations.isEmpty()) applied(settled) else CommandResult.Rejected(CommandError.InvalidResult(finalViolations))
     }
@@ -70,11 +76,11 @@ public class SceneReducer(limits: SceneLimits = SceneLimits.Default) {
  * 명령 뒤 문서를 맞춘다: 인스턴스에서 고친 값을 덮어쓴 값으로 남기고 → 직접 고친 토큰 색의 연결을 끊고 → 토큰 색을 반영하고 →
  * 인스턴스를 원본에 맞추고 → 제약·자동 배치를 계산한다. 순서가 바뀌면 고친 값이 동기화로 지워진다.
  */
-internal fun settleDocument(before: SceneDocument, after: SceneDocument): SceneDocument {
+internal fun settleDocument(before: SceneDocument, after: SceneDocument, measurer: TextMeasurer? = null): SceneDocument {
     val captured = Components.captureOverrides(before, after)
     val unlinked = Tokens.unlinkEdited(before, captured)
     val synced = Components.sync(Tokens.resolve(unlinked))
-    return Layouts.settle(before, synced)
+    return Layouts.settle(before, synced, measurer)
 }
 
 internal fun rejected(error: CommandError): CommandResult.Rejected = CommandResult.Rejected(error)

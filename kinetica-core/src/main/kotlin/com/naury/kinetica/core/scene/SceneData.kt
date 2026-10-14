@@ -37,7 +37,14 @@ public data class SceneData(val values: Map<String, DataValue> = emptyMap()) {
  * - 데이터가 보임을 바꾸면 자동 배치 Frame이 그 자리를 메우도록 다시 배치한다.
  */
 public object Bindings {
-    public fun apply(document: SceneDocument, data: SceneData, limits: SceneLimits = SceneLimits.Default): SceneDocument {
+    /** @param measurer 있으면 바인딩으로 바뀐 글자 중 글자에 맞춰 크기가 바뀌는 노드를 다시 재고 배치한다. */
+    @JvmOverloads
+    public fun apply(
+        document: SceneDocument,
+        data: SceneData,
+        limits: SceneLimits = SceneLimits.Default,
+        measurer: TextMeasurer? = null,
+    ): SceneDocument {
         if (data.values.isEmpty() || document.nodes.values.none { it.bindings.isNotEmpty() }) return document
         val nodes = LinkedHashMap(document.nodes)
         document.nodes.values.filter { it.bindings.isNotEmpty() }.forEach { node ->
@@ -48,7 +55,10 @@ public object Bindings {
         val bound = document.copy(nodes = nodes)
         // 데이터로 보임이 바뀐 노드가 있으면 자동 배치를 다시 해 빈자리를 메운다. 그 밖에는 애니메이션 위치를 덮지 않도록 다시 하지 않는다.
         val visibilityChanged = nodes.any { (id, node) -> document.nodes.getValue(id).visible != node.visible }
-        return if (visibilityChanged) Layouts.apply(bound) else bound
+        val autoTextChanged = measurer != null && nodes.any { (id, node) ->
+            (node.content as? NodeContent.Text)?.autoSize?.let { it != TextAutoSize.Fixed } == true && document.nodes.getValue(id) != node
+        }
+        return if (visibilityChanged || autoTextChanged) Layouts.apply(bound, measurer) else bound
     }
 
     private fun SceneNode.with(property: BoundProperty, value: DataValue, limits: SceneLimits): SceneNode = when (property) {

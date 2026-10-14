@@ -14,15 +14,25 @@ public object Layouts {
      * 자동 배치 Frame의 자식 위치·늘이기와 내용 맞춤 크기를 계산하고, 크기를 [SceneNode.sizeLimits] 안으로 자른다.
      * 안쪽 Frame부터 계산하며, 바뀐 것이 없으면 같은 문서를 돌려준다.
      */
-    public fun apply(document: SceneDocument): SceneDocument {
+    @JvmOverloads
+    public fun apply(document: SceneDocument, measurer: TextMeasurer? = null): SceneDocument {
         val limited = document.nodes.values.filter { it.sizeLimits != SizeLimits.None }
-        if (limited.isEmpty() && document.nodes.values.none { (it.content as? NodeContent.Frame)?.layout != null }) return document
+        val autoText = if (measurer ==
+            null
+        ) {
+            emptyList()
+        } else {
+            document.nodes.values.filter { it.autoSize != TextAutoSize.Fixed }.map { it.id }
+        }
+        val anyLayout = document.nodes.values.any { (it.content as? NodeContent.Frame)?.layout != null }
+        if (limited.isEmpty() && autoText.isEmpty() && !anyLayout) return document
         val nodes = LinkedHashMap(document.nodes)
         // 직접 크기를 바꾼 노드도 범위 안에 둔다. 배치 중 크기 변경은 resize가 자른다.
         limited.forEach { node -> node.content.sizeOrNull()?.let { resize(nodes, node.id, it) } }
         // 바깥 Frame이 안쪽 Frame을 늘이면 안쪽 배치를 다시 해야 한다. 깊이만큼 반복하면 충분하고, 보통 두 번 안에 멈춘다.
         repeat(MAX_PASSES) {
-            var changed = false
+            // 늘이기·채움으로 너비가 바뀐 글자는 높이를 다시 재야 하므로 배치마다 먼저 잰다.
+            var changed = measurer != null && autoText.fold(false) { any, id -> measureText(nodes, id, measurer) || any }
             SceneGraph(document.copy(nodes = nodes)).drawOrder.asReversed().forEach { id ->
                 if (layoutFrame(nodes, id)) changed = true
             }
@@ -50,7 +60,7 @@ public object Layouts {
     /**
      * 명령 전후를 비교해 크기가 바뀐 Frame(자동 배치가 아닌 것)·artboard의 자식을 제약대로 옮긴 뒤 자동 배치를 다시 한다.
      */
-    internal fun settle(before: SceneDocument, after: SceneDocument): SceneDocument {
+    internal fun settle(before: SceneDocument, after: SceneDocument, measurer: TextMeasurer? = null): SceneDocument {
         val nodes = LinkedHashMap(after.nodes)
         val oldArtboard = Size(before.artboard.width, before.artboard.height)
         val newArtboard = Size(after.artboard.width, after.artboard.height)
@@ -62,7 +72,7 @@ public object Layouts {
             if (frame.layout == null && node.instanceOf == null && old != frame.size) follow(nodes, frame.childIds, old, frame.size)
         }
         val constrained = if (nodes == after.nodes) after else after.copy(nodes = nodes)
-        return apply(constrained)
+        return apply(constrained, measurer)
     }
 
     /**
@@ -108,6 +118,17 @@ public object Layouts {
             ?.reduceOrNull(Rect::union)
             ?: return null
         return node.transform.matrix().mapBounds(local)
+    }
+
+    private fun measureText(nodes: MutableMap<NodeId, SceneNode>, id: NodeId, measurer: TextMeasurer): Boolean {
+        val text = nodes[id]?.content as? NodeContent.Text ?: return false
+        val measured = when (text.autoSize) {
+            TextAutoSize.Fixed -> return false
+            TextAutoSize.Height -> measurer.measure(text, text.size.width).let { Size(text.size.width, it.height) }
+            TextAutoSize.WidthAndHeight -> measurer.measure(text, null)
+        }
+        val valid = measured.width.isFinite() && measured.height.isFinite() && measured.width > 0.0 && measured.height > 0.0
+        return valid && resize(nodes, id, measured)
     }
 
     private fun layoutFrame(nodes: MutableMap<NodeId, SceneNode>, id: NodeId): Boolean {
@@ -194,7 +215,7 @@ public object Layouts {
         private fun fill(): Boolean {
             val fillers = items.filter { child ->
                 nodes.getValue(child).let {
-                    it.layoutFill && it.isAxisAligned() &&
+                    it.layoutFill && it.isAxisAligned() && !it.measures(width = axis.horizontal) &&
                         it.content.sizeOrNull() != null
                 }
             }
@@ -217,7 +238,9 @@ public object Layouts {
 
         private fun stretch(innerCross: Double): Boolean = items.fold(false) { changed, child ->
             val node = nodes.getValue(child)
-            val size = node.content.sizeOrNull()?.takeIf { node.isAxisAligned() && !hugsCross(node) } ?: return@fold changed
+            val size =
+                node.content.sizeOrNull()?.takeIf { node.isAxisAligned() && !hugsCross(node) && !node.measures(width = !axis.horizontal) }
+                    ?: return@fold changed
             val next = if (axis.horizontal) Size(size.width, innerCross) else Size(innerCross, size.height)
             resize(nodes, child, next) || changed
         }
@@ -311,6 +334,15 @@ public object Layouts {
         if (frame != null && frame.layout == null) follow(nodes, frame.childIds, old, size)
         return true
     }
+
+    /** 글자 측정이 정하는 축이면 `true`. 늘이기·채움이 그 축을 바꾸면 측정과 번갈아 바뀌므로 건드리지 않는다. */
+    private fun SceneNode.measures(width: Boolean): Boolean = when (autoSize) {
+        TextAutoSize.Fixed -> false
+        TextAutoSize.Height -> !width
+        TextAutoSize.WidthAndHeight -> true
+    }
+
+    private val SceneNode.autoSize: TextAutoSize get() = (content as? NodeContent.Text)?.autoSize ?: TextAutoSize.Fixed
 
     private fun SceneNode.isAxisAligned(): Boolean =
         transform.rotationDegrees % FULL_TURN == 0.0 && transform.scaleX == 1.0 && transform.scaleY == 1.0
