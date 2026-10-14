@@ -194,4 +194,7 @@
     <string name="kinetica_text_size_fixed">고정 크기</string>
     <string name="kinetica_text_size_height">높이 자동</string>
     <string name="kinetica_text_size_auto">너비 자동</string>
+    <string name="kinetica_property_gradient_start">그라디언트 시작</string>
+    <string name="kinetica_property_gradient_end">그라디언트 끝</string>
+    <string name="kinetica_property_gradient_angle">그라디언트 각도</string>
 </resources>

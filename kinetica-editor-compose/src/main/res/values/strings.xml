@@ -195,4 +195,7 @@
     <string name="kinetica_text_size_fixed">Fixed size</string>
     <string name="kinetica_text_size_height">Auto height</string>
     <string name="kinetica_text_size_auto">Auto width</string>
+    <string name="kinetica_property_gradient_start">Gradient start</string>
+    <string name="kinetica_property_gradient_end">Gradient end</string>
+    <string name="kinetica_property_gradient_angle">Gradient angle</string>
 </resources>

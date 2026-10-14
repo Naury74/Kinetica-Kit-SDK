@@ -296,6 +296,9 @@ private val ANIMATED = listOf(
     AnimatableProperty.Blur to R.string.kinetica_property_blur,
     AnimatableProperty.ShadowBlur to R.string.kinetica_property_shadow_blur,
     AnimatableProperty.ShadowOffsetY to R.string.kinetica_property_shadow_y,
+    AnimatableProperty.GradientStart to R.string.kinetica_property_gradient_start,
+    AnimatableProperty.GradientEnd to R.string.kinetica_property_gradient_end,
+    AnimatableProperty.GradientAngle to R.string.kinetica_property_gradient_angle,
 )
 private val PRESETS = listOf(
     "fade.in" to R.string.kinetica_preset_fade_in,
