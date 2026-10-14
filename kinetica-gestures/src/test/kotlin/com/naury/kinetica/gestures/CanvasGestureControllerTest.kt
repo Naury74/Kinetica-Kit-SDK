@@ -7,9 +7,12 @@ import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.geometry.Viewport
+import com.naury.kinetica.core.scene.AutoLayout
+import com.naury.kinetica.core.scene.LayoutDirection
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
+import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.testing.TestScenes.document
 import com.naury.kinetica.core.testing.TestScenes.group
 import com.naury.kinetica.core.testing.TestScenes.id
@@ -273,5 +276,46 @@ class CanvasGestureControllerTest {
 
         assertThat(host.viewport.zoom).isGreaterThan(2.0)
         assertThat(host.viewport.toViewport(anchor).distanceTo(point)).isLessThan(1e-9)
+    }
+
+    @Test
+    fun `자동 배치 안에서 고른 자식을 끌면 놓인 자리 순서로 바뀌고 실행 취소 한 단계다`() {
+        fun box(id: String) = rect(id, parent = "row", size = Size(50.0, 50.0))
+        val laidOut = com.naury.kinetica.core.scene.Layouts.apply(
+            document(
+                listOf(
+                    SceneNode(
+                        NodeId("row"),
+                        NodeContent.Frame(
+                            Size(300.0, 50.0),
+                            listOf(NodeId("x"), NodeId("y"), NodeId("z")),
+                            layout = AutoLayout(LayoutDirection.Horizontal, gap = 10.0),
+                        ),
+                    ),
+                    box("x"),
+                    box("y"),
+                    box("z"),
+                ),
+                rootOrder = listOf("row"),
+            ),
+        )
+        val rowHost = SessionHost(laidOut)
+        val rowController = CanvasGestureController(
+            rowHost,
+            GestureConfig(touchSlopPx = 8.0, handleTouchRadiusPx = 4.0, hitSlopPx = 2.0, rotateHandleOffsetPx = 40.0),
+        )
+        rowHost.select(listOf(NodeId("x")))
+        val from = rowHost.viewport.toViewport(Vec2(25.0, 25.0))
+        val to = rowHost.viewport.toViewport(Vec2(150.0, 25.0))
+
+        rowController.onDown(1, from)
+        (1..20).forEach { rowController.onMove(1, from + (to - from) * (it / 20.0)) }
+        rowController.onUp(1)
+
+        val children = (rowHost.document.node(NodeId("row"))!!.content as NodeContent.Frame).childIds
+        assertThat(children).containsExactly(NodeId("y"), NodeId("z"), NodeId("x")).inOrder()
+        assertThat(rowHost.document.node(NodeId("x"))!!.transform.translationX).isEqualTo(120.0)
+        rowHost.session.history.undo()
+        assertThat((rowHost.document.node(NodeId("row"))!!.content as NodeContent.Frame).childIds.first()).isEqualTo(NodeId("x"))
     }
 }

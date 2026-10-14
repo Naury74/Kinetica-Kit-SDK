@@ -6,7 +6,10 @@ import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.core.geometry.shortestDeltaDegrees
 import com.naury.kinetica.core.scene.HitTester
+import com.naury.kinetica.core.scene.Layouts
+import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
+import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneGraph
 import com.naury.kinetica.core.scene.SelectionFrame
 import com.naury.kinetica.core.scene.SelectionHandle
@@ -118,7 +121,7 @@ public class CanvasGestureController(
         val frame = selected.singleOrNull()?.takeIf { !graph.isEffectivelyLocked(it) }?.let { SelectionFrame.of(graph, listOf(it)) }
         val handle = frame?.let { pickHandle(it, viewport, viewportPoint, config) }
         val leaf = HitTester(graph).hitTest(documentPoint, config.hitSlopPx / viewport.zoom)
-        press = Press(pointerId, viewportPoint, graph, viewport, handle, leaf)
+        press = Press(pointerId, viewportPoint, graph, viewport, handle, leaf, selected)
         mode = InteractionMode.PressPending
     }
 
@@ -157,6 +160,13 @@ public class CanvasGestureController(
         when (mode) {
             InteractionMode.DragNode -> {
                 val raw = documentPoint - press.viewport.toDocument(press.start)
+                // 자동 배치 안의 노드는 위치를 배치가 정하므로, 끌면 놓일 순서 자리로 옮긴다.
+                val target = gesture.targets.singleOrNull()
+                val index = target?.let { Layouts.dropIndex(graph, it, raw) }
+                if (target != null && index != null) {
+                    reorderCommand(host.document, target, index)?.let(host::execute)
+                    return
+                }
                 val delta = gesture.snap?.adjust(raw, press.viewport.zoom) ?: raw
                 host.execute(SceneCommand.TransformNodes(TransformOps.move(graph, gesture.targets, delta)))
             }
@@ -244,6 +254,8 @@ public class CanvasGestureController(
         mode = InteractionMode.Idle
     }
 
+    // 누른 순간의 상태를 한 번에 담는 값 묶음이라 나누면 오히려 읽기 어렵다.
+    @Suppress("LongParameterList")
     private class Press(
         val pointerId: Long,
         val start: Vec2,
@@ -251,9 +263,14 @@ public class CanvasGestureController(
         val viewport: Viewport,
         val handle: SelectionHandle?,
         val leaf: NodeId?,
+        selected: List<NodeId>,
     ) {
-        /** 고르기·옮기기 단위인 최상위 노드. */
-        val hit: NodeId? = leaf?.let(graph::topLevelAncestor)
+        /**
+         * 고르기·옮기기 단위. 보통은 최상위 노드이고, 이미 고른 노드(레이어 패널 등으로 고른 Frame 안 노드)를 누르면 그 노드다.
+         */
+        val hit: NodeId? = leaf?.let { leaf ->
+            generateSequence(leaf) { graph.document.node(it)?.parentId }.firstOrNull { it in selected } ?: graph.topLevelAncestor(leaf)
+        }
     }
 
     private class LastTap(val leaf: NodeId, val time: Long, val point: Vec2)
@@ -292,4 +309,10 @@ private fun pickHandle(frame: SelectionFrame, viewport: Viewport, viewportPoint:
         config.handleTouchRadiusPx
     }
     return SelectionHandle.at(handles, viewportPoint, radius)
+}
+
+/** [id]가 이미 [index] 자리면 `null`. */
+private fun reorderCommand(document: SceneDocument, id: NodeId, index: Int): SceneCommand? {
+    val siblings = document.node(id)?.parentId?.let { (document.node(it)?.content as? NodeContent.Container)?.childIds }
+    return if (siblings == null || siblings.indexOf(id) == index) null else SceneCommand.ReorderNode(id, index)
 }
