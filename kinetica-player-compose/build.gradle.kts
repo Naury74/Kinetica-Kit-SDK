@@ -10,6 +10,8 @@ android {
 dependencies {
     api(project(":kinetica-render-compose"))
     api(project(":kinetica-motion"))
+    // 서버 주도 재생(RemoteKineticaPlayer)이 받은 JSON을 같은 검증으로 읽는다.
+    api(project(":kinetica-serialization"))
     implementation(libs.androidx.compose.foundation)
     api(libs.androidx.compose.animation)
 

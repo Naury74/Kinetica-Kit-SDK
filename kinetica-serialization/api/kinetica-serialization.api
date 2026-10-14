@@ -75,6 +75,78 @@ public final class com/naury/kinetica/serialization/LoadResult$NotFound : com/na
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class com/naury/kinetica/serialization/RemoteSceneError {
+}
+
+public final class com/naury/kinetica/serialization/RemoteSceneError$Invalid : com/naury/kinetica/serialization/RemoteSceneError {
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneLoadError;)V
+	public final fun component1 ()Lcom/naury/kinetica/serialization/SceneLoadError;
+	public final fun copy (Lcom/naury/kinetica/serialization/SceneLoadError;)Lcom/naury/kinetica/serialization/RemoteSceneError$Invalid;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/serialization/RemoteSceneError$Invalid;Lcom/naury/kinetica/serialization/SceneLoadError;ILjava/lang/Object;)Lcom/naury/kinetica/serialization/RemoteSceneError$Invalid;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/naury/kinetica/serialization/SceneLoadError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/RemoteSceneError$Network : com/naury/kinetica/serialization/RemoteSceneError {
+	public static final field INSTANCE Lcom/naury/kinetica/serialization/RemoteSceneError$Network;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/RemoteSceneError$Rejected : com/naury/kinetica/serialization/RemoteSceneError {
+	public static final field INSTANCE Lcom/naury/kinetica/serialization/RemoteSceneError$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/RemoteSceneLoader {
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneFetcher;Lcom/naury/kinetica/serialization/SceneRepository;Ljava/lang/String;Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/serialization/SceneCodec;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/serialization/SceneFetcher;Lcom/naury/kinetica/serialization/SceneRepository;Ljava/lang/String;Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/serialization/SceneCodec;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun refresh (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/naury/kinetica/serialization/RemoteSceneState {
+}
+
+public final class com/naury/kinetica/serialization/RemoteSceneState$Failed : com/naury/kinetica/serialization/RemoteSceneState {
+	public fun <init> (Lcom/naury/kinetica/serialization/RemoteSceneError;)V
+	public final fun component1 ()Lcom/naury/kinetica/serialization/RemoteSceneError;
+	public final fun copy (Lcom/naury/kinetica/serialization/RemoteSceneError;)Lcom/naury/kinetica/serialization/RemoteSceneState$Failed;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/serialization/RemoteSceneState$Failed;Lcom/naury/kinetica/serialization/RemoteSceneError;ILjava/lang/Object;)Lcom/naury/kinetica/serialization/RemoteSceneState$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/naury/kinetica/serialization/RemoteSceneError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/RemoteSceneState$Loading : com/naury/kinetica/serialization/RemoteSceneState {
+	public static final field INSTANCE Lcom/naury/kinetica/serialization/RemoteSceneState$Loading;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/RemoteSceneState$Ready : com/naury/kinetica/serialization/RemoteSceneState {
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/serialization/SceneOrigin;Lcom/naury/kinetica/serialization/RemoteSceneError;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/serialization/SceneOrigin;Lcom/naury/kinetica/serialization/RemoteSceneError;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun component2 ()Lcom/naury/kinetica/serialization/SceneOrigin;
+	public final fun component3 ()Lcom/naury/kinetica/serialization/RemoteSceneError;
+	public final fun copy (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/serialization/SceneOrigin;Lcom/naury/kinetica/serialization/RemoteSceneError;)Lcom/naury/kinetica/serialization/RemoteSceneState$Ready;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/serialization/RemoteSceneState$Ready;Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/serialization/SceneOrigin;Lcom/naury/kinetica/serialization/RemoteSceneError;ILjava/lang/Object;)Lcom/naury/kinetica/serialization/RemoteSceneState$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDocument ()Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun getLastError ()Lcom/naury/kinetica/serialization/RemoteSceneError;
+	public final fun getOrigin ()Lcom/naury/kinetica/serialization/SceneOrigin;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/naury/kinetica/serialization/SaveFailure : java/lang/Enum {
 	public static final field InvalidId Lcom/naury/kinetica/serialization/SaveFailure;
 	public static final field IoError Lcom/naury/kinetica/serialization/SaveFailure;
@@ -118,6 +190,34 @@ public final class com/naury/kinetica/serialization/SceneCodec {
 }
 
 public final class com/naury/kinetica/serialization/SceneCodec$Companion {
+}
+
+public abstract interface class com/naury/kinetica/serialization/SceneFetch {
+}
+
+public final class com/naury/kinetica/serialization/SceneFetch$Body : com/naury/kinetica/serialization/SceneFetch {
+	public fun <init> ([BLjava/lang/String;)V
+	public synthetic fun <init> ([BLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBytes ()[B
+	public final fun getEtag ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/SceneFetch$Failed : com/naury/kinetica/serialization/SceneFetch {
+	public static final field INSTANCE Lcom/naury/kinetica/serialization/SceneFetch$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/SceneFetch$NotModified : com/naury/kinetica/serialization/SceneFetch {
+	public static final field INSTANCE Lcom/naury/kinetica/serialization/SceneFetch$NotModified;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/naury/kinetica/serialization/SceneFetcher {
+	public abstract fun fetch (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public abstract interface class com/naury/kinetica/serialization/SceneLoadError {
@@ -182,6 +282,15 @@ public final class com/naury/kinetica/serialization/SceneMigrations {
 
 public final class com/naury/kinetica/serialization/SceneMigrations$Companion {
 	public final fun getNone ()Lcom/naury/kinetica/serialization/SceneMigrations;
+}
+
+public final class com/naury/kinetica/serialization/SceneOrigin : java/lang/Enum {
+	public static final field Cache Lcom/naury/kinetica/serialization/SceneOrigin;
+	public static final field Fallback Lcom/naury/kinetica/serialization/SceneOrigin;
+	public static final field Network Lcom/naury/kinetica/serialization/SceneOrigin;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/serialization/SceneOrigin;
+	public static fun values ()[Lcom/naury/kinetica/serialization/SceneOrigin;
 }
 
 public abstract interface class com/naury/kinetica/serialization/SceneRepository {
