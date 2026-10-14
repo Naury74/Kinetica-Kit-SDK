@@ -62,9 +62,7 @@ internal object SceneJsonWriter {
             }
         }
         node.action?.let { put(K.ACTION, it) }
-        if (node.constraints != LayoutConstraints.Default) put(K.CONSTRAINTS, LayoutJson.constraints(node.constraints))
-        if (node.layoutFill) put(K.LAYOUT_FILL, true)
-        if (node.sizeLimits != SizeLimits.None) put(K.SIZE_LIMITS, LayoutJson.sizeLimits(node.sizeLimits))
+        layout(node)
         node.component?.let { put(K.COMPONENT, it) }
         node.instanceOf?.let { put(K.INSTANCE_OF, ComponentJson.instance(it)) }
         put(K.TRANSFORM, transform(node.transform))
@@ -252,4 +250,12 @@ internal object SceneJsonWriter {
     } catch (_: SerializationException) {
         JsonPrimitive(raw)
     }
+}
+
+/** 배치·크기 제한·움직임 효과. 기본값이면 쓰지 않는다. */
+private fun JsonObjectBuilder.layout(node: SceneNode) {
+    if (node.constraints != LayoutConstraints.Default) put(K.CONSTRAINTS, LayoutJson.constraints(node.constraints))
+    if (node.layoutFill) put(K.LAYOUT_FILL, true)
+    if (node.sizeLimits != SizeLimits.None) put(K.SIZE_LIMITS, LayoutJson.sizeLimits(node.sizeLimits))
+    if (!node.effects.isEmpty) put(K.EFFECTS, EffectsJson.write(node.effects))
 }

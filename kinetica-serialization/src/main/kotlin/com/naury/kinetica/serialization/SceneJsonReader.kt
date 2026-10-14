@@ -13,6 +13,7 @@ import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.LayoutConstraints
 import com.naury.kinetica.core.scene.NodeContent
+import com.naury.kinetica.core.scene.NodeEffects
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeKind
 import com.naury.kinetica.core.scene.NodeStyle
@@ -89,6 +90,8 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             sizeLimits = json.optional(K.SIZE_LIMITS)?.let {
                 LayoutJson.readSizeLimits(it.asObject("$path.${K.SIZE_LIMITS}"), "$path.${K.SIZE_LIMITS}")
             } ?: SizeLimits.None,
+            effects = json.optional(K.EFFECTS)?.let { EffectsJson.read(it.asObject("$path.${K.EFFECTS}"), "$path.${K.EFFECTS}") }
+                ?: NodeEffects.None,
             component = json.optional(K.COMPONENT)?.asString("$path.${K.COMPONENT}"),
             instanceOf = json.optional(K.INSTANCE_OF)?.let {
                 ComponentJson.readInstance(it.asObject("$path.${K.INSTANCE_OF}"), "$path.${K.INSTANCE_OF}")
