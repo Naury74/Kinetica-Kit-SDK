@@ -1,3 +1,16 @@
+public final class com/naury/kinetica/presets/EffectPresets {
+	public static final field INSTANCE Lcom/naury/kinetica/presets/EffectPresets;
+	public static final field all Ljava/util/Map;
+	public static final field attention Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field badge Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field button Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field callToAction Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field card Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field floating Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field skeleton Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final fun listItem (I)Lcom/naury/kinetica/core/scene/NodeEffects;
+}
+
 public abstract interface class com/naury/kinetica/presets/MotionPreset {
 	public abstract fun keys (Ljava/util/List;Lcom/naury/kinetica/presets/PresetParams;)Ljava/util/List;
 }
