@@ -4,12 +4,16 @@ import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Density
@@ -20,6 +24,7 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneGraph
 import com.naury.kinetica.motion.TimelineEvaluator
 import com.naury.kinetica.render.ContentImageLoader
+import com.naury.kinetica.render.SceneFonts
 import com.naury.kinetica.render.SceneImageProvider
 import com.naury.kinetica.render.drawScene
 import java.io.File
@@ -39,10 +44,12 @@ import kotlinx.coroutines.withContext
  * 색 공간은 sRGB, 알파는 premultiplied가 아닌 PNG 표준을 따른다. 출력 위치는 호스트가 정하며 공유는 하지 않는다.
  *
  * @param images 이미지 노드에 쓸 이미지. `null`이면 내보내기 전에 문서의 `content://` 이미지를 [ContentImageLoader]로 읽는다.
+ * @param fonts 글자 노드의 글꼴 이름을 실제 글꼴로 바꾼다. 화면에 준 [com.naury.kinetica.render.LocalSceneFonts]와 같은 것을 준다.
  */
 public class PngExporter(
     context: Context,
     private val images: SceneImageProvider? = null,
+    private val fonts: SceneFonts = SceneFonts.Default,
     private val renderDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
@@ -118,7 +125,8 @@ public class PngExporter(
         withContext(renderDispatcher) {
             val artboard = document.artboard
             val width = request.widthPx
-            val height = (width * artboard.height / artboard.width).roundToInt()
+            val mockup = request.mockup?.let { MockupLayout(it, width, artboard.height / artboard.width) }
+            val height = mockup?.height ?: (width * artboard.height / artboard.width).roundToInt()
             val pixels = width.toLong() * height
             when {
                 width <= 0 || height <= 0 -> return@withContext Rendered.Failed(ExportError.InvalidSize)
@@ -133,12 +141,33 @@ public class PngExporter(
             val density = Density(1f)
             val measurer = TextMeasurer(fontResolver, density, LayoutDirection.Ltr)
             CanvasDrawScope().draw(density, LayoutDirection.Ltr, Canvas(image), Size(width.toFloat(), height.toFloat())) {
-                if (!request.transparentBackground && artboard.background == null) drawRect(Color.White)
-                drawScene(SceneGraph(scene), Mat3.scale(width / artboard.width, height / artboard.height), measurer, images)
+                if (mockup == null) {
+                    if (!request.transparentBackground && artboard.background == null) drawRect(Color.White)
+                    drawScene(SceneGraph(scene), Mat3.scale(width / artboard.width, height / artboard.height), measurer, images, fonts)
+                } else {
+                    drawMockup(mockup, scene, measurer, images)
+                }
             }
             ensureActive()
             Rendered.Image(image.asAndroidBitmap())
         }
+
+    /** 기기 틀을 그리고 화면 자리 안으로 잘라 장면을 그린다. */
+    private fun DrawScope.drawMockup(mockup: MockupLayout, scene: SceneDocument, measurer: TextMeasurer, images: SceneImageProvider) {
+        with(mockup) { drawBehindScreen() }
+        val screen = mockup.screen
+        clipPath(Path().apply { addRoundRect(screen) }) {
+            if (scene.artboard.background ==
+                null
+            ) {
+                drawRect(Color.White, topLeft = Offset(screen.left, screen.top), size = mockup.screenSize)
+            }
+            val toScreen = Mat3.translation(screen.left.toDouble(), screen.top.toDouble()) *
+                Mat3.scale(screen.width / scene.artboard.width, screen.height / scene.artboard.height)
+            drawScene(SceneGraph(scene), toScreen, measurer, images, fonts)
+        }
+        with(mockup) { drawOverScreen() }
+    }
 
     private fun availableMemory(): Long {
         val runtime = Runtime.getRuntime()

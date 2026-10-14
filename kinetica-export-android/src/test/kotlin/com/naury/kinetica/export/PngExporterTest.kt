@@ -97,6 +97,26 @@ class PngExporterTest {
     }
 
     @Test
+    fun `목업은 배경·기기 틀 안에 장면을 그리고 높이를 틀에 맞춘다`() {
+        val (result, bytes) = exportBytes(ExportRequest(widthPx = 400, mockup = MockupFrame(DeviceFrame.Phone, shadow = false)))
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+
+        // 여백 32, 몸체 336, 테두리 약 12 → 화면 약 312×625, 전체 높이 약 712.
+        assertThat((result as ExportResult.Success).heightPx).isIn(705..720)
+        assertThat(bitmap.getPixel(2, 2)).isEqualTo(0xFFEEF0F5.toInt())
+        assertThat(bitmap.getPixel(37, 400)).isEqualTo(0xFF1B1D22.toInt())
+        assertThat(bitmap.getPixel(200, 600)).isEqualTo(0xFF00FF00.toInt())
+    }
+
+    @Test
+    fun `브라우저·태블릿·폴더블 틀도 그린다`() {
+        DeviceFrame.entries.forEach { device ->
+            val (result, _) = exportBytes(ExportRequest(widthPx = 300, mockup = MockupFrame(device)))
+            assertThat(result).isInstanceOf(ExportResult.Success::class.java)
+        }
+    }
+
+    @Test
     fun `크기 상한을 넘거나 잘못된 크기는 그리지 않는다`() {
         assertThat(exportBytes(ExportRequest(widthPx = 4_000, maxPixels = 1_000_000)).first)
             .isEqualTo(ExportResult.Failure(ExportError.DimensionsExceeded))
