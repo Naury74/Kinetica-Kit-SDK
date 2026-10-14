@@ -68,6 +68,18 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | B8 | **완료** → 앱 종료 → 다시 실행, 폴더블 접고 펴기 | 같은 배치. 넓은 화면은 가로 비율대로 펼쳐짐 | `KineticaBoardStateTest` |
 | B9 | **XML 화면** | XML View 위젯도 같은 방식으로 편집 | `KineticaBoardViewTest` |
 
+### 디자인 — Kinetica Studio (docs 32)
+
+| # | 해 볼 것 | 기대 결과 | 자동 테스트 |
+| --- | --- | --- | --- |
+| D1 | **도형 더보기** → 별·다각형·화살표 | 별·육각형·끝에 화살표 달린 선이 들어옴 | `StyleInspectorTest` |
+| D2 | 속성 **채우기** 선형·원형, 시작·끝 색, 각도 | 그라디언트가 바로 보임 | `StyleEditsTest`, `SceneLayoutTest` |
+| D3 | **효과** + 바깥 그림자·+ 안쪽 그림자, 퍼짐·흐림 | 그림자가 여러 개 쌓이고 값대로 바뀜 | `StyleEditsTest`, `SceneLayoutTest` |
+| D4 | 사각형 **모서리별**, 선 **점선** | 모서리마다 다른 둥글기, 점선 | `StyleEditsTest` |
+| D5 | 글자 **글자 수정** → 일부 고르고 굵게·색 | 고른 부분만 바뀌고, 이어 쓰면 구간이 늘어남. 실행 취소 한 번에 되돌아감 | `RichTextTest`, `TextSpansTest` |
+| D6 | 속성 **글꼴** 명조·기울임·밑줄 | 글자 전체 모양이 바뀜 | `RichTextTest` |
+| D7 | **목업 내보내기** | 휴대폰 틀 안에 장면이 든 PNG | `PngExporterTest` |
+
 ### 모션
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
