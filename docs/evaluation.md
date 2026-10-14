@@ -71,6 +71,7 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | B11 | 편집 중 위젯을 화면 아래 끝으로 끌고 머물기 | 보드가 아래로 스크롤되고 위젯이 따라감 | `KineticaBoardTest` |
 | B12 | TalkBack 켜고 편집 중 위젯의 동작 메뉴 | 옮기기·크게·작게·빼기 | `KineticaBoardTest` |
 | B13 | **+ 위젯 추가** → 메모를 두 번 | 메모 1·메모 2가 따로 생기고 각자 쓴 글이 유지됨 | `KineticaBoardStateTest` |
+| B15 | **효과 예** → 타일·목록·XML 버튼 누르기 | 리플·눌림·기울기, 목록이 차례로 등장, 배지 두근·반짝임·빛 번짐·흔들기. 눌린 수가 올라감 | `NodeEffectsTest`, `ViewEffectsTest` |
 | B14 | 키보드 연결 → 편집 중 Tab으로 위젯 고르고 방향키·Shift+방향키·Delete | 옮기기·크기·빼기 | `KineticaBoardTest` |
 
 ### 디자인 — Kinetica Studio (docs 32)

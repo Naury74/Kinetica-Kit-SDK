@@ -37,6 +37,7 @@
 - **디자인**: 사각형·타원·다각형·별·선·화살표, 단색·선형·원형 그라디언트, 바깥·안쪽 그림자 여러 개(퍼짐), 레이어 흐림, 점선, 모서리별 반지름, 리치 텍스트(구간별 굵기·기울임·밑줄·크기·색·글꼴, 호스트 글꼴), 기기 틀 목업 PNG([docs/32](docs/32-studio.md))
 - **자동 배치·화면 크기 대응**: Frame 가로·세로 자동 배치(간격·여백·정렬·늘이기·내용 맞춤·남는 공간 채우기·줄 바꿈), 크기 최소·최대, 글자에 맞춘 상자(높이·너비 자동), 끌어서 자동 배치 안 순서 바꾸기, 고른 노드를 자동 배치로 감싸기, 노드 제약(왼쪽·오른쪽·좌우·가운데·비율), 재생기 `SceneFit.Responsive`로 기기 화면 모양에 맞춰 펼치기
 - **컴포넌트·디자인 토큰**: Frame을 컴포넌트로 만들고 인스턴스를 넣으면 원본을 고칠 때 함께 바뀜(인스턴스에서 바꾼 값은 유지·되돌리기·분리), 색 토큰에 채우기·선을 이어 토큰 하나로 전체 색 바꾸기, 기본 키트(버튼·보조 버튼·칩·카드·토글·입력·목록 항목·탭 바)
+- **움직임 효과**: 호스트의 Compose 뷰(`Modifier.kineticaEffects`)·XML View(`ViewEffects.apply`)·장면 노드·보드 위젯에 한 줄로 붙이는 리플·눌림·기울기·어둡게, 나타나기 8종, 반복 8종(두근·둥실·반짝임·빛 번짐 등)과 묶음 `EffectPresets`. 클릭을 가로채지 않고 "애니메이션 줄이기"를 따른다([docs/33](docs/33-effects.md))
 - **서버 주도 화면**: 호스트가 받은 장면 JSON을 같은 검증으로 읽어 재생(`RemoteSceneLoader`·`RemoteKineticaPlayer`). 캐시·앱에 넣은 기본 문서·etag(다시 켜도 유지)·서명 확인(`SceneVerifier`), 실패하거나 호스트가 거절하면 지금 화면 유지. 배치가 바뀌어도 호스트 뷰 상태·데이터·동작은 이어짐
 - **호스트 UI 조립**: 호스트 뷰 자리(HostSlot)·Frame(모서리·자르기)·그림자·글자 굵기, 데이터 바인딩(글자·보임·이미지·채우기·불투명도), 탭 동작, 노드마다 실제 Compose 요소로 그리는 `SceneLayout`, 글자를 두 번 눌러 바로 고치기
 - **문서**: 그룹·사각형·타원·경로·글자·이미지 노드, 불변 문서, 명령으로만 수정, 모든 결과를 검증(id·순환·깊이·유한값·상한·URI)
@@ -113,10 +114,10 @@ KineticaPlayer(document, slots = slots, data = data, fit = SceneFit.Responsive, 
 | `kinetica-history` | Kotlin JVM | `KineticaSession`, 트랜잭션, 실행 취소 |
 | `kinetica-motion` | Kotlin JVM | keyframe 평가, easing, 재생 제어, 장면 morph, 전환 진행률 |
 | `kinetica-guides` | Kotlin JVM | 안내선 스냅 |
-| `kinetica-presets` | Kotlin JVM | 모션 프리셋, 기본 컴포넌트 키트(`UiKit`) |
+| `kinetica-presets` | Kotlin JVM | 모션 프리셋, 기본 컴포넌트 키트(`UiKit`), 움직임 효과 묶음(`EffectPresets`) |
 | `kinetica-serialization` | Kotlin JVM | JSON 읽기·쓰기, migration, 파일 저장소, 서버 문서 받기(`RemoteSceneLoader`) |
 | `kinetica-java` | Kotlin JVM | Java 호스트용 정적 입구(선택) |
-| `kinetica-render-compose` | Android | Compose Canvas 그리기 |
+| `kinetica-render-compose` | Android | 장면 그리기(`SceneLayout`·`drawScene`), 움직임 효과(`Modifier.kineticaEffects`·`ViewEffects`) |
 | `kinetica-gestures` | Android | 캔버스 포인터 상태 기계 |
 | `kinetica-editor-compose` | Android | `KineticaEditor` |
 | `kinetica-player-compose` | Android | `KineticaPlayer`·`RemoteKineticaPlayer`, 전환 그리기·끌어서 닫기 |

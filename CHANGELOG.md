@@ -21,5 +21,6 @@
 - motion: 너비·높이·모서리·선 색·흐림·그림자 애니메이션
 - 서버 주도 화면: `RemoteSceneLoader`·`RemoteKineticaPlayer`
 - 자동 배치 줄 바꿈·크기 최소·최대·글자 자동 크기(`TextMeasurer`/`SceneTextMeasurer`)·끌어서 순서 바꾸기
+- 움직임 효과 `NodeEffects`(누름·나타나기·반복), Compose `Modifier.kineticaEffects`, XML `ViewEffects`, 보드 위젯 효과, `EffectPresets`
 - 그라디언트 애니메이션, 서버 화면 etag 저장·서명 확인, 보드 여러 개 위젯·키보드 편집
 - 샘플: sample-board, 갤러리 서버 화면 예
