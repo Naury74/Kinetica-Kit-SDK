@@ -14,7 +14,7 @@ import com.naury.kinetica.core.scene.LoopKind
 import com.naury.kinetica.core.scene.PressKind
 import com.naury.kinetica.core.scene.SceneNode
 
-/** 미리 만든 움직임 효과. 편집 캔버스에서는 움직이지 않고 미리보기·재생기에서 보인다. */
+/** 미리 만든 움직임 효과. 편집 캔버스에서는 움직이지 않고 바로 아래 미리보기([EffectPreview])·재생기에서 보인다. */
 @Composable
 internal fun MotionSection(node: SceneNode, edits: MotionEdits, theme: StudioTheme) {
     val effects = node.effects

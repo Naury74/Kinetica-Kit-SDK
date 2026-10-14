@@ -244,4 +244,5 @@
     <string name="kinetica_section_accessibility">Accessibility</string>
     <string name="kinetica_field_accessibility_label">Screen reader label</string>
     <string name="kinetica_accessibility_hidden">Decorative (not read)</string>
+    <string name="kinetica_motion_replay">Replay</string>
 </resources>

@@ -243,4 +243,5 @@
     <string name="kinetica_section_accessibility">접근성</string>
     <string name="kinetica_field_accessibility_label">화면 읽기 이름</string>
     <string name="kinetica_accessibility_hidden">장식(읽지 않음)</string>
+    <string name="kinetica_motion_replay">다시 보기</string>
 </resources>

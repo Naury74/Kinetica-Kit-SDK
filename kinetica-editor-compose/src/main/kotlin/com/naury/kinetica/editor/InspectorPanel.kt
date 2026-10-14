@@ -68,6 +68,7 @@ internal fun InspectorPanel(
         if (edits.layout.isLaidOut(node)) LayoutChildSection(node, edits.layout, theme) else ConstraintsSection(node, edits.layout, theme)
         SizeLimitsSection(node, edits.layout, theme)
         MotionSection(node, edits.motion, theme)
+        EffectPreview(document, node, theme)
         BindingFields(node, edits.property, theme)
         AccessibilityFields(node, edits.accessibility, theme)
     }
