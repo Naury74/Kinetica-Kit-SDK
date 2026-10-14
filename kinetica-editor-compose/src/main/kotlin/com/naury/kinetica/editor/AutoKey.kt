@@ -1,5 +1,6 @@
 package com.naury.kinetica.editor
 
+import com.naury.kinetica.core.animation.AnimatableProperties
 import com.naury.kinetica.core.animation.AnimatableProperty
 import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.KeyValue
@@ -25,6 +26,8 @@ internal object AutoKey {
         AnimatableProperty.ScaleY,
         AnimatableProperty.RotationDegrees,
     )
+
+    private val styleProperties = AnimatableProperty.entries - transformProperties.toSet()
 
     fun translate(
         base: SceneDocument,
@@ -59,32 +62,14 @@ internal object AutoKey {
                 transform = property.write(transform, value)
             }
         }
-        var style = wanted.style.copy(
-            opacity = original.style.opacity,
-            fill = original.style.fill,
-            strokeWidth = original.style.strokeWidth,
-        )
-        fun animate(property: AnimatableProperty, changed: Boolean, value: KeyValue, applyToBase: () -> Unit) {
-            if (!changed) return
-            if (timeline.track(wanted.id, property) != null) keys += key(timeline, wanted.id, property, value, timeMs) else applyToBase()
+        // 모양 속성: 트랙이 있으면 keyframe으로 넣고 바탕 값은 그대로 둔다. 트랙이 없으면 바탕 값을 바꾼다.
+        var updated = wanted.copy(transform = transform)
+        styleProperties.forEach { property ->
+            if (timeline.track(wanted.id, property) == null) return@forEach
+            val want = AnimatableProperties.read(wanted, property)
+            if (want != null && want != AnimatableProperties.read(shown, property)) keys += key(timeline, wanted.id, property, want, timeMs)
+            AnimatableProperties.read(original, property)?.let { updated = AnimatableProperties.write(updated, property, it) }
         }
-        animate(AnimatableProperty.Opacity, wanted.style.opacity != shown.style.opacity, KeyValue.Scalar(wanted.style.opacity)) {
-            style = style.copy(opacity = wanted.style.opacity)
-        }
-        animate(
-            AnimatableProperty.StrokeWidth,
-            wanted.style.strokeWidth != shown.style.strokeWidth,
-            KeyValue.Scalar(wanted.style.strokeWidth),
-        ) {
-            style = style.copy(strokeWidth = wanted.style.strokeWidth)
-        }
-        val fill = wanted.style.fill
-        if (fill != null) {
-            animate(AnimatableProperty.Fill, fill != shown.style.fill, KeyValue.Color(fill)) { style = style.copy(fill = fill) }
-        } else if (shown.style.fill != null && timeline.track(wanted.id, AnimatableProperty.Fill) == null) {
-            style = style.copy(fill = null)
-        }
-        val updated = wanted.copy(transform = transform, style = style)
         val baseEdit = if (updated == original) emptyList() else listOf(SceneCommand.UpdateProperties(updated))
         return baseEdit + keys
     }

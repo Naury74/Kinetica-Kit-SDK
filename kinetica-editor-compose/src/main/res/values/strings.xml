@@ -177,4 +177,12 @@
     <string name="kinetica_go_to_main">Go to main</string>
     <string name="kinetica_reset_overrides">Reset overrides (%1$d)</string>
     <string name="kinetica_detach">Detach</string>
+    <string name="kinetica_property_fill">Fill</string>
+    <string name="kinetica_property_width">W</string>
+    <string name="kinetica_property_height">H</string>
+    <string name="kinetica_property_corner">Corner</string>
+    <string name="kinetica_property_stroke">Stroke</string>
+    <string name="kinetica_property_blur">Blur</string>
+    <string name="kinetica_property_shadow_blur">Shadow blur</string>
+    <string name="kinetica_property_shadow_y">Shadow Y</string>
 </resources>

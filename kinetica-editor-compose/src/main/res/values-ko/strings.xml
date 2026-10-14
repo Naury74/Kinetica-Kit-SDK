@@ -176,4 +176,12 @@
     <string name="kinetica_go_to_main">원본으로</string>
     <string name="kinetica_reset_overrides">덮어쓴 값 되돌리기(%1$d)</string>
     <string name="kinetica_detach">분리</string>
+    <string name="kinetica_property_fill">채우기</string>
+    <string name="kinetica_property_width">너비</string>
+    <string name="kinetica_property_height">높이</string>
+    <string name="kinetica_property_corner">모서리</string>
+    <string name="kinetica_property_stroke">선 색</string>
+    <string name="kinetica_property_blur">흐림</string>
+    <string name="kinetica_property_shadow_blur">그림자 흐림</string>
+    <string name="kinetica_property_shadow_y">그림자 Y</string>
 </resources>

@@ -288,6 +288,14 @@ private val ANIMATED = listOf(
     AnimatableProperty.ScaleX to R.string.kinetica_property_scale_x,
     AnimatableProperty.ScaleY to R.string.kinetica_property_scale_y,
     AnimatableProperty.Opacity to R.string.kinetica_property_opacity,
+    AnimatableProperty.Fill to R.string.kinetica_property_fill,
+    AnimatableProperty.Width to R.string.kinetica_property_width,
+    AnimatableProperty.Height to R.string.kinetica_property_height,
+    AnimatableProperty.CornerRadius to R.string.kinetica_property_corner,
+    AnimatableProperty.Stroke to R.string.kinetica_property_stroke,
+    AnimatableProperty.Blur to R.string.kinetica_property_blur,
+    AnimatableProperty.ShadowBlur to R.string.kinetica_property_shadow_blur,
+    AnimatableProperty.ShadowOffsetY to R.string.kinetica_property_shadow_y,
 )
 private val PRESETS = listOf(
     "fade.in" to R.string.kinetica_preset_fade_in,

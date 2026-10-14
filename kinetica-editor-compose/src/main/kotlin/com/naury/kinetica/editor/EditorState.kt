@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.naury.kinetica.core.animation.AnimatableProperties
 import com.naury.kinetica.core.animation.AnimatableProperty
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.Keyframe
@@ -141,12 +142,7 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
     /** 지금 보이는 값으로 [property] keyframe을 재생 위치에 넣는다. timeline이 없으면 먼저 만든다. */
     fun addKey(id: NodeId, property: AnimatableProperty): Boolean {
         val shown = document.node(id) ?: return false
-        val value = when (property) {
-            AnimatableProperty.Opacity -> KeyValue.Scalar(shown.style.opacity)
-            AnimatableProperty.StrokeWidth -> KeyValue.Scalar(shown.style.strokeWidth)
-            AnimatableProperty.Fill -> KeyValue.Color(shown.style.fill ?: return false)
-            else -> KeyValue.Scalar(property.read(shown.transform))
-        }
+        val value = AnimatableProperties.read(shown, property) ?: return false
         return transaction("add-key") {
             val ready = timeline != null ||
                 session.commands.execute(SceneCommand.PutTimeline(Timeline(MAIN_TIMELINE, DEFAULT_DURATION_MS))) is CommandResult.Applied
