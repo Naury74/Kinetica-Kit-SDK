@@ -24,6 +24,19 @@ internal fun checkNode(node: SceneNode, limits: SceneLimits, sink: ViolationSink
     checkContent(node, limits, sink)
     checkBindings(node, sink)
     checkComponent(node, limits, sink)
+    checkSizeLimits(node, limits, sink)
+}
+
+private fun checkSizeLimits(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
+    val size = node.sizeLimits
+    if (size == SizeLimits.None) return
+    val badValue = size.values.any { !it.isFinite() || it < 0.0 || it > limits.maxCoordinateMagnitude } ||
+        listOfNotNull(size.maxWidth, size.maxHeight).any { it <= 0.0 }
+    val crossed = listOf(size.minWidth to size.maxWidth, size.minHeight to size.maxHeight)
+        .any { (min, max) -> min != null && max != null && min > max }
+    if (badValue || crossed) {
+        sink.add(ViolationCode.InvalidGeometry, "크기 최소·최대는 0 이상 유한하고 최소가 최대 이하여야 합니다.", node.id)
+    }
 }
 
 private fun checkBindings(node: SceneNode, sink: ViolationSink) {
@@ -122,7 +135,7 @@ private fun checkFrame(frame: NodeContent.Frame, id: NodeId, limits: SceneLimits
 }
 
 private fun checkLayout(layout: AutoLayout, id: NodeId, limits: SceneLimits, sink: ViolationSink) {
-    val values = layout.padding.values + layout.gap
+    val values = layout.padding.values + layout.gap + layout.lineGap
     if (values.any { !it.isFinite() || it < 0.0 || it > limits.maxCoordinateMagnitude }) {
         sink.add(ViolationCode.InvalidGeometry, "자동 배치 간격·여백은 0 이상 상한 이하여야 합니다.", id)
     }

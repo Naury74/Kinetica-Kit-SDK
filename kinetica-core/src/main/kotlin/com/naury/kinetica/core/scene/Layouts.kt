@@ -10,11 +10,15 @@ import com.naury.kinetica.core.geometry.Size
  */
 public object Layouts {
     /**
-     * 자동 배치 Frame의 자식 위치·늘이기와 내용 맞춤 크기를 계산한다. 안쪽 Frame부터 계산하며, 바뀐 것이 없으면 같은 문서를 돌려준다.
+     * 자동 배치 Frame의 자식 위치·늘이기와 내용 맞춤 크기를 계산하고, 크기를 [SceneNode.sizeLimits] 안으로 자른다.
+     * 안쪽 Frame부터 계산하며, 바뀐 것이 없으면 같은 문서를 돌려준다.
      */
     public fun apply(document: SceneDocument): SceneDocument {
-        if (document.nodes.values.none { (it.content as? NodeContent.Frame)?.layout != null }) return document
+        val limited = document.nodes.values.filter { it.sizeLimits != SizeLimits.None }
+        if (limited.isEmpty() && document.nodes.values.none { (it.content as? NodeContent.Frame)?.layout != null }) return document
         val nodes = LinkedHashMap(document.nodes)
+        // 직접 크기를 바꾼 노드도 범위 안에 둔다. 배치 중 크기 변경은 resize가 자른다.
+        limited.forEach { node -> node.content.sizeOrNull()?.let { resize(nodes, node.id, it) } }
         // 바깥 Frame이 안쪽 Frame을 늘이면 안쪽 배치를 다시 해야 한다. 깊이만큼 반복하면 충분하고, 보통 두 번 안에 멈춘다.
         repeat(MAX_PASSES) {
             var changed = false
@@ -93,6 +97,7 @@ public object Layouts {
         private val hugCross = axis.cross(layout.hugWidth, layout.hugHeight)
 
         fun run(): Boolean {
+            if (layout.wrap && !hugMain) return runWrapped()
             val innerCross = innerCross()
             val stretched = layout.crossAlign == CrossAlign.Stretch && innerCross > 0.0 && stretch(innerCross)
             val filled = !hugMain && fill()
@@ -100,8 +105,53 @@ public object Layouts {
             val totalMain = bounds.sumOf { axis.main(it.second.width, it.second.height) } + layout.gap * (bounds.size - 1).coerceAtLeast(0)
             val frameMain = if (hugMain) padStart + totalMain + padEnd else axis.main(frame.size.width, frame.size.height)
             val resized = resizeFrame(frameMain, innerCross)
-            val placed = place(bounds, frameMain - padStart - padEnd - totalMain, innerCross)
+            // 크기 최소·최대로 잘렸을 수 있으므로 실제 크기 기준으로 놓는다.
+            val actual = nodes.getValue(id).content.sizeOrNull() ?: frame.size
+            val actualMain = axis.main(actual.width, actual.height)
+            val actualCross = if (hugCross) axis.cross(actual.width, actual.height) - crossStart - crossEnd else innerCross
+            val placed = place(bounds, actualMain - padStart - padEnd - totalMain, actualCross)
             return stretched || filled || resized || placed
+        }
+
+        /** 줄 바꿈 배치. 자식을 안쪽 길이에 맞춰 줄로 나누고, 줄마다 배치 방향 정렬을, 줄 안에서 교차 정렬을 한다. */
+        private fun runWrapped(): Boolean {
+            val innerMain = axis.main(frame.size.width, frame.size.height) - padStart - padEnd
+            val bounds = items.mapNotNull { child -> boundsInParent(nodes, child)?.let { child to it } }
+            val lines = breakLines(bounds, innerMain)
+            val lineCross = lines.map { line -> line.maxOf { axis.cross(it.second.width, it.second.height) } }
+            val contentCross = lineCross.sum() + layout.lineGap * (lines.size - 1).coerceAtLeast(0)
+            val resized = resizeFrame(axis.main(frame.size.width, frame.size.height), contentCross)
+            // 고정 크기 Frame이면 줄 묶음 전체도 교차 정렬을 따른다.
+            val spare = if (hugCross) 0.0 else innerCross() - contentCross
+            var offset = crossStart + when (layout.crossAlign) {
+                CrossAlign.Start, CrossAlign.Stretch -> 0.0
+                CrossAlign.Center -> spare / 2.0
+                CrossAlign.End -> spare
+            }
+            return lines.indices.fold(resized) { changed, index ->
+                val line = lines[index]
+                val total = line.sumOf { axis.main(it.second.width, it.second.height) } + layout.gap * (line.size - 1)
+                val placed = place(line, innerMain - total, lineCross[index], offset)
+                offset += lineCross[index] + layout.lineGap
+                placed || changed
+            }
+        }
+
+        private fun breakLines(bounds: List<Pair<NodeId, Rect>>, innerMain: Double): List<List<Pair<NodeId, Rect>>> {
+            val lines = mutableListOf<MutableList<Pair<NodeId, Rect>>>()
+            var used = 0.0
+            bounds.forEach { item ->
+                val length = axis.main(item.second.width, item.second.height)
+                val current = lines.lastOrNull()
+                if (current == null || used + layout.gap + length > innerMain + EPSILON) {
+                    lines += mutableListOf(item)
+                    used = length
+                } else {
+                    current += item
+                    used += layout.gap + length
+                }
+            }
+            return lines
         }
 
         /** 채움 자식이 배치 방향의 남는 공간을 똑같이 나눈다. 내용에 맞추는 Frame에서는 남는 공간이 없어 쓰지 않는다. */
@@ -148,7 +198,7 @@ public object Layouts {
             return size.width > 0.0 && size.height > 0.0 && resize(nodes, id, size)
         }
 
-        private fun place(bounds: List<Pair<NodeId, Rect>>, free: Double, innerCross: Double): Boolean {
+        private fun place(bounds: List<Pair<NodeId, Rect>>, free: Double, innerCross: Double, crossBase: Double = crossStart): Boolean {
             val gap =
                 layout.gap +
                     if (layout.mainAlign == MainAlign.SpaceBetween && bounds.size > 1) free.coerceAtLeast(0.0) / (bounds.size - 1) else 0.0
@@ -159,7 +209,7 @@ public object Layouts {
             }
             return bounds.fold(false) { changed, (child, rect) ->
                 val cross = axis.cross(rect.width, rect.height)
-                val crossOffset = crossStart + when (layout.crossAlign) {
+                val crossOffset = crossBase + when (layout.crossAlign) {
                     CrossAlign.Start, CrossAlign.Stretch -> 0.0
                     CrossAlign.Center -> (innerCross - cross) / 2.0
                     CrossAlign.End -> innerCross - cross
@@ -210,9 +260,10 @@ public object Layouts {
      * 크기가 있는 노드의 크기를 바꾼다. pivot은 같은 비율 자리에 두어 회전 없는 노드의 왼쪽 위가 그대로다.
      * 자동 배치가 아닌 Frame이면 자식도 제약대로 따라간다.
      */
-    private fun resize(nodes: MutableMap<NodeId, SceneNode>, id: NodeId, size: Size): Boolean {
+    private fun resize(nodes: MutableMap<NodeId, SceneNode>, id: NodeId, wanted: Size): Boolean {
         val node = nodes.getValue(id)
         val old = node.content.sizeOrNull() ?: return false
+        val size = node.sizeLimits.clamp(wanted)
         if (kotlin.math.abs(old.width - size.width) < EPSILON && kotlin.math.abs(old.height - size.height) < EPSILON) return false
         val fx = if (old.width > 0.0) size.width / old.width else 1.0
         val fy = if (old.height > 0.0) size.height / old.height else 1.0

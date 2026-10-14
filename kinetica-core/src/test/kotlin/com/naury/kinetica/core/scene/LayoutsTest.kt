@@ -222,4 +222,67 @@ class LayoutsTest {
 
         assertThat(SceneValidator().validate(document(listOf(bad)))).isNotEmpty()
     }
+
+    @Test
+    fun `줄 바꿈은 안쪽 폭을 넘는 자식을 다음 줄로 넘기고 내용 맞춤 높이는 줄을 더한다`() {
+        val layout = AutoLayout(
+            LayoutDirection.Horizontal,
+            gap = 10.0,
+            padding = Insets.all(10.0),
+            hugHeight = true,
+            wrap = true,
+            lineGap = 20.0,
+            crossAlign = CrossAlign.Center,
+        )
+        val scene = document(
+            listOf(
+                frame("f", listOf("a", "b", "c"), layout, size = Size(250.0, 10.0)),
+                rect("a", parent = "f"),
+                rect("b", parent = "f", size = Size(100.0, 30.0)),
+                rect("c", parent = "f"),
+            ),
+        )
+
+        val laid = Layouts.apply(scene)
+
+        // 안쪽 폭 230: a(100)+10+b(100)=210은 한 줄, c는 다음 줄.
+        assertThat(laid.x("b")).isEqualTo(120.0)
+        assertThat(laid.y("b")).isEqualTo(20.0)
+        assertThat(laid.x("c")).isEqualTo(10.0)
+        assertThat(laid.y("c")).isEqualTo(80.0)
+        assertThat(laid.size("f")).isEqualTo(Size(250.0, 140.0))
+        assertThat(Layouts.apply(laid)).isSameInstanceAs(laid)
+    }
+
+    @Test
+    fun `크기 최소·최대는 채움·내용 맞춤·직접 바꾼 크기를 자른다`() {
+        val row = AutoLayout(LayoutDirection.Horizontal, hugHeight = true)
+        val scene = document(
+            listOf(
+                frame("f", listOf("a", "b"), row, size = Size(1000.0, 10.0)),
+                rect("a", parent = "f").copy(layoutFill = true, sizeLimits = SizeLimits(maxWidth = 300.0)),
+                rect("b", parent = "f"),
+                frame("hug", listOf("c"), AutoLayout(LayoutDirection.Vertical, hugWidth = true, hugHeight = true))
+                    .copy(sizeLimits = SizeLimits(minWidth = 250.0)),
+                rect("c", parent = "hug"),
+                rect("d").copy(sizeLimits = SizeLimits(minHeight = 80.0)),
+            ),
+        )
+
+        val laid = Layouts.apply(scene)
+
+        assertThat(laid.size("a").width).isEqualTo(300.0)
+        assertThat(laid.x("b")).isEqualTo(300.0)
+        assertThat(laid.size("hug")).isEqualTo(Size(250.0, 50.0))
+        assertThat(laid.size("d").height).isEqualTo(80.0)
+    }
+
+    @Test
+    fun `최소가 최대보다 큰 크기 제한은 받지 않는다`() {
+        val scene = document(listOf(rect("a").copy(sizeLimits = SizeLimits(minWidth = 200.0, maxWidth = 100.0))))
+        val zero = document(listOf(rect("a").copy(sizeLimits = SizeLimits(maxHeight = 0.0))))
+
+        assertThat(SceneValidator().validate(scene).map { it.code }).contains(ViolationCode.InvalidGeometry)
+        assertThat(SceneValidator().validate(zero).map { it.code }).contains(ViolationCode.InvalidGeometry)
+    }
 }
