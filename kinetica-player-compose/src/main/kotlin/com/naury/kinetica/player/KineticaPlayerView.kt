@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,7 +41,8 @@ public fun interface OnSceneActionListener {
  * player.data = SceneData.of("sales.today" to DataValue.Number(1_284_000.0))
  * ```
  *
- * 문서·로더·데이터는 메인 스레드에서 바꾼다. 처음 붙을 때와 [setLoader]로 로더를 바꿀 때 서버에서 새로 받는다.
+ * 문서·로더·데이터는 메인 스레드에서 바꾼다. [setLoader]로 로더를 정하면 그때 서버에서 받고, 다시 받으려면 [refresh]를 부른다.
+ * XML 속성: `app:kinetica_fit`(`contain`·`responsive`), `app:kinetica_autoplay`(boolean).
  */
 public class KineticaPlayerView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     FrameLayout(context, attrs, defStyleAttr) {
@@ -50,6 +52,7 @@ public class KineticaPlayerView @JvmOverloads constructor(context: Context, attr
     private var listener by mutableStateOf<OnSceneActionListener?>(null)
     private var fitState by mutableStateOf(SceneFit.Contain)
     private var autoplayState by mutableStateOf(true)
+    private var refreshKey by mutableIntStateOf(0)
 
     /** 바인딩에 쓸 호스트 데이터. 바꾸면 바로 다시 그린다(숫자는 올라가며 바뀐다). */
     public var data: SceneData
@@ -73,6 +76,14 @@ public class KineticaPlayerView @JvmOverloads constructor(context: Context, attr
         }
 
     init {
+        context.obtainStyledAttributes(attrs, R.styleable.KineticaPlayerView, defStyleAttr, 0).apply {
+            try {
+                if (getInt(R.styleable.KineticaPlayerView_kinetica_fit, 0) == 1) fitState = SceneFit.Responsive
+                autoplayState = getBoolean(R.styleable.KineticaPlayerView_kinetica_autoplay, true)
+            } finally {
+                recycle()
+            }
+        }
         addView(
             ComposeView(context).apply { setContent { PlayerContent() } },
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT),
@@ -87,6 +98,11 @@ public class KineticaPlayerView @JvmOverloads constructor(context: Context, attr
     /** 서버 화면을 재생한다. 받기 전에는 비어 있고, 받지 못하면 로더의 캐시·기본 문서를 보여 준다. */
     public fun setLoader(loader: RemoteSceneLoader) {
         source = Source.Remote(loader)
+    }
+
+    /** 서버 화면을 다시 받는다(당겨서 새로 고침 등). 문서를 재생 중이면 아무 일도 없다. */
+    public fun refresh() {
+        refreshKey++
     }
 
     /** 호스트 뷰 노드에 넣을 View. `null`이면 호스트 뷰 노드는 비어 보인다. */
@@ -121,6 +137,7 @@ public class KineticaPlayerView @JvmOverloads constructor(context: Context, attr
             is Source.Remote -> RemoteKineticaPlayer(
                 current.loader,
                 Modifier.fillMaxSize(),
+                refreshKey = refreshKey,
                 data = dataState,
                 slots = slots,
                 onAction = onAction,

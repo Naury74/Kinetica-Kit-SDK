@@ -17,7 +17,10 @@ public data class SceneAction(val name: String, val params: Map<String, String> 
     public operator fun get(key: String): String? = params[key]
 
     public companion object {
-        /** [raw]를 나눈다. `?`가 없으면 값 없이 이름만이다. 같은 키가 여러 번이면 마지막 값이다. */
+        /**
+         * [raw]를 나눈다. 너그럽게 읽으며 예외를 던지지 않는다: `?`가 없으면 값 없이 이름만, `=`가 없는 키는 빈 값,
+         * 같은 키가 여러 번이면 마지막 값, 빈 글자면 이름도 빈 글자다. 문서에 저장된 동작은 검증([isValidAction])을 통과한 것이라 이름이 비지 않는다.
+         */
         @JvmStatic
         public fun parse(raw: String): SceneAction {
             val name = raw.substringBefore('?').trim()

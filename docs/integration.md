@@ -68,7 +68,11 @@ player.setLoader(loader)                                   // 또는 player.setD
 player.setHostViews { key, context -> chartView(context) } // 호스트 뷰 노드(key)에 넣을 View
 player.setOnActionListener { raw -> handle(SceneAction.parse(raw)) }
 player.data = SceneData.of("sales.today" to DataValue.Number(1_284_000.0))
+swipeRefresh.setOnRefreshListener { player.refresh() }      // setLoader 때 한 번 받고, 다시 받을 때만 부른다
 ```
+
+XML 속성은 `app:kinetica_fit="responsive"`, `app:kinetica_autoplay="false"`입니다. Fragment에서는 `BoardStates.obtain(this, …)`처럼
+Fragment를 그대로 넘깁니다(ViewModel·lifecycle 주인이면 된다).
 
 보드는 `KineticaBoardView`·`BoardStates.obtain`([docs/31](31-board.md)), 효과는 `ViewEffects.apply`([docs/33](33-effects.md))입니다.
 
