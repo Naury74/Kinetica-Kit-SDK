@@ -48,6 +48,17 @@ public class KineticaBoardState private constructor(
 
     public val history: HistoryController get() = session.history
 
+    internal val commands get() = session.commands
+
+    /** 놓인 위젯 키(묶음 안의 것 포함). */
+    private val placedWidgetKeys: Set<String>
+        get() = session.document.value.let { document ->
+            document.rootOrder.flatMap { id ->
+                val node = document.node(id) ?: return@flatMap emptyList()
+                node.stackMembers().map { it.key }.ifEmpty { listOf(widgetKeyOf(node)) }
+            }.toSet()
+        }
+
     /**
      * 보드에 놓인 자리 id(그리기 순서). 한 번만 놓는 위젯은 위젯 키와 같고, [BoardWidget.multiple] 위젯은 `memo`, `memo.2`처럼 자리마다 다르다.
      * 자리 id는 옮기거나 저장해도 바뀌지 않으므로 호스트가 자리마다 데이터를 둘 때 키로 쓴다. 위젯 키는 [widgetKeyOf].
@@ -56,13 +67,17 @@ public class KineticaBoardState private constructor(
 
     /** 더 놓을 수 있는 위젯(아직 놓이지 않았거나 여러 개 놓을 수 있는 것). 위젯 추가 목록에 쓴다. */
     public val availableWidgets: List<BoardWidget>
-        get() {
-            val placed = placedKeys.mapNotNull(::widgetKeyOf).toSet()
-            return catalog.filter { it.multiple || it.key !in placed }
-        }
+        get() = placedWidgetKeys.let { placed -> catalog.filter { it.multiple || it.key !in placed } }
 
-    /** 놓인 자리 [id]의 위젯 키. 놓여 있지 않으면 `null`. */
-    public fun widgetKeyOf(id: String): String? = NodeId.parseOrNull(id)?.let(session.document.value::node)?.let(::widgetKeyOf)
+    /** 놓인 자리 [id]의 위젯 키. 묶음 안의 자리도 찾는다. 놓여 있지 않거나 묶음 자체의 id면 `null`. */
+    public fun widgetKeyOf(id: String): String? {
+        val document = session.document.value
+        val node = NodeId.parseOrNull(id)?.let(document::node)
+        if (node != null) return widgetKeyOf(node).takeIf { node.stackMembers().isEmpty() }
+        return document.rootOrder.firstNotNullOfOrNull { stackId ->
+            document.node(stackId)?.stackMembers()?.firstOrNull { it.id == id }?.key
+        }
+    }
 
     /** [key] 위젯을 비어 있는 첫 자리(위에서부터, 같은 줄이면 왼쪽부터)에 놓는다. 목록에 없거나 이미 놓인 한 개짜리 위젯이면 `false`. */
     public fun add(key: String): Boolean = addItem(key) != null
@@ -72,15 +87,17 @@ public class KineticaBoardState private constructor(
         val widget = widgets[key] ?: return null
         if (widget !in availableWidgets) return null
         val document = session.document.value
-        val id = newItemId(key, document, widgets.keys)
+        val taken = document.nodes.values.flatMap { node -> node.stackMembers().map { it.id } }.toSet()
+        val id = newItemId(key, document, widgets.keys, taken)
         val node = placementFor(widget, document, id)
         return id.takeIf { session.commands.execute(SceneCommand.AddNode(node)) is CommandResult.Applied }
     }
 
     /** 놓인 자리 [id]를 보드에서 뺀다. 놓여 있지 않거나 [BoardWidget.removable]이 `false`면 `false`. */
     public fun remove(id: String): Boolean {
-        val key = widgetKeyOf(id) ?: return false
-        if (widgets[key]?.removable == false) return false
+        val node = NodeId.parseOrNull(id)?.let(session.document.value::node) ?: return false
+        val keys = node.stackMembers().map { it.key }.ifEmpty { listOf(widgetKeyOf(node)) }
+        if (keys.any { widgets[it]?.removable == false }) return false
         return session.commands.execute(SceneCommand.RemoveNodes(setOf(NodeId(id)))) is CommandResult.Applied
     }
 
@@ -172,7 +189,7 @@ public class KineticaBoardState private constructor(
         }
     }
 
-    private fun placementFor(widget: BoardWidget, document: SceneDocument, id: String): SceneNode {
+    internal fun placementFor(widget: BoardWidget, document: SceneDocument, id: String): SceneNode {
         val gap = arrangement.gapUnits()
         val placed = document.rootOrder.mapNotNull { rectOf(document.node(it)) }
         val rect = when (val arrangement = arrangement) {
@@ -193,7 +210,7 @@ public class KineticaBoardState private constructor(
                 content = NodeContent.HostSlot(Size(rect.width, rect.height), id),
                 name = widget.label,
                 constraints = LayoutConstraints(horizontal = Pin.Scale),
-                metadata = if (id == widget.key) emptyMap() else mapOf(WIDGET_KEY to widget.key),
+                metadata = widgetMetadata(id, widget.key),
             ),
             rect,
         )
@@ -227,15 +244,14 @@ public class KineticaBoardState private constructor(
             val keys = catalog.map { it.key }.toSet()
             val known = restored?.let(::knownKeys)
             val base = restored?.let { document ->
-                val kept = document.rootOrder.filter { id ->
-                    val node = document.node(id)
-                    node?.content is NodeContent.HostSlot && widgetKeyOf(node) in keys
+                // 묶음은 목록에 남은 위젯만 남기고, 하나만 남으면 보통 위젯으로 되돌린다.
+                val kept = document.rootOrder.mapNotNull { id ->
+                    val node = document.node(id)?.takeIf { it.content is NodeContent.HostSlot } ?: return@mapNotNull null
+                    if (node.stackMembers().isEmpty()) node.takeIf { widgetKeyOf(it) in keys } else reconcileStack(node, keys)
                 }
                 document.copy(
-                    nodes = kept.associateWith {
-                        document.nodes.getValue(it).copy(parentId = null)
-                    },
-                    rootOrder = kept,
+                    nodes = kept.associate { it.id to it.copy(parentId = null) },
+                    rootOrder = kept.map { it.id },
                     timelines = emptyList(),
                 )
             } ?: emptyBoard()
@@ -243,7 +259,10 @@ public class KineticaBoardState private constructor(
                 ?: (KineticaSession.create(emptyBoard()) as SessionOpenResult.Opened)
             // 처음 배치·목록 맞춤은 사용자가 되돌릴 일이 아니므로, 임시 세션에서 놓은 결과로 기록 없는 세션을 연다.
             val draft = KineticaBoardState(catalog, arrangement, opened.session)
-            val placed = base.rootOrder.mapNotNull { base.node(it)?.let(::widgetKeyOf) }.toSet()
+            val placed = base.rootOrder.flatMap { id ->
+                val node = base.nodes.getValue(id)
+                node.stackMembers().map { it.key }.ifEmpty { listOf(widgetKeyOf(node)) }
+            }.toSet()
             catalog.filter { widget -> widget.placedByDefault && widget.key !in placed && (known == null || widget.key !in known) }
                 .forEach { draft.add(it.key) }
             val initial = draft.document.value
@@ -264,7 +283,10 @@ public class KineticaBoardState private constructor(
             Json.parseToJsonElement(raw).jsonObject[KNOWN]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }?.toSet()
         }.getOrNull()
 
-        private fun widgetKeyOf(node: SceneNode): String = node.metadata[WIDGET_KEY] ?: node.id.value
+        internal fun widgetKeyOf(node: SceneNode): String = node.metadata[WIDGET_KEY] ?: node.id.value
+
+        /** 놓인 자리 id·위젯 키로 만든 보통 위젯 노드의 메타데이터. */
+        internal fun widgetMetadata(id: String, key: String): Map<String, String> = if (id == key) emptyMap() else mapOf(WIDGET_KEY to key)
 
         internal fun rectOf(node: SceneNode?): Rect? {
             val size = (node?.content as? NodeContent.HostSlot)?.size ?: return null
@@ -287,11 +309,17 @@ public class KineticaBoardState private constructor(
 }
 
 // 첫 자리는 위젯 키 그대로(예전 저장본과 같은 id), 그다음은 `.2`, `.3`… 다른 위젯 키와 겹치지 않는 첫 번호를 쓴다.
-private fun newItemId(key: String, document: SceneDocument, widgetKeys: Set<String>): String = generateSequence(1) { it + 1 }
+private fun newItemId(key: String, document: SceneDocument, widgetKeys: Set<String>, taken: Set<String>): String = generateSequence(1) {
+    it +
+        1
+}
     .map { if (it == 1) key else "$key.$it" }
-    .first { id -> document.node(NodeId(id)) == null && (id == key || id !in widgetKeys) }
+    .first { id -> document.node(NodeId(id)) == null && id !in taken && (id == key || id !in widgetKeys) }
 
-private fun BoardArrangement.gapUnits(): Double = when (this) {
+internal fun BoardArrangement.gapUnits(): Double = when (this) {
     is BoardArrangement.Free -> gapDp * KineticaBoardState.UNITS
     is BoardArrangement.Grid -> gapDp * KineticaBoardState.UNITS
 }
+
+/** 묶음 안의 위젯 하나. [id]는 놓인 자리 id, [key]는 위젯 키다. */
+internal data class StackMember(val id: String, val key: String)

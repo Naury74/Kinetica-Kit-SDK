@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -20,6 +21,7 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -220,6 +222,42 @@ class KineticaBoardTest {
         assertThat(moved.left).isGreaterThan(before.left)
         assertThat(moved.height).isGreaterThan(before.height)
         assertThat(state.placedKeys).doesNotContain("a")
+    }
+
+    @Test
+    fun `위젯을 다른 위젯 가운데에 놓으면 묶음이 되고 배지를 누르면 풀린다`() {
+        val state = KineticaBoardState.create(catalog)
+        show(state, editing = true)
+        val a = compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").fetchSemanticsNode().boundsInRoot
+        val b = compose.onNodeWithTag(BOARD_WIDGET_TAG + "b").fetchSemanticsNode().boundsInRoot
+
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").performTouchInput {
+            down(center)
+            moveTo(Offset(center.x + 20f, center.y))
+            moveTo(Offset(b.center.x - a.left, b.center.y - a.top))
+            up()
+        }
+        compose.waitForIdle()
+
+        val stackId = state.placedKeys.single()
+        assertThat(state.stackMembers(stackId)).containsExactly("b", "a").inOrder()
+
+        compose.onNodeWithContentDescription("Split stack").performClick()
+        compose.waitForIdle()
+        assertThat(state.placedKeys).containsExactly("a", "b")
+    }
+
+    @Test
+    fun `사용 모드의 묶음은 첫 위젯을 보이고 옆으로 넘기면 다음 위젯이 보인다`() {
+        val state = KineticaBoardState.create(catalog)
+        state.stack("a", "b")
+        show(state, editing = false)
+
+        compose.onNodeWithText("widget a").assertExists()
+        compose.onNodeWithText("widget a").performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("widget b").assertIsDisplayed()
     }
 }
 

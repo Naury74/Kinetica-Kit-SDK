@@ -10,4 +10,6 @@
     <string name="kinetica_board_larger">Make larger</string>
     <string name="kinetica_board_smaller">Make smaller</string>
     <string name="kinetica_board_remove_action">Remove from board</string>
+    <string name="kinetica_board_unstack">Split stack</string>
+    <string name="kinetica_board_stack_label">%1$s and %2$d more</string>
 </resources>

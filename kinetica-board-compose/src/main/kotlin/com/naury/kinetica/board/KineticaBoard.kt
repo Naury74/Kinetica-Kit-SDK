@@ -92,8 +92,7 @@ public fun KineticaBoard(
     val zoom = (density / KineticaBoardState.UNITS).toFloat()
     val scroll = rememberScrollState()
     val controller = remember(state) { BoardDragController(state) }
-    val placedIds = stored.rootOrder
-    val slots: SceneSlots = remember(placedIds, content) { placedIds.associate { id -> id.value to { content(id.value) } } }
+    val slots = rememberBoardSlots(stored, content, colors)
     BoxWithConstraints(modifier.clipToBounds()) {
         val gap = gapDp(state.arrangement) * KineticaBoardState.UNITS
         val mapping = BoardMapping(state.arrangement, constraints.maxWidth / zoom.toDouble(), gap)
@@ -163,9 +162,11 @@ private fun EditLayer(
     stored.rootOrder.forEach { id ->
         val key = id.value
         val widget = state.widgetKeyOf(key)?.let { widgetKey -> state.catalog.firstOrNull { it.key == widgetKey } }
+        val members = state.stackMembers(key)
+        val label = if (members.isEmpty()) widget?.label ?: key else stackLabel(state, members)
         WidgetEditFrame(
             key = key,
-            label = widget?.label ?: key,
+            label = label,
             // 끄는 동안 틀은 제자리에 두어 손가락 위치의 기준이 흔들리지 않게 한다. 움직이는 모습은 DragOutline이 그린다.
             rect = stable.getValue(key),
             dragging = drag?.key == key,
@@ -173,10 +174,12 @@ private fun EditLayer(
             permissions = permissions.copy(remove = permissions.remove && widget?.removable != false),
             colors = colors,
             controller = controller,
-            actions = accessibilityActions(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)),
+            actions = accessibilityActions(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)) +
+                unstackActions(state, key, members),
             keys = Modifier.keyboardEditing(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)),
             onRemove = { state.remove(key) },
         )
+        if (members.isNotEmpty()) StackBadge(stable.getValue(key), zoom, members.size, colors) { state.unstack(key) }
     }
 }
 
@@ -444,3 +447,13 @@ private fun Modifier.editOutline(focused: Boolean, outline: Color, accent: Color
     border(if (focused) FOCUS_BORDER else 2.dp, if (focused) accent else outline, RoundedCornerShape(8.dp))
 private val BADGE_SIZE: Dp = 28.dp
 private val BADGE_OUTSET: Dp = 9.dp
+
+/** 놓인 자리마다 그릴 호스트 내용. 묶음이면 넘겨 보는 묶음 화면이다. */
+@Composable
+private fun rememberBoardSlots(stored: SceneDocument, content: @Composable (String) -> Unit, colors: BoardColors): SceneSlots =
+    remember(stored.rootOrder, stored, content) {
+        stored.rootOrder.associate { id ->
+            val members = stored.node(id)?.stackMembers()?.map { it.id }.orEmpty()
+            id.value to { if (members.isEmpty()) content(id.value) else StackPager(members, content, colors) }
+        }
+    }

@@ -8,8 +8,11 @@ import androidx.compose.ui.geometry.Offset
 import com.naury.kinetica.core.geometry.Rect
 import com.naury.kinetica.core.geometry.Vec2
 
-/** 끌고 있는 위젯. [rect]는 손가락을 따라가는 자리, [target]은 놓으면 들어갈 자리(분할·칸·붙임). 모두 화면 폭 문서 단위. */
-internal data class BoardDrag(val key: String, val rect: Rect, val target: Rect, val zone: SnapZone?)
+/**
+ * 끌고 있는 위젯. [rect]는 손가락을 따라가는 자리, [target]은 놓으면 들어갈 자리(분할·칸·붙임). 모두 화면 폭 문서 단위.
+ * [stackOnto]가 있으면 놓을 때 그 위젯과 묶음이 된다.
+ */
+internal data class BoardDrag(val key: String, val rect: Rect, val target: Rect, val zone: SnapZone?, val stackOnto: String? = null)
 
 /** 편집 모드의 옮기기·크기 바꾸기. 끄는 동안은 문서를 바꾸지 않고, 놓을 때 한 번 [KineticaBoardState.place]한다. */
 internal class BoardDragController(private val state: KineticaBoardState) {
@@ -52,6 +55,19 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         pointerY = pointer.y
         val zone = if (state.arrangement is BoardArrangement.Free) BoardGeometry.zoneAt(pointer, frame.visible, frame.edge) else null
         val snapped = BoardGeometry.snapMove(raw, others, frame.mapping.displayWidth, frame.mapping.gap, frame.snap)
+        // 손가락이 다른 위젯의 가운데에 있으면 그 위젯과 묶는다(가장자리 근처는 평소처럼 붙이거나 밀어낸다).
+        val onto = if (zone ==
+            null
+        ) {
+            frame.rects.entries.firstOrNull { (id, rect) -> id != key && rect.center(STACK_AREA).contains(pointer) }?.key
+        } else {
+            null
+        }
+        if (onto != null) {
+            drag = BoardDrag(key, raw, frame.rects.getValue(onto), null, stackOnto = onto)
+            scrollDirection = directionNow()
+            return
+        }
         val target = zone?.let { BoardGeometry.zoneRect(it, frame.visible, frame.mapping.gap) } ?: frame.mapping.cellPreview(raw) ?: snapped
         drag = BoardDrag(key, if (zone == null) snapped else raw, target, zone)
         scrollDirection = directionNow()
@@ -103,7 +119,14 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         val frame = frame
         drag = null
         origin = null
-        if (frame != null && current.target != frame.rects[current.key]) state.place(current.key, frame.mapping.toReference(current.target))
+        when {
+            current.stackOnto != null -> state.stack(current.stackOnto, current.key)
+
+            frame != null && current.target != frame.rects[current.key] -> state.place(
+                current.key,
+                frame.mapping.toReference(current.target),
+            )
+        }
     }
 
     fun cancel() {
@@ -127,3 +150,13 @@ internal data class BoardFrame(
     val minSize: Double,
     val scrollBand: Double = 0.0,
 )
+
+/** 가운데 [fraction] 비율 영역. */
+private fun Rect.center(fraction: Double): Rect {
+    val insetX = width * (1 - fraction) / 2
+    val insetY = height * (1 - fraction) / 2
+    return Rect(left + insetX, top + insetY, right - insetX, bottom - insetY)
+}
+
+/** 묶음으로 보는 가운데 영역의 비율. */
+private const val STACK_AREA = 0.4
