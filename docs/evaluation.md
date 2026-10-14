@@ -7,13 +7,13 @@ Kinetica가 무엇을 하는지, SDK로 쓸 만한지 직접 확인하기 위한
 
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-./gradlew check                                   # 테스트 250개·lint·형식·공개 API 검사
-./gradlew :sample-studio:installDebug :sample-gallery:installDebug
+./gradlew check                                   # 테스트 400여 개·lint·형식·공개 API 검사
+./gradlew :sample-studio:installDebug :sample-gallery:installDebug :sample-board:installDebug
 ```
 
 - 기기: Android 8.0(API 26) 이상. 지금까지는 에뮬레이터(Android 16, 펼친 폴더블)에서만 확인했습니다.
   그 에뮬레이터에서 1·3·4·5·10·11·12·13·15·16·17(저장까지)·18·19·20·23·24·25를 손으로 확인했고, 사진·글자 수정은 다시 실행 뒤에도 남았습니다.
-- 앱 두 개가 설치됩니다. **Kinetica Studio**(편집기 전체), **Kinetica Gallery**(재생기만 쓰는 앱).
+- 앱 세 개가 설치됩니다. **Kinetica Studio**(편집기 전체), **Kinetica Gallery**(재생기만 쓰는 앱), **Kinetica Board**(위젯 보드·효과 예).
 - 넓은 화면(600dp 이상)은 오른쪽에 레이어·속성 패널이 붙고, 좁은 화면은 도구 줄의 "레이어"·"속성" 버튼으로 아래 시트를 엽니다.
 
 ## 1. 기능 — Kinetica Studio
@@ -129,7 +129,7 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 | R8·난독화 | `./gradlew -p consumer-check :app:assembleRelease` | 추가 keep 규칙 없이 빌드됨(리플렉션 없음) |
 | 설계 문서 | [architecture.md](architecture.md), [integration.md](integration.md), [adr/](adr) | 모듈 경계·좌표계·데이터 흐름·결정 이유 |
 | 공개 API 관리 | `<모듈>/api/*.api` | JVM 7개 모듈은 자동 검사. Android 6개 모듈은 아직 없음(ADR-0005) |
-| 안정성 | `./gradlew check` | 테스트 340여 개(단위·Robolectric 화면·적대적 입력 fuzz) |
+| 안정성 | `./gradlew check` | 테스트 400여 개(단위·Robolectric 화면·적대적 입력 fuzz) |
 | 안전 | [SECURITY.md](../SECURITY.md) | SDK 자체 네트워크 없음(서버 화면은 호스트가 받음), 외부 문서 상한·검증, 웹·파일 URI 거부 |
 | 성능 | [performance.md](performance.md) | JVM에서 노드 2,000개 명령 p95 약 0.4 ms. 실기기 미측정 |
 | Java | [integration.md#java](integration.md#java) | `kinetica-java` 정적 입구, Java 테스트 있음 |

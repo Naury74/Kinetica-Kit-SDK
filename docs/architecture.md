@@ -10,12 +10,15 @@ sample-studio ─┬─ kinetica-editor-compose ─┬─ kinetica-render-compos
                │                            ├─ kinetica-motion ────────── kinetica-core
                │                            └─ kinetica-presets ───────── kinetica-core
                ├─ kinetica-serialization ── kinetica-core
-               └─ kinetica-export-android ─ kinetica-render-compose, kinetica-motion
-sample-gallery ── kinetica-player-compose ── kinetica-render-compose, kinetica-motion
+               ├─ kinetica-export-android ─ kinetica-render-compose, kinetica-motion
+               └─ kinetica-player-compose(미리보기)
+sample-gallery ── kinetica-player-compose ── kinetica-render-compose, kinetica-motion, kinetica-serialization(api)
+sample-board ─┬─ kinetica-board-compose ── kinetica-render-compose, kinetica-history, kinetica-serialization
+              └─ kinetica-presets
 kinetica-java ── kinetica-core, kinetica-history, kinetica-serialization
 ```
 
-- `kinetica-core`는 Kotlin 표준 라이브러리만 씁니다. history·motion·serialization은 `StateFlow`·IO dispatcher를 위해 `kotlinx-coroutines-core`만 더합니다.
+- `kinetica-core`는 Kotlin 표준 라이브러리만 씁니다. history·motion·serialization은 `StateFlow`·IO dispatcher를 위해 `kotlinx-coroutines-core`를, serialization은 JSON을 위해 `kotlinx-serialization-json`을 더합니다.
 - `kinetica-gestures`는 history·guides를 모릅니다. 문서 수정은 `GestureHost`, 스냅은 `DragSnap`으로만 받습니다.
 - `kinetica-render-compose`는 편집 도구·실행 취소를 모릅니다. 렌더러 입력은 문서와 viewport뿐입니다.
 - 모듈 사이 의존을 더할 때는 ADR을 남깁니다([adr](adr)).

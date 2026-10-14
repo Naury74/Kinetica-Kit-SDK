@@ -11,15 +11,18 @@ val catalog = listOf(
     BoardWidget("chart", "주간 매출", widthDp = 360f, heightDp = 170f, columnSpan = 2),
     BoardWidget("memo", "메모", placedByDefault = false),          // 추가 메뉴에만 있다
 )
-val state = remember { KineticaBoardState.create(catalog, BoardArrangement.Free(), saved = prefs.getString("board", null)) }
-DisposableEffect(state) { onDispose { prefs.edit().putString("board", state.toJson()).apply(); state.close() } }
+// 화면을 돌려도 배치·실행 취소 기록이 남고(ViewModel), 화면이 가려질 때(ON_STOP)마다 저장한다.
+// 저장본을 읽지 못했으면(state.restoreFailed) 사용자가 바꾸기 전까지 덮어쓰지 않는다.
+val state = rememberKineticaBoardState(catalog, BoardStorage.sharedPreferences(context, "home", "board"))
 
-KineticaBoard(state, Modifier.fillMaxSize(), editing = editing, permissions = BoardPermissions(remove = false)) { key ->
-    when (key) { "sales" -> SalesCard(vm); "chart" -> SalesChart(vm); "memo" -> Memo() }   // 호스트 것 그대로
+KineticaBoard(state, Modifier.fillMaxSize(), editing = editing, permissions = BoardPermissions(remove = false)) { id ->
+    when (state.widgetKeyOf(id)) { "sales" -> SalesCard(vm); "chart" -> SalesChart(vm); "memo" -> Memo() }   // 호스트 것 그대로
 }
 ```
 
-XML 화면은 `KineticaBoardView`에 `setBoard(state) { key, context -> View }`, `isEditing`을 쓴다. Java에서도 `KineticaBoardState.create(catalog)`로 부른다.
+XML 화면은 `KineticaBoardView`에 `setBoard(state) { id, context -> View }`(위젯 키는 `state.widgetKeyOf(id)`), `isEditing`,
+`setOnLongPressListener`를 쓴다. XML 속성은 `app:kinetica_editing`·`app:kinetica_stackAutoAdvanceMs`·`app:kinetica_accentColor`이며,
+View에 id가 있으면 화면을 돌려도 편집 모드가 남는다. Java에서도 `KineticaBoardState.create(catalog)`로 부른다.
 
 ## 동작
 
@@ -34,7 +37,7 @@ XML 화면은 `KineticaBoardView`에 `setBoard(state) { key, context -> View }`,
 | 자동 스크롤 | 끄는 손가락이 보이는 영역 위·아래 끝(분할 자리 바로 안쪽 48dp 띠나 그 너머)에 머물면 보드가 스크롤되고 위젯도 따라간다. 지금 내용 아래 한 화면까지만 늘어난다 |
 | 접근성 | 편집 모드에서 위젯마다 TalkBack 동작: 위·아래·왼쪽·오른쪽으로 옮기기(8dp, 격자는 한 칸), 크게·작게, 빼기 |
 | 여러 개 | `BoardWidget(multiple = true)`면 같은 위젯을 여러 번 추가한다. 자리 id는 `memo`, `memo.2`…이며 `content(id)`로 받고, 위젯 키는 `state.widgetKeyOf(id)` |
-| 묶음 | 위젯을 다른 위젯 가운데(가운데 40%)에 놓으면 그 자리에서 넘겨 보는 묶음이 된다(아래 점 표시). 편집 중 오른쪽 위 숫자 배지·TalkBack "묶음 풀기"로 푼다. 코드: `state.stack(a, b)`·`unstack(id)`·`stackMembers(id)`. `KineticaBoard(stackAutoAdvanceMs = 5_000)`(XML은 `stackAutoAdvanceMs` 속성)이면 사용 모드에서 시간마다 넘어가고, 사용자가 넘기면 그때부터 다시 잰다. 필수 위젯이 든 묶음은 뺄 수 없다 |
+| 묶음 | 위젯을 다른 위젯 가운데(가운데 40%)에 놓으면 그 자리에서 넘겨 보는 묶음이 된다(아래 점 표시). 편집 중 오른쪽 위 숫자 배지·TalkBack "묶음 풀기"로 푼다. 코드: `state.stack(a, b)`·`unstack(id)`·`stackMembers(id)`. `KineticaBoard(stackAutoAdvanceMs = 5_000)`(XML은 `app:kinetica_stackAutoAdvanceMs`)이면 사용 모드에서 시간마다 넘어가고, 사용자가 넘기면 그때부터 다시 잰다. 필수 위젯이 든 묶음은 뺄 수 없다 |
 | 키보드 | 편집 모드에서 위젯에 초점을 두고 방향키로 옮기기, Shift+방향키로 크기, Delete로 빼기 |
 | 실행 취소 | 끌기·크기·추가·빼기가 한 단계씩. `state.history.undo()/redo()` |
 

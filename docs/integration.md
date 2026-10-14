@@ -5,7 +5,7 @@
 ```kotlin
 class SceneViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = FileSceneRepository(File(app.filesDir, "scenes"))
-    val session: KineticaSession = /* KineticaSession.create(document) */
+    val session: KineticaSession = (KineticaSession.create(document) as SessionOpenResult.Opened).session
 
     fun save() = viewModelScope.launch { repository.save("scene", session.document.value) }
 

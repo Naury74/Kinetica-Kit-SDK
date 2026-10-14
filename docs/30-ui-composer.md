@@ -4,10 +4,10 @@
 
 | 종류 | 내용 | 비고 |
 | --- | --- | --- |
-| `Frame` | 크기, 모서리, 자르기, 자식 목록 | 배경은 `style.fill`, 테두리는 `stroke`, 그림자는 `style.shadow` |
+| `Frame` | 크기, 모서리, 자르기, 자식 목록 | 배경은 `style.fill`, 테두리는 `stroke`, 그림자는 `style.shadows`(최대 8개) |
 | `HostSlot` | 크기, `key` | 호스트가 `slots(key)`로 Composable을 준다. 문서에는 키·크기·배치만 저장 |
 | `Text` | 기존 + `fontWeight`(100~900), `lineHeight`, `letterSpacing` | 문서 단위 |
-| 기존 | Group·Rectangle·Ellipse·Path·Image | 그대로 |
+| 기존 | Group·Rectangle·Ellipse·Polygon·Path·Image | 그대로 |
 
 ## 바인딩과 동작
 
@@ -35,12 +35,13 @@ SceneNode.action: String?                        // 누르면 onAction(action)
 ## 자동 배치와 화면 크기 대응 (2단계)
 
 ```text
-Frame.layout: AutoLayout?      // 방향(row·column), gap, padding, main(start·center·end·between), cross(start·center·end·stretch), hugWidth·hugHeight
+Frame.layout: AutoLayout?      // direction(Horizontal·Vertical), gap, padding, mainAlign(Start·Center·End·SpaceBetween),
+                               // crossAlign(Start·Center·End·Stretch), hugWidth·hugHeight. JSON 키는 row·column·main·cross
 SceneNode.layoutFill: Boolean  // 자동 배치 안에서 남는 공간을 똑같이 나눠 채움
 SceneNode.constraints          // 자동 배치 밖: 부모 크기가 바뀔 때 h·v 각각 start·end·both·center·scale
 ```
 
-- 배치는 `SceneReducer`가 명령마다 반영한다(`Layouts.settle`). 저장된 문서는 늘 배치가 끝난 상태이고, 배치가 만든 값도 검사한다. 열 때도 반영한다.
+- 배치는 `SceneReducer`가 명령마다 반영한다(내부 단계. 직접 다시 배치하려면 `Layouts.apply(document)`). 저장된 문서는 늘 배치가 끝난 상태이고, 배치가 만든 값도 검사한다. 열 때도 반영한다.
 - 안쪽 Frame부터 계산하며 늘이기·채움으로 크기가 바뀌면 최대 4번까지 다시 계산한다. 그 축을 내용에 맞추는 자식 Frame은 늘이지 않는다(두 규칙이 번갈아 바뀌지 않게).
 - 데이터가 보임을 바꾸면 그 자리만 다시 배치한다. 애니메이션 위치는 덮지 않는다.
 - 재생기 `SceneFit.Responsive`: artboard를 화면 모양(문서 단위 = `HOST_VIEW_UNITS_PER_DP` × dp)으로 바꾸고 최상위 노드를 제약대로 옮긴다.
@@ -65,9 +66,9 @@ NodeStyle.fillToken·strokeToken  // 토큰에 이은 색
 
 ## 서버 주도 재생 (4단계)
 
-- `RemoteSceneLoader(fetcher, cache, fallback, accept)`: 호스트가 받은 JSON을 `SceneCodec`으로 검증한다. 처음에는 캐시를 먼저 보여 주고,
-  받기 실패·형식 오류·`accept` 거절이면 지금 문서를 유지하며 이유만 `lastError`에 남긴다. etag는 캐시한 문서의 확장 값으로 함께 저장해 다시 켜도 쓴다. `SceneVerifier.signature(publicKey)`를 주면 서명이 맞는 본문만 읽는다.
-- `RemoteKineticaPlayer(loader, refreshKey, data, slots, onAction, …)`: 보여 줄 문서가 없을 때만 `placeholder`.
+- `RemoteSceneLoader(fetcher, cache, fallback, verifier = …, accept = …)`: 호스트가 받은 JSON을 `SceneCodec`으로 검증한다. 처음에는 캐시를 먼저 보여 주고,
+  받기 실패·형식 오류·`accept` 거절이면 지금 문서를 유지하며 이유만 `RemoteSceneState.Ready.lastError`에 남긴다. etag는 캐시한 문서의 확장 값으로 함께 저장해 다시 켜도 쓴다. `verifier = SceneVerifier.signature(publicKey)`를 주면 서명이 맞는 본문만 읽는다.
+- `RemoteKineticaPlayer(loader, modifier, refreshKey = …, data = …, slots = …, onAction = …)`: 보여 줄 문서가 없을 때만 `placeholder`.
 - 여러 화면 묶음: `{"bundleVersion":1,"scenes":{"home":{…},"promo":{…}}}`(`SceneBundleCodec`, 기본 20 MiB·64화면).
   `RemoteSceneBundleLoader`가 화면마다 따로 검증·캐시하고, 깨지거나 거절된 화면만 이전 문서를 유지한다. 화면 여러 개가 함께 열려도
   받기는 한 번이며 2초 안의 새로 고침은 다시 받지 않는다(`refresh(force = true)`는 받음). 재생은 `RemoteKineticaPlayer(bundle, "home")`.
