@@ -25,6 +25,7 @@ internal fun checkNode(node: SceneNode, limits: SceneLimits, sink: ViolationSink
     checkBindings(node, sink)
     checkComponent(node, limits, sink)
     checkSizeLimits(node, limits, sink)
+    checkEffects(node.effects, node.id, sink)
 }
 
 private fun checkSizeLimits(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
