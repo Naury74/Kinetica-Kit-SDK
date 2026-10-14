@@ -142,7 +142,7 @@ private fun utf8Size(text: String): Long {
 }
 
 /** 문자열 안을 건너뛰며 괄호 중첩의 최대 깊이를 잰다. 재귀하지 않는다. */
-private fun nestingDepth(text: String): Int {
+internal fun nestingDepth(text: String): Int {
     var depth = 0
     var deepest = 0
     var inString = false

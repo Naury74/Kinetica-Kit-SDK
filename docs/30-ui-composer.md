@@ -65,5 +65,8 @@ NodeStyle.fillToken·strokeToken  // 토큰에 이은 색
 - `RemoteSceneLoader(fetcher, cache, fallback, accept)`: 호스트가 받은 JSON을 `SceneCodec`으로 검증한다. 처음에는 캐시를 먼저 보여 주고,
   받기 실패·형식 오류·`accept` 거절이면 지금 문서를 유지하며 이유만 `lastError`에 남긴다. etag는 캐시한 문서의 확장 값으로 함께 저장해 다시 켜도 쓴다. `SceneVerifier.signature(publicKey)`를 주면 서명이 맞는 본문만 읽는다.
 - `RemoteKineticaPlayer(loader, refreshKey, data, slots, onAction, …)`: 보여 줄 문서가 없을 때만 `placeholder`.
-- 남은 것: 여러 화면 묶음 받기, 키 교체(여러 공개 키) 정책.
+- 여러 화면 묶음: `{"bundleVersion":1,"scenes":{"home":{…},"promo":{…}}}`(`SceneBundleCodec`, 기본 20 MiB·64화면).
+  `RemoteSceneBundleLoader`가 화면마다 따로 검증·캐시하고, 깨지거나 거절된 화면만 이전 문서를 유지한다. 화면 여러 개가 함께 열려도
+  받기는 한 번이며 2초 안의 새로 고침은 다시 받지 않는다(`refresh(force = true)`는 받음). 재생은 `RemoteKineticaPlayer(bundle, "home")`.
+- 남은 것: 키 교체(여러 공개 키) 정책.
 

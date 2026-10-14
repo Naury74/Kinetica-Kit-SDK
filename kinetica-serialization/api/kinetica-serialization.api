@@ -1,3 +1,28 @@
+public abstract interface class com/naury/kinetica/serialization/BundleDecodeResult {
+}
+
+public final class com/naury/kinetica/serialization/BundleDecodeResult$Failure : com/naury/kinetica/serialization/BundleDecodeResult {
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneLoadError;)V
+	public final fun component1 ()Lcom/naury/kinetica/serialization/SceneLoadError;
+	public final fun copy (Lcom/naury/kinetica/serialization/SceneLoadError;)Lcom/naury/kinetica/serialization/BundleDecodeResult$Failure;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/serialization/BundleDecodeResult$Failure;Lcom/naury/kinetica/serialization/SceneLoadError;ILjava/lang/Object;)Lcom/naury/kinetica/serialization/BundleDecodeResult$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/naury/kinetica/serialization/SceneLoadError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/BundleDecodeResult$Success : com/naury/kinetica/serialization/BundleDecodeResult {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lcom/naury/kinetica/serialization/BundleDecodeResult$Success;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/serialization/BundleDecodeResult$Success;Ljava/util/Map;ILjava/lang/Object;)Lcom/naury/kinetica/serialization/BundleDecodeResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getScenes ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class com/naury/kinetica/serialization/DecodeResult {
 }
 
@@ -73,6 +98,35 @@ public final class com/naury/kinetica/serialization/LoadResult$NotFound : com/na
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/RemoteBundleSettings {
+	public fun <init> ()V
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneBundleCodec;)V
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneBundleCodec;Lcom/naury/kinetica/serialization/SceneVerifier;)V
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneBundleCodec;Lcom/naury/kinetica/serialization/SceneVerifier;J)V
+	public synthetic fun <init> (Lcom/naury/kinetica/serialization/SceneBundleCodec;Lcom/naury/kinetica/serialization/SceneVerifier;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/serialization/SceneBundleCodec;
+	public final fun component2 ()Lcom/naury/kinetica/serialization/SceneVerifier;
+	public final fun component3 ()J
+	public final fun copy (Lcom/naury/kinetica/serialization/SceneBundleCodec;Lcom/naury/kinetica/serialization/SceneVerifier;J)Lcom/naury/kinetica/serialization/RemoteBundleSettings;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/serialization/RemoteBundleSettings;Lcom/naury/kinetica/serialization/SceneBundleCodec;Lcom/naury/kinetica/serialization/SceneVerifier;JILjava/lang/Object;)Lcom/naury/kinetica/serialization/RemoteBundleSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCodec ()Lcom/naury/kinetica/serialization/SceneBundleCodec;
+	public final fun getMinRefreshIntervalMs ()J
+	public final fun getVerifier ()Lcom/naury/kinetica/serialization/SceneVerifier;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/RemoteSceneBundleLoader {
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneFetcher;Lcom/naury/kinetica/serialization/RemoteSceneCache;Ljava/util/Map;Lcom/naury/kinetica/serialization/RemoteBundleSettings;Lkotlin/jvm/functions/Function2;)V
+	public synthetic fun <init> (Lcom/naury/kinetica/serialization/SceneFetcher;Lcom/naury/kinetica/serialization/RemoteSceneCache;Ljava/util/Map;Lcom/naury/kinetica/serialization/RemoteBundleSettings;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getStates ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun refresh (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun refresh (ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun refresh$default (Lcom/naury/kinetica/serialization/RemoteSceneBundleLoader;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun state (Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
 }
 
 public final class com/naury/kinetica/serialization/RemoteSceneCache {
@@ -196,6 +250,24 @@ public final class com/naury/kinetica/serialization/SaveResult$Saved : com/naury
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/serialization/SceneBundleCodec {
+	public static final field Companion Lcom/naury/kinetica/serialization/SceneBundleCodec$Companion;
+	public static final field DEFAULT_MAX_BUNDLE_BYTES I
+	public static final field DEFAULT_MAX_SCENES I
+	public fun <init> ()V
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneCodec;)V
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneCodec;I)V
+	public fun <init> (Lcom/naury/kinetica/serialization/SceneCodec;II)V
+	public synthetic fun <init> (Lcom/naury/kinetica/serialization/SceneCodec;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun decode ([B)Lcom/naury/kinetica/serialization/BundleDecodeResult;
+	public final fun encode (Ljava/util/Map;)Ljava/lang/String;
+	public final fun getMaxBundleBytes ()I
+	public final fun getMaxScenes ()I
+}
+
+public final class com/naury/kinetica/serialization/SceneBundleCodec$Companion {
 }
 
 public final class com/naury/kinetica/serialization/SceneCodec {

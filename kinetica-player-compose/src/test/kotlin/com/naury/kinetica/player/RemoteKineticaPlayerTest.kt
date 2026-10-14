@@ -77,4 +77,26 @@ class RemoteKineticaPlayerTest {
 
         compose.onNodeWithText("bundled").assertIsDisplayed()
     }
+
+    @Test
+    fun `묶음의 두 화면을 함께 열어도 받기는 한 번이고 각자 자기 화면을 그린다`() {
+        val calls = mutableIntStateOf(0)
+        val bundleText = com.naury.kinetica.serialization.SceneBundleCodec().encode(mapOf("top" to scene("a"), "bottom" to scene("b")))
+        val bundle = com.naury.kinetica.serialization.RemoteSceneBundleLoader({
+            calls.intValue++
+            SceneFetch.Body(bundleText.toByteArray())
+        })
+
+        compose.setContent {
+            androidx.compose.foundation.layout.Column {
+                RemoteKineticaPlayer(bundle, "top", Modifier.size(100.dp), slots = mapOf("a" to { Text("slot a") }))
+                RemoteKineticaPlayer(bundle, "bottom", Modifier.size(100.dp), slots = mapOf("b" to { Text("slot b") }))
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("slot a").assertIsDisplayed()
+        compose.onNodeWithText("slot b").assertIsDisplayed()
+        assertThat(calls.intValue).isEqualTo(1)
+    }
 }
