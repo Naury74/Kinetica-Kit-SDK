@@ -12,6 +12,7 @@ import com.naury.kinetica.core.animation.Timeline
  * @property rootOrder 최상위 노드 순서. 뒤에 있을수록 위에 그려진다.
  * @property timelines 애니메이션. 문서 상태만 담고 재생 상태는 담지 않는다.
  * @property extensions 이 버전이 해석하지 않는 확장 데이터. 키별 JSON 문자열을 그대로 보존한다.
+ * @property tokens 디자인 토큰(이름 → 색). 노드의 [NodeStyle.fillToken]·[NodeStyle.strokeToken]이 이름으로 쓰며, 바꾸면 쓰는 노드가 모두 바뀐다.
  */
 public data class SceneDocument(
     val documentId: String,
@@ -21,6 +22,7 @@ public data class SceneDocument(
     val timelines: List<Timeline> = emptyList(),
     val extensions: Map<String, String> = emptyMap(),
     val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
+    val tokens: Map<String, ArgbColor> = emptyMap(),
 ) {
     public fun node(id: NodeId): SceneNode? = nodes[id]
 

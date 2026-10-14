@@ -53,7 +53,8 @@ public object Layouts {
         after.nodes.values.forEach { node ->
             val frame = node.content as? NodeContent.Frame ?: return@forEach
             val old = (before.nodes[node.id]?.content as? NodeContent.Frame)?.size ?: return@forEach
-            if (frame.layout == null && old != frame.size) follow(nodes, frame.childIds, old, frame.size)
+            // 인스턴스 자식은 컴포넌트 동기화가 원본 크기 기준으로 이미 맞췄다.
+            if (frame.layout == null && node.instanceOf == null && old != frame.size) follow(nodes, frame.childIds, old, frame.size)
         }
         val constrained = if (nodes == after.nodes) after else after.copy(nodes = nodes)
         return apply(constrained)
@@ -172,7 +173,7 @@ public object Layouts {
     }
 
     /** 부모 크기가 [old]에서 [new]로 바뀔 때 [childIds]를 각자의 제약대로 옮기고 늘인다. */
-    private fun follow(nodes: MutableMap<NodeId, SceneNode>, childIds: List<NodeId>, old: Size, new: Size) {
+    internal fun follow(nodes: MutableMap<NodeId, SceneNode>, childIds: List<NodeId>, old: Size, new: Size) {
         childIds.forEach { child ->
             val node = nodes[child] ?: return@forEach
             val rect = boundsInParent(nodes, child) ?: return@forEach

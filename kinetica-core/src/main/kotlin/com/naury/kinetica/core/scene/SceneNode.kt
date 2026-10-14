@@ -17,6 +17,8 @@ import com.naury.kinetica.core.geometry.Vec2
  * @property bindings 속성을 호스트 데이터 키에 묶는다. 데이터에 값이 있으면 저장된 값 대신 쓴다(docs 30).
  * @property action 사용 모드에서 누르면 호스트에 넘기는 동작 이름. 코드를 실행하지 않는다.
  * @property constraints 부모(Frame·artboard) 크기가 바뀔 때 따라가는 방식. 자동 배치 Frame의 자식이면 쓰지 않는다.
+ * @property component 이 Frame을 컴포넌트 원본으로 쓰며 그 이름이다. 원본을 고치면 모든 인스턴스가 바뀐다.
+ * @property instanceOf 이 Frame이 컴포넌트 인스턴스이며 자식은 원본에서 만든다([Components]). 자식의 글자·색·보임·이미지를 고치면 덮어쓴 값으로 남는다.
  * @property layoutFill 자동 배치 Frame의 자식일 때 배치 방향의 남는 공간을 다른 채움 자식과 똑같이 나눠 차지한다(Figma의 Fill container).
  */
 public data class SceneNode(
@@ -33,6 +35,8 @@ public data class SceneNode(
     val action: String? = null,
     val constraints: LayoutConstraints = LayoutConstraints.Default,
     val layoutFill: Boolean = false,
+    val component: String? = null,
+    val instanceOf: InstanceOf? = null,
 ) {
     public val kind: NodeKind get() = content.kind
 
@@ -277,6 +281,8 @@ public sealed interface PathCommand {
  * @property blur 노드 전체를 흐리는 반지름(문서 단위, 0 이상). Android 12(API 31) 미만에서는 흐림 없이 그린다.
  * @property startCap 열린 경로 시작점 모양
  * @property endCap 열린 경로 끝점 모양
+ * @property fillToken 있으면 채우기 색을 문서의 이 디자인 토큰 색으로 맞춘다([SceneDocument.tokens]). 채우기 색을 직접 고치면 연결이 끊긴다.
+ * @property strokeToken 선 색 토큰. [fillToken]과 같다.
  */
 public data class NodeStyle(
     val fill: ArgbColor? = null,
@@ -289,6 +295,8 @@ public data class NodeStyle(
     val blur: Double = 0.0,
     val startCap: LineCap = LineCap.None,
     val endCap: LineCap = LineCap.None,
+    val fillToken: String? = null,
+    val strokeToken: String? = null,
 )
 
 /** 열린 경로의 시작·끝 모양. 화살표와 원은 선 두께에 비례한 크기로 그린다. */

@@ -23,6 +23,7 @@ internal fun checkNode(node: SceneNode, limits: SceneLimits, sink: ViolationSink
     checkStyle(node, limits, sink)
     checkContent(node, limits, sink)
     checkBindings(node, sink)
+    checkComponent(node, limits, sink)
 }
 
 private fun checkBindings(node: SceneNode, sink: ViolationSink) {

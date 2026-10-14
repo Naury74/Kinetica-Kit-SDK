@@ -19,6 +19,7 @@ public class SceneValidator(private val limits: SceneLimits = SceneLimits.Defaul
         document.nodes.values.forEach { checkNode(it, limits, sink) }
         checkTimelines(document, limits, sink)
         checkExtensions(document, sink)
+        checkTokens(document, sink)
         return sink.violations
     }
 

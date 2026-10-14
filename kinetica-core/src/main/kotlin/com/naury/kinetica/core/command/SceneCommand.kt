@@ -5,6 +5,7 @@ import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Transform2D
+import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.AutoLayout
 import com.naury.kinetica.core.scene.NodeId
@@ -53,6 +54,9 @@ public sealed interface SceneCommand {
     public data class Ungroup(val groupId: NodeId) : SceneCommand
 
     public data class SetArtboard(val artboard: Artboard) : SceneCommand
+
+    /** 디자인 토큰 [name]을 [color]로 정한다. `null`이면 지운다(연결된 노드는 지금 색을 그대로 둔다). */
+    public data class SetToken(val name: String, val color: ArgbColor?) : SceneCommand
 
     /** 같은 id의 timeline이 있으면 바꾸고 없으면 더한다. */
     public data class PutTimeline(val timeline: Timeline) : SceneCommand
