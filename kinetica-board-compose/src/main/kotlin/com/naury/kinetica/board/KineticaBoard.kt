@@ -134,7 +134,9 @@ public fun KineticaBoard(
             scrollBand = SCROLL_BAND_DP * KineticaBoardState.UNITS,
         )
         AutoScroll(controller, scroll, drag?.key)
-        val shown = displayDocument(state, stored, rects, mapping.displayWidth, contentBottom)
+        // 끄는 동안 다른 위젯 노드는 같은 객체로 두어, 렌더러가 그 위젯들을 다시 구성하지 않게 한다(120Hz에서 프레임을 지키기 위해).
+        val base = remember(state, stored, stable, mapping.displayWidth) { displayDocument(state, stored, stable, mapping.displayWidth) }
+        val shown = withDrag(base, drag, contentBottom)
         val longPress = if (!editing && onLongPress != null) Modifier.longPressToEdit(onLongPress) else Modifier
         Box(Modifier.fillMaxWidth().verticalScroll(scroll, enabled = drag == null).then(longPress)) {
             Box(Modifier.fillMaxWidth().height(with(LocalDensity.current) { heightPx.toDp() })) {
@@ -291,20 +293,22 @@ private fun gapDp(arrangement: BoardArrangement): Float = when (arrangement) {
 }
 
 /** 저장 문서를 지금 화면 폭 좌표로 바꾼 그리기용 문서. */
-private fun displayDocument(
-    state: KineticaBoardState,
-    stored: SceneDocument,
-    rects: Map<String, Rect>,
-    width: Double,
-    height: Double,
-): SceneDocument {
+private fun displayDocument(state: KineticaBoardState, stored: SceneDocument, rects: Map<String, Rect>, width: Double): SceneDocument {
     val effects = state.catalog.associate { it.key to it.effects }
     val nodes = stored.nodes.mapValues { (id, node) ->
         val placed = rects[id.value]?.let { KineticaBoardState.withRect(node, it) } ?: node
         // 효과는 저장하지 않고 위젯 목록에서 가져온다.
         state.widgetKeyOf(id.value)?.let(effects::get)?.let { placed.copy(effects = it) } ?: placed
     }
-    return stored.copy(artboard = Artboard(width, height.coerceAtLeast(1.0)), nodes = nodes)
+    return stored.copy(artboard = Artboard(width, stored.artboard.height), nodes = nodes)
+}
+
+/** 끄는 위젯 하나만 바꾸고 artboard 높이를 맞춘다. 나머지 노드는 [base]의 같은 객체다. */
+private fun withDrag(base: SceneDocument, drag: BoardDrag?, height: Double): SceneDocument {
+    val artboard = base.artboard.copy(height = height.coerceAtLeast(1.0))
+    val moved = drag?.let { current -> base.node(NodeId(current.key))?.let { KineticaBoardState.withRect(it, current.rect) } }
+    val nodes = if (moved == null) base.nodes else base.nodes + (moved.id to moved)
+    return base.copy(artboard = artboard, nodes = nodes)
 }
 
 @Composable

@@ -14,8 +14,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -91,7 +93,10 @@ public fun SceneLayout(
     onAction: (String) -> Unit = {},
     clipToArtboard: Boolean = false,
 ) {
-    val scope = NodeScope(document, images, slots, if (interactive) onAction else null, effects = interactive)
+    // 스코프는 같은 객체로 두고 문서·동작은 상태로 읽는다. 바뀌지 않은 노드는 같은 인자라 다시 구성하지 않는다(끌기·애니메이션 중 성능).
+    val documentState = rememberUpdatedState(document)
+    val actionState = rememberUpdatedState(if (interactive) onAction else null)
+    val scope = remember(images, slots, interactive) { NodeScope(documentState, images, slots, actionState, effects = interactive) }
     Box(modifier.clipToBounds()) {
         Box(
             // artboard가 영역보다 크면 Compose가 가운데로 맞춰 밀어내므로, 제약 없이 재고 왼쪽 위에 둔다(위치는 viewport가 정한다).
@@ -117,12 +122,15 @@ public fun SceneLayout(
 }
 
 private class NodeScope(
-    val document: SceneDocument,
+    private val documentState: State<SceneDocument>,
     val images: SceneImageProvider,
     val slots: SceneSlots,
-    val onAction: ((String) -> Unit)?,
+    private val actionState: State<((String) -> Unit)?>,
     val effects: Boolean,
-)
+) {
+    val document: SceneDocument get() = documentState.value
+    val onAction: ((String) -> Unit)? get() = actionState.value
+}
 
 @Composable
 private fun Artboard(document: SceneDocument) {
