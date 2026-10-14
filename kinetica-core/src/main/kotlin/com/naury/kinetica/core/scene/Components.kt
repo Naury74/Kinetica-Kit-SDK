@@ -93,13 +93,15 @@ public object Components {
 
     private fun syncOnce(document: SceneDocument): SceneDocument {
         val nodes = LinkedHashMap(document.nodes)
-        document.nodes.values.filter { it.instanceOf != null }.forEach { instance ->
+        document.nodes.values.filter { it.instanceOf != null }.forEach { snapshot ->
+            // 바깥 인스턴스가 이번 차례에 이 노드를 새로 복사했을 수 있으므로(안쪽 인스턴스의 원본 바뀜) 지금 값을 쓴다.
+            val instance = nodes[snapshot.id]?.takeIf { it.instanceOf != null } ?: return@forEach
             val link = requireNotNull(instance.instanceOf)
             val main = document.nodes[link.main]
             val mainFrame = main?.content as? NodeContent.Frame
             if (main?.component == null || mainFrame == null || isInside(document, instance.id, main.id)) {
                 // 원본이 없거나 컴포넌트가 아니면 지금 모습 그대로 일반 Frame이 된다.
-                nodes[instance.id] = instance.copy(instanceOf = null)
+                nodes[instance.id] = instance.copy(instanceOf = null, bindings = instance.bindings - BoundProperty.Variant)
                 return@forEach
             }
             val copies = copySubtree(document, main, instance, link.overrides)

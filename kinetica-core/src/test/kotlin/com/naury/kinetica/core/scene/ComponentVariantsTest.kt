@@ -102,4 +102,70 @@ class ComponentVariantsTest {
 
         assertThat(SceneValidator().validate(bad).map { it.code }).contains(ViolationCode.InvalidBinding)
     }
+
+    @Test
+    fun `이미 고른 변형이면 다시 만들지 않아 애니메이션 값이 그대로다`() {
+        val data = SceneData.of("buy.state" to DataValue.Text("꺼짐"))
+        val resolved = Bindings.resolveVariants(withInstance(), data)
+        // 타임라인이 인스턴스 불투명도를 바꾼 상태라고 본다.
+        val animated = resolved.copy(
+            nodes = resolved.nodes + (id("buy") to resolved.node(id("buy"))!!.let { it.copy(style = it.style.copy(opacity = 0.3)) }),
+        )
+
+        assertThat(Bindings.resolveVariants(resolved, data)).isSameInstanceAs(resolved)
+        assertThat(Bindings.apply(animated, data).node(id("buy"))!!.style.opacity).isEqualTo(0.3)
+    }
+
+    @Test
+    fun `이름이 같은 레이어가 여럿이어도 덮어쓴 값이 제자리로 간다`() {
+        fun twoTexts(key: String, name: String) = listOf(
+            SceneNode(id(key), NodeContent.Frame(Size(200.0, 60.0), listOf(id("$key-a"), id("$key-b"))), component = name),
+            SceneNode(id("$key-a"), NodeContent.Text(Size(90.0, 40.0), "A"), parentId = id(key), name = "Text"),
+            SceneNode(id("$key-b"), NodeContent.Text(Size(90.0, 40.0), "B"), parentId = id(key), name = "Text"),
+        )
+        val scene = document(twoTexts("x", "칩/켜짐") + twoTexts("y", "칩/꺼짐"))
+        val link = InstanceOf(id("x"), mapOf(id("x-a") to Override(text = "첫째"), id("x-b") to Override(text = "둘째")))
+        val withLink = scene.copy(
+            nodes = scene.nodes + (id("i") to SceneNode(id("i"), NodeContent.Frame(Size(200.0, 60.0)), instanceOf = link)),
+            rootOrder = scene.rootOrder + id("i"),
+        )
+
+        val swapped = ComponentVariants.swapTo(withLink, link, id("y"))
+
+        assertThat(swapped.overrides).containsExactly(id("y-a"), Override(text = "첫째"), id("y-b"), Override(text = "둘째"))
+    }
+
+    @Test
+    fun `다른 컴포넌트 안에 든 인스턴스도 데이터로 변형을 고른다`() {
+        val card = SceneNode(id("card"), NodeContent.Frame(Size(300.0, 200.0), listOf(id("inner"))), component = "Card")
+        val inner = SceneNode(
+            id("inner"),
+            NodeContent.Frame(Size(200.0, 60.0)),
+            parentId = id("card"),
+            instanceOf = InstanceOf(id("normal")),
+            bindings = mapOf(BoundProperty.Variant to "buy.state"),
+        )
+        val outer = SceneNode(id("outer"), NodeContent.Frame(Size(300.0, 200.0)), instanceOf = InstanceOf(id("card")))
+        val base = scene.copy(
+            nodes = scene.nodes + listOf(card, inner, outer).associateBy { it.id },
+            rootOrder = scene.rootOrder + listOf(id("card"), id("outer")),
+        )
+        val synced = Components.sync(base)
+
+        val shown = Bindings.resolveVariants(synced, SceneData.of("buy.state" to DataValue.Text("꺼짐")))
+
+        val copied = shown.node(Components.childId(id("outer"), id("inner")))!!
+        assertThat(copied.instanceOf!!.main).isEqualTo(id("off"))
+        assertThat(copied.style.fill).isEqualTo(gray)
+    }
+
+    @Test
+    fun `변형에 묶인 인스턴스를 분리해도 문서가 올바르다`() {
+        val document = withInstance()
+        val detached = document.node(id("buy"))!!.let { it.copy(instanceOf = null, bindings = it.bindings - BoundProperty.Variant) }
+
+        assertThat(SceneValidator().validate(document.copy(nodes = document.nodes + (id("buy") to detached)))).isEmpty()
+        val withoutMain = document.apply(SceneCommand.RemoveNodes(setOf(id("normal"))))
+        assertThat(withoutMain.node(id("buy"))!!.bindings).doesNotContainKey(BoundProperty.Variant)
+    }
 }

@@ -239,7 +239,9 @@ private fun EditorCanvas(
     val base by state.session.document.collectAsStateWithLifecycle()
     val selection by state.session.selection.collectAsStateWithLifecycle()
     val document =
-        remember(base, state.motionEnabled, state.playheadMs, sources.data) { Bindings.apply(state.displayed(base), sources.data) }
+        remember(base, state.motionEnabled, state.playheadMs, sources.data) {
+            Bindings.apply(state.displayed(Bindings.resolveVariants(base, sources.data)), sources.data)
+        }
     val count = selection.selectedIds.size
     val description = pluralStringResource(R.plurals.kinetica_canvas_description, count, count)
     val focus = remember { FocusRequester() }

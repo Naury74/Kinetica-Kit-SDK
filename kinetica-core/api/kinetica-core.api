@@ -927,6 +927,7 @@ public final class com/naury/kinetica/core/scene/Bindings {
 	public final fun apply (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/SceneData;Lcom/naury/kinetica/core/scene/SceneLimits;)Lcom/naury/kinetica/core/scene/SceneDocument;
 	public final fun apply (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/SceneData;Lcom/naury/kinetica/core/scene/SceneLimits;Lcom/naury/kinetica/core/scene/TextMeasurer;)Lcom/naury/kinetica/core/scene/SceneDocument;
 	public static synthetic fun apply$default (Lcom/naury/kinetica/core/scene/Bindings;Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/SceneData;Lcom/naury/kinetica/core/scene/SceneLimits;Lcom/naury/kinetica/core/scene/TextMeasurer;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public static final fun resolveVariants (Lcom/naury/kinetica/core/scene/SceneDocument;Lcom/naury/kinetica/core/scene/SceneData;)Lcom/naury/kinetica/core/scene/SceneDocument;
 }
 
 public final class com/naury/kinetica/core/scene/BoundProperty : java/lang/Enum {

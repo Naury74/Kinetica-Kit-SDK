@@ -5,6 +5,7 @@ import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.scene.ArgbColor
+import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.InstanceOf
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
@@ -74,7 +75,7 @@ internal class ComponentEdits(private val state: EditorState) {
     /** 인스턴스를 원본과 끊어 지금 모습 그대로의 일반 Frame으로 만든다. */
     fun detach(id: NodeId): Boolean {
         val node = state.document.node(id)?.takeIf { it.instanceOf != null } ?: return false
-        return update(node.copy(instanceOf = null))
+        return update(node.copy(instanceOf = null, bindings = node.bindings - BoundProperty.Variant))
     }
 
     fun selectMain(id: NodeId): Boolean {

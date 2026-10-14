@@ -53,10 +53,13 @@ public object ComponentVariants {
         while (pending.isNotEmpty() && result.size <= document.nodes.size) {
             val parent = pending.removeFirst()
             val parentPath = result.getValue(parent)
+            val seen = HashMap<String, Int>()
             document.childrenOf(parent).forEach { childId ->
                 val child = document.node(childId) ?: return@forEach
                 if (childId in result) return@forEach
-                result[childId] = parentPath + child.name
+                // 이름이 같은 형제는 차례 번호로 구별한다(새 레이어는 종류 이름을 그대로 쓰는 일이 많다).
+                val index = seen.merge(child.name, 1, Int::plus)!! - 1
+                result[childId] = parentPath + "${child.name}#$index"
                 pending += childId
             }
         }

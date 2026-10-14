@@ -87,8 +87,10 @@ public fun KineticaPlayer(
     val context = LocalContext.current
     val fonts = LocalSceneFonts.current
     val measurer = remember(context, fonts) { SceneTextMeasurer(context, fonts) }
-    val shown = remember(fitted, timeline, timeMs, data, measurer) {
-        val evaluated = if (timeline == null) fitted else TimelineEvaluator.evaluate(fitted, timeline, timeMs)
+    // 변형은 타임라인 평가 전에 한 번만 바꿔, 프레임마다 인스턴스를 다시 만들거나 키 값을 덮지 않게 한다.
+    val resolved = remember(fitted, data) { Bindings.resolveVariants(fitted, data) }
+    val shown = remember(resolved, timeline, timeMs, data, measurer) {
+        val evaluated = if (timeline == null) resolved else TimelineEvaluator.evaluate(resolved, timeline, timeMs)
         // 데이터로 글자가 바뀌면 이 기기 글꼴로 다시 재 글자에 맞춘 상자와 자동 배치가 따라간다.
         Bindings.apply(evaluated, data, measurer = measurer)
     }
