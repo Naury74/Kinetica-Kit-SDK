@@ -53,6 +53,7 @@ import com.naury.kinetica.render.SceneLayout
 import com.naury.kinetica.render.SceneSlots
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -200,13 +201,19 @@ private fun AutoScroll(controller: BoardDragController, scroll: androidx.compose
     val speed = with(LocalDensity.current) { AUTO_SCROLL_DP_PER_FRAME.dp.toPx() }
     androidx.compose.runtime.LaunchedEffect(dragging) {
         val key = dragging ?: return@LaunchedEffect
-        // 띠 안에 있을 때만 프레임마다 스크롤하고, 끝까지 스크롤되면 멈춘다(쉬는 동안 프레임을 요청하지 않는다).
+        // 띠 안에 있을 때만 프레임마다 스크롤한다. 끝에 닿으면 프레임을 요청하지 않고 보드가 늘어날 때까지 기다린다.
+        // 손가락이 띠에 들어온 순간에는 보드가 아직 늘기 전이라 끝에 닿아 있을 수 있다(그때 멈추면 다시 시작하지 않는다).
         androidx.compose.runtime.snapshotFlow { controller.scrollDirection }.collectLatest { direction ->
             while (direction != 0) {
                 androidx.compose.runtime.withFrameNanos { }
                 val moved = scroll.scrollBy(direction * speed)
-                if (moved == 0f) break
-                controller.scrolled(key, moved)
+                if (moved == 0f) {
+                    if (direction < 0) break
+                    val end = scroll.value
+                    androidx.compose.runtime.snapshotFlow { scroll.maxValue }.first { it > end }
+                } else {
+                    controller.scrolled(key, moved)
+                }
             }
         }
     }

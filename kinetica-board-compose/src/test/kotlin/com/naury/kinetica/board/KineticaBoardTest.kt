@@ -173,6 +173,27 @@ class KineticaBoardTest {
         // 스크롤 없이 놓았다면 약 300dp 아래가 최대지만, 스크롤된 만큼 더 내려간다.
         assertThat((state.rectOf("w0")!!.top - before.top) / KineticaBoardState.UNITS).isGreaterThan(330.0)
     }
+
+    @Test
+    fun `손가락을 보드 아래 끝 너머로 빠르게 끌어 머물러도 스크롤된다`() {
+        val tall = (0 until 3).map { BoardWidget("w$it", "W$it", widthDp = 360f, heightDp = 100f) }
+        val state = KineticaBoardState.create(tall)
+        compose.setContent {
+            Box(Modifier.size(400.dp, 400.dp)) { KineticaBoard(state, Modifier.fillMaxSize(), editing = true) { BasicBox() } }
+        }
+        val before = state.rectOf("w0")!!
+
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "w0").performTouchInput {
+            down(center)
+            moveTo(Offset(center.x, center.y + 40f))
+            moveTo(Offset(center.x, 420f))
+        }
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "w0").performTouchInput { up() }
+        compose.waitForIdle()
+
+        assertThat((state.rectOf("w0")!!.top - before.top) / KineticaBoardState.UNITS).isGreaterThan(420.0)
+    }
 }
 
 @androidx.compose.runtime.Composable
