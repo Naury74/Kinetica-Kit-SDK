@@ -67,6 +67,15 @@ public enum class AnimatableProperty(public val wireName: String, public val val
     Blur("blur", KeyValueType.Scalar),
     ShadowBlur("shadowBlur", KeyValueType.Scalar),
     ShadowOffsetY("shadowY", KeyValueType.Scalar),
+
+    /** 그라디언트 첫 색. 그라디언트가 없는 노드에는 쓰지 않는다. */
+    GradientStart("gradientStart", KeyValueType.Color),
+
+    /** 그라디언트 마지막 색. */
+    GradientEnd("gradientEnd", KeyValueType.Color),
+
+    /** 선형 그라디언트 각도(도). */
+    GradientAngle("gradientAngle", KeyValueType.Scalar),
     ;
 
     public companion object {

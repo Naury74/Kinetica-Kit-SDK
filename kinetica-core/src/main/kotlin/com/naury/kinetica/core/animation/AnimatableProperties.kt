@@ -1,6 +1,7 @@
 package com.naury.kinetica.core.animation
 
 import com.naury.kinetica.core.geometry.Size
+import com.naury.kinetica.core.scene.Gradient
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.sizeOrNull
@@ -31,6 +32,9 @@ public object AnimatableProperties {
             AnimatableProperty.Blur -> KeyValue.Scalar(style.blur)
             AnimatableProperty.ShadowBlur -> style.shadows.firstOrNull()?.let { KeyValue.Scalar(it.blur) }
             AnimatableProperty.ShadowOffsetY -> style.shadows.firstOrNull()?.let { KeyValue.Scalar(it.offsetY) }
+            AnimatableProperty.GradientStart -> style.gradient?.stops?.firstOrNull()?.let { KeyValue.Color(it.color) }
+            AnimatableProperty.GradientEnd -> style.gradient?.stops?.lastOrNull()?.let { KeyValue.Color(it.color) }
+            AnimatableProperty.GradientAngle -> style.gradient?.let { KeyValue.Scalar(it.angleDegrees) }
         }
     }
 
@@ -43,20 +47,54 @@ public object AnimatableProperties {
         val transform = node.transform
         return when (property) {
             AnimatableProperty.TranslationX -> scalar?.let { node.copy(transform = transform.copy(translationX = it)) }
+
             AnimatableProperty.TranslationY -> scalar?.let { node.copy(transform = transform.copy(translationY = it)) }
+
             AnimatableProperty.ScaleX -> scalar?.let { node.copy(transform = transform.copy(scaleX = it)) }
+
             AnimatableProperty.ScaleY -> scalar?.let { node.copy(transform = transform.copy(scaleY = it)) }
+
             AnimatableProperty.RotationDegrees -> scalar?.let { node.copy(transform = transform.copy(rotationDegrees = it)) }
+
             AnimatableProperty.Opacity -> scalar?.let { node.copy(style = style.copy(opacity = it.coerceIn(0.0, 1.0))) }
+
             AnimatableProperty.StrokeWidth -> scalar?.let { node.copy(style = style.copy(strokeWidth = it.coerceAtLeast(0.0))) }
+
             AnimatableProperty.Fill -> color?.let { node.copy(style = style.copy(fill = it, gradient = null)) }
+
             AnimatableProperty.Stroke -> color?.let { node.copy(style = style.copy(stroke = it)) }
+
             AnimatableProperty.Width -> scalar?.let { width -> resize(node) { Size(width.coerceAtLeast(MIN_SIZE), it.height) } }
+
             AnimatableProperty.Height -> scalar?.let { height -> resize(node) { Size(it.width, height.coerceAtLeast(MIN_SIZE)) } }
+
             AnimatableProperty.CornerRadius -> scalar?.let { withCorner(node, it.coerceAtLeast(0.0)) }
+
             AnimatableProperty.Blur -> scalar?.let { node.copy(style = style.copy(blur = it.coerceAtLeast(0.0))) }
+
             AnimatableProperty.ShadowBlur -> scalar?.let { blur -> firstShadow(node) { it.copy(blur = blur.coerceAtLeast(0.0)) } }
+
             AnimatableProperty.ShadowOffsetY -> scalar?.let { offset -> firstShadow(node) { it.copy(offsetY = offset) } }
+
+            AnimatableProperty.GradientStart -> color?.let { c ->
+                gradient(node) {
+                    it.copy(
+                        stops =
+                            listOf(it.stops.first().copy(color = c)) + it.stops.drop(1),
+                    )
+                }
+            }
+
+            AnimatableProperty.GradientEnd -> color?.let { c ->
+                gradient(node) {
+                    it.copy(
+                        stops =
+                            it.stops.dropLast(1) + it.stops.last().copy(color = c),
+                    )
+                }
+            }
+
+            AnimatableProperty.GradientAngle -> scalar?.let { angle -> gradient(node) { it.copy(angleDegrees = angle) } }
         } ?: node
     }
 
@@ -82,6 +120,11 @@ public object AnimatableProperties {
     ): SceneNode? {
         val first = node.style.shadows.firstOrNull() ?: return null
         return node.copy(style = node.style.copy(shadows = listOf(change(first)) + node.style.shadows.drop(1)))
+    }
+
+    private fun gradient(node: SceneNode, change: (Gradient) -> Gradient): SceneNode? {
+        val current = node.style.gradient?.takeIf { it.stops.isNotEmpty() } ?: return null
+        return node.copy(style = node.style.copy(gradient = change(current)))
     }
 
     private const val MIN_SIZE = 1.0

@@ -68,4 +68,38 @@ class StyleAnimationTest {
 
         assertThat(SceneValidator().validate(document(listOf(card), timelines = listOf(timeline)))).isNotEmpty()
     }
+
+    @Test
+    fun `그라디언트 시작·끝 색과 각도를 보간한다`() {
+        val red = ArgbColor(0xFFFF0000.toInt())
+        val blue = ArgbColor(0xFF0000FF.toInt())
+        val shaded = card.copy(
+            style = NodeStyle(
+                gradient = com.naury.kinetica.core.scene.Gradient(
+                    com.naury.kinetica.core.scene.GradientType.Linear,
+                    listOf(com.naury.kinetica.core.scene.GradientStop(0.0, red), com.naury.kinetica.core.scene.GradientStop(1.0, blue)),
+                    0.0,
+                ),
+            ),
+        )
+        val timeline = Timeline(
+            "main",
+            1_000,
+            listOf(
+                track(AnimatableProperty.GradientStart, KeyValue.Color(red), KeyValue.Color(blue)),
+                track(AnimatableProperty.GradientEnd, KeyValue.Color(blue), KeyValue.Color(red)),
+                track(AnimatableProperty.GradientAngle, KeyValue.Scalar(0.0), KeyValue.Scalar(90.0)),
+            ),
+        )
+        val scene = document(listOf(shaded), timelines = listOf(timeline))
+
+        val gradient = TimelineEvaluator.evaluate(scene, timeline, 500.0).node(id("card"))!!.style.gradient!!
+
+        assertThat(gradient.stops.first().color.red).isIn(126..129)
+        assertThat(gradient.stops.last().color.blue).isIn(126..129)
+        assertThat(gradient.angleDegrees).isWithin(1e-9).of(45.0)
+        // 그라디언트가 없는 노드에는 쓰지 않는다.
+        val plain = TimelineEvaluator.evaluate(document(listOf(card), timelines = listOf(timeline)), timeline, 500.0)
+        assertThat(plain.node(id("card"))!!.style.gradient).isNull()
+    }
 }

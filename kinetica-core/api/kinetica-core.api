@@ -9,6 +9,9 @@ public final class com/naury/kinetica/core/animation/AnimatableProperty : java/l
 	public static final field Companion Lcom/naury/kinetica/core/animation/AnimatableProperty$Companion;
 	public static final field CornerRadius Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Fill Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field GradientAngle Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field GradientEnd Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field GradientStart Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Height Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Opacity Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field RotationDegrees Lcom/naury/kinetica/core/animation/AnimatableProperty;
