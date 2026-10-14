@@ -121,8 +121,8 @@ private fun DrawScope.drawItem(item: DrawItem, textMeasurer: TextMeasurer, image
             val path = content.outline() ?: return
             val bounds = content.localBounds() ?: return
             val size = Size(maxOf(bounds.right, 0.0).toFloat(), maxOf(bounds.bottom, 0.0).toFloat())
-            drawFilledOutline(path, style, size, item.alpha)
-            drawOutlineStroke(path, style, item.alpha, (content as? NodeContent.Path)?.commands)
+            drawFilledOutline(path, style, size, item.alpha, style.blur)
+            drawOutlineStroke(path, style, item.alpha, (content as? NodeContent.Path)?.commands, style.blur)
         }
     }
 }

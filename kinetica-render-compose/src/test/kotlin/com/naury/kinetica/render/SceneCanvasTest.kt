@@ -130,4 +130,30 @@ class SceneCanvasTest {
         assertThat(image.colorAt(220, 150)).isEqualTo(Color.Green)
         assertThat(image.colorAt(240, 125)).isNotEqualTo(Color.Green)
     }
+
+    @Test
+    fun `흐림이 있는 모양은 가장자리가 번져 내보내기에도 흐림이 보인다`() {
+        val blurred = SceneNode(
+            NodeId("blurred"),
+            NodeContent.Rectangle(Size(40.0, 40.0)),
+            transform = Transform2D(translationX = 30.0, translationY = 30.0),
+            style = NodeStyle(fill = red, blur = 8.0),
+        )
+        val single = SceneDocument(
+            documentId = "blur",
+            artboard = Artboard(100.0, 100.0, background = ArgbColor(0xFFFFFFFF.toInt())),
+            nodes = mapOf(blurred.id to blurred),
+            rootOrder = listOf(blurred.id),
+        )
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SceneCanvas(single, Viewport(), Modifier.size(100.dp, 100.dp).testTag("canvas"))
+            }
+        }
+        val image = compose.onNodeWithTag("canvas").captureToImage()
+
+        assertThat(image.colorAt(50, 50)).isEqualTo(Color.Red)
+        assertThat(image.colorAt(27, 50)).isNotEqualTo(Color.White)
+        assertThat(image.colorAt(32, 50)).isNotEqualTo(Color.Red)
+    }
 }

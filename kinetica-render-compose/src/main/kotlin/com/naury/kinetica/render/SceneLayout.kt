@@ -1,5 +1,6 @@
 package com.naury.kinetica.render
 
+import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -50,6 +51,7 @@ import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Viewport
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
+import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.PathCommand
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
@@ -180,11 +182,11 @@ private fun FrameView(node: SceneNode, content: NodeContent.Frame, modifier: Mod
     Box(
         modifier
             .requiredSizePx(content.size)
-            .drawBehind { drawFilledOutline(outline, node.style, size) }
+            .drawBehind { drawFilledOutline(outline, node.style, size, blur = node.style.fallbackBlur) }
             .then(clipped)
             .drawWithContent {
                 drawContent()
-                drawOutlineStroke(outline, node.style)
+                drawOutlineStroke(outline, node.style, blur = node.style.fallbackBlur)
             },
     ) {
         Children(content.childIds, scope, content.size)
@@ -198,8 +200,8 @@ private fun ShapeView(node: SceneNode, content: NodeContent, modifier: Modifier)
     val outline = remember(content) { content.outline() } ?: return
     val size = Size(maxOf(bounds.right, 0.0), maxOf(bounds.bottom, 0.0))
     Canvas(modifier.requiredSizePx(size)) {
-        drawFilledOutline(outline, node.style, this.size)
-        drawOutlineStroke(outline, node.style, open = (content as? NodeContent.Path)?.commands)
+        drawFilledOutline(outline, node.style, this.size, blur = node.style.fallbackBlur)
+        drawOutlineStroke(outline, node.style, open = (content as? NodeContent.Path)?.commands, blur = node.style.fallbackBlur)
     }
 }
 
@@ -253,11 +255,11 @@ private fun HostView(node: SceneNode, content: NodeContent.HostSlot, modifier: M
     Box(
         modifier
             .requiredSizePx(content.size)
-            .drawBehind { drawFilledOutline(outline, node.style, size) }
+            .drawBehind { drawFilledOutline(outline, node.style, size, blur = node.style.fallbackBlur) }
             .clipToBounds()
             .drawWithContent {
                 drawContent()
-                drawOutlineStroke(outline, node.style)
+                drawOutlineStroke(outline, node.style, blur = node.style.fallbackBlur)
             },
     ) {
         // 바깥 Box는 기기 픽셀(= 문서 단위)로 재고, 안쪽만 문서 단위 밀도로 바꿔 호스트의 dp 배치가 기기마다 달라지지 않게 한다.
@@ -274,6 +276,10 @@ private fun Placeholder(size: Size, modifier: Modifier) {
         drawLine(PLACEHOLDER, Offset(this.size.width, 0f), Offset(0f, this.size.height))
     }
 }
+
+/** API 31 미만에서는 노드 전체 흐림([layerBlur])이 듣지 않으므로, 적어도 채우기·선은 직접 흐려 그린다. */
+private val NodeStyle.fallbackBlur: Double
+    get() = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) blur else 0.0
 
 /** 노드 전체 흐림. 문서 단위 = 픽셀이므로 픽셀을 dp로 바꿔 쓴다. API 31 미만에서는 Compose가 흐림 없이 그린다. */
 @Composable

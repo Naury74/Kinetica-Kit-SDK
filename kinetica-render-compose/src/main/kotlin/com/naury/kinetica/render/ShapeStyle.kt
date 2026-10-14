@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathFillType
@@ -103,24 +104,59 @@ internal fun Gradient.toBrush(size: Size): Brush {
     }
 }
 
-/** 바깥 그림자 → 채우기 → 안쪽 그림자. 선은 [drawOutlineStroke]로 따로 그린다(자식 위에 그리기 위해). */
-internal fun DrawScope.drawFilledOutline(path: Path, style: NodeStyle, size: Size, alpha: Float = 1f) {
+/**
+ * 바깥 그림자 → 채우기 → 안쪽 그림자. 선은 [drawOutlineStroke]로 따로 그린다(자식 위에 그리기 위해).
+ * [blur]가 0보다 크면 채우기를 그 반지름(노드 단위)으로 흐린다. 화면은 노드 전체에 흐림을 걸므로 0을 넘긴다.
+ */
+internal fun DrawScope.drawFilledOutline(path: Path, style: NodeStyle, size: Size, alpha: Float = 1f, blur: Double = 0.0) {
     style.shadows.filterNot { it.inner }.forEach { drawShadow(path, it, size, alpha) }
-    style.fillBrush(size)?.let { drawPath(path, it, alpha = alpha) }
+    style.fillBrush(size)?.let { brush ->
+        if (blur > 0.0) drawBlurredPath(path, brush, size, alpha, blur, null) else drawPath(path, brush, alpha = alpha)
+    }
     val inner = style.shadows.filter { it.inner }
     if (inner.isNotEmpty()) clipPath(path) { inner.forEach { drawInnerShadow(path, it, size, alpha) } }
 }
 
 /** 선(점선 포함)과 열린 경로의 끝 모양. */
-internal fun DrawScope.drawOutlineStroke(path: Path, style: NodeStyle, alpha: Float = 1f, open: List<PathCommand>? = null) {
+internal fun DrawScope.drawOutlineStroke(
+    path: Path,
+    style: NodeStyle,
+    alpha: Float = 1f,
+    open: List<PathCommand>? = null,
+    blur: Double = 0.0,
+) {
     val color = style.stroke?.toColor() ?: return
     if (style.strokeWidth <= 0.0) return
     val width = style.strokeWidth.toFloat()
     val dash = style.strokeDash.takeIf { it.isNotEmpty() }?.let { values ->
         PathEffect.dashPathEffect(values.map(Double::toFloat).let { if (it.size % 2 == 1) it + it else it }.toFloatArray())
     }
-    drawPath(path, color, alpha = alpha, style = Stroke(width = width, pathEffect = dash))
+    val stroke = Stroke(width = width, pathEffect = dash)
+    if (blur >
+        0.0
+    ) {
+        drawBlurredPath(path, SolidColor(color), size, alpha, blur, stroke)
+    } else {
+        drawPath(path, color, alpha = alpha, style = stroke)
+    }
     if (open != null) drawCaps(open, style, color, width, alpha)
+}
+
+/** Compose의 drawPath에는 흐림 필터를 걸 수 없어 플랫폼 Paint에 BlurMaskFilter를 달아 그린다. 그림자와 같은 방식이다. */
+// 붓·크기·투명도·흐림·선 모양이 모두 그리기에 필요한 값이라 묶을 곳이 없다.
+@Suppress("LongParameterList")
+private fun DrawScope.drawBlurredPath(path: Path, brush: Brush, size: Size, alpha: Float, blur: Double, stroke: Stroke?) {
+    val paint = androidx.compose.ui.graphics.Paint().apply {
+        isAntiAlias = true
+        if (stroke != null) {
+            style = PaintingStyle.Stroke
+            strokeWidth = stroke.width
+            pathEffect = stroke.pathEffect
+        }
+    }
+    brush.applyTo(size, paint, alpha)
+    paint.asFrameworkPaint().maskFilter = BlurMaskFilter(blur.toFloat(), BlurMaskFilter.Blur.NORMAL)
+    drawIntoCanvas { it.drawPath(path, paint) }
 }
 
 private fun DrawScope.drawShadow(path: Path, shadow: Shadow, size: Size, alpha: Float) {
