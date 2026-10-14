@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -68,21 +69,14 @@ private fun StoreHome(viewModel: StoreViewModel = viewModel()) {
     )
     val history by state.history.state.collectAsState()
     Column(Modifier.fillMaxSize().background(Color(SCREEN_BACKGROUND)).safeDrawingPadding()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.board_title), fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            if (editing) {
-                TextButton(onClick = { state.history.undo() }, enabled = history.canUndo) { Text(stringResource(R.string.board_undo)) }
-                TextButton(onClick = { state.history.redo() }, enabled = history.canRedo) { Text(stringResource(R.string.board_redo)) }
-            }
-            Button(onClick = {
-                if (editing) BoardStore.save(context, grid, state)
-                editing = !editing
-            }) { Text(stringResource(if (editing) R.string.board_done else R.string.board_edit)) }
+        Header(editing, history.canUndo, history.canRedo, state) {
+            if (editing) BoardStore.save(context, grid, state)
+            editing = !editing
         }
-        Row(
+        FlowRow(
             Modifier.padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             FilterChip(selected = !grid, onClick = { grid = false }, label = { Text(stringResource(R.string.board_free)) })
             FilterChip(selected = grid, onClick = { grid = true }, label = { Text(stringResource(R.string.board_grid)) })
@@ -108,6 +102,25 @@ private fun StoreHome(viewModel: StoreViewModel = viewModel()) {
             onLongPress = { editing = true },
             stackAutoAdvanceMs = 5_000,
         ) { id -> StoreWidget(state.widgetKeyOf(id) ?: id, id, data) }
+    }
+}
+
+/** 제목과 편집 버튼. 글자 크기를 크게 쓰는 사용자도 있으므로 줄이 모자라면 다음 줄로 넘긴다. */
+@Composable
+private fun Header(editing: Boolean, canUndo: Boolean, canRedo: Boolean, state: KineticaBoardState, onToggle: () -> Unit) {
+    FlowRow(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.board_title), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (editing) {
+                TextButton(onClick = { state.history.undo() }, enabled = canUndo) { Text(stringResource(R.string.board_undo)) }
+                TextButton(onClick = { state.history.redo() }, enabled = canRedo) { Text(stringResource(R.string.board_redo)) }
+            }
+            Button(onClick = onToggle) { Text(stringResource(if (editing) R.string.board_done else R.string.board_edit)) }
+        }
     }
 }
 

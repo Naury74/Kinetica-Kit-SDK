@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -34,8 +36,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.board.BoardWidget
@@ -98,12 +102,8 @@ private fun Sales(data: StoreData) = Card {
     Text("오늘 매출", color = muted, fontSize = 13.sp)
     // 값이 바뀔 때 숫자가 올라가거나 내려가며 바뀐다.
     val sales by animateNumberAsState(data.sales.toDouble())
-    Text(
-        NumberFormat.getNumberInstance(Locale.KOREA).format(sales.roundToLong()) + "원",
-        color = ink,
-        fontSize = 24.sp,
-        fontWeight = FontWeight.Bold,
-    )
+    // 위젯 크기는 dp로 정해져 있으므로, 글자 크기를 키운 사용자에게는 숫자를 줄여 한 줄에 다 보이게 한다.
+    FitText(NumberFormat.getNumberInstance(Locale.KOREA).format(sales.roundToLong()) + "원", ink, 24.sp)
     Text(if (data.open) "영업 중" else "준비 중", color = if (data.open) Color(0xFF0E9F6E) else muted, fontSize = 12.sp)
 }
 
@@ -137,13 +137,25 @@ private fun Clock() {
         }
     }
     Box(Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).background(ink), contentAlignment = Alignment.Center) {
-        Text(
+        FitText(
             Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss")),
-            color = Color.White,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
+            Color.White,
+            28.sp,
+            Modifier.padding(horizontal = 12.dp),
         )
     }
+}
+
+/** 한 줄에 [max]까지 키우되 자리가 모자라면 줄이는 굵은 글자. */
+@Composable
+private fun FitText(text: String, color: Color, max: TextUnit, modifier: Modifier = Modifier) {
+    BasicText(
+        text,
+        modifier,
+        style = TextStyle(color = color, fontWeight = FontWeight.Bold),
+        maxLines = 1,
+        autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = max),
+    )
 }
 
 /** 입력 중인 글이 배치를 바꿔도 남아 있는지 보여 준다. */
