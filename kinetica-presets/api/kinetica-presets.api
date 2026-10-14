@@ -82,3 +82,36 @@ public final class com/naury/kinetica/presets/PresetResult$UnknownPreset : com/n
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/naury/kinetica/presets/UiKit {
+	public static final field INSTANCE Lcom/naury/kinetica/presets/UiKit;
+	public final fun getDefaultTokens ()Ljava/util/Map;
+	public final fun starter (Lcom/naury/kinetica/core/geometry/Vec2;Ljava/lang/String;Ljava/util/Map;)Lcom/naury/kinetica/presets/UiKitInsert;
+	public static synthetic fun starter$default (Lcom/naury/kinetica/presets/UiKit;Lcom/naury/kinetica/core/geometry/Vec2;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcom/naury/kinetica/presets/UiKitInsert;
+}
+
+public final class com/naury/kinetica/presets/UiKit$Token {
+	public static final field BORDER Ljava/lang/String;
+	public static final field BRAND Ljava/lang/String;
+	public static final field INSTANCE Lcom/naury/kinetica/presets/UiKit$Token;
+	public static final field ON_BRAND Ljava/lang/String;
+	public static final field SURFACE Ljava/lang/String;
+	public static final field SURFACE_ALT Ljava/lang/String;
+	public static final field TEXT Ljava/lang/String;
+	public static final field TEXT_MUTED Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/presets/UiKitInsert {
+	public fun <init> (Ljava/util/Map;Ljava/util/List;Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Ljava/util/Map;Ljava/util/List;Ljava/util/List;)Lcom/naury/kinetica/presets/UiKitInsert;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/presets/UiKitInsert;Ljava/util/Map;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lcom/naury/kinetica/presets/UiKitInsert;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNodes ()Ljava/util/List;
+	public final fun getRoots ()Ljava/util/List;
+	public final fun getTokens ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
