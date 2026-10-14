@@ -47,6 +47,7 @@ import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.player.RemoteKineticaPlayer
 import com.naury.kinetica.player.SceneFit
 import com.naury.kinetica.serialization.FileSceneRepository
+import com.naury.kinetica.serialization.RemoteSceneCache
 import com.naury.kinetica.serialization.RemoteSceneLoader
 import com.naury.kinetica.serialization.RemoteSceneState
 import com.naury.kinetica.serialization.SceneCodec
@@ -66,8 +67,7 @@ class RemoteActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val loader = RemoteSceneLoader(
             fetcher = server,
-            cache = FileSceneRepository(File(cacheDir, "remote")),
-            cacheId = "home-banner",
+            cache = RemoteSceneCache(FileSceneRepository(File(cacheDir, "remote")), "home-banner"),
             fallback = RemoteLayouts.bundled,
             // 앱이 그릴 수 없는 호스트 뷰를 요구하는 문서는 쓰지 않는다.
             accept = { document -> document.slotKeys().all { it in RemoteLayouts.SLOTS } },
