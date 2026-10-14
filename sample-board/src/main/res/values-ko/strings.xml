@@ -9,4 +9,5 @@
     <string name="board_xml">XML 화면</string>
     <string name="board_hint_free">끌어서 옮기세요. 화면 가장자리에 놓으면 반, 모서리는 4분의 1, 위쪽은 화면 가득 채웁니다.</string>
     <string name="board_hint_grid">끌어서 칸을 옮기세요. 겹치는 위젯은 아래로 밀립니다.</string>
+    <string name="board_effects">효과 예</string>
 </resources>

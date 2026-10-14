@@ -22,6 +22,9 @@
             android:name=".XmlBoardActivity"
             android:exported="false"
             android:theme="@style/Theme.KineticaBoardSample.Xml" />
+        <activity
+            android:name=".EffectsActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

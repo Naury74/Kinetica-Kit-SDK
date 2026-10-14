@@ -37,6 +37,8 @@ android {
 dependencies {
     // docs 31: 호스트 앱이 보드만 쓴다. 편집기 스튜디오는 넣지 않는다.
     implementation(project(":kinetica-board-compose"))
+    // 움직임 효과 묶음(EffectPresets)
+    implementation(project(":kinetica-presets"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

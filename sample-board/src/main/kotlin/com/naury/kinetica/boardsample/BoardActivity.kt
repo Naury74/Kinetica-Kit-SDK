@@ -90,6 +90,9 @@ private fun StoreHome(viewModel: StoreViewModel = viewModel()) {
             TextButton(onClick = { context.startActivity(Intent(context, XmlBoardActivity::class.java)) }) {
                 Text(stringResource(R.string.board_xml))
             }
+            TextButton(onClick = { context.startActivity(Intent(context, EffectsActivity::class.java)) }) {
+                Text(stringResource(R.string.board_effects))
+            }
         }
         if (editing) {
             Text(

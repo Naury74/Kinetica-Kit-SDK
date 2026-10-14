@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.board.BoardWidget
+import com.naury.kinetica.presets.EffectPresets
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -48,12 +49,20 @@ import kotlinx.coroutines.delay
 
 /** 이 앱이 보드에 내놓는 위젯 목록. 키·이름·처음 크기만 알려 주고, 내용은 [StoreWidget]이 그린다. */
 val storeCatalog = listOf(
-    BoardWidget("sales", "오늘 매출", widthDp = 176f, heightDp = 120f),
-    BoardWidget("orders", "최근 주문", widthDp = 176f, heightDp = 150f, rowSpan = 2),
+    BoardWidget("sales", "오늘 매출", widthDp = 176f, heightDp = 120f, effects = EffectPresets.card),
+    BoardWidget("orders", "최근 주문", widthDp = 176f, heightDp = 150f, rowSpan = 2, effects = EffectPresets.card),
     BoardWidget("chart", "주간 매출", widthDp = 360f, heightDp = 170f, columnSpan = 2),
     BoardWidget("clock", "시계", widthDp = 176f, heightDp = 96f),
     BoardWidget("memo", "메모", widthDp = 176f, heightDp = 150f, placedByDefault = false, multiple = true),
-    BoardWidget("notice", "공지", widthDp = 360f, heightDp = 110f, columnSpan = 2, placedByDefault = false, removable = true),
+    BoardWidget(
+        "notice",
+        "공지",
+        widthDp = 360f,
+        heightDp = 110f,
+        columnSpan = 2,
+        placedByDefault = false,
+        effects = EffectPresets.attention,
+    ),
 )
 
 /** [key]는 위젯 키, [id]는 놓인 자리 id(메모처럼 여러 개 놓는 위젯은 자리마다 다름). */
