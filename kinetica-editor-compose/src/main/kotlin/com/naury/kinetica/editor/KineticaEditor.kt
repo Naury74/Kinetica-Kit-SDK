@@ -179,11 +179,17 @@ private fun PropertiesFor(state: EditorState, edits: PropertyEdits, theme: Studi
     val selection by state.session.selection.collectAsStateWithLifecycle()
     // 모션 편집 중에는 화면에 보이는(재생 위치의) 값을 보여 준다. 고친 값도 그 기준으로 키가 된다.
     val document = remember(base, state.motionEnabled, state.playheadMs) { state.displayed(base) }
-    val inspectorEdits =
-        remember(state, edits) {
-            InspectorEdits(edits, LayoutEdits(state), StyleEdits(state), EffectEdits(state), ShapeEdits(state), TextEdits(state))
-        }
-    InspectorPanel(selection.selectedIds.singleOrNull()?.let(document::node), inspectorEdits, theme, Modifier.fillMaxWidth())
+    val inspectorEdits = remember(state, edits) {
+        InspectorEdits(edits, state)
+    }
+    InspectorPanel(
+        selection.selectedIds.singleOrNull()?.let(document::node),
+        document,
+        inspectorEdits,
+        theme,
+        Modifier.fillMaxWidth(),
+        onInsert = { main -> inspectorEdits.component.insertInstance(main.id, state.visibleCenter()) },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -304,6 +310,7 @@ private fun SelectionBar(state: EditorState, actions: EditorActions, theme: Stud
         val editableText = selection.selectedIds.singleOrNull()?.takeIf { document.node(it)?.content is NodeContent.Text }
         if (editableText != null) ToolButton(R.string.kinetica_edit_text, colors) { state.editingText = editableText }
         ToolButton(R.string.kinetica_auto_layout, colors, onClick = actions::wrapInAutoLayout)
+        ToolButton(R.string.kinetica_make_component, colors) { ComponentEdits(state).makeComponent(selection.selectedIds) }
         ToolButton(R.string.kinetica_group, colors, enabled = count >= 2, onClick = actions::group)
         ToolButton(R.string.kinetica_ungroup, colors, enabled = document.let { actions.canUngroup }, onClick = actions::ungroup)
         ToolButton(R.string.kinetica_bring_forward, colors, onClick = actions::bringForward)

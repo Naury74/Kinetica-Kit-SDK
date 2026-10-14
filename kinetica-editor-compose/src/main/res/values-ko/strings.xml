@@ -162,4 +162,18 @@
     <string name="kinetica_font_mono">고정폭</string>
     <string name="kinetica_font_cursive">손글씨</string>
     <string name="kinetica_section_font">글꼴</string>
+    <string name="kinetica_make_component">컴포넌트로</string>
+    <string name="kinetica_section_tokens">디자인 토큰</string>
+    <string name="kinetica_section_components">컴포넌트</string>
+    <string name="kinetica_components_empty">아직 컴포넌트가 없습니다. Frame을 고르고 컴포넌트로를 누르세요.</string>
+    <string name="kinetica_insert_instance">넣기</string>
+    <string name="kinetica_insert_kit">기본 키트 넣기</string>
+    <string name="kinetica_field_token_name">새 토큰 이름</string>
+    <string name="kinetica_field_token_color">색</string>
+    <string name="kinetica_section_component">컴포넌트</string>
+    <string name="kinetica_field_component_name">컴포넌트 이름</string>
+    <string name="kinetica_section_instance">인스턴스</string>
+    <string name="kinetica_go_to_main">원본으로</string>
+    <string name="kinetica_reset_overrides">덮어쓴 값 되돌리기(%1$d)</string>
+    <string name="kinetica_detach">분리</string>
 </resources>

@@ -163,4 +163,18 @@
     <string name="kinetica_font_mono">Monospace</string>
     <string name="kinetica_font_cursive">Handwriting</string>
     <string name="kinetica_section_font">Font</string>
+    <string name="kinetica_make_component">Make component</string>
+    <string name="kinetica_section_tokens">Design tokens</string>
+    <string name="kinetica_section_components">Components</string>
+    <string name="kinetica_components_empty">No components yet. Select a frame and press Make component.</string>
+    <string name="kinetica_insert_instance">Insert</string>
+    <string name="kinetica_insert_kit">Insert starter kit</string>
+    <string name="kinetica_field_token_name">New token name</string>
+    <string name="kinetica_field_token_color">Color</string>
+    <string name="kinetica_section_component">Component</string>
+    <string name="kinetica_field_component_name">Component name</string>
+    <string name="kinetica_section_instance">Instance</string>
+    <string name="kinetica_go_to_main">Go to main</string>
+    <string name="kinetica_reset_overrides">Reset overrides (%1$d)</string>
+    <string name="kinetica_detach">Detach</string>
 </resources>

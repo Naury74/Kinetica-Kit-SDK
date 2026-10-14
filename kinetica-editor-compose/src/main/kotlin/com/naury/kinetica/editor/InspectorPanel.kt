@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.NodeContent
+import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 import java.util.Locale
 
@@ -36,16 +37,21 @@ import java.util.Locale
  * 입력은 키보드 완료나 포커스를 잃을 때 적용하고, 올바르지 않으면 이전 값으로 되돌리며 오류를 알린다.
  */
 @Composable
-internal fun InspectorPanel(node: SceneNode?, edits: InspectorEdits, theme: StudioTheme, modifier: Modifier = Modifier) {
+@Suppress("LongParameterList")
+internal fun InspectorPanel(
+    node: SceneNode?,
+    document: SceneDocument,
+    edits: InspectorEdits,
+    theme: StudioTheme,
+    modifier: Modifier = Modifier,
+    onInsert: (SceneNode) -> Unit = {},
+) {
     if (node == null) {
-        Text(
-            stringResource(R.string.kinetica_properties_empty),
-            color = theme.onPanel.copy(alpha = HINT_ALPHA),
-            modifier = modifier.padding(16.dp),
-        )
+        DocumentPanel(document, edits.component, theme, onInsert, modifier)
         return
     }
     Column(modifier.verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ComponentNodeSection(node, edits.component, theme)
         TransformSection(node, edits.property)
         AppearanceSection(node, edits.property, theme)
         CornersSection(node, edits.shape, theme)
@@ -55,6 +61,7 @@ internal fun InspectorPanel(node: SceneNode?, edits: InspectorEdits, theme: Stud
             FontSection(node, it, edits.text, theme)
         }
         FillSection(node, edits.style, edits.property, theme)
+        FillTokenChips(node, document.tokens.keys, edits.component, theme)
         StrokeSection(node, edits.style, theme)
         EffectsSection(node, edits.effects, theme)
         (node.content as? NodeContent.Frame)?.let { AutoLayoutSection(node, it, edits.layout, theme) }
@@ -144,10 +151,15 @@ private fun KeyInput(node: SceneNode, field: String, current: String?, label: In
 
 @Composable
 internal fun ToggleChip(label: Int, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
+    ToggleChip(stringResource(label), checked, theme, onToggle)
+}
+
+@Composable
+internal fun ToggleChip(label: String, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
     FilterChip(
         selected = checked,
         onClick = onToggle,
-        label = { Text(stringResource(label)) },
+        label = { Text(label) },
         colors = FilterChipDefaults.filterChipColors(
             labelColor = theme.onPanel,
             selectedContainerColor = theme.accent.copy(alpha = CHIP_ALPHA),
