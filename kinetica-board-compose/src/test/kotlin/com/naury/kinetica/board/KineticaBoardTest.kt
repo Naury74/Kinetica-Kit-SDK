@@ -8,6 +8,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -15,7 +16,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -193,6 +198,28 @@ class KineticaBoardTest {
         compose.waitForIdle()
 
         assertThat((state.rectOf("w0")!!.top - before.top) / KineticaBoardState.UNITS).isGreaterThan(420.0)
+    }
+
+    @Test
+    fun `키보드로 고른 위젯을 방향키로 옮기고 Shift로 크기를 바꾸고 Delete로 뺀다`() {
+        val state = KineticaBoardState.create(catalog)
+        show(state, editing = true)
+        val before = state.rectOf("a")!!
+        val node = compose.onNodeWithTag(BOARD_WIDGET_TAG + "a")
+
+        node.requestFocus()
+        node.performKeyInput { pressKey(Key.DirectionRight) }
+        node.performKeyInput {
+            withKeyDown(Key.ShiftLeft) { pressKey(Key.DirectionDown) }
+        }
+        compose.waitForIdle()
+        val moved = state.rectOf("a")!!
+        node.performKeyInput { pressKey(Key.Delete) }
+        compose.waitForIdle()
+
+        assertThat(moved.left).isGreaterThan(before.left)
+        assertThat(moved.height).isGreaterThan(before.height)
+        assertThat(state.placedKeys).doesNotContain("a")
     }
 }
 

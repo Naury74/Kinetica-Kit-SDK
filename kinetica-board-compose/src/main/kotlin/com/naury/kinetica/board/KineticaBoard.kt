@@ -3,6 +3,7 @@ package com.naury.kinetica.board
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -32,6 +33,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -166,9 +173,34 @@ private fun EditLayer(
             colors = colors,
             controller = controller,
             actions = accessibilityActions(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)),
+            keys = Modifier.keyboardEditing(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)),
             onRemove = { state.remove(key) },
         )
     }
+}
+
+/**
+ * 키보드로 고른(초점이 있는) 위젯을 다룬다: 방향키로 옮기기, Shift+방향키로 크기, Delete·Backspace로 빼기.
+ * 격자 배치에서는 한 칸씩 움직인다.
+ */
+private fun Modifier.keyboardEditing(state: KineticaBoardState, key: String, permissions: BoardPermissions): Modifier =
+    onPreviewKeyEvent { event ->
+        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+        val delta = arrowDelta(event.key)
+        when {
+            event.key == Key.Delete || event.key == Key.Backspace -> permissions.remove && state.remove(key)
+            delta == null -> false
+            event.isShiftPressed -> permissions.resize && state.resizeBy(key, delta.first, delta.second)
+            else -> permissions.move && state.moveBy(key, delta.first, delta.second)
+        }
+    }.focusable()
+
+private fun arrowDelta(key: Key): Pair<Float, Float>? = when (key) {
+    Key.DirectionLeft -> -NUDGE_DP to 0f
+    Key.DirectionRight -> NUDGE_DP to 0f
+    Key.DirectionUp -> 0f to -NUDGE_DP
+    Key.DirectionDown -> 0f to NUDGE_DP
+    else -> null
 }
 
 /** TalkBack 등에서 끌기 없이 옮기고 크기를 바꾸고 빼는 동작. 허용된 것만 준다. */
@@ -284,6 +316,7 @@ private fun WidgetEditFrame(
     colors: BoardColors,
     controller: BoardDragController,
     actions: List<CustomAccessibilityAction>,
+    keys: Modifier,
     onRemove: () -> Unit,
 ) {
     val outline = if (dragging) Color.Transparent else colors.outline
@@ -294,6 +327,7 @@ private fun WidgetEditFrame(
             .background(outline.copy(alpha = EDIT_TINT))
             .testTag("$BOARD_WIDGET_TAG$key")
             .semantics { customActions = actions }
+            .then(keys)
             .pointerInput(key, permissions.move) {
                 if (!permissions.move) return@pointerInput
                 detectDragGestures(
