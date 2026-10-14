@@ -24,6 +24,23 @@ XML 화면은 `KineticaBoardView`에 `setBoard(state) { id, context -> View }`(�
 `setOnLongPressListener`를 쓴다. XML 속성은 `app:kinetica_editing`·`app:kinetica_stackAutoAdvanceMs`·`app:kinetica_accentColor`이며,
 View에 id가 있으면 화면을 돌려도 편집 모드가 남는다. Java에서도 `KineticaBoardState.create(catalog)`로 부른다.
 
+XML 화면의 상태는 `BoardStates.obtain(activity, catalog, storage)`로 얻는다. Compose의 `rememberKineticaBoardState`와 같이
+화면을 돌려도 배치·실행 취소가 남고, 화면이 가려질 때(ON_STOP)마다 저장하고, 화면이 끝나면 닫는다(`close()`를 부르지 않는다).
+같은 화면에 보드가 둘 이상이면 마지막 인자 `key`(ViewModel 이름)를 다르게 준다.
+
+```kotlin
+class HomeActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.home)
+        val state = BoardStates.obtain(this, catalog, BoardStorage.sharedPreferences(this, "home", "board"))
+        findViewById<KineticaBoardView>(R.id.board).setBoard(state) { id, context -> widgetView(state.widgetKeyOf(id), context) }
+    }
+}
+```
+
+`BoardViewFactory`는 자리마다 View를 한 번 만든다. 실시간 값(매출 등)은 만든 View를 호스트가 들고 있다가 갱신하거나, View 안에서 데이터를 구독한다.
+
 ## 동작
 
 | 상황 | 동작 |
@@ -36,7 +53,7 @@ View에 id가 있으면 화면을 돌려도 편집 모드가 남는다. Java에�
 | 처음 배치 | 위에서부터, 같은 줄이면 왼쪽부터 첫 빈자리. 넓은 화면은 옆으로 채운다 |
 | 자동 스크롤 | 끄는 손가락이 보이는 영역 위·아래 끝(분할 자리 바로 안쪽 48dp 띠나 그 너머)에 머물면 보드가 스크롤되고 위젯도 따라간다. 지금 내용 아래 한 화면까지만 늘어난다 |
 | 접근성 | 편집 모드에서 위젯마다 TalkBack 동작: 위·아래·왼쪽·오른쪽으로 옮기기(8dp, 격자는 한 칸), 크게·작게, 빼기 |
-| 여러 개 | `BoardWidget(multiple = true)`면 같은 위젯을 여러 번 추가한다. 자리 id는 `memo`, `memo.2`…이며 `content(id)`로 받고, 위젯 키는 `state.widgetKeyOf(id)` |
+| 여러 개 | `BoardWidget(multiple = true)`면 같은 위젯을 여러 번 추가한다. 자리 id는 `memo`, `memo.2`…이며 `content(id)`로 받고, 위젯 키는 `state.widgetKeyOf(id)`. 뺀 자리 id는 저장했다 열어도 다시 주지 않으므로 호스트가 자리 id로 둔 데이터가 새 자리에 섞이지 않는다. 자리 데이터 정리는 편집을 마칠 때 `state.itemIds`에 없는 것을 지운다(빼자마자 지우면 실행 취소로 되살린 자리의 데이터가 사라진다) |
 | 묶음 | 위젯을 다른 위젯 가운데(가운데 40%)에 놓으면 그 자리에서 넘겨 보는 묶음이 된다(아래 점 표시). 편집 중 오른쪽 위 숫자 배지·TalkBack "묶음 풀기"로 푼다. 코드: `state.stack(a, b)`·`unstack(id)`·`stackMembers(id)`. `KineticaBoard(stackAutoAdvanceMs = 5_000)`(XML은 `app:kinetica_stackAutoAdvanceMs`)이면 사용 모드에서 시간마다 넘어가고, 사용자가 넘기면 그때부터 다시 잰다. 필수 위젯이 든 묶음은 뺄 수 없다 |
 | 오른쪽에서 왼쪽 | 아랍어·히브리어처럼 레이아웃 방향이 RTL이면 보드 화면을 좌우로 뒤집는다. 처음 배치·끌기·분할 자리·추가 버튼이 오른쪽부터이고, 방향키·TalkBack "왼쪽으로"는 화면 왼쪽으로 옮긴다. 저장 배치는 방향과 상관없이 같다 |
 | 키보드 | 편집 모드에서 위젯에 초점을 두고 방향키로 옮기기, Shift+방향키로 크기, Delete로 빼기 |

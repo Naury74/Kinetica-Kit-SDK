@@ -131,4 +131,20 @@ class KineticaBoardStateTest {
         // 목록에서 위젯이 사라지면 그 위젯의 모든 자리가 빠진다.
         assertThat(KineticaBoardState.create(catalog, saved = state.toJson()).placedKeys).containsNoneOf("memo", "memo.2")
     }
+
+    @Test
+    fun `뺀 자리 id는 다시 주지 않고 저장했다 열어도 이어서 준다`() {
+        val withMemo = catalog + BoardWidget("memo", "메모", multiple = true, placedByDefault = false)
+        val state = KineticaBoardState.create(withMemo)
+        assertThat(state.addItem("memo")).isEqualTo("memo")
+        assertThat(state.addItem("memo")).isEqualTo("memo.2")
+        state.remove("memo.2")
+
+        assertThat(state.addItem("memo")).isEqualTo("memo.3")
+        state.remove("memo.3")
+        val reopened = KineticaBoardState.create(withMemo, saved = state.toJson())
+
+        assertThat(reopened.addItem("memo")).isEqualTo("memo.4")
+        assertThat(reopened.itemIds).containsExactly("sales", "orders", "memo", "memo.4")
+    }
 }

@@ -70,6 +70,35 @@ class KineticaBoardViewTest {
         }
     }
 
+    @Test
+    fun `XML 화면 보드 상태는 화면을 다시 만들어도 실행 취소까지 남고 가려질 때 저장된다`() {
+        val saves = mutableListOf<String>()
+        val storage = object : BoardStorage {
+            override fun load(): String? = null
+
+            override fun save(json: String) {
+                saves += json
+            }
+        }
+        val catalog = listOf(BoardWidget("a", "A"), BoardWidget("memo", "메모", multiple = true, placedByDefault = false))
+        ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
+            var first: KineticaBoardState? = null
+            scenario.onActivity { activity ->
+                first = BoardStates.obtain(activity, catalog, storage).also { it.add("memo") }
+            }
+            scenario.recreate()
+            scenario.onActivity { activity ->
+                val again = BoardStates.obtain(activity, catalog, storage)
+                assertThat(again).isSameInstanceAs(first)
+                assertThat(again.history.state.value.canUndo).isTrue()
+            }
+            scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+
+            assertThat(saves).isNotEmpty()
+            assertThat(KineticaBoardState.create(catalog, saved = saves.last()).itemIds).contains("memo")
+        }
+    }
+
     private companion object {
         const val BOARD_ID = 42
     }

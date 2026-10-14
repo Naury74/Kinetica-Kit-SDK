@@ -44,6 +44,9 @@ public class KineticaBoardState private constructor(
 ) {
     private val widgets = catalog.associateBy { it.key }
 
+    /** 위젯 키마다 지금까지 준 가장 큰 자리 번호. 뺀 자리 id를 다시 주지 않아, 호스트가 자리 id로 둔 데이터가 새 자리에 섞이지 않는다. */
+    private val issued = ItemNumbers()
+
     /** 기준 폭 기준 배치 문서. 놓인 자리마다 그 id를 노드 id·호스트 뷰 키로 쓰는 호스트 뷰 노드 하나다. */
     public val document: StateFlow<SceneDocument> get() = session.document
 
@@ -70,8 +73,21 @@ public class KineticaBoardState private constructor(
     /**
      * 보드에 놓인 자리 id(그리기 순서). 한 번만 놓는 위젯은 위젯 키와 같고, [BoardWidget.multiple] 위젯은 `memo`, `memo.2`처럼 자리마다 다르다.
      * 자리 id는 옮기거나 저장해도 바뀌지 않으므로 호스트가 자리마다 데이터를 둘 때 키로 쓴다. 위젯 키는 [widgetKeyOf].
+     * 묶음 안의 자리는 [itemIds]에 있다.
      */
     public val placedKeys: List<String> get() = session.document.value.rootOrder.map { it.value }
+
+    /**
+     * 지금 보드에 있는 모든 자리 id(묶음 안의 것 포함). 뺀 자리 id는 다시 주지 않으므로, 호스트가 자리마다 둔 데이터는
+     * 편집을 마칠 때 여기에 없는 것을 지우면 된다. 빼자마자 지우면 실행 취소로 되살린 자리의 데이터가 사라진다.
+     */
+    public val itemIds: Set<String>
+        get() = session.document.value.let { document ->
+            document.rootOrder.flatMap { id ->
+                val node = document.node(id) ?: return@flatMap emptyList()
+                node.stackMembers().map { it.id }.ifEmpty { listOf(id.value) }
+            }.toSet()
+        }
 
     /** 더 놓을 수 있는 위젯(아직 놓이지 않았거나 여러 개 놓을 수 있는 것). 위젯 추가 목록에 쓴다. */
     public val availableWidgets: List<BoardWidget>
@@ -96,7 +112,9 @@ public class KineticaBoardState private constructor(
         if (widget !in availableWidgets) return null
         val document = session.document.value
         val taken = document.nodes.values.flatMap { node -> node.stackMembers().map { it.id } }.toSet()
-        val id = newItemId(key, document, widgets.keys, taken)
+        // 한 번만 놓는 위젯은 자리 id가 늘 위젯 키다. 여러 개 놓는 위젯만 번호를 이어서 준다.
+        val id = newItemId(key, document, widgets.keys, taken, if (widget.multiple) issued[key] else 0)
+        issued.record(key, id)
         val node = placementFor(widget, document, id)
         return id.takeIf { session.commands.execute(SceneCommand.AddNode(node)) is CommandResult.Applied }
     }
@@ -183,8 +201,12 @@ public class KineticaBoardState private constructor(
     public fun toJson(): String {
         val known = JsonArray(catalog.map { JsonPrimitive(it.key) })
         val document = session.document.value
+        val numbers = JsonObject(issued.all.mapValues { JsonPrimitive(it.value) })
         return codec.encode(
-            document.copy(extensions = document.extensions + (EXTENSION_KEY to JsonObject(mapOf(KNOWN to known)).toString())),
+            document.copy(
+                extensions =
+                    document.extensions + (EXTENSION_KEY to JsonObject(mapOf(KNOWN to known, ISSUED to numbers)).toString()),
+            ),
         )
     }
 
@@ -234,6 +256,7 @@ public class KineticaBoardState private constructor(
         private const val EXTENSION_KEY = "kinetica.board"
         private const val WIDGET_KEY = "kinetica.widget"
         private const val KNOWN = "known"
+        private const val ISSUED = "issued"
         private val codec = SceneCodec()
 
         /**
@@ -279,6 +302,7 @@ public class KineticaBoardState private constructor(
             val initial = draft.document.value
             draft.close()
             val state = KineticaBoardState(catalog, arrangement, (KineticaSession.create(initial) as SessionOpenResult.Opened).session)
+            state.issued.restore(restored?.let(::issuedNumbers).orEmpty(), draft.issued.all, state.document.value)
             state.restoreFailed = saved != null && restored == null
             return state
         }
@@ -294,6 +318,13 @@ public class KineticaBoardState private constructor(
             val raw = document.extensions[EXTENSION_KEY] ?: return null
             Json.parseToJsonElement(raw).jsonObject[KNOWN]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }?.toSet()
         }.getOrNull()
+
+        private fun issuedNumbers(document: SceneDocument): Map<String, Int> = runCatching {
+            val raw = document.extensions[EXTENSION_KEY] ?: return emptyMap()
+            Json.parseToJsonElement(raw).jsonObject[ISSUED]?.jsonObject?.mapNotNull { (key, value) ->
+                value.jsonPrimitive.contentOrNull?.toIntOrNull()?.let { key to it }
+            }?.toMap().orEmpty()
+        }.getOrDefault(emptyMap())
 
         internal fun widgetKeyOf(node: SceneNode): String = node.metadata[WIDGET_KEY] ?: node.id.value
 
@@ -321,12 +352,38 @@ public class KineticaBoardState private constructor(
 }
 
 // 첫 자리는 위젯 키 그대로(예전 저장본과 같은 id), 그다음은 `.2`, `.3`… 다른 위젯 키와 겹치지 않는 첫 번호를 쓴다.
-private fun newItemId(key: String, document: SceneDocument, widgetKeys: Set<String>, taken: Set<String>): String = generateSequence(1) {
-    it +
-        1
+private fun newItemId(key: String, document: SceneDocument, widgetKeys: Set<String>, taken: Set<String>, issued: Int): String =
+    generateSequence(issued + 1) { it + 1 }
+        .map { if (it == 1) key else "$key.$it" }
+        .first { id -> document.node(NodeId(id)) == null && id !in taken && (id == key || id !in widgetKeys) }
+
+/** 위젯 키마다 지금까지 준 가장 큰 자리 번호. */
+internal class ItemNumbers {
+    private val numbers = HashMap<String, Int>()
+
+    val all: Map<String, Int> get() = numbers
+
+    operator fun get(key: String): Int = numbers[key] ?: 0
+
+    fun record(key: String, id: String) {
+        numbers[key] = maxOf(this[key], itemNumber(key, id))
+    }
+
+    /** 저장된 번호들과 [document]에 놓인 자리(번호가 없던 이전 형식 저장본 포함)로 맞춘다. */
+    fun restore(saved: Map<String, Int>, more: Map<String, Int>, document: SceneDocument) {
+        (saved.entries + more.entries).forEach { (key, number) -> numbers[key] = maxOf(this[key], number) }
+        document.rootOrder.mapNotNull(document::node).flatMap { node ->
+            node.stackMembers().map { it.key to it.id }.ifEmpty { listOf(KineticaBoardState.widgetKeyOf(node) to node.id.value) }
+        }.forEach { (key, id) -> record(key, id) }
+    }
 }
-    .map { if (it == 1) key else "$key.$it" }
-    .first { id -> document.node(NodeId(id)) == null && id !in taken && (id == key || id !in widgetKeys) }
+
+/** 자리 id의 번호. 위젯 키와 같으면 1, `memo.3`이면 3, 알 수 없으면 0. */
+private fun itemNumber(key: String, id: String): Int = when {
+    id == key -> 1
+    id.startsWith("$key.") -> id.removePrefix("$key.").toIntOrNull() ?: 0
+    else -> 0
+}
 
 internal fun BoardArrangement.gapUnits(): Double = when (this) {
     is BoardArrangement.Free -> gapDp * KineticaBoardState.UNITS
