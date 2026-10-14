@@ -76,10 +76,14 @@ public class CanvasGestureController(
         onChange?.invoke()
     }
 
-    public fun onUp(pointerId: Long) {
+    /**
+     * 손가락을 뗐다. [eventUptimeMillis]는 입력 이벤트가 생긴 시각(밀리초, 단조 증가)이며, 주면 두 번 누르기 간격을 이 값으로 잰다.
+     * 화면이 바빠 이벤트 처리가 늦어져도 실제 누른 간격으로 판단하기 위해서다. 없으면 지금 시각을 쓴다.
+     */
+    public fun onUp(pointerId: Long, eventUptimeMillis: Long? = null) {
         pointers.remove(pointerId) ?: return
         when (mode) {
-            InteractionMode.PressPending -> press?.let(::tap)
+            InteractionMode.PressPending -> press?.let { tap(it, eventUptimeMillis ?: uptimeMillis()) }
             InteractionMode.DragNode, InteractionMode.ResizeNode, InteractionMode.RotateNode -> host.commitTransaction()
             InteractionMode.SelectMarquee -> finishMarquee()
             else -> Unit
@@ -185,8 +189,7 @@ public class CanvasGestureController(
             ?.let { host.execute(SceneCommand.TransformNodes(mapOf(id to it))) }
     }
 
-    private fun tap(press: Press) {
-        val now = uptimeMillis()
+    private fun tap(press: Press, now: Long) {
         val previous = lastTap
         val leaf = press.leaf
         val isDouble = leaf != null && previous != null && previous.leaf == leaf &&

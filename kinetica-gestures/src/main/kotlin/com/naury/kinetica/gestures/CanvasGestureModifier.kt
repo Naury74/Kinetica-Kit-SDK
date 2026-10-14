@@ -26,7 +26,7 @@ public fun Modifier.canvasGestures(controller: CanvasGestureController): Modifie
                     val point = change.position.toVec2()
                     when {
                         change.changedToDownIgnoreConsumed() -> controller.onDown(id, point)
-                        change.changedToUpIgnoreConsumed() -> controller.onUp(id)
+                        change.changedToUpIgnoreConsumed() -> controller.onUp(id, change.uptimeMillis)
                         change.pressed && change.positionChanged() -> controller.onMove(id, point)
                     }
                     change.consume()
