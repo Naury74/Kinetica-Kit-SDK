@@ -18,8 +18,10 @@ import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneData
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.export.DeviceFrame
 import com.naury.kinetica.export.ExportRequest
 import com.naury.kinetica.export.ExportResult
+import com.naury.kinetica.export.MockupFrame
 import com.naury.kinetica.export.PngExporter
 import com.naury.kinetica.history.KineticaSession
 import com.naury.kinetica.history.SessionOpenResult
@@ -147,11 +149,12 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    /** 1080 픽셀 너비 PNG로 사용자가 고른 [uri]에 내보낸다. */
-    fun export(uri: Uri) {
+    /** 1080 픽셀 너비 PNG로 사용자가 고른 [uri]에 내보낸다. [mockup]이면 휴대폰 틀에 넣은 목업으로 내보낸다. */
+    fun export(uri: Uri, mockup: Boolean = false) {
         val ready = mutableState.value as? StudioState.Ready ?: return
+        val request = ExportRequest(widthPx = EXPORT_WIDTH, mockup = if (mockup) MockupFrame(DeviceFrame.Phone) else null)
         viewModelScope.launch {
-            val result = exporter.exportToUri(ready.session.document.value, ExportRequest(widthPx = EXPORT_WIDTH), resolver, uri)
+            val result = exporter.exportToUri(ready.session.document.value, request, resolver, uri)
             val message = if (result is ExportResult.Success) R.string.sample_exported else R.string.sample_export_failed
             mutableState.value = (mutableState.value as? StudioState.Ready ?: ready).copy(message = message)
         }

@@ -17,4 +17,5 @@
     <string name="sample_preview_hint">As app users see it. Host views are live.</string>
     <string name="sample_back_to_edit">Edit</string>
     <string name="sample_action_received">Action received by host: %1$s</string>
+    <string name="sample_export_mockup">Export mockup</string>
 </resources>

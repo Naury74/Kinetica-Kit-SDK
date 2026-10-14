@@ -72,8 +72,9 @@ private fun StudioScreen(viewModel: StudioViewModel = viewModel()) {
     val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let(viewModel::addPhoto)
     }
+    var mockup by remember { mutableStateOf(false) }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
-        uri?.let(viewModel::export)
+        uri?.let { viewModel.export(it, mockup) }
     }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -84,13 +85,7 @@ private fun StudioScreen(viewModel: StudioViewModel = viewModel()) {
             StudioState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
 
             is StudioState.Ready -> {
-                current.message?.let { message ->
-                    val text = current.messageArg?.let { stringResource(message, it) } ?: stringResource(message)
-                    LaunchedEffect(current) {
-                        snackbar.showSnackbar(text)
-                        viewModel.messageShown()
-                    }
-                }
+                MessageEffect(current, snackbar, viewModel::messageShown)
                 val modifier = Modifier.padding(padding).safeDrawingPadding()
                 if (previewing) {
                     Preview(current, data, slots, theme, modifier, onAction = viewModel::onAction, onClose = { previewing = false })
@@ -111,12 +106,33 @@ private fun StudioScreen(viewModel: StudioViewModel = viewModel()) {
                         }
                         ToolbarButton(R.string.sample_demo, theme, viewModel::openDemo)
                         ToolbarButton(R.string.sample_save, theme, viewModel::save)
-                        ToolbarButton(R.string.sample_export, theme) { exportLauncher.launch("kinetica-scene.png") }
+                        ExportButtons(theme) { asMockup, name ->
+                            mockup = asMockup
+                            exportLauncher.launch(name)
+                        }
                     },
                 )
             }
         }
     }
+}
+
+/** 화면 상태의 알림을 한 번 보여 주고 [onShown]으로 지운다. */
+@Composable
+private fun MessageEffect(state: StudioState.Ready, snackbar: SnackbarHostState, onShown: () -> Unit) {
+    val message = state.message ?: return
+    val text = state.messageArg?.let { stringResource(message, it) } ?: stringResource(message)
+    LaunchedEffect(state) {
+        snackbar.showSnackbar(text)
+        onShown()
+    }
+}
+
+/** PNG와 휴대폰 틀 목업 내보내기. [export]는 목업 여부와 기본 파일 이름을 받는다. */
+@Composable
+private fun ExportButtons(theme: StudioTheme, export: (mockup: Boolean, name: String) -> Unit) {
+    ToolbarButton(R.string.sample_export, theme) { export(false, "kinetica-scene.png") }
+    ToolbarButton(R.string.sample_export_mockup, theme) { export(true, "kinetica-mockup.png") }
 }
 
 /** 앱 사용자가 보게 될 화면. 호스트 뷰는 눌리고, 데이터는 실시간이며, 동작은 [onAction]으로 온다. */

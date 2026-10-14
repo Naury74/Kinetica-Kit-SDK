@@ -16,4 +16,5 @@
     <string name="sample_preview_hint">앱 사용자가 보는 화면입니다. 호스트 뷰가 실제로 동작합니다.</string>
     <string name="sample_back_to_edit">편집</string>
     <string name="sample_action_received">호스트가 받은 동작: %1$s</string>
+    <string name="sample_export_mockup">목업 내보내기</string>
 </resources>
