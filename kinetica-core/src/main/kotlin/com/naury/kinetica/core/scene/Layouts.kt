@@ -2,6 +2,7 @@ package com.naury.kinetica.core.scene
 
 import com.naury.kinetica.core.geometry.Rect
 import com.naury.kinetica.core.geometry.Size
+import com.naury.kinetica.core.geometry.Vec2
 
 /**
  * 자동 배치([AutoLayout])와 크기 제약([LayoutConstraints])을 문서에 반영하는 순수 함수 모음.
@@ -62,6 +63,41 @@ public object Layouts {
         }
         val constrained = if (nodes == after.nodes) after else after.copy(nodes = nodes)
         return apply(constrained)
+    }
+
+    /**
+     * 자동 배치 Frame의 자식 [id]를 문서 좌표로 [documentDelta]만큼 끌었을 때 들어갈 자식 순서 자리(`ReorderNode`의 `toIndex`).
+     * 끈 노드의 가운데를 형제들과 비교하며, 줄 바꿈 배치는 줄을 먼저 본다. 부모가 자동 배치 Frame이 아니면 `null`이다.
+     */
+    public fun dropIndex(graph: SceneGraph, id: NodeId, documentDelta: Vec2): Int? {
+        val nodes = graph.document.nodes
+        val parent = nodes[id]?.parentId?.let(nodes::get)?.content as? NodeContent.Frame
+        val layout = parent?.layout
+        val point = draggedCenter(graph, id, documentDelta)
+        if (layout == null || point == null) return null
+        val axis = Axis(layout.direction)
+        val others = parent.childIds - id
+        val firstAfter = others.indexOfFirst { other ->
+            val rect = boundsInParent(nodes, other)?.takeIf { nodes[other]?.visible == true } ?: return@indexOfFirst false
+            val pointCross = axis.cross(point.x, point.y)
+            when {
+                layout.wrap && axis.cross(rect.left, rect.top) > pointCross -> true
+                layout.wrap && axis.cross(rect.right, rect.bottom) < pointCross -> false
+                else -> axis.main(rect.center.x, rect.center.y) > axis.main(point.x, point.y)
+            }
+        }
+        return if (firstAfter < 0) others.size else firstAfter
+    }
+
+    /** [id]를 [documentDelta]만큼 옮겼을 때 부모 좌표의 가운데. */
+    private fun draggedCenter(graph: SceneGraph, id: NodeId, documentDelta: Vec2): Vec2? {
+        val node = graph.document.nodes[id] ?: return null
+        val moved = TransformOps.move(graph, listOf(id), documentDelta)[id] ?: return null
+        val center = boundsInParent(graph.document.nodes, id)?.center ?: return null
+        return Vec2(
+            center.x + moved.translationX - node.transform.translationX,
+            center.y + moved.translationY - node.transform.translationY,
+        )
     }
 
     /** 부모 기준 축 정렬 범위. 크기가 없는 그룹은 자손 범위의 합이고, 자손이 없으면 `null`이다. */

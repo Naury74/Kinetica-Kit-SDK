@@ -1117,6 +1117,7 @@ public final class com/naury/kinetica/core/scene/LayoutDirection$Companion {
 public final class com/naury/kinetica/core/scene/Layouts {
 	public static final field INSTANCE Lcom/naury/kinetica/core/scene/Layouts;
 	public final fun apply (Lcom/naury/kinetica/core/scene/SceneDocument;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun dropIndex-lYf7Kd4 (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;Lcom/naury/kinetica/core/geometry/Vec2;)Ljava/lang/Integer;
 	public final fun resizeArtboard (Lcom/naury/kinetica/core/scene/SceneDocument;DD)Lcom/naury/kinetica/core/scene/SceneDocument;
 }
 
