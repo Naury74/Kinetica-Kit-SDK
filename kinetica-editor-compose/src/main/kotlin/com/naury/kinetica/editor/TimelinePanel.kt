@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -38,14 +39,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.naury.kinetica.core.animation.AnimatableProperties
 import com.naury.kinetica.core.animation.AnimatableProperty
 import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.scene.NodeId
+import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.motion.PlaybackController
 import com.naury.kinetica.presets.PresetRegistry
 import java.util.Locale
@@ -90,21 +94,27 @@ internal fun TimelinePanel(state: EditorState, theme: StudioTheme, modifier: Mod
             )
             return@Column
         }
+        val rows = animatedRows(document, timeline, nodeId)
+        // 눈금자는 고정하고 속성 줄만 위아래로 넘긴다. 좌우 스크롤은 같은 상태를 써서 눈금자와 키 줄이 함께 움직인다.
+        val scroll = rememberScrollState()
+        val laneWidth = LANE_START_PADDING + MS_WIDTH * durationMs.toFloat() + LANE_END_PADDING
         Row {
-            Column(Modifier.width(LABEL_WIDTH)) {
-                Box(Modifier.height(RULER_HEIGHT))
-                ANIMATED.forEach { (property, label) -> TrackLabel(state, nodeId, property, label, theme) }
-            }
-            val scroll = rememberScrollState()
+            Box(Modifier.width(LABEL_WIDTH).height(RULER_HEIGHT))
             Box(Modifier.weight(1f).horizontalScroll(scroll)) {
-                val laneWidth = LANE_START_PADDING + MS_WIDTH * durationMs.toFloat() + LANE_END_PADDING
+                Box(Modifier.width(laneWidth)) { Ruler(state, durationMs, theme) }
+                Playhead(state.playheadMs, theme, Modifier.matchParentSize())
+            }
+        }
+        Row(Modifier.verticalScroll(rememberScrollState())) {
+            Column(Modifier.width(LABEL_WIDTH)) {
+                rows.forEach { (property, label) -> TrackLabel(state, nodeId, property, label, theme) }
+            }
+            Box(Modifier.weight(1f).horizontalScroll(scroll)) {
                 Column(Modifier.width(laneWidth)) {
-                    Ruler(state, durationMs, theme)
-                    ANIMATED.forEach { (property, label) ->
+                    rows.forEach { (property, label) ->
                         val track = timeline?.track(nodeId, property)
                         KeyLane(state, nodeId, property, track?.keyframes?.map { it.timeMs }.orEmpty(), label, selectedKey, theme) {
-                            selectedKey =
-                                it
+                            selectedKey = it
                         }
                     }
                 }
@@ -136,7 +146,13 @@ private fun TrackLabel(state: EditorState, nodeId: NodeId, property: AnimatableP
     val name = stringResource(label)
     val description = stringResource(R.string.kinetica_add_key, name)
     Row(Modifier.height(ROW_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
-        Text(name, color = theme.onPanel, modifier = Modifier.weight(1f).padding(start = 8.dp))
+        Text(
+            name,
+            color = theme.onPanel,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(start = 8.dp),
+        )
         TextButton(onClick = { state.addKey(nodeId, property) }, modifier = Modifier.semantics { contentDescription = description }) {
             Text("+", color = theme.accent)
         }
@@ -281,6 +297,14 @@ private fun seconds(ms: Double): String = String.format(Locale.ROOT, "%.2f", ms 
 internal const val TIMELINE_TAG = "kinetica-timeline"
 internal const val RULER_TAG = "kinetica-timeline-ruler"
 
+// 그 노드에 없는 속성(그림자 없는 노드의 그림자 등)은 키를 넣어도 바뀌지 않으므로 숨긴다. 이미 키가 있으면 지울 수 있게 보인다.
+private fun animatedRows(document: SceneDocument, timeline: Timeline?, nodeId: NodeId): List<Pair<AnimatableProperty, Int>> {
+    val node = document.node(nodeId) ?: return emptyList()
+    return ANIMATED.filter { (property, _) ->
+        AnimatableProperties.read(node, property) != null || timeline?.track(nodeId, property) != null
+    }
+}
+
 private val ANIMATED = listOf(
     AnimatableProperty.TranslationX to R.string.kinetica_property_x,
     AnimatableProperty.TranslationY to R.string.kinetica_property_y,
@@ -325,7 +349,7 @@ private val EASINGS = listOf(
 
 /** docs 24: 1초 80dp. */
 private val MS_WIDTH = 0.08.dp
-private val LABEL_WIDTH = 132.dp
+private val LABEL_WIDTH = 168.dp
 private val RULER_HEIGHT = 32.dp
 private val ROW_HEIGHT = 44.dp
 private val DIAMOND_SIZE = 10.dp

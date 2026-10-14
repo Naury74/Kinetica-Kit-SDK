@@ -187,10 +187,10 @@
     <string name="kinetica_property_shadow_x">그림자 X</string>
     <string name="kinetica_property_shadow_spread">그림자 퍼짐</string>
     <string name="kinetica_property_shadow_color">그림자 색</string>
-    <string name="kinetica_property_corner_top_left">왼쪽 위 모서리</string>
-    <string name="kinetica_property_corner_top_right">오른쪽 위 모서리</string>
-    <string name="kinetica_property_corner_bottom_right">오른쪽 아래 모서리</string>
-    <string name="kinetica_property_corner_bottom_left">왼쪽 아래 모서리</string>
+    <string name="kinetica_property_corner_top_left">좌상단 모서리</string>
+    <string name="kinetica_property_corner_top_right">우상단 모서리</string>
+    <string name="kinetica_property_corner_bottom_right">우하단 모서리</string>
+    <string name="kinetica_property_corner_bottom_left">좌하단 모서리</string>
     <string name="kinetica_layout_wrap">줄 바꿈</string>
     <string name="kinetica_field_line_gap">줄 간격</string>
     <string name="kinetica_section_size_limits">크기 제한</string>

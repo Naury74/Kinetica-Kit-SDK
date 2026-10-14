@@ -62,4 +62,23 @@ class TimelinePanelTest {
         val node = session.document.value.node(session.document.value.rootOrder.single())!!
         assertThat(node.transform.translationX).isEqualTo(before.node(node.id)!!.transform.translationX)
     }
+
+    @Test
+    fun `노드에 있는 속성만 보이고 아래쪽 속성까지 스크롤해 키를 넣는다`() {
+        compose.setContent { KineticaEditor(session) }
+        compose.onNodeWithText("Rectangle").performClick()
+        compose.onNodeWithText("Motion").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        // 새 사각형에는 그림자·그라디언트가 없다.
+        compose.onNodeWithContentDescription("Add key for Shadow color").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Add key for Gradient angle").assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("Add key for Corner BL").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        val document = session.document.value
+        val track = document.timelines.single().track(document.rootOrder.single(), AnimatableProperty.CornerBottomLeft)
+        assertThat(track?.keyframes?.map { it.timeMs }).containsExactly(0L)
+    }
 }
