@@ -4,6 +4,7 @@ import com.naury.kinetica.core.command.CommandResult
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneLimits
+import com.naury.kinetica.core.scene.TextMeasurer
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -61,9 +62,11 @@ public data class SelectionState(val selectedIds: List<NodeId> = emptyList()) {
 /**
  * @property historyCapacity 실행 취소 단계 수 상한
  * @property historyMaxChangedNodes 실행 취소 기록 전체에 보관하는 바뀐 노드 수 상한
+ * @property textMeasurer 글자에 맞춰 크기가 바뀌는 글자 노드를 잴 측정기. 없으면 저장된 크기를 쓴다.
  */
 public data class SessionConfig(
     val limits: SceneLimits = SceneLimits.Default,
     val historyCapacity: Int = SceneHistory.DEFAULT_CAPACITY,
     val historyMaxChangedNodes: Int = SceneHistory.DEFAULT_MAX_CHANGED_NODES,
+    val textMeasurer: TextMeasurer? = null,
 )

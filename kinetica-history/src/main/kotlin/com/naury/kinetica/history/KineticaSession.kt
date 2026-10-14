@@ -8,6 +8,7 @@ import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneValidator
 import com.naury.kinetica.core.scene.SceneViolation
+import com.naury.kinetica.core.scene.TextMeasurer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,8 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 public class KineticaSession private constructor(initial: SceneDocument, config: SessionConfig) {
     private val lock = Any()
-    private val reducer = SceneReducer(config.limits)
+    private val limits = config.limits
+    private var reducer = SceneReducer(config.limits, config.textMeasurer)
     private val sceneHistory = SceneHistory(config.historyCapacity, config.historyMaxChangedNodes)
     private val documentState = MutableStateFlow(initial)
     private val selectionState = MutableStateFlow(SelectionState())
@@ -32,6 +34,18 @@ public class KineticaSession private constructor(initial: SceneDocument, config:
     public val selection: StateFlow<SelectionState> = selectionState.asStateFlow()
     public val commands: CommandDispatcher = Dispatcher()
     public val history: HistoryController = History()
+
+    /**
+     * 글자에 맞춰 크기가 바뀌는 글자 노드([com.naury.kinetica.core.scene.TextAutoSize])를 잴 측정기. 다음 명령부터 쓴다.
+     * 편집기(`KineticaEditor`)는 비어 있으면 화면 글꼴로 재는 측정기를 넣는다.
+     */
+    public var textMeasurer: TextMeasurer? = config.textMeasurer
+        set(value) {
+            synchronized(lock) {
+                field = value
+                reducer = SceneReducer(limits, value)
+            }
+        }
 
     /** 선택을 바꾼다. 문서에 없는 id는 무시하고 중복은 한 번만 남긴다. */
     public fun select(ids: Collection<NodeId>) {
