@@ -825,6 +825,7 @@ public final class com/naury/kinetica/core/scene/AppearEffect$Companion {
 }
 
 public final class com/naury/kinetica/core/scene/AppearKind : java/lang/Enum {
+	public static final field Blur Lcom/naury/kinetica/core/scene/AppearKind;
 	public static final field Companion Lcom/naury/kinetica/core/scene/AppearKind$Companion;
 	public static final field Fade Lcom/naury/kinetica/core/scene/AppearKind;
 	public static final field Flip Lcom/naury/kinetica/core/scene/AppearKind;
@@ -1238,10 +1239,13 @@ public final class com/naury/kinetica/core/scene/LoopKind : java/lang/Enum {
 	public static final field Companion Lcom/naury/kinetica/core/scene/LoopKind$Companion;
 	public static final field Float Lcom/naury/kinetica/core/scene/LoopKind;
 	public static final field Glow Lcom/naury/kinetica/core/scene/LoopKind;
+	public static final field Heartbeat Lcom/naury/kinetica/core/scene/LoopKind;
+	public static final field Ping Lcom/naury/kinetica/core/scene/LoopKind;
 	public static final field Pulse Lcom/naury/kinetica/core/scene/LoopKind;
 	public static final field Shake Lcom/naury/kinetica/core/scene/LoopKind;
 	public static final field Shimmer Lcom/naury/kinetica/core/scene/LoopKind;
 	public static final field Spin Lcom/naury/kinetica/core/scene/LoopKind;
+	public static final field Wiggle Lcom/naury/kinetica/core/scene/LoopKind;
 	public final fun getDefaultAmount ()D
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getWireName ()Ljava/lang/String;
@@ -1702,8 +1706,10 @@ public final class com/naury/kinetica/core/scene/PressEffect {
 }
 
 public final class com/naury/kinetica/core/scene/PressKind : java/lang/Enum {
+	public static final field Burst Lcom/naury/kinetica/core/scene/PressKind;
 	public static final field Companion Lcom/naury/kinetica/core/scene/PressKind$Companion;
 	public static final field Dim Lcom/naury/kinetica/core/scene/PressKind;
+	public static final field Lift Lcom/naury/kinetica/core/scene/PressKind;
 	public static final field Ripple Lcom/naury/kinetica/core/scene/PressKind;
 	public static final field Scale Lcom/naury/kinetica/core/scene/PressKind;
 	public static final field Tilt Lcom/naury/kinetica/core/scene/PressKind;

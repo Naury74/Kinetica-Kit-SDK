@@ -74,4 +74,22 @@ class ViewEffectsTest {
         assertThat(view.alpha).isEqualTo(1f)
         assertThat(view.translationY).isEqualTo(0f)
     }
+
+    @Test
+    fun `떠오르기는 눌린 동안 높이를 올리고 떼면 내린다`() {
+        val parent = FrameLayout(context)
+        val view = View(context).apply { layout(0, 0, 100, 100) }
+        parent.addView(view)
+        ViewEffects.apply(view, NodeEffects(press = listOf(PressEffect(PressKind.Lift, amount = 8.0), PressEffect(PressKind.Burst))))
+
+        view.isPressed = true
+        ShadowLooper.idleMainLooper(1_000, java.util.concurrent.TimeUnit.MILLISECONDS)
+        val lifted = view.translationZ
+        view.isPressed = false
+        ShadowLooper.idleMainLooper(1_000, java.util.concurrent.TimeUnit.MILLISECONDS)
+
+        assertThat(lifted).isWithin(0.01f).of(8f * view.resources.displayMetrics.density)
+        assertThat(view.translationZ).isWithin(0.01f).of(0f)
+        ViewEffects.clear(view)
+    }
 }

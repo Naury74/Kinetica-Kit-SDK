@@ -5,6 +5,7 @@ package com.naury.kinetica.presets
 
 import com.naury.kinetica.core.scene.AppearEffect
 import com.naury.kinetica.core.scene.AppearKind
+import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.LoopEffect
 import com.naury.kinetica.core.scene.LoopKind
 import com.naury.kinetica.core.scene.NodeEffects
@@ -57,6 +58,28 @@ public object EffectPresets {
     public val floating: NodeEffects =
         NodeEffects(appear = AppearEffect(AppearKind.Zoom), loop = LoopEffect(LoopKind.Float, periodMs = 3_000, amount = 10.0))
 
+    /** 좋아요·완료 버튼: 누르면 작아졌다가 놓을 때 조각이 터진다. */
+    @JvmField
+    public val like: NodeEffects = NodeEffects(
+        press = listOf(PressEffect(PressKind.Scale, amount = 0.85), PressEffect(PressKind.Burst, color = ArgbColor(0xFFFF4D6D.toInt()))),
+    )
+
+    /** 떠오르는 카드: 누르면 그림자가 커지며 떠오르고, 흐림이 걷히며 나타남. */
+    @JvmField
+    public val liftCard: NodeEffects = NodeEffects(
+        press = listOf(PressEffect(PressKind.Lift)),
+        appear = AppearEffect(AppearKind.Blur, durationMs = 500),
+    )
+
+    /** 실시간·연결됨 점: 고리가 퍼진다. */
+    @JvmField
+    public val live: NodeEffects =
+        NodeEffects(loop = LoopEffect(LoopKind.Ping, periodMs = 1_800, amount = 10.0, color = ArgbColor(0xFF22C55E.toInt())))
+
+    /** 새 소식 하트·아이콘: 콩닥. */
+    @JvmField
+    public val heartbeat: NodeEffects = NodeEffects(loop = LoopEffect(LoopKind.Heartbeat, periodMs = 1_400))
+
     /** 이름으로 고를 때 쓰는 목록. */
     @JvmField
     public val all: Map<String, NodeEffects> = mapOf(
@@ -68,5 +91,9 @@ public object EffectPresets {
         "callToAction" to callToAction,
         "attention" to attention,
         "floating" to floating,
+        "like" to like,
+        "liftCard" to liftCard,
+        "live" to live,
+        "heartbeat" to heartbeat,
     )
 }

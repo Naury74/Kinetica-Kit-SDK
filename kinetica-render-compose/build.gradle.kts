@@ -10,6 +10,8 @@ android {
 dependencies {
     api(project(":kinetica-core"))
     api(libs.androidx.compose.ui)
+    // ContentTransitions가 ContentTransform을 공개 API로 돌려준다.
+    api(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.kotlinx.coroutines.android)
 

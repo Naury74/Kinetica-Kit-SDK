@@ -80,6 +80,8 @@ private val PRESS = listOf(
     PressKind.Scale to R.string.kinetica_press_scale,
     PressKind.Tilt to R.string.kinetica_press_tilt,
     PressKind.Dim to R.string.kinetica_press_dim,
+    PressKind.Lift to R.string.kinetica_press_lift,
+    PressKind.Burst to R.string.kinetica_press_burst,
 )
 
 private val APPEAR = listOf(
@@ -91,6 +93,7 @@ private val APPEAR = listOf(
     AppearKind.Pop to R.string.kinetica_appear_pop,
     AppearKind.Zoom to R.string.kinetica_appear_zoom,
     AppearKind.Flip to R.string.kinetica_appear_flip,
+    AppearKind.Blur to R.string.kinetica_appear_blur,
 )
 
 private val LOOP = listOf(
@@ -102,6 +105,9 @@ private val LOOP = listOf(
     LoopKind.Shimmer to R.string.kinetica_loop_shimmer,
     LoopKind.Glow to R.string.kinetica_loop_glow,
     LoopKind.Spin to R.string.kinetica_loop_spin,
+    LoopKind.Heartbeat to R.string.kinetica_loop_heartbeat,
+    LoopKind.Wiggle to R.string.kinetica_loop_wiggle,
+    LoopKind.Ping to R.string.kinetica_loop_ping,
 )
 
 private const val MUTED = 0.6f

@@ -40,11 +40,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.board.BoardWidget
 import com.naury.kinetica.presets.EffectPresets
+import com.naury.kinetica.render.animateNumberAsState
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
 
 /** 이 앱이 보드에 내놓는 위젯 목록. 키·이름·처음 크기만 알려 주고, 내용은 [StoreWidget]이 그린다. */
@@ -94,7 +96,14 @@ private val brand = Color(0xFF5B6CFF)
 @Composable
 private fun Sales(data: StoreData) = Card {
     Text("오늘 매출", color = muted, fontSize = 13.sp)
-    Text(NumberFormat.getNumberInstance(Locale.KOREA).format(data.sales) + "원", color = ink, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+    // 값이 바뀔 때 숫자가 올라가거나 내려가며 바뀐다.
+    val sales by animateNumberAsState(data.sales.toDouble())
+    Text(
+        NumberFormat.getNumberInstance(Locale.KOREA).format(sales.roundToLong()) + "원",
+        color = ink,
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold,
+    )
     Text(if (data.open) "영업 중" else "준비 중", color = if (data.open) Color(0xFF0E9F6E) else muted, fontSize = 12.sp)
 }
 

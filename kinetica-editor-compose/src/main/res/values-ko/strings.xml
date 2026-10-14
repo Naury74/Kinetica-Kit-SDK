@@ -218,6 +218,8 @@
     <string name="kinetica_press_scale">눌림</string>
     <string name="kinetica_press_tilt">기울기</string>
     <string name="kinetica_press_dim">어둡게</string>
+    <string name="kinetica_press_lift">떠오르기</string>
+    <string name="kinetica_press_burst">터지기</string>
     <string name="kinetica_appear_fade">페이드</string>
     <string name="kinetica_appear_slide_up">아래에서</string>
     <string name="kinetica_appear_slide_down">위에서</string>
@@ -226,6 +228,7 @@
     <string name="kinetica_appear_pop">튕기며</string>
     <string name="kinetica_appear_zoom">줌</string>
     <string name="kinetica_appear_flip">뒤집기</string>
+    <string name="kinetica_appear_blur">흐림 걷히기</string>
     <string name="kinetica_loop_pulse">두근</string>
     <string name="kinetica_loop_breathe">숨쉬기</string>
     <string name="kinetica_loop_float">둥실</string>
@@ -234,4 +237,7 @@
     <string name="kinetica_loop_shimmer">반짝임</string>
     <string name="kinetica_loop_glow">빛 번짐</string>
     <string name="kinetica_loop_spin">회전</string>
+    <string name="kinetica_loop_heartbeat">콩닥</string>
+    <string name="kinetica_loop_wiggle">갸웃</string>
+    <string name="kinetica_loop_ping">퍼지는 고리</string>
 </resources>

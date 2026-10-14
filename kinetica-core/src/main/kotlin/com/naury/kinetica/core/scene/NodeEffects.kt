@@ -26,10 +26,12 @@ public data class NodeEffects(val press: List<PressEffect> = emptyList(), val ap
 /**
  * 누르는 동안의 반응.
  *
- * @property color [PressKind.Ripple]·[PressKind.Dim]의 색. `null`이면 반투명 검정.
+ * @property color [PressKind.Ripple]·[PressKind.Dim]의 색(`null`이면 반투명 검정), [PressKind.Lift]의 그림자 색(`null`이면 검정),
+ *   [PressKind.Burst]의 조각 색(`null`이면 파랑 `#5B6CFF`).
  * @property amount 종류별 세기. `null`이면 기본값([PressKind.defaultAmount]).
  *   [PressKind.Scale]은 눌렸을 때 배율(0.5..1.5), [PressKind.Tilt]는 최대 기울기(도, 0..45), [PressKind.Dim]은 덮는 불투명도(0..1),
- *   [PressKind.Ripple]은 퍼지는 원의 불투명도(0..1)다.
+ *   [PressKind.Ripple]은 퍼지는 원의 불투명도(0..1), [PressKind.Lift]는 떠오르는 높이(문서 단위, 0..50),
+ *   [PressKind.Burst]는 터지는 조각 수(3..24)다.
  */
 public data class PressEffect(val kind: PressKind, val color: ArgbColor? = null, val amount: Double? = null) {
     public val resolvedAmount: Double get() = amount ?: kind.defaultAmount
@@ -51,6 +53,12 @@ public enum class PressKind(
 
     /** 어둡게 덮는다. */
     Dim("dim", 0.12, 0.0..1.0),
+
+    /** 그림자가 커지며 위로 떠오른다(카드). */
+    Lift("lift", 6.0, 0.0..50.0),
+
+    /** 손을 뗄 때 조각이 사방으로 터진다(좋아요·완료). */
+    Burst("burst", 10.0, 3.0..24.0),
     ;
 
     public companion object {
@@ -85,6 +93,9 @@ public enum class AppearKind(public val wireName: String) {
 
     /** 위쪽 축으로 뒤집히며 나타난다. */
     Flip("flip"),
+
+    /** 흐릿하다가 또렷해지며 나타난다. Android 12(API 31) 미만에서는 흐림 없이 서서히 나타난다. */
+    Blur("blur"),
     ;
 
     public companion object {
@@ -99,8 +110,9 @@ public enum class AppearKind(public val wireName: String) {
  * @property amount 종류별 세기. `null`이면 기본값([LoopKind.defaultAmount]). [LoopKind.Pulse]는 최대 배율(1..2),
  *   [LoopKind.Breathe]는 가장 흐릴 때 불투명도(0..1), [LoopKind.Float]·[LoopKind.Bounce]는 움직이는 거리(문서 단위, 0..200),
  *   [LoopKind.Shake]는 흔드는 각도(도, 0..45), [LoopKind.Shimmer]는 빛 띠 불투명도(0..1), [LoopKind.Glow]는 빛 번짐 반지름(문서 단위, 0..200),
+ *   [LoopKind.Heartbeat]는 최대 배율(1..2), [LoopKind.Wiggle]은 흔드는 각도(도, 0..45), [LoopKind.Ping]은 고리가 퍼지는 거리(문서 단위, 0..200),
  *   [LoopKind.Spin]은 쓰지 않는다.
- * @property color [LoopKind.Shimmer]·[LoopKind.Glow]의 색. `null`이면 흰색·노드 채우기 색.
+ * @property color [LoopKind.Shimmer]·[LoopKind.Glow]의 색(`null`이면 흰색), [LoopKind.Ping] 고리 색(`null`이면 파랑 `#5B6CFF`).
  */
 public data class LoopEffect(
     val kind: LoopKind,
@@ -144,6 +156,15 @@ public enum class LoopKind(
 
     /** 통통 튄다. */
     Bounce("bounce", 16.0, 0.0..200.0),
+
+    /** 두 번 콩닥 뛰고 쉰다(좋아요·알림). */
+    Heartbeat("heartbeat", 1.12, 1.0..2.0),
+
+    /** 좌우로 계속 갸웃거린다. */
+    Wiggle("wiggle", 3.0, 0.0..45.0),
+
+    /** 고리가 바깥으로 퍼지며 사라진다(실시간·연결됨 표시). */
+    Ping("ping", 16.0, 0.0..200.0),
     ;
 
     public companion object {

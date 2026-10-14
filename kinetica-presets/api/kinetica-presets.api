@@ -7,6 +7,10 @@ public final class com/naury/kinetica/presets/EffectPresets {
 	public static final field callToAction Lcom/naury/kinetica/core/scene/NodeEffects;
 	public static final field card Lcom/naury/kinetica/core/scene/NodeEffects;
 	public static final field floating Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field heartbeat Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field liftCard Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field like Lcom/naury/kinetica/core/scene/NodeEffects;
+	public static final field live Lcom/naury/kinetica/core/scene/NodeEffects;
 	public static final field skeleton Lcom/naury/kinetica/core/scene/NodeEffects;
 	public static final fun listItem (I)Lcom/naury/kinetica/core/scene/NodeEffects;
 }

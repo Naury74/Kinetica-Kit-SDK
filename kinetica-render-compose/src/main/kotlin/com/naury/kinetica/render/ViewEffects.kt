@@ -31,7 +31,8 @@ import kotlin.math.sin
  *
  * - 누름 효과는 View의 눌림 상태(foreground drawable 상태)를 따라가므로 터치·클릭 리스너를 건드리지 않는다.
  *   눌림 상태는 클릭할 수 있는 View(`isClickable`, 클릭 리스너를 단 View)에서만 바뀐다.
- * - 리플·어둡게·반짝임은 View의 foreground로 [cornerRadiusDp] 둥근 사각형 안에 그린다. 빛 번짐은 그림자 높이로 표현하며 View 윤곽을 따른다.
+ * - 리플·어둡게·반짝임은 View의 foreground로 [cornerRadiusDp] 둥근 사각형 안에 그린다. 빛 번짐·떠오르기는 그림자 높이로 표현하며 View 윤곽을 따른다.
+ * - 터지기·퍼지는 고리는 View 밖까지 그리므로 부모 ViewGroup의 overlay에 그린다(부모가 없으면 그리지 않는다).
  * - View가 화면에서 떨어지면 반복을 멈추고 다시 붙으면 이어 간다. 시스템 애니메이션이 꺼져 있으면 나타나기·반복은 하지 않는다.
  *
  * 메인 스레드에서 부른다.
@@ -81,6 +82,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
     private val watcher = if (kinds.keys.any { it != PressKind.Ripple }) PressWatcher(::pressed) else null
     private val shimmer = effects.loop?.takeIf { it.kind == LoopKind.Shimmer && motion }?.let { ShimmerDrawable(it, corner) }
     private var loop: ValueAnimator? = null
+    private var ping: PingDrawable? = null
 
     fun start() {
         val layers = listOfNotNull(originalForeground, ripple, dim, shimmer, watcher)
@@ -92,11 +94,12 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
 
     fun stop() {
         view.removeOnAttachStateChangeListener(this)
-        loop?.cancel()
-        loop = null
+        stopLoop()
         view.animate().cancel()
         view.foreground = originalForeground
         view.elevation = originalElevation
+        view.translationZ = 0f
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) view.setRenderEffect(null)
         view.scaleX = 1f
         view.scaleY = 1f
         view.alpha = 1f
@@ -109,9 +112,13 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
 
     override fun onViewAttachedToWindow(v: View) = startLoop()
 
-    override fun onViewDetachedFromWindow(v: View) {
+    override fun onViewDetachedFromWindow(v: View) = stopLoop()
+
+    private fun stopLoop() {
         loop?.cancel()
         loop = null
+        ping?.let { drawable -> (view.parent as? android.view.ViewGroup)?.overlay?.remove(drawable) }
+        ping = null
     }
 
     private fun pressed(down: Boolean, x: Float, y: Float) {
@@ -122,6 +129,8 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
             val s = if (down) it.resolvedAmount.toFloat() else 1f
             animator.scaleX(s).scaleY(s)
         }
+        lift(animator, down)
+        if (!down) kinds[PressKind.Burst]?.let(::burst)
         kinds[PressKind.Tilt]?.let {
             val amount = it.resolvedAmount.toFloat()
             val tiltX = if (view.width > 0) (x / view.width - HALF) * 2f else 0f
@@ -129,6 +138,12 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
             animator.rotationX(if (down) -tiltY * amount else 0f).rotationY(if (down) tiltX * amount else 0f)
         }
         animator.start()
+    }
+
+    private fun lift(animator: android.view.ViewPropertyAnimator, down: Boolean) {
+        val effect = kinds[PressKind.Lift] ?: return
+        animator.translationZ(if (down) effect.resolvedAmount.toFloat() * density else 0f)
+        if (PressKind.Scale !in kinds) (if (down) 1f + LIFT_SCALE else 1f).let { animator.scaleX(it).scaleY(it) }
     }
 
     private fun appear(appear: AppearEffect) {
@@ -143,6 +158,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
             AppearKind.Pop -> view.scaleX = POP_FROM.also { view.scaleY = it }
             AppearKind.Zoom -> view.scaleX = ZOOM_FROM.also { view.scaleY = it }
             AppearKind.Flip -> view.rotationX = FLIP_DEGREES
+            AppearKind.Blur -> blurIn(appear)
         }
         view.animate()
             .alpha(1f).translationX(0f).translationY(0f).scaleX(1f).scaleY(1f).rotationX(0f)
@@ -152,9 +168,48 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
             .start()
     }
 
+    private fun blurIn(appear: AppearEffect) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) return
+        ValueAnimator.ofFloat(BLUR_FROM_DP * density, 0f).apply {
+            startDelay = appear.delayMs
+            duration = appear.durationMs
+            interpolator = STANDARD
+            addUpdateListener {
+                val radius = it.animatedValue as Float
+                view.setRenderEffect(
+                    if (radius > MIN_BLUR) android.graphics.RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.DECAL) else null,
+                )
+            }
+            start()
+        }
+    }
+
+    /** 손을 뗀 자리(View 가운데)에서 조각이 터진다. 부모 overlay에 잠깐 그렸다가 뗀다. */
+    private fun burst(effect: com.naury.kinetica.core.scene.PressEffect) {
+        val overlay = (view.parent as? android.view.ViewGroup)?.overlay ?: return
+        val drawable = BurstDrawable(effect, view)
+        overlay.add(drawable)
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = BURST_MS
+            interpolator = STANDARD
+            addUpdateListener { drawable.progress = it.animatedValue as Float }
+            addListener(
+                object : android.animation.AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: android.animation.Animator) = overlay.remove(drawable)
+                },
+            )
+            start()
+        }
+    }
+
     private fun startLoop() {
         val effect = effects.loop?.takeIf { motion } ?: return
         if (loop != null) return
+        if (effect.kind == LoopKind.Ping) {
+            ping = (view.parent as? android.view.ViewGroup)?.let { parent ->
+                PingDrawable(effect, view, corner).also { parent.overlay.add(it) }
+            }
+        }
         loop = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = effect.periodMs
             repeatCount = ValueAnimator.INFINITE
@@ -190,6 +245,15 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
             LoopKind.Shimmer -> shimmer?.progress = t
 
             LoopKind.Glow -> view.elevation = originalElevation + amount * density * (GLOW_MIN + (1f - GLOW_MIN) * wave * wave) / 2f
+
+            LoopKind.Heartbeat -> (1f + (amount - 1f) * heartbeatAt(t)).let {
+                view.scaleX = it
+                view.scaleY = it
+            }
+
+            LoopKind.Wiggle -> view.rotation = amount * sin(2 * PI * t).toFloat()
+
+            LoopKind.Ping -> ping?.progress = t
         }
     }
 
@@ -216,6 +280,10 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         const val FULL_ALPHA = 255
         const val RGB_MASK = 0x00FFFFFF
         const val ALPHA_SHIFT = 24
+        const val LIFT_SCALE = 0.02f
+        const val BLUR_FROM_DP = 16f
+        const val MIN_BLUR = 0.5f
+        const val BURST_MS = 560L
     }
 }
 

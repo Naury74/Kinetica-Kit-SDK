@@ -219,6 +219,8 @@
     <string name="kinetica_press_scale">Press in</string>
     <string name="kinetica_press_tilt">Tilt</string>
     <string name="kinetica_press_dim">Dim</string>
+    <string name="kinetica_press_lift">Lift</string>
+    <string name="kinetica_press_burst">Burst</string>
     <string name="kinetica_appear_fade">Fade</string>
     <string name="kinetica_appear_slide_up">Slide up</string>
     <string name="kinetica_appear_slide_down">Slide down</string>
@@ -227,6 +229,7 @@
     <string name="kinetica_appear_pop">Pop</string>
     <string name="kinetica_appear_zoom">Zoom</string>
     <string name="kinetica_appear_flip">Flip</string>
+    <string name="kinetica_appear_blur">Blur</string>
     <string name="kinetica_loop_pulse">Pulse</string>
     <string name="kinetica_loop_breathe">Breathe</string>
     <string name="kinetica_loop_float">Float</string>
@@ -235,4 +238,7 @@
     <string name="kinetica_loop_shimmer">Shimmer</string>
     <string name="kinetica_loop_glow">Glow</string>
     <string name="kinetica_loop_spin">Spin</string>
+    <string name="kinetica_loop_heartbeat">Heartbeat</string>
+    <string name="kinetica_loop_wiggle">Wiggle</string>
+    <string name="kinetica_loop_ping">Ping</string>
 </resources>

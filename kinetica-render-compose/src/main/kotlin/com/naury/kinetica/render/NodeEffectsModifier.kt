@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -74,6 +75,7 @@ internal fun Modifier.nodeEffects(effects: NodeEffects, shape: Shape, enabled: B
         appear = appearProgress(effects.appear.takeUnless { reduced }),
         loop = loopProgress(effects.loop.takeUnless { reduced }),
         press = remember { PressState() },
+        appearBlur = effects.appear?.kind == AppearKind.Blur && !reduced,
         unitPx = unitPx,
     )
     val scope = rememberCoroutineScope()
@@ -87,8 +89,19 @@ private fun Modifier.watchPress(press: PressState, scope: kotlinx.coroutines.Cor
         while (true) {
             val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull() ?: continue
             when {
-                change.pressed && !press.down -> scope.launch { press.press(change.position, size.width.toFloat(), size.height.toFloat()) }
-                !change.pressed && press.down -> scope.launch { press.release() }
+                // 상태는 바로 바꾸고 움직임만 코루틴으로 돌린다. 빠른 탭에서 떼기가 누르기 코루틴보다 먼저 와도 놓치지 않는다.
+                change.pressed && !press.down -> {
+                    press.down(change.position, size.width.toFloat(), size.height.toFloat())
+                    press.pressing = scope.launch { press.animatePress() }
+                }
+
+                !change.pressed && press.down -> {
+                    press.up()
+                    // 누르기 움직임이 아직 시작 전이면 떼기 움직임을 덮어쓰므로 먼저 멈춘다.
+                    press.pressing?.cancel()
+                    scope.launch { press.animateRelease() }
+                    if (press.bursts) scope.launch { press.animateBurst() }
+                }
             }
         }
     }
@@ -101,14 +114,19 @@ private class RunningEffects(
     val loop: State<Float>?,
     val press: PressState,
     val unitPx: Float,
+    val appearBlur: Boolean,
 ) {
     private val kinds = effects.press.associateBy { it.kind }
+
+    init {
+        press.bursts = PressKind.Burst in kinds
+    }
 
     fun applyTo(layer: androidx.compose.ui.graphics.GraphicsLayerScope) {
         val transform = EffectTransform().apply {
             applyAppear(effects.appear?.kind, appear.value, unitPx * SLIDE_DISTANCE)
             loop?.let { applyLoop(effects.loop, it.value, unitPx) }
-            applyPress(kinds, press)
+            applyPress(kinds, press, unitPx)
         }
         with(layer) {
             scaleX = transform.scale
@@ -120,6 +138,10 @@ private class RunningEffects(
             rotationY = transform.rotationY
             rotationZ = transform.rotationZ
             cameraDistance = CAMERA_DISTANCE * density
+            if (appearBlur && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val radius = (1f - appear.value) * BLUR_FROM * density
+                renderEffect = if (radius > MIN_BLUR) androidx.compose.ui.graphics.BlurEffect(radius, radius) else null
+            }
             // 반짝임은 그린 픽셀 위에만 겹쳐야 해서 따로 합성한다.
             if (effects.loop?.kind == LoopKind.Shimmer) compositingStrategy = CompositingStrategy.Offscreen
         }
@@ -129,12 +151,15 @@ private class RunningEffects(
         val looping = effects.loop
         val t = loop?.value
         if (looping?.kind == LoopKind.Glow && t != null) drawGlow(shape, looping, t, unitPx)
+        if (looping?.kind == LoopKind.Ping && t != null) drawPing(shape, looping, t, unitPx)
+        kinds[PressKind.Lift]?.let { lift -> drawLiftShadow(shape, lift, press.amount.value, unitPx) }
         drawContent()
         if (looping?.kind == LoopKind.Shimmer && t != null) drawShimmer(looping, t)
         kinds[PressKind.Dim]?.let { dim ->
             drawShape(shape, (dim.color?.toColor() ?: Color.Black).copy(alpha = dim.resolvedAmount.toFloat() * press.amount.value))
         }
         kinds[PressKind.Ripple]?.let { ripple -> drawRipple(shape, press, ripple.color?.toColor(), ripple.resolvedAmount.toFloat()) }
+        kinds[PressKind.Burst]?.let { burst -> drawBurst(burst, press.burst.value, unitPx) }
     }
 }
 
@@ -198,12 +223,17 @@ private class EffectTransform {
             AppearKind.Pop -> scale *= POP_FROM + (1f - POP_FROM) * p
             AppearKind.Zoom -> scale *= 1f + (ZOOM_FROM - 1f) * rest
             AppearKind.Flip -> rotationX += rest * FLIP_DEGREES
+            AppearKind.Blur -> scale *= 1f + (BLUR_SCALE - 1f) * rest
         }
     }
 
-    fun applyPress(kinds: Map<PressKind, com.naury.kinetica.core.scene.PressEffect>, press: PressState) {
+    fun applyPress(kinds: Map<PressKind, com.naury.kinetica.core.scene.PressEffect>, press: PressState, unitPx: Float) {
         val amount = press.amount.value
         kinds[PressKind.Scale]?.let { scale *= 1f + (it.resolvedAmount.toFloat() - 1f) * amount }
+        kinds[PressKind.Lift]?.let {
+            y -= it.resolvedAmount.toFloat() * unitPx * amount
+            scale *= 1f + LIFT_SCALE * amount
+        }
         kinds[PressKind.Tilt]?.let {
             rotationX += -press.tiltY * it.resolvedAmount.toFloat() * amount
             rotationY += press.tiltX * it.resolvedAmount.toFloat() * amount
@@ -233,7 +263,11 @@ private class EffectTransform {
 
             LoopKind.Spin -> rotationZ += FULL_TURN * t
 
-            LoopKind.Shimmer, LoopKind.Glow -> Unit
+            LoopKind.Heartbeat -> scale *= 1f + (amount - 1f) * heartbeat(t)
+
+            LoopKind.Wiggle -> rotationZ += amount * sin(2 * PI * t).toFloat()
+
+            LoopKind.Shimmer, LoopKind.Glow, LoopKind.Ping -> Unit
         }
     }
 }
@@ -244,8 +278,15 @@ private class PressState {
         private set
     val amount = Animatable(0f)
     val ripple = Animatable(0f)
+    val burst = Animatable(0f)
     var origin by mutableStateOf(Offset.Zero)
         private set
+
+    /** 손을 뗄 때 조각 터지기를 움직일지. */
+    var bursts = false
+
+    /** 지금 돌고 있는 누르기 움직임. */
+    var pressing: kotlinx.coroutines.Job? = null
 
     /** 누른 자리의 가로·세로 치우침(-1..1). 기울기 방향에 쓴다. */
     var tiltX = 0f
@@ -253,11 +294,18 @@ private class PressState {
     var tiltY = 0f
         private set
 
-    suspend fun press(position: Offset, width: Float, height: Float) {
+    fun down(position: Offset, width: Float, height: Float) {
         down = true
         origin = position
         tiltX = if (width > 0f) (position.x / width - HALF) * 2f else 0f
         tiltY = if (height > 0f) (position.y / height - HALF) * 2f else 0f
+    }
+
+    fun up() {
+        down = false
+    }
+
+    suspend fun animatePress() {
         ripple.snapTo(0f)
         kotlinx.coroutines.coroutineScope {
             launch { amount.animateTo(1f, spring(stiffness = Spring.StiffnessMedium)) }
@@ -265,9 +313,13 @@ private class PressState {
         }
     }
 
-    suspend fun release() {
-        down = false
+    suspend fun animateRelease() {
         amount.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
+    }
+
+    suspend fun animateBurst() {
+        burst.snapTo(0f)
+        burst.animateTo(1f, tween(BURST_MS, easing = FastOutSlowInEasing))
     }
 }
 
@@ -315,6 +367,65 @@ private fun ContentDrawScope.drawGlow(shape: Shape, loop: LoopEffect, t: Float, 
     )
 }
 
+/** 한 주기 앞부분에서 두 번 뛰는 크기(0..1). */
+private fun heartbeat(t: Float): Float {
+    fun beat(start: Float): Float {
+        val x = (t - start) / BEAT_LENGTH
+        return if (x in 0f..1f) sin(PI * x).toFloat() else 0f
+    }
+    return maxOf(beat(0f), beat(SECOND_BEAT) * SECOND_BEAT_STRENGTH)
+}
+
+private fun ContentDrawScope.drawLiftShadow(shape: Shape, lift: com.naury.kinetica.core.scene.PressEffect, amount: Float, unitPx: Float) {
+    val height = lift.resolvedAmount.toFloat() * unitPx * amount
+    if (height <= 0f) return
+    val path = androidx.compose.ui.graphics.Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawLiftShadow)) }
+    path.translate(Offset(0f, height))
+    val color = lift.color?.toColor() ?: Color.Black
+    drawContext.canvas.nativeCanvas.drawPath(
+        path.asAndroidPath(),
+        android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color.copy(alpha = LIFT_SHADOW_ALPHA * amount).toArgb()
+            maskFilter = android.graphics.BlurMaskFilter(height * 2f, android.graphics.BlurMaskFilter.Blur.NORMAL)
+        },
+    )
+}
+
+private fun ContentDrawScope.drawPing(shape: Shape, loop: LoopEffect, t: Float, unitPx: Float) {
+    val distance = loop.resolvedAmount.toFloat() * unitPx
+    if (distance <= 0f || size.width <= 0f || size.height <= 0f) return
+    val color = loop.color?.toColor() ?: ACCENT
+    val path = androidx.compose.ui.graphics.Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawPing)) }
+    listOf(t, (t + HALF) % 1f).forEach { phase ->
+        val grow = distance * phase
+        withTransform({ scale((size.width + 2 * grow) / size.width, (size.height + 2 * grow) / size.height, center) }) {
+            drawPath(path, color.copy(alpha = color.alpha * PING_ALPHA * (1f - phase)))
+        }
+    }
+}
+
+private fun ContentDrawScope.drawBurst(burst: com.naury.kinetica.core.scene.PressEffect, p: Float, unitPx: Float) {
+    if (p <= 0f || p >= 1f) return
+    val count = burst.resolvedAmount.toInt()
+    val short = minOf(size.width, size.height)
+    val dot = maxOf(MIN_DOT * unitPx, short * DOT_RATIO) * (1f - p * HALF)
+    val base = burst.color?.toColor() ?: ACCENT
+    // 조각마다 진한 색과 옅은 색을 번갈아 써 반짝이게 한다.
+    val light = androidx.compose.ui.graphics.lerp(base, Color.White, LIGHT_MIX)
+    val fade = 1f - p * p
+    // 가로로 긴 버튼도 가장자리 밖으로 터지도록 크기에 맞춘 타원을 따라 퍼진다.
+    val spread = 1f + BURST_REACH * p
+    val rx = size.width * HALF * spread
+    val ry = size.height * HALF * spread
+    repeat(count) { i ->
+        val angle = 2 * PI * i / count - PI / 2
+        val color = (if (i % 2 == 0) base else light).let { it.copy(alpha = it.alpha * fade) }
+        val reach = if (i % 2 == 0) 1f else INNER_REACH
+        drawCircle(color, dot, center + Offset((kotlin.math.cos(angle) * rx * reach).toFloat(), (sin(angle) * ry * reach).toFloat()))
+    }
+}
+
+private val ACCENT = Color(0xFF5B6CFF)
 private const val SLIDE_DISTANCE = 24f
 private const val POP_FROM = 0.6f
 private const val ZOOM_FROM = 1.15f
@@ -328,3 +439,18 @@ private const val SHIMMER_BAND = 0.35f
 private const val GLOW_MIN = 0.4f
 private const val GLOW_ALPHA = 0.8f
 private const val CAMERA_DISTANCE = 12f
+private const val BLUR_FROM = 16f
+private const val MIN_BLUR = 0.5f
+private const val BLUR_SCALE = 1.04f
+private const val LIFT_SCALE = 0.02f
+private const val LIFT_SHADOW_ALPHA = 0.28f
+private const val BEAT_LENGTH = 0.15f
+private const val SECOND_BEAT = 0.22f
+private const val SECOND_BEAT_STRENGTH = 0.8f
+private const val PING_ALPHA = 0.45f
+private const val BURST_MS = 560
+private const val BURST_REACH = 1.3f
+private const val MIN_DOT = 3f
+private const val DOT_RATIO = 0.09f
+private const val LIGHT_MIX = 0.45f
+private const val INNER_REACH = 0.8f
