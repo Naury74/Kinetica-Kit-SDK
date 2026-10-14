@@ -8,12 +8,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.asAndroidPathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -33,6 +34,7 @@ import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /*
@@ -146,17 +148,23 @@ internal fun DrawScope.drawOutlineStroke(
 // 붓·크기·투명도·흐림·선 모양이 모두 그리기에 필요한 값이라 묶을 곳이 없다.
 @Suppress("LongParameterList")
 private fun DrawScope.drawBlurredPath(path: Path, brush: Brush, size: Size, alpha: Float, blur: Double, stroke: Stroke?) {
-    val paint = androidx.compose.ui.graphics.Paint().apply {
-        isAntiAlias = true
-        if (stroke != null) {
-            style = PaintingStyle.Stroke
-            strokeWidth = stroke.width
-            pathEffect = stroke.pathEffect
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        when (brush) {
+            is SolidColor -> color = brush.value.copy(alpha = brush.value.alpha * alpha).toArgb()
+
+            is ShaderBrush -> {
+                shader = brush.createShader(size)
+                this.alpha = (alpha * OPAQUE).roundToInt()
+            }
         }
+        if (stroke != null) {
+            style = android.graphics.Paint.Style.STROKE
+            strokeWidth = stroke.width
+            pathEffect = stroke.pathEffect?.asAndroidPathEffect()
+        }
+        maskFilter = BlurMaskFilter(blur.toFloat(), BlurMaskFilter.Blur.NORMAL)
     }
-    brush.applyTo(size, paint, alpha)
-    paint.asFrameworkPaint().maskFilter = BlurMaskFilter(blur.toFloat(), BlurMaskFilter.Blur.NORMAL)
-    drawIntoCanvas { it.drawPath(path, paint) }
+    drawIntoCanvas { it.nativeCanvas.drawPath(path.asAndroidPath(), paint) }
 }
 
 private fun DrawScope.drawShadow(path: Path, shadow: Shadow, size: Size, alpha: Float) {
@@ -266,6 +274,7 @@ internal fun List<PathCommand>.toComposePath(): Path = Path().apply {
 internal val Vec2.xf: Float get() = x.toFloat()
 internal val Vec2.yf: Float get() = y.toFloat()
 
+private const val OPAQUE = 255f
 private const val CIRCLE_SCALE = 1.5f
 private const val ARROW_SCALE = 4f
 private const val MIN_ARROW = 6f
