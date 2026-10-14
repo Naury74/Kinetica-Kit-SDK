@@ -94,6 +94,7 @@ public fun KineticaPlayer(
             slots,
             interactive = true,
             onAction = onAction,
+            clipToArtboard = true,
         )
     }
 }

@@ -71,6 +71,7 @@ public const val HOST_VIEW_UNITS_PER_DP: Float = 2.75f
  *
  * - 노드 배치는 문서 변환과 같다: `graphicsLayer(translation, rotation, scale, transformOrigin = pivot)`.
  * - 문서 단위 1 = 픽셀 1(배율 1). [viewport]가 전체를 옮기고 확대한다.
+ * - [clipToArtboard]가 `true`면 artboard 밖은 그리지 않는다(재생기). 편집기는 밖에 둔 컴포넌트 원본도 보이도록 `false`다.
  * - [interactive]가 `true`면 동작([SceneNode.action])이 있는 노드를 누를 때 [onAction]을 부른다. `false`면(편집 모드) 누르기를 처리하지 않는다.
  *
  * 바인딩이나 애니메이션은 이 함수 밖에서 적용한 문서를 넘긴다.
@@ -84,6 +85,7 @@ public fun SceneLayout(
     slots: SceneSlots = emptyMap(),
     interactive: Boolean = false,
     onAction: (String) -> Unit = {},
+    clipToArtboard: Boolean = false,
 ) {
     val scope = NodeScope(document, images, slots, if (interactive) onAction else null)
     Box(modifier.clipToBounds()) {
@@ -97,8 +99,15 @@ public fun SceneLayout(
                 scaleY = viewport.zoom.toFloat()
             },
         ) {
-            Artboard(document)
-            Children(document.rootOrder, scope)
+            if (clipToArtboard) {
+                Box(Modifier.requiredSizePx(Size(document.artboard.width, document.artboard.height)).clipToBounds()) {
+                    Artboard(document)
+                    Children(document.rootOrder, scope)
+                }
+            } else {
+                Artboard(document)
+                Children(document.rootOrder, scope)
+            }
         }
     }
 }
