@@ -99,7 +99,12 @@ private fun StoreHome(viewModel: StoreViewModel = viewModel()) {
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
-        KineticaBoard(state, Modifier.weight(1f).fillMaxWidth(), editing = editing) { key -> StoreWidget(key, data) }
+        KineticaBoard(
+            state,
+            Modifier.weight(1f).fillMaxWidth(),
+            editing = editing,
+            onLongPress = { editing = true },
+        ) { key -> StoreWidget(key, data) }
     }
 }
 
