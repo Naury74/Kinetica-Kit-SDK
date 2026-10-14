@@ -27,12 +27,12 @@ class RemoteSceneLoaderTest {
     @Test
     fun `받은 문서를 보여 주고 캐시에 저장해 다음 실행에서 먼저 꺼낸다`() = runTest {
         val cache = FileSceneRepository(folder.root, ioDispatcher = StandardTestDispatcher(testScheduler))
-        val online = RemoteSceneLoader({ body(first) }, cache)
+        val online = RemoteSceneLoader({ body(first) }, RemoteSceneCache(cache))
 
         assertThat(online.state.value).isEqualTo(RemoteSceneState.Loading)
         assertThat(online.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Network))
 
-        val offline = RemoteSceneLoader({ SceneFetch.Failed }, cache)
+        val offline = RemoteSceneLoader({ SceneFetch.Failed }, RemoteSceneCache(cache))
         assertThat(offline.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Cache, RemoteSceneError.Network))
     }
 
@@ -79,5 +79,43 @@ class RemoteSceneLoaderTest {
         val loader = RemoteSceneLoader({ SceneFetch.Failed })
 
         assertThat(loader.refresh()).isEqualTo(RemoteSceneState.Failed(RemoteSceneError.Network))
+    }
+
+    @Test
+    fun `버전 표시를 캐시에 남겨 다시 켠 뒤 첫 요청에도 보낸다`() = runTest {
+        val cache = FileSceneRepository(folder.root, ioDispatcher = StandardTestDispatcher(testScheduler))
+        RemoteSceneLoader({ body(first, "v7") }, RemoteSceneCache(cache)).refresh()
+        var sent: String? = null
+
+        val restarted = RemoteSceneLoader({ etag ->
+            sent = etag
+            SceneFetch.NotModified
+        }, RemoteSceneCache(cache))
+
+        assertThat(restarted.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Cache))
+        assertThat(sent).isEqualTo("v7")
+    }
+
+    @Test
+    fun `서명이 맞는 본문만 쓴다`() = runTest {
+        val keys = java.security.KeyPairGenerator.getInstance("EC").apply { initialize(256) }.generateKeyPair()
+        val bytes = codec.encode(second).toByteArray()
+        val signed = java.security.Signature.getInstance("SHA256withECDSA").run {
+            initSign(keys.private)
+            update(bytes)
+            sign()
+        }
+        val responses = ArrayDeque(
+            listOf(
+                SceneFetch.Body(bytes),
+                SceneFetch.Body(bytes, signature = byteArrayOf(1, 2, 3)),
+                SceneFetch.Body(bytes, signature = signed),
+            ),
+        )
+        val loader = RemoteSceneLoader({ responses.removeFirst() }, fallback = first, verifier = SceneVerifier.signature(keys.public))
+
+        assertThat(loader.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Fallback, RemoteSceneError.Unverified))
+        assertThat(loader.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Fallback, RemoteSceneError.Unverified))
+        assertThat(loader.refresh()).isEqualTo(RemoteSceneState.Ready(second, SceneOrigin.Network))
     }
 }
