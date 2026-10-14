@@ -259,6 +259,24 @@ class KineticaBoardTest {
 
         compose.onNodeWithText("widget b").assertIsDisplayed()
     }
+
+    @Test
+    fun `묶음 자동 넘김을 켜면 시간마다 다음 위젯이 보인다`() {
+        val state = KineticaBoardState.create(catalog)
+        state.stack("a", "b")
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            Box(Modifier.size(400.dp, 600.dp)) {
+                KineticaBoard(state, Modifier.fillMaxSize(), stackAutoAdvanceMs = 1_000) { key -> Text("widget $key") }
+            }
+        }
+        compose.mainClock.advanceTimeBy(300)
+        compose.onNodeWithText("widget a").assertIsDisplayed()
+
+        compose.mainClock.advanceTimeBy(2_000)
+
+        compose.onNodeWithText("widget b").assertIsDisplayed()
+    }
 }
 
 @androidx.compose.runtime.Composable

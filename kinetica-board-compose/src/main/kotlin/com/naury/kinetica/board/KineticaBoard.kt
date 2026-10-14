@@ -73,6 +73,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  *   편집 중에는 위젯 안이 눌리지 않는다. 변경은 [KineticaBoardState]에 실행 취소 한 단계씩 남는다.
  *
  * @param permissions 편집 모드에서 허용할 일
+ * @param stackAutoAdvanceMs 0보다 크면 사용 모드에서 위젯 묶음이 이 간격(ms)마다 다음 위젯으로 넘어간다. 사용자가 넘기면 그때부터 다시 잰다.
+ *   편집 중이거나 시스템 애니메이션이 꺼져 있으면 넘어가지 않는다.
  * @param onLongPress 사용 모드에서 위젯을 길게 누르면 불린다(보통 편집 모드로 바꾼다). 그 누름은 위젯에 전달하지 않는다.
  * @param content 놓인 자리마다 호스트가 그릴 내용. 인자는 자리 id로, 한 번만 놓는 위젯은 위젯 키와 같고
  *   여러 개 놓는 위젯([BoardWidget.multiple])은 자리마다 다르다(위젯 키는 [KineticaBoardState.widgetKeyOf]). 보드가 정한 크기를 꽉 채우도록 그린다.
@@ -85,6 +87,7 @@ public fun KineticaBoard(
     permissions: BoardPermissions = BoardPermissions(),
     colors: BoardColors = BoardColors(),
     onLongPress: (() -> Unit)? = null,
+    stackAutoAdvanceMs: Long = 0L,
     content: @Composable (id: String) -> Unit,
 ) {
     val stored by state.document.collectAsState()
@@ -92,7 +95,7 @@ public fun KineticaBoard(
     val zoom = (density / KineticaBoardState.UNITS).toFloat()
     val scroll = rememberScrollState()
     val controller = remember(state) { BoardDragController(state) }
-    val slots = rememberBoardSlots(stored, content, colors)
+    val slots = rememberBoardSlots(stored, content, colors, StackAdvance(stackAutoAdvanceMs, editing))
     BoxWithConstraints(modifier.clipToBounds()) {
         val gap = gapDp(state.arrangement) * KineticaBoardState.UNITS
         val mapping = BoardMapping(state.arrangement, constraints.maxWidth / zoom.toDouble(), gap)
@@ -450,10 +453,20 @@ private val BADGE_OUTSET: Dp = 9.dp
 
 /** 놓인 자리마다 그릴 호스트 내용. 묶음이면 넘겨 보는 묶음 화면이다. */
 @Composable
-private fun rememberBoardSlots(stored: SceneDocument, content: @Composable (String) -> Unit, colors: BoardColors): SceneSlots =
-    remember(stored.rootOrder, stored, content) {
+private fun rememberBoardSlots(
+    stored: SceneDocument,
+    content: @Composable (String) -> Unit,
+    colors: BoardColors,
+    advance: StackAdvance,
+): SceneSlots {
+    // 편집 중에는 묶음이 저절로 넘어가지 않는다.
+    val autoAdvanceMs = if (advance.editing) 0L else advance.intervalMs
+    return remember(stored.rootOrder, stored, content, autoAdvanceMs) {
         stored.rootOrder.associate { id ->
             val members = stored.node(id)?.stackMembers()?.map { it.id }.orEmpty()
-            id.value to { if (members.isEmpty()) content(id.value) else StackPager(members, content, colors) }
+            id.value to { if (members.isEmpty()) content(id.value) else StackPager(members, content, colors, autoAdvanceMs) }
         }
     }
+}
+
+private class StackAdvance(val intervalMs: Long, val editing: Boolean)

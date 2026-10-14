@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -39,12 +40,20 @@ public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs
     private var board by mutableStateOf<Pair<KineticaBoardState, BoardViewFactory>?>(null)
     private var editingState by mutableStateOf(false)
     private var permissionsState by mutableStateOf(BoardPermissions())
+    private var stackAdvanceState by mutableLongStateOf(0L)
 
     /** 편집 모드. 켜면 위젯을 옮기고 크기를 바꾸고 빼고 추가할 수 있다. */
     public var isEditing: Boolean
         get() = editingState
         set(value) {
             editingState = value
+        }
+
+    /** 0보다 크면 사용 모드에서 위젯 묶음이 이 간격(ms)마다 다음 위젯으로 넘어간다. */
+    public var stackAutoAdvanceMs: Long
+        get() = stackAdvanceState
+        set(value) {
+            stackAdvanceState = value
         }
 
     /** 편집 모드에서 허용할 일. */
@@ -59,7 +68,13 @@ public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs
             ComposeView(context).apply {
                 setContent {
                     board?.let { (state, factory) ->
-                        KineticaBoard(state, Modifier.fillMaxSize(), editing = editingState, permissions = permissionsState) { key ->
+                        KineticaBoard(
+                            state,
+                            Modifier.fillMaxSize(),
+                            editing = editingState,
+                            permissions = permissionsState,
+                            stackAutoAdvanceMs = stackAdvanceState,
+                        ) { key ->
                             AndroidView(factory = { viewContext -> factory.create(key, viewContext) }, modifier = Modifier.fillMaxSize())
                         }
                     }

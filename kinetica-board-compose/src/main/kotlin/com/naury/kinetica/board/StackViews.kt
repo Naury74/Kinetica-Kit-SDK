@@ -1,5 +1,6 @@
 package com.naury.kinetica.board
 
+import android.animation.ValueAnimator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -26,11 +30,23 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.core.geometry.Rect
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 /** 묶음: 한 자리에서 옆으로 넘겨 보고, 아래 점으로 몇 번째인지 보인다. 각 위젯 내용은 호스트의 `content(자리 id)`다. */
 @Composable
-internal fun StackPager(members: List<String>, content: @Composable (String) -> Unit, colors: BoardColors) {
+internal fun StackPager(members: List<String>, content: @Composable (String) -> Unit, colors: BoardColors, autoAdvanceMs: Long = 0L) {
     val pager = rememberPagerState { members.size }
+    val animations = remember { ValueAnimator.areAnimatorsEnabled() }
+    if (autoAdvanceMs > 0 && animations && members.size > 1) {
+        // 쪽이 바뀔 때마다(사용자가 넘겨도) 시간을 다시 재고, 넘기는 중이면 기다린다.
+        LaunchedEffect(pager, autoAdvanceMs, members.size) {
+            snapshotFlow { pager.currentPage }.collectLatest { page ->
+                delay(autoAdvanceMs)
+                if (!pager.isScrollInProgress) pager.animateScrollToPage((page + 1) % members.size)
+            }
+        }
+    }
     Box(Modifier.fillMaxSize()) {
         HorizontalPager(pager, Modifier.fillMaxSize(), key = { members[it] }) { page ->
             Box(Modifier.fillMaxSize()) { content(members[page]) }
