@@ -102,4 +102,52 @@ class StyleAnimationTest {
         val plain = TimelineEvaluator.evaluate(document(listOf(card), timelines = listOf(timeline)), timeline, 500.0)
         assertThat(plain.node(id("card"))!!.style.gradient).isNull()
     }
+
+    @Test
+    fun `그림자 색·가로 거리·퍼짐과 모서리 하나를 보간한다`() {
+        val black = ArgbColor(0xFF000000.toInt())
+        val white = ArgbColor(0xFFFFFFFF.toInt())
+        val timeline = Timeline(
+            "main",
+            1_000,
+            listOf(
+                track(AnimatableProperty.ShadowColor, KeyValue.Color(black), KeyValue.Color(white)),
+                track(AnimatableProperty.ShadowOffsetX, KeyValue.Scalar(0.0), KeyValue.Scalar(-8.0)),
+                track(AnimatableProperty.ShadowSpread, KeyValue.Scalar(0.0), KeyValue.Scalar(6.0)),
+                track(AnimatableProperty.CornerTopRight, KeyValue.Scalar(0.0), KeyValue.Scalar(40.0)),
+            ),
+        )
+        val scene = document(listOf(card), timelines = listOf(timeline))
+        assertThat(SceneValidator().validate(scene)).isEmpty()
+
+        val half = TimelineEvaluator.evaluate(scene, timeline, 500.0).node(id("card"))!!
+
+        val shadow = half.style.shadows.single()
+        assertThat(shadow.color.red).isIn(126..129)
+        assertThat(shadow.offsetX).isWithin(1e-9).of(-4.0)
+        assertThat(shadow.spread).isWithin(1e-9).of(3.0)
+        val corners = (half.content as NodeContent.Rectangle).corners!!
+        assertThat(corners.topRight).isWithin(1e-9).of(20.0)
+        assertThat(corners.topLeft).isEqualTo(0.0)
+    }
+
+    @Test
+    fun `모서리별 반지름이 있으면 전체 모서리 애니메이션이 네 모서리를 함께 바꾼다`() {
+        val rounded = card.copy(
+            content = NodeContent.Rectangle(Size(100.0, 50.0), corners = com.naury.kinetica.core.scene.CornerRadii(0.0, 10.0, 0.0, 10.0)),
+        )
+        val timeline = Timeline("main", 1_000, listOf(track(AnimatableProperty.CornerRadius, KeyValue.Scalar(0.0), KeyValue.Scalar(20.0))))
+
+        val half = TimelineEvaluator.evaluate(document(listOf(rounded), timelines = listOf(timeline)), timeline, 500.0).node(id("card"))!!
+
+        assertThat((half.content as NodeContent.Rectangle).corners).isEqualTo(com.naury.kinetica.core.scene.CornerRadii.all(10.0))
+    }
+
+    @Test
+    fun `모서리 반지름은 음수로 둘 수 없다`() {
+        val timeline =
+            Timeline("main", 1_000, listOf(track(AnimatableProperty.CornerBottomLeft, KeyValue.Scalar(-1.0), KeyValue.Scalar(10.0))))
+
+        assertThat(SceneValidator().validate(document(listOf(card), timelines = listOf(timeline)))).isNotEmpty()
+    }
 }

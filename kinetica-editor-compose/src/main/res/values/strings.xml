@@ -185,6 +185,13 @@
     <string name="kinetica_property_blur">Blur</string>
     <string name="kinetica_property_shadow_blur">Shadow blur</string>
     <string name="kinetica_property_shadow_y">Shadow Y</string>
+    <string name="kinetica_property_shadow_x">Shadow X</string>
+    <string name="kinetica_property_shadow_spread">Shadow spread</string>
+    <string name="kinetica_property_shadow_color">Shadow color</string>
+    <string name="kinetica_property_corner_top_left">Top-left corner</string>
+    <string name="kinetica_property_corner_top_right">Top-right corner</string>
+    <string name="kinetica_property_corner_bottom_right">Bottom-right corner</string>
+    <string name="kinetica_property_corner_bottom_left">Bottom-left corner</string>
     <string name="kinetica_layout_wrap">Wrap</string>
     <string name="kinetica_field_line_gap">Line gap</string>
     <string name="kinetica_section_size_limits">Size limits</string>

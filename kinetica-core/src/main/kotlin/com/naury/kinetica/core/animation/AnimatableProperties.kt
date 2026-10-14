@@ -1,6 +1,7 @@
 package com.naury.kinetica.core.animation
 
 import com.naury.kinetica.core.geometry.Size
+import com.naury.kinetica.core.scene.CornerRadii
 import com.naury.kinetica.core.scene.Gradient
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneNode
@@ -18,23 +19,50 @@ public object AnimatableProperties {
         val style = node.style
         return when (property) {
             AnimatableProperty.TranslationX -> KeyValue.Scalar(node.transform.translationX)
+
             AnimatableProperty.TranslationY -> KeyValue.Scalar(node.transform.translationY)
+
             AnimatableProperty.ScaleX -> KeyValue.Scalar(node.transform.scaleX)
+
             AnimatableProperty.ScaleY -> KeyValue.Scalar(node.transform.scaleY)
+
             AnimatableProperty.RotationDegrees -> KeyValue.Scalar(node.transform.rotationDegrees)
+
             AnimatableProperty.Opacity -> KeyValue.Scalar(style.opacity)
+
             AnimatableProperty.StrokeWidth -> KeyValue.Scalar(style.strokeWidth)
+
             AnimatableProperty.Fill -> style.fill?.let(KeyValue::Color)
+
             AnimatableProperty.Stroke -> style.stroke?.let(KeyValue::Color)
+
             AnimatableProperty.Width -> node.content.sizeOrNull()?.let { KeyValue.Scalar(it.width) }
+
             AnimatableProperty.Height -> node.content.sizeOrNull()?.let { KeyValue.Scalar(it.height) }
+
             AnimatableProperty.CornerRadius -> corner(node.content)?.let(KeyValue::Scalar)
+
             AnimatableProperty.Blur -> KeyValue.Scalar(style.blur)
+
             AnimatableProperty.ShadowBlur -> style.shadows.firstOrNull()?.let { KeyValue.Scalar(it.blur) }
+
             AnimatableProperty.ShadowOffsetY -> style.shadows.firstOrNull()?.let { KeyValue.Scalar(it.offsetY) }
+
             AnimatableProperty.GradientStart -> style.gradient?.stops?.firstOrNull()?.let { KeyValue.Color(it.color) }
+
             AnimatableProperty.GradientEnd -> style.gradient?.stops?.lastOrNull()?.let { KeyValue.Color(it.color) }
+
             AnimatableProperty.GradientAngle -> style.gradient?.let { KeyValue.Scalar(it.angleDegrees) }
+
+            AnimatableProperty.ShadowColor -> style.shadows.firstOrNull()?.let { KeyValue.Color(it.color) }
+
+            AnimatableProperty.ShadowOffsetX -> style.shadows.firstOrNull()?.let { KeyValue.Scalar(it.offsetX) }
+
+            AnimatableProperty.ShadowSpread -> style.shadows.firstOrNull()?.let { KeyValue.Scalar(it.spread) }
+
+            AnimatableProperty.CornerTopLeft, AnimatableProperty.CornerTopRight,
+            AnimatableProperty.CornerBottomRight, AnimatableProperty.CornerBottomLeft,
+            -> radii(node.content)?.let { KeyValue.Scalar(it.values[CORNERS.indexOf(property)]) }
         }
     }
 
@@ -95,19 +123,63 @@ public object AnimatableProperties {
             }
 
             AnimatableProperty.GradientAngle -> scalar?.let { angle -> gradient(node) { it.copy(angleDegrees = angle) } }
+
+            AnimatableProperty.ShadowColor -> color?.let { c -> firstShadow(node) { it.copy(color = c) } }
+
+            AnimatableProperty.ShadowOffsetX -> scalar?.let { offset -> firstShadow(node) { it.copy(offsetX = offset) } }
+
+            AnimatableProperty.ShadowSpread -> scalar?.let { spread -> firstShadow(node) { it.copy(spread = spread) } }
+
+            AnimatableProperty.CornerTopLeft, AnimatableProperty.CornerTopRight,
+            AnimatableProperty.CornerBottomRight, AnimatableProperty.CornerBottomLeft,
+            -> scalar?.let { withOneCorner(node, property, it.coerceAtLeast(0.0)) }
         } ?: node
     }
 
-    private fun corner(content: NodeContent): Double? = when (content) {
-        is NodeContent.Rectangle -> content.cornerRadius
-        is NodeContent.Frame -> content.cornerRadius
+    // 모서리별 반지름이 있으면 그것이 그려지므로, 전체 반지름은 왼쪽 위 값을 읽고 네 모서리에 같이 쓴다.
+    private fun corner(content: NodeContent): Double? = radii(content)?.topLeft
+
+    private fun radii(content: NodeContent): CornerRadii? = when (content) {
+        is NodeContent.Rectangle -> content.corners ?: CornerRadii.all(content.cornerRadius)
+        is NodeContent.Frame -> content.corners ?: CornerRadii.all(content.cornerRadius)
         else -> null
     }
 
     private fun withCorner(node: SceneNode, radius: Double): SceneNode? = when (val content = node.content) {
-        is NodeContent.Rectangle -> node.copy(content = content.copy(cornerRadius = radius))
-        is NodeContent.Frame -> node.copy(content = content.copy(cornerRadius = radius))
+        is NodeContent.Rectangle -> node.copy(
+            content = content.copy(
+                cornerRadius = radius,
+                corners = content.corners?.let {
+                    CornerRadii.all(radius)
+                },
+            ),
+        )
+
+        is NodeContent.Frame -> node.copy(
+            content = content.copy(
+                cornerRadius = radius,
+                corners = content.corners?.let {
+                    CornerRadii.all(radius)
+                },
+            ),
+        )
+
         else -> null
+    }
+
+    private fun withOneCorner(node: SceneNode, property: AnimatableProperty, radius: Double): SceneNode? {
+        val current = radii(node.content) ?: return null
+        val corners = when (property) {
+            AnimatableProperty.CornerTopLeft -> current.copy(topLeft = radius)
+            AnimatableProperty.CornerTopRight -> current.copy(topRight = radius)
+            AnimatableProperty.CornerBottomRight -> current.copy(bottomRight = radius)
+            else -> current.copy(bottomLeft = radius)
+        }
+        return when (val content = node.content) {
+            is NodeContent.Rectangle -> node.copy(content = content.copy(corners = corners))
+            is NodeContent.Frame -> node.copy(content = content.copy(corners = corners))
+            else -> null
+        }
     }
 
     private fun resize(node: SceneNode, change: (Size) -> Size): SceneNode? = node.content.sizeOrNull()?.let {
@@ -128,4 +200,12 @@ public object AnimatableProperties {
     }
 
     private const val MIN_SIZE = 1.0
+
+    // CornerRadii.values와 같은 순서.
+    private val CORNERS = listOf(
+        AnimatableProperty.CornerTopLeft,
+        AnimatableProperty.CornerTopRight,
+        AnimatableProperty.CornerBottomRight,
+        AnimatableProperty.CornerBottomLeft,
+    )
 }

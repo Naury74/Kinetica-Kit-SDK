@@ -7,7 +7,11 @@ public final class com/naury/kinetica/core/animation/AnimatableProperties {
 public final class com/naury/kinetica/core/animation/AnimatableProperty : java/lang/Enum {
 	public static final field Blur Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Companion Lcom/naury/kinetica/core/animation/AnimatableProperty$Companion;
+	public static final field CornerBottomLeft Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field CornerBottomRight Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field CornerRadius Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field CornerTopLeft Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field CornerTopRight Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Fill Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field GradientAngle Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field GradientEnd Lcom/naury/kinetica/core/animation/AnimatableProperty;
@@ -18,7 +22,10 @@ public final class com/naury/kinetica/core/animation/AnimatableProperty : java/l
 	public static final field ScaleX Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field ScaleY Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field ShadowBlur Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field ShadowColor Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field ShadowOffsetX Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field ShadowOffsetY Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field ShadowSpread Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Stroke Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field StrokeWidth Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field TranslationX Lcom/naury/kinetica/core/animation/AnimatableProperty;

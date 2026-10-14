@@ -76,6 +76,27 @@ public enum class AnimatableProperty(public val wireName: String, public val val
 
     /** 선형 그라디언트 각도(도). */
     GradientAngle("gradientAngle", KeyValueType.Scalar),
+
+    /** 첫 그림자의 색. */
+    ShadowColor("shadowColor", KeyValueType.Color),
+
+    /** 첫 그림자의 가로 거리(문서 단위). */
+    ShadowOffsetX("shadowX", KeyValueType.Scalar),
+
+    /** 첫 그림자의 퍼짐(문서 단위). 음수면 그림자가 줄어든다. */
+    ShadowSpread("shadowSpread", KeyValueType.Scalar),
+
+    /** 왼쪽 위 모서리 반지름(문서 단위, 0 이상). 다른 모서리는 그대로 둔다. */
+    CornerTopLeft("cornerTopLeft", KeyValueType.Scalar),
+
+    /** 오른쪽 위 모서리 반지름. */
+    CornerTopRight("cornerTopRight", KeyValueType.Scalar),
+
+    /** 오른쪽 아래 모서리 반지름. */
+    CornerBottomRight("cornerBottomRight", KeyValueType.Scalar),
+
+    /** 왼쪽 아래 모서리 반지름. */
+    CornerBottomLeft("cornerBottomLeft", KeyValueType.Scalar),
     ;
 
     public companion object {
