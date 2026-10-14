@@ -150,8 +150,9 @@ class KineticaBoardTest {
         show(state, editing = true)
         val before = state.rectOf("a")!!
 
-        compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").performCustomAccessibilityActionWithLabel("Move down")
-        compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").performCustomAccessibilityActionWithLabel("Make larger")
+        // TalkBack이 읽을 이름(위젯 이름)으로 찾는다.
+        compose.onNodeWithContentDescription("A").performCustomAccessibilityActionWithLabel("Move down")
+        compose.onNodeWithContentDescription("A").performCustomAccessibilityActionWithLabel("Make larger")
 
         val after = state.rectOf("a")!!
         assertThat(after.top).isGreaterThan(before.top)

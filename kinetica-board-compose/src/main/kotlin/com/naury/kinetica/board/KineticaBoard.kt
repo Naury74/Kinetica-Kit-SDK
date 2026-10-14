@@ -349,7 +349,10 @@ private fun WidgetEditFrame(
             .editOutline(focused, outline, colors.accent)
             .background(outline.copy(alpha = EDIT_TINT))
             .testTag("$BOARD_WIDGET_TAG$key")
-            .semantics { customActions = actions }
+            .semantics {
+                contentDescription = label
+                customActions = actions
+            }
             .onFocusChanged { focused = it.isFocused }
             .then(keys)
             .dragToMove(key, permissions.move, controller),
