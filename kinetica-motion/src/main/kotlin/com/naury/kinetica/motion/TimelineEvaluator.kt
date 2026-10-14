@@ -1,5 +1,6 @@
 package com.naury.kinetica.motion
 
+import com.naury.kinetica.core.animation.AnimatableProperties
 import com.naury.kinetica.core.animation.AnimatableProperty
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.PropertyTrack
@@ -87,19 +88,7 @@ public object TimelineEvaluator {
         )
     }
 
-    private fun SceneNode.with(property: AnimatableProperty, value: KeyValue): SceneNode {
-        val scalar = (value as? KeyValue.Scalar)?.value
-        return when (property) {
-            AnimatableProperty.TranslationX -> copy(transform = transform.copy(translationX = checkNotNull(scalar)))
-            AnimatableProperty.TranslationY -> copy(transform = transform.copy(translationY = checkNotNull(scalar)))
-            AnimatableProperty.ScaleX -> copy(transform = transform.copy(scaleX = checkNotNull(scalar)))
-            AnimatableProperty.ScaleY -> copy(transform = transform.copy(scaleY = checkNotNull(scalar)))
-            AnimatableProperty.RotationDegrees -> copy(transform = transform.copy(rotationDegrees = checkNotNull(scalar)))
-            AnimatableProperty.Opacity -> copy(style = style.copy(opacity = checkNotNull(scalar).coerceIn(0.0, 1.0)))
-            AnimatableProperty.StrokeWidth -> copy(style = style.copy(strokeWidth = checkNotNull(scalar).coerceAtLeast(0.0)))
-            AnimatableProperty.Fill -> copy(style = style.copy(fill = (value as KeyValue.Color).color))
-        }
-    }
+    private fun SceneNode.with(property: AnimatableProperty, value: KeyValue): SceneNode = AnimatableProperties.write(this, property, value)
 
     private const val MAX_CHANNEL = 255
 }

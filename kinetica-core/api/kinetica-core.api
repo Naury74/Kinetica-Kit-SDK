@@ -1,13 +1,26 @@
+public final class com/naury/kinetica/core/animation/AnimatableProperties {
+	public static final field INSTANCE Lcom/naury/kinetica/core/animation/AnimatableProperties;
+	public final fun read (Lcom/naury/kinetica/core/scene/SceneNode;Lcom/naury/kinetica/core/animation/AnimatableProperty;)Lcom/naury/kinetica/core/animation/KeyValue;
+	public final fun write (Lcom/naury/kinetica/core/scene/SceneNode;Lcom/naury/kinetica/core/animation/AnimatableProperty;Lcom/naury/kinetica/core/animation/KeyValue;)Lcom/naury/kinetica/core/scene/SceneNode;
+}
+
 public final class com/naury/kinetica/core/animation/AnimatableProperty : java/lang/Enum {
+	public static final field Blur Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Companion Lcom/naury/kinetica/core/animation/AnimatableProperty$Companion;
+	public static final field CornerRadius Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Fill Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field Height Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field Opacity Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field RotationDegrees Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field ScaleX Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field ScaleY Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field ShadowBlur Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field ShadowOffsetY Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field Stroke Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field StrokeWidth Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field TranslationX Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static final field TranslationY Lcom/naury/kinetica/core/animation/AnimatableProperty;
+	public static final field Width Lcom/naury/kinetica/core/animation/AnimatableProperty;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getValueType ()Lcom/naury/kinetica/core/animation/KeyValueType;
 	public final fun getWireName ()Ljava/lang/String;

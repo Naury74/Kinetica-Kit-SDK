@@ -78,8 +78,15 @@ private fun isValueAllowed(property: AnimatableProperty, value: KeyValue, limits
     if (!scalar.isFinite() || abs(scalar) > limits.maxCoordinateMagnitude) return false
     return when (property) {
         AnimatableProperty.Opacity -> scalar in 0.0..1.0
-        AnimatableProperty.StrokeWidth -> scalar >= 0.0
+
+        AnimatableProperty.StrokeWidth, AnimatableProperty.CornerRadius, AnimatableProperty.Blur, AnimatableProperty.ShadowBlur ->
+            scalar >=
+                0.0
+
+        AnimatableProperty.Width, AnimatableProperty.Height -> scalar > 0.0
+
         AnimatableProperty.ScaleX, AnimatableProperty.ScaleY -> limits.allowFlip || scalar >= 0.0
+
         else -> true
     }
 }

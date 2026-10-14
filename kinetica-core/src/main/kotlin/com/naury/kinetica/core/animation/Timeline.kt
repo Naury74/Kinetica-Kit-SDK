@@ -60,6 +60,13 @@ public enum class AnimatableProperty(public val wireName: String, public val val
     Opacity("opacity", KeyValueType.Scalar),
     Fill("fill", KeyValueType.Color),
     StrokeWidth("strokeWidth", KeyValueType.Scalar),
+    Width("width", KeyValueType.Scalar),
+    Height("height", KeyValueType.Scalar),
+    CornerRadius("cornerRadius", KeyValueType.Scalar),
+    Stroke("stroke", KeyValueType.Color),
+    Blur("blur", KeyValueType.Scalar),
+    ShadowBlur("shadowBlur", KeyValueType.Scalar),
+    ShadowOffsetY("shadowY", KeyValueType.Scalar),
     ;
 
     public companion object {
