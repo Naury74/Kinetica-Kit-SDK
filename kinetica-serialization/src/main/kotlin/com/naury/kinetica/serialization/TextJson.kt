@@ -1,6 +1,7 @@
 package com.naury.kinetica.serialization
 
 import com.naury.kinetica.core.scene.NodeContent
+import com.naury.kinetica.core.scene.TextAutoSize
 import com.naury.kinetica.core.scene.TextDecoration
 import com.naury.kinetica.core.scene.TextSpan
 import com.naury.kinetica.serialization.JsonKeys as K
@@ -17,7 +18,13 @@ internal object TextJson {
         if (text.italic) put(K.ITALIC, true)
         if (text.decoration != TextDecoration.None) put(K.DECORATION, text.decoration.wireName)
         if (text.spans.isNotEmpty()) putJsonArray(K.SPANS) { text.spans.forEach { add(span(it)) } }
+        if (text.autoSize != TextAutoSize.Fixed) put(K.AUTO_SIZE, text.autoSize.wireName)
     }
+
+    fun readAutoSize(json: JsonObject, path: String): TextAutoSize = json.optional(K.AUTO_SIZE)?.let {
+        TextAutoSize.fromWireName(it.asString("$path.${K.AUTO_SIZE}"))
+            ?: fail("$path.${K.AUTO_SIZE}", "fixed·height·auto 중 하나여야 합니다.")
+    } ?: TextAutoSize.Fixed
 
     fun readDecoration(json: JsonObject, path: String): TextDecoration = json.optional(K.DECORATION)?.let {
         TextDecoration.fromWireName(it.asString("$path.${K.DECORATION}"))

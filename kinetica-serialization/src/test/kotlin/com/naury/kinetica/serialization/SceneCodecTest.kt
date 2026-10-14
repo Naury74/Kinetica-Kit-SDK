@@ -37,6 +37,7 @@ import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.Shadow
 import com.naury.kinetica.core.scene.SizeLimits
 import com.naury.kinetica.core.scene.TextAlignment
+import com.naury.kinetica.core.scene.TextAutoSize
 import com.naury.kinetica.core.scene.TextDecoration
 import com.naury.kinetica.core.scene.TextSpan
 import com.naury.kinetica.core.scene.ViolationCode
@@ -350,6 +351,7 @@ class SceneCodecTest {
                 letterSpacing = -0.5,
                 fontFamily = "serif",
                 italic = true,
+                autoSize = TextAutoSize.Height,
                 decoration = TextDecoration.Underline,
                 spans = listOf(
                     TextSpan(0, 2, fontWeight = 900, color = ArgbColor(0xFFFF0000.toInt())),

@@ -39,6 +39,7 @@ internal object JsonKeys {
     const val ITALIC = "italic"
     const val DECORATION = "decoration"
     const val SPANS = "spans"
+    const val AUTO_SIZE = "autoSize"
     const val START = "start"
     const val END = "end"
     const val SHADOW = "shadow"
