@@ -66,6 +66,7 @@ internal fun InspectorPanel(
         EffectsSection(node, edits.effects, theme)
         (node.content as? NodeContent.Frame)?.let { AutoLayoutSection(node, it, edits.layout, theme) }
         if (edits.layout.isLaidOut(node)) LayoutChildSection(node, edits.layout, theme) else ConstraintsSection(node, edits.layout, theme)
+        SizeLimitsSection(node, edits.layout, theme)
         BindingFields(node, edits.property, theme)
     }
 }

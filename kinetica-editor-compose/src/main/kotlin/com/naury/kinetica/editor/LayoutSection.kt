@@ -3,6 +3,7 @@ package com.naury.kinetica.editor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,6 +17,7 @@ import com.naury.kinetica.core.scene.MainAlign
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.Pin
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.sizeOrNull
 
 /** Frame 자동 배치(방향·간격·여백·정렬·내용 맞춤). 끄면 자식은 지금 자리에 남는다. */
 @Composable
@@ -56,6 +58,40 @@ internal fun AutoLayoutSection(node: SceneNode, frame: NodeContent.Frame, edits:
         }
         ToggleChip(R.string.kinetica_layout_hug_height, layout.hugHeight, theme) {
             edits.setLayout(node.id) { it?.copy(hugHeight = !it.hugHeight) }
+        }
+        ToggleChip(R.string.kinetica_layout_wrap, layout.wrap, theme) { edits.toggleWrap(node.id) }
+    }
+    if (layout.wrap) {
+        SpacingInput(node.id.value + "line" + layout.lineGap, layout.lineGap, R.string.kinetica_field_line_gap, Modifier.fillMaxWidth()) {
+            edits.setLineGap(node.id, it)
+        }
+    }
+}
+
+/** 크기 최소·최대. 자동 배치·제약이 크기를 바꿀 때 이 범위를 지킨다. 빈 칸은 제한 없음. */
+@Composable
+internal fun SizeLimitsSection(node: SceneNode, edits: LayoutEdits, theme: StudioTheme) {
+    if (node.content.sizeOrNull() == null) return
+    val limits = node.sizeLimits
+    Text(stringResource(R.string.kinetica_section_size_limits), color = theme.onPanel.copy(alpha = SECTION_ALPHA))
+    LIMIT_ROWS.forEach { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            row.forEach { (field, label) ->
+                val value = when (field) {
+                    LimitField.MinWidth -> limits.minWidth
+                    LimitField.MaxWidth -> limits.maxWidth
+                    LimitField.MinHeight -> limits.minHeight
+                    LimitField.MaxHeight -> limits.maxHeight
+                }
+                CommitTextField(
+                    current = value?.let(::formatNumber).orEmpty(),
+                    key = node.id.value + field + value,
+                    label = stringResource(label),
+                    keyboardType = KeyboardType.Decimal,
+                    enabled = true,
+                    modifier = Modifier.weight(1f),
+                ) { edits.setSizeLimit(node.id, field, it) }
+            }
         }
     }
 }
@@ -105,6 +141,11 @@ private fun SpacingInput(key: String, value: Double, label: Int, modifier: Modif
 private fun ChipRow(content: @Composable () -> Unit) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) { content() }
 }
+
+private val LIMIT_ROWS = listOf(
+    listOf(LimitField.MinWidth to R.string.kinetica_field_min_width, LimitField.MaxWidth to R.string.kinetica_field_max_width),
+    listOf(LimitField.MinHeight to R.string.kinetica_field_min_height, LimitField.MaxHeight to R.string.kinetica_field_max_height),
+)
 
 private val MAIN_ALIGNS = listOf(
     MainAlign.Start to R.string.kinetica_align_start,

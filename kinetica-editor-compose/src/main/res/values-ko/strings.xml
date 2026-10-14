@@ -184,4 +184,11 @@
     <string name="kinetica_property_blur">흐림</string>
     <string name="kinetica_property_shadow_blur">그림자 흐림</string>
     <string name="kinetica_property_shadow_y">그림자 Y</string>
+    <string name="kinetica_layout_wrap">줄 바꿈</string>
+    <string name="kinetica_field_line_gap">줄 간격</string>
+    <string name="kinetica_section_size_limits">크기 제한</string>
+    <string name="kinetica_field_min_width">최소 너비</string>
+    <string name="kinetica_field_max_width">최대 너비</string>
+    <string name="kinetica_field_min_height">최소 높이</string>
+    <string name="kinetica_field_max_height">최대 높이</string>
 </resources>

@@ -185,4 +185,11 @@
     <string name="kinetica_property_blur">Blur</string>
     <string name="kinetica_property_shadow_blur">Shadow blur</string>
     <string name="kinetica_property_shadow_y">Shadow Y</string>
+    <string name="kinetica_layout_wrap">Wrap</string>
+    <string name="kinetica_field_line_gap">Line gap</string>
+    <string name="kinetica_section_size_limits">Size limits</string>
+    <string name="kinetica_field_min_width">Min width</string>
+    <string name="kinetica_field_max_width">Max width</string>
+    <string name="kinetica_field_min_height">Min height</string>
+    <string name="kinetica_field_max_height">Max height</string>
 </resources>

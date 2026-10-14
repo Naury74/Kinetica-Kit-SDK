@@ -24,6 +24,26 @@ internal class LayoutEdits(private val state: EditorState) {
     fun setPadding(id: NodeId, text: String): Boolean =
         parse(text)?.let { padding -> setLayout(id) { it?.copy(padding = Insets.all(padding)) } } ?: false
 
+    /** 줄 바꿈할 때 줄 사이 간격(문서 단위, 0 이상). */
+    fun setLineGap(id: NodeId, text: String): Boolean = parse(text)?.let { gap -> setLayout(id) { it?.copy(lineGap = gap) } } ?: false
+
+    fun toggleWrap(id: NodeId): Boolean = setLayout(id) { it?.copy(wrap = !it.wrap) }
+
+    /** 크기 최소·최대 하나를 바꾼다. 빈 칸이면 그 제한을 없앤다. 최소가 최대보다 커지면 `false`. */
+    fun setSizeLimit(id: NodeId, field: LimitField, text: String): Boolean {
+        val node = state.document.node(id) ?: return false
+        val value = if (text.isBlank()) null else parse(text) ?: return false
+        val limits = node.sizeLimits.let {
+            when (field) {
+                LimitField.MinWidth -> it.copy(minWidth = value)
+                LimitField.MaxWidth -> it.copy(maxWidth = value)
+                LimitField.MinHeight -> it.copy(minHeight = value)
+                LimitField.MaxHeight -> it.copy(maxHeight = value)
+            }
+        }
+        return update(node.copy(sizeLimits = limits))
+    }
+
     /** 자동 배치 Frame 안에서 남는 공간을 채울지 바꾼다. */
     fun toggleFill(id: NodeId): Boolean = state.document.node(id)?.let { update(it.copy(layoutFill = !it.layoutFill)) } ?: false
 
@@ -40,3 +60,6 @@ internal class LayoutEdits(private val state: EditorState) {
         return state.execute(SceneCommand.UpdateProperties(node))
     }
 }
+
+/** 크기 최소·최대 입력 칸. */
+internal enum class LimitField { MinWidth, MaxWidth, MinHeight, MaxHeight }

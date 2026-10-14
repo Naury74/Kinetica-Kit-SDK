@@ -3,7 +3,9 @@ package com.naury.kinetica.editor
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import com.google.common.truth.Truth.assertThat
 import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
@@ -84,5 +86,28 @@ class AutoLayoutEditorTest {
         compose.waitForIdle()
 
         assertThat(session.document.value.node(NodeId("a"))!!.constraints.vertical).isEqualTo(Pin.End)
+    }
+
+    @Test
+    fun `줄 바꿈을 켜고 최소 너비를 넣으면 크기가 그 아래로 줄지 않는다`() {
+        compose.setContent { KineticaEditor(session) }
+        session.select(listOf(NodeId("a"), NodeId("b")))
+        compose.waitForIdle()
+        compose.onNodeWithText("Auto layout").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Wrap").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertThat(frame().second.layout!!.wrap).isTrue()
+
+        session.select(listOf(NodeId("a")))
+        compose.waitForIdle()
+        compose.onNodeWithText("Min width").performScrollTo().performTextReplacement("150")
+        compose.onNodeWithText("Min width").performImeAction()
+        compose.waitForIdle()
+
+        val a = session.document.value.node(NodeId("a"))!!
+        assertThat(a.sizeLimits.minWidth).isEqualTo(150.0)
+        assertThat((a.content as NodeContent.Rectangle).size.width).isEqualTo(150.0)
     }
 }
