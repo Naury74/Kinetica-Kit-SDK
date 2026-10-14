@@ -281,6 +281,7 @@ public final class com/naury/kinetica/serialization/SceneCodec {
 	public final fun decode ([B)Lcom/naury/kinetica/serialization/DecodeResult;
 	public final fun encode (Lcom/naury/kinetica/core/scene/SceneDocument;)Ljava/lang/String;
 	public final fun getMaxJsonBytes ()I
+	public final fun validate (Lcom/naury/kinetica/core/scene/SceneDocument;)Ljava/util/List;
 }
 
 public final class com/naury/kinetica/serialization/SceneCodec$Companion {

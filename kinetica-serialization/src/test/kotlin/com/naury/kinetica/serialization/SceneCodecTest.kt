@@ -451,4 +451,21 @@ class SceneCodecTest {
         val future = decoded(encoded.replace("\"role\":\"image\"", "\"role\":\"slider\""))
         assertThat(future.node(NodeId("logo"))!!.accessibility.role).isNull()
     }
+
+    @Test
+    fun `읽기가 거부할 문서는 쓰지 않고 이유를 알린다`() {
+        val flat =
+            SceneNode(
+                NodeId("flat"),
+                NodeContent.Rectangle(Size(10.0, 10.0)),
+                transform = com.naury.kinetica.core.geometry.Transform2D(scaleX = 0.0),
+            )
+        val bad = SceneDocument("bad", Artboard(100.0, 100.0), mapOf(flat.id to flat), listOf(flat.id))
+
+        val error = runCatching { codec.encode(bad) }.exceptionOrNull()
+
+        assertThat(error).isInstanceOf(IllegalArgumentException::class.java)
+        assertThat(error!!.message).contains("InvalidTransform(flat)")
+        assertThat(codec.validate(bad)).isNotEmpty()
+    }
 }

@@ -38,8 +38,22 @@ public class SceneCodec(
     private val validator = SceneValidator(limits)
     private val json = Json
 
-    /** 문서를 한 줄 JSON으로 쓴다. 같은 문서는 항상 같은 문자열이 된다. */
-    public fun encode(document: SceneDocument): String = SceneJsonWriter.write(document).toString()
+    /**
+     * 문서를 한 줄 JSON으로 쓴다. 같은 문서는 항상 같은 문자열이 된다.
+     * 읽기([decode])가 거부할 문서는 쓰지 않는다. 서버가 코드로 만든 문서를 모든 기기가 거부하는 일을 쓰는 쪽에서 막기 위해서다.
+     *
+     * @throws IllegalArgumentException 문서가 검증([validate])을 통과하지 못할 때. 메시지에 위반 코드와 노드 id가 있다.
+     */
+    public fun encode(document: SceneDocument): String {
+        val violations = validate(document)
+        require(violations.isEmpty()) {
+            "읽을 수 없는 문서라 쓰지 않습니다: " + violations.take(MAX_REPORTED).joinToString { "${it.code}(${it.nodeId?.value ?: "-"})" }
+        }
+        return SceneJsonWriter.write(document).toString()
+    }
+
+    /** [decode]가 쓰는 것과 같은 검증. 빈 목록이면 쓰고 읽을 수 있다. */
+    public fun validate(document: SceneDocument): List<SceneViolation> = validator.validate(document)
 
     public fun decode(bytes: ByteArray): DecodeResult {
         if (bytes.size > maxJsonBytes) return DecodeResult.Failure(SceneLoadError.TooLarge(bytes.size.toLong(), maxJsonBytes))
@@ -85,6 +99,8 @@ public class SceneCodec(
     }
 
     public companion object {
+        private const val MAX_REPORTED = 5
+
         public const val DEFAULT_MAX_JSON_BYTES: Int = 10_485_760
 
         /** 허용하는 JSON 중첩 깊이. 형식 버전 1은 7단계면 충분하고 나머지는 확장 데이터 몫이다. */
