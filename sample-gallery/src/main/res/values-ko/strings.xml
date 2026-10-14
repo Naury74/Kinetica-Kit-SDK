@@ -3,4 +3,9 @@
     <string name="gallery_hint">아래로 끌거나 뒤로 가기를 누르면 닫힙니다</string>
     <string name="gallery_open">%1$s 열기</string>
     <string name="gallery_view_host">View 화면 예</string>
+    <string name="gallery_remote">서버 화면 예</string>
+    <string name="remote_loading">불러오는 중…</string>
+    <string name="remote_refresh">새로 고침</string>
+    <string name="remote_cart">장바구니 %1$d</string>
+    <string name="remote_coupons">쿠폰 누름 %1$d</string>
 </resources>

@@ -104,6 +104,9 @@ private fun SceneGrid(shared: SharedTransitionScope, visibility: AnimatedVisibil
             TextButton(onClick = { context.startActivity(Intent(context, ViewHostActivity::class.java)) }) {
                 Text(stringResource(R.string.gallery_view_host))
             }
+            TextButton(onClick = { context.startActivity(Intent(context, RemoteActivity::class.java)) }) {
+                Text(stringResource(R.string.gallery_remote))
+            }
         }
         LazyVerticalGrid(columns = GridCells.Adaptive(160.dp), contentPadding = PaddingValues(12.dp)) {
             items(GalleryScenes.items, key = { it.id }) { item ->

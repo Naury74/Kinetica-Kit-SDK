@@ -69,7 +69,8 @@ tasks.register("verifyReleaseClasspath") {
     group = "verification"
     description = "release 런타임에 재생에 필요한 모듈만 있는지 확인한다."
     val projects = configurations.named("releaseRuntimeClasspath").flatMap { it.projectDependencyNames() }
-    val allowed = setOf("kinetica-player-compose", "kinetica-render-compose", "kinetica-motion", "kinetica-core")
+    // 서버 주도 재생이 JSON을 읽으므로 serialization은 재생기에 포함된다.
+    val allowed = setOf("kinetica-player-compose", "kinetica-render-compose", "kinetica-motion", "kinetica-serialization", "kinetica-core")
     doLast {
         val names = projects.get()
         val extra = names - allowed
