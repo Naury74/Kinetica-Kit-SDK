@@ -44,6 +44,8 @@ import com.naury.kinetica.render.rememberSceneImages
  * @param slots 호스트 뷰 노드에 그릴 Composable(키 → 내용). 실제로 동작한다.
  * @param onAction 동작이 있는 노드를 누르면 동작 이름으로 불린다.
  * @param fit 영역에 맞추는 방식. 기본은 비율을 지키는 [SceneFit.Contain]이다.
+ * @param numberAnimationMs 데이터의 숫자 값이 바뀌면 이 시간(ms) 동안 올라가거나 내려가며 바뀐다([animateSceneNumbers]).
+ *   0이면 바로 바뀐다. 시스템 "애니메이션 삭제"가 켜져 있으면 바로 바뀐다.
  */
 @Composable
 public fun KineticaPlayer(
@@ -56,7 +58,9 @@ public fun KineticaPlayer(
     slots: SceneSlots = emptyMap(),
     onAction: (String) -> Unit = {},
     fit: SceneFit = SceneFit.Contain,
+    numberAnimationMs: Int = DEFAULT_NUMBER_ANIMATION_MS,
 ) {
+    val data = animateSceneNumbers(data, if (rememberSystemReducedMotion()) 0 else numberAnimationMs)
     val sceneImages = images ?: rememberSceneImages(document)
     val timeline = playback?.timeline ?: document.timelines.firstOrNull()
     val state = playback?.state?.collectAsState()

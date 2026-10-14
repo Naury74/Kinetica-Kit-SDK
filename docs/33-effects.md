@@ -30,6 +30,7 @@
   ```kotlin
   AnimatedContent(tab, transitionSpec = { ContentTransitions.sharedAxisX(forward = targetState > initialState) }) { Page(it) }
   ```
+- 장면·서버 화면 안의 숫자 글자는 재생기가 알아서 올라가게 한다(`KineticaPlayer(numberAnimationMs = …)`, [docs/30](30-ui-composer.md)).
 - `animateNumberAsState(target)`: 값이 바뀌면 지금 보이는 숫자에서 새 값까지 올라가거나 내려간다(대시보드 매출·카운터). 큰 수도 Double로 계산한다.
 
 ## 규칙
