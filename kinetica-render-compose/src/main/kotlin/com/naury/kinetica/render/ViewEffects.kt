@@ -1,7 +1,6 @@
 package com.naury.kinetica.render
 
 import android.animation.ValueAnimator
-import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.ColorFilter
@@ -9,11 +8,10 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Shader
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.RippleDrawable
-import android.view.MotionEvent
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
@@ -31,19 +29,25 @@ import kotlin.math.sin
 /**
  * Compose가 아닌 XML View에 미리 만든 움직임 효과([NodeEffects])를 붙인다. Compose의 `Modifier.kineticaEffects`와 같은 효과이며 거리 값은 dp다.
  *
- * - 누름 효과는 View의 터치 리스너로 관찰만 하고 소비하지 않으므로 클릭은 그대로 동작한다. 단, View에 이미 있던 터치 리스너는 교체된다.
- * - 리플·어둡게·반짝임은 View의 foreground로 그린다(View 모양의 사각형 범위). 빛 번짐은 그림자 높이로 표현한다.
+ * - 누름 효과는 View의 눌림 상태(foreground drawable 상태)를 따라가므로 터치·클릭 리스너를 건드리지 않는다.
+ *   눌림 상태는 클릭할 수 있는 View(`isClickable`, 클릭 리스너를 단 View)에서만 바뀐다.
+ * - 리플·어둡게·반짝임은 View의 foreground로 [cornerRadiusDp] 둥근 사각형 안에 그린다. 빛 번짐은 그림자 높이로 표현하며 View 윤곽을 따른다.
  * - View가 화면에서 떨어지면 반복을 멈추고 다시 붙으면 이어 간다. 시스템 애니메이션이 꺼져 있으면 나타나기·반복은 하지 않는다.
  *
  * 메인 스레드에서 부른다.
  */
 public object ViewEffects {
-    /** [view]에 [effects]를 붙인다. 이미 붙인 효과가 있으면 먼저 떼고 붙인다. */
+    /**
+     * [view]에 [effects]를 붙인다. 이미 붙인 효과가 있으면 먼저 떼고 붙인다.
+     *
+     * @param cornerRadiusDp 리플·어둡게·반짝임을 그릴 모서리 반지름(dp, 0 이상). View 배경과 같게 준다.
+     */
     @JvmStatic
-    public fun apply(view: View, effects: NodeEffects) {
+    @JvmOverloads
+    public fun apply(view: View, effects: NodeEffects, cornerRadiusDp: Float = 0f) {
         clear(view)
         if (effects.isEmpty) return
-        val attached = AttachedEffects(view, effects)
+        val attached = AttachedEffects(view, effects, cornerRadiusDp.coerceAtLeast(0f) * view.resources.displayMetrics.density)
         view.setTag(R.id.kinetica_view_effects, attached)
         attached.start()
     }
@@ -56,7 +60,8 @@ public object ViewEffects {
     }
 }
 
-private class AttachedEffects(private val view: View, private val effects: NodeEffects) : View.OnAttachStateChangeListener {
+private class AttachedEffects(private val view: View, private val effects: NodeEffects, private val corner: Float) :
+    View.OnAttachStateChangeListener {
     private val density = view.resources.displayMetrics.density
     private val kinds = effects.press.associateBy { it.kind }
     private val motion = ValueAnimator.areAnimatorsEnabled()
@@ -67,22 +72,19 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         RippleDrawable(
             ColorStateList.valueOf(withAlpha(color, effect.resolvedAmount.toFloat())),
             null,
-            ColorDrawable(android.graphics.Color.WHITE),
+            rounded(android.graphics.Color.WHITE),
         )
     }
     private val dim = kinds[PressKind.Dim]?.let { effect ->
-        ColorDrawable(effect.color?.argb ?: android.graphics.Color.BLACK).apply {
-            alpha =
-                0
-        }
+        rounded(effect.color?.argb ?: android.graphics.Color.BLACK).apply { alpha = 0 }
     }
-    private val shimmer = effects.loop?.takeIf { it.kind == LoopKind.Shimmer && motion }?.let(::ShimmerDrawable)
+    private val watcher = if (kinds.keys.any { it != PressKind.Ripple }) PressWatcher(::pressed) else null
+    private val shimmer = effects.loop?.takeIf { it.kind == LoopKind.Shimmer && motion }?.let { ShimmerDrawable(it, corner) }
     private var loop: ValueAnimator? = null
 
     fun start() {
-        val layers = listOfNotNull(originalForeground, ripple, dim, shimmer)
+        val layers = listOfNotNull(originalForeground, ripple, dim, shimmer, watcher)
         if (layers.size > (if (originalForeground == null) 0 else 1)) view.foreground = LayerDrawable(layers.toTypedArray())
-        if (kinds.isNotEmpty()) watchPress()
         effects.appear?.takeIf { motion }?.let(::appear)
         view.addOnAttachStateChangeListener(this)
         if (view.isAttachedToWindow) startLoop()
@@ -93,7 +95,6 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         loop?.cancel()
         loop = null
         view.animate().cancel()
-        if (kinds.isNotEmpty()) view.setOnTouchListener(null)
         view.foreground = originalForeground
         view.elevation = originalElevation
         view.scaleX = 1f
@@ -113,21 +114,8 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         loop = null
     }
 
-    // 관찰만 하므로 접근성 클릭 처리(performClick)는 View 자신에게 맡긴다.
-    @SuppressLint("ClickableViewAccessibility")
-    private fun watchPress() {
-        view.setOnTouchListener { _, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> pressed(true, event.x, event.y)
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> pressed(false, event.x, event.y)
-            }
-            false
-        }
-    }
-
     private fun pressed(down: Boolean, x: Float, y: Float) {
-        ripple?.setHotspot(x, y)
-        ripple?.state = if (down) intArrayOf(android.R.attr.state_pressed, android.R.attr.state_enabled) else intArrayOf()
+        // 리플은 View 상태를 직접 따르므로 여기서는 나머지 효과만 움직인다.
         dim?.alpha = if (down) ((kinds[PressKind.Dim]?.resolvedAmount ?: 0.0) * FULL_ALPHA).toInt() else 0
         val animator = view.animate().setDuration(PRESS_MS).setInterpolator(if (down) STANDARD else OvershootInterpolator())
         kinds[PressKind.Scale]?.let {
@@ -205,6 +193,11 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         }
     }
 
+    private fun rounded(color: Int) = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = corner
+    }
+
     private fun withAlpha(color: Int, alpha: Float): Int = (color and RGB_MASK) or ((alpha * FULL_ALPHA).toInt() shl ALPHA_SHIFT)
 
     private companion object {
@@ -226,8 +219,43 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
     }
 }
 
+/**
+ * View의 눌림 상태를 알려 주는 보이지 않는 foreground 층. 클릭할 수 있는 View는 누르는 동안 drawable 상태에 pressed가 들어오고,
+ * 누른 자리는 hotspot으로 들어온다.
+ */
+private class PressWatcher(private val onPress: (Boolean, Float, Float) -> Unit) : Drawable() {
+    private var down = false
+    private var x = 0f
+    private var y = 0f
+
+    override fun isStateful(): Boolean = true
+
+    override fun onStateChange(state: IntArray): Boolean {
+        val pressed = android.R.attr.state_pressed in state
+        if (pressed != down) {
+            down = pressed
+            onPress(pressed, x, y)
+        }
+        return false
+    }
+
+    override fun setHotspot(x: Float, y: Float) {
+        this.x = x
+        this.y = y
+    }
+
+    override fun draw(canvas: Canvas) = Unit
+
+    override fun setAlpha(alpha: Int) = Unit
+
+    override fun setColorFilter(colorFilter: ColorFilter?) = Unit
+
+    @Deprecated("Drawable 계약상 구현해야 한다.", ReplaceWith("PixelFormat.TRANSPARENT"))
+    override fun getOpacity(): Int = PixelFormat.TRANSPARENT
+}
+
 /** View foreground로 지나가는 빛 띠. */
-private class ShimmerDrawable(private val loop: LoopEffect) : Drawable() {
+private class ShimmerDrawable(private val loop: LoopEffect, private val corner: Float) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     var progress = 0f
@@ -256,7 +284,7 @@ private class ShimmerDrawable(private val loop: LoopEffect) : Drawable() {
             null,
             Shader.TileMode.CLAMP,
         )
-        canvas.drawRect(bounds, paint)
+        canvas.drawRoundRect(android.graphics.RectF(bounds), corner, corner, paint)
     }
 
     override fun setAlpha(alpha: Int) = Unit

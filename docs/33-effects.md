@@ -6,7 +6,7 @@
 | 쓰는 곳 | 방법 |
 | --- | --- |
 | 호스트의 Compose 뷰 | `Modifier.kineticaEffects(EffectPresets.button, RoundedCornerShape(16.dp))` |
-| 호스트의 XML View | `ViewEffects.apply(view, EffectPresets.button)` / 떼기 `ViewEffects.clear(view)` |
+| 호스트의 XML View | `ViewEffects.apply(view, EffectPresets.button, cornerRadiusDp = 16f)` / 떼기 `ViewEffects.clear(view)` |
 | 장면 노드(호스트 뷰 자리 포함) | `SceneNode.effects`, 편집기 속성 패널 **움직임 효과** |
 | 보드 위젯 | `BoardWidget(…, effects = EffectPresets.card)` |
 
@@ -24,13 +24,15 @@
 ## 규칙
 
 - 누름 효과는 손가락을 관찰만 하고 소비하지 않는다. 호스트 뷰의 클릭·스크롤·입력은 그대로 동작한다.
-  XML View에서는 터치 리스너를 쓰므로 그 View에 이미 있던 터치 리스너는 교체된다(클릭 리스너는 그대로).
+  XML View에서는 View의 눌림 상태를 foreground drawable로 따라가므로 터치·클릭 리스너를 건드리지 않는다.
+  눌림 상태는 클릭할 수 있는 View에서만 바뀐다(클릭 리스너를 단 View).
 - 시스템 "애니메이션 줄이기"(애니메이터 배율 0)가 켜져 있으면 나타나기·반복은 하지 않고 누름 효과만 쓴다.
 - 장면에서는 재생기·미리보기·보드 사용 모드에서만 움직이고, 편집 캔버스·보드 편집 중에는 움직이지 않는다.
 - 거리(둥실·통통·빛 번짐)는 Compose·XML에서는 dp, 장면·보드에서는 문서 단위다.
 - 효과는 장면 JSON에 `effects`로 저장되어 서버 화면으로도 내려보낼 수 있다. 값은 검증한다(같은 누름 종류 한 번,
   세기 범위, 시간 0..60초, 반복 주기 100ms 이상).
-- XML View의 리플·어둡게·반짝임은 View의 사각형 범위에 그리고, 빛 번짐은 그림자 높이로 흉내 낸다.
+- XML View의 리플·어둡게·반짝임은 `ViewEffects.apply(view, effects, cornerRadiusDp)`의 둥근 사각형 안에 그린다.
+  빛 번짐은 그림자 높이로 흉내 내며 View 윤곽(`outlineProvider`)을 따른다.
 
 ## 확인
 

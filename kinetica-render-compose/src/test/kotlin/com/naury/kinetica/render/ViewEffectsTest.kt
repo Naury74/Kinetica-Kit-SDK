@@ -26,7 +26,7 @@ class ViewEffectsTest {
     }
 
     @Test
-    fun `누름 효과는 터치를 가로채지 않고 리플을 foreground로 붙이며 떼면 원래대로 돌린다`() {
+    fun `누름 효과는 터치 리스너를 쓰지 않고 눌림 상태로 움직이며 떼면 원래대로 돌린다`() {
         // 창에 붙지 않은 View는 클릭 콜백이 미뤄지므로, 터치가 View 자신에게 전달되는지로 확인한다.
         var received = 0
         val view = object : View(context) {
@@ -36,11 +36,23 @@ class ViewEffectsTest {
             }
         }.apply { layout(0, 0, 100, 100) }
 
-        ViewEffects.apply(view, NodeEffects(press = listOf(PressEffect(PressKind.Ripple), PressEffect(PressKind.Scale, amount = 0.9))))
+        var hostListener = 0
+        view.setOnTouchListener { _, _ ->
+            hostListener++
+            false
+        }
+        ViewEffects.apply(view, NodeEffects(press = listOf(PressEffect(PressKind.Ripple), PressEffect(PressKind.Scale, amount = 0.9))), 12f)
+        view.isPressed = true
+        ShadowLooper.idleMainLooper(1_000, java.util.concurrent.TimeUnit.MILLISECONDS)
+        val pressedScale = view.scaleX
+        view.isPressed = false
         touch(view, MotionEvent.ACTION_DOWN)
         touch(view, MotionEvent.ACTION_UP)
-        ShadowLooper.idleMainLooper()
+        ShadowLooper.idleMainLooper(1_000, java.util.concurrent.TimeUnit.MILLISECONDS)
 
+        assertThat(pressedScale).isWithin(0.01f).of(0.9f)
+        assertThat(view.scaleX).isWithin(0.01f).of(1f)
+        assertThat(hostListener).isEqualTo(2)
         assertThat(received).isEqualTo(2)
         assertThat(view.foreground).isNotNull()
         ViewEffects.clear(view)
