@@ -81,7 +81,11 @@ import androidx.compose.ui.unit.sp
  * @param showChecklist 조건 체크리스트를 보일지
  * @param newPassword 새 비밀번호를 만드는 입력란인지. 자동 채우기 종류만 바꾼다.
  * @param error 오류 문구. `null`이 아니면 테두리가 빨개지고 입력란이 흔들리며 아래에 문구가 보인다.
- * @param keyboardActions IME 동작 키를 눌렀을 때 할 일
+ * @param keyboardActions IME 동작 키를 눌렀을 때 할 일. [imeAction]에 맞는 콜백을 채운다.
+ * @param imeAction 키보드 동작 키의 종류. 아래에 입력란이 더 있으면 [ImeAction.Next]로 둔다. [keyboardActions]에 맞는 콜백이 없으면
+ *   Next는 다음 입력란으로 포커스를 옮기고 Done은 키보드를 내리는 기본 동작을 한다.
+ * @param fieldModifier 안쪽 입력란에 붙일 Modifier. `testTag`, `focusRequester`, 자동 채우기 설정처럼 입력란 자체에 걸어야 하는 것을 여기에 준다.
+ *   [modifier]는 그대로 입력란, 강도 막대, 체크리스트를 감싼 바깥 묶음에 붙는다.
  */
 @Composable
 public fun GlassPasswordField(
@@ -95,6 +99,8 @@ public fun GlassPasswordField(
     error: String? = null,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     style: GlassStyle = LocalGlassStyle.current,
+    imeAction: ImeAction = ImeAction.Done,
+    fieldModifier: Modifier = Modifier,
 ) {
     var visible by rememberSaveable { mutableStateOf(false) }
     var focused by remember { mutableStateOf(false) }
@@ -121,11 +127,12 @@ public fun GlassPasswordField(
                 .semantics {
                     contentType = if (newPassword) ContentType.NewPassword else ContentType.Password
                     if (error != null) error(error)
-                },
+                }
+                .then(fieldModifier),
             singleLine = true,
             textStyle = themed(TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE)),
             cursorBrush = SolidColor(colors.accent),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done, autoCorrectEnabled = false),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = imeAction, autoCorrectEnabled = false),
             keyboardActions = keyboardActions,
             visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
             decorationBox = { field ->

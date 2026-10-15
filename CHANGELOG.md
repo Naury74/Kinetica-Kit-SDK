@@ -55,6 +55,10 @@
 - 편집기 timeline: 키 도구 줄을 늘 같은 높이로 두어, 길게 누른 뒤 이어서 끌 때 키 줄이 밀려 손가락과 사각형이 어긋나던 문제를 고쳤습니다. 회전 방향 칩은 같은 줄 끝으로 옮겼습니다.
 - 계단 easing 점프 방식: `EasingSpec.Steps.jump`(`StepJump`: `Start`, `End`, `None`, `Both`)로 CSS `steps()`의 jump-start, jump-end, jump-none, jump-both를 고릅니다. 기본값은 예전과 같은 `End`이고, `None`은 칸이 2개 이상이어야 합니다. JSON의 `steps` easing에 선택 필드 `jump`가 추가되며, 없으면 `end`로 읽고 `end`일 때는 쓰지 않습니다. 스키마 버전은 그대로 1입니다. 곡선 편집기에서도 칸 수 슬라이더 아래의 칩으로 점프 방식을 바꿀 수 있습니다.
 - 회전 보간 방향: `Keyframe.rotation`(`RotationDirection`: 가장 짧게, 시계, 반시계, 값 그대로). JSON keyframe에 선택 필드 `rotationDirection`이 추가되며, 없으면 예전처럼 가장 짧은 방향으로 보간합니다. 스키마 버전은 그대로 1입니다.
+- 3차 컴포넌트 호스트 연동: XML 화면의 `ComposeView` 안에서 `GlassColorPicker`를 끌면 바깥 `NestedScrollView`가 스크롤되던 문제를 고쳤습니다. 투명도 슬라이더, `BeforeAfterSlider`, `FlipCard`도 자기 방향으로 끄는 동안에는 바깥 View가 가로채지 않고, 반대 방향 끌기는 바깥 스크롤에 넘깁니다.
+- `GlassPasswordField`, `GlassTagInput`, `GlassCodeInput`에 `imeAction`과 `keyboardActions`를 추가했습니다. `GlassTagInput`은 입력 중인 글자가 있으면 동작 키로 칩을 만들고, 빈 입력란에서 누르면 `keyboardActions`로 넘깁니다. 이제 빈 입력란에서 완료를 누르면 기본 동작대로 키보드가 내려갑니다.
+- `GlassPasswordField`, `GlassTagInput`에 안쪽 입력란에 붙는 `fieldModifier`를 추가했습니다. `modifier`는 예전처럼 바깥 묶음에 붙습니다.
+- `BeforeAfterSlider(position, onPositionChange, before, after)`: 손잡이 위치를 호스트가 들고 있는 버전을 추가했습니다.
 
 ### 알파 동안 바뀐 이름
 - `GlassSlider`·`GlassRangeSlider`의 `activeColor`, `GlassSwitch`의 `onColor`, `GlassSlideToConfirm`의 `color` → `accent`

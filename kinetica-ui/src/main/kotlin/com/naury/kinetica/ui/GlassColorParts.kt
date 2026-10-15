@@ -1,6 +1,7 @@
 package com.naury.kinetica.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -190,6 +191,7 @@ internal fun ColorAlphaSlider(color: Color, onAlphaChange: (Float) -> Unit, onFi
                     true
                 }
             }
+            .holdViewParentDrag(Orientation.Horizontal)
             .pointerInput(rtl) {
                 detectTapGestures {
                     latest(alphaAt(it.x, size.width.toFloat(), size.height.toFloat(), rtl))

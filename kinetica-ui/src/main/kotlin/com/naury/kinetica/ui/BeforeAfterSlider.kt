@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,6 +24,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
@@ -98,8 +100,55 @@ public fun BeforeAfterSlider(
 ) {
     require(initial in 0f..1f) { "initial은 0..1이어야 합니다." }
     val split = rememberSaveable { mutableFloatStateOf(initial) }
-    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val compare = remember(split) { CompareState(split) }
+    CompareBox(compare, before, after, modifier, CompareLabels(beforeLabel, afterLabel), style)
+}
+
+/**
+ * 손잡이 위치를 호스트가 들고 있는 [BeforeAfterSlider]. 끌기, 누르기, 키보드, TalkBack으로 바꾼 위치를 [onPositionChange]로 받고,
+ * 호스트가 [position]을 바꾸면 손잡이가 그 위치로 간다. 누른 곳으로 미끄러지는 동안에는 [onPositionChange]가 프레임마다 불린다.
+ * 위치를 저장하거나 화면 회전 뒤에 되살리는 일은 호스트가 한다.
+ *
+ * ```kotlin
+ * var split by rememberSaveable { mutableFloatStateOf(0.5f) }
+ * BeforeAfterSlider(split, { split = it }, before = { Raw() }, after = { Edited() }, Modifier.fillMaxWidth().aspectRatio(4f / 3f))
+ * ```
+ *
+ * @param position 손잡이 위치. 시작 쪽 가장자리가 0, 끝 쪽 가장자리가 1이다. 0..1 밖의 값은 가장자리로 맞춰 그린다.
+ * @param onPositionChange 사용자가 바꾼 새 위치(0..1)를 받는다.
+ */
+@Composable
+public fun BeforeAfterSlider(
+    position: Float,
+    onPositionChange: (Float) -> Unit,
+    before: @Composable () -> Unit,
+    after: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    beforeLabel: String? = stringResource(R.string.kinetica_ui_compare_before),
+    afterLabel: String? = stringResource(R.string.kinetica_ui_compare_after),
+    style: GlassStyle = LocalGlassStyle.current,
+) {
+    val split = remember { mutableFloatStateOf(position.coerceIn(0f, 1f)) }
+    // 그리기 단계에서 읽는 값이므로 컴포지션마다 호스트 값으로 맞춘다. 같은 값이면 상태가 바뀌지 않는다.
+    split.floatValue = position.coerceIn(0f, 1f)
+    val latest by rememberUpdatedState(onPositionChange)
+    val compare = remember(split) { CompareState(split) { latest(it) } }
+    CompareBox(compare, before, after, modifier, CompareLabels(beforeLabel, afterLabel), style)
+}
+
+/** 손잡이 양쪽 위에 띄우는 라벨. */
+private class CompareLabels(val before: String?, val after: String?)
+
+@Composable
+private fun CompareBox(
+    compare: CompareState,
+    before: @Composable () -> Unit,
+    after: @Composable () -> Unit,
+    modifier: Modifier,
+    labels: CompareLabels,
+    style: GlassStyle,
+) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     compare.rtl = rtl
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
@@ -120,6 +169,7 @@ public fun BeforeAfterSlider(
                     true
                 }
             }
+            .holdViewParentDrag(Orientation.Horizontal)
             .compareInput(compare, interaction),
     ) {
         Box(Modifier.glassBackdrop(backdrop)) {
@@ -137,8 +187,8 @@ public fun BeforeAfterSlider(
                 },
             ) { before() }
         }
-        beforeLabel?.let { CompareLabel(it, Alignment.TopStart, style, backdrop) { compare.startRoom() } }
-        afterLabel?.let { CompareLabel(it, Alignment.TopEnd, style, backdrop) { compare.width - compare.startRoom() } }
+        labels.before?.let { CompareLabel(it, Alignment.TopStart, style, backdrop) { compare.startRoom() } }
+        labels.after?.let { CompareLabel(it, Alignment.TopEnd, style, backdrop) { compare.width - compare.startRoom() } }
         Divider(compare::splitX)
         Handle(compare::splitX, compare.dragging, focused, style, backdrop)
     }
@@ -146,11 +196,13 @@ public fun BeforeAfterSlider(
 
 /** 손잡이 위치([split], 시작 쪽 0..1)와 터치 좌표 변환. 터치와 그리기 좌표는 레이아웃 방향과 관계없이 왼쪽 기준이다. */
 @Stable
-private class CompareState(private val position: MutableFloatState) {
+private class CompareState(private val position: MutableFloatState, private val onChange: (Float) -> Unit = {}) {
     var split: Float
         get() = position.floatValue
         set(value) {
+            if (value == position.floatValue) return
             position.floatValue = value
+            onChange(value)
         }
     var width by mutableIntStateOf(0)
     var dragging by mutableStateOf(false)

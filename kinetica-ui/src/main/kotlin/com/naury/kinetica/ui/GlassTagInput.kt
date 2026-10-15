@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -107,6 +108,12 @@ import kotlin.math.roundToInt
  * @param placeholder 태그가 하나도 없고 입력란이 비어 있을 때 보이는 안내 문구
  * @param suggestions 추천 태그. 입력한 글자로 시작하는 항목을 먼저, 글자가 들어간 항목을 그다음에 최대 5개 보여 준다.
  *   이미 추가한 태그는 빠진다.
+ * @param imeAction 키보드 동작 키의 종류. 입력 중인 글자가 있으면 동작 키는 그 글자를 칩으로 만들고 입력란에 머문다.
+ *   입력란이 비어 있을 때 누르면 [keyboardActions]로 넘기므로, [ImeAction.Next]로 두면 칩을 다 넣은 뒤 한 번 더 눌러 다음 입력란으로 갈 수 있다.
+ * @param keyboardActions 빈 입력란에서 동작 키를 눌렀을 때 할 일. [imeAction]에 맞는 콜백이 없으면 Next는 다음 입력란으로 포커스를 옮기고
+ *   Done은 키보드를 내리는 기본 동작을 한다.
+ * @param fieldModifier 안쪽 입력란에 붙일 Modifier. `testTag`나 `focusRequester`처럼 입력란 자체에 걸어야 하는 것을 여기에 준다.
+ *   [modifier]는 그대로 칩과 입력란을 감싼 바깥 상자에 붙는다.
  */
 @Composable
 public fun GlassTagInput(
@@ -116,6 +123,9 @@ public fun GlassTagInput(
     placeholder: String = "",
     suggestions: List<String> = emptyList(),
     style: GlassStyle = LocalGlassStyle.current,
+    imeAction: ImeAction = ImeAction.Done,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    fieldModifier: Modifier = Modifier,
 ) {
     val model = remember { TagInputModel() }
     model.tags = tags
@@ -147,7 +157,11 @@ public fun GlassTagInput(
                     }
                 }
             }
-            TagField(model, placeholder, style, Modifier.weight(1f).focusRequester(requester))
+            TagField(
+                model,
+                TagFieldLook(placeholder, style, imeAction, keyboardActions),
+                Modifier.weight(1f).focusRequester(requester).then(fieldModifier),
+            )
         }
         SuggestionPopup(model.focused && matches.isNotEmpty(), SuggestionContent(matches, model.text, style, anchor)) { picked ->
             model.add(listOf(picked))
@@ -199,8 +213,22 @@ internal class TagInputModel {
     }
 }
 
+/** 태그 입력란의 안내 문구와 모양, 키보드 동작 설정. */
+private class TagFieldLook(val placeholder: String, val style: GlassStyle, val imeAction: ImeAction, val actions: KeyboardActions)
+
 @Composable
-private fun TagField(model: TagInputModel, placeholder: String, style: GlassStyle, modifier: Modifier) {
+private fun TagField(model: TagInputModel, look: TagFieldLook, modifier: Modifier) {
+    val placeholder = look.placeholder
+    val style = look.style
+    val onAction: KeyboardActionScope.() -> Unit = {
+        if (model.text.isNotBlank()) {
+            model.add(listOf(model.text))
+            model.text = ""
+        } else {
+            model.text = ""
+            look.actions.callbackFor(look.imeAction)?.invoke(this) ?: defaultKeyboardAction(look.imeAction)
+        }
+    }
     BasicTextField(
         model.text,
         model::type,
@@ -213,11 +241,15 @@ private fun TagField(model: TagInputModel, placeholder: String, style: GlassStyl
         singleLine = true,
         textStyle = themed(TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE)),
         cursorBrush = SolidColor(GlassTheme.colors.accent),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = {
-            model.add(listOf(model.text))
-            model.text = ""
-        }),
+        keyboardOptions = KeyboardOptions(imeAction = look.imeAction),
+        keyboardActions = KeyboardActions(
+            onDone = onAction,
+            onGo = onAction,
+            onNext = onAction,
+            onPrevious = onAction,
+            onSearch = onAction,
+            onSend = onAction,
+        ),
         decorationBox = { inner ->
             Box(contentAlignment = Alignment.CenterStart) {
                 if (model.text.isEmpty() && model.tags.isEmpty() && placeholder.isNotEmpty()) {
@@ -231,6 +263,17 @@ private fun TagField(model: TagInputModel, placeholder: String, style: GlassStyl
             }
         },
     )
+}
+
+/** [action]에 해당하는 콜백. 없으면 `null`이다. */
+internal fun KeyboardActions.callbackFor(action: ImeAction): (KeyboardActionScope.() -> Unit)? = when (action) {
+    ImeAction.Done -> onDone
+    ImeAction.Go -> onGo
+    ImeAction.Next -> onNext
+    ImeAction.Previous -> onPrevious
+    ImeAction.Search -> onSearch
+    ImeAction.Send -> onSend
+    else -> null
 }
 
 /** 입력란 글자를 쉼표와 줄 바꿈으로 나눈 결과. [committed]는 칩으로 만들 조각, [rest]는 입력란에 남길 마지막 조각이다. */

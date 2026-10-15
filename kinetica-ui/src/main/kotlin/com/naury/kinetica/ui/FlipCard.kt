@@ -5,6 +5,7 @@ package com.naury.kinetica.ui
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -44,7 +45,9 @@ public enum class FlipAxis {
 /**
  * 앞면과 뒷면이 있는 카드를 3D로 뒤집는다. [flipped]가 바뀌면 스프링으로 돌고, 뒷면의 글자는 거울처럼 뒤집히지 않게 바로 세워 그린다.
  * [onFlippedChange]를 주면 손가락으로 끌어 돌릴 수 있다. 끄는 동안 카드가 손을 따라 돌고, 놓으면 속도와 각도를 보고 가까운 면으로 멈춘다.
- * TalkBack에는 지금 보이는 면을 상태로 알리고 '뒤집기' 동작을 제공한다.
+ * TalkBack에는 지금 보이는 면을 상태로 알리고 '뒤집기' 동작을 제공한다. 카드는 보이는 면의 글자를 합쳐 한 항목으로 읽히며
+ * (`mergeDescendants`), 면 안의 버튼처럼 따로 누를 수 있는 요소는 따로 읽힌다. 그래서 테스트에서 면 안 글자의 `testTag`는
+ * `useUnmergedTree = true`로 찾는다. 끌기를 받는 동안에는 바깥 View 부모(ScrollView, ViewPager2 등)가 터치를 가로채지 않는다.
  * '애니메이션 삭제' 접근성 설정이 켜져 있으면 [flipped]가 바뀔 때 돌지 않고 바로 바뀐다.
  *
  * 기본으로는 보이지 않는 면을 컴포지션에서 빼므로 그 면의 `remember` 상태(입력 중인 글자, 스크롤 위치 등)는 뒤집을 때 처음으로 돌아간다.
@@ -91,7 +94,7 @@ public fun FlipCard(
     val drag = if (onFlippedChange == null) {
         Modifier
     } else {
-        Modifier.pointerInput(axis) {
+        Modifier.holdViewParentDrag(if (axis == FlipAxis.Y) Orientation.Horizontal else Orientation.Vertical).pointerInput(axis) {
             flipDrag(axis, scope, angle, { currentFlipped }) { landed -> if (landed != currentFlipped) currentChange?.invoke(landed) }
         }
     }

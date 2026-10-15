@@ -46,8 +46,11 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
@@ -207,6 +210,7 @@ internal enum class HueWheelPart { Ring, Square }
 @Composable
 private fun HueWheel(model: PickerModel, onChange: (PickerHsv) -> Unit, onFinished: () -> Unit) {
     val haptic = LocalHapticFeedback.current
+    val view = LocalView.current
     val scope = rememberCoroutineScope()
     val ringGrab = remember { Animatable(0f) }
     val squareGrab = remember { Animatable(0f) }
@@ -235,22 +239,18 @@ private fun HueWheel(model: PickerModel, onChange: (PickerHsv) -> Unit, onFinish
                     val geometry = HueWheelGeometry(size.width.toFloat(), size.height.toFloat(), RING_WIDTH.toPx(), RING_GAP.toPx())
                     val part = geometry.partAt(down.position) ?: return@awaitEachGesture
                     down.consume()
+                    // View 부모(NestedScrollView 등)는 소비 여부를 보지 않고 가로채므로 끄는 동안 막아 둔다.
+                    view.holdParent(true)
                     val grab = if (part == HueWheelPart.Ring) ringGrab else squareGrab
                     scope.grab(grab, 1f)
                     haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                    val tracker = HueTicker(model.hsv.h)
-                    var position: Offset? = down.position
-                    while (position != null) {
-                        val next = geometry.apply(part, position, model.hsv)
-                        if (part == HueWheelPart.Ring &&
-                            tracker.crossed(next.h)
-                        ) {
-                            haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                    try {
+                        trackWheel(down, part, geometry, model) { next, crossed ->
+                            if (crossed) haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                            latestChange(next)
                         }
-                        if (next != model.hsv) latestChange(next)
-                        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
-                        change?.consume()
-                        position = change?.takeIf { it.pressed }?.position
+                    } finally {
+                        view.holdParent(false)
                     }
                     scope.grab(grab, 0f)
                     latestFinished()
@@ -261,6 +261,26 @@ private fun HueWheel(model: PickerModel, onChange: (PickerHsv) -> Unit, onFinish
         for (part in HueWheelPart.entries) {
             WheelKeys(part, model, { latestChange(it) }, { latestFinished() })
         }
+    }
+}
+
+/** 손을 뗄 때까지 [down] 손가락을 따라 [part]의 값을 바꾼다. 고리에서 색조가 눈금을 넘으면 `crossed`가 `true`다. */
+private suspend fun AwaitPointerEventScope.trackWheel(
+    down: PointerInputChange,
+    part: HueWheelPart,
+    geometry: HueWheelGeometry,
+    model: PickerModel,
+    onChange: (PickerHsv, crossed: Boolean) -> Unit,
+) {
+    val tracker = HueTicker(model.hsv.h)
+    var position: Offset? = down.position
+    while (position != null) {
+        val next = geometry.apply(part, position, model.hsv)
+        val crossed = part == HueWheelPart.Ring && tracker.crossed(next.h)
+        if (next != model.hsv || crossed) onChange(next, crossed)
+        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+        change?.consume()
+        position = change?.takeIf { it.pressed }?.position
     }
 }
 

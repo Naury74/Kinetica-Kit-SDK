@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -83,6 +84,9 @@ import kotlin.math.cos
  * @param error 입력한 코드가 틀렸는지
  * @param onComplete 마지막 칸까지 채워지는 순간 완성된 코드로 한 번 호출된다.
  * @param contentDescription TalkBack이 읽는 입력란 이름
+ * @param imeAction 키보드 동작 키의 종류. 코드 다음에 입력란이 더 있으면 [ImeAction.Next]로 둔다.
+ * @param keyboardActions 동작 키를 눌렀을 때 할 일. [imeAction]에 맞는 콜백이 없으면 Next는 다음 입력란으로 포커스를 옮기고
+ *   Done은 키보드를 내리는 기본 동작을 한다. 마지막 칸을 채울 때 할 일은 [onComplete]에 둔다.
  */
 @Composable
 public fun GlassCodeInput(
@@ -95,6 +99,8 @@ public fun GlassCodeInput(
     onComplete: ((String) -> Unit)? = null,
     contentDescription: String = stringResource(R.string.kinetica_ui_code_label),
     style: GlassStyle = LocalGlassStyle.current,
+    imeAction: ImeAction = ImeAction.Done,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     require(length in 1..MAX_LENGTH) { "length는 1..12여야 합니다." }
     val code = value.filter(Char::isDigit).take(length)
@@ -131,8 +137,9 @@ public fun GlassCodeInput(
             },
         keyboardOptions = KeyboardOptions(
             keyboardType = if (mask) KeyboardType.NumberPassword else KeyboardType.Number,
-            imeAction = ImeAction.Done,
+            imeAction = imeAction,
         ),
+        keyboardActions = keyboardActions,
         visualTransformation = if (mask) PasswordVisualTransformation() else VisualTransformation.None,
         singleLine = true,
         textStyle = TextStyle(color = Color.Transparent),

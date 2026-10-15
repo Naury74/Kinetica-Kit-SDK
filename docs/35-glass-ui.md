@@ -165,18 +165,22 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 
 | 구성 요소 | 하는 일 |
 | --- | --- |
-| `GlassCodeInput(value, onValueChange, length, mask, error, onComplete)` | 한 칸에 한 자리씩 받는 인증번호, PIN 입력란. 붙여 넣기와 SMS 자동 채우기를 받고, `error`가 켜지면 칸이 빨개지며 흔들린다 |
-| `GlassTagInput(tags, onTagsChange, placeholder, suggestions)` | 쉼표나 완료 키로 칩을 만드는 태그 입력란. 같은 태그는 다시 넣지 않고 그 칩을 흔든다. 빈 입력란에서 지우기를 두 번 누르면 마지막 칩이 지워진다. 추천 목록은 아래 내용을 밀어내지 않고 겹쳐 뜨며, 아래 공간이 모자라면(키보드가 올라왔을 때 등) 입력란 위로 뜬다 |
+| `GlassCodeInput(value, onValueChange, length, mask, error, onComplete)` | 한 칸에 한 자리씩 받는 인증번호, PIN 입력란. 붙여 넣기와 SMS 자동 채우기를 받고, `error`가 켜지면 칸이 빨개지며 흔들린다. `imeAction`과 `keyboardActions`로 키보드 동작 키를 바꾼다 |
+| `GlassTagInput(tags, onTagsChange, placeholder, suggestions)` | 쉼표나 완료 키로 칩을 만드는 태그 입력란. 같은 태그는 다시 넣지 않고 그 칩을 흔든다. 빈 입력란에서 지우기를 두 번 누르면 마지막 칩이 지워진다. 입력 중인 글자가 있으면 동작 키가 칩을 만들고, 빈 입력란에서 누르면 `keyboardActions`로 넘기므로 `imeAction = ImeAction.Next`로 두면 다음 입력란으로 갈 수 있다. 추천 목록은 아래 내용을 밀어내지 않고 겹쳐 뜨며, 아래 공간이 모자라면(키보드가 올라왔을 때 등) 입력란 위로 뜬다 |
 | `GlassColorPicker(color, onColorChange, presets, showAlpha, showHexInput)` | 색조 고리와 채도·명도 사각형, 투명도 슬라이더, HEX 입력란, 최근 색과 프리셋 칩이 있는 색 선택기. 키보드로는 Tab으로 고리, 사각형, 투명도 슬라이더를 오가며 방향키로 조절한다 |
 | `GlassSignaturePad(modifier, rememberSignaturePadState())` | 속도에 따라 굵기가 바뀌는 서명란. `state.toImageBitmap()`이나 `state.toSvg()`로 내보내고, 되돌리기와 지우기 버튼이 있다 |
-| `GlassPasswordField(value, onValueChange, label, showStrength, showChecklist)` / `passwordStrength(password)` | 눈 아이콘으로 보이거나 숨기는 비밀번호 입력란. 강도 막대가 약함, 보통, 강함 색으로 차오르고 조건 체크리스트를 보여 줄 수 있다 |
+| `GlassPasswordField(value, onValueChange, label, showStrength, showChecklist)` / `passwordStrength(password)` | 눈 아이콘으로 보이거나 숨기는 비밀번호 입력란. 강도 막대가 약함, 보통, 강함 색으로 차오르고 조건 체크리스트를 보여 줄 수 있다. `imeAction`으로 동작 키를 Next 등으로 바꾼다 |
+
+`GlassPasswordField`와 `GlassTagInput`의 `modifier`는 입력란과 칩, 강도 막대를 감싼 바깥 묶음에 붙는다. `testTag`나 `focusRequester`처럼 입력란 자체에 걸어야 하는 것은 `fieldModifier`로 준다. `GlassCodeInput`은 `modifier`가 곧 입력란이다.
+
+XML 화면의 `NestedScrollView`, `ViewPager2`, `RecyclerView` 안에 `ComposeView`로 넣어도 색상 고리와 사각형, 서명란은 끄는 동안 바깥 View가 터치를 가로채지 않는다. 투명도 슬라이더, `BeforeAfterSlider`, `FlipCard`는 자기 방향(가로 슬라이더는 가로)으로 끌 때만 붙잡고, 반대 방향으로 끌기 시작하면 바깥 스크롤에 넘긴다.
 
 ## 미디어와 피드백
 
 | 구성 요소 | 하는 일 |
 | --- | --- |
 | `GlassImageViewer(rememberGlassImageViewerState(), images)` + `Modifier.imageViewerSource(state, index)` | 전체 화면 사진 뷰어. 썸네일에서 커지며 열리고, 핀치로 1~5배 확대, 두 번 탭 확대, 위아래로 끌어 닫기를 지원한다. 확대한 사진이 가장자리에 닿은 뒤 바깥쪽으로 더 끌면 확대를 풀지 않고 옆 사진으로 넘어간다. 사진 대신 원하는 내용을 넣는 `pageCount` 버전도 있다. `images`의 Painter는 `intrinsicSize` 비율대로 맞춰 그리고, `BrushPainter`처럼 크기가 없으면 화면 전체를 채운다. 열린 채 목록이 비면 바로 닫히고 상태 없는 버전은 `onDismiss`를 부른다 |
-| `BeforeAfterSlider(before, after)` | 두 이미지를 겹쳐 놓고 가운데 손잡이를 끌어 비교한다. 가로 드래그만 받아 세로 스크롤을 막지 않는다 |
+| `BeforeAfterSlider(before, after)` / `BeforeAfterSlider(position, onPositionChange, before, after)` | 두 이미지를 겹쳐 놓고 가운데 손잡이를 끌어 비교한다. 가로 드래그만 받아 세로 스크롤을 막지 않는다. 손잡이 위치를 호스트가 저장하거나 바꾸려면 `position`을 받는 버전을 쓴다 |
 | `GlassResultMark(state)` / `GlassResultDialog(visible, state, title, onDismissRequest)` | `GlassResult.Loading`이면 링이 돌고, 결과로 바뀌면 원이 닫힌 뒤 체크, ×, 느낌표가 획 순서대로 그려진다. 성공이면 파티클이 튄다 |
 | `GlassOnboarding(pages, onFinish)` + `OnboardingPage(title, body, background, art)` | 첫 실행 안내. 그림이 시차를 두고 따라오고 배경색이 섞이며, 마지막 페이지에서 버튼이 '시작하기'로 늘어난다 |
 | `GlassEmptyState(title, message, art, action)` / `GlassEmptyIcon(GlassEmptyIconKind)` | 빈 목록, 오프라인, 오류 화면. 글래스 원판 위 그림이 천천히 떠 있다. 기본 그림은 NoResults, Offline, EmptyInbox, Error |
