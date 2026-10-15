@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -98,13 +96,12 @@ private fun ParamSlider(
             Text(valueText, color = theme.onPanel)
         }
         // TalkBack이 백분율 대신 실제 값을 읽도록 상태 설명을 값으로 둔다.
-        Slider(
+        StudioSlider(
             value = value.coerceIn(spec.range),
             onValueChange = onValue,
             valueRange = spec.range,
             steps = spec.steps,
             onValueChangeFinished = onCommit,
-            colors = SliderDefaults.colors(thumbColor = theme.accent, activeTrackColor = theme.accent),
             modifier = Modifier.semantics {
                 contentDescription = label
                 stateDescription = valueText
