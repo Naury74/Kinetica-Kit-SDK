@@ -12,10 +12,15 @@ package com.naury.kinetica.core.scene
  * @property appear 처음 화면에 나타날 때 한 번 재생하는 등장 애니메이션
  * @property loop 계속 반복하는 애니메이션
  */
-public data class NodeEffects(val press: List<PressEffect> = emptyList(), val appear: AppearEffect? = null, val loop: LoopEffect? = null) {
+public data class NodeEffects @JvmOverloads constructor(
+    val press: List<PressEffect> = emptyList(),
+    val appear: AppearEffect? = null,
+    val loop: LoopEffect? = null,
+) {
     public val isEmpty: Boolean get() = press.isEmpty() && appear == null && loop == null
 
     public companion object {
+        @JvmField
         public val None: NodeEffects = NodeEffects()
 
         /** 효과 하나에 허용하는 최대 시간(ms). */
@@ -40,6 +45,19 @@ public data class NodeEffects(val press: List<PressEffect> = emptyList(), val ap
  */
 public data class PressEffect(val kind: PressKind, val color: ArgbColor? = null, val amount: Double? = null) {
     public val resolvedAmount: Double get() = amount ?: kind.defaultAmount
+
+    public companion object {
+        /**
+         * Java에서 만들 때 쓴다. 색은 ARGB 정수(`0xFFFF0000`)로 받는다. `ArgbColor`가 value class라 Java에서 생성자를 부를 수 없기 때문이다.
+         *
+         * @param colorArgb 리플·글로우 색. `null`이면 기본색
+         * @param amount 세기. `null`이면 [PressKind.defaultAmount]
+         */
+        @JvmStatic
+        @JvmOverloads
+        public fun of(kind: PressKind, colorArgb: Int? = null, amount: Double? = null): PressEffect =
+            PressEffect(kind, colorArgb?.let(::ArgbColor), amount)
+    }
 }
 
 public enum class PressKind(
@@ -77,7 +95,11 @@ public enum class PressKind(
  * @property durationMs 재생 시간(ms). 0..[NodeEffects.MAX_DURATION_MS]
  * @property delayMs 시작 전 대기 시간(ms). 여러 노드를 차례로 등장시킬 때 쓴다.
  */
-public data class AppearEffect(val kind: AppearKind, val durationMs: Long = DEFAULT_DURATION_MS, val delayMs: Long = 0L) {
+public data class AppearEffect @JvmOverloads constructor(
+    val kind: AppearKind,
+    val durationMs: Long = DEFAULT_DURATION_MS,
+    val delayMs: Long = 0L,
+) {
     public companion object {
         public const val DEFAULT_DURATION_MS: Long = 400L
     }
@@ -133,6 +155,18 @@ public data class LoopEffect(
     public companion object {
         public const val DEFAULT_PERIOD_MS: Long = 1_600L
         public const val MIN_PERIOD_MS: Long = 100L
+
+        /**
+         * Java에서 만들 때 쓴다. 색은 ARGB 정수로 받는다([PressEffect.of]와 같은 이유).
+         *
+         * @param periodMs 한 번 반복하는 시간(ms), [MIN_PERIOD_MS] 이상
+         * @param amount 세기. `null`이면 [LoopKind.defaultAmount]
+         * @param colorArgb 빛·고리 색. `null`이면 기본색
+         */
+        @JvmStatic
+        @JvmOverloads
+        public fun of(kind: LoopKind, periodMs: Long = DEFAULT_PERIOD_MS, amount: Double? = null, colorArgb: Int? = null): LoopEffect =
+            LoopEffect(kind, periodMs, amount, colorArgb?.let(::ArgbColor))
     }
 }
 

@@ -806,6 +806,8 @@ public final class com/naury/kinetica/core/scene/AlignMode : java/lang/Enum {
 public final class com/naury/kinetica/core/scene/AppearEffect {
 	public static final field Companion Lcom/naury/kinetica/core/scene/AppearEffect$Companion;
 	public static final field DEFAULT_DURATION_MS J
+	public fun <init> (Lcom/naury/kinetica/core/scene/AppearKind;)V
+	public fun <init> (Lcom/naury/kinetica/core/scene/AppearKind;J)V
 	public fun <init> (Lcom/naury/kinetica/core/scene/AppearKind;JJ)V
 	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/AppearKind;JJILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/naury/kinetica/core/scene/AppearKind;
@@ -1230,10 +1232,19 @@ public final class com/naury/kinetica/core/scene/LoopEffect {
 	public final fun getPeriodMs ()J
 	public final fun getResolvedAmount ()D
 	public fun hashCode ()I
+	public static final fun of (Lcom/naury/kinetica/core/scene/LoopKind;)Lcom/naury/kinetica/core/scene/LoopEffect;
+	public static final fun of (Lcom/naury/kinetica/core/scene/LoopKind;J)Lcom/naury/kinetica/core/scene/LoopEffect;
+	public static final fun of (Lcom/naury/kinetica/core/scene/LoopKind;JLjava/lang/Double;)Lcom/naury/kinetica/core/scene/LoopEffect;
+	public static final fun of (Lcom/naury/kinetica/core/scene/LoopKind;JLjava/lang/Double;Ljava/lang/Integer;)Lcom/naury/kinetica/core/scene/LoopEffect;
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/naury/kinetica/core/scene/LoopEffect$Companion {
+	public final fun of (Lcom/naury/kinetica/core/scene/LoopKind;)Lcom/naury/kinetica/core/scene/LoopEffect;
+	public final fun of (Lcom/naury/kinetica/core/scene/LoopKind;J)Lcom/naury/kinetica/core/scene/LoopEffect;
+	public final fun of (Lcom/naury/kinetica/core/scene/LoopKind;JLjava/lang/Double;)Lcom/naury/kinetica/core/scene/LoopEffect;
+	public final fun of (Lcom/naury/kinetica/core/scene/LoopKind;JLjava/lang/Double;Ljava/lang/Integer;)Lcom/naury/kinetica/core/scene/LoopEffect;
+	public static synthetic fun of$default (Lcom/naury/kinetica/core/scene/LoopEffect$Companion;Lcom/naury/kinetica/core/scene/LoopKind;JLjava/lang/Double;Ljava/lang/Integer;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/LoopEffect;
 }
 
 public final class com/naury/kinetica/core/scene/LoopKind : java/lang/Enum {
@@ -1498,7 +1509,10 @@ public final class com/naury/kinetica/core/scene/NodeContent$Text : com/naury/ki
 public final class com/naury/kinetica/core/scene/NodeEffects {
 	public static final field Companion Lcom/naury/kinetica/core/scene/NodeEffects$Companion;
 	public static final field MAX_DURATION_MS J
+	public static final field None Lcom/naury/kinetica/core/scene/NodeEffects;
 	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> (Ljava/util/List;Lcom/naury/kinetica/core/scene/AppearEffect;)V
 	public fun <init> (Ljava/util/List;Lcom/naury/kinetica/core/scene/AppearEffect;Lcom/naury/kinetica/core/scene/LoopEffect;)V
 	public synthetic fun <init> (Ljava/util/List;Lcom/naury/kinetica/core/scene/AppearEffect;Lcom/naury/kinetica/core/scene/LoopEffect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/util/List;
@@ -1516,7 +1530,6 @@ public final class com/naury/kinetica/core/scene/NodeEffects {
 }
 
 public final class com/naury/kinetica/core/scene/NodeEffects$Companion {
-	public final fun getNone ()Lcom/naury/kinetica/core/scene/NodeEffects;
 }
 
 public final class com/naury/kinetica/core/scene/NodeId {
@@ -1733,6 +1746,7 @@ public final class com/naury/kinetica/core/scene/Pin$Companion {
 }
 
 public final class com/naury/kinetica/core/scene/PressEffect {
+	public static final field Companion Lcom/naury/kinetica/core/scene/PressEffect$Companion;
 	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/PressKind;Lcom/naury/kinetica/core/scene/ArgbColor;Ljava/lang/Double;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/PressKind;Lcom/naury/kinetica/core/scene/ArgbColor;Ljava/lang/Double;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/naury/kinetica/core/scene/PressKind;
@@ -1746,7 +1760,17 @@ public final class com/naury/kinetica/core/scene/PressEffect {
 	public final fun getKind ()Lcom/naury/kinetica/core/scene/PressKind;
 	public final fun getResolvedAmount ()D
 	public fun hashCode ()I
+	public static final fun of (Lcom/naury/kinetica/core/scene/PressKind;)Lcom/naury/kinetica/core/scene/PressEffect;
+	public static final fun of (Lcom/naury/kinetica/core/scene/PressKind;Ljava/lang/Integer;)Lcom/naury/kinetica/core/scene/PressEffect;
+	public static final fun of (Lcom/naury/kinetica/core/scene/PressKind;Ljava/lang/Integer;Ljava/lang/Double;)Lcom/naury/kinetica/core/scene/PressEffect;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/PressEffect$Companion {
+	public final fun of (Lcom/naury/kinetica/core/scene/PressKind;)Lcom/naury/kinetica/core/scene/PressEffect;
+	public final fun of (Lcom/naury/kinetica/core/scene/PressKind;Ljava/lang/Integer;)Lcom/naury/kinetica/core/scene/PressEffect;
+	public final fun of (Lcom/naury/kinetica/core/scene/PressKind;Ljava/lang/Integer;Ljava/lang/Double;)Lcom/naury/kinetica/core/scene/PressEffect;
+	public static synthetic fun of$default (Lcom/naury/kinetica/core/scene/PressEffect$Companion;Lcom/naury/kinetica/core/scene/PressKind;Ljava/lang/Integer;Ljava/lang/Double;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/PressEffect;
 }
 
 public final class com/naury/kinetica/core/scene/PressKind : java/lang/Enum {
