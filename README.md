@@ -1,4 +1,14 @@
-# Kinetica
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.png">
+    <img src="docs/images/logo-light.png" alt="Kinetica" width="420">
+  </picture>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/minSdk-26-3DDC84" alt="minSdk 26">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue" alt="License"></a>
+</p>
 
 > **알파 버전**: 1.0.0 정식 버전이 나오기 전(`-alpha`, `-beta`)에는 공개 API가 바뀔 수 있습니다. 바뀐 내용은 [CHANGELOG.md](CHANGELOG.md)에 적습니다.
 

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+  <title>Kinetica</title>
+  <defs><linearGradient id="kinetica-gradient" x1="0" y1="0" x2="220" y2="220" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF8A5B"/><stop offset="1" stop-color="#D6336C"/></linearGradient></defs>
+    <rect width="220" height="220" rx="55" fill="url(#kinetica-gradient)"/>
+    <path d="M103,42 H147 A22,22 0 0 1 169,64 V108 A22,22 0 0 1 147,130 H103 A22,22 0 0 1 81,108 V64 A22,22 0 0 1 103,42 Z" fill="#fff" fill-opacity="0.28"/>
+    <path d="M61,54 L61,170" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+    <path d="M61,128 C107,128 101,66 131,60" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+    <path d="M91,120 L137,170" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+    <path d="M125,60 A16,16 0 1 0 157,60 A16,16 0 1 0 125,60 Z" fill="#fff"/>
+</svg>
