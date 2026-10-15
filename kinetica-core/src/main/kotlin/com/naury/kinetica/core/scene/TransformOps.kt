@@ -78,6 +78,82 @@ public object TransformOps {
         return pinTranslation(graph, node, turned, bounds.center, world.map(bounds.center))
     }
 
+    /**
+     * 여러 노드를 함께 감싼 축 정렬 상자의 [handle]을 문서 좌표 [documentPointer]까지 끌어 크기를 바꾼 노드 목록.
+     * 반대쪽 핸들은 움직이지 않고, 각 노드의 위치와 크기가 상자와 같은 비율로 바뀐다. 회전한 노드는 문서 축의 배율을
+     * 자기 축에 나눠 받아 크기를 바꾸므로, 가로세로 비율이 다른 배율이면 모양이 조금 다를 수 있다.
+     *
+     * @return 계산할 수 있는 노드만 담는다. 상자가 없거나 회전 핸들이면 빈 목록이다.
+     */
+    public fun resizeMany(
+        graph: SceneGraph,
+        ids: Collection<NodeId>,
+        handle: SelectionHandle,
+        documentPointer: Vec2,
+        keepAspect: Boolean = false,
+    ): List<SceneNode> {
+        val axes = HandleAxes.of(handle) ?: return emptyList()
+        val union = ids.mapNotNull(graph::worldBounds).reduceOrNull(Rect::union)?.takeIf { it.width > 0.0 && it.height > 0.0 }
+            ?: return emptyList()
+        val box = resizedBox(union, axes, documentPointer, keepAspect)
+        val anchor = Vec2(axes.anchorX(union), axes.anchorY(union))
+        val sx = box.width / union.width
+        val sy = box.height / union.height
+        return ids.mapNotNull { id -> scaleInGroup(graph, id, anchor, sx, sy) }
+    }
+
+    /**
+     * 여러 노드를 함께 감싼 상자의 가운데를 축으로 [deltaDegrees]만큼 돌린 로컬 변환. 각 노드는 자기 자리에서도 같은 각도만큼 돈다.
+     * [snapDegrees]가 0보다 크면 돌린 각도를 그 배수로 맞춘다.
+     */
+    public fun rotateMany(
+        graph: SceneGraph,
+        ids: Collection<NodeId>,
+        deltaDegrees: Double,
+        snapDegrees: Double = 0.0,
+    ): Map<NodeId, Transform2D> {
+        val pivot = ids.mapNotNull(graph::worldBounds).reduceOrNull(Rect::union)?.center ?: return emptyMap()
+        val delta = if (snapDegrees > 0.0) Math.round(deltaDegrees / snapDegrees) * snapDegrees else deltaDegrees
+        val turn = Mat3.rotationDegrees(delta)
+        return ids.mapNotNull { id ->
+            val node = graph.document.nodes[id] ?: return@mapNotNull null
+            val bounds = localExtent(graph, node) ?: return@mapNotNull null
+            val world = graph.worldMatrix(id) ?: return@mapNotNull null
+            val center = world.map(bounds.center)
+            val moved = pivot + turn.mapVector(center - pivot)
+            val turned = node.transform.copy(rotationDegrees = normalizeDegrees(node.transform.rotationDegrees + delta))
+            id to pinTranslation(graph, node, turned, bounds.center, moved)
+        }.toMap()
+    }
+
+    /** 문서 좌표 [anchor]를 기준으로 가로 [sx], 세로 [sy]배 한 자리와 크기로 노드를 옮긴다. */
+    private fun scaleInGroup(graph: SceneGraph, id: NodeId, anchor: Vec2, sx: Double, sy: Double): SceneNode? {
+        val node = graph.document.nodes[id] ?: return null
+        val bounds = localExtent(graph, node) ?: return null
+        val world = graph.worldMatrix(id) ?: return null
+        val center = world.map(bounds.center)
+        val target = Vec2(anchor.x + (center.x - anchor.x) * sx, anchor.y + (center.y - anchor.y) * sy)
+
+        // 노드 로컬 축이 문서에서 가리키는 방향에 문서 축 배율을 나눠 준다. 축이 문서 축과 나란하면 정확히 sx, sy다.
+        fun axisScale(axis: Vec2): Double {
+            val direction = world.mapVector(axis)
+            val length = direction.length()
+            if (length == 0.0) return 1.0
+            return Vec2(direction.x / length * sx, direction.y / length * sy).length()
+        }
+        val fx = axisScale(Vec2(1.0, 0.0))
+        val fy = axisScale(Vec2(0.0, 1.0))
+        val width = max(bounds.width * fx, MIN_EXTENT)
+        val height = max(bounds.height * fy, MIN_EXTENT)
+        val resized = withExtent(node, Size(width, height), width / bounds.width, height / bounds.height)
+        val sizeBased = node.content.hasSize()
+        val transform = resized.transform.let {
+            if (sizeBased) it.copy(pivotX = it.pivotX * width / bounds.width, pivotY = it.pivotY * height / bounds.height) else it
+        }
+        val localCenter = if (sizeBased) Vec2(width / 2, height / 2) else bounds.center
+        return resized.copy(transform = pinTranslation(graph, node, transform, localCenter, target))
+    }
+
     private fun NodeContent.hasSize(): Boolean = this !is NodeContent.Path && this !is NodeContent.Group
 
     /** 크기가 있는 노드는 내용 크기를 [size]로 바꾸고, 경로와 그룹은 배율에 [fx], [fy]를 곱한다. */

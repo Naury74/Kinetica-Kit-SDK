@@ -271,7 +271,7 @@ private fun EditorCanvas(
         val frame = remember(document, selection) { SelectionFrame.of(SceneGraph(document), selection.selectedIds) }
         // gestureTick을 읽어 드래그 선택 영역이 바뀔 때마다 오버레이를 다시 그린다.
         val marquee = state.gestureTick.let { controller.marquee }
-        SelectionOverlay(frame, showHandles = count == 1, marquee, state.guides, viewport, theme, Modifier.fillMaxSize())
+        SelectionOverlay(frame, showHandles = count >= 1, marquee, state.guides, viewport, theme, Modifier.fillMaxSize())
         // 맨 위 투명 레이어가 포인터를 모두 가져가므로, 편집 중에는 호스트 뷰가 눌리지 않고 위치와 크기만 바뀐다.
         Box(
             Modifier

@@ -119,7 +119,8 @@ public class CanvasGestureController(
         val viewport = host.viewport
         val documentPoint = viewport.toDocument(viewportPoint)
         val selected = host.selection
-        val frame = selected.singleOrNull()?.takeIf { !graph.isEffectivelyLocked(it) }?.let { SelectionFrame.of(graph, listOf(it)) }
+        val movable = selected.filterNot(graph::isEffectivelyLocked)
+        val frame = movable.takeIf { it.isNotEmpty() }?.let { SelectionFrame.of(graph, it) }
         val handle = frame?.let { pickHandle(it, viewport, viewportPoint, config) }
         val leaf = HitTester(graph).hitTest(documentPoint, config.hitSlopPx / viewport.zoom)
         press = Press(pointerId, viewportPoint, graph, viewport, handle, leaf, selected)
@@ -174,8 +175,14 @@ public class CanvasGestureController(
 
             InteractionMode.ResizeNode -> {
                 val handle = press.handle ?: return
-                TransformOps.resize(graph, gesture.targets.single(), handle, documentPoint)
-                    ?.let { host.execute(SceneCommand.UpdateProperties(it)) }
+                val single = gesture.targets.singleOrNull()
+                val nodes = if (single != null) {
+                    listOfNotNull(TransformOps.resize(graph, single, handle, documentPoint))
+                } else {
+                    // 여러 개를 고르면 함께 감싼 상자를 기준으로 같은 비율로 바꾼다.
+                    TransformOps.resizeMany(graph, gesture.targets, handle, documentPoint)
+                }
+                nodes.forEach { host.execute(SceneCommand.UpdateProperties(it)) }
             }
 
             InteractionMode.RotateNode -> rotate(gesture, documentPoint)
@@ -187,8 +194,7 @@ public class CanvasGestureController(
     }
 
     private fun rotate(gesture: ActiveGesture, documentPoint: Vec2) {
-        val id = gesture.targets.single()
-        val center = SelectionFrame.of(gesture.press.graph, listOf(id))?.center ?: return
+        val center = SelectionFrame.of(gesture.press.graph, gesture.targets)?.center ?: return
         fun angleTo(point: Vec2) = Math.toDegrees(atan2(point.y - center.y, point.x - center.x))
         val angle = angleTo(documentPoint)
         // touch slop을 넘기 전의 움직임도 회전에 반영하도록 처음 누른 지점을 기준으로 잰다.
@@ -196,8 +202,14 @@ public class CanvasGestureController(
         // ±180°를 넘을 때 각도가 튀지 않도록 프레임 사이의 변화량을 누적한다.
         gesture.totalRotation += shortestDeltaDegrees(previous, angle)
         gesture.lastAngle = angle
-        TransformOps.rotate(gesture.press.graph, id, gesture.totalRotation, config.rotationSnapDegrees)
-            ?.let { host.execute(SceneCommand.TransformNodes(mapOf(id to it))) }
+        val graph = gesture.press.graph
+        val single = gesture.targets.singleOrNull()
+        val transforms = if (single != null) {
+            TransformOps.rotate(graph, single, gesture.totalRotation, config.rotationSnapDegrees)?.let { mapOf(single to it) }.orEmpty()
+        } else {
+            TransformOps.rotateMany(graph, gesture.targets, gesture.totalRotation, config.rotationSnapDegrees)
+        }
+        if (transforms.isNotEmpty()) host.execute(SceneCommand.TransformNodes(transforms))
     }
 
     private fun tap(press: Press, now: Long) {

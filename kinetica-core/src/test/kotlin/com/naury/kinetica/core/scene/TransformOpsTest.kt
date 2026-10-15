@@ -143,4 +143,39 @@ class TransformOpsTest {
             assertThat(checkNotNull(after.worldMatrix(id("n"))).map(Vec2.Zero).distanceTo(before + delta)).isLessThan(1e-6)
         }
     }
+
+    @Test
+    fun `여러 노드를 함께 늘리면 반대쪽은 고정되고 자리와 크기가 같은 비율로 바뀐다`() {
+        val doc = document(
+            listOf(
+                rect("a", transform = Transform2D(translationX = 0.0, translationY = 0.0)),
+                rect("b", transform = Transform2D(translationX = 100.0, translationY = 50.0)),
+            ),
+        )
+        val graph = SceneGraph(doc)
+        // 두 사각형을 감싼 상자는 (0,0)-(200,100). 오른쪽 아래 핸들을 (400,100)까지 끌면 가로만 두 배.
+        val nodes = TransformOps.resizeMany(graph, listOf(id("a"), id("b")), SelectionHandle.BottomRight, Vec2(400.0, 100.0))
+        val after = SceneGraph(nodes.fold(doc) { d, n -> d.copy(nodes = d.nodes + (n.id to n)) })
+
+        assertThat(checkNotNull(after.worldBounds(id("a")))).isEqualTo(com.naury.kinetica.core.geometry.Rect(0.0, 0.0, 200.0, 50.0))
+        assertThat(checkNotNull(after.worldBounds(id("b")))).isEqualTo(com.naury.kinetica.core.geometry.Rect(200.0, 50.0, 400.0, 100.0))
+    }
+
+    @Test
+    fun `여러 노드를 함께 돌리면 감싼 상자 가운데를 축으로 돈다`() {
+        val doc = document(
+            listOf(
+                rect("a", size = Size(20.0, 20.0)),
+                rect("b", transform = Transform2D(translationX = 80.0), size = Size(20.0, 20.0)),
+            ),
+        )
+        val graph = SceneGraph(doc)
+        val transforms = TransformOps.rotateMany(graph, listOf(id("a"), id("b")), 90.0)
+        val after = SceneGraph(doc.copy(nodes = doc.nodes.mapValues { (k, v) -> transforms[k]?.let { v.copy(transform = it) } ?: v }))
+
+        // 상자 가운데 (50,10). a의 가운데 (10,10)은 90도 돌면 (50,-30)으로 간다.
+        val centerA = checkNotNull(after.worldBounds(id("a"))).center
+        assertThat(centerA.distanceTo(Vec2(50.0, -30.0))).isLessThan(1e-6)
+        assertThat(transforms.getValue(id("a")).rotationDegrees).isWithin(1e-9).of(90.0)
+    }
 }

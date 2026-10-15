@@ -2183,8 +2183,12 @@ public final class com/naury/kinetica/core/scene/TransformOps {
 	public final fun move (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/Collection;Lcom/naury/kinetica/core/geometry/Vec2;)Ljava/util/Map;
 	public final fun resize-7cexHE0 (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;Lcom/naury/kinetica/core/scene/SelectionHandle;Lcom/naury/kinetica/core/geometry/Vec2;Z)Lcom/naury/kinetica/core/scene/SceneNode;
 	public static synthetic fun resize-7cexHE0$default (Lcom/naury/kinetica/core/scene/TransformOps;Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;Lcom/naury/kinetica/core/scene/SelectionHandle;Lcom/naury/kinetica/core/geometry/Vec2;ZILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneNode;
+	public final fun resizeMany (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/Collection;Lcom/naury/kinetica/core/scene/SelectionHandle;Lcom/naury/kinetica/core/geometry/Vec2;Z)Ljava/util/List;
+	public static synthetic fun resizeMany$default (Lcom/naury/kinetica/core/scene/TransformOps;Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/Collection;Lcom/naury/kinetica/core/scene/SelectionHandle;Lcom/naury/kinetica/core/geometry/Vec2;ZILjava/lang/Object;)Ljava/util/List;
 	public final fun rotate-tdherlE (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;DD)Lcom/naury/kinetica/core/geometry/Transform2D;
 	public static synthetic fun rotate-tdherlE$default (Lcom/naury/kinetica/core/scene/TransformOps;Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/lang/String;DDILjava/lang/Object;)Lcom/naury/kinetica/core/geometry/Transform2D;
+	public final fun rotateMany (Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/Collection;DD)Ljava/util/Map;
+	public static synthetic fun rotateMany$default (Lcom/naury/kinetica/core/scene/TransformOps;Lcom/naury/kinetica/core/scene/SceneGraph;Ljava/util/Collection;DDILjava/lang/Object;)Ljava/util/Map;
 }
 
 public final class com/naury/kinetica/core/scene/ViolationCode : java/lang/Enum {
