@@ -20,6 +20,7 @@ val sdkModules = mapOf(
     "kinetica-player-compose" to "읽기 전용 재생기와 전환",
     "kinetica-board-compose" to "호스트 화면에 넣는 자유 배치·분할 보드와 제자리 편집",
     "kinetica-export-android" to "PNG 내보내기",
+    "kinetica-ui" to "글래스 UI 키트: 뒤를 흐리게 비추는 표면·팝업·시트·탭바",
 )
 
 // 호스트가 저장소를 공개하기 전이라 주소와 라이선스는 gradle.properties에서 읽는다. 라이선스가 없으면 Central 묶음을 만들지 않는다.
