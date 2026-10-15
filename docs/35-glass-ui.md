@@ -3,7 +3,7 @@
 다른 앱에서 직접 만들기 어려운 "뒤를 흐리게 비추는 유리" UI와 고급 움직임을 옵션처럼 붙여 쓰는 모듈이다. Compose만 쓰며 다른 Kinetica 모듈이 필요 없다.
 
 ```kotlin
-implementation("com.naurylab:kinetica-ui:0.1.0-SNAPSHOT")
+implementation("com.naurylab:kinetica-ui:1.0.0-alpha01")
 ```
 
 ## 화면 뼈대
@@ -55,6 +55,27 @@ GlassScaffold(
 | `Modifier.glassContextMenu(items)` | 길게 누르면(진동) 요소가 떠오르고 뒤가 흐려지며 그 아래·위에 유리 메뉴(`GlassMenuItem`, `destructive`면 빨간 글자). 화면 읽기에서는 사용자 정의 동작 |
 | `GlassSegmentedControl(options, selectedIndex, onSelect)` | 고른 칸 알약이 늘어났다 줄며 옮겨 가는 세그먼트 버튼 |
 | `GlassSwitch(checked, onCheckedChange)` | 누르는 동안 손잡이가 늘어나고 출렁이며 넘어가는 스위치(iOS 26 느낌) |
+| `GlassSlider(value, onValueChange, valueRange, steps)` | 잡으면 막대가 굵어지고 손잡이가 비치며 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다 튕겨 돌아온다. 화면 읽기로 값 조절 |
+| `GlassRefreshBox(refreshing, onRefresh) { LazyColumn { … } }` | 맨 위에서 당기면 내용이 버티며 내려오고 유리 물방울이 차오른다. 문턱을 넘으면 진동과 함께 길쭉해지고, 놓으면 새로 고친다. 화면 읽기에서는 "새로 고침" 동작 |
+
+## 화면 이동
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `GlassExpandHost(state) { key -> 상세 }` + `Modifier.expandSource(state, key)` + `state.expand(key)` | 카드가 그 자리에서 화면 가득 커지며 상세가 된다(App Store 오늘 탭). 뒤는 흐려지고, 상세를 아래로 끌면 작아지며 둥글어지고 놓으면 카드 자리로 돌아간다. 상세 위쪽을 카드와 같은 모습으로 두면 끊김 없이 이어진다 |
+| `PushNavigation(stack, onBack) { screen -> … }` | iOS식 밀어 넣기. 새 화면이 옆에서 들어오고 아래 화면은 조금 물러나며 어두워진다. 왼쪽 가장자리에서 끌거나 예측 뒤로 가기 몸짓을 하면 손을 따라 되돌아간다. 아래 화면의 `rememberSaveable` 상태(스크롤 등)는 남는다. 오른쪽에서 왼쪽으로 쓰는 언어에서는 방향이 뒤집힌다 |
+
+```kotlin
+var stack by rememberSaveable { mutableStateOf(listOf("home")) }
+PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
+    when (screen) {
+        "home" -> Home(open = { stack = stack + it })
+        else -> Detail(screen)
+    }
+}
+```
+
+예측 뒤로 가기에서 손을 따라 움직이는 미리 보기는 Android 14부터다. targetSdk 36 이상 앱은 기본으로 켜져 있고, 그보다 낮으면 manifest에 `android:enableOnBackInvokedCallback="true"`가 있어야 한다. 꺼져 있으면 뒤로 가기에서 바로 닫히는 움직임만 나온다.
 
 ## 고급 효과
 
@@ -77,4 +98,4 @@ GPU 가속 에뮬레이터(Apple M5 호스트)에서 유리 20개 남짓과 움�
 
 ## 확인
 
-`sample-showcase` → **글래스 UI**(스타일 바꾸기, 팝업·시트·알림·탭 막대), **모션 효과**.
+`sample-showcase` → **글래스 UI**(스타일 바꾸기, 팝업·시트·알림·탭 막대·컨트롤·슬라이더, 맨 위에서 당겨 새로 고침), **화면 이동**(카드가 커지는 상세, 밀어 넣기·가장자리 끌어 뒤로), **모션 효과**.
