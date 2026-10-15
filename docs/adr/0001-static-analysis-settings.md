@@ -4,18 +4,18 @@
 
 ## 배경
 
-ktlint·detekt 기본 규칙을 CI에서 강제한다(`./gradlew check`). 일부 기본값은 이 SDK의 코드 형태와 맞지 않아
-같은 의미의 코드를 억지로 쪼개게 만든다.
+CI에서는 `./gradlew check`로 ktlint와 detekt 기본 규칙을 강제한다. 그런데 일부 기본값은 이 SDK의 코드 형태와 맞지 않아,
+의미상 하나인 코드를 억지로 쪼개게 만든다.
 
 ## 결정
 
-`config/detekt/detekt.yml`에 덮어쓰는 값만 둔다.
+`config/detekt/detekt.yml`에는 기본값을 덮어쓰는 항목만 둔다.
 
 - `MaxLineLength` 140: `.editorconfig`의 ktlint 값과 맞춘다.
 - `MagicNumber`: 테스트·testFixtures는 제외한다. 기대값을 상수로 빼면 테스트가 읽기 어려워진다.
-- `ReturnCount` 3, guard clause 제외.
-- `TooManyFunctions`: 파일 20, 클래스·object 15. 저장 형식 변환(`kinetica-serialization`)은 필드 묶음마다 작은 함수가 하나씩 있어 기본값(11)을 넘는다.
-- 명령 종류별로 한 갈래씩인 `when` 분기(`SceneReducer.apply`)는 해당 함수에만 `@Suppress("CyclomaticComplexMethod")`와 이유 주석을 단다.
+- `ReturnCount`: 3으로 올리고, guard clause는 세지 않는다.
+- `TooManyFunctions`: 파일은 20, 클래스와 object는 15로 둔다. 저장 형식 변환 코드(`kinetica-serialization`)는 필드 그룹마다 작은 함수가 하나씩 있어 기본값(11)을 넘는다.
+- 명령 종류마다 분기가 하나씩 있는 `when`(`SceneReducer.apply`)은 그 함수에만 `@Suppress("CyclomaticComplexMethod")`와 이유를 적은 주석을 단다.
 
 ## 결과
 

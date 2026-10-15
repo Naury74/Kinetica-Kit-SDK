@@ -1,170 +1,171 @@
 # 검증 가이드
 
-Kinetica가 무엇을 하는지, SDK로 쓸 만한지 직접 확인하기 위한 순서입니다. 각 항목에 해 볼 것, 기대 결과, 같은 동작을 확인하는 자동 테스트를 적었습니다.
-"기대 결과"와 다르면 그 자리에서 메모해 두세요.
+Kinetica가 무엇을 하는지, SDK로 쓸 만한지 직접 확인해 볼 수 있도록 순서를 정리했습니다. 항목마다 해 볼 것과 기대 결과, 같은 동작을 확인하는 자동 테스트를 적었습니다.
+기대 결과와 다르게 동작하면 바로 메모해 두세요.
 
 ## 0. 준비
 
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-./gradlew check                                   # 테스트 400여 개·lint·형식·공개 API 검사
+./gradlew check                                   # 테스트 400여 개, lint, 코드 형식, 공개 API 검사
 ./gradlew :sample-showcase:installDebug
 ```
 
-- 기기: Android 8.0(API 26) 이상. 지금까지는 에뮬레이터(Android 16, 펼친 폴더블)에서만 확인했습니다.
-  그 에뮬레이터에서 1·3·4·5·10·11·12·13·15·16·17(저장까지)·18·19·20·23·24·25를 손으로 확인했고, 사진·글자 수정은 다시 실행 뒤에도 남았습니다.
-- 앱 하나(**Kinetica**)가 설치됩니다. 첫 화면에서 글래스 UI·모션 효과·대시보드 보드·화면 이동·장면 전환·서버 화면·화면 만들기를 고르고, 맨 아래에서 XML 화면 예를 엽니다.
-- 에뮬레이터는 GPU 가속(`-gpu host`)으로 켭니다. SwiftShader(소프트웨어)에서는 흐림이 많아 프레임이 크게 늘어납니다.
-- 넓은 화면(600dp 이상)은 오른쪽에 레이어·속성 패널이 붙고, 좁은 화면은 도구 줄의 "레이어"·"속성" 버튼으로 아래 시트를 엽니다.
+- Android 8.0(API 26) 이상 기기가 필요합니다. Android 16 에뮬레이터와 Galaxy Z Fold7(Android 16, 커버·메인 화면) 실기기에서 확인했습니다.
+  그 에뮬레이터에서 1, 3, 4, 5, 10, 11, 12, 13, 15, 16, 17(저장까지), 18, 19, 20, 23, 24, 25번을 손으로 확인했고, 사진과 글자 수정은 앱을 다시 실행한 뒤에도 남아 있었습니다.
+- 설치되는 앱은 **Kinetica** 하나입니다. 첫 화면에서 글래스 UI, 모션 효과, 대시보드 보드, 화면 이동, 장면 전환, 서버 화면, 화면 만들기 중 하나를 고르고, XML로 만든 화면은 맨 아래 **XML 레이아웃으로 만든 화면 보기**에서 엽니다.
+- 에뮬레이터는 GPU 가속(`-gpu host`)으로 실행합니다. 소프트웨어 렌더러인 SwiftShader에서는 블러가 많아 프레임 시간이 크게 늘어납니다.
+- 600dp 이상인 넓은 화면에서는 오른쪽에 레이어 패널과 속성 패널이 붙습니다. 좁은 화면에서는 도구 줄의 "레이어", "속성" 버튼으로 바텀 시트를 엽니다.
 
 ## 1. 화면 만들기 (첫 화면 → 화면 만들기)
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
 | --- | --- | --- | --- |
-| 1 | 도구 줄 **예제** | 글자·카드·원·곡선·칩 그룹이 있는 장면이 열림 | `DemoSceneTest` |
+| 1 | 도구 줄 **예제** | 글자, 카드, 원, 곡선, 칩 그룹이 있는 장면이 열림 | `DemoSceneTest` |
 | 2 | **사각형·타원·글자**로 추가 | 보이는 영역 가운데에 추가되고 선택됨 | `KineticaEditorTest` |
-| 3 | 도형 끌기 | 손가락을 따라 이동, 다른 도형·artboard 가장자리·가운데 근처에서 보라색 안내선과 함께 붙음 | `CanvasGestureControllerTest`, `MoveSnapperTest` |
-| 4 | 선택 후 모서리·변 손잡이 끌기 | 반대쪽 손잡이는 제자리, 크기만 바뀜. 회전한 도형도 마찬가지 | `TransformOpsTest`(2,400가지 무작위) |
+| 3 | 도형 끌기 | 손가락을 따라 움직이고, 다른 도형이나 artboard의 가장자리·가운데 근처에서 보라색 안내선과 함께 스냅됨 | `CanvasGestureControllerTest`, `MoveSnapperTest` |
+| 4 | 선택 후 모서리·변 손잡이 끌기 | 반대쪽 손잡이는 제자리에 있고 크기만 바뀜. 회전한 도형도 같음 | `TransformOpsTest`(2,400가지 무작위) |
 | 5 | 위쪽 동그란 손잡이 끌기 | 가운데를 축으로 회전 | `CanvasGestureControllerTest` |
-| 6 | 빈 곳에서 끌기 | 사각 영역에 걸친 도형이 함께 선택됨 | 같음 |
-| 7 | 두 손가락 벌리기·이동, 마우스 휠 | 손가락 사이 지점이 고정된 채 확대·이동 | `ViewportTest`, `CanvasGestureControllerTest` |
-| 8 | 둘 이상 선택 → 선택 줄 **그룹**, 다시 **그룹 해제** | 화면 위치 그대로 묶이고 풀림 | `GroupCommandTest` |
-| 9 | 선택 줄 **정렬** 메뉴(맞춤·간격 같게), **앞으로·뒤로** | 선택 범위(하나면 artboard) 기준 정렬, 순서 이동 | `ArrangeOpsTest`, `EditorActionsTest` |
-| 10 | 속성 패널에서 X·Y·너비·높이·회전·불투명도·채우기 입력 | 완료 키나 포커스 이동 시 적용. `abc` 같은 값은 거부하고 이전 값 유지 | `PropertyEditsTest`, `EditorPanelsTest` |
+| 6 | 빈 곳에서 끌기 | 드래그한 사각 영역에 걸친 도형이 함께 선택됨 | 같음 |
+| 7 | 두 손가락 벌리기·이동, 마우스 휠 | 두 손가락 사이 지점을 고정한 채 확대·이동 | `ViewportTest`, `CanvasGestureControllerTest` |
+| 8 | 둘 이상 선택 → 선택 툴바 **그룹**, 다시 **그룹 해제** | 화면 위치를 유지한 채 그룹이 되고 풀림 | `GroupCommandTest` |
+| 9 | 선택 툴바 **정렬** 메뉴(맞춤, 간격 균등하게), **앞으로 가져오기**·**뒤로 보내기** | 선택 범위 기준으로 정렬(하나만 골랐으면 artboard 기준), 순서 이동 | `ArrangeOpsTest`, `EditorActionsTest` |
+| 10 | 속성 패널에서 X, Y, 너비, 높이, 회전, 불투명도, 채우기 입력 | 완료 키를 누르거나 포커스를 옮기면 적용. `abc` 같은 값은 거부하고 이전 값 유지 | `PropertyEditsTest`, `EditorPanelsTest` |
 | 11 | 글자를 고르고 속성 패널 **내용**·**글자 크기** 수정 | 캔버스 글자가 바뀜 | `PropertyEditsTest` |
-| 12 | 레이어 패널 **보임**·**잠금** | 숨기면 안 그려지고, 잠그면 캔버스에서 잡히지 않음 | `EditorPanelsTest`, `HitTesterTest` |
-| 13 | **실행 취소·다시 실행** (Ctrl+Z / Ctrl+Shift+Z) | 끌기 한 번이 한 단계. 여러 번 되돌리면 처음 장면 | `KineticaSessionTest`(무작위 1,000회) |
-| 14 | 키보드(외부 키보드·에뮬레이터): 화살표, Shift+화살표, Delete, Esc | 1·10 단위 이동, 삭제, 선택 해제 | — (수동) |
-| 15 | **사진** → 사진 고르기 | 원본 비율로 들어옴. 큰 사진도 메모리 상한(4 MP)으로 줄여 읽음 | `ContentImageLoaderTest` |
+| 12 | 레이어 패널 **보임**·**잠금** | 숨기면 그려지지 않고, 잠그면 캔버스에서 선택되지 않음 | `EditorPanelsTest`, `HitTesterTest` |
+| 13 | **실행 취소·다시 실행** (Ctrl+Z / Ctrl+Shift+Z) | 끌기 한 번이 한 단계. 계속 되돌리면 처음 장면으로 돌아감 | `KineticaSessionTest`(무작위 1,000회) |
+| 14 | 외부 키보드나 에뮬레이터 키보드로 화살표, Shift+화살표, Delete, Esc | 1 또는 10 단위 이동, 삭제, 선택 해제 | — (수동) |
+| 15 | **사진** → 사진 고르기 | 원본 비율 그대로 들어옴. 큰 사진은 메모리 상한(4 MP)에 맞춰 줄여 읽음 | `ContentImageLoaderTest` |
 | 16 | **저장** → 앱 완전 종료 → 다시 실행 | 같은 장면이 열림(실행 취소 기록은 새로 시작) | `FileSceneRepositoryTest` |
-| 17 | 도구 줄 **PNG** → 위치 고르기 | 1080 px 너비 PNG. 화면과 같은 모습 | `PngExporterTest` |
+| 17 | 도구 줄 **PNG** → 위치 고르기 | 너비 1080 px PNG가 화면과 같은 모습으로 저장됨 | `PngExporterTest` |
 
 ### 호스트 UI 조립 (ADR-0006)
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
 | --- | --- | --- | --- |
-| H1 | 도구 줄 **대시보드** | 인사말·매출·주문 카드, 매출 그래프·시계·날씨 위젯, 새로고침 버튼이 있는 화면이 열림 | `DashboardSceneTest` |
-| H2 | 2초 기다리기 | 매출·주문 숫자가 바뀌고 그래프 막대가 움직임(호스트 데이터 → 바인딩) | `HostComposerTest` |
-| H3 | 위젯을 끌어 옮기고 크기·회전 바꾸기 | 위젯이 살아 있는 채로 따라옴. 편집 중에는 위젯 안 버튼이 눌리지 않음 | `HostComposerTest` |
+| H1 | 도구 줄 **대시보드** | 인사말, 매출·주문 카드, 매출 그래프·시계·날씨 위젯, 새로고침 버튼이 있는 화면이 열림 | `DashboardSceneTest` |
+| H2 | 2초 기다리기 | 호스트 데이터가 바인딩되어 매출·주문 숫자가 바뀌고 그래프 막대가 움직임 | `HostComposerTest` |
+| H3 | 위젯을 끌어 옮기고 크기·회전 바꾸기 | 위젯이 계속 동작하는 상태로 따라옴. 편집 중에는 위젯 안 버튼이 눌리지 않음 | `HostComposerTest` |
 | H4 | **호스트 뷰** 메뉴 → 카운터 | 카운터 위젯이 들어옴 | `HostComposerTest` |
-| H5 | 글자를 두 번 누르기 | 글자 수정 창이 뜨고, 고친 뒤 실행 취소 한 번에 되돌아감 | `HostComposerTest` |
-| H6 | 속성 패널 **데이터**: 내용 키·보임 키·탭 동작 | 키를 넣으면 그 데이터 값이 보이고, 동작 이름이 저장됨 | `PropertyEditsTest` |
-| H7 | **미리보기** → 카운터 +1, 새로고침 버튼 | 카운터 숫자가 오름(호스트 상태), "호스트가 받은 동작: refresh" 알림과 함께 값이 바뀜 | `PlayerHostTest` |
-| H8 | 대시보드에서 "widgets" 레이어 고르기 → 속성 **자동 배치** 가로↔세로 | 위젯이 줄·열로 다시 쌓임. 실행 취소 한 번에 되돌아감 | `AutoLayoutEditorTest`, `LayoutsTest` |
-| H9 | 도형 두 개 고르기 → 선택 줄 **자동 배치** | 위치 순서대로 쌓인 Frame으로 감싸지고, 간격·여백·정렬을 속성에서 바꿈 | `AutoLayoutEditorTest`, `LayoutsTest` |
-| H10 | 데이터로 "영업 중"이 숨을 때(2초마다 무작위) | "배달 가능"이 빈자리로 당겨지고 카드 높이가 맞춰짐 | `BindingsTest` |
-| H11 | **미리보기**(폴더블 펼침·접힘, 가로 화면) | 화면 모양대로 펼쳐짐: 카드·위젯은 반씩 채우고, 그래프·버튼은 좌우로 늘고, 버튼은 아래에 붙음 | `LayoutsTest`, `SceneLayoutTest` |
+| H5 | 텍스트를 두 번 누르기 | 텍스트 편집 창이 뜨고, 고친 뒤 실행 취소 한 번에 되돌아감 | `HostComposerTest` |
+| H6 | 속성 패널 **데이터**에서 내용 키, 보임 키, 탭 동작 입력 | 키를 넣으면 그 데이터 값이 보이고, 동작 이름이 저장됨 | `PropertyEditsTest` |
+| H7 | **미리보기** → 카운터 +1, 새로고침 버튼 | 호스트 상태인 카운터 숫자가 오르고, 새로고침을 누르면 "호스트가 받은 동작: refresh" 알림과 함께 값이 바뀜 | `PlayerHostTest` |
+| H8 | 대시보드에서 "widgets" 레이어 고르기 → 속성 **자동 레이아웃**을 가로↔세로로 바꾸기 | 위젯이 행 또는 열로 다시 쌓임. 실행 취소 한 번에 되돌아감 | `AutoLayoutEditorTest`, `LayoutsTest` |
+| H9 | 도형 두 개 고르기 → 선택 툴바 **자동 레이아웃** | 위치 순서대로 쌓인 Frame으로 감싸짐. 간격, 패딩, 정렬은 속성에서 바꿀 수 있음 | `AutoLayoutEditorTest`, `LayoutsTest` |
+| H10 | 데이터에 따라 "영업 중"이 숨겨질 때(2초마다 무작위) | "배달 가능"이 빈 곳으로 당겨지고 카드 높이가 줄어듦 | `BindingsTest` |
+| H11 | **미리보기**를 폴더블 펼침·접힘, 가로 화면에서 보기 | 화면 모양에 맞게 배치됨. 카드와 위젯은 반씩 채우고, 그래프와 버튼은 좌우로 늘어나며, 버튼은 아래에 붙음 | `LayoutsTest`, `SceneLayoutTest` |
 
 ### 대시보드 보드 (첫 화면 → 대시보드 보드, docs 31)
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
 | --- | --- | --- | --- |
-| B1 | 앱 실행 | 매출·주문·주간 매출·시계 위젯이 빈자리에 채워지고 숫자가 2초마다 바뀜 | `KineticaBoardStateTest` |
-| B2 | **편집** → 위젯 끌기 | 손가락을 따라오고 다른 위젯·가장자리에 붙음. 위젯 안 버튼은 눌리지 않음 | `KineticaBoardTest`, `BoardGeometryTest` |
-| B3 | 위젯을 화면 오른쪽 끝·모서리로 끌어 놓기 | 반·4분의 1 자리를 미리 보여 주고 그 자리에 들어감. 겹친 위젯은 아래로 밀림 | `KineticaBoardTest`, `BoardGeometryTest` |
-| B3a | 위젯을 위쪽 가장자리로 끌기 → 고르기판의 틀 칸에 손가락 올리고 놓기 | 배치 틀 7가지가 뜨고, 올린 칸이 강조되며 그 자리를 미리 보여 주고, 놓으면 들어감 | `KineticaBoardTest`(배치 틀) |
-| B4 | 오른쪽 아래 손잡이, 왼쪽 위 −, **+ 위젯 추가** | 크기 바뀜, 빠짐, 메모·공지 추가 | `KineticaBoardTest` |
+| B1 | 앱 실행 | 매출, 주문, 주간 매출, 시계 위젯이 빈 슬롯에 채워지고 숫자가 2초마다 바뀜 | `KineticaBoardStateTest` |
+| B2 | **편집** → 위젯 끌기 | 손가락을 따라오고 다른 위젯이나 가장자리에 스냅됨. 위젯 안 버튼은 눌리지 않음 | `KineticaBoardTest`, `BoardGeometryTest` |
+| B3 | 위젯을 화면 오른쪽 끝·모서리로 끌어 놓기 | 화면의 절반이나 4분의 1 영역을 미리 보여 주고 그 위치에 들어감. 겹친 위젯은 아래로 밀림 | `KineticaBoardTest`, `BoardGeometryTest` |
+| B3a | 위젯을 위쪽 가장자리로 끌기 → 스냅 레이아웃 선택판의 칸에 손가락을 올렸다가 놓기 | 스냅 레이아웃 7가지가 뜨고, 손가락을 올린 칸이 강조되며 들어갈 위치를 미리 보여 줌. 놓으면 그 위치에 들어감 | `KineticaBoardTest`(스냅 레이아웃) |
+| B4 | 오른쪽 아래 손잡이, 왼쪽 위 −, **+ 위젯 추가** | 각각 크기 변경, 위젯 제거, 메모·공지 추가 | `KineticaBoardTest` |
 | B5 | **되돌리기·다시** | 끌기 한 번이 한 단계 | `KineticaBoardStateTest` |
-| B6 | 메모에 글을 쓰고 다른 위젯 옮기기 | 쓴 글이 그대로 | `SceneLayoutTest` |
-| B7 | **격자 배치** | 칸에 맞춰 놓이고 겹치면 아래로 밀림 | `KineticaBoardStateTest` |
-| B8 | **완료** → 앱 종료 → 다시 실행, 폴더블 접고 펴기 | 같은 배치. 넓은 화면은 가로 비율대로 펼쳐짐 | `KineticaBoardStateTest` |
-| B9 | 첫 화면 맨 아래 **XML 화면 예** | XML View 위젯도 같은 방식으로 편집 | `KineticaBoardViewTest` |
-| B10 | 편집 아닐 때 위젯을 길게 누르기 | 편집 모드가 켜짐. 짧게 누르거나 스크롤하면 그대로 동작 | `KineticaBoardTest` |
+| B6 | 메모에 글을 쓰고 다른 위젯 옮기기 | 쓴 글이 그대로 남음 | `SceneLayoutTest` |
+| B7 | **격자 배치** | 격자 칸에 맞춰 놓이고, 겹치면 아래로 밀림 | `KineticaBoardStateTest` |
+| B8 | **완료** → 앱 종료 → 다시 실행, 폴더블 접고 펴기 | 같은 배치로 열림. 넓은 화면에서는 가로 비율에 맞춰 펼쳐짐 | `KineticaBoardStateTest` |
+| B9 | 첫 화면 맨 아래 **XML 레이아웃으로 만든 화면 보기** | XML View 위젯도 같은 방식으로 편집됨 | `KineticaBoardViewTest` |
+| B10 | 편집 모드가 아닐 때 위젯을 길게 누르기 | 편집 모드가 켜짐. 짧게 누르거나 스크롤하면 원래대로 동작 | `KineticaBoardTest` |
 | B11 | 편집 중 위젯을 화면 아래 끝으로 끌고 머물기 | 보드가 아래로 스크롤되고 위젯이 따라감 | `KineticaBoardTest` |
-| B12 | TalkBack 켜고 편집 중 위젯의 동작 메뉴 | 옮기기·크게·작게·빼기 | `KineticaBoardTest` |
-| B13 | **+ 위젯 추가** → 메모를 두 번 | 메모 1·메모 2가 따로 생기고 각자 쓴 글이 유지됨 | `KineticaBoardStateTest` |
-| B16 | 편집 중 위젯을 다른 위젯 가운데로 끌어 놓기 → 완료 → 묶음 옆으로 넘기기 → 다시 편집에서 숫자 배지 누르기 | 한 자리에서 넘겨 보이고 점 표시. 배지를 누르면 다시 따로 놓임 | `BoardStacksTest`, `KineticaBoardTest` |
-| B15 | 첫 화면 → **모션 효과** → 누름·나타남·반복 타일, XML 화면 예의 편집 버튼 | 리플·눌림·터지기·떠오르기, 두근·반짝임·빛 번짐·흔들기. 눌린 수가 올라감 | `NodeEffectsTest`, `ViewEffectsTest` |
-| B14 | 키보드 연결 → 편집 중 Tab으로 위젯 고르고 방향키·Shift+방향키·Delete | 옮기기·크기·빼기 | `KineticaBoardTest` |
+| B12 | TalkBack을 켜고 편집 중에 위젯의 동작 메뉴 열기 | 이동, 크기 키우기, 크기 줄이기, 보드에서 삭제 동작이 있음 | `KineticaBoardTest` |
+| B13 | **+ 위젯 추가** → 메모를 두 번 | 메모 1과 메모 2가 따로 생기고 각각 쓴 글이 유지됨 | `KineticaBoardStateTest` |
+| B14 | 키보드 연결 → 편집 중 Tab으로 위젯 고르고 방향키, Shift+방향키, Delete | 각각 위젯 이동, 크기 변경, 제거 | `KineticaBoardTest` |
+| B15 | 첫 화면 → **모션 효과** → **프리셋 효과** 카드의 타일, XML 화면의 편집 버튼 | 리플, 눌림, 터지기, 떠오르기, 두근거림, 반짝임, 글로우, 흔들기가 보이고 누른 횟수가 올라감 | `NodeEffectsTest`, `ViewEffectsTest` |
+| B16 | 편집 중 위젯을 다른 위젯 가운데로 끌어 놓기 → 완료 → 스택을 옆으로 넘기기 → 다시 편집 모드에서 숫자 배지 누르기 | 한 슬롯 안에서 위젯을 넘겨 볼 수 있고 페이지 점이 표시됨. 배지를 누르면 다시 따로 놓임 | `BoardStacksTest`, `KineticaBoardTest` |
 
 ### 디자인 (화면 만들기, docs 32)
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
 | --- | --- | --- | --- |
-| D1 | **도형 더보기** → 별·다각형·화살표 | 별·육각형·끝에 화살표 달린 선이 들어옴 | `StyleInspectorTest` |
-| D2 | 속성 **채우기** 선형·원형, 시작·끝 색, 각도 | 그라디언트가 바로 보임 | `StyleEditsTest`, `SceneLayoutTest` |
-| D3 | **효과** + 바깥 그림자·+ 안쪽 그림자, 퍼짐·흐림 | 그림자가 여러 개 쌓이고 값대로 바뀜 | `StyleEditsTest`, `SceneLayoutTest` |
-| D4 | 사각형 **모서리별**, 선 **점선** | 모서리마다 다른 둥글기, 점선 | `StyleEditsTest` |
-| D5 | 글자 **글자 수정** → 일부 고르고 굵게·색 | 고른 부분만 바뀌고, 이어 쓰면 구간이 늘어남. 실행 취소 한 번에 되돌아감 | `RichTextTest`, `TextSpansTest` |
-| D6 | 속성 **글꼴** 명조·기울임·밑줄 | 글자 전체 모양이 바뀜 | `RichTextTest` |
-| D7 | 도구 줄 **목업** | 휴대폰 틀 안에 장면이 든 PNG | `PngExporterTest` |
-| D8 | 빈 곳 눌러 선택 해제 → **기본 키트 넣기**, 토큰 `color.brand` 색 바꾸기 | 키트 9종이 artboard 오른쪽에 생기고 버튼·토글 색이 함께 바뀜 | `ComponentEditorTest`, `UiKitTest` |
-| D9 | 카드 원본 **넣기** → 인스턴스 글자 고치기 → 원본 색 바꾸기 | 인스턴스 글자는 유지되고 색은 따라감. **덮어쓴 값 되돌리기**로 원래 글자 | `ComponentsTest` |
-| D10 | Frame 고르고 **컴포넌트로** | 원본이 되고 **넣기**로 인스턴스를 넣을 수 있음 | `ComponentEditorTest` |
+| D1 | **도형 더보기** → 별·다각형·화살표 | 별, 육각형, 끝에 화살표가 달린 선이 들어옴 | `StyleInspectorTest` |
+| D2 | 속성 **채우기**에서 선형·원형, 시작·끝 색, 각도 바꾸기 | 그라디언트가 바로 보임 | `StyleEditsTest`, `SceneLayoutTest` |
+| D3 | **효과**에서 + 바깥 그림자, + 안쪽 그림자, 확산·블러 조절 | 그림자가 여러 개 쌓이고 값대로 바뀜 | `StyleEditsTest`, `SceneLayoutTest` |
+| D4 | 사각형 **모서리별**, 선 **점선** | 모서리마다 둥글기가 다르게, 선은 점선으로 바뀜 | `StyleEditsTest` |
+| D5 | 텍스트 **텍스트 편집** → 일부를 골라 굵게 하거나 색 바꾸기 | 고른 부분만 바뀌고, 이어 쓰면 서식 구간이 늘어남. 실행 취소 한 번에 되돌아감 | `RichTextTest`, `TextSpansTest` |
+| D6 | 속성 **글꼴**에서 명조, 기울임, 밑줄 | 글자 전체 모양이 바뀜 | `RichTextTest` |
+| D7 | 도구 줄 **목업** | 휴대폰 프레임 안에 장면이 들어간 PNG | `PngExporterTest` |
+| D8 | 빈 곳 눌러 선택 해제 → **기본 키트 추가**, 토큰 `color.brand` 색 바꾸기 | 키트 9종이 artboard 오른쪽에 생기고, 토큰 색을 바꾸면 버튼·토글 색이 함께 바뀜 | `ComponentEditorTest`, `UiKitTest` |
+| D9 | 카드 원본 **추가** → 인스턴스 글자 고치기 → 원본 색 바꾸기 | 인스턴스 글자는 유지되고 색은 원본을 따라감. **오버라이드 재설정**을 누르면 원래 글자로 돌아감 | `ComponentsTest` |
+| D10 | Frame 고르고 **컴포넌트 만들기** | 컴포넌트 원본이 되고, **추가**로 인스턴스를 넣을 수 있음 | `ComponentEditorTest` |
 | D11 | 흐림을 준 도형을 PNG로 내보내기 | 내보낸 그림에도 흐림이 보임 | `SceneCanvasTest` |
-| D12 | 자동 배치 Frame **줄 바꿈** 켜기 | 폭을 넘는 자식이 다음 줄로 | `LayoutsTest`, `AutoLayoutEditorTest` |
+| D12 | 자동 레이아웃 Frame **줄 바꿈** 켜기 | 폭을 넘는 자식이 다음 줄로 넘어감 | `LayoutsTest`, `AutoLayoutEditorTest` |
 | D13 | 노드 **크기 제한** 최소 너비 150 | 너비가 150 아래로 줄지 않음 | `LayoutsTest`, `AutoLayoutEditorTest` |
 | D14 | 글자 **너비 자동** 후 글자 늘이기 | 상자가 글자에 맞춰 넓어짐 | `RichTextTest`, `LayoutsTest` |
-| D15 | 레이어 패널로 자동 배치 안 노드를 고르고 캔버스에서 옆으로 끌기 | 형제 순서가 바뀜, 실행 취소 한 번 | `CanvasGestureControllerTest` |
+| D15 | 레이어 패널로 자동 배치 안 노드를 고르고 캔버스에서 옆으로 끌기 | 형제 순서가 바뀌고, 실행 취소 한 번에 되돌아감 | `CanvasGestureControllerTest` |
 
 ### 모션
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
 | --- | --- | --- | --- |
-| 18 | 예제 장면에서 **모션** 켜기 → **재생** | 글자가 올라오며 나타나고, 카드가 튕기며 커지고, 원이 돌며 색이 바뀌고, 칩이 차례로 올라옴 | `TimelineEvaluatorTest`, `EasingTest` |
+| 18 | 예제 장면에서 **모션** 켜기 → **재생** | 글자가 아래에서 올라오며 등장하고, 카드가 튕기며 커지고, 원이 돌며 색이 바뀌고, 칩이 차례로 올라옴 | `TimelineEvaluatorTest`, `EasingTest` |
 | 19 | 눈금자를 누르거나 끌기 | 그 시각의 장면이 보임(캔버스는 움직이지 않음) | `TimelinePanelTest` |
-| 20a | 도형을 고르고 timeline **너비**·**모서리** 키 → 다른 시각에서 값 바꾸기 | 재생하면 크기·둥글기가 바뀜 | `StyleAnimationTest` |
+| 20a | 도형을 고르고 타임라인에서 **너비**·**모서리** 키 추가 → 다른 시각에서 값 바꾸기 | 재생하면 크기·둥글기가 바뀜 | `StyleAnimationTest` |
 | 20 | 도형을 고르고 **X +** → 눈금자 1초 → 캔버스에서 도형 끌기 | 1초에 X 키가 자동으로 생기고, 재생하면 두 키 사이를 움직임 | `AutoKeyTest`, `TimelinePanelTest` |
-| 21 | 키 다이아몬드 끌기, 누른 뒤 easing·**키 삭제** | 시간 이동(같은 시각과 겹치면 거부), 곡선 변경, 삭제 | `TimelineCommandTest` |
-| 22 | 여러 도형 선택 → **프리셋** → 차례로 등장 | 재생 위치부터 80 ms씩 늦게 나타남. 실행 취소 한 번에 사라짐 | `PresetRegistryTest`, `AutoKeyTest` |
+| 21 | 키 다이아몬드 끌기, 누른 뒤 easing·**키 삭제** | 키 시간이 옮겨지고(같은 시각의 키와 겹치면 거부), 곡선이 바뀌고, 키가 삭제됨 | `TimelineCommandTest` |
+| 22 | 여러 도형 선택 → **프리셋** → 차례로 등장 | 재생 위치부터 80 ms 간격으로 차례로 등장함. 실행 취소 한 번에 사라짐 | `PresetRegistryTest`, `AutoKeyTest` |
 
 ### 글래스 UI·모션 효과 (첫 화면 → 글래스 UI / 모션 효과, docs 35)
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
 | --- | --- | --- | --- |
-| G1 | 스타일 Liquid·Acrylic·One UI·Vision, 밝게·어둡게 | 위 막대·탭 막대·카드가 뒤 색을 흐리게 비추고 스타일마다 투명도·흐림·빛 테두리가 다름 | `GlassTest` |
-| G2 | **팝업** | 누른 버튼에서 판이 커져 나오고 뒤(막대 포함)가 흐려지고 어두워짐. 바깥·뒤로 가기로 닫힘 | `GlassTest` |
-| G3 | **시트** → 아래로 끌기 | 뒤 내용이 물러나고 둥글어짐. 30% 넘게 끌거나 튕기면 닫힘 | — (수동) |
-| G4 | **알림**, 탭 막대 누르기 | 위에서 내려오는 알림. 고른 탭 알약이 늘어났다 줄며 옮겨 감 | — (수동) |
-| G5 | 빛 테두리·화면 가장자리 켜기 | 색이 가장자리를 따라 돎 | — (수동) |
-| G6 | 젤리 버튼 누르기, 자석 버튼 끌기 | 납작해졌다 출렁이며 돌아옴 / 손가락을 따라왔다 튕기며 제자리 | — (수동) |
-| G7 | 숫자 굴리기 + 주문·− 환불 | 바뀐 자리만 위아래로 굴러감 | — (수동) |
+| G1 | 스타일을 Liquid, Acrylic, One UI, Vision으로, 밝게·어둡게 바꾸기 | 상단 바, 탭 바, 카드가 배경색을 블러 처리해 비추고, 스타일마다 투명도·블러·글로우 테두리가 다름 | `GlassTest` |
+| G2 | **팝업** | 누른 버튼에서 패널이 커져 나오고 바를 포함한 배경이 흐려지며 어두워짐. 바깥을 누르거나 뒤로 가기로 닫힘 | `GlassTest` |
+| G3 | **시트** → 아래로 끌기 | 뒤쪽 콘텐츠가 물러나며 모서리가 둥글어짐. 30% 넘게 끌거나 빠르게 튕기면 닫힘 | — (수동) |
+| G4 | **알림**, 탭 바 누르기 | 위에서 토스트가 내려옴. 선택한 탭의 인디케이터가 늘어났다 줄어들며 이동함 | — (수동) |
+| G5 | 글로우 테두리, 화면 가장자리 효과 켜기 | 색이 가장자리를 따라 돎 | — (수동) |
+| G6 | 젤리 버튼 누르기, 자석 버튼 끌기 | 젤리 버튼은 납작해졌다가 출렁이며 돌아오고, 자석 버튼은 손가락을 따라오다가 튕기며 제자리로 돌아옴 | — (수동) |
+| G7 | 숫자 굴리기의 + 주문, − 환불 | 바뀐 자릿수만 위아래로 굴러감 | — (수동) |
 | G8 | 축하하기 | 색종이가 위로 터졌다 떨어짐 | — (수동) |
-| G9 | 사진 카드 길게 누르기, 컨트롤 카드의 세그먼트·스위치 | 사진이 떠오르고 뒤가 흐려지며 메뉴. 세그먼트 표시가 늘어났다 옮겨 감 | `GlassTest` |
-| G10 | 슬라이더를 끝 너머로 끌기, 눈금 슬라이더 | 막대가 고무줄처럼 늘어났다 튕겨 돌아옴. 눈금 슬라이더는 눈금에만 멈춤 | `GlassNavigationTest` |
-| G11 | 글래스 UI 맨 위에서 아래로 당기기 | 유리 물방울이 차오르고 문턱에서 진동, 놓으면 돌다가 "새로 고쳤어요" 알림 | `GlassNavigationTest` |
-| G12 | **화면 이동** → 카드 누르기 → 아래로 끌기 | 카드가 그 자리에서 커져 상세가 되고 뒤가 흐려짐. 끌면 작아지고 놓으면 카드 자리로 돌아감 | `GlassNavigationTest` |
-| G13 | **화면 이동** → 목록 항목 → 왼쪽 가장자리에서 끌기 | 새 화면이 옆에서 들어오고 아래 화면은 물러나며 어두워짐. 끌면 손을 따라 되돌아가고 아래 화면 스크롤이 그대로 | `GlassNavigationTest` |
+| G9 | 사진 카드 길게 누르기, 컨트롤 카드의 세그먼트·스위치 | 사진이 떠오르고 배경이 흐려지며 메뉴가 뜸. 세그먼트 인디케이터가 늘어났다가 이동함 | `GlassTest` |
+| G10 | 슬라이더를 끝 너머로 끌기, 눈금 슬라이더 | 트랙이 고무줄처럼 늘어났다가 튕겨 돌아옴. 눈금 슬라이더는 눈금 위치에만 멈춤 | `GlassNavigationTest` |
+| G11 | 글래스 UI 맨 위에서 아래로 당기기 | 글래스 물방울이 차오르고 기준 거리에서 햅틱이 옴. 놓으면 잠시 돌다가 "새로 고쳤어요" 토스트가 뜸 | `GlassNavigationTest` |
+| G12 | **화면 이동** → 카드 누르기 → 아래로 끌기 | 카드가 제자리에서 커져 상세 화면이 되고 배경이 흐려짐. 끌면 작아지고, 놓으면 원래 카드 위치로 돌아감 | `GlassNavigationTest` |
+| G13 | **화면 이동** → 목록 항목 → 왼쪽 가장자리에서 끌기 | 새 화면이 옆에서 들어오고 아래 화면은 물러나며 어두워짐. 끌면 손가락을 따라 되돌아가고 아래 화면의 스크롤 위치가 그대로 남음 | `GlassNavigationTest` |
 
 ## 2. 장면 전환·서버 화면 (재생기만 쓰는 화면)
 
 | # | 해 볼 것 | 기대 결과 | 자동 테스트 |
 | --- | --- | --- | --- |
-| 23 | 첫 화면 → **장면 전환** → 카드 누르기 | 카드가 상세 화면으로 이어지며 바뀜(같은 morphKey끼리 보간, 본문은 나타남) | `SceneMorphTest` |
+| 23 | 첫 화면 → **장면 전환** → 카드 누르기 | 카드가 상세 화면으로 자연스럽게 바뀜. 같은 morphKey끼리 보간되고 본문은 새로 등장함 | `SceneMorphTest` |
 | 24 | 상세에서 조금 끌고 놓기 | 다시 열린 상태로 돌아감 | `TransitionDriverTest`(35%) |
-| 25 | 크게 아래로 끌기 / 빠르게 튕기기 / 뒤로 가기 | 닫히고 목록으로 돌아감(한 번만) | `TransitionDriverTest`(80%·속도), `SceneTransitionTest` |
-| 26 | 첫 화면 맨 아래 **XML 화면 예** | XML 레이아웃의 `KineticaPlayerView`가 서버 화면을 그림 | `KineticaPlayerViewTest` |
-| 27 | 회전·다른 앱 다녀오기 | 보던 화면 유지 | — (수동) |
-| 28 | 첫 화면 → **서버 화면** → **새 버전 받기**, **JSON 보기**, 주문 버튼 | 앱 업데이트 없이 글자·색이 바뀜. 매출 숫자는 실시간으로 올라가며 "1,284,000원" 형식. 버튼을 누르면 앱이 받은 동작이 알림으로 보임 | `RemoteKineticaPlayerTest`, `SceneJsonDocTest` |
-| 29 | (자동) 깨진 JSON·오프라인 | 화면은 그대로, 이유는 `lastError`. 다시 켜면 캐시가 먼저 보임 | `RemoteSceneLoaderTest` |
-| 30 | (코드) `SceneVerifier.signature(publicKey)` | 서명이 없거나 틀린 본문은 `Unverified`로 거절 | `RemoteSceneLoaderTest` |
+| 25 | 크게 아래로 끌기 / 빠르게 튕기기 / 뒤로 가기 | 닫히고 목록으로 돌아감. 닫힘 처리는 한 번만 일어남 | `TransitionDriverTest`(80%·속도), `SceneTransitionTest` |
+| 26 | 첫 화면 맨 아래 **XML 레이아웃으로 만든 화면 보기** | XML 레이아웃에 넣은 `KineticaPlayerView`가 서버 화면을 그림 | `KineticaPlayerViewTest` |
+| 27 | 회전·다른 앱 다녀오기 | 보던 화면이 유지됨 | — (수동) |
+| 28 | 첫 화면 → **서버 화면** → **새 버전 받기**, **JSON 보기**, 주문 버튼 | 앱 업데이트 없이 글자와 색이 바뀜. 매출 숫자는 "1,284,000원" 형식으로 실시간으로 올라감. 버튼을 누르면 앱이 받은 동작이 알림으로 보임 | `RemoteKineticaPlayerTest`, `SceneJsonDocTest` |
+| 29 | (자동) 깨진 JSON·오프라인 | 화면은 그대로 두고 이유를 `lastError`에 남김. 앱을 다시 켜면 캐시된 화면이 먼저 보임 | `RemoteSceneLoaderTest` |
+| 30 | (코드) `SceneVerifier.signature(publicKey)` | 서명이 없거나 틀린 본문은 `Unverified`로 거부됨 | `RemoteSceneLoaderTest` |
 
 ## 3. SDK로서 쓸 만한지
 
 | 관점 | 확인 방법 | 지금 상태 |
 | --- | --- | --- |
-| 연동 난이도 | [README 연동](../README.md#연동)의 재생기 예를 새 앱에 붙여 보기 | 의존성 1줄 + 코드 10줄 안팎. `consumer-check/`가 같은 코드를 배포 artifact만으로 빌드 |
-| 필요한 것만 쓰기 | `./gradlew :kinetica-player-compose:verifyReleaseClasspath` | 재생만 쓰면 core·motion·render·serialization·player 5개만 들어감 |
-| 앱 크기 | `consumer-check` release APK | 약 680 KB(Compose 런타임 포함, R8). Kinetica만의 몫은 따로 재지 않음 |
-| R8·난독화 | `./gradlew -p consumer-check :app:assembleRelease` | 추가 keep 규칙 없이 빌드됨(리플렉션 없음) |
-| 설계 문서 | [architecture.md](architecture.md), [integration.md](integration.md), [adr/](adr) | 모듈 경계·좌표계·데이터 흐름·결정 이유 |
-| 공개 API 관리 | `<모듈>/api/*.api` | JVM 7개 모듈은 자동 검사. Android 7개 모듈은 아직 없음(ADR-0005) |
-| 안정성 | `./gradlew check` | 테스트 400여 개(단위·Robolectric 화면·적대적 입력 fuzz) |
-| 안전 | [SECURITY.md](../SECURITY.md) | SDK 자체 네트워크 없음(서버 화면은 호스트가 받음), 외부 문서 상한·검증, 웹·파일 URI 거부 |
-| 성능 | [performance.md](performance.md) | JVM에서 노드 2,000개 명령 p95 약 0.4 ms. 실기기 보드 스크롤 p50 5 ms. 쇼케이스 글래스 화면 GPU 에뮬레이터 p50 17 ms(60fps) |
-| Java | [integration.md#java](integration.md#java) | `kinetica-java` 정적 입구, Java 테스트 있음 |
+| 연동 난이도 | [README 연동](../README.md#연동)의 재생기 예를 새 앱에 붙여 보기 | 의존성 1줄과 코드 10줄 안팎. `consumer-check/`가 같은 코드를 배포 artifact만으로 빌드함 |
+| 필요한 것만 쓰기 | `./gradlew :kinetica-player-compose:verifyReleaseClasspath` | 재생만 쓰면 core, motion, render, serialization, player 5개 모듈만 들어감 |
+| 앱 크기 | `consumer-check` release APK | R8 적용, Compose 런타임 포함 약 680 KB. Kinetica만 차지하는 크기는 따로 재지 않았음 |
+| R8·난독화 | `./gradlew -p consumer-check :app:assembleRelease` | 리플렉션을 쓰지 않아 추가 keep 규칙 없이 빌드됨 |
+| 설계 문서 | [architecture.md](architecture.md), [integration.md](integration.md), [adr/](adr) | 모듈 경계, 좌표계, 데이터 흐름, 설계 결정 이유 |
+| 공개 API 관리 | `<모듈>/api/*.api` | JVM 모듈 7개는 자동으로 검사함. Android 모듈 7개는 아직 없음(ADR-0005) |
+| 안정성 | `./gradlew check` | 단위 테스트, Robolectric 화면 테스트, 적대적 입력 fuzz 테스트를 합쳐 400여 개 |
+| 안전 | [SECURITY.md](../SECURITY.md) | SDK는 직접 네트워크를 쓰지 않음(서버 화면은 호스트가 받아 옴). 외부 문서는 크기 상한과 검증을 거치고, 웹·파일 URI는 거부함 |
+| 성능 | [performance.md](performance.md) | JVM에서 노드 2,000개 장면의 명령 처리 p95 약 0.4 ms, 실기기 보드 스크롤 p50 5 ms, GPU 에뮬레이터에서 쇼케이스 글래스 화면 p50 17 ms(60fps) |
+| Java | [integration.md#java](integration.md#java) | `kinetica-java`의 정적 진입점과 Java 테스트가 있음 |
 
-## 4. 알려진 제한 (검증 때 막힐 수 있는 것)
+## 4. 알려진 제한 (검증 중 막힐 수 있는 부분)
 
-- 그룹 안 도형은 캔버스에서 하나만 고를 수 없습니다(레이어 패널에서 고름).
+- 그룹 안의 도형은 캔버스에서 하나만 따로 고를 수 없습니다. 레이어 패널에서 골라야 합니다.
 - 여러 도형을 한꺼번에 크기 조절·회전할 수 없습니다.
-- timeline 확대, 여러 키 한꺼번에 끌기, easing 곡선 편집기가 없습니다.
-- 그룹은 자식을 자르지 않고, 그룹 불투명도는 자식마다 곱합니다(겹친 자식이 더 진해 보임).
+- 타임라인 확대, 여러 키를 한꺼번에 끌기, easing 곡선 편집기는 아직 없습니다.
+- 그룹은 자식을 잘라 내지 않습니다. 그룹 불투명도는 자식마다 따로 곱하므로 겹친 자식이 더 진해 보입니다.
 - API 26·27에서는 사진의 EXIF 회전을 반영하지 않습니다.
-- 실기기 성능, TalkBack, 저사양 기기는 확인하지 않았습니다.
+- 실기기는 Galaxy Z Fold7 한 대에서만 확인했습니다(보드 스크롤·편집 끌기·글래스 화면 프레임 측정, 키보드 편집, TalkBack 초점 이동). 저사양 기기와 Android 12 미만 기기는 확인하지 않았습니다.
+- TalkBack 사용자 정의 동작 메뉴는 adb로 넣은 터치로는 열 수 없어 Robolectric 테스트로만 검증했습니다.
 
 ## 5. 판단을 위한 질문
 
-- 내 앱(또는 고객 앱)에 **앱 안 편집기**가 필요한가, 아니면 **재생만** 필요한가? 재생만이면 Lottie·Rive와 비교가 필요합니다.
-- 문서 모델(명령·검증·실행 취소·JSON)을 직접 다룰 일이 있는가? Kinetica의 강점은 이 부분입니다.
-- 위 제한 중 출시를 막는 것은 무엇인가?
+- 내 앱이나 고객 앱에 **앱 안 편집기**가 필요한가, 아니면 **재생**만 필요한가? 재생만 필요하다면 Lottie, Rive와 비교해 봐야 합니다.
+- 명령, 검증, 실행 취소, JSON 같은 문서 모델을 직접 다룰 일이 있는가? Kinetica는 이 부분이 강합니다.
+- 위 제한 가운데 출시를 막는 것이 있는가?
