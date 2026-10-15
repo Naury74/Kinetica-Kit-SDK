@@ -13,5 +13,6 @@ class EffectPresetsTest {
 
         assertThat(SceneValidator().validate(document(nodes))).isEmpty()
         assertThat(EffectPresets.listItem(3).appear!!.delayMs).isEqualTo(180L)
+        assertThat(EffectPresets.listItem(50).appear!!.delayMs).isEqualTo(600L)
     }
 }

@@ -29,11 +29,16 @@ public object EffectPresets {
         appear = AppearEffect(AppearKind.SlideUp, durationMs = 450),
     )
 
-    /** 목록 항목. 누르면 어두워지고, 아래에서 올라오며 등장한다. [index]에 비례해 늦게 시작하므로 항목이 차례로 나타난다. */
+    /**
+     * 목록 항목. 누르면 어두워지고, 아래에서 올라오며 등장한다. [index]에 60ms씩 비례해 늦게 시작하므로 항목이 차례로 나타난다.
+     *
+     * 지연은 10번째 항목(600ms)에서 멈춘다. `LazyColumn`은 스크롤해 새로 들어온 항목도 처음부터 등장 애니메이션을 재생하므로,
+     * 목록 전체 위치 대신 처음 화면에 보이는 순서를 넘기거나 스크롤로 들어온 항목에는 `listItem(0)`을 쓴다.
+     */
     @JvmStatic
     public fun listItem(index: Int): NodeEffects = NodeEffects(
         press = listOf(PressEffect(PressKind.Dim)),
-        appear = AppearEffect(AppearKind.SlideUp, durationMs = 350, delayMs = 60L * index.coerceIn(0, 30)),
+        appear = AppearEffect(AppearKind.SlideUp, durationMs = 350, delayMs = 60L * index.coerceIn(0, 10)),
     )
 
     /** 새 알림 배지. 튀어나오듯 등장한 뒤 맥박처럼 커졌다 작아진다. */
