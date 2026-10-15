@@ -6,7 +6,8 @@
 호스트 뷰는 편집 중에도 살아 있고, 글자·보임·이미지·색은 호스트 데이터 키에 묶여 실시간으로 바뀌며, 누르면 동작 이름이 호스트로 돌아옵니다.
 그 아래에는 정밀하게 편집할 수 있는 2D 장면(scene graph), 시간 기반 애니메이션, 장면 전환이 있습니다. 방향과 단계는 [ADR-0006](docs/adr/0006-host-ui-composer.md)과 [UI 조립 계획](docs/30-ui-composer.md)을 보세요.
 
-- **Board**: 호스트 화면에 넣는 위젯 보드 `KineticaBoard`·`KineticaBoardView`(XML). 사용자가 앱 안에서 바로 옮기고·크기 바꾸고·빼고·추가, 가장자리로 끌면 반·4분의 1·전체 분할, 격자 배치, 같은 위젯 여러 개(메모 등), 위젯 묶음(한 자리에서 넘겨 보기), 길게 눌러 편집·자동 스크롤·키보드·TalkBack, 저장·앱 업데이트 맞춤([docs/31](docs/31-board.md))
+- **Glass UI**: 뒤 화면을 흐리게 비추는 유리 표면 `GlassScaffold`·`GlassSurface`, 팝업·시트·알림·탭 막대, Liquid·Acrylic·One UI·Vision 스타일, 빛 테두리·젤리·자석·기울이면 3D·숫자 굴리기·타자기·색종이([docs/35](docs/35-glass-ui.md))
+- **Board**: 호스트 화면에 넣는 위젯 보드 `KineticaBoard`·`KineticaBoardView`(XML). 사용자가 앱 안에서 바로 옮기고·크기 바꾸고·빼고·추가, 위로 끌면 Windows식 배치 틀(반반·2:1·3등분·4분할 등), 가장자리로 끌면 반·4분의 1, 격자 배치, 같은 위젯 여러 개(메모 등), 위젯 묶음(한 자리에서 넘겨 보기), 길게 눌러 편집·자동 스크롤·키보드·TalkBack, 저장·앱 업데이트 맞춤([docs/31](docs/31-board.md))
 - **Host UI**: `slots`(키 → Compose 뷰)·`hostViews`(편집기 메뉴)·`SceneData`(실시간 값)·`onAction`(누름)
 
 - **Studio**: 캔버스·도구·레이어·속성·timeline이 있는 편집 화면 `KineticaEditor`
@@ -16,21 +17,18 @@
 
 <table>
   <tr>
-    <td align="center" width="50%"><img src="docs/images/screen-dashboard.png" width="360" alt="호스트 뷰 배치 편집"><br><b>Host UI 편집</b><br>호스트 위젯·실시간 데이터를 자유 배치</td>
-    <td align="center" width="50%"><img src="docs/images/screen-preview.png" width="360" alt="사용자 화면"><br><b>사용자 화면</b><br>위젯이 실제로 동작하고 동작은 호스트로</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-home.png" width="240" alt="쇼케이스 첫 화면"><br><b>쇼케이스</b><br>무엇을 할 수 있는지 한 앱에</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-glass.png" width="240" alt="글래스 팝업"><br><b>글래스 UI</b><br>뒤를 흐리게 비추는 팝업·시트·탭 막대</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-motion.png" width="240" alt="모션 효과"><br><b>모션 효과</b><br>빛 테두리·젤리·자석·숫자 굴리기·색종이</td>
   </tr>
-</table>
-
-<table>
   <tr>
-    <td align="center" width="25%"><img src="docs/images/screen-studio.png" width="240" alt="편집 화면"><br><b>Studio</b><br>레이어·속성 패널</td>
-    <td align="center" width="25%"><img src="docs/images/screen-motion.png" width="240" alt="모션 편집"><br><b>Motion</b><br>재생 위치 기준 자동 키</td>
-    <td align="center" width="25%"><img src="docs/images/screen-gallery.png" width="240" alt="장면 목록"><br><b>Gallery</b><br>재생기만 쓰는 앱</td>
-    <td align="center" width="25%"><img src="docs/images/screen-transition.png" width="240" alt="장면 전환"><br><b>Transition</b><br>morphKey 장면 morph</td>
+    <td align="center"><img src="docs/images/showcase-board.png" width="240" alt="배치 틀 고르기"><br><b>대시보드 보드</b><br>위로 끌면 Windows식 배치 틀</td>
+    <td align="center"><img src="docs/images/showcase-server.png" width="240" alt="서버 화면"><br><b>서버 화면</b><br>JSON으로 바꾸는 화면·실시간 숫자</td>
+    <td align="center"><img src="docs/images/showcase-studio.png" width="240" alt="편집기"><br><b>화면 만들기</b><br>앱 안의 피그마식 편집기</td>
   </tr>
 </table>
 
-화면은 `sample-studio`·`sample-gallery` debug 빌드를 Android 에뮬레이터(펼친 폴더블, 한국어)에서 실행한 실제 화면입니다.
+화면은 `sample-showcase`(한 앱에 다섯 가지 + XML 화면 예)를 Android 에뮬레이터에서 실행한 실제 화면입니다.
 
 ## 지금 되는 것 (0.1.0-SNAPSHOT)
 
@@ -47,7 +45,7 @@
 - **전환**: 장면 morph(같은 종류는 보간, 다른 종류는 dissolve), 끌어서 닫기(속도 반영, 끝 알림 한 번), Compose `sharedBounds` 연결
 - **이미지**: 사진 선택기로 고른 `content://` 이미지를 크기 제한해 읽는 기본 로더(호스트가 따로 줄 수도 있음)
 - **저장·내보내기**: 형식 버전이 있는 JSON(크기·중첩 상한, migration 틀), 원자적 교체로 저장하는 파일 저장소, 화면과 같은 그리기로 PNG 내보내기
-- **샘플**: `sample-board`(평범한 가게 앱 홈 화면에서 길게 눌러 편집·자유/격자 배치·XML 화면), `sample-studio`(편집·저장·내보내기, **대시보드** 예제의 호스트 위젯·실시간 데이터·**미리보기**), `sample-gallery`(재생기만 쓰는 장면 전환, View 화면 연결, 가짜 서버로 바꾸는 **서버 화면**)
+- **샘플**: `sample-showcase` 하나. 첫 화면에서 글래스 UI·모션 효과·대시보드 보드·서버 화면·화면 만들기(편집기)를 고르고, 맨 아래에서 Compose 없는 XML 화면 예를 연다
 
 아직 없는 것과 제한은 [알려진 제한](#알려진-제한)을 보세요.
 
@@ -64,6 +62,7 @@
 
 ```kotlin
 dependencies {
+    implementation("com.naurylab:kinetica-ui:0.1.0-SNAPSHOT")              // 글래스 UI·팝업·시트·탭 막대·고급 효과
     implementation("com.naurylab:kinetica-board-compose:0.1.0-SNAPSHOT")    // 호스트 위젯 자유 배치 보드(대시보드)
     implementation("com.naurylab:kinetica-render-compose:0.1.0-SNAPSHOT")   // 움직임 효과·화면 전환·숫자 올라가기만
     implementation("com.naurylab:kinetica-presets:0.1.0-SNAPSHOT")          // EffectPresets·UiKit(선택)
@@ -187,7 +186,7 @@ JVM(Apple M5) 기준으로 노드 2,000개에서 명령 적용 p95 약 0.4 ms, t
 
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-./gradlew check :sample-studio:assembleDebug :sample-studio:assembleRelease :sample-gallery:assembleRelease
+./gradlew check :sample-showcase:assembleDebug :sample-showcase:assembleRelease
 ```
 
 `check`는 단위·Robolectric 테스트, Android Lint, ktlint, detekt, 공개 API 검사(`checkKotlinAbi`), gallery release 런타임 검사(`verifyReleaseClasspath`)를 실행합니다.

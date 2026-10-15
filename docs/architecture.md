@@ -3,18 +3,17 @@
 ## 모듈과 의존 방향
 
 ```text
-sample-studio ─┬─ kinetica-editor-compose ─┬─ kinetica-render-compose ── kinetica-core
-               │                            ├─ kinetica-gestures ──────── kinetica-core
-               │                            ├─ kinetica-history ───────── kinetica-core
-               │                            ├─ kinetica-guides ────────── kinetica-core
-               │                            ├─ kinetica-motion ────────── kinetica-core
-               │                            └─ kinetica-presets ───────── kinetica-core
-               ├─ kinetica-serialization ── kinetica-core
-               ├─ kinetica-export-android ─ kinetica-render-compose, kinetica-motion
-               └─ kinetica-player-compose(미리보기)
-sample-gallery ── kinetica-player-compose ── kinetica-render-compose, kinetica-motion, kinetica-serialization(api)
-sample-board ─┬─ kinetica-board-compose ── kinetica-render-compose, kinetica-history, kinetica-serialization
-              └─ kinetica-presets
+sample-showcase ─┬─ kinetica-ui (글래스 UI·고급 효과) ── Compose만
+                 ├─ kinetica-board-compose ── kinetica-render-compose, kinetica-history, kinetica-serialization
+                 ├─ kinetica-player-compose ── kinetica-render-compose, kinetica-motion, kinetica-serialization(api)
+                 ├─ kinetica-editor-compose ─┬─ kinetica-render-compose ── kinetica-core
+                 │                            ├─ kinetica-gestures ──────── kinetica-core
+                 │                            ├─ kinetica-history ───────── kinetica-core
+                 │                            ├─ kinetica-guides ────────── kinetica-core
+                 │                            ├─ kinetica-motion ────────── kinetica-core
+                 │                            └─ kinetica-presets ───────── kinetica-core
+                 └─ kinetica-presets
+kinetica-export-android ── kinetica-render-compose, kinetica-motion
 kinetica-java ── kinetica-core, kinetica-history, kinetica-serialization
 ```
 

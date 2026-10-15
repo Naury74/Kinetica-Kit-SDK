@@ -27,7 +27,7 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v5
-      - run: ./gradlew check :sample-studio:assembleDebug :sample-studio:assembleRelease :sample-gallery:assembleRelease
+      - run: ./gradlew check :sample-showcase:assembleDebug :sample-showcase:assembleRelease
       # 배포된 artifact만 쓰는 독립 소비자가 R8 release로 빌드되는지 확인한다(docs 20 Journey C).
       - run: ./gradlew publishToMavenLocal && ./gradlew -p consumer-check :app:assembleRelease
       - if: always()

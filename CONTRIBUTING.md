@@ -6,13 +6,13 @@ JDK 25(Android Studio에 포함된 JBR)를 씁니다.
 
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-./gradlew check :sample-studio:assembleDebug :sample-studio:assembleRelease :sample-gallery:assembleRelease
+./gradlew check :sample-showcase:assembleDebug :sample-showcase:assembleRelease
 ```
 
 PR 전에 위 명령이 통과해야 합니다. 같은 명령과 소비자 확인 빌드가 CI(`.github/workflows/ci.yml`)에서 실행됩니다. 형식은 `./gradlew ktlintFormat`으로 고칩니다.
 
 - JVM 모듈의 공개 ABI는 `<모듈>/api/<모듈>.api`에 고정되어 있습니다. 의도한 변경이면 `./gradlew updateKotlinAbi`로 갱신해 함께 커밋하고 CHANGELOG에 적습니다.
-- `sample-gallery`의 release 런타임에는 재생에 필요한 모듈(player·render·motion·core)만 있어야 합니다(`verifyReleaseClasspath`).
+- 재생기(`kinetica-player-compose`)의 release 런타임에는 재생에 필요한 모듈(render·motion·serialization·core)만 있어야 합니다(`verifyReleaseClasspath`).
 
 ## 작업 흐름
 
@@ -30,7 +30,7 @@ build: Kotlin 2.4.21로 올림
 | --- | --- |
 | `core` · `history` · `motion` · `guides` · `presets` · `serialization` · `java` | `kinetica-*` JVM 모듈 |
 | `render` · `gestures` · `editor` · `player` · `export` | Android 모듈 |
-| `sample` | sample-studio, sample-gallery |
+| `sample` | sample-showcase |
 | `build` · `ci` | 빌드 설정, CI |
 
 ## 규칙

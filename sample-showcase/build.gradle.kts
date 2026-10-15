@@ -41,6 +41,7 @@ dependencies {
     implementation(project(":kinetica-presets"))
     implementation(project(":kinetica-player-compose"))
     implementation(project(":kinetica-editor-compose"))
+    implementation(project(":kinetica-export-android"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

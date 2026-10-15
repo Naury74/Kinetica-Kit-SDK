@@ -29,5 +29,6 @@ android {
 dependencies {
     implementation("com.naurylab:kinetica-player-compose:${providers.gradleProperty("KINETICA_VERSION").get()}")
     implementation("com.naurylab:kinetica-board-compose:${providers.gradleProperty("KINETICA_VERSION").get()}")
+    implementation("com.naurylab:kinetica-ui:${providers.gradleProperty("KINETICA_VERSION").get()}")
     implementation(libs.androidx.activity.compose)
 }

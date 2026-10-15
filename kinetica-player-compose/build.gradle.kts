@@ -1,3 +1,6 @@
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+
 plugins {
     alias(libs.plugins.kinetica.android.library)
     alias(libs.plugins.kinetica.android.compose)
@@ -22,3 +25,35 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.androidx.compose.material3)
 }
+
+// 재생기만 쓰는 앱에 편집용 모듈이 들어가지 않도록, 재생기 release 런타임의 SDK 모듈을 확인한다.
+fun Configuration.projectDependencyNames(): Provider<Set<String>> = incoming.resolutionResult.rootComponent.map { root ->
+    val seen = mutableSetOf<String>()
+    val pending = ArrayDeque(listOf(root))
+    while (pending.isNotEmpty()) {
+        pending
+            .removeFirst()
+            .dependencies
+            .filterIsInstance<ResolvedDependencyResult>()
+            .map { it.selected }
+            .forEach { component ->
+                val id = component.id
+                if (id is ProjectComponentIdentifier && seen.add(id.projectName)) pending.add(component)
+            }
+    }
+    seen
+}
+
+tasks.register("verifyReleaseClasspath") {
+    group = "verification"
+    description = "재생기의 release 런타임에 재생에 필요한 모듈만 있는지(편집기·세션이 따라오지 않는지) 확인한다."
+    val projects = configurations.named("releaseRuntimeClasspath").flatMap { it.projectDependencyNames() }
+    // 서버 주도 재생이 JSON을 읽으므로 serialization은 재생기에 포함된다.
+    val allowed = setOf("kinetica-render-compose", "kinetica-motion", "kinetica-serialization", "kinetica-core")
+    doLast {
+        val names = projects.get()
+        val extra = names - allowed
+        check(extra.isEmpty()) { "release 런타임에 재생에 필요 없는 모듈이 들어갔습니다: $extra" }
+    }
+}
+tasks.named("check") { dependsOn("verifyReleaseClasspath") }

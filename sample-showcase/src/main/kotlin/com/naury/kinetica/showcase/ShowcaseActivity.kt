@@ -70,6 +70,7 @@ internal enum class Demo(val title: String, val summary: String, val icon: Image
     Glass("글래스 UI", "뒤를 흐리게 비추는 유리. Liquid·Acrylic·One UI·Vision 스타일, 팝업·시트·알림·탭 막대", ShowcaseIcons.Sparkle, Color(0xFF7AA2FF)),
     Motion("모션 효과", "빛 테두리, 젤리 누름, 자석, 기울이면 3D, 숫자 굴리기, 색종이, 누름·나타남·반복 효과", ShowcaseIcons.Bell, Color(0xFFFF7EB3)),
     Board("대시보드 보드", "사용자가 위젯을 끌어 배치. 위로 끌면 Windows식 배치 틀, 가장자리면 반·4분할", ShowcaseIcons.Grid, Color(0xFF5EF0C8)),
+    Transition("장면 전환", "카드가 이어지며 상세 화면이 되고, 끌어서 닫는다(재생기만 사용)", ShowcaseIcons.Home, Color(0xFF7AE0FF)),
     Server("서버 화면", "앱 업데이트 없이 서버 JSON으로 화면을 바꾸고, 실시간 숫자·동작을 연결", ShowcaseIcons.Cloud, Color(0xFFFFC56E)),
     Studio("화면 만들기", "운영자가 앱 안에서 화면을 디자인하는 편집기(피그마처럼)", ShowcaseIcons.Pen, Color(0xFFB98CFF)),
 }
@@ -80,7 +81,7 @@ private fun Showcase() {
     BackHandler(enabled = current != null) { current = null }
     // 첫 화면은 어두운 바탕이라 상태 표시줄 아이콘을 밝게, 나머지는 밝은 바탕이라 어둡게 둔다(편집기는 시스템 테마를 따른다).
     val view = LocalView.current
-    val darkScreen = current == null || (current == Demo.Studio && isSystemInDarkTheme())
+    val darkScreen = current == null || current == Demo.Transition || (current == Demo.Studio && isSystemInDarkTheme())
     SideEffect {
         val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkScreen
@@ -96,6 +97,7 @@ private fun Showcase() {
             Demo.Glass -> GlassDemo(back)
             Demo.Motion -> MotionDemo(back)
             Demo.Board -> BoardDemo(back)
+            Demo.Transition -> TransitionDemo(back)
             Demo.Server -> ServerDemo(back)
             Demo.Studio -> StudioDemo(back)
         }
