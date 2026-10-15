@@ -45,6 +45,9 @@
 - 편집기 timeline: 두 손가락·Ctrl+휠·버튼으로 시간 축 확대, 맞춤, 배율에 맞춰 바뀌는 눈금자, 재생 위치 따라가기
 - 편집기 timeline: 탭, Shift 탭, 길게 눌러 켜는 선택 모드, 사각 선택으로 여러 키 선택. 고른 키를 함께 끌기(실행 취소 한 단계), 복사·붙여넣기(재생 위치로), 삭제. 단축키 Delete, Ctrl+C/V/A, Esc
 - 편집기 timeline: easing 곡선 편집기(베지어 조절점 끌기, 프리셋 6종, 곡선을 따라 움직이는 미리보기)
+- 편집기 timeline: 곡선 편집기에서 스프링의 감쇠비와 강성, 계단의 칸 수(1~20)를 슬라이더로 바꿉니다. 그래프는 스프링의 넘침과 계단 모양을 그대로 그리고, 손을 뗄 때마다 실행 취소 한 단계로 남습니다.
+- 편집기 timeline: 키 줄의 빈 곳을 세로로 끌면 사각 선택 대신 줄 목록이 스크롤됩니다. 사각 선택은 가로로 끌거나 길게 눌러 선택 모드를 켠 뒤 끌어서 시작합니다.
+- 편집기 timeline: 키 도구 줄을 늘 같은 높이로 두어, 길게 누른 뒤 이어서 끌 때 키 줄이 밀려 손가락과 사각형이 어긋나던 문제를 고쳤습니다. 회전 방향 칩은 같은 줄 끝으로 옮겼습니다.
 - 회전 보간 방향: `Keyframe.rotation`(`RotationDirection`: 가장 짧게, 시계, 반시계, 값 그대로). JSON keyframe에 선택 필드 `rotationDirection`이 추가되며, 없으면 예전처럼 가장 짧은 방향으로 보간합니다. 스키마 버전은 그대로 1입니다.
 
 ### 알파 동안 바뀐 이름
@@ -52,4 +55,7 @@
 - `GlassCalendar`의 `onSelect` → `onSelectionChange`, `animateNumberAsState`의 `target` → `targetValue`
 - `MiniPlayerState`·`DetentSheetState`·`TooltipState`·`TooltipPlacement`·`SlideToConfirmState`와 `remember*` 함수, `rememberLargeTitleState` → 앞에 `Glass`를 붙인 이름
 - `GlassMiniPlayer`의 `collapsed`·`expanded` 슬롯이 진행도를 `() -> Float`로 받음
+- 서버 화면·재생기 안정성: 같은 묶음을 기다리던 화면이 먼저 요청한 화면을 떠나면 멈추던 문제, 캐시 일부 손상 시 화면을 다시 받지 못하던 문제, 캐시 저장 실패가 앱을 죽이던 문제, 마이그레이션 예외가 밖으로 새던 문제(`SaveFailure.InvalidDocument` 추가)
+- 재생기: 화면이 가려지면 멈추고 돌아오면 이어서 재생, `RemoteKineticaPlayer` 회전 뒤 처음부터 다시 재생하지 않음, 실행 중 바뀐 '애니메이션 삭제' 설정을 따르며 재생 위치·속도를 이어받음
+- 보드: 저장본으로 열지 못하면 `restoreFailed`로 덮어쓰기 방지, 위젯 100개 편집 끌기에서 다른 위젯 틀을 다시 그리지 않음, 긴 키 `multiple` 위젯 추가 크래시
 
