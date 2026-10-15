@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F4F8"
+    android:fitsSystemWindows="true">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="XML 화면 (Compose 코드 없음)"
+        android:textColor="#15161A"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="KineticaBoardView · KineticaPlayerView · ViewEffects를 레이아웃 XML로 씁니다."
+        android:textColor="#6B7280"
+        android:textSize="13sp" />
+
+    <Button
+        android:id="@+id/edit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="편집" />
+
+    <com.naury.kinetica.board.KineticaBoardView
+        android:id="@+id/board"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        app:kinetica_accentColor="#5B6CFF" />
+
+    <com.naury.kinetica.player.KineticaPlayerView
+        android:id="@+id/promo"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        app:kinetica_fit="contain" />
+</LinearLayout>
+</FrameLayout>

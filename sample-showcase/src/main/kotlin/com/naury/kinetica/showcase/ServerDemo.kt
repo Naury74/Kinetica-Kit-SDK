@@ -121,7 +121,7 @@ private val PROMOS = listOf(
 )
 
 /** 서버가 내려주는 홍보 화면 JSON. 버전마다 글자·색이 다르다. */
-private fun promoJson(version: Int): String {
+internal fun promoJson(version: Int): String {
     val promo = PROMOS[version % PROMOS.size]
     return """
 {

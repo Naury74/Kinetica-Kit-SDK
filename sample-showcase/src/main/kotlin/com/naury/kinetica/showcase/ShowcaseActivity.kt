@@ -3,6 +3,7 @@
 
 package com.naury.kinetica.showcase
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -40,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -112,6 +114,18 @@ private fun Home(open: (Demo) -> Unit) {
         ) {
             item { Hero() }
             Demo.entries.forEach { demo -> item(demo.name) { DemoEntry(demo) { open(demo) } } }
+            item {
+                val context = LocalContext.current
+                Label(
+                    "Compose 없는 XML 화면 예 보기 ›",
+                    15,
+                    FontWeight.SemiBold,
+                    Modifier.clickable(role = Role.Button) {
+                        context.startActivity(Intent(context, XmlActivity::class.java))
+                    }.padding(vertical = 8.dp),
+                    Color.White,
+                )
+            }
             item {
                 Label(
                     "모든 화면은 SDK 모듈을 그대로 씁니다. 코드는 sample-showcase에 있습니다.",
