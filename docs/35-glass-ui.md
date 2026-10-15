@@ -34,6 +34,8 @@ GlassScaffold(
 | `GlassStyles.Acrylic` / `AcrylicDark` | Windows 11 Acrylic: 많이 흐리고 옅은 색, 고운 알갱이 |
 | `GlassStyles.OneUi` / `OneUiDark` | One UI: 부드럽게 흐리고 밝은 바탕, 테두리 없음 |
 | `GlassStyles.Vision` | visionOS: 어둡고 깊은 유리, 은은한 빛 테두리 |
+| `GlassStyles.Material` / `MaterialDark` | Material 3 Expressive: 은은한 색조 표면, 테두리 없이 큰 그림자 |
+| `GlassStyles.Frosted` | 예전 iOS 서리 유리: 아주 많이 흐리고 하얗게 덮음 |
 | `GlassStyles.Clear` | 흐림만(팝업 뒤 배경용) |
 
 값: `blur`(흐림), `saturation`(채도 배율), `brightness`, `tint`(덮는 색), `edgeLight`·`edgeWidth`(빛 테두리), `shadow`(바깥에만 지는 그림자),

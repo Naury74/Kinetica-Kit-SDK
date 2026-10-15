@@ -134,6 +134,37 @@ public object GlassStyles {
         onGlass = Color.White,
     )
 
+    /** Material 3 Expressive 느낌: 은은히 흐린 색조 표면, 테두리 없이 큰 그림자. 색은 앱 색에 맞춰 `tint`를 바꾼다. */
+    @JvmField
+    public val Material: GlassStyle = GlassStyle(
+        blur = 16.dp,
+        saturation = 1.15f,
+        tint = Color(0xFFF3EDF7).copy(alpha = 0.86f),
+        edgeLight = Color.Transparent,
+        shadow = 14.dp,
+        fallback = Color(0xFFF3EDF7),
+        onGlass = Color(0xFF1D1B20),
+    )
+
+    @JvmField
+    public val MaterialDark: GlassStyle = Material.copy(
+        tint = Color(0xFF211F26).copy(alpha = 0.88f),
+        fallback = Color(0xFF211F26),
+        onGlass = Color(0xFFE6E0E9),
+    )
+
+    /** 예전 iOS의 서리 유리: 아주 많이 흐리고 하얗게 덮어 뒤가 색으로만 비친다. 알림·메뉴 판에 어울린다. */
+    @JvmField
+    public val Frosted: GlassStyle = GlassStyle(
+        blur = 44.dp,
+        saturation = 1.9f,
+        brightness = 0.06f,
+        tint = Color.White.copy(alpha = 0.55f),
+        edgeLight = Color.White.copy(alpha = 0.4f),
+        shadow = 10.dp,
+        fallback = Color(0xF2F7F7F7),
+    )
+
     /** 흐림만 있는 맑은 유리(팝업 뒤 배경 처리용). */
     @JvmField
     public val Clear: GlassStyle = GlassStyle(

@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -164,6 +165,8 @@ private val STYLES = listOf(
     StyleOption("Acrylic", GlassStyles.Acrylic, GlassStyles.AcrylicDark),
     StyleOption("One UI", GlassStyles.OneUi, GlassStyles.OneUiDark),
     StyleOption("Vision", GlassStyles.Vision, GlassStyles.Vision),
+    StyleOption("Material", GlassStyles.Material, GlassStyles.MaterialDark),
+    StyleOption("Frosted", GlassStyles.Frosted, GlassStyles.Frosted.copy(tint = Color.Black.copy(alpha = 0.35f), onGlass = Color.White)),
 )
 
 @Composable
@@ -181,7 +184,7 @@ private fun Intro(dark: Boolean) {
 
 @Composable
 private fun Chips(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         labels.forEachIndexed { i, label -> Pill(label, filled = i == selected) { onSelect(i) } }
     }
 }
