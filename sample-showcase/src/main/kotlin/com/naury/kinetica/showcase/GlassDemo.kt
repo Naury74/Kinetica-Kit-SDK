@@ -23,7 +23,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,13 +40,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.ui.GlassDialog
 import com.naury.kinetica.ui.GlassMenuItem
+import com.naury.kinetica.ui.GlassRefreshBox
 import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassSegmentedControl
 import com.naury.kinetica.ui.GlassSheet
+import com.naury.kinetica.ui.GlassSlider
 import com.naury.kinetica.ui.GlassStyle
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.GlassSurface
@@ -58,6 +63,7 @@ import com.naury.kinetica.ui.glassContextMenu
 import com.naury.kinetica.ui.glassOrigin
 import com.naury.kinetica.ui.rememberGlassBackdrop
 import com.naury.kinetica.ui.rememberGlassToastState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** 글래스 UI 키트: 스타일을 바꿔 가며 팝업·시트·알림·탭 막대가 뒤 화면을 어떻게 비추는지 본다. */
@@ -91,30 +97,46 @@ internal fun GlassDemo(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
-                top =
-                    padding.calculateTopPadding() + 8.dp,
-                bottom = padding.calculateBottomPadding() + 16.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item { Intro(dark) }
-            item {
-                Chips(STYLES.map { it.name }, styleIndex) { styleIndex = it }
-                Spacer(Modifier.height(8.dp))
-                Chips(listOf("밝게", "어둡게"), if (dark) 1 else 0) { dark = it == 1 }
+        // 맨 위에서 당기면 유리 물방울이 차오르고, 놓으면 새로 고친다.
+        DemoRefresh(padding.calculateTopPadding(), { toast.show("새로 고쳤어요") }) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top =
+                        padding.calculateTopPadding() + 8.dp,
+                    bottom = padding.calculateBottomPadding() + 16.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                item { Intro(dark) }
+                item {
+                    Chips(STYLES.map { it.name }, styleIndex) { styleIndex = it }
+                    Spacer(Modifier.height(8.dp))
+                    Chips(listOf("밝게", "어둡게"), if (dark) 1 else 0) { dark = it == 1 }
+                }
+                item { PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } } }
+                item { ControlsCard() }
+                items(PHOTOS.size) { index -> Photo(PHOTOS[index], index) { scope.launch { toast.show(it) } } }
             }
-            item { PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } } }
-            item { ControlsCard() }
-            items(PHOTOS.size) { index -> Photo(PHOTOS[index], index) { scope.launch { toast.show(it) } } }
         }
         DemoPopups(dialog, sheet, origin, { dialog = false }, { sheet = false }) { scope.launch { toast.show(it) } }
         GlassToastHost(toast)
     }
+}
+
+/** 1.5초 동안 새로 고치는 척하고 [onDone]을 부른다. */
+@Composable
+private fun DemoRefresh(top: Dp, onDone: suspend () -> Unit, content: @Composable () -> Unit) {
+    var refreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(refreshing) {
+        if (!refreshing) return@LaunchedEffect
+        delay(1500)
+        refreshing = false
+        onDone()
+    }
+    GlassRefreshBox(refreshing, { refreshing = true }, Modifier.fillMaxSize(), indicatorTop = top) { content() }
 }
 
 @Composable
@@ -168,12 +190,18 @@ private fun ControlsCard() {
     var view by remember { mutableIntStateOf(0) }
     var notify by remember { mutableStateOf(true) }
     var dark by remember { mutableStateOf(false) }
+    var volume by remember { mutableFloatStateOf(0.6f) }
+    var size by remember { mutableFloatStateOf(2f) }
     GlassSurface(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Label("컨트롤", 18, FontWeight.Bold)
             GlassSegmentedControl(listOf("일", "주", "월", "년"), view, { view = it }, Modifier.fillMaxWidth())
             SwitchRow("알림 받기", notify) { notify = it }
             SwitchRow("방해 금지", dark) { dark = it }
+            Label("음량 ${(volume * 100).toInt()}% · 끝을 넘어 끌어 보세요", 14)
+            GlassSlider(volume, { volume = it })
+            Label("글자 크기 ${size.toInt() + 1}단계", 14)
+            GlassSlider(size, { size = it }, valueRange = 0f..4f, steps = 3)
         }
     }
 }

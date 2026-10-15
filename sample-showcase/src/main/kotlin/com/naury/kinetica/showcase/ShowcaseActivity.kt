@@ -56,7 +56,7 @@ import com.naury.kinetica.ui.GlassSurface
 import com.naury.kinetica.ui.TypewriterText
 import com.naury.kinetica.ui.jellyPress
 
-/** Kinetica 쇼케이스: SDK로 무엇을 만들 수 있는지 한 앱에서 보여 준다. 첫 화면에서 다섯 가지를 고른다. */
+/** Kinetica 쇼케이스: SDK로 무엇을 만들 수 있는지 한 앱에서 보여 준다. 첫 화면에서 데모를 고른다. */
 class ShowcaseActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +70,7 @@ internal enum class Demo(val title: String, val summary: String, val icon: Image
     Glass("글래스 UI", "뒤를 흐리게 비추는 유리. Liquid·Acrylic·One UI·Vision 스타일, 팝업·시트·알림·탭 막대", ShowcaseIcons.Sparkle, Color(0xFF7AA2FF)),
     Motion("모션 효과", "빛 테두리, 젤리 누름, 자석, 기울이면 3D, 숫자 굴리기, 색종이, 누름·나타남·반복 효과", ShowcaseIcons.Bell, Color(0xFFFF7EB3)),
     Board("대시보드 보드", "사용자가 위젯을 끌어 배치. 위로 끌면 Windows식 배치 틀, 가장자리면 반·4분할", ShowcaseIcons.Grid, Color(0xFF5EF0C8)),
+    Navigation("화면 이동", "카드가 그 자리에서 커지며 열리고(App Store), 목록은 옆에서 밀려 들어온다(iOS). 가장자리 끌어 뒤로", ShowcaseIcons.Grid, Color(0xFFA0F08C)),
     Transition("장면 전환", "카드가 이어지며 상세 화면이 되고, 끌어서 닫는다(재생기만 사용)", ShowcaseIcons.Home, Color(0xFF7AE0FF)),
     Server("서버 화면", "앱 업데이트 없이 서버 JSON으로 화면을 바꾸고, 실시간 숫자·동작을 연결", ShowcaseIcons.Cloud, Color(0xFFFFC56E)),
     Studio("화면 만들기", "운영자가 앱 안에서 화면을 디자인하는 편집기(피그마처럼)", ShowcaseIcons.Pen, Color(0xFFB98CFF)),
@@ -97,6 +98,7 @@ private fun Showcase() {
             Demo.Glass -> GlassDemo(back)
             Demo.Motion -> MotionDemo(back)
             Demo.Board -> BoardDemo(back)
+            Demo.Navigation -> NavigationDemo(back)
             Demo.Transition -> TransitionDemo(back)
             Demo.Server -> ServerDemo(back)
             Demo.Studio -> StudioDemo(back)

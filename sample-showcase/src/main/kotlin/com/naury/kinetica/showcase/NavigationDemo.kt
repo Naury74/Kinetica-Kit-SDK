@@ -1,0 +1,199 @@
+// 화면 모양 값(간격·크기·색)은 그 자리에서 읽는 편이 낫다.
+@file:Suppress("MagicNumber")
+
+package com.naury.kinetica.showcase
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.naury.kinetica.ui.GlassExpandHost
+import com.naury.kinetica.ui.GlassExpandState
+import com.naury.kinetica.ui.GlassScaffold
+import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.GlassSurface
+import com.naury.kinetica.ui.PushNavigation
+import com.naury.kinetica.ui.expandSource
+import com.naury.kinetica.ui.jellyPress
+import com.naury.kinetica.ui.rememberGlassExpandState
+
+/**
+ * 화면 이동: 카드를 누르면 그 자리에서 상세 화면으로 커지고(아래로 끌어 닫기), 목록 항목은 iOS처럼 옆에서 밀려 들어온다
+ * (왼쪽 가장자리에서 끌거나 뒤로 가기로 되돌아감).
+ */
+@Composable
+internal fun NavigationDemo(onBack: () -> Unit) {
+    var stack by rememberSaveable { mutableStateOf(listOf(ROOT)) }
+    PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
+        if (screen == ROOT) {
+            NavigationHome(onBack) { stack = stack + it }
+        } else {
+            NavigationDetail(screen, depth = stack.indexOf(screen), { stack = stack.dropLast(1) }) { stack = stack + it }
+        }
+    }
+}
+
+@Composable
+private fun NavigationHome(onBack: () -> Unit, push: (String) -> Unit) {
+    val expand = rememberGlassExpandState()
+    GlassScaffold(
+        Modifier.fillMaxSize(),
+        style = GlassStyles.Liquid,
+        background = { Aurora(Modifier.fillMaxSize(), dark = false) },
+        topBar = { DemoTopBar("화면 이동", "카드는 커지며 열리고, 목록은 옆에서 밀려 들어온다", onBack) },
+    ) { padding ->
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            item { Label("오늘 · 카드를 눌러 보세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = 520.dp).fillMaxWidth()) }
+            STORIES.forEachIndexed { index, story -> item("story$index") { StoryCard(story, expand, index) } }
+            item { Label("밀어 넣기 · 항목을 누르고, 왼쪽 가장자리에서 끌어 돌아오세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = 520.dp).fillMaxWidth()) }
+            item { MenuList(MENU, push) }
+        }
+        GlassExpandHost(expand, cornerRadius = 28.dp, title = "이야기") { key -> StoryDetail(STORIES[key as Int], expand) }
+    }
+}
+
+@Composable
+private fun StoryCard(story: Story, expand: GlassExpandState, index: Int) {
+    Box(
+        Modifier
+            .widthIn(max = 520.dp)
+            .fillMaxWidth()
+            .expandSource(expand, index)
+            .jellyPress(0.03f)
+            .clip(RoundedCornerShape(28.dp))
+            .clickable(role = Role.Button) { expand.expand(index) }
+            .semantics { contentDescription = "${story.title} 열기" },
+    ) { StoryCover(story) }
+}
+
+/** 카드와 상세 맨 위가 같은 모습이어야 커질 때 끊기지 않는다. */
+@Composable
+private fun StoryCover(story: Story) {
+    Box(
+        Modifier.fillMaxWidth().aspectRatio(1.15f).background(Brush.linearGradient(story.colors)),
+        contentAlignment = Alignment.BottomStart,
+    ) {
+        Column(Modifier.padding(24.dp)) {
+            Label(story.kicker, 13, FontWeight.SemiBold, color = Color.White.copy(alpha = 0.8f))
+            Label(story.title, 28, FontWeight.Bold, color = Color.White)
+        }
+    }
+}
+
+@Composable
+private fun StoryDetail(story: Story, expand: GlassExpandState) {
+    Box(Modifier.fillMaxSize().background(Color(0xFFF7F7FA))) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            StoryCover(story)
+            Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Label("아래로 끌면 작아지며 카드 자리로 돌아갑니다.", 15, FontWeight.SemiBold, color = Color(0xFF15161A))
+                repeat(6) { Label(story.body, 16, color = Color(0xFF3A3B40)) }
+            }
+        }
+        GlassSurface(
+            Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(16.dp)
+                .size(40.dp)
+                .clickable(role = Role.Button) { expand.collapse() }
+                .semantics { contentDescription = "닫기" },
+            shape = CircleShape,
+        ) { Label("✕", 16, FontWeight.Bold, Modifier.align(Alignment.Center)) }
+    }
+}
+
+@Composable
+private fun NavigationDetail(screen: String, depth: Int, back: () -> Unit, push: (String) -> Unit) {
+    GlassScaffold(
+        Modifier.fillMaxSize(),
+        style = GlassStyles.Liquid,
+        background = { Aurora(Modifier.fillMaxSize(), dark = depth % 2 == 0) },
+        topBar = { DemoTopBar(screen.substringAfterLast('/'), "${depth}단계 · 가장자리에서 끌어 뒤로", back) },
+    ) { padding ->
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item { MenuList(MENU.map { "$screen/$it" }.take(3), push) }
+        }
+    }
+}
+
+@Composable
+private fun MenuList(items: List<String>, push: (String) -> Unit) {
+    GlassSurface(Modifier.widthIn(max = 520.dp).fillMaxWidth()) {
+        Column(Modifier.padding(vertical = 6.dp)) {
+            items.forEach { item ->
+                Row(
+                    Modifier.fillMaxWidth().clickable(role = Role.Button) { push(item) }.padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Label(item.substringAfterLast('/'), 16, modifier = Modifier.weight(1f))
+                    Label("›", 20, FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+private class Story(val kicker: String, val title: String, val colors: List<Color>, val body: String)
+
+private const val ROOT = "home"
+private val MENU = listOf("알림", "화면 표시", "개인정보", "배터리")
+private val STORIES = listOf(
+    Story(
+        "오늘의 앱",
+        "빛으로 그린 도시",
+        listOf(Color(0xFF141E30), Color(0xFF8E54E9)),
+        "밤의 도시를 빛의 줄기로 담는 사진 앱입니다. 셔터를 오래 열어 차의 불빛을 길게 남깁니다.",
+    ),
+    Story(
+        "새 기능",
+        "바다를 담는 법",
+        listOf(Color(0xFF00C6FF), Color(0xFF0072FF)),
+        "물결이 멈춘 듯한 순간을 잡으려면 빠른 셔터와 낮은 시선이 필요합니다.",
+    ),
+    Story(
+        "함께 보기",
+        "노을 산책",
+        listOf(Color(0xFFFF7E5F), Color(0xFFFEB47B)),
+        "해가 지기 30분 전이 가장 좋습니다. 하늘이 주황에서 보라로 바뀌는 동안 천천히 걸어 보세요.",
+    ),
+)
