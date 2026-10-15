@@ -17,10 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -29,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -44,7 +49,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -92,6 +99,8 @@ public const val HOST_VIEW_UNITS_PER_DP: Float = 2.75f
  *   재생한다. 편집 모드처럼 `false`면 누르기를 처리하지 않고 효과도 재생하지 않는다.
  * - [onPressChange]는 동작이 있는 컴포넌트 인스턴스를 누르기 시작할 때 `true`로, 손을 떼거나 취소될 때 `false`로 그 노드 id와 함께 호출된다.
  *   재생기는 이 콜백으로 누르는 동안 pressed 변형을 보여 준다.
+ * - [hiddenSlots]는 숨긴 노드(`visible = false`이거나 불투명도 0, 또는 그런 조상 아래) 안의 호스트 뷰를 어떻게 다룰지 정한다.
+ *   기본값 [HiddenSlotPolicy.Keep]이면 다시 보일 때 스크롤 위치나 입력 중인 글자가 그대로 남는다.
  *
  * 바인딩과 애니메이션은 이 함수 밖에서 적용한 뒤 그 문서를 넘긴다.
  */
@@ -106,13 +115,14 @@ public fun SceneLayout(
     onAction: (String) -> Unit = {},
     clipToArtboard: Boolean = false,
     onPressChange: (NodeId, Boolean) -> Unit = { _, _ -> },
+    hiddenSlots: HiddenSlotPolicy = HiddenSlotPolicy.Keep,
 ) {
     // 드래그와 애니메이션 중 성능을 위해 스코프는 같은 객체로 두고 문서와 동작은 상태로 읽는다. 바뀌지 않은 노드는 인자가 같아서 재구성되지 않는다.
     val documentState = rememberUpdatedState(document)
-    val actionState = rememberUpdatedState(if (interactive) onAction else null)
-    val pressState = rememberUpdatedState(onPressChange)
-    val scope =
-        remember(images, slots, interactive) { NodeScope(documentState, images, slots, actionState, pressState, effects = interactive) }
+    val callbacks = rememberUpdatedState(Callbacks(if (interactive) onAction else null, onPressChange))
+    val scope = remember(images, slots, interactive, hiddenSlots) {
+        NodeScope(documentState, images, slots, callbacks, effects = interactive, keepHidden = hiddenSlots == HiddenSlotPolicy.Keep)
+    }
     Box(modifier.clipToBounds()) {
         Box(
             // artboard가 영역보다 크면 Compose가 가운데 정렬로 밀어내므로 제약 없이 측정해 왼쪽 위에 둔다. 실제 위치는 viewport가 정한다.
@@ -137,22 +147,48 @@ public fun SceneLayout(
     }
 }
 
+private class Callbacks(val onAction: ((String) -> Unit)?, val onPressChange: (NodeId, Boolean) -> Unit)
+
 private class NodeScope(
     private val documentState: State<SceneDocument>,
     val images: SceneImageProvider,
     val slots: SceneSlots,
-    private val actionState: State<((String) -> Unit)?>,
-    private val pressState: State<(NodeId, Boolean) -> Unit>,
+    private val callbacks: State<Callbacks>,
     val effects: Boolean,
+    private val keepHidden: Boolean,
 ) {
-    fun pressChanged(id: NodeId, pressed: Boolean) = pressState.value(id, pressed)
+    fun pressChanged(id: NodeId, pressed: Boolean) = callbacks.value.onPressChange(id, pressed)
 
     /** 사용 모드. 누르면 동작을 실행하고 효과를 재생한다. */
     val interactive: Boolean get() = effects
 
     val document: SceneDocument get() = documentState.value
-    val onAction: ((String) -> Unit)? get() = actionState.value
+    val onAction: ((String) -> Unit)? get() = callbacks.value.onAction
+
+    /** 숨긴 [node]를 컴포지션에 남겨야 하는지. 자손까지 보아 실제 호스트 뷰가 있을 때만 남긴다. */
+    fun keepsHidden(node: SceneNode): Boolean = keepHidden && hasHostView(node)
+
+    private fun hasHostView(node: SceneNode): Boolean = when (val content = node.content) {
+        is NodeContent.HostSlot -> content.key in slots
+        is NodeContent.Container -> content.childIds.any { id -> document.nodes[id]?.let(::hasHostView) == true }
+        else -> false
+    }
 }
+
+/** 숨긴 노드 안의 호스트 뷰([com.naury.kinetica.core.scene.NodeContent.HostSlot])를 어떻게 다룰지. */
+public enum class HiddenSlotPolicy {
+    /**
+     * 컴포지션에 남겨 상태를 유지한다. 측정은 계속하지만 배치하지 않으므로 그려지지 않고, 터치와 포커스를 받지 않으며,
+     * 스크린 리더에도 나오지 않는다. 숨길 때 안쪽에 포커스가 있으면 포커스를 해제한다.
+     */
+    Keep,
+
+    /** 컴포지션에서 뺀다. 숨긴 동안 비용이 들지 않지만 다시 보이면 호스트 뷰의 상태가 처음부터 시작된다. */
+    Dispose,
+}
+
+/** 숨긴 노드 표시. [Children]은 이 표시가 있는 자식을 측정만 하고 배치하지 않는다. */
+private object HiddenNode
 
 @Composable
 private fun Artboard(document: SceneDocument) {
@@ -162,27 +198,35 @@ private fun Artboard(document: SceneDocument) {
 
 /** 자식을 각자의 크기로 측정해 원점에 놓는다. 위치는 자식의 graphicsLayer가 정한다. 컨테이너 크기는 [size]이고, 없으면 0이다. */
 @Composable
-private fun Children(ids: List<NodeId>, scope: NodeScope, size: Size? = null) {
+private fun Children(ids: List<NodeId>, scope: NodeScope, size: Size? = null, hidden: Boolean = false) {
     // 노드 id로 식별해야 순서가 바뀌어도 호스트 뷰의 상태(입력 중인 텍스트, 스크롤 위치 등)가 다른 노드로 넘어가거나 사라지지 않는다.
-    Layout(content = { ids.forEach { id -> key(id) { scope.document.nodes[id]?.let { NodeView(it, scope) } } } }) { measurables, _ ->
-        val placeables = measurables.map { it.measure(Constraints()) }
-        layout(size?.width?.toInt() ?: 0, size?.height?.toInt() ?: 0) { placeables.forEach { it.place(0, 0) } }
+    Layout(content = {
+        ids.forEach { id -> key(id) { scope.document.nodes[id]?.let { NodeView(it, scope, hidden) } } }
+    }) { measurables, _ ->
+        // 숨긴 노드도 측정해 두어야 다시 보일 때 크기를 새로 잡느라 한 프레임 비는 일이 없다.
+        val placeables = measurables.map { it.measure(Constraints()) to (it.layoutId === HiddenNode) }
+        layout(size?.width?.toInt() ?: 0, size?.height?.toInt() ?: 0) {
+            placeables.forEach { (placeable, hiddenChild) -> if (!hiddenChild) placeable.place(0, 0) }
+        }
     }
 }
 
 @Composable
-private fun NodeView(node: SceneNode, scope: NodeScope) {
-    if (!node.visible || node.style.opacity <= 0.0) return
-    val placed = Modifier.placement(
-        node,
-    ).effects(node, scope.effects).layerBlur(node.style.blur).actionable(node, scope).accessibility(node)
+private fun NodeView(node: SceneNode, scope: NodeScope, parentHidden: Boolean) {
+    val hidden = parentHidden || !node.visible || node.style.opacity <= 0.0
+    if (hidden && !scope.keepsHidden(node)) return
+    // 숨김 여부와 상관없이 같은 Composable을 같은 순서로 불러야 숨겼다 다시 보일 때 호스트 뷰의 상태가 이어진다. 바뀌는 것은 Modifier뿐이다.
+    val placed = Modifier.placement(node)
+        .effects(node, scope.effects && !hidden)
+        .layerBlur(node.style.blur)
+        .then(if (hidden) Modifier.layoutId(HiddenNode).clearAndSetSemantics {} else Modifier.actionable(node, scope).accessibility(node))
     when (val content = node.content) {
-        is NodeContent.Group -> Box(placed) { Children(content.childIds, scope) }
-        is NodeContent.Frame -> FrameView(node, content, placed, scope)
+        is NodeContent.Group -> Box(placed) { Children(content.childIds, scope, hidden = hidden) }
+        is NodeContent.Frame -> FrameView(node, content, placed, scope, hidden)
         is NodeContent.Rectangle, is NodeContent.Ellipse, is NodeContent.Polygon, is NodeContent.Path -> ShapeView(node, content, placed)
         is NodeContent.Text -> TextView(node, content, placed)
         is NodeContent.Image -> ImageView(content, placed, scope)
-        is NodeContent.HostSlot -> HostView(node, content, placed, scope)
+        is NodeContent.HostSlot -> HostView(node, content, placed, scope, hidden)
     }
 }
 
@@ -249,7 +293,7 @@ private fun Modifier.accessibility(node: SceneNode): Modifier {
 }
 
 @Composable
-private fun FrameView(node: SceneNode, content: NodeContent.Frame, modifier: Modifier, scope: NodeScope) {
+private fun FrameView(node: SceneNode, content: NodeContent.Frame, modifier: Modifier, scope: NodeScope, hidden: Boolean) {
     val outline = remember(content) { requireNotNull(content.outline()) }
     // 그림자가 잘리지 않도록 그림자와 채우기는 클리핑 전에 그리고, 선은 자식 위에 그린다.
     val clipped = if (content.clip) Modifier.clip(GenericShape { _, _ -> addPath(outline) }) else Modifier
@@ -263,7 +307,7 @@ private fun FrameView(node: SceneNode, content: NodeContent.Frame, modifier: Mod
                 drawOutlineStroke(outline, node.style, blur = node.style.fallbackBlur)
             },
     ) {
-        Children(content.childIds, scope, content.size)
+        Children(content.childIds, scope, content.size, hidden)
     }
 }
 
@@ -305,16 +349,21 @@ private fun ImageView(content: NodeContent.Image, modifier: Modifier, scope: Nod
 }
 
 @Composable
-private fun HostView(node: SceneNode, content: NodeContent.HostSlot, modifier: Modifier, scope: NodeScope) {
+private fun HostView(node: SceneNode, content: NodeContent.HostSlot, modifier: Modifier, scope: NodeScope, hidden: Boolean) {
     val slot = scope.slots[content.key]
     if (slot == null) {
         Placeholder(content.size, modifier)
         return
     }
     val outline = remember(content) { requireNotNull(content.outline()) }
+    // 배치하지 않은 노드는 포커스 이동에서 빠지지만, 이미 포커스를 가진 입력란은 숨겨도 키 입력을 계속 받으므로 직접 해제한다.
+    var focused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    if (hidden && focused) SideEffect { focusManager.clearFocus(force = true) }
     Box(
         modifier
             .requiredSizePx(content.size)
+            .onFocusChanged { focused = it.hasFocus }
             .drawBehind { drawFilledOutline(outline, node.style, size, blur = node.style.fallbackBlur) }
             .clipToBounds()
             .drawWithContent {

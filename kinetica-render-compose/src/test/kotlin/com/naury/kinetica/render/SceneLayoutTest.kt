@@ -1,14 +1,22 @@
 package com.naury.kinetica.render
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -19,12 +27,16 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -381,5 +393,127 @@ class SceneLayoutTest {
         compose.onNodeWithContentDescription("회사 로고").assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Image))
         compose.onNodeWithText("장식 글자").assertDoesNotExist()
         compose.onNodeWithText("구매").assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+    }
+
+    /** 누를 때마다 수가 오르는 글자와 50줄 목록이 있는 호스트 뷰. 숨겼다 보여도 상태가 남는지 볼 때 쓴다. */
+    private class FormSlot {
+        val created = mutableSetOf<Any>()
+        var list: LazyListState? = null
+
+        val slots: SceneSlots = mapOf(
+            "form" to {
+                var count by rememberSaveable { mutableIntStateOf(0) }
+                created += remember { Any() }
+                val state = rememberLazyListState()
+                list = state
+                Column {
+                    BasicText("count $count", Modifier.clickable { count++ })
+                    LazyColumn(Modifier.size(40.dp).testTag("list"), state) { items(50) { BasicText("row $it") } }
+                }
+            },
+        )
+    }
+
+    private fun formScene(visible: Boolean) = scene(
+        SceneNode(NodeId("group"), NodeContent.Group(listOf(NodeId("form"))), visible = visible),
+        SceneNode(NodeId("form"), NodeContent.HostSlot(Size(150.0, 180.0), "form"), parentId = NodeId("group")),
+    )
+
+    private fun showForm(form: FormSlot, document: androidx.compose.runtime.State<SceneDocument>, policy: HiddenSlotPolicy) {
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SceneLayout(document.value, Viewport(), Modifier.size(200.dp), slots = form.slots, interactive = true, hiddenSlots = policy)
+            }
+        }
+        compose.onNodeWithText("count 0").performClick()
+        compose.onNodeWithTag("list").performScrollToIndex(20)
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun `조상을 숨겼다 다시 보여도 호스트 뷰의 상태와 스크롤 위치가 남고 숨긴 동안은 누르거나 읽을 수 없다`() {
+        val form = FormSlot()
+        val document = mutableStateOf(formScene(visible = true))
+        showForm(form, document, HiddenSlotPolicy.Keep)
+
+        document.value = formScene(visible = false)
+        compose.waitForIdle()
+        compose.onNodeWithText("count 1").assertDoesNotExist()
+        compose.onNodeWithTag("list").assertDoesNotExist()
+        compose.onAllNodes(hasClickAction()).assertCountEquals(0)
+
+        document.value = formScene(visible = true)
+        compose.waitForIdle()
+        compose.onNodeWithText("count 1").assertExists()
+        assertThat(form.list?.firstVisibleItemIndex).isEqualTo(20)
+        assertThat(form.created).hasSize(1)
+    }
+
+    @Test
+    fun `Dispose면 숨길 때 호스트 뷰를 빼서 다시 보이면 처음 상태다`() {
+        val form = FormSlot()
+        val document = mutableStateOf(formScene(visible = true))
+        showForm(form, document, HiddenSlotPolicy.Dispose)
+
+        document.value = formScene(visible = false)
+        compose.waitForIdle()
+        document.value = formScene(visible = true)
+        compose.waitForIdle()
+
+        compose.onNodeWithText("count 0").assertExists()
+        assertThat(form.list?.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(form.created).hasSize(2)
+    }
+
+    @Test
+    fun `불투명도 0에서는 누를 수 없고 나타나는 중에는 누를 수 있다`() {
+        val taps = mutableListOf<String>()
+        fun doc(opacity: Double) = scene(
+            SceneNode(
+                NodeId("button"),
+                NodeContent.Rectangle(Size(80.0, 40.0)),
+                style = NodeStyle(fill = blue, opacity = opacity),
+                action = "open",
+            ),
+            SceneNode(
+                NodeId("host"),
+                NodeContent.HostSlot(Size(80.0, 40.0), "tap"),
+                transform = Transform2D(translationY = 100.0),
+                style = NodeStyle(opacity = opacity),
+            ),
+        )
+        val document = mutableStateOf(doc(0.0))
+        val slots: SceneSlots = mapOf("tap" to { Box(Modifier.fillMaxSize().clickable { taps += "host" }) })
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SceneLayout(
+                    document.value,
+                    Viewport(),
+                    Modifier.size(
+                        200.dp,
+                    ).testTag("root"),
+                    slots = slots,
+                    interactive = true,
+                    onAction = {
+                        taps += it
+                    },
+                )
+            }
+        }
+        fun tapBoth() {
+            compose.onNodeWithTag("root").performTouchInput { click(Offset(40f, 20f)) }
+            compose.onNodeWithTag("root").performTouchInput { click(Offset(40f, 120f)) }
+            compose.waitForIdle()
+        }
+
+        tapBoth()
+        assertThat(taps).isEmpty()
+        compose.onAllNodes(hasClickAction()).assertCountEquals(0)
+
+        // 0에서 1로 페이드인하는 중간 값
+        document.value = doc(0.3)
+        compose.waitForIdle()
+        tapBoth()
+        assertThat(taps).containsExactly("open", "host").inOrder()
     }
 }
