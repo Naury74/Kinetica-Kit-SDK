@@ -4,7 +4,6 @@
 package com.naury.kinetica.showcase
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +59,7 @@ import com.naury.kinetica.ui.GlassTextField
 import com.naury.kinetica.ui.GlassToastHost
 import com.naury.kinetica.ui.LocalGlassContentColor
 import com.naury.kinetica.ui.glassBackdrop
+import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.glassContextMenu
 import com.naury.kinetica.ui.glassOrigin
 import com.naury.kinetica.ui.rememberGlassBackdrop
@@ -103,8 +103,8 @@ internal fun GlassDemo(onBack: () -> Unit) {
             LazyColumn(
                 Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 20.dp,
-                    end = 20.dp,
+                    start = readingPadding(),
+                    end = readingPadding(),
                     top =
                         padding.calculateTopPadding() + 8.dp,
                     bottom = padding.calculateBottomPadding() + 16.dp,
@@ -169,9 +169,9 @@ private fun DemoPopups(
         Spacer(Modifier.height(8.dp))
         Label("아메리카노 2잔 · 9,000원", 15)
         Spacer(Modifier.height(20.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Pill("취소", onClick = closeDialog)
-            Pill("보내기", filled = true) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Pill("취소", Modifier.weight(1f), onClick = closeDialog)
+            Pill("보내기", Modifier.weight(1f), filled = true) {
                 closeDialog()
                 notify("주문을 보냈어요")
             }
@@ -182,10 +182,20 @@ private fun DemoPopups(
         Spacer(Modifier.height(12.dp))
         // 입력란을 누르면 시트가 키보드 위로 올라온다(contentWindowInsets 기본값).
         var note by remember { mutableStateOf("") }
-        GlassTextField(note, { note = it }, "함께 보낼 메모", Modifier.fillMaxWidth())
+        GlassTextField(note, { note = it }, "함께 보낼 메모", Modifier.fillMaxWidth(), placeholder = "받는 사람에게 남길 말")
         Spacer(Modifier.height(8.dp))
-        listOf("메시지", "메일", "링크 복사", "저장").forEach { item ->
-            Box(Modifier.fillMaxWidth().clickable(onClick = closeSheet).padding(vertical = 14.dp)) { Label(item, 16) }
+        SHARE_TARGETS.forEach { (item, icon) ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(ROW_SHAPE)
+                    .glassClickable(ROW_SHAPE, onClick = closeSheet)
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ShowcaseIcon(icon, 22.dp)
+                Label(item, 16, modifier = Modifier.padding(start = 14.dp))
+            }
         }
     }
 }
@@ -271,7 +281,7 @@ private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
         contentAlignment = Alignment.BottomStart,
     ) {
         Box(Modifier.matchParentSize().glassBackdrop(photo).background(Brush.linearGradient(colors)))
-        GlassSurface(Modifier.padding(14.dp), shape = RoundedCornerShape(18.dp), backdrop = photo) {
+        GlassSurface(Modifier.padding(14.dp), shape = RoundedCornerShape(14.dp), backdrop = photo) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                 Label(TITLES[index % TITLES.size], 16, FontWeight.SemiBold)
                 Label("길게 누르면 메뉴가 열려요", 13)
@@ -280,6 +290,13 @@ private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
     }
 }
 
+private val ROW_SHAPE = RoundedCornerShape(14.dp)
+private val SHARE_TARGETS = listOf(
+    "메시지" to ShowcaseIcons.Message,
+    "메일" to ShowcaseIcons.Mail,
+    "링크 복사" to ShowcaseIcons.Link,
+    "저장" to ShowcaseIcons.Download,
+)
 private val TITLES = listOf("제주 바다", "노을", "숲길", "도시의 밤", "라벤더")
 private val PHOTOS = listOf(
     listOf(Color(0xFF00C6FF), Color(0xFF0072FF)),

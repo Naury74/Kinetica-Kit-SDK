@@ -3,7 +3,6 @@
 
 package com.naury.kinetica.showcase
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,7 +18,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.GlassScaffold
@@ -36,8 +34,9 @@ import com.naury.kinetica.ui.jellyPress
 internal fun AppsDemo(onBack: () -> Unit) {
     var stack by rememberSaveable { mutableStateOf(listOf(APPS_HOME)) }
     val back = { stack = stack.dropLast(1) }
+    // 쌓인 화면마다 따로 정하면 사라지는 화면이 늦게 정리되며 값을 덮으므로, 맨 위 화면 기준으로 한 번만 정한다.
+    StatusBarIcons(darkBackground = stack.last() in DARK_SCREENS)
     PushNavigation(stack, onBack = back) { screen ->
-        StatusBarIcons(darkBackground = screen in DARK_SCREENS)
         when (screen) {
             "music" -> MusicApp(back)
             "map" -> MapApp(back)
@@ -58,7 +57,13 @@ private fun AppsHome(onBack: () -> Unit, open: (String) -> Unit) {
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 32.dp),
+            contentPadding = PaddingValues(
+                start = readingPadding(),
+                end = readingPadding(),
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom =
+                    navigationBarBottom() + 32.dp,
+            ),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             APPS.forEach { app -> item(app.id) { AppEntry(app) { open(app.id) } } }
@@ -68,13 +73,13 @@ private fun AppsHome(onBack: () -> Unit, open: (String) -> Unit) {
 
 @Composable
 private fun AppEntry(app: AppInfo, onClick: () -> Unit) {
-    GlassSurface(Modifier.fillMaxWidth().jellyPress(0.04f).clickable(role = Role.Button, onClick = onClick)) {
+    GlassSurface(onClick, Modifier.fillMaxWidth().jellyPress(0.04f)) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Label(app.title, 19, FontWeight.Bold)
                 Label(app.summary, 13, color = LocalGlassContentColor.current.copy(alpha = 0.72f))
             }
-            Label("›", 26, FontWeight.Bold)
+            ShowcaseIcon(ShowcaseIcons.Chevron, 20.dp, LocalGlassContentColor.current.copy(alpha = 0.6f))
         }
     }
 }

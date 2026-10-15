@@ -4,19 +4,23 @@
 package com.naury.kinetica.showcase
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -42,11 +46,14 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.naury.kinetica.ui.GlassExpandHost
 import com.naury.kinetica.ui.GlassExpandState
+import com.naury.kinetica.ui.GlassIconButton
 import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.GlassSurface
+import com.naury.kinetica.ui.LocalGlassContentColor
 import com.naury.kinetica.ui.PushNavigation
 import com.naury.kinetica.ui.expandSource
+import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.jellyPress
 import com.naury.kinetica.ui.rememberGlassExpandState
 
@@ -57,6 +64,8 @@ import com.naury.kinetica.ui.rememberGlassExpandState
 @Composable
 internal fun NavigationDemo(onBack: () -> Unit) {
     var stack by rememberSaveable { mutableStateOf(listOf(ROOT)) }
+    // 하위 화면은 단계마다 밝고 어두운 배경이 번갈아 나온다. 맨 위 화면 기준으로 한 번만 정한다.
+    StatusBarIcons(darkBackground = stack.size > 1 && (stack.size - 1) % 2 == 0)
     PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
         if (screen == ROOT) {
             NavigationHome(onBack) { stack = stack + it }
@@ -77,7 +86,13 @@ private fun NavigationHome(onBack: () -> Unit, push: (String) -> Unit) {
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 32.dp),
+            contentPadding = PaddingValues(
+                start = readingPadding(),
+                end = readingPadding(),
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom =
+                    navigationBarBottom() + 32.dp,
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -108,8 +123,8 @@ private fun StoryCard(story: Story, expand: GlassExpandState, index: Int) {
             .fillMaxWidth()
             .expandSource(expand, index)
             .jellyPress(0.03f)
-            .clip(RoundedCornerShape(28.dp))
-            .clickable(role = Role.Button) { expand.expand(index) }
+            .clip(STORY_SHAPE)
+            .glassClickable(STORY_SHAPE) { expand.expand(index) }
             .semantics { contentDescription = "${story.title} 열기" },
     ) { StoryCover(story) }
 }
@@ -138,16 +153,15 @@ private fun StoryDetail(story: Story, expand: GlassExpandState) {
                 repeat(6) { Label(story.body, 16, color = Color(0xFF3A3B40)) }
             }
         }
-        GlassSurface(
+        GlassIconButton(
+            ShowcaseIcons.Close,
+            "닫기",
+            { expand.collapse() },
             Modifier
                 .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(16.dp)
-                .size(40.dp)
-                .clickable(role = Role.Button) { expand.collapse() }
-                .semantics { contentDescription = "닫기" },
-            shape = CircleShape,
-        ) { Label("✕", 16, FontWeight.Bold, Modifier.align(Alignment.Center)) }
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.End))
+                .padding(16.dp),
+        )
     }
 }
 
@@ -161,7 +175,13 @@ private fun NavigationDetail(screen: String, depth: Int, back: () -> Unit, push:
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 32.dp),
+            contentPadding = PaddingValues(
+                start = readingPadding(),
+                end = readingPadding(),
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom =
+                    navigationBarBottom() + 32.dp,
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { MenuList(MENU.map { "$screen/$it" }.take(3), push) }
@@ -171,15 +191,20 @@ private fun NavigationDetail(screen: String, depth: Int, back: () -> Unit, push:
 
 @Composable
 private fun MenuList(items: List<String>, push: (String) -> Unit) {
+    // 행 눌림 표시가 카드 모서리 밖으로 나가지 않도록 6dp 안쪽에 18dp(바깥 24dp − 6dp) 모서리로 그린다.
     GlassSurface(Modifier.widthIn(max = 520.dp).fillMaxWidth()) {
-        Column(Modifier.padding(vertical = 6.dp)) {
+        Column(Modifier.padding(6.dp)) {
             items.forEach { item ->
                 Row(
-                    Modifier.fillMaxWidth().clickable(role = Role.Button) { push(item) }.padding(horizontal = 20.dp, vertical = 16.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(MENU_ROW_SHAPE)
+                        .glassClickable(MENU_ROW_SHAPE) { push(item) }
+                        .padding(horizontal = 14.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Label(item.substringAfterLast('/'), 16, modifier = Modifier.weight(1f))
-                    Label("›", 20, FontWeight.Bold)
+                    ShowcaseIcon(ShowcaseIcons.Chevron, 18.dp, LocalGlassContentColor.current.copy(alpha = 0.5f))
                 }
             }
         }
@@ -189,6 +214,8 @@ private fun MenuList(items: List<String>, push: (String) -> Unit) {
 private class Story(val kicker: String, val title: String, val colors: List<Color>, val body: String)
 
 private const val ROOT = "home"
+private val STORY_SHAPE = RoundedCornerShape(28.dp)
+private val MENU_ROW_SHAPE = RoundedCornerShape(18.dp)
 private val MENU = listOf("알림", "화면 표시", "개인정보", "배터리")
 private val STORIES = listOf(
     Story(

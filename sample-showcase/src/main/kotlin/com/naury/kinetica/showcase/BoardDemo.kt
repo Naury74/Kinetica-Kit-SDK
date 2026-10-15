@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -62,8 +63,8 @@ internal fun BoardDemo(onBack: () -> Unit, viewModel: StoreViewModel = viewModel
                 FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill(if (editing) "완료" else "편집", filled = editing) { editing = !editing }
                     if (editing) {
-                        Pill("되돌리기") { if (history.canUndo) state.history.undo() }
-                        Pill("다시") { if (history.canRedo) state.history.redo() }
+                        Pill("되돌리기", Modifier.alpha(if (history.canUndo) 1f else 0.4f)) { if (history.canUndo) state.history.undo() }
+                        Pill("다시", Modifier.alpha(if (history.canRedo) 1f else 0.4f)) { if (history.canRedo) state.history.redo() }
                     }
                     Pill(if (grid) "격자" else "자유 배치") { grid = !grid }
                 }
@@ -78,6 +79,7 @@ internal fun BoardDemo(onBack: () -> Unit, viewModel: StoreViewModel = viewModel
                 editing = editing,
                 onLongPress = { editing = true },
                 stackAutoAdvanceMs = 5_000,
+                widgetCornerRadius = 20.dp,
             ) { id -> StoreWidget(state.widgetKeyOf(id) ?: id, id, data) }
         }
     }

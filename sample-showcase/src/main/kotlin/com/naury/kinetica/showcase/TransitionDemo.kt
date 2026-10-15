@@ -9,7 +9,6 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
@@ -46,6 +45,7 @@ import com.naury.kinetica.player.dragToDismiss
 import com.naury.kinetica.player.rememberTransitionDriver
 import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.glassClickable
 
 /**
  * 장면 전환 데모. 카드를 누르면 morphKey가 같은 노드끼리 이어지며 상세 화면이 된다. 아래로 끌거나 뒤로 가기를 누르면 닫히고,
@@ -81,7 +81,13 @@ private fun SceneGrid(
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(160.dp),
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = padding.calculateTopPadding(), bottom = 24.dp),
+            contentPadding = PaddingValues(
+                start = 12.dp,
+                end = 12.dp,
+                top = padding.calculateTopPadding(),
+                bottom =
+                    navigationBarBottom() + 24.dp,
+            ),
         ) {
             items(GalleryScenes.items, key = { it.id }) { item ->
                 with(shared) {
@@ -93,7 +99,7 @@ private fun SceneGrid(
                             .padding(6.dp)
                             .aspectRatio(1080f / 1920f)
                             .clip(RoundedCornerShape(20.dp))
-                            .clickable { onOpen(item) }
+                            .glassClickable(RoundedCornerShape(20.dp)) { onOpen(item) }
                             .semantics { contentDescription = "${item.title} 열기" },
                     )
                 }
@@ -128,4 +134,5 @@ private fun SceneDetail(item: GalleryItem, shared: SharedTransitionScope, visibi
     }
 }
 
-private val DARK = Color(0xFF101216)
+// 장면 바탕색과 같게 둬서 화면 비율이 달라도 위아래에 띠가 보이지 않게 한다.
+private val DARK = Color(0xFF15181E)

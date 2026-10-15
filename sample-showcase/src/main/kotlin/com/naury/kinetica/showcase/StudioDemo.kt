@@ -6,19 +6,21 @@ package com.naury.kinetica.showcase
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,8 +28,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -57,6 +65,9 @@ import com.naury.kinetica.render.ContentImageLoader
 import com.naury.kinetica.serialization.FileSceneRepository
 import com.naury.kinetica.serialization.LoadResult
 import com.naury.kinetica.serialization.SaveResult
+import com.naury.kinetica.ui.GlassToastHost
+import com.naury.kinetica.ui.glassClickable
+import com.naury.kinetica.ui.rememberGlassToastState
 import java.io.File
 import java.util.UUID
 import kotlin.random.Random
@@ -73,7 +84,6 @@ import kotlinx.coroutines.launch
  */
 @Composable
 internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()) {
-    val context = LocalContext.current
     var previewing by rememberSaveable { mutableStateOf(false) }
     var sales by remember { mutableStateOf(List(7) { Random.nextFloat() }) }
     LaunchedEffect(Unit) {
@@ -84,10 +94,11 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
     }
     val session by model.session.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
+    val toast = rememberGlassToastState()
     LaunchedEffect(message) {
         message?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             model.messageShown()
+            toast.show(it)
         }
     }
     val photo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let(model::addPhoto) }
@@ -101,7 +112,9 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
     Column(Modifier.fillMaxSize().background(theme.canvasBackground).statusBarsPadding().navigationBarsPadding()) {
         if (previewing) {
             val document by session.document.collectAsStateWithLifecycle()
-            TextButton(onClick = { previewing = false }) { Text("‹ 편집으로 돌아가기", color = theme.accent) }
+            StudioAction("편집으로 돌아가기", theme.accent, ShowcaseIcons.Back, Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+                previewing = false
+            }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 KineticaPlayer(document, Modifier.fillMaxSize(), data = DATA, slots = slots, fit = SceneFit.Responsive)
             }
@@ -119,10 +132,27 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
                     }, { photo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) { asMockup ->
                         mockup = asMockup
                         export.launch(if (asMockup) "kinetica-mockup.png" else "kinetica-scene.png")
-                    }.forEach { (label, action) -> TextButton(onClick = action) { Text(label, color = theme.accent) } }
+                    }.forEach { (label, action) -> StudioAction(label, theme.accent, onClick = action) }
                 },
             )
         }
+    }
+    GlassToastHost(toast)
+}
+
+/** 편집기 도구 모음의 글자 버튼. 캡슐 모양으로 눌림을 보이고, [icon]이 있으면 글자 앞에 18dp로 놓는다. */
+@Composable
+private fun StudioAction(label: String, color: Color, icon: ImageVector? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Row(
+        modifier
+            .heightIn(min = 44.dp)
+            .clip(CircleShape)
+            .glassClickable(CircleShape, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) ShowcaseIcon(icon, 18.dp, color, Modifier.padding(end = 6.dp))
+        Text(label, color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
 

@@ -4,17 +4,23 @@
 package com.naury.kinetica.showcase
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -25,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +70,7 @@ import com.naury.kinetica.ui.SwipeAction
 import com.naury.kinetica.ui.SwipeActionsRow
 import com.naury.kinetica.ui.coachMarkTarget
 import com.naury.kinetica.ui.glassBadge
+import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.rememberCoachMarkState
 import com.naury.kinetica.ui.rememberGlassDrawerState
 import com.naury.kinetica.ui.rememberGlassSnackbarState
@@ -98,18 +106,23 @@ private fun MailList(mails: SnapshotStateList<Mail>, selected: Int?, onBack: () 
     var toured by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { if (!toured) coach.start() }
-    GlassDrawer(drawerContent = { MailFolders(onBack) }, state = drawer) {
+    GlassDrawer(drawerContent = { MailFolders(onBack) { scope.launch { drawer.close() } } }, state = drawer) {
         GlassScaffold(
             Modifier.fillMaxSize(),
             style = GlassStyles.OneUi,
             background = { Aurora(Modifier.fillMaxSize(), dark = false) },
             topBar = {
-                Row(Modifier.statusBarsPadding().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.fillMaxWidth().windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    ).padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     GlassSurface(
+                        { scope.launch { drawer.open() } },
                         Modifier
                             .size(44.dp)
                             .coachMarkTarget(coach, "menu")
-                            .clickable(role = Role.Button) { scope.launch { drawer.open() } }
                             .semantics { contentDescription = "메뉴" },
                         shape = CircleShape,
                     ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { MenuCloseIcon(drawer.isOpen) } }
@@ -138,7 +151,13 @@ private fun Inbox(
     LazyColumn(
         Modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = top + 4.dp, bottom = 40.dp),
+        contentPadding = PaddingValues(
+            start = readingPadding(16.dp),
+            end = readingPadding(16.dp),
+            top = top + 4.dp,
+            bottom =
+                navigationBarBottom() + 40.dp,
+        ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item { Tips() }
@@ -157,6 +176,7 @@ private fun Inbox(
                     modifier = Modifier.coachMarkTarget(coach, if (mail == MAILS.first()) "row" else "row-${mail.id}"),
                     startActions = listOf(SwipeAction("읽음", Color(0xFF34C759)) {}),
                     state = rememberSwipeActionsState(group),
+                    shape = MAIL_ROW_SHAPE,
                 ) { MailRow(mail, mail.id == selected) { onOpen(mail.id) } }
             }
         }
@@ -169,9 +189,9 @@ private fun MailRow(mail: Mail, selected: Boolean, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(MAIL_ROW_SHAPE)
             .background(if (selected) Color(0xFFE3E9FF) else Color.White)
-            .clickable(role = Role.Button, onClick = onClick)
+            .glassClickable(MAIL_ROW_SHAPE, onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -205,7 +225,13 @@ private fun MailDetail(mail: Mail, onClose: () -> Unit) {
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 40.dp),
+                .padding(
+                    start = readingPadding(),
+                    end = readingPadding(),
+                    top = padding.calculateTopPadding() + 8.dp,
+                    bottom =
+                        navigationBarBottom() + 40.dp,
+                ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Label(mail.subject, 22, FontWeight.Bold)
@@ -258,13 +284,44 @@ private fun Tips() {
 }
 
 @Composable
-private fun MailFolders(onBack: () -> Unit) {
-    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Label("메일함", 22, FontWeight.Bold)
-        listOf("받은편지함", "보낸편지함", "보관함", "휴지통").forEach { Label(it, 16) }
-        Pill("데모 나가기", onClick = onBack)
+private fun MailFolders(onBack: () -> Unit, close: () -> Unit) {
+    var current by rememberSaveable { mutableIntStateOf(0) }
+    Column(
+        Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Label("메일함", 22, FontWeight.Bold, Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp))
+        FOLDERS.forEachIndexed { index, (name, icon) ->
+            val selected = index == current
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(FOLDER_SHAPE)
+                    .background(if (selected) LocalGlassContentColor.current.copy(alpha = 0.08f) else Color.Transparent)
+                    .glassClickable(FOLDER_SHAPE) {
+                        current = index
+                        close()
+                    }
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ShowcaseIcon(icon, 22.dp)
+                Label(name, 16, if (selected) FontWeight.SemiBold else FontWeight.Normal, Modifier.padding(start = 14.dp))
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Pill("데모 나가기", Modifier.padding(start = 4.dp), onClick = onBack)
     }
 }
+
+private val MAIL_ROW_SHAPE = RoundedCornerShape(16.dp)
+private val FOLDER_SHAPE = RoundedCornerShape(14.dp)
+private val FOLDERS = listOf(
+    "받은편지함" to ShowcaseIcons.Inbox,
+    "보낸편지함" to ShowcaseIcons.Send,
+    "보관함" to ShowcaseIcons.Archive,
+    "휴지통" to ShowcaseIcons.Trash,
+)
 
 private class Mail(val id: Int, val from: String, val subject: String, val color: Color, val unread: Int) {
     val body: String

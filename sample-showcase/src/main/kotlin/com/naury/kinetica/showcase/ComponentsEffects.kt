@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +45,7 @@ import com.naury.kinetica.ui.FlipCard
 import com.naury.kinetica.ui.GlassBlobButton
 import com.naury.kinetica.ui.GlassBlobGroup
 import com.naury.kinetica.ui.GlassChipGroup
+import com.naury.kinetica.ui.GlassIndication
 import com.naury.kinetica.ui.GlassSwitch
 import com.naury.kinetica.ui.ParticleField
 import com.naury.kinetica.ui.ParticlePreset
@@ -57,7 +59,7 @@ internal fun EffectsTab(padding: PaddingValues, connection: NestedScrollConnecti
     ComponentTabList(padding, connection) {
         item {
             DemoCard("물결 왜곡", "그림을 누르면 그 자리에서 물결이 퍼지며 그림이 일렁입니다. 여러 번 누르면 물결이 겹칩니다. Android 13보다 낮으면 빛 고리로 대신합니다.") {
-                Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).clip(RoundedCornerShape(20.dp)).rippleDistortion()) {
+                Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).clip(INNER_SHAPE).rippleDistortion()) {
                     Landscape(vivid = true, Modifier.fillMaxSize())
                 }
             }
@@ -153,14 +155,14 @@ private fun BlobCard(notify: (String) -> Unit) {
                             Modifier
                                 .blob()
                                 .size(52.dp)
-                                .clickable(role = Role.Button) { open = !open }
+                                .clickable(null, GlassIndication(CircleShape, Color.White), role = Role.Button) { open = !open }
                                 .semantics { contentDescription = name },
                             contentAlignment = Alignment.Center,
                         ) { Image(rememberVectorPainter(icon), null, Modifier.size(24.dp), colorFilter = ColorFilter.tint(Color.White)) }
                     }
                 }
             }
-            Label(if (open) "방울을 누르면 모입니다" else "방울을 누르면 펼쳐집니다", 13)
+            Label(if (open) "방울을 누르면 모입니다" else "방울을 누르면 펼쳐집니다", 13, modifier = Modifier.weight(1f))
         }
     }
 }

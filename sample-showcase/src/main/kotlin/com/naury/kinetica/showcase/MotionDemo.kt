@@ -4,7 +4,6 @@
 package com.naury.kinetica.showcase
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +46,7 @@ import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.RollingText
 import com.naury.kinetica.ui.TypewriterText
+import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.glowBorder
 import com.naury.kinetica.ui.magnetic
 import com.naury.kinetica.ui.motionTilt
@@ -68,25 +68,21 @@ internal fun MotionDemo(onBack: () -> Unit) {
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 40.dp),
+            contentPadding = PaddingValues(
+                start = readingPadding(),
+                end = readingPadding(),
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom =
+                    navigationBarBottom() + 40.dp,
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { GlowCard(siri) { siri = !siri } }
-            item {
-                DemoCard("젤리 버튼과 자석 버튼", "Modifier.jellyPress와 Modifier.magnetic입니다. 누르면 젤리처럼 납작해지고, 끌면 손가락을 따라옵니다.") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Pill("젤리 버튼", filled = true) {}
-                        Box(
-                            Modifier.magnetic(0.35f).size(width = 140.dp, height = 46.dp).background(Color(0xFF15161A), CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) { Label("자석 버튼", 14, FontWeight.SemiBold, color = Color.White) }
-                    }
-                }
-            }
+            item { JellyCard() }
             item {
                 DemoCard("기울이는 3D 카드", "Modifier.motionTilt입니다. 휴대폰을 기울이면 카드가 함께 기울고 빛이 흐릅니다. 실기기에서 확인해 보세요.") {
                     Box(
-                        Modifier.fillMaxWidth().aspectRatio(1.7f).motionTilt(12f, 0.35f).clip(RoundedCornerShape(24.dp))
+                        Modifier.fillMaxWidth().aspectRatio(1.7f).motionTilt(12f, 0.35f).clip(INNER_SHAPE)
                             .background(Brush.linearGradient(listOf(Color(0xFF8E54E9), Color(0xFF4776E6), Color(0xFF00C6FF)))),
                         contentAlignment = Alignment.BottomStart,
                     ) { Label("Kinetica Card", 22, FontWeight.Bold, Modifier.padding(20.dp), Color.White) }
@@ -113,12 +109,25 @@ internal fun MotionDemo(onBack: () -> Unit) {
 }
 
 @Composable
+private fun JellyCard() {
+    DemoCard("젤리 버튼과 자석 버튼", "Modifier.jellyPress와 Modifier.magnetic입니다. 누르면 젤리처럼 납작해지고, 끌면 손가락을 따라옵니다.") {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Pill("젤리 버튼", Modifier.height(44.dp), filled = true) {}
+            Box(
+                Modifier.magnetic(0.35f).size(width = 140.dp, height = 44.dp).background(Color(0xFF15161A), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Label("자석 버튼", 14, FontWeight.SemiBold, color = Color.White) }
+        }
+    }
+}
+
+@Composable
 private fun GlowCard(on: Boolean, toggle: () -> Unit) {
     DemoCard("글로우 테두리", "Modifier.glowBorder입니다. Siri처럼 가장자리를 따라 빛이 돌고, 화면 전체에도 붙일 수 있습니다.") {
         Box(
             Modifier.fillMaxWidth().height(
                 90.dp,
-            ).glowBorder(RoundedCornerShape(24.dp)).background(Color.White.copy(alpha = 0.6f), RoundedCornerShape(24.dp)),
+            ).glowBorder(INNER_SHAPE).background(Color.White.copy(alpha = 0.6f), INNER_SHAPE),
             contentAlignment = Alignment.Center,
         ) { Label("AI가 답변을 쓰고 있어요…", 15, FontWeight.Medium) }
         Pill(if (on) "화면 글로우 끄기" else "화면 전체에 켜기", filled = on, onClick = toggle)
@@ -154,17 +163,22 @@ private fun TypewriterCard() {
 private fun PresetsCard() {
     var taps by remember { mutableIntStateOf(0) }
     DemoCard("프리셋 효과", "Modifier.kineticaEffects(EffectPresets.…) 한 줄로 어떤 뷰에든 누름, 등장, 반복 애니메이션을 붙입니다. 누른 횟수 $taps") {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            PRESETS.forEach { (name, label, color) ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        Modifier.size(width = 96.dp, height = 56.dp)
-                            .kineticaEffects(EffectPresets.all.getValue(name), RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(color)
-                            .clickable { taps++ },
-                    )
-                    Label(label, 11, modifier = Modifier.padding(top = 4.dp))
+        // 세 칸씩 나눠 카드 폭을 고르게 채운다.
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            PRESETS.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    row.forEach { (name, label, color) ->
+                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                Modifier.fillMaxWidth().height(56.dp)
+                                    .kineticaEffects(EffectPresets.all.getValue(name), INNER_SHAPE)
+                                    .clip(INNER_SHAPE)
+                                    .background(color)
+                                    .glassClickable(INNER_SHAPE) { taps++ },
+                            )
+                            Label(label, 12, modifier = Modifier.padding(top = 6.dp))
+                        }
+                    }
                 }
             }
         }

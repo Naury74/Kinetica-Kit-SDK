@@ -2,6 +2,8 @@ package com.naury.kinetica.showcase
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import java.text.NumberFormat
+import java.util.Locale
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +31,11 @@ class StoreViewModel : ViewModel() {
 
     private fun next() = StoreData(
         sales = BASE_SALES + random.nextInt(SALES_RANGE),
-        orders = List(RECENT_ORDERS) { MENU[random.nextInt(MENU.size)] + " · " + (random.nextInt(PRICE_RANGE) + 1) * PRICE_UNIT + "원" },
+        orders = List(RECENT_ORDERS) {
+            MENU[random.nextInt(MENU.size)] + " · " +
+                PRICE.format((random.nextInt(PRICE_RANGE) + 1) * PRICE_UNIT) +
+                "원"
+        },
         week = List(DAYS) { random.nextFloat() },
         open = random.nextInt(OPEN_ODDS) != 0,
     )
@@ -44,6 +50,7 @@ class StoreViewModel : ViewModel() {
         const val PRICE_UNIT = 1_000
         const val DAYS = 7
         const val OPEN_ODDS = 4
+        val PRICE: NumberFormat = NumberFormat.getNumberInstance(Locale.KOREA)
         val MENU = listOf("아메리카노", "라떼", "크루아상", "샌드위치", "케이크")
     }
 }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.editor.HostViewOption
+import com.naury.kinetica.ui.GlassButton
+import com.naury.kinetica.ui.GlassButtonSize
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -93,7 +94,7 @@ private fun Counter() {
             Text("방문자", color = cardText.copy(alpha = 0.6f), fontSize = 13.sp)
             Text("$count", color = cardText, fontSize = 36.sp, fontWeight = FontWeight.Bold)
         }
-        Button(onClick = { count++ }) { Text("+1") }
+        GlassButton("+1", { count++ }, size = GlassButtonSize.Small)
     }
 }
 
@@ -110,7 +111,7 @@ private fun SalesChart(sales: List<Float>) {
                 val height by animateFloatAsState(value.coerceIn(0.05f, 1f), label = "bar")
                 Canvas(Modifier.weight(1f).fillMaxSize()) {
                     val barHeight = size.height * height
-                    drawRoundRect(accent, Offset(0f, size.height - barHeight), Size(size.width, barHeight), CornerRadius(12f))
+                    drawRoundRect(accent, Offset(0f, size.height - barHeight), Size(size.width, barHeight), CornerRadius(6.dp.toPx()))
                 }
             }
         }

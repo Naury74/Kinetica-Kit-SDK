@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +43,9 @@ import androidx.compose.ui.unit.sp
 import com.naury.kinetica.board.BoardWidget
 import com.naury.kinetica.presets.EffectPresets
 import com.naury.kinetica.render.animateNumberAsState
+import com.naury.kinetica.ui.GlassButton
+import com.naury.kinetica.ui.GlassButtonSize
+import com.naury.kinetica.ui.GlassTextField
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -121,7 +122,7 @@ private fun Chart(week: List<Float>) = Card {
             val height by animateFloatAsState(value.coerceIn(0.06f, 1f), label = "bar")
             Canvas(Modifier.weight(1f).fillMaxSize()) {
                 val bar = size.height * height
-                drawRoundRect(brand, Offset(0f, size.height - bar), Size(size.width, bar), CornerRadius(10f))
+                drawRoundRect(brand, Offset(0f, size.height - bar), Size(size.width, bar), CornerRadius(6.dp.toPx()))
             }
         }
     }
@@ -163,7 +164,7 @@ private fun FitText(text: String, color: Color, max: TextUnit, modifier: Modifie
 private fun Memo(id: String) = Card(Color(0xFFFFF7D6)) {
     var text by rememberSaveable { mutableStateOf("") }
     Text("메모 " + id.substringAfter("memo.", "1"), color = muted, fontSize = 13.sp)
-    OutlinedTextField(text, { text = it }, modifier = Modifier.fillMaxWidth().weight(1f), placeholder = { Text("오늘 할 일") })
+    GlassTextField(text, { text = it }, "오늘 할 일", Modifier.fillMaxWidth().weight(1f), singleLine = false)
 }
 
 @Composable
@@ -172,6 +173,6 @@ private fun Notice() = Card(Color(0xFFEFF2FF)) {
     Text("공지", color = muted, fontSize = 13.sp)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Text("다음 주 월요일은 정기 휴무입니다", color = ink, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        Button(onClick = { read++ }) { Text(if (read == 0) "확인" else "확인 $read") }
+        GlassButton(if (read == 0) "확인" else "확인 $read", { read++ }, size = GlassButtonSize.Small)
     }
 }

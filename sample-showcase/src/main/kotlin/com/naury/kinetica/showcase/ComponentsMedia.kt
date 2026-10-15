@@ -6,7 +6,6 @@ package com.naury.kinetica.showcase
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -49,6 +48,7 @@ import com.naury.kinetica.ui.GlassImageViewer
 import com.naury.kinetica.ui.GlassImageViewerState
 import com.naury.kinetica.ui.GlassOnboarding
 import com.naury.kinetica.ui.OnboardingPage
+import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.imageViewerSource
 import com.naury.kinetica.ui.rememberGlassImageViewerState
 
@@ -84,8 +84,8 @@ private fun PhotoGridCard(viewer: GlassImageViewerState, photos: List<Painter>) 
                                 .weight(1f)
                                 .aspectRatio(1f)
                                 .imageViewerSource(viewer, index)
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable(role = Role.Image) { viewer.open(index) },
+                                .clip(INNER_SHAPE)
+                                .glassClickable(INNER_SHAPE, role = Role.Image) { viewer.open(index) },
                             contentScale = ContentScale.Crop,
                         )
                     }
@@ -101,7 +101,7 @@ private fun CompareCard() {
         BeforeAfterSlider(
             before = { Landscape(vivid = false, Modifier.fillMaxSize()) },
             after = { Landscape(vivid = true, Modifier.fillMaxSize()) },
-            modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(20.dp)),
+            modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(INNER_SHAPE),
         )
     }
 }

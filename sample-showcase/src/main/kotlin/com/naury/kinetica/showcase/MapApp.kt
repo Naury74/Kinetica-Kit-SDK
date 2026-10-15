@@ -8,12 +8,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -32,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.Detent
 import com.naury.kinetica.ui.GlassDetentSheet
+import com.naury.kinetica.ui.GlassIconButton
 import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassSearchBar
 import com.naury.kinetica.ui.GlassStyles
@@ -49,13 +56,27 @@ internal fun MapApp(onBack: () -> Unit) {
     var query by remember { mutableStateOf("") }
     GlassScaffold(Modifier.fillMaxSize(), style = GlassStyles.OneUi, background = { FakeMap(Modifier.fillMaxSize()) }) { _ ->
         Box(Modifier.fillMaxSize()) {
-            Row(Modifier.statusBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Pill("‹ 뒤로", onClick = onBack)
-                GlassSurface(Modifier.tooltipOnLongPress("길게 눌러 도움말을 보여 줍니다"), shape = CircleShape) {
-                    Label("내 위치", 14, FontWeight.SemiBold, Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
+            Row(
+                Modifier.fillMaxWidth().windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                ).padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlassIconButton(ShowcaseIcons.Back, "뒤로", onBack)
+                GlassSurface(Modifier.height(44.dp).tooltipOnLongPress("길게 눌러 도움말을 보여 줍니다"), shape = CircleShape) {
+                    Row(
+                        Modifier.align(Alignment.Center).padding(start = 12.dp, end = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ShowcaseIcon(ShowcaseIcons.Location, 18.dp)
+                        Label("내 위치", 14, FontWeight.SemiBold, Modifier.padding(start = 6.dp))
+                    }
                 }
             }
-            GlassDetentSheet(sheet, title = "장소", header = { GlassSearchBar(query, { query = it }, {}, placeholder = "장소 검색") }) {
+            GlassDetentSheet(sheet, title = "장소", header = {
+                GlassSearchBar(query, { query = it }, {}, Modifier.padding(horizontal = 16.dp), placeholder = "장소 검색")
+            }) {
                 PlaceTabs()
             }
         }
@@ -66,9 +87,13 @@ internal fun MapApp(onBack: () -> Unit) {
 private fun PlaceTabs() {
     val pager = rememberPagerState { PLACE_TABS.size }
     Column(Modifier.fillMaxSize()) {
-        GlassTopTabs(PLACE_TABS.map { GlassTab(it) }, pager, Modifier.fillMaxWidth())
+        GlassTopTabs(PLACE_TABS.map { GlassTab(it) }, pager, Modifier.fillMaxWidth().padding(horizontal = 12.dp))
         HorizontalPager(pager, Modifier.fillMaxSize()) { page ->
-            LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = navigationBarBottom() + 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 items(12) { index -> PlaceRow(PLACE_TABS[page], index) }
             }
         }

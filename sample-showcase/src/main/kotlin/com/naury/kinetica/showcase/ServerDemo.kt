@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
@@ -74,7 +75,7 @@ internal fun ServerDemo(onBack: () -> Unit) {
         background = { Box(Modifier.fillMaxSize().background(Color(0xFFF3F4F8))) },
         topBar = { DemoTopBar("서버 화면", "서버 JSON으로 그리고, 숫자와 버튼은 앱과 연결됩니다", onBack) },
         bottomBar = {
-            Row(Modifier.padding(16.dp).padding(bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("새 버전 받기", filled = true) {
                     version = (version + 1) % PROMOS.size
                     refreshKey++

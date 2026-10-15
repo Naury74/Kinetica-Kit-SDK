@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.AvatarStack
 import com.naury.kinetica.ui.GlassAvatar
 import com.naury.kinetica.ui.GlassFloatingTabBar
+import com.naury.kinetica.ui.GlassIndication
 import com.naury.kinetica.ui.GlassMiniPlayerBar
 import com.naury.kinetica.ui.GlassMiniPlayerFullScreen
 import com.naury.kinetica.ui.GlassRating
@@ -91,8 +92,8 @@ internal fun MusicApp(onBack: () -> Unit) {
         LazyColumn(
             Modifier.fillMaxSize().nestedScroll(bar.nestedScrollConnection),
             contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
+                start = readingPadding(),
+                end = readingPadding(),
                 top = padding.calculateTopPadding() + 8.dp,
                 bottom = padding.calculateBottomPadding() + 16.dp,
             ),
@@ -121,7 +122,7 @@ private fun tabTracks(tab: Int): List<Int> = when (tab) {
 
 @Composable
 private fun TrackRow(song: Song, loading: Boolean, current: Boolean, onClick: () -> Unit) {
-    GlassSurface(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick)) {
+    GlassSurface(onClick, Modifier.fillMaxWidth()) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).skeleton(loading).clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(song.colors)))
             Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
@@ -146,7 +147,7 @@ private fun Artwork(song: Song) {
 private fun MiniBar(song: Song, playing: Boolean, toggle: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end = 10.dp)) {
-            Label(song.title, 14, FontWeight.SemiBold)
+            Label(song.title, 14, FontWeight.SemiBold, color = Color.White)
             Label(song.artist, 11, color = Color.White.copy(alpha = 0.7f))
         }
         PlayButton(playing, 36, toggle)
@@ -160,7 +161,12 @@ private fun FullPlayer(song: Song, playing: Boolean, toggle: () -> Unit) {
     var rating by remember { mutableFloatStateOf(4f) }
     var position by remember { mutableFloatStateOf(0.32f) }
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, bottom = 32.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(
+            start = 28.dp,
+            end = 28.dp,
+            bottom =
+                navigationBarBottom() + 32.dp,
+        ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -202,7 +208,7 @@ private fun PlayButton(playing: Boolean, size: Int, toggle: () -> Unit) {
             .size(size.dp)
             .clip(CircleShape)
             .background(Color.White.copy(alpha = 0.18f))
-            .clickable(role = Role.Button, onClick = toggle)
+            .clickable(null, GlassIndication(CircleShape, Color.White), role = Role.Button, onClick = toggle)
             .semantics { contentDescription = if (playing) "일시 정지" else "재생" },
         contentAlignment = Alignment.Center,
     ) { PlayPauseIcon(playing, Modifier.size((size / 2).dp), Color.White) }

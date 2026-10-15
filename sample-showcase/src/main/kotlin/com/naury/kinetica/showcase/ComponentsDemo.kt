@@ -10,18 +10,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -36,11 +42,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.ui.GlassButton
@@ -72,6 +83,7 @@ import com.naury.kinetica.ui.GlassTextField
 import com.naury.kinetica.ui.GlassTimePicker
 import com.naury.kinetica.ui.GlassTopTabs
 import com.naury.kinetica.ui.GradientText
+import com.naury.kinetica.ui.LocalGlassContentColor
 import com.naury.kinetica.ui.MeshGradientBackground
 import com.naury.kinetica.ui.MeshGradients
 import com.naury.kinetica.ui.ScrambleText
@@ -109,13 +121,23 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
             style = GlassStyles.Liquid,
             background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Candy) },
             topBar = {
-                Column {
-                    GlassLargeTitleBar(title, "컴포넌트", onBack = onBack)
-                    GlassTopTabs(COMPONENT_TABS.map { GlassTab(it) }, pager, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
-                }
+                // 탭 줄은 큰 제목과 함께 올라가 작은 바 밑에 붙고, 접히면 글래스 배경이 탭 줄까지 이어진다.
+                GlassLargeTitleBar(title, "컴포넌트", onBack = onBack, bottom = {
+                    GlassTopTabs(
+                        COMPONENT_TABS.map { GlassTab(it) },
+                        pager,
+                        Modifier.padding(horizontal = readingPadding(16.dp)).fillMaxWidth().padding(bottom = 6.dp),
+                    )
+                })
             },
         ) { padding ->
-            val list = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 120.dp)
+            val list = PaddingValues(
+                start = readingPadding(),
+                end = readingPadding(),
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom =
+                    navigationBarBottom() + 120.dp,
+            )
             HorizontalPager(pager, Modifier.fillMaxSize()) { page ->
                 when (page) {
                     0 -> BasicTab(list, title.connection, island, snackbar)
@@ -136,7 +158,8 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
 @Composable
 internal fun ComponentTabList(padding: PaddingValues, connection: NestedScrollConnection, content: LazyListScope.() -> Unit) {
     LazyColumn(
-        Modifier.fillMaxSize().nestedScroll(connection),
+        // 입력란에 초점이 가면 키보드 높이만큼 목록이 줄어 입력란이 가려지지 않는다.
+        Modifier.fillMaxSize().imePadding().nestedScroll(connection),
         contentPadding = padding,
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
@@ -206,13 +229,17 @@ private fun DemoDial(open: Boolean, onOpenChange: (Boolean) -> Unit, notify: (St
 @Composable
 private fun ButtonsCard() {
     var loading by remember { mutableStateOf(false) }
-    DemoCard("버튼", "채움, 옅은 색, 글래스, 글자만. 누르면 젤리처럼 눌리고, 로딩 중에는 폭을 유지한 채 링이 돈다.") {
+    DemoCard("버튼", "채움, 옅은 색, 글래스, 글자만 있는 버튼입니다. 누르면 젤리처럼 눌리고, 로딩 중에는 폭을 유지한 채 링이 돕니다.") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             GlassButton("결제하기", { loading = !loading }, loading = loading)
             GlassButton("장바구니", {}, kind = GlassButtonKind.Tinted)
             GlassButton("더 보기", {}, kind = GlassButtonKind.Glass)
             GlassButton("취소", {}, kind = GlassButtonKind.Plain)
+        }
+        // 크기가 다른 버튼은 한 줄에 세로 가운데로 맞춰 따로 보여 준다.
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             GlassButton("작게", {}, size = GlassButtonSize.Small, kind = GlassButtonKind.Tinted)
+            GlassButton("보통", {}, kind = GlassButtonKind.Tinted)
             GlassButton("크게", {}, size = GlassButtonSize.Large)
         }
     }
@@ -222,7 +249,7 @@ private fun ButtonsCard() {
 private fun StepperCard() {
     var count by remember { mutableIntStateOf(2) }
     var chips by remember { mutableStateOf(setOf(0)) }
-    DemoCard("스테퍼, 칩, 배지", "숫자는 굴러가며 바뀌고, 길게 누르면 점점 빨라진다. 배지는 숫자가 바뀔 때 톡 튄다.") {
+    DemoCard("스테퍼, 칩, 배지", "숫자는 굴러가며 바뀌고, 길게 누르면 점점 빨라집니다. 배지는 숫자가 바뀔 때 톡 튑니다.") {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             GlassStepper(count, { count = it }, range = 0..120)
             Box(Modifier.size(44.dp).background(Color(0xFF5B6CFF), RoundedCornerShape(12.dp)).glassBadge(count.takeIf { it > 0 }))
@@ -234,7 +261,7 @@ private fun StepperCard() {
 @Composable
 private fun ProgressCard() {
     var progress by remember { mutableFloatStateOf(0.35f) }
-    DemoCard("진행 표시", "값이 바뀌면 용수철로 따라가고, 물결을 켜면 액체가 차오르듯 출렁인다.") {
+    DemoCard("진행 표시", "값이 바뀌면 용수철처럼 따라가고, 물결을 켜면 액체가 차오르듯 출렁입니다.") {
         GlassProgressBar(progress, Modifier.fillMaxWidth(), thickness = 12.dp, wave = true)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             GlassProgressRing(progress, Modifier.size(88.dp), wave = true) { Label("${(progress * 100).toInt()}%", 16, FontWeight.Bold) }
@@ -250,12 +277,22 @@ private fun InputCard() {
     var email by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var tries by remember { mutableIntStateOf(0) }
-    DemoCard("검색과 입력", "검색창을 누르면 취소 버튼이 밀려 들어온다. 이메일이 틀리면 테두리가 빨개지며 흔들린다.") {
-        GlassSearchBar(query, { query = it }, {})
-        GlassTextField(email, {
-            email = it
-            error = null
-        }, "이메일", Modifier.fillMaxWidth().shake(tries), error = error)
+    DemoCard("검색과 입력", "검색창을 누르면 취소 버튼이 밀려 들어옵니다. 이메일 형식이 틀리면 테두리가 빨개지며 흔들립니다.") {
+        GlassSearchBar(query, { query = it }, {}, placeholder = "메뉴나 가게 이름")
+        GlassTextField(
+            email,
+            {
+                email = it
+                error = null
+            },
+            "이메일",
+            Modifier.fillMaxWidth().shake(tries),
+            error = error,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
+            placeholder = "name@example.com",
+            supportingText = "영수증을 받을 주소입니다",
+            leadingIcon = { ShowcaseIcon(ShowcaseIcons.Mail, 20.dp, LocalGlassContentColor.current.copy(alpha = 0.6f)) },
+        )
         Pill("확인") {
             if ("@" !in email) {
                 error = "이메일 주소를 확인해 주세요"
@@ -270,7 +307,7 @@ private fun PickerCard() {
     var date by remember { mutableStateOf(LocalDate.now()) }
     var hour by remember { mutableIntStateOf(9) }
     var minute by remember { mutableIntStateOf(30) }
-    DemoCard("휠 피커", "iOS처럼 원통에 붙은 휠. 굴리면 항목마다 가볍게 진동하고 가운데에 맞춰 멈춘다.") {
+    DemoCard("휠 피커", "iOS처럼 원통에 붙은 휠입니다. 굴리면 항목마다 가볍게 진동하고 가운데에 맞춰 멈춥니다.") {
         GlassDatePicker(date, { date = it }, Modifier.fillMaxWidth())
         GlassTimePicker(hour, minute, { h, m ->
             hour = h
@@ -282,7 +319,7 @@ private fun PickerCard() {
 @Composable
 private fun CarouselCard() {
     val pager = rememberPagerState { PHOTO_COLORS.size }
-    DemoCard("캐러셀", "옆 카드가 살짝 보이고, 멀어질수록 작아지며 기운다. 아래 점이 액체처럼 이어진다.") {
+    DemoCard("캐러셀", "옆 카드가 살짝 보이고, 멀어질수록 작아지며 기웁니다. 아래 인디케이터가 액체처럼 이어집니다.") {
         GlassCarousel(PHOTO_COLORS.size, Modifier.fillMaxWidth().height(180.dp), state = pager) { page ->
             Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)).background(Brush.linearGradient(PHOTO_COLORS[page])))
         }
@@ -294,7 +331,7 @@ private fun CarouselCard() {
 private fun CardStackCard(notify: (String) -> Unit) {
     val stack = rememberSwipeCardStackState()
     val scope = rememberCoroutineScope()
-    DemoCard("카드 더미", "끌어서 좌우로 던진다. 넘긴 카드는 되돌릴 수 있다.") {
+    DemoCard("카드 더미", "카드를 끌어 좌우로 던집니다. 넘긴 카드는 되돌릴 수 있습니다.") {
         SwipeCardStack(
             PEOPLE,
             { name, direction -> notify(if (direction == SwipeDirection.Right) "$name 좋아요" else "$name 넘김") },
@@ -305,7 +342,7 @@ private fun CardStackCard(notify: (String) -> Unit) {
             },
         ) { name ->
             Box(
-                Modifier.fillMaxSize().clip(RoundedCornerShape(28.dp)).background(
+                Modifier.fillMaxSize().clip(INNER_SHAPE).background(
                     Brush.linearGradient(
                         PHOTO_COLORS[
                             PEOPLE.indexOf(name) %
@@ -324,7 +361,7 @@ private fun CardStackCard(notify: (String) -> Unit) {
 private fun TextEffectsCard() {
     var round by remember { mutableIntStateOf(0) }
     DemoCard("글자 효과", "빛이 흐르는 글자, 색이 흐르는 글자, 뒤섞였다 맞춰지는 글자. 카드에 손가락을 대고 움직여 보세요.") {
-        GlassSurface(Modifier.fillMaxWidth().spotlight(shape = RoundedCornerShape(24.dp)).sparkle(), shape = RoundedCornerShape(24.dp)) {
+        GlassSurface(Modifier.fillMaxWidth().spotlight(shape = INNER_SHAPE).sparkle(), shape = INNER_SHAPE) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ShimmerText("밀어서 잠금 해제", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold))
                 GradientText("Kinetica", style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Black))
@@ -337,7 +374,7 @@ private fun TextEffectsCard() {
 
 @Composable
 private fun NotifyCard(onIsland: () -> Unit, onTimer: () -> Unit, onSnackbar: () -> Unit) {
-    DemoCard("알림", "화면 위 캡슐이 부풀며 알림이 되고, 아래 스낵바는 되돌리기와 남은 시간을 보여 준다. 오른쪽 아래 버튼도 눌러 보세요.") {
+    DemoCard("알림", "화면 위 캡슐이 부풀며 알림이 되고, 아래 스낵바는 되돌리기 버튼과 남은 시간을 보여 줍니다. 오른쪽 아래 버튼도 눌러 보세요.") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Pill("메시지 알림", onClick = onIsland)
             Pill("타이머", onClick = onTimer)
