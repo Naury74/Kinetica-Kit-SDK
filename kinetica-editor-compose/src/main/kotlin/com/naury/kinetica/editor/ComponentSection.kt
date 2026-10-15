@@ -29,7 +29,7 @@ import com.naury.kinetica.core.scene.ComponentVariants
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 
-/** 아무것도 고르지 않았을 때 보이는 문서 설정: 디자인 토큰과 컴포넌트. */
+// 아무것도 선택하지 않았을 때 보이는 문서 설정(디자인 토큰, 컴포넌트).
 @Composable
 internal fun DocumentPanel(
     document: SceneDocument,
@@ -99,7 +99,7 @@ private fun NewToken(edits: ComponentEdits) {
     }
 }
 
-/** 컴포넌트 원본이면 이름, 인스턴스면 원본으로 가기·덮어쓴 값 되돌리기·분리. */
+// 메인 컴포넌트면 이름을, 인스턴스면 메인으로 이동·오버라이드 재설정·분리 버튼을 보여 준다.
 @Composable
 internal fun ComponentNodeSection(node: SceneNode, document: SceneDocument, edits: ComponentEdits, theme: StudioTheme) {
     val component = node.component
@@ -144,7 +144,7 @@ internal fun ComponentNodeSection(node: SceneNode, document: SceneDocument, edit
     }
 }
 
-/** 채우기 색을 문서 토큰에 잇는 칩. */
+// 채우기 색을 문서 토큰에 연결하는 칩.
 @Composable
 internal fun FillTokenChips(node: SceneNode, tokens: Set<String>, edits: ComponentEdits, theme: StudioTheme) {
     if (tokens.isEmpty()) return

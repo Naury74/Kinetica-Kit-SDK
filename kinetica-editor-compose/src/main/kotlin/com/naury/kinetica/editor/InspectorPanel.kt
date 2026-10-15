@@ -33,8 +33,8 @@ import com.naury.kinetica.core.scene.SceneNode
 import java.util.Locale
 
 /**
- * 속성 패널(docs 24): 변형(X·Y·너비·높이·회전), 모양(불투명도·채우기). 노드 하나를 골랐을 때만 고칠 수 있다.
- * 입력은 키보드 완료나 포커스를 잃을 때 적용하고, 올바르지 않으면 이전 값으로 되돌리며 오류를 알린다.
+ * 속성 패널. 위치, 크기, 회전, 불투명도, 채우기 등을 편집하며 노드를 하나만 선택했을 때 편집할 수 있다.
+ * 입력은 키보드의 완료를 누르거나 포커스를 잃을 때 적용하고, 올바르지 않은 값이면 이전 값으로 되돌리고 오류를 알린다.
  */
 @Composable
 @Suppress("LongParameterList")
@@ -126,7 +126,7 @@ private fun TextSection(node: SceneNode, content: NodeContent.Text, edits: Prope
     }
 }
 
-/** 화면 읽기 이름과 장식(읽지 않음) 표시. */
+// 스크린 리더 라벨과 장식용(읽지 않음) 설정.
 @Composable
 private fun AccessibilityFields(node: SceneNode, edits: AccessibilityEdits, theme: StudioTheme) {
     Text(stringResource(R.string.kinetica_section_accessibility), color = theme.onPanel.copy(alpha = HINT_ALPHA))
@@ -143,7 +143,7 @@ private fun AccessibilityFields(node: SceneNode, edits: AccessibilityEdits, them
     }
 }
 
-/** 데이터 키·동작 이름 입력. 빈칸이면 연결을 푼다. */
+// 데이터 키와 동작 이름 입력. 비우면 바인딩을 해제한다.
 @Composable
 private fun BindingFields(node: SceneNode, edits: PropertyEdits, theme: StudioTheme) {
     Text(stringResource(R.string.kinetica_section_data), color = theme.onPanel.copy(alpha = HINT_ALPHA))
@@ -207,7 +207,7 @@ internal fun NumberInput(node: SceneNode, field: NumericField, label: Int, edits
     ) { edits.setNumber(node.id, field, it) }
 }
 
-/** 입력 중에는 문서를 바꾸지 않고, 완료하거나 포커스를 잃을 때 [onCommit]한다. 실패하면 [current]로 되돌린다. */
+// 입력하는 동안에는 문서를 바꾸지 않고, 완료하거나 포커스를 잃을 때 [onCommit]을 부른다. 실패하면 [current]로 되돌린다.
 @Composable
 internal fun CommitTextField(
     current: String,
@@ -229,7 +229,7 @@ internal fun CommitTextField(
         invalid = !onCommit(text)
         if (invalid) text = current
     }
-    // 시트나 패널이 닫혀 입력칸이 사라질 때도 쓰던 값을 버리지 않는다.
+    // 시트나 패널이 닫혀 입력란이 사라질 때도 입력하던 값을 버리지 않는다.
     DisposableEffect(key) {
         onDispose { if (focused && latestText != current) latestCommit(latestText) }
     }
@@ -261,7 +261,7 @@ private const val DECIMALS_SCALE = 100.0
 private const val HINT_ALPHA = 0.6f
 private const val CHIP_ALPHA = 0.3f
 
-/** 소수점 둘째 자리까지, 끝의 0은 뺀다. 기기 언어와 상관없이 `.`을 쓴다. */
+// 소수점 둘째 자리까지 쓰고 끝의 0은 뺀다. 기기 언어와 상관없이 소수점은 `.`이다.
 internal fun formatNumber(value: Double): String {
     val rounded = Math.round(value * DECIMALS_SCALE) / DECIMALS_SCALE
     return if (rounded == Math.rint(rounded)) rounded.toLong().toString() else String.format(Locale.ROOT, "%s", rounded)

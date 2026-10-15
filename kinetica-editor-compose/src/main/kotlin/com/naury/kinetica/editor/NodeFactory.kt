@@ -13,7 +13,7 @@ import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.Shadow
 import java.util.UUID
 
-/** 도구로 새로 만드는 노드. 가운데가 [center](문서 좌표)에 오고 pivot은 가운데다. */
+// 툴바로 새로 만드는 노드. 중심이 [center](문서 좌표)에 오고 pivot도 중심이다.
 internal object NodeFactory {
     private val palette = listOf(0xFF7C8CFF, 0xFF64C8FF, 0xFFF0B35A, 0xFF5ED6A0, 0xFFFF7A90).map { ArgbColor(it.toInt()) }
     private val shapeSize = Size(240.0, 160.0)
@@ -43,7 +43,7 @@ internal object NodeFactory {
     fun star(center: Vec2, sequence: Int): SceneNode =
         shape(NodeContent.Polygon(squareSize, sides = STAR_POINTS, innerRatio = STAR_INNER), center, sequence)
 
-    /** 왼쪽에서 오른쪽으로 가는 선. [arrow]면 끝에 화살표를 단다. */
+    // 왼쪽에서 오른쪽으로 긋는 선. [arrow]면 끝에 화살표를 단다.
     fun line(center: Vec2, sequence: Int, arrow: Boolean): SceneNode {
         val commands = listOf(PathCommand.MoveTo(Vec2(0.0, 0.0)), PathCommand.LineTo(Vec2(LINE_LENGTH, 0.0)))
         return SceneNode(
@@ -58,7 +58,7 @@ internal object NodeFactory {
         )
     }
 
-    /** 흰 배경·둥근 모서리·옅은 그림자의 카드 모양 Frame. */
+    // 흰 배경에 둥근 모서리와 옅은 그림자를 준 카드 모양 Frame.
     fun frame(center: Vec2): SceneNode = SceneNode(
         id = newId(),
         content = NodeContent.Frame(frameSize, cornerRadius = FRAME_RADIUS),

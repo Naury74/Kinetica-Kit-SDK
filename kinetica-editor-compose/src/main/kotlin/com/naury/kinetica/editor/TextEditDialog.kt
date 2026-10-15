@@ -36,14 +36,14 @@ import com.naury.kinetica.core.scene.TextSpan
 import com.naury.kinetica.core.scene.TextSpans
 
 /**
- * 글자 노드의 내용과 리치 텍스트를 고치는 창. 고른 부분(고른 곳이 없으면 전체)에 굵게·기울임·밑줄·취소선·크기·색·글꼴을 준다.
- * 입력란에 모양이 그대로 보이며, 글자를 고치면 구간이 따라 움직인다. 확인을 누르면 실행 취소 한 단계로 적용한다.
+ * 텍스트 노드의 내용과 리치 텍스트를 편집하는 창. 선택한 범위(없으면 전체)에 굵게, 기울임, 밑줄, 취소선, 크기, 색, 폰트를 적용한다.
+ * 입력란에 스타일이 그대로 보이고, 텍스트를 고치면 구간도 따라 움직인다. 확인을 누르면 실행 취소 한 단계로 적용한다.
  */
 @Composable
 internal fun TextEditDialog(state: EditorState, edits: PropertyEdits, id: NodeId, onDismiss: () -> Unit) {
     val node = state.document.node(id)
     val content = node?.content as? NodeContent.Text ?: return onDismiss()
-    // 내용이 데이터에 묶여 있으면 화면에는 앱 데이터가 보여 여기서 고친 글자가 안 보인다. 그 사실을 알리고 묶음을 풀 수 있게 한다.
+    // 내용이 데이터에 바인딩되어 있으면 화면에는 앱 데이터가 보여서 여기서 고친 텍스트가 보이지 않는다. 그 사실을 알리고 바인딩을 해제할 수 있게 한다.
     val boundKey = node.bindings[BoundProperty.Text]
     val draft = remember(id) { RichTextDraft(content) }
     val focus = remember { FocusRequester() }
@@ -91,13 +91,13 @@ internal fun TextEditDialog(state: EditorState, edits: PropertyEdits, id: NodeId
     LaunchedEffect(id) { focus.requestFocus() }
 }
 
-/** 창 안에서 고치는 중인 글자·구간과 모양을 줄 범위. */
+// 창 안에서 편집 중인 텍스트와 구간, 스타일을 적용할 범위.
 private class RichTextDraft(content: NodeContent.Text) {
     var value by mutableStateOf(TextFieldValue(content.text, TextRange(content.text.length)))
     var spans by mutableStateOf(content.spans)
     var invalid by mutableStateOf(false)
 
-    // 크기·색 입력칸을 누르면 글자 입력칸의 고른 부분이 풀리므로, 마지막으로 고른 부분을 기억해 모양을 준다. 없으면 전체에 준다.
+    // 크기나 색 입력란을 누르면 텍스트 입력란의 선택이 풀린다. 그래서 마지막으로 선택한 범위를 기억해 두고 거기에 적용하고, 없으면 전체에 적용한다.
     private var selected by mutableStateOf(TextRange.Zero)
 
     val range: IntRange
@@ -105,7 +105,7 @@ private class RichTextDraft(content: NodeContent.Text) {
 
     fun change(next: TextFieldValue) {
         spans = TextSpans.remap(spans, value.text, next.text)
-        // 글자를 고치면 고른 부분을 잊고, 고른 부분이 있을 때만 새로 기억한다. 다른 입력칸을 눌러 풀린 선택은 무시한다.
+        // 텍스트를 고치면 기억한 범위를 버리고, 선택 범위가 있을 때만 새로 기억한다. 다른 입력란을 눌러 풀린 선택은 무시한다.
         if (next.text != value.text) {
             selected = TextRange.Zero
         } else if (!next.selection.collapsed) {
@@ -195,10 +195,10 @@ private fun SpanField(label: Int, current: String, keyboard: KeyboardType, onCom
     )
 }
 
-/** 테스트에서 글자 편집 입력칸을 찾을 때 쓰는 tag. */
+/** 테스트에서 텍스트 편집 입력란을 찾을 때 쓰는 test tag. */
 internal const val TEXT_EDIT_TAG = "kinetica-text-edit"
 
-/** 글꼴 선택. `null`은 노드 글꼴을 따른다(구간에는 기본 글꼴 이름을 준다). */
+// 폰트 선택. `null`은 노드 폰트를 따른다는 뜻이고, 구간에는 기본 폰트 이름을 넣는다.
 internal val FONT_CHOICES = listOf(
     null to R.string.kinetica_font_default,
     "sans" to R.string.kinetica_font_sans,

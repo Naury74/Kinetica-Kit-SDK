@@ -19,7 +19,7 @@ import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.TextAutoSize
 import com.naury.kinetica.core.scene.TextDecoration
 
-/** 채우기(없음·단색·선형·원형 그라디언트). 글자는 글자 색으로 쓴다. */
+// 채우기(없음, 단색, 선형·방사형 그라디언트). 텍스트에서는 글자색이 된다.
 @Composable
 internal fun FillSection(node: SceneNode, edits: StyleEdits, property: PropertyEdits, theme: StudioTheme) {
     if (node.content is NodeContent.Image || node.content is NodeContent.HostSlot || node.content is NodeContent.Group) return
@@ -60,7 +60,7 @@ internal fun FillSection(node: SceneNode, edits: StyleEdits, property: PropertyE
     }
 }
 
-/** 선 색·두께·점선, 열린 경로의 끝 모양. */
+// 선 색, 두께, 점선과 열린 패스의 끝 모양.
 @Composable
 internal fun StrokeSection(node: SceneNode, edits: StyleEdits, theme: StudioTheme) {
     val content = node.content
@@ -105,7 +105,7 @@ internal fun StrokeSection(node: SceneNode, edits: StyleEdits, theme: StudioThem
     }
 }
 
-/** 그림자 목록(바깥·안쪽)과 레이어 흐림. */
+// 그림자 목록(바깥, 안쪽)과 레이어 블러.
 @Composable
 internal fun EffectsSection(node: SceneNode, edits: EffectEdits, theme: StudioTheme) {
     if (node.content is NodeContent.Text) return
@@ -153,7 +153,7 @@ internal fun EffectsSection(node: SceneNode, edits: EffectEdits, theme: StudioTh
     }
 }
 
-/** 사각형·Frame의 모서리별 반지름. */
+// 사각형과 Frame의 모서리별 반경.
 @Composable
 internal fun CornersSection(node: SceneNode, edits: ShapeEdits, theme: StudioTheme) {
     val corners = when (val content = node.content) {
@@ -172,7 +172,7 @@ internal fun CornersSection(node: SceneNode, edits: ShapeEdits, theme: StudioThe
     }
 }
 
-/** 다각형 꼭짓점 수와 별 비율. */
+// 다각형 꼭짓점 수와 별 비율.
 @Composable
 internal fun PolygonSection(node: SceneNode, polygon: NodeContent.Polygon, edits: ShapeEdits, theme: StudioTheme) {
     SectionTitle(R.string.kinetica_section_polygon, theme)
@@ -193,7 +193,7 @@ internal fun PolygonSection(node: SceneNode, polygon: NodeContent.Polygon, edits
     }
 }
 
-/** 글자 전체의 글꼴·기울임·밑줄·취소선. 일부만 바꾸려면 글자 수정 창에서 고른다. */
+// 텍스트 전체의 폰트, 기울임, 밑줄, 취소선. 일부만 바꾸려면 텍스트 편집 창에서 범위를 선택한다.
 @Composable
 internal fun FontSection(node: SceneNode, text: NodeContent.Text, edits: TextEdits, theme: StudioTheme) {
     SectionTitle(R.string.kinetica_section_font, theme)

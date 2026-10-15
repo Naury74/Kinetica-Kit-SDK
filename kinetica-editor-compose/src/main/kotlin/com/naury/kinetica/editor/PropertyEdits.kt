@@ -13,16 +13,16 @@ import com.naury.kinetica.core.scene.TextSpans
 import com.naury.kinetica.core.scene.sizeOrNull
 import com.naury.kinetica.core.scene.withSize
 
-/** 속성 패널에서 고칠 수 있는 숫자 값. */
+/** 속성 패널에서 편집할 수 있는 숫자 값. */
 internal enum class NumericField { X, Y, Width, Height, Rotation, Opacity, CornerRadius, FontWeight }
 
 /**
- * 속성 패널 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계다. 모션 편집 중이면 보이는 값을 기준으로 고치고
- * 애니메이션 속성은 keyframe이 된다([EditorState.execute]).
+ * 속성 패널 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계다. 모션 편집 중이면 화면에 보이는 값을 기준으로 고치고,
+ * 애니메이션할 수 있는 속성은 keyframe이 된다([EditorState.execute]).
  * 숫자가 아니거나 유한하지 않거나 범위를 벗어나면 문서를 바꾸지 않고 `false`를 돌려준다.
  */
 internal class PropertyEdits(private val state: EditorState) {
-    /** 지금 값. 크기가 없는 노드(경로·그룹)의 너비·높이는 `null`이다. opacity는 0..100(%)이다. */
+    /** 지금 값. 크기가 없는 노드(패스, 그룹)의 너비와 높이는 `null`이고, opacity는 0..100(%)이다. */
     fun value(node: SceneNode, field: NumericField): Double? = when (field) {
         NumericField.X -> node.transform.translationX
 
@@ -68,7 +68,7 @@ internal class PropertyEdits(private val state: EditorState) {
         return update(updated)
     }
 
-    /** `#RRGGBB` 또는 `#AARRGGBB`. `#`는 빼도 된다. */
+    /** 색을 `#RRGGBB` 또는 `#AARRGGBB`로 받는다. `#`는 생략해도 된다. */
     fun setFill(id: NodeId, text: String): Boolean {
         val node = state.document.node(id) ?: return false
         val hex = text.trim().let { if (it.startsWith("#")) it else "#$it" }
@@ -77,9 +77,9 @@ internal class PropertyEdits(private val state: EditorState) {
     }
 
     /**
-     * 글자 노드의 내용을 바꾼다. [unbind]면 내용 데이터 묶음도 같은 실행 취소 단계에서 푼다.
-     * [spans]를 주면 리치 텍스트 구간을 그것으로 바꾸고, 주지 않으면 지금 구간을 바뀐 글자에 맞춰 옮긴다.
-     * 상한·유니코드 검사를 통과하지 못하면 `false`이고 문서는 그대로다.
+     * 텍스트 노드의 내용을 바꾼다. [unbind]면 텍스트 데이터 바인딩도 같은 실행 취소 단계에서 해제한다.
+     * [spans]를 주면 리치 텍스트 구간을 그것으로 바꾸고, 주지 않으면 기존 구간을 바뀐 텍스트에 맞춰 옮긴다.
+     * 길이 상한이나 유니코드 검사를 통과하지 못하면 `false`를 돌려주고 문서는 그대로 둔다.
      */
     fun setText(id: NodeId, text: String, unbind: Boolean = false, spans: List<TextSpan>? = null): Boolean {
         val node = state.document.node(id) ?: return false
@@ -89,7 +89,7 @@ internal class PropertyEdits(private val state: EditorState) {
         return update(node.copy(content = content.copy(text = text, spans = nextSpans), bindings = bindings))
     }
 
-    /** 글자 크기(문서 단위). 0 이하는 거부한다. */
+    /** 폰트 크기(문서 단위). 0 이하는 거부한다. */
     fun setFontSize(id: NodeId, text: String): Boolean {
         val node = state.document.node(id) ?: return false
         val content = node.content as? NodeContent.Text ?: return false
@@ -98,7 +98,7 @@ internal class PropertyEdits(private val state: EditorState) {
     }
 
     /**
-     * [property]를 데이터 키 [key]에 묶는다. 빈 글자면 묶음을 푼다. 키 형식이 틀리면 `false`이고 문서는 그대로다.
+     * [property]를 데이터 키 [key]에 바인딩한다. 빈 문자열이면 바인딩을 해제한다. 키 형식이 틀리면 `false`를 돌려주고 문서는 그대로 둔다.
      */
     fun setBinding(id: NodeId, property: BoundProperty, key: String): Boolean {
         val node = state.document.node(id) ?: return false
@@ -107,13 +107,13 @@ internal class PropertyEdits(private val state: EditorState) {
         return update(node.copy(bindings = bindings))
     }
 
-    /** 누르면 호스트에 넘길 동작 이름. 빈 글자면 지운다. */
+    /** 탭했을 때 호스트에 넘길 동작 이름. 빈 문자열이면 지운다. */
     fun setAction(id: NodeId, action: String): Boolean {
         val node = state.document.node(id) ?: return false
         return update(node.copy(action = action.trim().ifEmpty { null }))
     }
 
-    /** 바깥 그림자를 켜고 끈다. 켤 때는 옅은 기본 그림자를 맨 앞에 넣고, 끌 때는 바깥 그림자를 모두 뺀다. */
+    /** 바깥 그림자를 켜고 끈다. 켤 때는 옅은 기본 그림자를 맨 앞에 넣고, 끌 때는 바깥 그림자를 모두 지운다. */
     fun toggleShadow(id: NodeId): Boolean {
         val node = state.document.node(id) ?: return false
         val outer = node.style.shadows.filterNot { it.inner }
@@ -125,7 +125,7 @@ internal class PropertyEdits(private val state: EditorState) {
         return update(node.copy(style = node.style.copy(shadows = shadows)))
     }
 
-    /** Frame이 자식을 상자 안으로 자를지 바꾼다. */
+    /** Frame이 자식을 자기 영역 안으로 자를지 정한다. */
     fun toggleClip(id: NodeId): Boolean {
         val node = state.document.node(id) ?: return false
         val frame = node.content as? NodeContent.Frame ?: return false
@@ -150,7 +150,7 @@ internal class PropertyEdits(private val state: EditorState) {
         }
     }
 
-    /** 크기를 바꿔도 pivot이 같은 비율 자리에 있게 한다. 0 이하는 거부한다. */
+    /** 크기를 바꿔도 pivot이 같은 비율의 위치에 있게 한다. 0 이하는 거부한다. */
     private fun resized(node: SceneNode, field: NumericField, value: Double): SceneNode? {
         val size = node.content.sizeOrNull() ?: return null
         if (value <= 0.0) return null

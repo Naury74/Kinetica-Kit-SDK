@@ -12,7 +12,7 @@ import com.naury.kinetica.core.scene.BoundProperty
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneNode
 
-/** 글자에 데이터를 묶었을 때 숫자를 보여 줄 형식(앞 글자·뒤 글자·소수 자릿수). 묶지 않았으면 보이지 않는다. */
+// 텍스트에 데이터를 바인딩했을 때 숫자를 보여 줄 형식(접두사, 접미사, 소수점 자릿수). 바인딩하지 않았으면 보이지 않는다.
 @Composable
 internal fun NumberFormatFields(node: SceneNode, content: NodeContent.Text, edits: TextEdits, theme: StudioTheme) {
     if (BoundProperty.Text !in node.bindings) return

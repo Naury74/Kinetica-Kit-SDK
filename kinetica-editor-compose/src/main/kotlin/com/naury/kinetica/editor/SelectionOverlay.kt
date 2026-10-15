@@ -18,8 +18,8 @@ import com.naury.kinetica.guides.GuideAxis
 import com.naury.kinetica.guides.SnapGuide
 
 /**
- * 문서 위에 그리는 편집 표시. 문서 렌더러와 분리되어 있으며(docs 11) 크기는 확대와 상관없이 dp로 고정이다.
- * 선택 테두리 1.5dp, 크기 손잡이 10dp 사각형, 회전 손잡이 원, 안내선 1dp(docs 24).
+ * 문서 위에 그리는 편집 오버레이. 문서 렌더러와 따로 그리며, 크기는 확대 배율과 상관없이 dp로 고정이다.
+ * 선택 테두리 1.5dp, 크기 핸들은 10dp 사각형, 회전 핸들은 원, 가이드선 1dp.
  */
 @Composable
 internal fun SelectionOverlay(

@@ -14,7 +14,7 @@ import com.naury.kinetica.core.scene.TextDecoration
 import com.naury.kinetica.core.scene.TextSpan
 import com.naury.kinetica.core.scene.TextSpans
 
-/** 글자 입력란에 구간 모양(굵기·기울임·장식·색)을 보여 준다. 크기·글꼴은 입력 편의를 위해 보여 주지 않는다. */
+// 텍스트 입력란에 구간 스타일(굵기, 기울임, 밑줄·취소선, 색)을 보여 준다. 크기와 폰트까지 바꾸면 입력하기 불편해서 반영하지 않는다.
 internal class SpanPreview(private val spans: List<TextSpan>) : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
         val styled = buildAnnotatedString {

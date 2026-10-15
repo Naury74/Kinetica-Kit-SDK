@@ -13,7 +13,7 @@ import com.naury.kinetica.core.scene.NodeStyle
 /** 채우기 방식. */
 internal enum class FillMode { None, Solid, Linear, Radial }
 
-/** 채우기·선·효과·모서리·다각형 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이며, 받을 수 없는 값이면 `false`다. */
+/** 채우기, 선, 효과, 모서리, 다각형 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이고, 받을 수 없는 값이면 `false`를 돌려준다. */
 internal class StyleEdits(private val state: EditorState) {
     fun fillMode(style: NodeStyle): FillMode = when (style.gradient?.type) {
         GradientType.Linear -> FillMode.Linear
@@ -39,7 +39,7 @@ internal class StyleEdits(private val state: EditorState) {
         }
     }
 
-    /** 그라디언트 [index]번째 색(`#RRGGBB`·`#AARRGGBB`). */
+    /** 그라디언트의 [index]번째 색을 `#RRGGBB` 또는 `#AARRGGBB`로 바꾼다. */
     fun setStopColor(id: NodeId, index: Int, text: String): Boolean {
         val color = parseColor(text) ?: return false
         return edit(id) { style ->
@@ -95,7 +95,7 @@ internal class StyleEdits(private val state: EditorState) {
     }
 }
 
-/** [change]가 `null`을 돌려주면 받을 수 없는 입력이며 문서는 그대로다. */
+// [change]가 `null`을 돌려주면 받을 수 없는 입력이므로 문서를 그대로 둔다.
 internal fun EditorState.editStyle(id: NodeId, change: (NodeStyle) -> NodeStyle?): Boolean {
     val node = document.node(id) ?: return false
     val style = change(node.style) ?: return false

@@ -13,13 +13,13 @@ import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.isValidDataKey
 import com.naury.kinetica.presets.UiKit
 
-/** 컴포넌트·인스턴스·디자인 토큰 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이며, 받을 수 없는 값이면 `false`다. */
+/** 컴포넌트, 인스턴스, 디자인 토큰 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이고, 받을 수 없는 값이면 `false`를 돌려준다. */
 internal class ComponentEdits(private val state: EditorState) {
     val variants = VariantEdits(state)
 
     /**
-     * 고른 노드를 컴포넌트 원본으로 만든다. Frame 하나면 그대로, 아니면 Frame으로 감싼 뒤 원본으로 만든다.
-     * 이미 원본·인스턴스이거나 고른 것이 없으면 `false`.
+     * 선택한 노드를 메인 컴포넌트로 만든다. Frame 하나를 선택했으면 그대로 쓰고, 아니면 Frame으로 감싼 뒤 만든다.
+     * 이미 메인 컴포넌트나 인스턴스이거나 선택한 노드가 없으면 `false`를 돌려준다.
      */
     fun makeComponent(ids: List<NodeId>): Boolean {
         val document = state.document
@@ -50,7 +50,7 @@ internal class ComponentEdits(private val state: EditorState) {
         return update(node.copy(component = trimmed, name = trimmed))
     }
 
-    /** 원본 [mainId]의 인스턴스를 [center]에 넣고 고른다. */
+    /** 메인 컴포넌트 [mainId]의 인스턴스를 [center]에 넣고 선택한다. */
     fun insertInstance(mainId: NodeId, center: Vec2): Boolean {
         val main = state.document.node(mainId)?.takeIf { it.component != null } ?: return false
         val frame = main.content as? NodeContent.Frame ?: return false
@@ -72,7 +72,7 @@ internal class ComponentEdits(private val state: EditorState) {
         return update(node.copy(instanceOf = link.copy(overrides = emptyMap())))
     }
 
-    /** 인스턴스를 원본과 끊어 지금 모습 그대로의 일반 Frame으로 만든다. */
+    /** 인스턴스를 메인 컴포넌트에서 분리해 지금 모습 그대로 일반 Frame으로 만든다. */
     fun detach(id: NodeId): Boolean {
         val node = state.document.node(id)?.takeIf { it.instanceOf != null } ?: return false
         return update(node.copy(instanceOf = null, bindings = node.bindings - BoundProperty.Variant))
@@ -85,7 +85,7 @@ internal class ComponentEdits(private val state: EditorState) {
         return true
     }
 
-    /** 토큰 [name]을 `#RRGGBB`·`#AARRGGBB` 색으로 정한다. 새 이름이면 더한다. */
+    /** 토큰 [name]의 색을 `#RRGGBB` 또는 `#AARRGGBB`로 정한다. 없는 이름이면 새로 추가한다. */
     fun setToken(name: String, text: String): Boolean {
         val key = name.trim()
         val color = parseColor(text) ?: return false
@@ -95,7 +95,7 @@ internal class ComponentEdits(private val state: EditorState) {
 
     fun removeToken(name: String): Boolean = state.session.commands.execute(SceneCommand.SetToken(name, null)) is CommandResult.Applied
 
-    /** 채우기를 토큰 [name]에 잇는다. `null`이면 연결을 끊고 지금 색을 둔다. */
+    /** 채우기를 토큰 [name]에 연결한다. `null`이면 연결을 끊고 지금 색을 그대로 둔다. */
     fun linkFill(id: NodeId, name: String?): Boolean = state.editStyle(id) { style ->
         if (name ==
             null
@@ -106,7 +106,7 @@ internal class ComponentEdits(private val state: EditorState) {
         }
     }
 
-    /** 기본 컴포넌트 키트를 artboard 오른쪽 밖에 넣는다. 이미 넣었으면 `false`. */
+    /** 기본 컴포넌트 키트를 artboard 오른쪽 바깥에 넣는다. 이미 넣었으면 `false`를 돌려준다. */
     fun insertStarterKit(): Boolean {
         val document = state.document
         if (document.node(NodeId("$KIT_PREFIX-button")) != null) return false

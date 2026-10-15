@@ -246,7 +246,7 @@
     <string name="kinetica_accessibility_hidden">Decorative (not read)</string>
     <string name="kinetica_motion_replay">Replay</string>
     <string name="kinetica_number_format">Number format</string>
-    <string name="kinetica_number_prefix">Before</string>
-    <string name="kinetica_number_suffix">After</string>
+    <string name="kinetica_number_prefix">Prefix</string>
+    <string name="kinetica_number_suffix">Suffix</string>
     <string name="kinetica_number_decimals">Decimals</string>
 </resources>

@@ -8,9 +8,9 @@ import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 
-/** 컴포넌트 변형 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이며, 받을 수 없으면 `false`다. */
+/** 컴포넌트 베리언트 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이고, 받을 수 없는 입력이면 `false`를 돌려준다. */
 internal class VariantEdits(private val state: EditorState) {
-    /** 인스턴스 [id]를 같은 세트의 원본 [mainId] 변형으로 바꾼다. 덮어쓴 값은 이름이 같은 레이어로 옮긴다. */
+    /** 인스턴스 [id]를 같은 세트에 있는 베리언트 [mainId]로 바꾼다. 오버라이드는 이름이 같은 레이어로 옮긴다. */
     fun swapVariant(id: NodeId, mainId: NodeId): Boolean {
         val node = state.document.node(id) ?: return false
         val link = node.instanceOf ?: return false
@@ -19,8 +19,8 @@ internal class VariantEdits(private val state: EditorState) {
     }
 
     /**
-     * 원본 [mainId]를 복사해 같은 세트의 새 변형을 원본 오른쪽에 만들고 고른다. 원본에 세트가 없으면 원본 이름을 `이름/Default`로 바꿔 세트를 만든다.
-     * 원본이 아니면 `false`.
+     * 메인 컴포넌트 [mainId]를 복사해 같은 세트의 새 베리언트를 오른쪽에 만들고 선택한다. 세트가 없으면 메인 컴포넌트 이름을 `이름/Default`로 바꿔 세트를 만든다.
+     * [mainId]가 메인 컴포넌트가 아니면 `false`를 돌려준다.
      */
     fun addVariant(mainId: NodeId): Boolean {
         val document = state.document
@@ -46,7 +46,7 @@ internal class VariantEdits(private val state: EditorState) {
         }
     }
 
-    /** [rootId]와 자손을 새 id로 복사한다(첫 원소가 루트). 인스턴스의 자식은 인스턴스가 스스로 다시 만들므로 복사하지 않는다. */
+    // [rootId]와 자손을 새 id로 복사한다. 첫 원소가 루트다. 인스턴스의 자식은 인스턴스가 다시 만들므로 복사하지 않는다.
     private fun cloneSubtree(document: SceneDocument, rootId: NodeId): List<SceneNode> {
         val ids = HashMap<NodeId, NodeId>()
         val result = ArrayList<SceneNode>()
@@ -81,7 +81,7 @@ internal class VariantEdits(private val state: EditorState) {
     }
 }
 
-/** 부모부터 자식 순서로 넣는다. AddNode는 부모가 먼저 있어야 받는다. */
+// 부모부터 자식 순서로 넣는다. AddNode는 부모가 먼저 있어야 받아들인다.
 internal fun EditorState.addSubtree(nodes: List<SceneNode>, rootId: NodeId, rootParent: NodeId?): Boolean {
     val byId = nodes.associateBy { it.id }
     fun add(id: NodeId, parent: NodeId?): Boolean {

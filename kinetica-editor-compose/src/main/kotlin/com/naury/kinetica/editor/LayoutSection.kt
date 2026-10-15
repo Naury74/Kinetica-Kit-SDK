@@ -19,7 +19,7 @@ import com.naury.kinetica.core.scene.Pin
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.sizeOrNull
 
-/** Frame 자동 배치(방향·간격·여백·정렬·내용 맞춤). 끄면 자식은 지금 자리에 남는다. */
+// Frame 자동 레이아웃 설정(방향, 간격, 패딩, 정렬, 콘텐츠 맞춤). 끄면 자식은 지금 위치에 그대로 남는다.
 @Composable
 internal fun AutoLayoutSection(node: SceneNode, frame: NodeContent.Frame, edits: LayoutEdits, theme: StudioTheme) {
     val layout = frame.layout
@@ -68,7 +68,7 @@ internal fun AutoLayoutSection(node: SceneNode, frame: NodeContent.Frame, edits:
     }
 }
 
-/** 크기 최소·최대. 자동 배치·제약이 크기를 바꿀 때 이 범위를 지킨다. 빈 칸은 제한 없음. */
+// 최소·최대 크기. 자동 레이아웃이나 제약이 크기를 바꿀 때 이 범위를 지킨다. 비워 두면 제한이 없다.
 @Composable
 internal fun SizeLimitsSection(node: SceneNode, edits: LayoutEdits, theme: StudioTheme) {
     if (node.content.sizeOrNull() == null) return
@@ -96,7 +96,7 @@ internal fun SizeLimitsSection(node: SceneNode, edits: LayoutEdits, theme: Studi
     }
 }
 
-/** 부모(Frame·artboard) 크기가 바뀔 때 따라가는 방식. 화면 크기 대응 재생([com.naury.kinetica.core.scene.Layouts.resizeArtboard])에 쓰인다. */
+// 부모(Frame이나 artboard) 크기가 바뀔 때 따라가는 방식. 화면 크기에 맞춰 재생할 때([com.naury.kinetica.core.scene.Layouts.resizeArtboard]) 쓰인다.
 @Composable
 internal fun ConstraintsSection(node: SceneNode, edits: LayoutEdits, theme: StudioTheme) {
     Text(stringResource(R.string.kinetica_section_constraints), color = theme.onPanel.copy(alpha = SECTION_ALPHA))
@@ -116,7 +116,7 @@ internal fun ConstraintsSection(node: SceneNode, edits: LayoutEdits, theme: Stud
     }
 }
 
-/** 자동 배치 Frame의 자식. 위치는 배치가 정하고, 남는 공간을 채울지만 고른다. */
+// 자동 레이아웃 Frame의 자식. 위치는 레이아웃이 정하므로 남은 공간을 채울지만 고른다.
 @Composable
 internal fun LayoutChildSection(node: SceneNode, edits: LayoutEdits, theme: StudioTheme) {
     Text(stringResource(R.string.kinetica_section_layout_child), color = theme.onPanel.copy(alpha = SECTION_ALPHA))

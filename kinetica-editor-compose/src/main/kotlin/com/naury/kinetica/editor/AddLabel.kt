@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/** "+ 글자" 버튼 글자. 기호와 글자를 따로 두어 오른쪽에서 왼쪽으로 쓰는 언어에서도 기호가 시작쪽에 온다. */
+/** "+ 텍스트" 같은 추가 버튼 라벨. 기호와 글자를 나눠 두어 RTL 언어에서도 기호가 시작 쪽에 오게 한다. */
 @Composable
 internal fun AddLabel(text: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {

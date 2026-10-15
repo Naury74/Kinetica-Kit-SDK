@@ -8,10 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /**
- * 편집기 색. 기본값은 어두운 테마([dark])이며 [light]·[system]으로 바꾸거나 값마다 고쳐 쓴다.
- * 편집기 안의 입력란·칩·시트도 이 색을 따른다(호스트 앱의 MaterialTheme과 상관없이).
+ * 편집기 색. 기본값은 다크 테마([dark])이고 [light]나 [system]으로 바꾸거나 값을 하나씩 바꿔 쓸 수 있다.
+ * 편집기 안의 입력란, 칩, 시트도 호스트 앱의 MaterialTheme과 상관없이 이 색을 따른다.
  *
- * @property isDark 어두운 색 조합인지. 입력란 글자·시스템 대비 계산에 쓴다.
+ * @property isDark 어두운 색 조합인지 여부. 입력란 글자색과 대비 계산에 쓴다.
  */
 public data class StudioTheme(
     val canvasBackground: Color = Color(CANVAS_BACKGROUND),
@@ -22,7 +22,7 @@ public data class StudioTheme(
     val warning: Color = Color(WARNING),
     val isDark: Boolean = true,
 ) {
-    /** 편집기 안 Material 구성 요소에 쓰는 색. */
+    /** 편집기 안의 Material 컴포넌트에 쓰는 색. */
     internal fun colorScheme(): ColorScheme {
         val base = if (isDark) darkColorScheme() else lightColorScheme()
         return base.copy(
@@ -43,11 +43,11 @@ public data class StudioTheme(
     }
 
     public companion object {
-        /** 어두운 편집기(기본값). */
+        /** 다크 테마(기본값). */
         @JvmStatic
         public fun dark(): StudioTheme = StudioTheme()
 
-        /** 밝은 편집기. */
+        /** 라이트 테마. */
         @JvmStatic
         public fun light(): StudioTheme = StudioTheme(
             canvasBackground = Color(LIGHT_CANVAS),
@@ -59,7 +59,7 @@ public data class StudioTheme(
             isDark = false,
         )
 
-        /** 시스템 어두운 모드를 따른다. */
+        /** 시스템 다크 모드 설정을 따른다. */
         @Composable
         public fun system(): StudioTheme = if (isSystemInDarkTheme()) dark() else light()
     }

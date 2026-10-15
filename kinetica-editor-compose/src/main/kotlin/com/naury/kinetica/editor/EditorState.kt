@@ -28,9 +28,9 @@ import com.naury.kinetica.presets.PresetResult
 import kotlin.math.roundToLong
 
 /**
- * 편집 화면의 보기 상태(viewport·캔버스 크기·모션 재생 위치)와 세션을 잇는다. 보기 상태는 문서가 아니므로 실행 취소되지 않는다.
+ * 편집 화면의 보기 상태(viewport, 캔버스 크기, 모션 재생 위치)와 세션을 연결한다. 보기 상태는 문서에 속하지 않으므로 실행 취소되지 않는다.
  *
- * 모든 편집(제스처·속성 패널·정렬)은 [execute]를 지난다. 모션 편집 중에는 [document]가 재생 위치에서 평가한 문서이고,
+ * 제스처, 속성 패널, 정렬 등 모든 편집은 [execute]를 거친다. 모션 편집 중에는 [document]가 재생 위치에서 평가한 문서이고,
  * [execute]는 [AutoKey]로 애니메이션 속성 변경을 keyframe으로 바꾼다.
  */
 internal class EditorState(val session: KineticaSession) : GestureHost {
@@ -41,16 +41,16 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
     private var viewportState by mutableStateOf<Viewport?>(null)
     private var created = 0
 
-    /** 옮기는 동안 붙은 안내선. 제스처가 끝나면 비운다. */
+    /** 드래그하는 동안 스냅된 가이드선. 제스처가 끝나면 비운다. */
     var guides by mutableStateOf<List<SnapGuide>>(emptyList())
 
-    /** 상태 기계가 바뀔 때마다 늘어난다. 표시(사각 선택 등)를 다시 그리는 신호다. */
+    /** 제스처 상태가 바뀔 때마다 1씩 늘어난다. 드래그 선택 영역 같은 오버레이를 다시 그리는 신호로 쓴다. */
     var gestureTick by mutableIntStateOf(0)
 
-    /** 글자 편집 창을 연 노드. 없으면 `null`. */
+    /** 텍스트 편집 창을 연 노드. 열린 창이 없으면 `null`이다. */
     var editingText by mutableStateOf<NodeId?>(null)
 
-    /** 모션 편집 중인지. 켜져 있으면 캔버스가 [playheadMs]의 모습을 보여 준다. */
+    /** 모션 편집 중인지 여부. 켜져 있으면 캔버스가 [playheadMs] 시점의 모습을 보여 준다. */
     var motionEnabled by mutableStateOf(false)
 
     /** 재생 위치(ms). */
@@ -58,7 +58,7 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
 
     val timeline: Timeline? get() = session.document.value.timelines.firstOrNull { it.id == MAIN_TIMELINE }
 
-    /** 키를 넣을 시각. 재생 위치를 정수 ms로 맞추고 timeline 범위로 자른다. */
+    /** keyframe을 넣을 시각(ms). 재생 위치를 정수로 맞추고 timeline 범위 안으로 자른다. */
     val keyTimeMs: Long get() = playheadMs.roundToLong().coerceIn(0L, timeline?.durationMs ?: DEFAULT_DURATION_MS)
 
     override val document: SceneDocument get() = displayed(session.document.value)
@@ -69,15 +69,15 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
             viewportState = value
         }
 
-    /** 화면에 보여 줄 문서. 모션 편집 중이면 재생 위치에서 평가한다. */
+    /** 화면에 보여 줄 문서. 모션 편집 중이면 재생 위치에서 평가한 문서다. */
     fun displayed(base: SceneDocument): SceneDocument {
         val timeline = base.timelines.firstOrNull { it.id == MAIN_TIMELINE }
         return if (motionEnabled && timeline != null) TimelineEvaluator.evaluate(base, timeline, playheadMs) else base
     }
 
     /**
-     * 캔버스 크기가 처음 정해지면 artboard가 꽉 차게 보이도록 맞춘다. 그 뒤로 크기가 바뀌면(패널·키보드) 가운데 문서 점이
-     * 그대로 가운데 있도록 이동량만 고친다. 문서는 바꾸지 않는다.
+     * 캔버스 크기가 처음 정해지면 artboard가 화면에 꽉 차도록 맞춘다. 그 뒤 패널이나 키보드 때문에 크기가 바뀌면
+     * 가운데 있던 문서 좌표가 계속 가운데 오도록 이동량만 고친다. 문서는 바꾸지 않는다.
      */
     fun onCanvasSize(width: Int, height: Int, paddingPx: Double) {
         val previous = viewportState
@@ -98,7 +98,7 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
             Viewport.fitting(Rect(0.0, 0.0, artboard.width, artboard.height), canvasWidth.toDouble(), canvasHeight.toDouble(), paddingPx)
     }
 
-    /** 지금 보이는 영역의 가운데(문서 좌표). */
+    /** 지금 보이는 영역의 중심(문서 좌표). */
     fun visibleCenter(): Vec2 = viewport.toDocument(Vec2(canvasWidth / 2.0, canvasHeight / 2.0))
 
     fun nextSequence(): Int = created++
@@ -139,7 +139,7 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
         return ok
     }
 
-    /** 지금 보이는 값으로 [property] keyframe을 재생 위치에 넣는다. timeline이 없으면 먼저 만든다. */
+    /** 지금 보이는 값으로 재생 위치에 [property] keyframe을 넣는다. timeline이 없으면 먼저 만든다. */
     fun addKey(id: NodeId, property: AnimatableProperty): Boolean {
         val shown = document.node(id) ?: return false
         val value = AnimatableProperties.read(shown, property) ?: return false
@@ -154,7 +154,7 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
         }
     }
 
-    /** 고른 노드에 프리셋을 재생 위치부터 적용한다. 명령 전체가 실행 취소 한 단계이고, 하나라도 거부되면 모두 되돌린다. */
+    /** 선택한 노드에 프리셋을 재생 위치부터 적용한다. 전체가 실행 취소 한 단계이고, 명령이 하나라도 거부되면 모두 되돌린다. */
     fun applyPreset(registry: PresetRegistry, presetId: String): Boolean {
         val result = registry.apply(presetId, session.document.value, selection, PresetParams(MAIN_TIMELINE, startMs = keyTimeMs))
         val commands = (result as? PresetResult.Commands)?.commands ?: return false

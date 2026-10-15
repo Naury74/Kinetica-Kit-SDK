@@ -4,12 +4,12 @@ import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.Shadow
 
-/** 그림자 한 개의 숫자 칸. */
+/** 그림자 하나의 숫자 입력 항목. */
 internal enum class ShadowField { X, Y, Blur, Spread }
 
-/** 그림자·레이어 흐림 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이며, 받을 수 없는 값이면 `false`다. */
+/** 그림자와 레이어 블러 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이고, 받을 수 없는 값이면 `false`를 돌려준다. */
 internal class EffectEdits(private val state: EditorState) {
-    /** 그림자를 맨 뒤에 더한다. */
+    /** 그림자를 목록 맨 뒤에 추가한다. */
     fun addShadow(id: NodeId, inner: Boolean): Boolean = state.editStyle(id) { style ->
         val shadow = if (inner) {
             Shadow(ArgbColor(DEFAULT_SHADOW), offsetY = INNER_Y, blur = INNER_BLUR, inner = true)

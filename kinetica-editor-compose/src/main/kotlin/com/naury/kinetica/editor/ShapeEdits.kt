@@ -6,9 +6,9 @@ import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneNode
 
-/** 모서리별 반지름·다각형 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이며, 받을 수 없는 값이면 `false`다. */
+/** 모서리별 반경과 다각형 입력을 명령으로 바꾼다. 입력 하나가 실행 취소 한 단계이고, 받을 수 없는 값이면 `false`를 돌려준다. */
 internal class ShapeEdits(private val state: EditorState) {
-    /** 모서리별 반지름을 켜고 끈다. 켤 때는 지금 반지름을 네 모서리에 똑같이 쓴다. */
+    /** 모서리별 반경을 켜고 끈다. 켤 때는 지금 반경을 네 모서리에 똑같이 넣는다. */
     fun toggleCorners(id: NodeId): Boolean {
         val node = state.document.node(id) ?: return false
         val content = when (val content = node.content) {
@@ -19,7 +19,7 @@ internal class ShapeEdits(private val state: EditorState) {
         return update(node.copy(content = content))
     }
 
-    /** 모서리 [index](왼쪽 위부터 시계 방향 0..3)의 반지름. 모서리별 반지름이 꺼져 있으면 `false`. */
+    /** 모서리 [index](왼쪽 위부터 시계 방향으로 0..3)의 반경을 바꾼다. 모서리별 반경이 꺼져 있으면 `false`를 돌려준다. */
     fun setCorner(id: NodeId, index: Int, text: String): Boolean {
         val radius = text.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 } ?: return false
         val node = state.document.node(id) ?: return false
@@ -42,7 +42,7 @@ internal class ShapeEdits(private val state: EditorState) {
         return editPolygon(id) { it.copy(sides = sides) }
     }
 
-    /** 별 비율. 1이면 정다각형. */
+    /** 별 비율. 1이면 정다각형이다. */
     fun setInnerRatio(id: NodeId, text: String): Boolean {
         val ratio = text.trim().replace(',', '.').toDoubleOrNull()?.takeIf(Double::isFinite) ?: return false
         return editPolygon(id) { it.copy(innerRatio = ratio) }

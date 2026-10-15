@@ -76,21 +76,21 @@ import com.naury.kinetica.render.SceneTextMeasurer
 import com.naury.kinetica.render.rememberSceneImages
 
 /**
- * 문서를 보고 고치는 편집 화면(docs 10).
+ * 장면 문서를 보고 편집하는 화면. 사용법은 docs/32-studio.md에 있다.
  *
- * - 위 도구 줄: 도형·글자 추가, 실행 취소·다시 실행, 화면 맞춤, 호스트 슬롯([toolbarEnd]).
- * - 선택 줄: 무언가를 고르면 나타난다. 삭제, 그룹, 순서, 정렬.
- * - 캔버스: 고르기·옮기기·크기·회전·두 손가락 이동·확대, 안내선 스냅.
- * - 레이어·속성 패널: 너비 600dp 이상이면 오른쪽에 붙고, 그보다 좁으면 아래 시트로 연다.
- * - 키보드(캔버스에 포커스): 화살표 1(Shift 10) 이동, Delete 삭제, Ctrl+Z·Ctrl+Shift+Z 실행 취소·다시 실행, Esc 선택 해제.
+ * - 상단 툴바: 도형과 텍스트 추가, 실행 취소와 다시 실행, 화면에 맞추기, 호스트 슬롯([toolbarEnd]).
+ * - 선택 툴바: 무언가를 선택하면 나타난다. 삭제, 그룹, 순서, 정렬.
+ * - 캔버스: 선택, 이동, 크기 조절, 회전, 두 손가락 이동과 확대, 가이드선 스냅.
+ * - 레이어·속성 패널: 너비가 600dp 이상이면 오른쪽에 붙고, 그보다 좁으면 바텀 시트로 연다.
+ * - 키보드(캔버스에 포커스가 있을 때): 방향키로 1씩(Shift와 함께 10씩) 이동, Delete 삭제, Ctrl+Z와 Ctrl+Shift+Z로 실행 취소와 다시 실행, Esc 선택 해제.
  *
- * 저장소에 접근하지 않는다. 화면이 멈추면(ON_PAUSE) 진행 중인 끌기를 되돌린다.
+ * 저장소에는 접근하지 않는다. 화면이 ON_PAUSE가 되면 진행 중인 드래그를 되돌린다.
  *
  * @param images 이미지 노드를 그릴 이미지. `null`이면 [rememberSceneImages]로 `content://` 이미지를 직접 읽는다.
  * @param config 스냅·격자·회전 스냅 설정
- * @param slots 호스트 뷰 노드에 그릴 Composable(키 → 내용). 편집 중에는 눌리지 않고 배치만 바뀐다.
+ * @param slots 호스트 뷰 노드에 그릴 Composable(키 → 내용). 편집 중에는 터치를 받지 않고 위치와 크기만 바뀐다.
  * @param hostViews "호스트 뷰" 메뉴에 보일 항목. 비어 있으면 메뉴를 숨긴다.
- * @param data 바인딩에 쓸 호스트 데이터. 바뀌면 화면에 바로 반영된다(문서는 바뀌지 않음).
+ * @param data 바인딩에 쓸 호스트 데이터. 값이 바뀌면 화면에 바로 반영되고 문서는 바뀌지 않는다.
  */
 @Composable
 public fun KineticaEditor(
@@ -125,7 +125,7 @@ private fun EditorContent(
 ) {
     val context = LocalContext.current
     val fonts = LocalSceneFonts.current
-    // 호스트가 측정기를 주지 않았으면 화면 글꼴로 재는 측정기를 넣어 글자 자동 크기가 편집기에서 바로 동작하게 한다.
+    // 호스트가 측정기를 주지 않으면 화면 폰트로 재는 측정기를 넣는다. 그래야 텍스트 자동 크기가 편집기에서도 동작한다.
     LaunchedEffect(session, fonts) { if (session.textMeasurer == null) session.textMeasurer = SceneTextMeasurer(context, fonts) }
     val state = remember(session) { EditorState(session) }
     val actions = remember(state) { EditorActions(state) }
@@ -147,7 +147,7 @@ private fun EditorContent(
         Column(Modifier.fillMaxSize()) {
             EditorToolbar(state, theme, paddingPx, !docked, hostViews, onOpenSheet = { sheet = it }, toolbarEnd = toolbarEnd)
             Row(Modifier.weight(1f).fillMaxWidth()) {
-                // 선택 줄은 캔버스 위에 띄워, 고를 때마다 캔버스 크기가 바뀌어 장면이 밀리지 않게 한다.
+                // 선택 툴바를 캔버스 위에 띄운다. 레이아웃에 넣으면 선택할 때마다 캔버스 크기가 바뀌어 장면이 밀린다.
                 Box(Modifier.weight(1f).fillMaxHeight()) {
                     EditorCanvas(
                         state,
@@ -175,7 +175,7 @@ internal enum class PanelSheet { Layers, Properties }
 
 @Composable
 private fun Panels(state: EditorState, edits: PropertyEdits, theme: StudioTheme, modifier: Modifier = Modifier) {
-    // 높이를 둘로 나눠, 아래에 timeline이 열려 패널이 낮아져도 레이어 목록이 사라지지 않게 한다. 두 칸 모두 안에서 스크롤된다.
+    // 높이를 둘로 나눠, 아래에 timeline이 열려 패널이 낮아져도 레이어 목록이 사라지지 않게 한다. 두 영역은 각각 스크롤된다.
     Column(modifier) {
         PanelTitle(R.string.kinetica_layers, theme)
         LayersFor(state, edits, theme, Modifier.weight(1f))
@@ -205,7 +205,7 @@ private fun LayersFor(state: EditorState, edits: PropertyEdits, theme: StudioThe
 private fun PropertiesFor(state: EditorState, edits: PropertyEdits, theme: StudioTheme) {
     val base by state.session.document.collectAsStateWithLifecycle()
     val selection by state.session.selection.collectAsStateWithLifecycle()
-    // 모션 편집 중에는 화면에 보이는(재생 위치의) 값을 보여 준다. 고친 값도 그 기준으로 키가 된다.
+    // 모션 편집 중에는 재생 위치에서 화면에 보이는 값을 보여 준다. 고친 값도 그 시각의 keyframe이 된다.
     val document = remember(base, state.motionEnabled, state.playheadMs) { state.displayed(base) }
     val inspectorEdits = remember(state, edits) {
         InspectorEdits(edits, state)
@@ -243,7 +243,7 @@ private fun PanelTitle(label: Int, theme: StudioTheme) {
     Text(stringResource(label), color = theme.onPanel, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
 }
 
-/** 캔버스가 그릴 때 쓰는 호스트 자원. */
+// 캔버스가 그릴 때 쓰는 호스트 자원.
 internal class SceneSources(val images: SceneImageProvider, val slots: SceneSlots, val data: SceneData)
 
 @Composable
@@ -269,10 +269,10 @@ private fun EditorCanvas(
         val viewport = state.viewport
         SceneLayout(document, viewport, Modifier.fillMaxSize(), sources.images, sources.slots, interactive = false)
         val frame = remember(document, selection) { SelectionFrame.of(SceneGraph(document), selection.selectedIds) }
-        // gestureTick을 읽어 사각 선택 영역이 바뀔 때마다 표시를 다시 그린다.
+        // gestureTick을 읽어 드래그 선택 영역이 바뀔 때마다 오버레이를 다시 그린다.
         val marquee = state.gestureTick.let { controller.marquee }
         SelectionOverlay(frame, showHandles = count == 1, marquee, state.guides, viewport, theme, Modifier.fillMaxSize())
-        // 맨 위 투명 층이 포인터를 모두 가져가, 편집 중에는 호스트 뷰가 눌리지 않고 배치만 바뀐다.
+        // 맨 위 투명 레이어가 포인터를 모두 가져가므로, 편집 중에는 호스트 뷰가 눌리지 않고 위치와 크기만 바뀐다.
         Box(
             Modifier
                 .matchParentSize()
@@ -330,7 +330,7 @@ private fun EditorToolbar(
 @Composable
 private fun SelectionBar(state: EditorState, actions: EditorActions, theme: StudioTheme, modifier: Modifier) {
     val selection by state.session.selection.collectAsStateWithLifecycle()
-    // 문서가 바뀌면 그룹 해제 가능 여부도 바뀌므로 다시 그린다.
+    // 문서가 바뀌면 그룹 해제를 할 수 있는지도 달라지므로 다시 그린다.
     val document by state.session.document.collectAsStateWithLifecycle()
     val count = selection.selectedIds.size
     if (count == 0) return
@@ -387,7 +387,7 @@ private fun HostViewMenu(options: List<HostViewOption>, colors: ButtonColors, on
     }
 }
 
-/** 다각형·별·선·화살표. */
+// 다각형, 별, 선, 화살표 메뉴.
 @Composable
 private fun ShapeMenu(colors: ButtonColors, onPick: (make: (Vec2, Int) -> SceneNode) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -472,7 +472,7 @@ private fun CancelGestureOnPause(controller: CanvasGestureController) {
     }
 }
 
-/** 테스트와 호스트가 캔버스를 찾을 때 쓰는 tag. */
+/** 테스트나 호스트가 캔버스를 찾을 때 쓰는 test tag. */
 public const val CANVAS_TAG: String = "kinetica-canvas"
 private val CANVAS_PADDING = 24.dp
 private val MIN_TOUCH_TARGET = 48.dp

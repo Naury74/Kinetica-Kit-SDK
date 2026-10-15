@@ -25,8 +25,8 @@ import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeKind
 
 /**
- * 레이어 목록(docs 24). 줄 높이 48dp, 그룹 깊이만큼 들여 쓰고, 뒤쪽에 보임·잠금 전환을 둔다.
- * 줄을 누르면 그 노드 하나를 고른다. 고른 줄은 접근성에 선택됨으로 알린다.
+ * 레이어 목록. 한 줄 높이는 48dp이고 그룹 깊이만큼 들여 쓰며, 줄 끝에 표시·잠금 토글을 둔다.
+ * 줄을 누르면 그 노드 하나만 선택하고, 선택한 줄은 접근성 서비스에 선택됨으로 알린다.
  */
 @Composable
 internal fun LayerPanel(

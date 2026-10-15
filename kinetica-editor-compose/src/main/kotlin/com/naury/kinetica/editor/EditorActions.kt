@@ -17,7 +17,7 @@ import com.naury.kinetica.core.scene.TransformOps
 import com.naury.kinetica.history.KineticaSession
 
 /**
- * 도구 줄 동작. 명령이 여러 개인 동작은 트랜잭션 하나로 묶어 실행 취소 한 단계로 만든다.
+ * 툴바 동작. 명령이 여러 개인 동작은 트랜잭션 하나로 묶어 실행 취소 한 단계로 만든다.
  * 잠긴 노드는 옮기지 않는다.
  */
 internal class EditorActions(private val state: EditorState) {
@@ -34,7 +34,7 @@ internal class EditorActions(private val state: EditorState) {
         if (session.commands.execute(SceneCommand.Group(selection, groupId)) is CommandResult.Applied) session.select(listOf(groupId))
     }
 
-    /** 고른 노드를 세로 자동 배치 Frame으로 감싼다(내용 맞춤, 간격·여백 16). 노드들이 옆으로 더 넓게 퍼져 있으면 가로로 놓는다. */
+    /** 선택한 노드를 세로 자동 레이아웃 Frame으로 감싼다. 크기는 콘텐츠에 맞추고 간격과 패딩은 16이다. 노드가 가로로 더 넓게 퍼져 있으면 가로 방향으로 만든다. */
     fun wrapInAutoLayout() {
         val bounds = selection.mapNotNull(graph::worldBounds)
         val wide =
@@ -68,10 +68,10 @@ internal class EditorActions(private val state: EditorState) {
         if (selection.isNotEmpty()) session.commands.execute(SceneCommand.RemoveNodes(selection.toSet()))
     }
 
-    /** 고른 노드를 문서 좌표로 [dx]·[dy]만큼 옮긴다. 키보드 화살표 한 번이 실행 취소 한 단계다. */
+    /** 선택한 노드를 문서 좌표로 [dx], [dy]만큼 옮긴다. 방향키 한 번이 실행 취소 한 단계다. */
     fun nudge(dx: Double, dy: Double) = move("nudge", TransformOps.move(graph, movable(), Vec2(dx, dy)))
 
-    /** 고른 노드를 한 칸씩 위(앞)로 옮긴다. 이미 맨 위인 노드는 그대로다. */
+    /** 선택한 노드를 한 단계 앞으로 가져온다. 이미 맨 앞인 노드는 그대로 둔다. */
     fun bringForward() = reorder(forward = true)
 
     fun sendBackward() = reorder(forward = false)

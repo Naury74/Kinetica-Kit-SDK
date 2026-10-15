@@ -57,11 +57,11 @@ import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 /**
- * 모션 편집 패널(docs 08·24). 고른 레이어 하나의 속성마다 줄을 두고 keyframe을 보여 준다.
+ * 모션 편집 패널. 선택한 레이어 하나의 속성마다 트랙 줄을 두고 keyframe을 보여 준다.
  *
- * - 눈금자를 누르거나 끌면 재생 위치가 옮겨진다(캔버스 제스처와 따로 처리).
- * - 줄의 + 버튼은 지금 보이는 값으로 재생 위치에 키를 넣는다.
- * - 키를 끌어 시간을 옮기고(놓을 때 한 번 적용, 겹치면 거부), 누르면 골라서 easing을 바꾸거나 지운다.
+ * - 눈금자를 누르거나 끌면 재생 위치가 바뀐다. 캔버스 제스처와는 따로 처리한다.
+ * - 줄의 + 버튼은 지금 보이는 값으로 재생 위치에 keyframe을 넣는다.
+ * - keyframe을 끌면 시간이 바뀐다. 손을 뗄 때 한 번만 적용하고, 다른 keyframe과 겹치면 거부한다. 누르면 선택되어 easing을 바꾸거나 지울 수 있다.
  */
 @Composable
 internal fun TimelinePanel(state: EditorState, theme: StudioTheme, modifier: Modifier = Modifier) {
@@ -95,7 +95,7 @@ internal fun TimelinePanel(state: EditorState, theme: StudioTheme, modifier: Mod
             return@Column
         }
         val rows = animatedRows(document, timeline, nodeId)
-        // 눈금자는 고정하고 속성 줄만 위아래로 넘긴다. 좌우 스크롤은 같은 상태를 써서 눈금자와 키 줄이 함께 움직인다.
+        // 눈금자는 고정하고 속성 줄만 세로로 스크롤한다. 가로 스크롤은 상태를 공유해 눈금자와 keyframe 줄이 함께 움직인다.
         val scroll = rememberScrollState()
         val laneWidth = LANE_START_PADDING + MS_WIDTH * durationMs.toFloat() + LANE_END_PADDING
         Row {
@@ -293,11 +293,11 @@ private fun KeyActions(state: EditorState, key: SelectedKey, theme: StudioTheme,
 
 private fun seconds(ms: Double): String = String.format(Locale.ROOT, "%.2f", ms / MS_PER_SECOND)
 
-/** 테스트에서 패널을 찾을 때 쓰는 tag. */
+/** 테스트에서 패널을 찾을 때 쓰는 test tag. */
 internal const val TIMELINE_TAG = "kinetica-timeline"
 internal const val RULER_TAG = "kinetica-timeline-ruler"
 
-// 그 노드에 없는 속성(그림자 없는 노드의 그림자 등)은 키를 넣어도 바뀌지 않으므로 숨긴다. 이미 키가 있으면 지울 수 있게 보인다.
+// 노드에 없는 속성(그림자가 없는 노드의 그림자 등)은 keyframe을 넣어도 바뀌지 않으므로 숨긴다. 이미 keyframe이 있으면 지울 수 있게 보여 준다.
 private fun animatedRows(document: SceneDocument, timeline: Timeline?, nodeId: NodeId): List<Pair<AnimatableProperty, Int>> {
     val node = document.node(nodeId) ?: return emptyList()
     return ANIMATED.filter { (property, _) ->
@@ -347,7 +347,7 @@ private val EASINGS = listOf(
     EasingSpec.Spring(dampingRatio = 0.5, stiffness = 300.0) to R.string.kinetica_easing_spring,
 )
 
-/** docs 24: 1초 80dp. */
+// 1초를 80dp로 그린다.
 private val MS_WIDTH = 0.08.dp
 private val LABEL_WIDTH = 168.dp
 private val RULER_HEIGHT = 32.dp

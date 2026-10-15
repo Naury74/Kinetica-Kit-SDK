@@ -1,12 +1,12 @@
 package com.naury.kinetica.editor
 
 /**
- * 편집기의 "호스트 뷰" 메뉴에 보일 항목. [key]는 문서에 저장되고, 화면에서는 같은 키의 Composable(`slots`)로 그려진다.
+ * 편집기의 "호스트 뷰" 메뉴에 보일 항목. [key]는 문서에 저장되고, 화면에는 같은 키로 등록한 Composable(`slots`)이 그려진다.
  *
- * @property label 메뉴 이름(사용자에게 보임)
- * @property width 처음 넣을 때 너비(문서 단위)
- * @property height 처음 넣을 때 높이(문서 단위)
- * @throws IllegalArgumentException 키 형식이 틀리거나 크기가 0 이하일 때
+ * @property label 메뉴에 보일 이름
+ * @property width 처음 넣을 때의 너비(문서 단위, 0 초과)
+ * @property height 처음 넣을 때의 높이(문서 단위, 0 초과)
+ * @throws IllegalArgumentException 키 형식이 틀리거나 크기가 0 이하이거나 유한하지 않을 때
  */
 public data class HostViewOption(val key: String, val label: String, val width: Double, val height: Double) {
     init {
