@@ -28,14 +28,15 @@
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-home.png" width="240" alt="쇼케이스 첫 화면"><br><b>쇼케이스</b><br>모든 기능을 앱 하나에서 써 보기</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-glass.png" width="240" alt="글래스 다이얼로그"><br><b>글래스 UI</b><br>배경이 블러로 비치는 다이얼로그, 시트, 탭 바</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-motion.png" width="240" alt="모션 효과"><br><b>모션 효과</b><br>글로우 테두리, 젤리, 자석, 숫자 롤링, 컨페티</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-home.png" width="200" alt="쇼케이스 첫 화면"><br><b>쇼케이스</b><br>모든 기능을 앱 하나에서 써 보기</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-glass.png" width="200" alt="글래스 다이얼로그"><br><b>글래스 UI</b><br>배경이 블러로 비치는 다이얼로그, 시트, 탭 바</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-motion.png" width="200" alt="모션 효과"><br><b>모션 효과</b><br>글로우 테두리, 젤리, 자석, 숫자 롤링, 컨페티</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-navigation.png" width="200" alt="카드 상세 화면"><br><b>화면 이동</b><br>카드가 커지는 상세, 끌어서 닫기, iOS식 밀어 넣기</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/showcase-board.png" width="240" alt="스냅 레이아웃 선택"><br><b>대시보드 보드</b><br>위로 끌면 Windows식 스냅 레이아웃</td>
-    <td align="center"><img src="docs/images/showcase-server.png" width="240" alt="서버 화면"><br><b>서버 화면</b><br>JSON만 바꿔 화면 교체, 숫자는 실시간 갱신</td>
-    <td align="center"><img src="docs/images/showcase-studio.png" width="240" alt="편집기"><br><b>화면 만들기</b><br>앱 안에서 쓰는 Figma 같은 편집기</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-board.png" width="200" alt="스냅 레이아웃 선택"><br><b>대시보드 보드</b><br>위로 끌면 Windows식 스냅 레이아웃</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-server.png" width="200" alt="서버 화면"><br><b>서버 화면</b><br>JSON만 바꿔 화면 교체, 숫자는 실시간 갱신</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-studio.png" width="200" alt="편집기"><br><b>화면 만들기</b><br>앱 안에서 쓰는 Figma 같은 편집기. 여러 개를 함께 변형</td>
   </tr>
 </table>
 

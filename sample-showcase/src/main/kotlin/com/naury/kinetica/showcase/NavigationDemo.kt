@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,11 +33,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import com.naury.kinetica.ui.GlassExpandHost
 import com.naury.kinetica.ui.GlassExpandState
 import com.naury.kinetica.ui.GlassScaffold
@@ -84,6 +87,16 @@ private fun NavigationHome(onBack: () -> Unit, push: (String) -> Unit) {
             item { MenuList(MENU, push) }
         }
         GlassExpandHost(expand, cornerRadius = 28.dp, title = "이야기") { key -> StoryDetail(STORIES[key as Int], expand) }
+        // 상세 위쪽은 어두운 사진이라, 열려 있는 동안 상태 표시줄 아이콘을 밝게 바꾼다.
+        val view = LocalView.current
+        val expanded = expand.expandedKey != null
+        DisposableEffect(expanded) {
+            val window = (view.context as? android.app.Activity)?.window
+            val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+            val before = controller?.isAppearanceLightStatusBars
+            if (expanded) controller?.isAppearanceLightStatusBars = false
+            onDispose { if (before != null) controller.isAppearanceLightStatusBars = before }
+        }
     }
 }
 
