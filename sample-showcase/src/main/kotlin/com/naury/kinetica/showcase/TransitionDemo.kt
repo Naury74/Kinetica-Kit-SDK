@@ -48,8 +48,8 @@ import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
 
 /**
- * 장면 전환: 카드를 누르면 같은 morphKey끼리 이어지며 상세 화면이 된다. 아래로 끌거나 뒤로 가기로 되돌아가며,
- * 끄는 도중 놓으면 속도에 따라 다시 열리거나 닫힌다. 재생기 모듈만 쓴다(편집기 없음).
+ * 장면 전환 데모. 카드를 누르면 morphKey가 같은 노드끼리 이어지며 상세 화면이 된다. 아래로 끌거나 뒤로 가기를 누르면 닫히고,
+ * 끄는 도중에 손을 떼면 속도에 따라 다시 열리거나 닫힌다. 편집기 없이 재생기 모듈만 쓴다.
  */
 @Composable
 internal fun TransitionDemo(onBack: () -> Unit) {
@@ -77,7 +77,7 @@ private fun SceneGrid(
         Modifier.fillMaxSize(),
         style = GlassStyles.LiquidDark,
         background = { Aurora(Modifier.fillMaxSize(), dark = true) },
-        topBar = { DemoTopBar("장면 전환", "카드를 누르면 이어지며 열리고, 아래로 끌면 닫힌다", onBack) },
+        topBar = { DemoTopBar("장면 전환", "카드가 상세 화면으로 이어지고, 아래로 끌면 닫힙니다", onBack) },
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(160.dp),
@@ -102,7 +102,7 @@ private fun SceneGrid(
     }
 }
 
-/** 카드 장면에서 상세 장면으로 morph한다. 다 닫힌 때 한 번만 [onClosed]를 부른다. */
+/** 카드 장면에서 상세 장면으로 morph한다. 완전히 닫혔을 때 [onClosed]를 한 번만 부른다. */
 @Composable
 private fun SceneDetail(item: GalleryItem, shared: SharedTransitionScope, visibility: AnimatedVisibilityScope, onClosed: () -> Unit) {
     val morph = remember(item) { (SceneMorph.create(item.card, item.detail) as MorphResult.Ready).morph }

@@ -55,7 +55,7 @@ import java.text.NumberFormat
 import java.util.Locale
 import kotlin.random.Random
 
-/** 모션 효과: kinetica-ui의 고급 효과와 kinetica-render의 누름·나타남·반복 효과를 한곳에서 눌러 본다. */
+/** 모션 효과 데모. kinetica-ui의 효과와 kinetica-render의 누름, 등장, 반복 프리셋을 한 화면에서 눌러 본다. */
 @Composable
 internal fun MotionDemo(onBack: () -> Unit) {
     var siri by remember { mutableStateOf(false) }
@@ -64,7 +64,7 @@ internal fun MotionDemo(onBack: () -> Unit) {
         Modifier.fillMaxSize().then(if (siri) Modifier.glowBorder(RectangleShape, width = 4.dp, glow = 28.dp) else Modifier),
         style = GlassStyles.OneUi,
         background = { Aurora(Modifier.fillMaxSize(), dark = false) },
-        topBar = { DemoTopBar("모션 효과", "한 줄로 붙이는 움직임 — 눌러 보세요", onBack) },
+        topBar = { DemoTopBar("모션 효과", "Modifier 한 줄로 붙이는 애니메이션", onBack) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -73,7 +73,7 @@ internal fun MotionDemo(onBack: () -> Unit) {
         ) {
             item { GlowCard(siri) { siri = !siri } }
             item {
-                DemoCard("젤리 누름 · 자석", "Modifier.jellyPress · Modifier.magnetic — 누르면 납작해지고, 끌면 손가락을 따라온다.") {
+                DemoCard("젤리 버튼과 자석 버튼", "Modifier.jellyPress와 Modifier.magnetic입니다. 누르면 젤리처럼 납작해지고, 끌면 손가락을 따라옵니다.") {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Pill("젤리 버튼", filled = true) {}
                         Box(
@@ -84,7 +84,7 @@ internal fun MotionDemo(onBack: () -> Unit) {
                 }
             }
             item {
-                DemoCard("기울이면 3D", "Modifier.motionTilt — 휴대폰을 기울이면 카드가 따라 기울고 빛이 흐른다(실기기).") {
+                DemoCard("기울이는 3D 카드", "Modifier.motionTilt입니다. 휴대폰을 기울이면 카드가 함께 기울고 빛이 흐릅니다. 실기기에서 확인해 보세요.") {
                     Box(
                         Modifier.fillMaxWidth().aspectRatio(1.7f).motionTilt(12f, 0.35f).clip(RoundedCornerShape(24.dp))
                             .background(Brush.linearGradient(listOf(Color(0xFF8E54E9), Color(0xFF4776E6), Color(0xFF00C6FF)))),
@@ -96,7 +96,7 @@ internal fun MotionDemo(onBack: () -> Unit) {
             item { TypewriterCard() }
             item {
                 var origin by remember { mutableStateOf(Offset.Zero) }
-                DemoCard("색종이", "ConfettiHost — 결제·달성 순간에 터뜨린다.") {
+                DemoCard("컨페티", "ConfettiHost입니다. 결제를 마치거나 목표를 달성한 순간에 터뜨려 보세요.") {
                     Pill(
                         "축하하기",
                         Modifier.onGloballyPositioned {
@@ -114,21 +114,21 @@ internal fun MotionDemo(onBack: () -> Unit) {
 
 @Composable
 private fun GlowCard(on: Boolean, toggle: () -> Unit) {
-    DemoCard("빛 테두리", "Modifier.glowBorder — Siri처럼 가장자리를 도는 빛. 화면 전체에도 붙인다.") {
+    DemoCard("글로우 테두리", "Modifier.glowBorder입니다. Siri처럼 가장자리를 따라 빛이 돌고, 화면 전체에도 붙일 수 있습니다.") {
         Box(
             Modifier.fillMaxWidth().height(
                 90.dp,
             ).glowBorder(RoundedCornerShape(24.dp)).background(Color.White.copy(alpha = 0.6f), RoundedCornerShape(24.dp)),
             contentAlignment = Alignment.Center,
-        ) { Label("AI가 답을 쓰는 중…", 15, FontWeight.Medium) }
-        Pill(if (on) "화면 빛 끄기" else "화면 가장자리에 켜기", filled = on, onClick = toggle)
+        ) { Label("AI가 답변을 쓰고 있어요…", 15, FontWeight.Medium) }
+        Pill(if (on) "화면 글로우 끄기" else "화면 전체에 켜기", filled = on, onClick = toggle)
     }
 }
 
 @Composable
 private fun RollingCard() {
     var sales by remember { mutableLongStateOf(1_284_000L) }
-    DemoCard("숫자 굴리기", "RollingText — 바뀐 자리만 위아래로 굴러간다(주행 거리계).") {
+    DemoCard("숫자 롤링", "RollingText입니다. 주행 거리계처럼 바뀐 자릿수만 위아래로 굴러갑니다.") {
         RollingText(
             NumberFormat.getNumberInstance(Locale.KOREA).format(sales) + "원",
             style = TextStyle(fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color(0xFF15161A)),
@@ -144,7 +144,7 @@ private fun RollingCard() {
 private fun TypewriterCard() {
     var round by remember { mutableIntStateOf(0) }
     val lines = listOf("오늘 매출이 어제보다 12% 늘었어요.", "가장 많이 팔린 메뉴는 아메리카노예요.", "오후 3시에 손님이 가장 많아요.")
-    DemoCard("타자기", "TypewriterText — 한 글자씩 써 내려가는 안내·AI 답변.") {
+    DemoCard("타자기 효과", "TypewriterText입니다. 안내 문구나 AI 답변을 한 글자씩 써 내려갑니다.") {
         TypewriterText(lines[round % lines.size], style = TextStyle(fontSize = 17.sp, color = Color(0xFF15161A)))
         Pill("다음 문장") { round++ }
     }
@@ -153,7 +153,7 @@ private fun TypewriterCard() {
 @Composable
 private fun PresetsCard() {
     var taps by remember { mutableIntStateOf(0) }
-    DemoCard("누름 · 나타남 · 반복", "Modifier.kineticaEffects(EffectPresets.…) — 호스트 뷰 어디에나 한 줄. 눌린 수 $taps") {
+    DemoCard("프리셋 효과", "Modifier.kineticaEffects(EffectPresets.…) 한 줄로 어떤 뷰에든 누름, 등장, 반복 애니메이션을 붙입니다. 누른 횟수 $taps") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             PRESETS.forEach { (name, label, color) ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -172,13 +172,13 @@ private fun PresetsCard() {
 }
 
 private val PRESETS = listOf(
-    Triple("button", "리플+눌림", Color(0xFF5B6CFF)),
+    Triple("button", "리플", Color(0xFF5B6CFF)),
     Triple("like", "좋아요 터지기", Color(0xFFFF5C8A)),
     Triple("liftCard", "떠오르기", Color.White),
-    Triple("callToAction", "빛 번짐", Color(0xFFFF7A59)),
-    Triple("heartbeat", "콩닥", Color(0xFFE5484D)),
-    Triple("live", "실시간 고리", Color(0xFF22C55E)),
+    Triple("callToAction", "글로우", Color(0xFFFF7A59)),
+    Triple("heartbeat", "두근두근", Color(0xFFE5484D)),
+    Triple("live", "라이브 링", Color(0xFF22C55E)),
     Triple("attention", "흔들기", Color(0xFFFFD166)),
     Triple("floating", "둥실", Color(0xFF34C3A0)),
-    Triple("skeleton", "반짝임", Color(0xFFE5E7EB)),
+    Triple("skeleton", "스켈레톤", Color(0xFFE5E7EB)),
 )

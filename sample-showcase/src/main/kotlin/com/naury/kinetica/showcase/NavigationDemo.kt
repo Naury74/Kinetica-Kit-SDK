@@ -48,8 +48,8 @@ import com.naury.kinetica.ui.jellyPress
 import com.naury.kinetica.ui.rememberGlassExpandState
 
 /**
- * 화면 이동: 카드를 누르면 그 자리에서 상세 화면으로 커지고(아래로 끌어 닫기), 목록 항목은 iOS처럼 옆에서 밀려 들어온다
- * (왼쪽 가장자리에서 끌거나 뒤로 가기로 되돌아감).
+ * 화면 이동 데모. 카드를 누르면 그 자리에서 상세 화면으로 커지고, 아래로 끌면 닫힌다. 목록 항목을 누르면 iOS처럼 다음 화면이
+ * 옆에서 밀려 들어오고, 왼쪽 가장자리에서 끌거나 뒤로 가기를 누르면 돌아간다.
  */
 @Composable
 internal fun NavigationDemo(onBack: () -> Unit) {
@@ -70,7 +70,7 @@ private fun NavigationHome(onBack: () -> Unit, push: (String) -> Unit) {
         Modifier.fillMaxSize(),
         style = GlassStyles.Liquid,
         background = { Aurora(Modifier.fillMaxSize(), dark = false) },
-        topBar = { DemoTopBar("화면 이동", "카드는 커지며 열리고, 목록은 옆에서 밀려 들어온다", onBack) },
+        topBar = { DemoTopBar("화면 이동", "카드는 제자리에서 열리고, 목록은 옆에서 밀려 들어옵니다", onBack) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -78,9 +78,9 @@ private fun NavigationHome(onBack: () -> Unit, push: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item { Label("오늘 · 카드를 눌러 보세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = 520.dp).fillMaxWidth()) }
+            item { Label("카드를 눌러 열어 보세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = 520.dp).fillMaxWidth()) }
             STORIES.forEachIndexed { index, story -> item("story$index") { StoryCard(story, expand, index) } }
-            item { Label("밀어 넣기 · 항목을 누르고, 왼쪽 가장자리에서 끌어 돌아오세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = 520.dp).fillMaxWidth()) }
+            item { Label("항목을 눌러 들어간 뒤, 왼쪽 가장자리를 밀어 돌아와 보세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = 520.dp).fillMaxWidth()) }
             item { MenuList(MENU, push) }
         }
         GlassExpandHost(expand, cornerRadius = 28.dp, title = "이야기") { key -> StoryDetail(STORIES[key as Int], expand) }
@@ -101,7 +101,7 @@ private fun StoryCard(story: Story, expand: GlassExpandState, index: Int) {
     ) { StoryCover(story) }
 }
 
-/** 카드와 상세 맨 위가 같은 모습이어야 커질 때 끊기지 않는다. */
+/** 카드와 상세 화면 윗부분이 똑같이 생겨야 커지는 동안 화면이 튀지 않는다. */
 @Composable
 private fun StoryCover(story: Story) {
     Box(
@@ -121,7 +121,7 @@ private fun StoryDetail(story: Story, expand: GlassExpandState) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             StoryCover(story)
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Label("아래로 끌면 작아지며 카드 자리로 돌아갑니다.", 15, FontWeight.SemiBold, color = Color(0xFF15161A))
+                Label("아래로 끌면 작아지면서 원래 카드로 돌아갑니다.", 15, FontWeight.SemiBold, color = Color(0xFF15161A))
                 repeat(6) { Label(story.body, 16, color = Color(0xFF3A3B40)) }
             }
         }
@@ -144,7 +144,7 @@ private fun NavigationDetail(screen: String, depth: Int, back: () -> Unit, push:
         Modifier.fillMaxSize(),
         style = GlassStyles.Liquid,
         background = { Aurora(Modifier.fillMaxSize(), dark = depth % 2 == 0) },
-        topBar = { DemoTopBar(screen.substringAfterLast('/'), "${depth}단계 · 가장자리에서 끌어 뒤로", back) },
+        topBar = { DemoTopBar(screen.substringAfterLast('/'), "${depth}단계 화면, 왼쪽 가장자리를 밀면 뒤로 갑니다", back) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),

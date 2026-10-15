@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** 천천히 떠다니는 색 덩어리 바탕. 유리가 비춰 보일 색을 준다. */
+/** 색 덩어리가 천천히 떠다니는 배경. 글래스 뒤로 비칠 색을 깔아 준다. */
 @Composable
 internal fun Aurora(modifier: Modifier, dark: Boolean) {
     val time by rememberInfiniteTransition(label = "aurora").animateFloat(

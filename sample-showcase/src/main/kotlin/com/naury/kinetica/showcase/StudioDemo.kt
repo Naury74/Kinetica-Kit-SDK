@@ -67,8 +67,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * 화면 만들기: 운영자가 앱 안에서 화면을 디자인한다(도형·글자·자동 배치·컴포넌트·움직임·호스트 위젯·데이터 연결).
- * 도구 줄 끝: 미리보기(사용자 화면), 예제·대시보드 열기, 사진 넣기, 저장, PNG·목업 내보내기. 만든 문서는 서버 화면 JSON으로 쓸 수 있다.
+ * 화면 만들기 데모. 운영자가 앱 안에서 도형, 텍스트, 자동 레이아웃, 컴포넌트, 애니메이션, 호스트 위젯, 데이터 연결로 화면을 디자인한다.
+ * 도구 모음 끝에는 사용자 화면 미리보기, 예제와 대시보드 열기, 사진 추가, 저장, PNG와 목업 내보내기 버튼이 있다.
+ * 만든 문서는 그대로 서버 화면 JSON으로 쓸 수 있다.
  */
 @Composable
 internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()) {
@@ -125,7 +126,7 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
     }
 }
 
-/** 편집기 도구 줄 끝 버튼들. */
+/** 편집기 도구 모음 끝에 놓을 버튼. */
 private fun studioActions(
     model: StudioDemoModel,
     onBack: () -> Unit,
@@ -150,7 +151,7 @@ private val DATA = SceneData.of(
     DashboardScene.GREETING to DataValue.Text("안녕하세요, 사장님"),
 )
 
-/** 편집 세션은 화면보다 오래 살아 화면을 돌려도 실행 취소 기록이 남는다. 저장한 장면이 있으면 그것으로 연다. */
+/** 편집 세션이 화면보다 오래 살아 있어 화면을 회전해도 실행 취소 기록이 남는다. 저장한 장면이 있으면 그 장면으로 연다. */
 internal class StudioDemoModel(application: Application) : AndroidViewModel(application) {
     private val repository = FileSceneRepository(File(application.filesDir, "scenes"))
     private val exporter = PngExporter(application)
@@ -161,7 +162,7 @@ internal class StudioDemoModel(application: Application) : AndroidViewModel(appl
 
     val session: StateFlow<KineticaSession> = current.asStateFlow()
 
-    /** 잠깐 띄울 알림. 보여 준 뒤 [messageShown]을 부른다. */
+    /** 잠깐 띄울 토스트 문구. 보여 준 뒤 [messageShown]을 부른다. */
     val message: StateFlow<String?> = notice.asStateFlow()
 
     init {
@@ -178,13 +179,13 @@ internal class StudioDemoModel(application: Application) : AndroidViewModel(appl
     fun save() {
         viewModelScope.launch {
             notice.value = when (repository.save(SCENE_ID, current.value.document.value)) {
-                SaveResult.Saved -> "저장했어요. 다시 열어도 이 장면이에요"
+                SaveResult.Saved -> "저장했어요. 다음에 열어도 이 장면이 열려요"
                 is SaveResult.Failed -> "저장하지 못했어요"
             }
         }
     }
 
-    /** 고른 사진을 원본 비율대로 가로 600 단위 이미지 노드로 넣는다. 다시 실행해도 열리도록 지속 읽기 권한을 시도한다. */
+    /** 고른 사진을 원본 비율 그대로 가로 600 단위 이미지 노드로 넣는다. 앱을 다시 실행해도 열리도록 영구 읽기 권한을 요청해 둔다. */
     fun addPhoto(uri: Uri) {
         runCatching { resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
         viewModelScope.launch {
@@ -208,7 +209,7 @@ internal class StudioDemoModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    /** 1080 픽셀 너비 PNG로 내보낸다. [mockup]이면 휴대폰 틀에 넣는다. */
+    /** 1080 픽셀 너비 PNG로 내보낸다. [mockup]이면 휴대폰 목업 프레임에 넣는다. */
     fun export(uri: Uri, mockup: Boolean) {
         val request = ExportRequest(widthPx = EXPORT_WIDTH, mockup = if (mockup) MockupFrame(DeviceFrame.Phone) else null)
         viewModelScope.launch {

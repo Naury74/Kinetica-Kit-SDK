@@ -32,7 +32,7 @@ import com.naury.kinetica.ui.GlassSurface
 import com.naury.kinetica.ui.LocalGlassContentColor
 import com.naury.kinetica.ui.jellyPress
 
-/** 화면 위 유리 막대: 뒤로, 제목, 이 화면이 보여 주는 것 한 줄. */
+/** 글래스 상단 바. 뒤로 가기 버튼, 제목, 화면을 한 줄로 설명하는 부제를 보여 준다. */
 @Composable
 internal fun DemoTopBar(title: String, subtitle: String, onBack: () -> Unit) {
     GlassSurface(
@@ -55,7 +55,7 @@ internal fun DemoTopBar(title: String, subtitle: String, onBack: () -> Unit) {
     }
 }
 
-/** 제목과 설명이 있는 유리 카드. 시연 내용은 [content]에 넣는다. */
+/** 제목과 설명이 있는 글래스 카드. 시연할 내용은 [content]에 넣는다. */
 @Composable
 internal fun DemoCard(title: String, description: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     GlassSurface(modifier.fillMaxWidth()) {
@@ -67,7 +67,7 @@ internal fun DemoCard(title: String, description: String, modifier: Modifier = M
     }
 }
 
-/** 알약 버튼. [filled]면 진하게 칠한다. 누르면 젤리처럼 눌린다. */
+/** 캡슐 모양 버튼. [filled]면 배경을 채워 그리고, 누르면 젤리처럼 눌린다. */
 @Composable
 internal fun Pill(text: String, modifier: Modifier = Modifier, filled: Boolean = false, onClick: () -> Unit) {
     val ink = LocalGlassContentColor.current

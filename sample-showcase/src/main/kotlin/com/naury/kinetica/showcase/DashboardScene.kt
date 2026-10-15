@@ -26,8 +26,8 @@ import com.naury.kinetica.core.scene.TextAlignment
 import com.naury.kinetica.core.scene.TextNumberFormat
 
 /**
- * 호스트 위젯·데이터 바인딩·동작을 함께 쓰는 대시보드 예제. 카드(Frame) 안의 글자는 데이터 키에 묶여 있고,
- * 위젯은 호스트가 키로 주는 실제 화면이며, 아래 버튼을 누르면 호스트에 "refresh" 동작이 간다.
+ * 호스트 위젯, 데이터 바인딩, 동작을 함께 쓰는 대시보드 예제. 카드(Frame) 안의 텍스트는 데이터 키에 바인딩되어 있고,
+ * 위젯은 호스트가 키로 넘겨주는 실제 화면이다. 아래 버튼을 누르면 호스트에 "refresh" 동작이 전달된다.
  */
 object DashboardScene {
     const val SALES_TODAY = "sales.today"
@@ -52,7 +52,7 @@ object DashboardScene {
         text("date", "오늘의 매장 현황", 60.0, 150.0, 960.0, 60.0, 34.0, 400, 0xFF9AA3B2).stretchX(),
     )
 
-    /** 카드 두 장은 가로 자동 배치 줄 안에서 남는 공간을 반씩 채워, 화면이 넓어지면 함께 넓어진다. */
+    /** 카드 두 장은 가로 자동 레이아웃 안에서 남는 공간을 반씩 채우므로, 화면이 넓어지면 함께 넓어진다. */
     private fun stats() = listOf(
         row("stats", 60.0, 240.0, listOf("sales-card", "orders-card")),
         card("sales-card", "stats", listOf("sales-label", "sales-value")),
@@ -64,7 +64,7 @@ object DashboardScene {
         text("orders-value", "-", 0.0, 0.0, 300.0, 100.0, 72.0, 800, 0xFF1A1D24, parent = "orders-card", bind = ORDER_COUNT),
     )
 
-    /** 가로 자동 배치 줄. "영업 중"이 데이터로 숨으면 "배달 가능"이 그 자리로 당겨진다. */
+    /** 가로 자동 레이아웃. 데이터에 따라 "영업 중"이 숨으면 "배달 가능"이 그 위치로 당겨진다. */
     private fun badges() = listOf(
         SceneNode(
             NodeId("badges"),
@@ -103,7 +103,7 @@ object DashboardScene {
         host("counter", HostWidgets.COUNTER, 0.0, 0.0, 470.0, 260.0).copy(parentId = NodeId("widgets"), layoutFill = true),
     )
 
-    /** 좌우로 늘어나는 가로 자동 배치 줄. 높이는 가장 큰 자식에 맞춘다. */
+    /** 좌우로 늘어나는 가로 자동 레이아웃. 높이는 가장 큰 자식에 맞춘다. */
     private fun row(id: String, x: Double, y: Double, children: List<String>) = SceneNode(
         id = NodeId(id),
         content = NodeContent.Frame(
@@ -144,7 +144,7 @@ object DashboardScene {
 
     private fun SceneNode.stretchX() = copy(constraints = LayoutConstraints(Pin.Both))
 
-    /** 숫자 카드. 안의 글자는 세로 자동 배치라 데이터로 글자가 바뀌거나 표시가 숨어도 자리가 맞춰진다. */
+    /** 숫자 카드. 안쪽은 세로 자동 레이아웃이라 데이터 때문에 텍스트가 바뀌거나 요소가 숨어도 간격이 다시 맞춰진다. */
     private fun card(id: String, parent: String, children: List<String>) = SceneNode(
         id = NodeId(id),
         content = NodeContent.Frame(

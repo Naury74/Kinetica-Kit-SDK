@@ -66,7 +66,7 @@ import com.naury.kinetica.ui.rememberGlassToastState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** 글래스 UI 키트: 스타일을 바꿔 가며 팝업·시트·알림·탭 막대가 뒤 화면을 어떻게 비추는지 본다. */
+/** 글래스 UI 데모. 스타일을 바꿔 가며 다이얼로그, 바텀 시트, 토스트, 탭 바에 배경이 어떻게 비치는지 본다. */
 @Composable
 internal fun GlassDemo(onBack: () -> Unit) {
     var styleIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -83,7 +83,7 @@ internal fun GlassDemo(onBack: () -> Unit) {
         Modifier.fillMaxSize(),
         style = style,
         background = { Aurora(Modifier.fillMaxSize(), dark) },
-        topBar = { DemoTopBar("글래스 UI · ${option.name}", "뒤를 흐리게 비추는 유리 표면·팝업·시트·알림", onBack) },
+        topBar = { DemoTopBar("글래스 UI · ${option.name}", "배경이 비치는 글래스 표면과 다이얼로그, 시트, 토스트", onBack) },
         bottomBar = {
             GlassTabBar(
                 listOf(
@@ -97,7 +97,7 @@ internal fun GlassDemo(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        // 맨 위에서 당기면 유리 물방울이 차오르고, 놓으면 새로 고친다.
+        // 맨 위에서 당기면 글래스 인디케이터가 물방울처럼 차오르고, 놓으면 새로 고침한다.
         DemoRefresh(padding.calculateTopPadding(), { toast.show("새로 고쳤어요") }) {
             LazyColumn(
                 Modifier.fillMaxSize(),
@@ -114,7 +114,7 @@ internal fun GlassDemo(onBack: () -> Unit) {
                 item {
                     Chips(STYLES.map { it.name }, styleIndex) { styleIndex = it }
                     Spacer(Modifier.height(8.dp))
-                    Chips(listOf("밝게", "어둡게"), if (dark) 1 else 0) { dark = it == 1 }
+                    Chips(listOf("라이트", "다크"), if (dark) 1 else 0) { dark = it == 1 }
                 }
                 item { PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } } }
                 item { ControlsCard() }
@@ -126,7 +126,7 @@ internal fun GlassDemo(onBack: () -> Unit) {
     }
 }
 
-/** 1.5초 동안 새로 고치는 척하고 [onDone]을 부른다. */
+/** 1.5초 동안 새로 고침을 흉내 낸 뒤 [onDone]을 부른다. */
 @Composable
 private fun DemoRefresh(top: Dp, onDone: suspend () -> Unit, content: @Composable () -> Unit) {
     var refreshing by remember { mutableStateOf(false) }
@@ -143,8 +143,8 @@ private fun DemoRefresh(top: Dp, onDone: suspend () -> Unit, content: @Composabl
 private fun PopupCard(onOrigin: (Offset) -> Unit, openDialog: () -> Unit, openSheet: () -> Unit, notify: () -> Unit) {
     GlassSurface(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Label("팝업 열기", 18, FontWeight.Bold)
-            Label("누른 버튼에서 커져 나오고 뒤 화면이 흐려집니다.", 14)
+            Label("팝업 띄우기", 18, FontWeight.Bold)
+            Label("다이얼로그는 누른 버튼 위치에서 커지며 열리고, 뒤쪽 화면은 흐려집니다.", 14)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("팝업", Modifier.glassOrigin(onOrigin), onClick = openDialog)
                 Pill("시트", onClick = openSheet)
@@ -198,7 +198,7 @@ private fun ControlsCard() {
             GlassSegmentedControl(listOf("일", "주", "월", "년"), view, { view = it }, Modifier.fillMaxWidth())
             SwitchRow("알림 받기", notify) { notify = it }
             SwitchRow("방해 금지", dark) { dark = it }
-            Label("음량 ${(volume * 100).toInt()}% · 끝을 넘어 끌어 보세요", 14)
+            Label("음량 ${(volume * 100).toInt()}%, 끝에서 더 당겨 보세요", 14)
             GlassSlider(volume, { volume = it })
             Label("글자 크기 ${size.toInt() + 1}단계", 14)
             GlassSlider(size, { size = it }, valueRange = 0f..4f, steps = 3)
@@ -229,10 +229,10 @@ private val STYLES = listOf(
 private fun Intro(dark: Boolean) {
     val ink = if (dark) Color.White else Color(0xFF15161A)
     Column(Modifier.padding(top = 8.dp)) {
-        BasicText("뒤를 비추는 유리", style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold, color = ink))
+        BasicText("배경이 비치는 글래스", style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold, color = ink))
         Spacer(Modifier.height(6.dp))
         BasicText(
-            "GlassScaffold 하나로 막대·팝업·시트·알림이 뒤 화면을 흐리게 비춥니다. 스타일만 바꿔 보세요.",
+            "GlassScaffold 하나만 쓰면 상단 바와 팝업, 시트, 토스트 뒤로 배경이 흐리게 비칩니다. 아래에서 스타일을 바꿔 보세요.",
             style = TextStyle(fontSize = 15.sp, color = ink.copy(alpha = 0.8f)),
         )
     }
@@ -245,18 +245,18 @@ private fun Chips(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) 
     }
 }
 
-/** 사진 대신 색 카드. 유리 막대 뒤로 지나가며 비친다. */
+/** 사진 대신 쓰는 그라디언트 카드. 스크롤하면 글래스 바 뒤로 지나가며 비친다. */
 @Composable
 private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
-    // 사진 위 유리는 그 사진을 비춰야 하므로 사진에 따로 뒤 화면을 둔다.
+    // 사진 위 글래스는 그 사진을 비춰야 하므로 사진마다 백드롭을 따로 둔다.
     val photo = rememberGlassBackdrop()
     val title = TITLES[index % TITLES.size]
     val menu = listOf(
-        GlassMenuItem("공유", ShowcaseIcons.Cloud) { notify("$title 공유") },
+        GlassMenuItem("공유", ShowcaseIcons.Cloud) { notify("$title 공유했어요") },
         GlassMenuItem("즐겨찾기", ShowcaseIcons.Sparkle) { notify("$title 즐겨찾기에 넣었어요") },
-        GlassMenuItem("삭제", destructive = true) { notify("$title 삭제") },
+        GlassMenuItem("삭제", destructive = true) { notify("$title 삭제했어요") },
     )
-    // 길게 누르면 사진이 떠오르고 뒤가 흐려지며 메뉴가 뜬다.
+    // 길게 누르면 사진이 떠오르고 배경이 흐려지며 메뉴가 열린다.
     Box(
         Modifier.fillMaxWidth().aspectRatio(1.6f).glassContextMenu(menu).clip(RoundedCornerShape(28.dp)),
         contentAlignment = Alignment.BottomStart,
@@ -265,7 +265,7 @@ private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
         GlassSurface(Modifier.padding(14.dp), shape = RoundedCornerShape(18.dp), backdrop = photo) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                 Label(TITLES[index % TITLES.size], 16, FontWeight.SemiBold)
-                Label("사진 위 유리 · 길게 눌러 메뉴", 13)
+                Label("길게 누르면 메뉴가 열려요", 13)
             }
         }
     }

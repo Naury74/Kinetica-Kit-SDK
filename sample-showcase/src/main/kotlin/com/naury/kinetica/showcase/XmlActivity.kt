@@ -25,14 +25,14 @@ import com.naury.kinetica.render.ViewEffects
 import com.naury.kinetica.serialization.RemoteSceneLoader
 import com.naury.kinetica.serialization.SceneFetch
 
-/** Compose를 쓰지 않는 화면: 레이아웃 XML에 보드·재생기를 넣고 기존 View를 위젯으로 쓴다. */
+/** Compose 없이 만든 화면. 레이아웃 XML에 보드와 재생기를 넣고, 기존 View를 위젯으로 쓴다. */
 class XmlActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_xml)
         val board = findViewById<KineticaBoardView>(R.id.board)
         val edit = findViewById<Button>(R.id.edit)
-        // 화면을 돌려도 배치·실행 취소가 남고 화면이 가려질 때마다 저장된다.
+        // 화면을 회전해도 배치와 실행 취소 기록이 유지되고, 화면이 가려질 때마다 저장된다.
         val state = BoardStates.obtain(this, catalog, BoardStorage.sharedPreferences(this, "showcase-xml", "board"))
         board.setBoard(state) { id, context ->
             val key = state.widgetKeyOf(id) ?: id
@@ -58,7 +58,7 @@ class XmlActivity : ComponentActivity() {
         val promo = findViewById<KineticaPlayerView>(R.id.promo)
         promo.setLoader(RemoteSceneLoader({ SceneFetch.Body(promoJson(0).toByteArray()) }))
         promo.data = SceneData.of("sales.today" to DataValue.Number(1_284_000.0))
-        promo.setOnActionListener { raw -> Toast.makeText(this, "동작: ${SceneAction.parse(raw).name}", Toast.LENGTH_SHORT).show() }
+        promo.setOnActionListener { raw -> Toast.makeText(this, "받은 동작: ${SceneAction.parse(raw).name}", Toast.LENGTH_SHORT).show() }
     }
 
     private companion object {

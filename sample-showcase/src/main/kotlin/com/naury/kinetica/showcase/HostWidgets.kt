@@ -39,8 +39,8 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
 
 /**
- * 호스트 앱이 Kinetica에 넘기는 실제 화면 조각. Kinetica는 이것들을 키로만 알고, 배치·크기·회전만 정한다.
- * 안의 상태와 동작은 호스트 것이라 편집해도 그대로 살아 있다.
+ * 호스트 앱이 Kinetica에 넘기는 실제 화면 조각. Kinetica는 이 조각을 키로만 알고 위치, 크기, 회전만 정한다.
+ * 안쪽 상태와 동작은 호스트가 가지고 있어서 편집하는 동안에도 그대로 유지된다.
  */
 object HostWidgets {
     const val CLOCK = "widget.clock"

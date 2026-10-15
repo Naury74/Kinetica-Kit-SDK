@@ -53,7 +53,7 @@ import java.util.Locale
 import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
 
-/** 이 앱이 보드에 내놓는 위젯 목록. 키·이름·처음 크기만 알려 주고, 내용은 [StoreWidget]이 그린다. */
+/** 이 앱이 보드에 제공하는 위젯 목록. 키와 이름, 처음 크기만 알려 주고 내용은 [StoreWidget]이 그린다. */
 val storeCatalog = listOf(
     BoardWidget("sales", "오늘 매출", widthDp = 176f, heightDp = 120f, effects = EffectPresets.card),
     BoardWidget("orders", "최근 주문", widthDp = 176f, heightDp = 150f, rowSpan = 2, effects = EffectPresets.card),
@@ -71,7 +71,7 @@ val storeCatalog = listOf(
     ),
 )
 
-/** [key]는 위젯 키, [id]는 놓인 자리 id(메모처럼 여러 개 놓는 위젯은 자리마다 다름). */
+/** [key]는 위젯 키, [id]는 보드에 놓인 슬롯 id다. 메모처럼 여러 개 놓을 수 있는 위젯은 슬롯마다 id가 다르다. */
 @Composable
 fun StoreWidget(key: String, id: String, data: StoreData) {
     when (key) {
@@ -146,7 +146,7 @@ private fun Clock() {
     }
 }
 
-/** 한 줄에 [max]까지 키우되 자리가 모자라면 줄이는 굵은 글자. */
+/** 한 줄에 [max] 크기까지 키우고, 공간이 모자라면 줄이는 굵은 글자. */
 @Composable
 private fun FitText(text: String, color: Color, max: TextUnit, modifier: Modifier = Modifier) {
     BasicText(
@@ -158,7 +158,7 @@ private fun FitText(text: String, color: Color, max: TextUnit, modifier: Modifie
     )
 }
 
-/** 입력 중인 글이 배치를 바꿔도 남아 있는지 보여 준다. */
+/** 배치를 바꿔도 입력 중인 글이 그대로 남는지 보여 준다. */
 @Composable
 private fun Memo(id: String) = Card(Color(0xFFFFF7D6)) {
     var text by rememberSaveable { mutableStateOf("") }

@@ -49,12 +49,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 서버 화면: 앱에 화면을 넣어 두지 않고 서버가 준 JSON(docs/34)을 그린다. "새 버전 받기"를 누르면 서버 내용이 바뀌어
- * 앱 업데이트 없이 화면이 바뀐다. 매출 숫자는 앱 데이터로 실시간 연결되고, 버튼 동작은 앱이 받아 처리한다.
+ * 서버 화면 데모. 화면을 앱에 넣어 두지 않고 서버가 준 JSON(docs/34)으로 그린다. "새 버전 받기"를 누르면 서버 응답이 바뀌어
+ * 앱을 업데이트하지 않아도 화면이 달라진다. 매출 숫자는 앱 데이터에 실시간으로 연결되고, 버튼 동작은 앱이 받아 처리한다.
  */
 @Composable
 internal fun ServerDemo(onBack: () -> Unit) {
-    // 가짜 서버: 버전마다 다른 JSON을 내려준다. 실제 앱은 OkHttp 등으로 받는다(docs/integration.md).
+    // 가짜 서버라 버전마다 다른 JSON을 내려준다. 실제 앱에서는 OkHttp 같은 클라이언트로 받는다(docs/integration.md).
     var version by remember { mutableIntStateOf(0) }
     val loader = remember { RemoteSceneLoader({ SceneFetch.Body(promoJson(version).toByteArray(), etag = "v$version") }) }
     var refreshKey by remember { mutableIntStateOf(0) }
@@ -72,7 +72,7 @@ internal fun ServerDemo(onBack: () -> Unit) {
         Modifier.fillMaxSize(),
         style = GlassStyles.Liquid,
         background = { Box(Modifier.fillMaxSize().background(Color(0xFFF3F4F8))) },
-        topBar = { DemoTopBar("서버 화면", "서버 JSON으로 그린 화면 · 숫자는 실시간 · 버튼은 앱이 처리", onBack) },
+        topBar = { DemoTopBar("서버 화면", "서버 JSON으로 그리고, 숫자와 버튼은 앱과 연결됩니다", onBack) },
         bottomBar = {
             Row(Modifier.padding(16.dp).padding(bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("새 버전 받기", filled = true) {
@@ -93,14 +93,14 @@ internal fun ServerDemo(onBack: () -> Unit) {
                 data = SceneData.of("sales.today" to DataValue.Number(sales)),
                 onAction = { raw ->
                     val action = SceneAction.parse(raw)
-                    scope.launch { toast.show("앱이 받은 동작: ${action.name} · filter=${action["filter"]}") }
+                    scope.launch { toast.show("앱이 받은 동작: ${action.name}, filter=${action["filter"]}") }
                 },
                 autoplay = true,
             )
             Spacer(Modifier.height(padding.calculateBottomPadding()))
         }
         GlassSheet(showJson, { showJson = false }, title = "서버 JSON") {
-            Label("서버가 보낸 JSON (docs/34 형식)", 16)
+            Label("서버가 보낸 JSON입니다. 형식은 docs/34에 정리되어 있어요.", 16)
             Spacer(Modifier.height(10.dp))
             Box(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState())) {
                 BasicText(
@@ -120,7 +120,7 @@ private val PROMOS = listOf(
     Promo("가을 신메뉴", "단호박 라떼 출시 기념 매출", "#FF7A59", "#FFF4EC", "신메뉴 주문 보기"),
 )
 
-/** 서버가 내려주는 홍보 화면 JSON. 버전마다 글자·색이 다르다. */
+/** 서버가 내려주는 홍보 화면 JSON. 버전마다 문구와 색이 다르다. */
 internal fun promoJson(version: Int): String {
     val promo = PROMOS[version % PROMOS.size]
     return """

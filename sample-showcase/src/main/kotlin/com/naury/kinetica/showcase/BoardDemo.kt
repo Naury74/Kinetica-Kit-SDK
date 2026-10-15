@@ -34,8 +34,9 @@ import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
 
 /**
- * 대시보드 보드: 가게 주인이 홈 화면 위젯을 직접 배치한다. 위젯은 평범한 Compose 화면(호스트 것)이고 보드가 자리만 맡는다.
- * 길게 눌러 편집, 위쪽으로 끌면 배치 틀, 왼쪽·오른쪽 가장자리면 반, 모서리면 4분의 1, 다른 위젯 가운데면 묶음.
+ * 대시보드 보드 데모. 가게 주인이 홈 화면 위젯을 직접 배치한다. 위젯은 호스트 앱의 평범한 Compose 화면이고, 보드는 위치와 크기만 관리한다.
+ * 길게 누르면 편집 모드가 된다. 위젯을 위쪽으로 끌면 스냅 레이아웃을 고를 수 있고, 왼쪽이나 오른쪽 가장자리에 놓으면 절반,
+ * 모서리에 놓으면 4분의 1 크기로 붙는다. 다른 위젯 가운데에 놓으면 스택으로 묶인다.
  */
 @Composable
 internal fun BoardDemo(onBack: () -> Unit, viewModel: StoreViewModel = viewModel()) {
@@ -57,7 +58,7 @@ internal fun BoardDemo(onBack: () -> Unit, viewModel: StoreViewModel = viewModel
         background = { Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFEDEBFF), Color(0xFFF6F7FB))))) },
         topBar = {
             Column {
-                DemoTopBar("대시보드 보드", "길게 눌러 편집 · 위로 끌면 배치 틀 · 가장자리면 반·4분할", onBack)
+                DemoTopBar("대시보드 보드", "길게 눌러 편집하고, 위로 끌어 스냅 레이아웃을 골라 보세요", onBack)
                 FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill(if (editing) "완료" else "편집", filled = editing) { editing = !editing }
                     if (editing) {

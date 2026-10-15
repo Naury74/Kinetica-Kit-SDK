@@ -65,22 +65,22 @@ class ShowcaseActivity : ComponentActivity() {
     }
 }
 
-/** 쇼케이스 화면. 첫 화면 순서대로다. */
+/** 쇼케이스 데모 목록. 선언한 순서대로 첫 화면에 나온다. */
 internal enum class Demo(val title: String, val summary: String, val icon: ImageVector, val accent: Color) {
-    Glass("글래스 UI", "뒤를 흐리게 비추는 유리. Liquid·Acrylic·One UI·Vision 스타일, 팝업·시트·알림·탭 막대", ShowcaseIcons.Sparkle, Color(0xFF7AA2FF)),
-    Motion("모션 효과", "빛 테두리, 젤리 누름, 자석, 기울이면 3D, 숫자 굴리기, 색종이, 누름·나타남·반복 효과", ShowcaseIcons.Bell, Color(0xFFFF7EB3)),
-    Board("대시보드 보드", "사용자가 위젯을 끌어 배치. 위로 끌면 Windows식 배치 틀, 가장자리면 반·4분할", ShowcaseIcons.Grid, Color(0xFF5EF0C8)),
-    Navigation("화면 이동", "카드가 그 자리에서 커지며 열리고(App Store), 목록은 옆에서 밀려 들어온다(iOS). 가장자리 끌어 뒤로", ShowcaseIcons.Grid, Color(0xFFA0F08C)),
-    Transition("장면 전환", "카드가 이어지며 상세 화면이 되고, 끌어서 닫는다(재생기만 사용)", ShowcaseIcons.Home, Color(0xFF7AE0FF)),
-    Server("서버 화면", "앱 업데이트 없이 서버 JSON으로 화면을 바꾸고, 실시간 숫자·동작을 연결", ShowcaseIcons.Cloud, Color(0xFFFFC56E)),
-    Studio("화면 만들기", "운영자가 앱 안에서 화면을 디자인하는 편집기(피그마처럼)", ShowcaseIcons.Pen, Color(0xFFB98CFF)),
+    Glass("글래스 UI", "배경이 비치는 글래스 UI입니다. 스타일을 바꿔 가며 다이얼로그, 시트, 토스트, 탭 바를 살펴보세요.", ShowcaseIcons.Sparkle, Color(0xFF7AA2FF)),
+    Motion("모션 효과", "글로우 테두리, 젤리 버튼, 기울이면 움직이는 3D 카드, 숫자 롤링, 컨페티와 프리셋 애니메이션을 직접 눌러 보세요.", ShowcaseIcons.Bell, Color(0xFFFF7EB3)),
+    Board("대시보드 보드", "사용자가 위젯을 직접 배치하는 홈 화면입니다. 위로 끌면 스냅 레이아웃을 고르고, 가장자리로 끌면 절반이나 4분의 1에 붙습니다.", ShowcaseIcons.Grid, Color(0xFF5EF0C8)),
+    Navigation("화면 이동", "App Store처럼 카드가 제자리에서 커지며 열리고, 목록은 iOS처럼 옆에서 밀려 들어옵니다. 가장자리를 밀면 뒤로 갑니다.", ShowcaseIcons.Grid, Color(0xFFA0F08C)),
+    Transition("장면 전환", "카드가 자연스럽게 상세 화면으로 이어지고, 아래로 끌면 닫힙니다. 재생기 모듈만 씁니다.", ShowcaseIcons.Home, Color(0xFF7AE0FF)),
+    Server("서버 화면", "앱을 업데이트하지 않고 서버 JSON으로 화면을 바꿉니다. 실시간 숫자와 버튼 동작도 앱과 연결됩니다.", ShowcaseIcons.Cloud, Color(0xFFFFC56E)),
+    Studio("화면 만들기", "운영자가 피그마처럼 앱 안에서 바로 화면을 디자인하는 편집기입니다.", ShowcaseIcons.Pen, Color(0xFFB98CFF)),
 }
 
 @Composable
 private fun Showcase() {
     var current by rememberSaveable { mutableStateOf<Demo?>(null) }
     BackHandler(enabled = current != null) { current = null }
-    // 첫 화면은 어두운 바탕이라 상태 표시줄 아이콘을 밝게, 나머지는 밝은 바탕이라 어둡게 둔다(편집기는 시스템 테마를 따른다).
+    // 첫 화면은 배경이 어두워 상태 표시줄 아이콘을 밝게 두고, 나머지는 배경이 밝아 어둡게 둔다. 편집기는 시스템 테마를 따른다.
     val view = LocalView.current
     val darkScreen = current == null || current == Demo.Transition || (current == Demo.Studio && isSystemInDarkTheme())
     SideEffect {
@@ -121,7 +121,7 @@ private fun Home(open: (Demo) -> Unit) {
             item {
                 val context = LocalContext.current
                 Label(
-                    "Compose 없는 XML 화면 예 보기 ›",
+                    "XML 레이아웃으로 만든 화면 보기 ›",
                     15,
                     FontWeight.SemiBold,
                     Modifier.clickable(role = Role.Button) {
@@ -132,7 +132,7 @@ private fun Home(open: (Demo) -> Unit) {
             }
             item {
                 Label(
-                    "모든 화면은 SDK 모듈을 그대로 씁니다. 코드는 sample-showcase에 있습니다.",
+                    "모든 화면은 SDK 모듈을 그대로 사용합니다. 코드는 sample-showcase 모듈에서 볼 수 있습니다.",
                     12,
                     color = Color.White.copy(alpha = 0.6f),
                     modifier = Modifier.padding(top = 8.dp),
@@ -148,7 +148,7 @@ private fun Hero() {
         BasicText("Kinetica", style = TextStyle(color = Color.White, fontSize = 44.sp, fontWeight = FontWeight.Black))
         Spacer(Modifier.height(8.dp))
         TypewriterText(
-            "앱에 붙여 쓰는 움직이는 UI 키트",
+            "앱에 바로 붙여 쓰는 모션 UI 키트",
             style = TextStyle(color = Color.White.copy(alpha = 0.85f), fontSize = 18.sp, fontWeight = FontWeight.Medium),
         )
     }
