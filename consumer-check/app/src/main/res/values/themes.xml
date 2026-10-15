@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- XML 화면용 AppCompat 테마. 다크 모드를 따른다. -->
+    <style name="Theme.Consumer" parent="Theme.Material3.DayNight.NoActionBar" />
+</resources>

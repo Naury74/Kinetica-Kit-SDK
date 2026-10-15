@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:label="Consumer" android:allowBackup="false">
+    <application android:label="Consumer" android:allowBackup="false" android:theme="@style/Theme.Consumer">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -10,5 +10,9 @@
         <activity android:name=".BoardActivity" android:exported="false" />
         <activity android:name=".GlassActivity" android:exported="false" />
         <activity android:name=".XmlGlassActivity" android:exported="false" />
+        <activity android:name=".m3.M3EdgeActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".m3.M3NoEdgeActivity" android:exported="false" />
+        <activity android:name=".xml.XmlHostActivity" android:exported="false" />
+        <activity android:name=".JavaHostActivity" android:exported="false" />
     </application>
 </manifest>
