@@ -127,6 +127,7 @@ public sealed interface RemoteSceneError {
  * - 받은 본문은 [verifier]가 있으면 서명부터 확인하고, [codec]의 크기 제한과 검증을 거친다. 마지막으로 [accept]가 `false`를 돌려주면 쓰지 않는다.
  *   어느 단계에서 실패해도 현재 문서는 유지한다.
  * - 받은 문서는 ETag와 함께 [cache]에 저장한다. 그래서 앱을 다시 실행해도 내용이 그대로면 서버가 본문을 다시 보낼 필요가 없다.
+ *   캐시 저장소가 실패하거나 예외를 던지면 캐시 없이 계속한다.
  * - 문서 안의 액션, 데이터 키, HostSlot 키는 이름일 뿐이며 SDK가 코드를 실행하지 않는다. 어떻게 처리할지는 호스트의 `onAction`과 `slots`가 정한다.
  *
  * [refresh]는 동시에 여러 번 호출해도 순서대로 실행한다. 어느 스레드에서 호출해도 되며, 서명 확인과 JSON 파싱은 [Dispatchers.Default]에서 한다.
@@ -151,9 +152,10 @@ public class RemoteSceneLoader(
 
     /** 서버에서 문서를 다시 받고, 끝난 뒤의 상태를 돌려준다. [fetcher]가 던진 예외는 네트워크 실패로 처리한다. */
     public suspend fun refresh(): RemoteSceneState = lock.withLock {
+        // 캐시를 읽다가 취소되면(화면을 떠나면) 다음 refresh에서 다시 읽는다.
         if (!cacheRead) {
-            cacheRead = true
             readCache()
+            cacheRead = true
         }
         when (val fetched = fetchSafely()) {
             is SceneFetch.Body -> receive(fetched)
@@ -174,7 +176,8 @@ public class RemoteSceneLoader(
     }
 
     private suspend fun readCache() {
-        val stored = (cache?.repository?.load(cache.id) as? LoadResult.Loaded)?.document ?: return
+        val repository = cache?.repository ?: return
+        val stored = (cacheCall { repository.load(cache.id) } as? LoadResult.Loaded)?.document ?: return
         val loaded = stored.copy(extensions = stored.extensions - ETAG_KEY)
         if (!accept(loaded)) return
         etag = stored.extensions[ETAG_KEY]
@@ -196,7 +199,8 @@ public class RemoteSceneLoader(
         etag = body.etag
         mutable.value = RemoteSceneState.Ready(document, SceneOrigin.Network)
         // ETag는 캐시하는 문서의 extensions에만 넣어 함께 저장하고, 화면에 넘기는 문서에는 넣지 않는다.
-        cache?.repository?.save(cache.id, body.etag?.let { document.copy(extensions = document.extensions + (ETAG_KEY to it)) } ?: document)
+        val cached = body.etag?.let { document.copy(extensions = document.extensions + (ETAG_KEY to it)) } ?: document
+        cache?.let { (repository, id) -> cacheCall { repository.save(id, cached) } }
     }
 
     private fun clearError() {
@@ -214,4 +218,17 @@ public class RemoteSceneLoader(
     private companion object {
         const val ETAG_KEY = "kinetica.remote.etag"
     }
+}
+
+/**
+ * 호스트가 구현한 저장소가 던진 예외를 캐시 없음으로 바꾼다. 캐시는 없어도 화면을 그릴 수 있으므로 저장소 오류로 새로 고침이 실패하면 안 된다.
+ * 취소는 그대로 던진다.
+ */
+@Suppress("TooGenericExceptionCaught")
+internal suspend fun <T> cacheCall(block: suspend () -> T): T? = try {
+    block()
+} catch (cancelled: CancellationException) {
+    throw cancelled
+} catch (_: Exception) {
+    null
 }

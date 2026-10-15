@@ -5,7 +5,10 @@ import com.naury.kinetica.core.scene.SceneDocument
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.completeWith
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +44,8 @@ public data class RemoteBundleSettings @JvmOverloads constructor(
  * - 처음 [refresh]할 때 화면마다 캐시를 먼저 읽고, 캐시가 없으면 [fallback]에서 같은 id의 문서를 보여 준다.
  * - 받은 번들에서 올바르고 [accept]를 통과한 화면만 교체한다. 깨졌거나 거절된 화면은 이전 문서를 유지하고 실패 이유만 남긴다.
  *   번들에 없는 화면은 건드리지 않는다.
- * - 서명([RemoteBundleSettings.verifier])과 ETag는 번들 전체에 하나씩이며, ETag는 캐시에 함께 저장한다.
+ * - 서명([RemoteBundleSettings.verifier])과 ETag는 번들 전체에 하나씩이며, ETag는 캐시에 함께 저장한다. 캐시한 화면 중 하나라도
+ *   읽지 못하면 ETag를 보내지 않고 번들 전체를 다시 받는다.
  * - 여러 화면이 함께 열려 [refresh]가 동시에 호출되면 진행 중인 요청 하나의 결과를 같이 기다린다.
  *   마지막 요청이 [RemoteBundleSettings.minRefreshIntervalMs] 안에 끝났다면 다시 요청하지 않는다.
  *
@@ -73,32 +77,50 @@ public class RemoteSceneBundleLoader(
         all[sceneId] ?: error?.let(RemoteSceneState::Failed) ?: RemoteSceneState.Loading
     }.distinctUntilChanged()
 
-    /** 서버에서 번들을 다시 받는다. 다른 [refresh]가 진행 중이면 그 결과를 같이 기다린다. */
+    /**
+     * 서버에서 번들을 다시 받는다. 다른 [refresh]가 진행 중이면 그 결과를 같이 기다린다.
+     * 요청을 시작한 호출이 취소되면(그 화면을 떠나면) 기다리던 호출이 이어서 다시 요청한다.
+     */
     @JvmOverloads
     public suspend fun refresh(force: Boolean = false): Map<String, RemoteSceneState> {
-        val (job, owner) = lock.withLock {
-            val recent = lastFetchNanos?.let { System.nanoTime() - it < settings.minRefreshIntervalMs * NANOS_PER_MS } == true
-            when {
-                inFlight != null -> checkNotNull(inFlight) to false
-                recent && !force -> return mutable.value
-                else -> CompletableDeferred<Map<String, RemoteSceneState>>().also { inFlight = it } to true
+        while (true) {
+            val (job, owner) = lock.withLock {
+                val recent = lastFetchNanos?.let { System.nanoTime() - it < settings.minRefreshIntervalMs * NANOS_PER_MS } == true
+                when {
+                    inFlight != null -> checkNotNull(inFlight) to false
+                    recent && !force -> return mutable.value
+                    else -> CompletableDeferred<Map<String, RemoteSceneState>>().also { inFlight = it } to true
+                }
+            }
+            if (owner) return fetchAsOwner(job)
+            val outcome = runCatching { job.await() }
+            // 이 호출이 취소되었으면 그대로 던진다. 요청한 쪽만 취소된 것이면 이 호출은 아직 결과가 필요하므로 다시 요청한다.
+            currentCoroutineContext().ensureActive()
+            if (outcome.exceptionOrNull() !is CancellationException) return outcome.getOrThrow()
+        }
+    }
+
+    private suspend fun fetchAsOwner(job: CompletableDeferred<Map<String, RemoteSceneState>>): Map<String, RemoteSceneState> {
+        val result = runCatching { fetchAndApply() }
+        val cancelled = result.exceptionOrNull() is CancellationException
+        // 취소된 코루틴에서도 진행 중 표시를 반드시 지워야 다음 refresh가 끝나지 않는 요청을 기다리지 않는다.
+        withContext(NonCancellable) {
+            lock.withLock {
+                inFlight = null
+                // 취소된 요청은 끝난 요청이 아니므로 짧은 간격 제한에 넣지 않는다.
+                if (!cancelled) lastFetchNanos = System.nanoTime()
             }
         }
-        if (!owner) return job.await()
         // 실패나 취소까지 포함해, 기다리던 다른 호출도 똑같은 결과를 받게 한다.
-        val result = runCatching { fetchAndApply() }
-        lock.withLock {
-            inFlight = null
-            lastFetchNanos = System.nanoTime()
-        }
         job.completeWith(result)
         return result.getOrThrow()
     }
 
     private suspend fun fetchAndApply(): Map<String, RemoteSceneState> {
+        // 캐시를 읽다가 취소되면 다음 refresh에서 다시 읽는다.
         if (!cacheRead) {
-            cacheRead = true
             readCache()
+            cacheRead = true
         }
         when (val fetched = fetchSafely()) {
             is SceneFetch.Body -> receive(fetched)
@@ -125,15 +147,16 @@ public class RemoteSceneBundleLoader(
 
     private suspend fun readCache() {
         val repository = cache?.repository ?: return
-        val meta = (repository.load(metaId()) as? LoadResult.Loaded)?.document
+        val meta = (cacheCall { repository.load(metaId()) } as? LoadResult.Loaded)?.document
         // extensions 값은 문자열로만 저장되므로 화면 id 목록은 JSON 배열 문자열로 넣어 둔다.
         val ids = meta?.extensions?.get(IDS_KEY)?.let { raw ->
             runCatching { Json.parseToJsonElement(raw).jsonArray.mapNotNull { it.jsonPrimitive.contentOrNull } }.getOrNull()
         }.orEmpty()
         val loaded = ids.mapNotNull { id ->
-            (repository.load(sceneCacheId(id)) as? LoadResult.Loaded)?.document?.takeIf { accept(id, it) }?.let { id to it }
+            (cacheCall { repository.load(sceneCacheId(id)) } as? LoadResult.Loaded)?.document?.takeIf { accept(id, it) }?.let { id to it }
         }
-        if (loaded.isNotEmpty()) etag = meta?.extensions?.get(ETAG_KEY)
+        // 캐시한 화면 중 하나라도 읽지 못했으면 ETag를 보내지 않는다. 보내면 서버가 304로 답해 그 화면을 다시 받을 수 없다.
+        if (loaded.isNotEmpty() && loaded.size == ids.size) etag = meta?.extensions?.get(ETAG_KEY)
         mutable.value = mutable.value + loaded.associate { (id, document) -> id to RemoteSceneState.Ready(document, SceneOrigin.Cache) }
     }
 
@@ -172,13 +195,15 @@ public class RemoteSceneBundleLoader(
 
     private suspend fun saveCache(accepted: Map<String, SceneDocument>) {
         val repository = cache?.repository ?: return
-        accepted.forEach { (id, document) -> repository.save(sceneCacheId(id), document) }
+        accepted.forEach { (id, document) -> cacheCall { repository.save(sceneCacheId(id), document) } }
         val ids = (mutable.value.filterValues { it is RemoteSceneState.Ready && it.origin != SceneOrigin.Fallback }.keys).sorted()
         val extensions = buildMap {
             put(IDS_KEY, JsonArray(ids.map(::JsonPrimitive)).toString())
             etag?.let { put(ETAG_KEY, it) }
         }
-        repository.save(metaId(), SceneDocument(documentId = metaId(), artboard = Artboard(1.0, 1.0), extensions = extensions))
+        cacheCall {
+            repository.save(metaId(), SceneDocument(documentId = metaId(), artboard = Artboard(1.0, 1.0), extensions = extensions))
+        }
     }
 
     private fun failAll(error: RemoteSceneError) {

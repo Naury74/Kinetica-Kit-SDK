@@ -25,11 +25,17 @@ public class FileSceneRepository(
 ) : SceneRepository {
     override suspend fun save(id: String, document: SceneDocument): SaveResult = withContext(ioDispatcher) {
         val target = fileFor(id) ?: return@withContext SaveResult.Failed(SaveFailure.InvalidId)
+        // 검증을 통과하지 못한 문서는 encode가 예외를 던진다. 저장은 실패로 알리고 이전 파일은 그대로 둔다.
+        val bytes = try {
+            codec.encode(document).toByteArray(Charsets.UTF_8)
+        } catch (_: IllegalArgumentException) {
+            return@withContext SaveResult.Failed(SaveFailure.InvalidDocument)
+        }
         val temp = File(directory, "$id$TEMP_SUFFIX")
         try {
             directory.mkdirs()
             FileOutputStream(temp).use { stream ->
-                stream.write(codec.encode(document).toByteArray(Charsets.UTF_8))
+                stream.write(bytes)
                 stream.fd.sync()
             }
             replace(temp, target)

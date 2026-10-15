@@ -6,6 +6,7 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.testing.TestScenes
 import com.naury.kinetica.core.testing.TestScenes.id
 import java.io.IOException
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -94,6 +95,53 @@ class RemoteSceneLoaderTest {
 
         assertThat(restarted.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Cache))
         assertThat(sent).isEqualTo("v7")
+    }
+
+    @Test
+    fun `캐시 저장소가 실패하거나 예외를 던져도 받은 문서를 보여 준다`() = runTest {
+        val strict = SceneCodec(limits = com.naury.kinetica.core.scene.SceneLimits(maxExtensionBytes = 16))
+        val small = FileSceneRepository(folder.root, strict, ioDispatcher = StandardTestDispatcher(testScheduler))
+        val broken = object : SceneRepository {
+            override suspend fun save(id: String, document: SceneDocument): SaveResult = throw IOException("disk")
+
+            override suspend fun load(id: String): LoadResult = throw IOException("disk")
+
+            override suspend fun list(): List<String> = emptyList()
+
+            override suspend fun delete(id: String): Boolean = false
+        }
+        // ETag를 extensions에 넣어 저장하므로, 저장소 codec 한도를 넘으면 저장만 실패한다.
+        val tagged = RemoteSceneLoader({ body(first, "v".repeat(32)) }, RemoteSceneCache(small))
+        val throwing = RemoteSceneLoader({ body(first) }, RemoteSceneCache(broken))
+
+        assertThat(tagged.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Network))
+        assertThat(throwing.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Network))
+    }
+
+    @Test
+    fun `캐시를 읽다가 화면을 떠나 취소되면 다음 새로 고침에서 캐시를 다시 읽는다`() = runTest {
+        val files = FileSceneRepository(folder.root, ioDispatcher = StandardTestDispatcher(testScheduler))
+        RemoteSceneLoader({ body(first, "v1") }, RemoteSceneCache(files)).refresh()
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val slow = object : SceneRepository by files {
+            override suspend fun load(id: String): LoadResult {
+                gate.await()
+                return files.load(id)
+            }
+        }
+        var sent: String? = null
+        val loader = RemoteSceneLoader({ etag ->
+            sent = etag
+            SceneFetch.NotModified
+        }, RemoteSceneCache(slow))
+
+        val leaving = launch { loader.refresh() }
+        testScheduler.runCurrent()
+        leaving.cancel()
+        gate.complete(Unit)
+
+        assertThat(loader.refresh()).isEqualTo(RemoteSceneState.Ready(first, SceneOrigin.Cache))
+        assertThat(sent).isEqualTo("v1")
     }
 
     @Test

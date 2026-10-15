@@ -86,6 +86,16 @@ class FileSceneRepositoryTest {
     }
 
     @Test
+    fun `저장소 codec 한도를 넘는 문서는 예외 없이 저장 실패로 알린다`() = runTest {
+        val strict = SceneCodec(limits = com.naury.kinetica.core.scene.SceneLimits(maxExtensionBytes = 16))
+        val repository = FileSceneRepository(folder.root, strict, ioDispatcher = StandardTestDispatcher(testScheduler))
+        val large = TestScenes.sample().copy(extensions = mapOf("host.note" to "x".repeat(64)))
+
+        assertThat(repository.save("big", large)).isEqualTo(SaveResult.Failed(SaveFailure.InvalidDocument))
+        assertThat(repository.load("big")).isEqualTo(LoadResult.NotFound)
+    }
+
+    @Test
     fun `지우기`() = runTest {
         val repository = FileSceneRepository(folder.root, ioDispatcher = StandardTestDispatcher(testScheduler))
         repository.save("gone", TestScenes.sample())

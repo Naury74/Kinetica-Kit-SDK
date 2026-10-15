@@ -94,4 +94,44 @@ class RemoteSceneBundleTest {
         assertThat(calls).isEqualTo(1)
         assertThat(loader.state("home").first()).isEqualTo(RemoteSceneState.Failed(RemoteSceneError.Network))
     }
+
+    @Test
+    fun `먼저 요청한 화면이 닫혀 취소되어도 함께 기다리던 화면은 다시 요청해 결과를 받는다`() = runTest {
+        var calls = 0
+        val loader = RemoteSceneBundleLoader({
+            calls++
+            kotlinx.coroutines.delay(100)
+            body(bundles.encode(mapOf("home" to home)))
+        })
+
+        val leaving = async { loader.refresh() }
+        testScheduler.runCurrent()
+        val staying = async { loader.refresh() }
+        testScheduler.runCurrent()
+        leaving.cancel()
+        val result = staying.await()
+
+        assertThat(calls).isEqualTo(2)
+        assertThat(result.getValue("home")).isEqualTo(RemoteSceneState.Ready(home, SceneOrigin.Network))
+        // 취소된 요청은 간격 제한에 넣지 않았고, 끝난 요청 뒤에는 간격 제한이 그대로 적용된다.
+        loader.refresh()
+        assertThat(calls).isEqualTo(2)
+    }
+
+    @Test
+    fun `캐시한 화면 하나가 손상되면 ETag를 보내지 않아 서버가 전체를 다시 보낸다`() = runTest {
+        val cache = RemoteSceneCache(FileSceneRepository(folder.root, ioDispatcher = StandardTestDispatcher(testScheduler)), "shop")
+        RemoteSceneBundleLoader({ body(bundles.encode(mapOf("home" to home, "promo" to promo)), "v3") }, cache).refresh()
+        java.io.File(folder.root, "shop-promo.kinetica.json").writeText("{broken")
+        var sent: String? = "unset"
+        val restarted = RemoteSceneBundleLoader({ etag ->
+            sent = etag
+            if (etag == null) body(bundles.encode(mapOf("home" to home, "promo" to promo)), "v3") else SceneFetch.NotModified
+        }, cache)
+
+        restarted.refresh()
+
+        assertThat(sent).isNull()
+        assertThat(restarted.state("promo").first()).isEqualTo(RemoteSceneState.Ready(promo, SceneOrigin.Network))
+    }
 }

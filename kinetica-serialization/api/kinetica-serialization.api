@@ -224,6 +224,7 @@ public final class com/naury/kinetica/serialization/RemoteSceneState$Ready : com
 }
 
 public final class com/naury/kinetica/serialization/SaveFailure : java/lang/Enum {
+	public static final field InvalidDocument Lcom/naury/kinetica/serialization/SaveFailure;
 	public static final field InvalidId Lcom/naury/kinetica/serialization/SaveFailure;
 	public static final field IoError Lcom/naury/kinetica/serialization/SaveFailure;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;

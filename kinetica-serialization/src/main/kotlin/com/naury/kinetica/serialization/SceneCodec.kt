@@ -11,9 +11,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * 장면 문서를 UTF-8 JSON으로 직렬화하고 역직렬화한다.
@@ -93,10 +91,19 @@ public class SceneCodec(
         val version = (root[SCHEMA_VERSION_KEY] as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull
             ?: fail(SCHEMA_VERSION_KEY, "정수여야 합니다.")
         val current = SceneDocument.CURRENT_SCHEMA_VERSION
-        val migrated = migrations.upgrade(root, from = version, to = current).takeIf { version <= current }
-            ?: throw LoadFailure(SceneLoadError.UnsupportedSchema(version))
-        check(migrated[SCHEMA_VERSION_KEY]?.jsonPrimitive?.int == current) { "마이그레이션 뒤 schemaVersion은 $current 이어야 합니다." }
+        if (version > current) throw LoadFailure(SceneLoadError.UnsupportedSchema(version))
+        val migrated = migrate(root, version, current) ?: throw LoadFailure(SceneLoadError.UnsupportedSchema(version))
+        val upgraded = (migrated[SCHEMA_VERSION_KEY] as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull
+        if (upgraded != current) fail(SCHEMA_VERSION_KEY, "마이그레이션 뒤 schemaVersion이 $current 이 아닙니다.")
         return migrated
+    }
+
+    // 호스트가 만든 마이그레이션이 서버에서 온 예상 밖의 트리를 받고 예외를 던져도, decode는 예외 대신 실패 결과를 돌려준다.
+    @Suppress("TooGenericExceptionCaught")
+    private fun migrate(root: JsonObject, version: Int, current: Int): JsonObject? = try {
+        migrations.upgrade(root, from = version, to = current)
+    } catch (_: RuntimeException) {
+        fail(SCHEMA_VERSION_KEY, "마이그레이션에 실패했습니다.")
     }
 
     public companion object {

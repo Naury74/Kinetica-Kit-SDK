@@ -131,6 +131,16 @@ class SceneCodecTest {
     }
 
     @Test
+    fun `migration이 예외를 던지거나 버전을 올리지 않아도 예외 없이 실패로 돌려준다`() {
+        val v0 = fixture("scene-demo.json").replace("\"schemaVersion\":1", "\"schemaVersion\":0")
+        val throwing = SceneCodec(migrations = SceneMigrations(mapOf(0 to SceneMigration { error("예상 밖의 트리") })))
+        val stuck = SceneCodec(migrations = SceneMigrations(mapOf(0 to SceneMigration { it })))
+
+        assertThat(throwing.decode(v0)).isInstanceOf(DecodeResult.Failure::class.java)
+        assertThat(stuck.decode(v0)).isInstanceOf(DecodeResult.Failure::class.java)
+    }
+
+    @Test
     fun `유한하지 않은 숫자와 문자열 숫자를 위치와 함께 거부한다`() {
         val text = fixture("scene-demo.json")
 

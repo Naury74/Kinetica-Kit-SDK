@@ -32,6 +32,9 @@ public enum class SaveFailure {
 
     /** 디스크 공간 부족이나 권한 문제 같은 입출력 오류. */
     IoError,
+
+    /** 저장소의 [SceneCodec] 검증을 통과하지 못하는 문서다. 읽을 때 쓰는 codec보다 한도가 작은 codec으로 저장하면 생긴다. */
+    InvalidDocument,
 }
 
 public sealed interface LoadResult {
