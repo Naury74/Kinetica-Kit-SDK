@@ -1,12 +1,12 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -59,10 +59,11 @@ public fun ShimmerText(
 ) {
     require(periodMs > 0) { "periodMs는 0보다 커야 합니다." }
     val still = reducedMotion()
-    val progress = loopProgress(still, periodMs, PAUSE_MS, FastOutSlowInEasing)
-    BasicText(
+    val progress = rememberLoopProgress(still, periodMs, PAUSE_MS, FastOutSlowInEasing)
+    ThemedText(
         text,
         modifier
+            .loopVisibility(progress.clock)
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .drawWithCache {
                 val band = maxOf(size.width * BAND_RATIO, size.height * 2f)
@@ -106,12 +107,13 @@ public fun GradientText(
     require(colors.size >= 2) { "colors는 두 개 이상이어야 합니다." }
     require(periodMs >= 0) { "periodMs는 0 이상이어야 합니다." }
     val still = reducedMotion() || periodMs == 0
-    val progress = loopProgress(still, maxOf(periodMs, 1), 0, LinearEasing)
+    val progress = rememberLoopProgress(still, maxOf(periodMs, 1), 0, LinearEasing)
     // 끝 색을 처음 색으로 이어 붙여야 반복되는 경계가 보이지 않는다.
     val loop = remember(colors) { colors + colors.first() }
-    BasicText(
+    ThemedText(
         text,
         modifier
+            .loopVisibility(progress.clock)
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .drawWithCache {
                 val span = maxOf(size.width, 1f)
@@ -170,7 +172,7 @@ public fun ScrambleText(
             if (settled < text.length) delay(SCRAMBLE_TICK_MS)
         }
     }
-    BasicText(
+    ThemedText(
         shown,
         modifier.clearAndSetSemantics { this.text = AnnotatedString(text) },
         style = style.copy(color = style.color.takeOrElse { LocalGlassContentColor.current }),
@@ -185,20 +187,24 @@ internal fun scrambleFrame(text: String, settled: Int, glyphs: String, random: R
     return String(chars)
 }
 
-/** 0..1을 반복하는 진행률. 멈춰야 하면 애니메이션 없이 0을 돌려준다. 값은 그리기 단계에서 읽는다. */
+/** 쉬는 시간 [pauseMs] 뒤 [periodMs] 동안 0에서 1로 가기를 반복하는 진행률. 멈춰야 하면 0이다. 값은 그리기 단계에서 읽는다. */
+private class LoopProgress(val clock: LoopClock, private val periodMs: Int, private val pauseMs: Int, private val easing: Easing) {
+    val value: Float
+        get() {
+            val ms = clock.seconds * MS_PER_SECOND % (periodMs + pauseMs)
+            return if (ms < pauseMs) 0f else easing.transform((ms - pauseMs) / periodMs)
+        }
+}
+
 @Composable
-private fun loopProgress(still: Boolean, periodMs: Int, pauseMs: Int, easing: androidx.compose.animation.core.Easing): State<Float> {
-    if (still) return remember { mutableFloatStateOf(0f) }
-    return rememberInfiniteTransition(label = "text-effect").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(periodMs, delayMillis = pauseMs, easing = easing)),
-        label = "progress",
-    )
+private fun rememberLoopProgress(still: Boolean, periodMs: Int, pauseMs: Int, easing: Easing): LoopProgress {
+    val clock = rememberLoopClock(running = !still)
+    return remember(clock, periodMs, pauseMs, easing) { LoopProgress(clock, periodMs, pauseMs, easing) }
 }
 
 private const val SCRAMBLE_GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*+=<>/\\"
 private const val SCRAMBLE_TICK_MS = 45L
+private const val MS_PER_SECOND = 1_000f
 private const val PAUSE_MS = 700
 private const val BAND_RATIO = 0.3f
 private const val BAND_SLANT = 0.6f

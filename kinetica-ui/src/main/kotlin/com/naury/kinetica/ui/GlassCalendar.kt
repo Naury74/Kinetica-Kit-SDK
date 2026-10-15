@@ -30,7 +30,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -154,7 +153,7 @@ public sealed class GlassCalendarSelection {
 /**
  * [GlassCalendar]의 색.
  *
- * @param accent 선택한 날의 인디케이터, 오늘 테두리, 기간 띠의 색
+ * @param accent 선택한 날의 인디케이터, 오늘 테두리, 기간 띠의 색. [GlassCalendar]의 기본값은 [GlassTheme]의 `accent`다.
  * @param onAccent 선택한 날 숫자의 색
  * @param sunday 일요일 숫자의 색
  * @param saturday 토요일 숫자의 색. 평일과 같게 하려면 [Color.Unspecified]를 넘긴다.
@@ -233,23 +232,23 @@ public fun rememberGlassCalendarState(
  * ```
  *
  * @param selection 지금 고른 날짜와 모드. 모드는 이 값의 타입을 따른다.
- * @param onSelect 날짜를 누르면 [selection]에 그 날을 반영한 새 값을 받는다. 범위 밖 날짜로는 호출되지 않는다.
+ * @param onSelectionChange 날짜를 누르면 [selection]에 그 날을 반영한 새 값을 받는다. 범위 밖 날짜로는 호출되지 않는다.
  * @param events 날짜별 일정 색. 앞의 3개만 점으로 그리고, TalkBack은 전체 개수를 읽는다. 날짜마다 구성할 때 호출되므로 가볍게 만든다.
  */
 @Composable
 public fun GlassCalendar(
     state: GlassCalendarState,
     selection: GlassCalendarSelection,
-    onSelect: (GlassCalendarSelection) -> Unit,
+    onSelectionChange: (GlassCalendarSelection) -> Unit,
     modifier: Modifier = Modifier,
     events: (LocalDate) -> List<Color> = NoEvents,
-    colors: GlassCalendarColors = GlassCalendarColors(),
+    colors: GlassCalendarColors = GlassCalendarColors(accent = GlassTheme.colors.accent, onAccent = GlassTheme.colors.onAccent),
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     val locale = LocalConfiguration.current.locales.get(0) ?: Locale.ROOT
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val scope = rememberCoroutineScope()
-    val latestSelect by rememberUpdatedState(onSelect)
+    val latestSelect by rememberUpdatedState(onSelectionChange)
     val latestSelection by rememberUpdatedState(selection)
     val keys = remember(state) { CalendarKeys(state, scope) }
     val strings = CalendarStrings(
@@ -436,7 +435,7 @@ private fun MonthTitle(month: YearMonth, look: CalendarLook, modifier: Modifier)
         },
         contentAlignment = Alignment.CenterStart,
         label = "calendar-month",
-    ) { shown -> BasicText(formatter.format(shown), style = text, maxLines = 1) }
+    ) { shown -> ThemedText(formatter.format(shown), style = text, maxLines = 1) }
 }
 
 @Composable
@@ -476,7 +475,7 @@ private fun WeekdayRow(look: CalendarLook) {
     Row(Modifier.fillMaxWidth().padding(vertical = WEEKDAY_PADDING).clearAndSetSemantics {}) {
         repeat(DAYS_PER_WEEK) { index ->
             val day = look.env.firstDay.plus(index.toLong())
-            BasicText(
+            ThemedText(
                 day.getDisplayName(DateTextStyle.SHORT, look.env.locale),
                 Modifier.weight(1f),
                 style = TextStyle(
@@ -703,7 +702,7 @@ private fun DayCell(date: LocalDate, look: CalendarLook, onTap: (LocalDate) -> U
             .dayMarks(marker, scale, coverage),
         contentAlignment = Alignment.Center,
     ) {
-        BasicText(
+        ThemedText(
             date.dayOfMonth.toString(),
             style = TextStyle(
                 fontSize = DAY_SIZE,

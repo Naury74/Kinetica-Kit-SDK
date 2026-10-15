@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -81,7 +80,7 @@ public fun GlassBarChart(
     values: List<Float>,
     modifier: Modifier = Modifier,
     labels: List<String>? = null,
-    colors: List<Color> = listOf(GlassChartDefaults.Blue),
+    colors: List<Color> = listOf(GlassTheme.colors.accent),
     orientation: GlassBarOrientation = GlassBarOrientation.Vertical,
     valueFormatter: (Float) -> String = GlassChartDefaults::formatValue,
     onSelect: ((Int?) -> Unit)? = null,
@@ -354,7 +353,7 @@ private fun BarLabels(content: BarContent, horizontal: Boolean) {
         Column(Modifier.fillMaxHeight().widthIn(max = H_LABEL_MAX).padding(end = LABEL_GAP)) {
             repeat(count) { i ->
                 Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                    BasicText(labels.getOrNull(i).orEmpty(), style = textStyle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    ThemedText(labels.getOrNull(i).orEmpty(), style = textStyle, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -363,7 +362,7 @@ private fun BarLabels(content: BarContent, horizontal: Boolean) {
             repeat(count) { i ->
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     val text = if (i % every == 0) labels.getOrNull(i).orEmpty() else ""
-                    BasicText(text, style = textStyle.copy(textAlign = TextAlign.Center), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    ThemedText(text, style = textStyle.copy(textAlign = TextAlign.Center), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

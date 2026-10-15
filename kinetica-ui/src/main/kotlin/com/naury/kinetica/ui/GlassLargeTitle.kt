@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
@@ -66,7 +65,7 @@ import kotlin.math.roundToInt
  * 목록 스크롤에 맞춰 큰 제목이 접힌다. 목록 스크롤을 가로채지 않으므로 목록은 평소처럼 움직인다.
  * 단, 맨 위에서 아래로 더 당긴 거리는 이 상태가 소비해 큰 제목을 키우는 데 쓴다.
  *
- * 인자 없는 [rememberLargeTitleState]로 만들면 중첩 스크롤로 전해진 거리만 세므로, `scrollToItem`처럼 코드로 옮긴 스크롤은
+ * 인자 없는 [rememberGlassLargeTitleState]로 만들면 중첩 스크롤로 전해진 거리만 세므로, `scrollToItem`처럼 코드로 옮긴 스크롤은
  * 목록이 맨 위에 다시 닿을 때까지 접힘에 반영되지 않는다. 코드로도 스크롤하는 목록이면 `LazyListState`나 `ScrollState`를 받는
  * 오버로드를 쓴다. 이때 접힘은 목록의 실제 위치로 정하고, [connection]은 당겨서 키우는 효과에만 쓰인다.
  */
@@ -126,7 +125,7 @@ public class GlassLargeTitleState internal constructor(initialScrolled: Float, p
 
 /** [GlassLargeTitleBar]의 상태를 만든다. 화면을 회전해도 접힌 정도가 유지된다. 접힘은 중첩 스크롤로 전해진 거리로만 정한다. */
 @Composable
-public fun rememberLargeTitleState(): GlassLargeTitleState = rememberSaveable(saver = GlassLargeTitleState.Saver) {
+public fun rememberGlassLargeTitleState(): GlassLargeTitleState = rememberSaveable(saver = GlassLargeTitleState.Saver) {
     GlassLargeTitleState(0f)
 }
 
@@ -136,7 +135,7 @@ public fun rememberLargeTitleState(): GlassLargeTitleState = rememberSaveable(sa
  * 남은 만큼 한꺼번에 접힌다.
  */
 @Composable
-public fun rememberLargeTitleState(listState: LazyListState): GlassLargeTitleState = remember(listState) {
+public fun rememberGlassLargeTitleState(listState: LazyListState): GlassLargeTitleState = remember(listState) {
     GlassLargeTitleState(0f) {
         if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset.toFloat() else Float.POSITIVE_INFINITY
     }
@@ -144,7 +143,7 @@ public fun rememberLargeTitleState(listState: LazyListState): GlassLargeTitleSta
 
 /** [scrollState]의 스크롤 위치(px)로 접힘을 정하는 상태를 만든다. `scrollTo` 같은 코드 스크롤도 바로 반영된다. */
 @Composable
-public fun rememberLargeTitleState(scrollState: ScrollState): GlassLargeTitleState = remember(scrollState) {
+public fun rememberGlassLargeTitleState(scrollState: ScrollState): GlassLargeTitleState = remember(scrollState) {
     GlassLargeTitleState(0f) { scrollState.value.toFloat() }
 }
 
@@ -157,7 +156,7 @@ public fun rememberLargeTitleState(scrollState: ScrollState): GlassLargeTitleSta
  * 스크롤 중에 바뀌지 않는다. 큰 제목 영역은 터치를 받지 않아, 접힌 뒤 그 아래로 지나가는 목록 항목을 그대로 누를 수 있다.
  *
  * ```kotlin
- * val titleState = rememberLargeTitleState()
+ * val titleState = rememberGlassLargeTitleState()
  * GlassScaffold(topBar = { GlassLargeTitleBar(titleState, "설정", onBack = { finish() }) }) { padding ->
  *     LazyColumn(Modifier.nestedScroll(titleState.connection), contentPadding = padding) { ... }
  * }
@@ -206,7 +205,7 @@ private fun SmallBar(
             .statusBarsPadding()
             .height(BAR_HEIGHT),
     ) {
-        BasicText(
+        ThemedText(
             title,
             Modifier
                 .align(Alignment.Center)
@@ -244,7 +243,7 @@ private fun LargeTitle(state: GlassLargeTitleState, title: String, style: GlassS
                 }
             },
     ) {
-        BasicText(
+        ThemedText(
             title,
             Modifier
                 .padding(start = LARGE_TITLE_INSET, end = LARGE_TITLE_INSET, top = 2.dp, bottom = 10.dp)

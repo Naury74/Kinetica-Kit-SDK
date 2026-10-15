@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.CornerRadius
@@ -49,7 +50,8 @@ import androidx.compose.ui.unit.dp
  * 바텀 시트, 토스트가 그 배경을 블러 처리해 비춰 보이게 한다. [content] 안의 카드 같은 글래스 요소는 [background]를 비춘다.
  * 콘텐츠는 바 아래까지 그려지므로 스크롤하면 바 뒤로 지나가는 모습이 보이고, 바 높이는 [content]가 받는 패딩으로 전달된다.
  *
- * 바텀 시트가 열려 있으면 iOS 시트처럼 콘텐츠가 살짝 뒤로 물러나며 모서리가 둥글어진다. [style]은 이 안의 글래스 요소가 쓰는 기본 스타일이다.
+ * 바텀 시트가 열려 있으면 iOS 시트처럼 콘텐츠가 살짝 뒤로 물러나며 모서리가 둥글어진다. [style]은 이 안의 글래스 요소가 쓰는 기본 스타일이고,
+ * 기본값은 [GlassTheme]이 정한 스타일(없으면 [GlassStyles.Liquid])이다.
  *
  * ```kotlin
  * GlassScaffold(style = GlassStyles.Liquid, background = { Image(...) }, bottomBar = { GlassTabBar(...) }) { padding ->
@@ -64,7 +66,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 public fun GlassScaffold(
     modifier: Modifier = Modifier,
-    style: GlassStyle = GlassStyles.Liquid,
+    style: GlassStyle = LocalGlassStyle.current,
     background: @Composable BoxScope.() -> Unit = {},
     topBar: @Composable BoxScope.() -> Unit = {},
     bottomBar: @Composable BoxScope.() -> Unit = {},
@@ -86,29 +88,7 @@ public fun GlassScaffold(
             Box(Modifier.fillMaxSize().glassBackdrop(backdrop).modalBackground(host.background, host.modalOpen)) {
                 Box(Modifier.fillMaxSize().glassBackdrop(contentBackdrop).background(backdropColor)) {
                     // graphicsLayer를 만들지 않고 그리기 단계에서만 축소해야 안쪽 글래스가 배경 기록에서 빠진다.
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .drawWithContent {
-                                // 그리기 단계에서 읽어야 시트가 움직이는 동안 콘텐츠를 다시 컴포지션하지 않는다.
-                                val push = host.pushBack
-                                if (push <= 0f) {
-                                    drawContent()
-                                    return@drawWithContent
-                                }
-                                val scale = 1f - PUSH_SCALE * push
-                                val corner = PUSH_CORNER.toPx() * push
-                                translate(top = PUSH_DROP.toPx() * push) {
-                                    scale(scale) {
-                                        clipPath(
-                                            Path().apply {
-                                                addRoundRect(RoundRect(size.toRect(), CornerRadius(corner)))
-                                            },
-                                        ) { this@drawWithContent.drawContent() }
-                                    }
-                                }
-                            },
-                    ) {
+                    Box(Modifier.fillMaxSize().pushBack(host)) {
                         Box(Modifier.fillMaxSize().glassBackdrop(backgroundBackdrop), content = background)
                         CompositionLocalProvider(LocalGlassBackdrop provides backgroundBackdrop) {
                             with(density) { content(PaddingValues(top = topHeight.toDp(), bottom = bottomHeight.toDp())) }
@@ -118,7 +98,13 @@ public fun GlassScaffold(
                 if (edgeFade) EdgeFade(contentBackdrop, Modifier.align(Alignment.TopCenter))
                 CompositionLocalProvider(LocalGlassBackdrop provides contentBackdrop) {
                     Box(Modifier.align(Alignment.TopCenter).onSizeChanged { topHeight = it.height }, content = topBar)
-                    Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomHeight = it.height }, content = bottomBar)
+                    Box(
+                        Modifier.align(Alignment.BottomCenter).onSizeChanged {
+                            bottomHeight = it.height
+                            host.bottomBarPx = it.height
+                        },
+                        content = bottomBar,
+                    )
                 }
             }
             val topModal = host.entries.indexOfLast { it.modal }
@@ -128,6 +114,24 @@ public fun GlassScaffold(
                     Box(if (index < topModal) Modifier.clearAndSetSemantics { } else Modifier) { entry.content() }
                 }
             }
+        }
+    }
+}
+
+/** 시트가 열린 정도만큼 콘텐츠를 살짝 줄이고 내려 둥글게 자른다(iOS 시트 뒤 화면). 그리기 단계에서 읽어 다시 컴포지션하지 않는다. */
+private fun Modifier.pushBack(host: GlassOverlayHost): Modifier = drawWithCache {
+    val clip = Path()
+    onDrawWithContent {
+        val push = host.pushBack
+        if (push <= 0f) {
+            drawContent()
+            return@onDrawWithContent
+        }
+        val corner = PUSH_CORNER.toPx() * push
+        clip.reset()
+        clip.addRoundRect(RoundRect(size.toRect(), CornerRadius(corner)))
+        translate(top = PUSH_DROP.toPx() * push) {
+            scale(1f - PUSH_SCALE * push) { clipPath(clip) { this@onDrawWithContent.drawContent() } }
         }
     }
 }
@@ -150,7 +154,7 @@ private fun EdgeFade(backdrop: GlassBackdrop, modifier: Modifier) {
     }
 }
 
-/** 글래스 요소가 기본으로 쓰는 스타일. [GlassScaffold]의 `style`이 여기에 들어간다. */
+/** 글래스 요소가 기본으로 쓰는 스타일. [GlassTheme]과 [GlassScaffold]의 `style`이 여기에 들어간다. 둘 다 없으면 [GlassStyles.Liquid]다. */
 public val LocalGlassStyle: androidx.compose.runtime.ProvidableCompositionLocal<GlassStyle> =
     staticCompositionLocalOf { GlassStyles.Liquid }
 
@@ -175,6 +179,9 @@ internal val LocalGlassHost = staticCompositionLocalOf<GlassOverlayHost?> { null
 @Stable
 internal class GlassOverlayHost {
     val entries = mutableStateListOf<OverlayEntry>()
+
+    // bottomBar 높이(px). 스낵바가 탭 바를 덮지 않고 그 위에 뜨는 데 쓴다.
+    var bottomBarPx by mutableIntStateOf(0)
 
     /** 뒤 화면 전체를 묶는 초점 그룹. 모달이 닫히면 열기 전에 초점이 있던 요소로 돌아가는 데 쓴다. */
     val background = FocusRequester()

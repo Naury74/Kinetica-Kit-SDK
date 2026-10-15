@@ -2,9 +2,12 @@ package com.naury.kinetica.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -12,9 +15,11 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -152,5 +157,27 @@ class GlassNotifyTest {
         step()
         assertThat(result).isEqualTo(GlassSnackbarResult.Dismissed)
         compose.onNodeWithText("저장했습니다", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `스캐폴드 안 스낵바는 탭 바 위에 뜬다`() {
+        val snackbar = GlassSnackbarState()
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            scope = rememberCoroutineScope()
+            GlassScaffold(
+                Modifier.fillMaxSize(),
+                bottomBar = { Box(Modifier.fillMaxWidth().height(100.dp).testTag("bar")) },
+            ) {
+                GlassSnackbarHost(snackbar)
+            }
+        }
+        scope.launch { snackbar.show("지웠어요", durationMs = 10_000) }
+        compose.waitForIdle()
+        step(800)
+
+        val bar = compose.onNodeWithTag("bar").fetchSemanticsNode().boundsInRoot
+        val pill = compose.onNodeWithText("지웠어요", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertThat(pill.bottom).isAtMost(bar.top)
     }
 }

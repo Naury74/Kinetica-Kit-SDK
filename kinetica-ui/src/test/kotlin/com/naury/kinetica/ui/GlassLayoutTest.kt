@@ -51,7 +51,7 @@ class GlassLayoutTest {
         lateinit var state: GlassLargeTitleState
         var back = 0
         compose.setContent {
-            state = rememberLargeTitleState()
+            state = rememberGlassLargeTitleState()
             GlassScaffold(Modifier.fillMaxSize(), topBar = { GlassLargeTitleBar(state, "설정", onBack = { back++ }) }) { padding ->
                 LazyColumn(Modifier.fillMaxSize().nestedScroll(state.connection).testTag("list"), contentPadding = padding) {
                     items(60) { BasicText("항목 $it", Modifier.fillMaxWidth().height(48.dp)) }
@@ -170,7 +170,7 @@ class GlassLayoutTest {
         lateinit var state: GlassLargeTitleState
         val list = androidx.compose.foundation.lazy.LazyListState()
         compose.setContent {
-            state = rememberLargeTitleState(list)
+            state = rememberGlassLargeTitleState(list)
             GlassScaffold(Modifier.fillMaxSize(), topBar = { GlassLargeTitleBar(state, "설정") }) { padding ->
                 LazyColumn(Modifier.fillMaxSize().nestedScroll(state.connection), state = list, contentPadding = padding) {
                     items(60) { BasicText("항목 $it", Modifier.fillMaxWidth().height(48.dp)) }

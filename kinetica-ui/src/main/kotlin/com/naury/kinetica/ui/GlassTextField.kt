@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -34,6 +33,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.error
@@ -85,6 +85,9 @@ public fun GlassTextField(
     require(maxLines >= 1) { "maxLines는 1 이상이어야 합니다." }
     var focused by remember { mutableStateOf(false) }
     val motion = remember { FieldMotion(value.isNotEmpty(), error) }
+    val colors = GlassTheme.colors
+    motion.accent = colors.accent
+    motion.errorColor = colors.destructive
     val still = reducedMotion()
     LaunchedEffect(focused, value.isEmpty()) {
         motion.float.animateTo(if (focused || value.isNotEmpty()) 1f else 0f, spring(stiffness = Spring.StiffnessMediumLow))
@@ -111,19 +114,19 @@ public fun GlassTextField(
             maxLines = if (singleLine) 1 else maxLines,
             interactionSource = interactionSource,
             keyboardActions = keyboardActions,
-            textStyle = TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE),
-            cursorBrush = SolidColor(Color(FIELD_ACCENT)),
+            textStyle = themed(TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE)),
+            cursorBrush = SolidColor(colors.accent),
             keyboardOptions = keyboardOptions,
             visualTransformation = visualTransformation,
             decorationBox = { field -> FieldDecoration(label, style, motion, field) },
         )
         if (error != null) {
-            BasicText(
+            ThemedText(
                 error,
                 Modifier
                     .padding(start = FIELD_PADDING, top = ERROR_GAP, end = FIELD_PADDING)
                     .semantics { liveRegion = LiveRegionMode.Polite },
-                style = TextStyle(color = Color(FIELD_ERROR), fontSize = ERROR_FONT_SIZE),
+                style = TextStyle(color = colors.destructive, fontSize = ERROR_FONT_SIZE),
             )
         }
     }
@@ -132,24 +135,26 @@ public fun GlassTextField(
 @Composable
 private fun FieldDecoration(label: String, style: GlassStyle, motion: FieldMotion, field: @Composable () -> Unit) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    Box(Modifier.heightIn(min = FIELD_HEIGHT).padding(horizontal = FIELD_PADDING)) {
-        BasicText(
+    // 글자 크기를 키우면 라벨 자리와 입력 줄 간격도 같이 늘려야 라벨이 입력한 글자와 겹치지 않는다.
+    val grow = LocalDensity.current.fontScale.coerceAtLeast(1f)
+    Box(Modifier.heightIn(min = FIELD_HEIGHT * grow).padding(horizontal = FIELD_PADDING)) {
+        ThemedText(
             label,
             Modifier.graphicsLayer {
                 val up = motion.float.value
                 transformOrigin = TransformOrigin(if (rtl) 1f else 0f, 0f)
                 scaleX = 1f - (1f - LABEL_SCALE) * up
                 scaleY = scaleX
-                translationY = (LABEL_REST + (LABEL_FLOAT - LABEL_REST) * up) * density
+                translationY = (LABEL_REST + (LABEL_FLOAT - LABEL_REST) * up) * density * grow
             },
             style = TextStyle(fontSize = FIELD_FONT_SIZE),
             color = {
                 val idle = style.onGlass.copy(alpha = LABEL_ALPHA)
-                lerp(lerp(idle, Color(FIELD_ACCENT), motion.focus.value * motion.float.value), Color(FIELD_ERROR), motion.error.value)
+                lerp(lerp(idle, motion.accent, motion.focus.value * motion.float.value), motion.errorColor, motion.error.value)
             },
             maxLines = 1,
         )
-        Box(Modifier.fillMaxWidth().padding(top = INPUT_TOP, bottom = INPUT_BOTTOM).align(Alignment.TopStart)) { field() }
+        Box(Modifier.fillMaxWidth().padding(top = INPUT_TOP * grow, bottom = INPUT_BOTTOM).align(Alignment.TopStart)) { field() }
     }
 }
 
@@ -162,7 +167,7 @@ private fun Modifier.fieldBorder(motion: FieldMotion): Modifier = drawWithCache 
     val box = Size(size.width - width, size.height - width)
     onDrawWithContent {
         drawContent()
-        val color = lerp(Color(FIELD_ACCENT).copy(alpha = motion.focus.value), Color(FIELD_ERROR), motion.error.value)
+        val color = lerp(motion.accent.copy(alpha = motion.focus.value), motion.errorColor, motion.error.value)
         if (color.alpha > 0f) drawRoundRect(color, inset, box, corner, style = stroke)
     }
 }
@@ -175,6 +180,10 @@ private class FieldMotion(filled: Boolean, initialError: String?) {
 
     /** 가로로 흔들리는 거리(dp). */
     val shake = Animatable(0f)
+
+    // 테마 색. 그리기 단계에서 읽는다.
+    var accent: Color = Color.Unspecified
+    var errorColor: Color = Color.Unspecified
     private var lastError: String? = initialError
 
     suspend fun onError(next: String?, still: Boolean) = coroutineScope {
@@ -222,5 +231,3 @@ private const val SHAKE_AT_3 = 180
 private const val SHAKE_AT_4 = 240
 private const val SHAKE_FIRST = 8f
 private const val SHAKE_SECOND = 4f
-private const val FIELD_ACCENT = 0xFF0A84FF
-private const val FIELD_ERROR = 0xFFFF453A

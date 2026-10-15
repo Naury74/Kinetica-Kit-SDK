@@ -85,7 +85,7 @@ public fun Modifier.shake(trigger: Any?, distance: Dp = 10.dp, durationMs: Int =
 /**
  * 요소 주위에 작은 별이 반짝였다 사라지기를 반복한다. 새 기능이나 보상을 강조할 때 쓴다.
  * 터치는 받지 않고 그리기만 한다. 별은 요소 바깥으로 조금 넘쳐 그리므로 부모가 자르지 않게 여유를 둔다.
- * [enabled]가 false이거나 '애니메이션 삭제' 접근성 설정이 켜져 있으면 그리지 않는다.
+ * [enabled]가 false이거나 '애니메이션 삭제' 접근성 설정이 켜져 있으면 그리지 않고, 요소가 창 밖에 있는 동안에는 멈춘다.
  *
  * ```kotlin
  * GlassButton(onClick = {}, modifier = Modifier.sparkle()) { Text("새 기능") }
@@ -100,23 +100,14 @@ public fun Modifier.sparkle(enabled: Boolean = true, color: Color = Color.White,
     require(count in 1..MAX_SPARKLES) { "count는 1..64여야 합니다." }
     val active = enabled && !reducedMotion()
     if (!active) return this
-    val clock = remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        var start = -1L
-        while (true) {
-            withInfiniteAnimationFrameNanos { now ->
-                if (start < 0) start = now
-                clock.floatValue = (now - start) / NANOS_PER_SEC
-            }
-        }
-    }
+    val clock = rememberLoopClock(running = true)
     val field = remember(count) { SparkleField(count) }
-    return drawWithCache {
+    return loopVisibility(clock).drawWithCache {
         val star = starPath()
         val spread = starSize.toPx()
         onDrawWithContent {
             drawContent()
-            val now = clock.floatValue
+            val now = clock.seconds
             for (i in 0 until field.count) {
                 val life = field.life(i, now)
                 // 0에서 커졌다가 다시 0으로 줄어드는 곡선
@@ -326,7 +317,6 @@ private class MovingRadial(color: Color, radius: Float) {
 
 private val SHAKE_STEPS = floatArrayOf(1f, -1f, 0.65f, -0.65f, 0.3f, -0.15f)
 private const val MAX_SPARKLES = 64
-private const val NANOS_PER_SEC = 1_000_000_000f
 private const val STAR_LIFE_MIN = 0.7f
 private const val STAR_LIFE_MAX = 1.5f
 private const val STAR_MIN = 0.45f

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -86,7 +85,7 @@ public fun FlipDigits(
     ) {
         text.forEachIndexed { index, char ->
             key(text.length - index) {
-                if (char.isDigit()) FlipCard(char, look) else BasicText(char.toString(), style = style.copy(color = cardColor))
+                if (char.isDigit()) FlipCard(char, look) else ThemedText(char.toString(), style = style.copy(color = cardColor))
             }
         }
     }

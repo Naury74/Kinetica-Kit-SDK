@@ -70,7 +70,7 @@ import kotlin.math.sin
 public fun GlassProgressBar(
     progress: Float?,
     modifier: Modifier = Modifier,
-    color: Color = Color(PROGRESS_BLUE),
+    color: Color = GlassTheme.colors.accent,
     thickness: Dp = 8.dp,
     wave: Boolean = false,
     style: GlassStyle = LocalGlassStyle.current,
@@ -124,7 +124,7 @@ public fun GlassProgressBar(
 public fun GlassProgressRing(
     progress: Float?,
     modifier: Modifier = Modifier,
-    color: Color = Color(PROGRESS_BLUE),
+    color: Color = GlassTheme.colors.accent,
     thickness: Dp = 6.dp,
     wave: Boolean = false,
     style: GlassStyle = LocalGlassStyle.current,
@@ -306,4 +306,3 @@ private const val WATER_ALPHA = 0.28f
 private const val QUARTER_TURN = 90f
 private const val FULL_TURN = 360f
 private const val TWO_PI = 6.2831855f
-private const val PROGRESS_BLUE = 0xFF0A84FF

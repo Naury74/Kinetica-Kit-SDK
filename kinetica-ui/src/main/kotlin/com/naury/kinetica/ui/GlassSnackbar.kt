@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -55,6 +54,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
@@ -129,10 +129,18 @@ internal class SnackbarData(val message: String, val actionLabel: String?, val d
  * 밖에서는 내용 크기의 팝업 창에 띄우므로 호출한 자리의 배치에 끼어들지 않고 뒤 화면의 터치도 막지 않는다.
  * TalkBack은 새 스낵바를 바로 읽어 준다.
  *
- * 하단 탭 바가 있는 화면에서는 [modifier]에 `Modifier.padding(bottom = 탭 바 높이)`를 주어 탭 바 위에 띄운다.
+ * [GlassScaffold] 안이면 `bottomBar`(탭 바) 위에 저절로 뜬다. 밖에서 Material `NavigationBar` 같은 하단 막대가 있으면
+ * [bottomOffset]에 그 높이(예: 80.dp)를 준다.
+ *
+ * @param bottomOffset 화면 아래(내비게이션 바·키보드 위)에서 더 띄울 거리
  */
 @Composable
-public fun GlassSnackbarHost(state: GlassSnackbarState, modifier: Modifier = Modifier, style: GlassStyle = LocalGlassStyle.current) {
+public fun GlassSnackbarHost(
+    state: GlassSnackbarState,
+    modifier: Modifier = Modifier,
+    bottomOffset: Dp = 0.dp,
+    style: GlassStyle = LocalGlassStyle.current,
+) {
     val adjust = rememberAccessibleTimeout(withControls = true)
     SideEffect { state.timeoutAdjust = adjust }
     var last by remember { mutableStateOf<SnackbarData?>(null) }
@@ -143,7 +151,12 @@ public fun GlassSnackbarHost(state: GlassSnackbarState, modifier: Modifier = Mod
             transitionSpec = { if (targetState) spring(SNACKBAR_DAMPING, Spring.StiffnessMediumLow) else tween(SNACKBAR_OUT_MS) },
             label = "glass-snackbar",
         ) { if (it) 1f else 0f }
-        last?.let { data -> key(data) { SnackbarPill(data, style, appear, modifier) } }
+        // 스캐폴드 탭 바는 내비게이션 바 여백까지 포함하므로, 이미 피한 아래 인셋만큼 빼고 띄운다.
+        val density = LocalDensity.current
+        val navBottom = with(density) { insets.getBottom(density).toDp() }
+        val bar = LocalGlassHost.current?.bottomBarPx?.let { with(density) { it.toDp() } } ?: 0.dp
+        val lift = maxOf(bottomOffset, bar - navBottom).coerceAtLeast(0.dp)
+        last?.let { data -> key(data) { SnackbarPill(data, style, appear, modifier.padding(bottom = lift)) } }
     }
 }
 
@@ -178,7 +191,7 @@ private fun SnackbarPill(data: SnackbarData, style: GlassStyle, appear: State<Fl
             .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BasicText(
+        ThemedText(
             data.message,
             Modifier.weight(1f, fill = false).padding(vertical = 6.dp),
             style = TextStyle(color = style.onGlass, fontSize = 14.sp, fontWeight = FontWeight.Medium),
@@ -187,7 +200,7 @@ private fun SnackbarPill(data: SnackbarData, style: GlassStyle, appear: State<Fl
         )
         Spacer(Modifier.size(12.dp))
         data.actionLabel?.let { label ->
-            BasicText(
+            ThemedText(
                 label,
                 Modifier
                     .background(style.onGlass.copy(alpha = ACTION_BACK_ALPHA), CircleShape)

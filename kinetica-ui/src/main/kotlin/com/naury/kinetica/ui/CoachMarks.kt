@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,9 +63,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -139,10 +142,39 @@ public class CoachMarkState internal constructor() {
 @Composable
 public fun rememberCoachMarkState(): CoachMarkState = remember { CoachMarkState() }
 
-/** 이 요소를 [state]의 안내에서 [id]로 비출 대상으로 등록한다. 요소가 움직이거나 크기가 바뀌면 구멍도 따라간다. */
-public fun Modifier.coachMarkTarget(state: CoachMarkState, id: String): Modifier = onGloballyPositioned {
-    val bounds = Rect(it.positionOnScreen(), it.size.toSize())
-    if (state.targets[id] != bounds) state.targets[id] = bounds
+/**
+ * 이 요소를 [state]의 안내에서 [id]로 비출 대상으로 등록한다. 요소가 움직이거나 크기가 바뀌면 구멍도 따라간다.
+ * 요소가 컴포지션에서 빠지면 등록도 지운다. 대상이 없는 단계에서는 구멍이 화면 가운데로 오그라든다.
+ */
+public fun Modifier.coachMarkTarget(state: CoachMarkState, id: String): Modifier = this then CoachTargetElement(state, id)
+
+private data class CoachTargetElement(val state: CoachMarkState, val id: String) : ModifierNodeElement<CoachTargetNode>() {
+    override fun create(): CoachTargetNode = CoachTargetNode(state, id)
+
+    override fun update(node: CoachTargetNode) {
+        if (node.id != id || node.state !== state) node.forget()
+        node.state = state
+        node.id = id
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "coachMarkTarget"
+    }
+}
+
+private class CoachTargetNode(var state: CoachMarkState, var id: String) :
+    Modifier.Node(),
+    GlobalPositionAwareModifierNode {
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        val bounds = Rect(coordinates.positionOnScreen(), coordinates.size.toSize())
+        if (state.targets[id] != bounds) state.targets[id] = bounds
+    }
+
+    override fun onDetach() = forget()
+
+    fun forget() {
+        state.targets.remove(id)
+    }
 }
 
 /**
@@ -304,7 +336,7 @@ private fun CoachCard(frame: CoachFrame, hole: State<Rect>) {
                     val r = hole.value
                     val anchor = if (r.isEmpty) Rect(Offset(container.width / 2f, container.height / 2f), 0f) else r
                     val spacing = TooltipSpacing(margin, CARD_GAP.toPx(), 0f)
-                    val placed = placeTooltip(anchor, container, IntSize(card.width, card.height), TooltipPlacement.Below, spacing)
+                    val placed = placeTooltip(anchor, container, IntSize(card.width, card.height), GlassTooltipPlacement.Below, spacing)
                     val y = if (r.isEmpty) (container.height - card.height) / 2 else placed.y
                     card.place(placed.x, y)
                 }
@@ -352,13 +384,13 @@ private fun CoachText(frame: CoachFrame) {
                     )
                 },
         ) {
-            BasicText(
+            ThemedText(
                 step.title,
                 Modifier.semantics { heading() },
                 style = TextStyle(color = frame.style.onGlass, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
             )
             Spacer(Modifier.height(6.dp))
-            BasicText(
+            ThemedText(
                 step.body,
                 style = TextStyle(color = frame.style.onGlass.copy(alpha = BODY_ALPHA), fontSize = 15.sp, lineHeight = 21.sp),
             )
@@ -409,7 +441,7 @@ private fun CoachButton(text: String, filled: Boolean, style: GlassStyle, onClic
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        BasicText(
+        ThemedText(
             text,
             style = TextStyle(
                 color = if (filled) onInk else ink.copy(alpha = BODY_ALPHA),

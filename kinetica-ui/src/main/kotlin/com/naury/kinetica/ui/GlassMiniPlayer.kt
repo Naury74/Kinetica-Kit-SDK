@@ -60,10 +60,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * [GlassMiniPlayer]가 막대로 접혀 있는지 전체 화면으로 펼쳐져 있는지를 담는다. [rememberMiniPlayerState]로 만든다.
+ * [GlassMiniPlayer]가 막대로 접혀 있는지 전체 화면으로 펼쳐져 있는지를 담는다. [rememberGlassMiniPlayerState]로 만든다.
  */
 @Stable
-public class MiniPlayerState internal constructor(initiallyExpanded: Boolean) {
+public class GlassMiniPlayerState internal constructor(initiallyExpanded: Boolean) {
     private val motion = Animatable(if (initiallyExpanded) 1f else 0f)
 
     /** 펼쳐진 정도. 0이면 막대, 1이면 전체 화면이다. 스프링 때문에 잠깐 0..1을 조금 벗어날 수 있다. */
@@ -107,12 +107,12 @@ public class MiniPlayerState internal constructor(initiallyExpanded: Boolean) {
     }
 }
 
-/** 화면 회전이나 프로세스 재시작 뒤에도 펼침 여부를 기억하는 [MiniPlayerState]를 만든다. */
+/** 화면 회전이나 프로세스 재시작 뒤에도 펼침 여부를 기억하는 [GlassMiniPlayerState]를 만든다. */
 @Composable
-public fun rememberMiniPlayerState(initiallyExpanded: Boolean = false): MiniPlayerState =
-    rememberSaveable(saver = MiniPlayerSaver) { MiniPlayerState(initiallyExpanded) }
+public fun rememberGlassMiniPlayerState(initiallyExpanded: Boolean = false): GlassMiniPlayerState =
+    rememberSaveable(saver = MiniPlayerSaver) { GlassMiniPlayerState(initiallyExpanded) }
 
-private val MiniPlayerSaver = Saver<MiniPlayerState, Boolean>(save = { it.isExpanded }, restore = { MiniPlayerState(it) })
+private val MiniPlayerSaver = Saver<GlassMiniPlayerState, Boolean>(save = { it.isExpanded }, restore = { GlassMiniPlayerState(it) })
 
 /**
  * 화면 아래에 떠 있는 글래스 캡슐 모양의 미니 플레이어. 막대를 누르거나 위로 끌면 전체 화면 플레이어로 커지고,
@@ -127,7 +127,7 @@ private val MiniPlayerSaver = Saver<MiniPlayerState, Boolean>(save = { it.isExpa
  * [GlassScaffold] 안에서 부르면 오버레이 레이어에 그린다. 밖에서 부르면 호출한 자리를 화면 전체로 보고 그린다.
  *
  * ```kotlin
- * val player = rememberMiniPlayerState()
+ * val player = rememberGlassMiniPlayerState()
  * GlassMiniPlayer(
  *     player,
  *     artwork = { Image(cover, null, contentScale = ContentScale.Crop) },
@@ -144,7 +144,7 @@ private val MiniPlayerSaver = Saver<MiniPlayerState, Boolean>(save = { it.isExpa
  */
 @Composable
 public fun GlassMiniPlayer(
-    state: MiniPlayerState,
+    state: GlassMiniPlayerState,
     modifier: Modifier = Modifier,
     style: GlassStyle = LocalGlassStyle.current,
     artwork: (@Composable () -> Unit)? = null,
@@ -173,12 +173,12 @@ public fun GlassMiniPlayer(
 }
 
 @Composable
-private fun PlayerPushBack(state: MiniPlayerState) {
+private fun PlayerPushBack(state: GlassMiniPlayerState) {
     ReportPushBack(state.progress.coerceIn(0f, 1f))
 }
 
 @Composable
-private fun BoxScope.PlayerScrim(state: MiniPlayerState, scope: CoroutineScope) {
+private fun BoxScope.PlayerScrim(state: GlassMiniPlayerState, scope: CoroutineScope) {
     val level = state.progress.coerceIn(0f, 1f)
     if (level > 0f) Scrim(level) { scope.launch { state.collapse() } }
 }
@@ -228,7 +228,7 @@ private fun playerGeometry(constraints: Constraints, barHeight: Dp, barBottomPad
 }
 
 @Composable
-private fun PlayerFrame(state: MiniPlayerState, geometry: PlayerGeometry, style: GlassStyle, slots: PlayerSlots) {
+private fun PlayerFrame(state: GlassMiniPlayerState, geometry: PlayerGeometry, style: GlassStyle, slots: PlayerSlots) {
     val level = state.progress.coerceIn(0f, 1f)
     val shape = RoundedCornerShape(lerp(geometry.barCorner, FULL_CORNER, level))
     // 이 함수는 모양 때문에 매 프레임 다시 구성되지만, 아래 슬롯은 인자가 그대로라 건너뛴다.
@@ -251,7 +251,7 @@ private fun PlayerFrame(state: MiniPlayerState, geometry: PlayerGeometry, style:
 }
 
 @Composable
-private fun CollapsedBar(state: MiniPlayerState, geometry: PlayerGeometry, slots: PlayerSlots) {
+private fun CollapsedBar(state: GlassMiniPlayerState, geometry: PlayerGeometry, slots: PlayerSlots) {
     val scope = slots.scope
     val density = LocalDensity.current
     val start = if (slots.hasArtwork) with(density) { (geometry.barArt.right - geometry.bar.left).toDp() } + ART_INSET else BAR_PADDING
@@ -271,7 +271,7 @@ private fun CollapsedBar(state: MiniPlayerState, geometry: PlayerGeometry, slots
 }
 
 @Composable
-private fun ExpandedPanel(state: MiniPlayerState, geometry: PlayerGeometry, slots: PlayerSlots) {
+private fun ExpandedPanel(state: GlassMiniPlayerState, geometry: PlayerGeometry, slots: PlayerSlots) {
     val scope = slots.scope
     val density = LocalDensity.current
     val title = stringResource(R.string.kinetica_ui_player_now_playing)
@@ -310,7 +310,7 @@ private fun ExpandedPanel(state: MiniPlayerState, geometry: PlayerGeometry, slot
 }
 
 @Composable
-private fun Artwork(state: MiniPlayerState, geometry: PlayerGeometry, artwork: @Composable () -> Unit) {
+private fun Artwork(state: GlassMiniPlayerState, geometry: PlayerGeometry, artwork: @Composable () -> Unit) {
     val level = state.progress.coerceIn(0f, 1f)
     val shape = RoundedCornerShape(lerp(ART_CORNER_SMALL, ART_CORNER_BIG, level))
     Box(
@@ -322,7 +322,7 @@ private fun Artwork(state: MiniPlayerState, geometry: PlayerGeometry, artwork: @
 }
 
 @Composable
-private fun Modifier.playerDrag(state: MiniPlayerState, travel: Float): Modifier {
+private fun Modifier.playerDrag(state: GlassMiniPlayerState, travel: Float): Modifier {
     val scope = rememberCoroutineScope()
     return draggable(
         rememberDraggableState { delta -> scope.launch { state.dragBy(-delta / travel) } },

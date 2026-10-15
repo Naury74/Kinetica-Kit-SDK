@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -65,7 +64,7 @@ public fun GlassLineChart(
     points: List<Float>,
     modifier: Modifier = Modifier,
     labels: List<String>? = null,
-    color: Color = GlassChartDefaults.Blue,
+    color: Color = GlassTheme.colors.accent,
     fill: Brush? = GlassChartDefaults.fill(color),
     smooth: Boolean = true,
     valueFormatter: (Float) -> String = GlassChartDefaults::formatValue,
@@ -317,7 +316,7 @@ private fun LineAxis(labels: List<String>, count: Int, plot: LinePlot, ink: Colo
     val picks = remember(count, labels.size) { axisPicks(minOf(count, labels.size), count) }
     val textStyle = chartAxisText(ink)
     Layout(
-        content = { picks.forEach { BasicText(labels[it], style = textStyle, maxLines = 1) } },
+        content = { picks.forEach { ThemedText(labels[it], style = textStyle, maxLines = 1) } },
         modifier = Modifier.fillMaxWidth().padding(top = AXIS_GAP),
     ) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0)) }

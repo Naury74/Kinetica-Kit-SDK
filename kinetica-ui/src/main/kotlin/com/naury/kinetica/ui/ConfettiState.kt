@@ -58,15 +58,17 @@ public class ConfettiState {
     }
 }
 
+/** 컴포지션에 유지되는 [ConfettiState]를 만든다. */
 @Composable
 public fun rememberConfettiState(): ConfettiState = remember { ConfettiState() }
 
 /**
  * 색종이를 그리는 레이어. 화면 위에 덮어 두고 [ConfettiState.burst]로 터뜨린다. 터치 입력은 받지 않는다.
  * 색종이는 중력과 공기 저항을 받아 떨어지면서 뒤집히고 회전한다. '애니메이션 삭제' 접근성 설정이 켜져 있으면 그리지 않는다.
+ * 부모를 가득 채우므로 화면을 감싼 `Box`의 마지막 자식으로 둔다. [ConfettiState.burst]의 `origin`은 이 레이어 기준 좌표(px)다.
  */
 @Composable
-public fun ConfettiHost(state: ConfettiState, modifier: Modifier = Modifier.fillMaxSize()) {
+public fun ConfettiHost(state: ConfettiState, modifier: Modifier = Modifier) {
     val still = reducedMotion()
     var frame by remember { mutableLongStateOf(0L) }
     LaunchedEffect(state.running) {
@@ -89,7 +91,7 @@ public fun ConfettiHost(state: ConfettiState, modifier: Modifier = Modifier.fill
             frame = now
         }
     }
-    Canvas(modifier) {
+    Canvas(Modifier.fillMaxSize().then(modifier)) {
         frame // 이 값을 읽어야 프레임마다 다시 그린다.
         state.pieces.forEach { piece ->
             val fade = (1f - (piece.age - FADE_FROM) / (LIFE_SECONDS - FADE_FROM)).coerceIn(0f, 1f)

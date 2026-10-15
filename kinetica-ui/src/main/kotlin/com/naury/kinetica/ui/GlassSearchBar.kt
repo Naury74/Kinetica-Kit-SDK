@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -86,7 +85,8 @@ public fun GlassSearchBar(
             stretch.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow))
         }
     }
-    val textStyle = TextStyle(color = style.onGlass, fontSize = SEARCH_FONT_SIZE)
+    val textStyle = themed(TextStyle(color = style.onGlass, fontSize = SEARCH_FONT_SIZE))
+    val accent = GlassTheme.colors.accent
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         BasicTextField(
             query,
@@ -101,7 +101,7 @@ public fun GlassSearchBar(
                 .onFocusChanged { focused = it.isFocused },
             singleLine = true,
             textStyle = textStyle,
-            cursorBrush = SolidColor(Color(SEARCH_ACCENT)),
+            cursorBrush = SolidColor(accent),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = {
                 onSearch(query)
@@ -128,7 +128,7 @@ private fun SearchDecoration(query: String, placeholder: String, style: GlassSty
         Spacer(Modifier.width(ICON_GAP))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (query.isEmpty()) {
-                BasicText(
+                ThemedText(
                     placeholder,
                     style = TextStyle(color = style.onGlass.copy(alpha = HINT_ALPHA), fontSize = SEARCH_FONT_SIZE),
                     maxLines = 1,
@@ -152,12 +152,12 @@ private fun CancelButton(visible: Boolean, onCancel: () -> Unit) {
         enter = expandHorizontally(expandFrom = Alignment.Start) + slideInHorizontally { it * sign } + fadeIn(),
         exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + slideOutHorizontally { it * sign } + fadeOut(),
     ) {
-        BasicText(
+        ThemedText(
             stringResource(R.string.kinetica_ui_search_cancel),
             Modifier
                 .clickable(role = Role.Button, onClick = onCancel)
                 .padding(horizontal = CANCEL_PADDING, vertical = CANCEL_VERTICAL),
-            style = TextStyle(color = Color(SEARCH_ACCENT), fontSize = SEARCH_FONT_SIZE),
+            style = TextStyle(color = GlassTheme.colors.accent, fontSize = SEARCH_FONT_SIZE),
             maxLines = 1,
         )
     }
@@ -232,4 +232,3 @@ private const val DIAGONAL = 0.7071f
 private const val STRETCH_IN_MS = 110
 private const val STRETCH_X = 0.03f
 private const val STRETCH_Y = 0.04f
-private const val SEARCH_ACCENT = 0xFF0A84FF

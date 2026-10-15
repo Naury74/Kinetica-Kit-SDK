@@ -98,13 +98,13 @@ public sealed interface Detent {
 }
 
 /**
- * [GlassDetentSheet]의 높이 상태. [rememberDetentSheetState]로 만든다.
+ * [GlassDetentSheet]의 높이 상태. [rememberGlassDetentSheetState]로 만든다.
  *
  * @property detents 시트가 멈출 수 있는 높이. 순서는 상관없다.
  * @property dismissible true면 가장 낮은 높이에서 더 끌어내려 [Detent.Hidden]으로 숨길 수 있다.
  */
 @Stable
-public class DetentSheetState internal constructor(
+public class GlassDetentSheetState internal constructor(
     public val detents: List<Detent>,
     initialDetent: Detent,
     public val dismissible: Boolean,
@@ -238,11 +238,11 @@ public class DetentSheetState internal constructor(
     internal val lowestVisible: Detent get() = detents.maxBy { positionOf(it) }
 
     internal companion object {
-        fun saver(detents: List<Detent>, dismissible: Boolean): Saver<DetentSheetState, Int> = Saver(
+        fun saver(detents: List<Detent>, dismissible: Boolean): Saver<GlassDetentSheetState, Int> = Saver(
             save = { it.stops.indexOf(it.currentDetent) },
             restore = { index ->
                 val stops = if (dismissible) detents + Detent.Hidden else detents
-                DetentSheetState(detents, stops.getOrElse(index) { detents.first() }, dismissible)
+                GlassDetentSheetState(detents, stops.getOrElse(index) { detents.first() }, dismissible)
             },
         )
     }
@@ -256,12 +256,12 @@ public class DetentSheetState internal constructor(
  * @param dismissible true면 가장 낮은 높이에서 아래로 끌거나 뒤로 가기를 해서 시트를 숨길 수 있다. 지도 위에 늘 떠 있어야 하면 false로 둔다.
  */
 @Composable
-public fun rememberDetentSheetState(
+public fun rememberGlassDetentSheetState(
     detents: List<Detent> = DefaultDetents,
     initialDetent: Detent = detents.first(),
     dismissible: Boolean = false,
-): DetentSheetState = rememberSaveable(detents, dismissible, saver = DetentSheetState.saver(detents, dismissible)) {
-    DetentSheetState(detents, initialDetent, dismissible)
+): GlassDetentSheetState = rememberSaveable(detents, dismissible, saver = GlassDetentSheetState.saver(detents, dismissible)) {
+    GlassDetentSheetState(detents, initialDetent, dismissible)
 }
 
 /**
@@ -278,7 +278,7 @@ public fun rememberDetentSheetState(
  * 키보드가 올라오면 시트도 그만큼 올라가고, 펼친 시트의 내용은 그만큼 안쪽으로 들어간다.
  *
  * ```kotlin
- * val sheet = rememberDetentSheetState()
+ * val sheet = rememberGlassDetentSheetState()
  * Box {
  *     MapView()
  *     GlassDetentSheet(sheet, header = { SearchField() }) {
@@ -294,7 +294,7 @@ public fun rememberDetentSheetState(
  */
 @Composable
 public fun GlassDetentSheet(
-    state: DetentSheetState,
+    state: GlassDetentSheetState,
     modifier: Modifier = Modifier,
     style: GlassStyle = LocalGlassStyle.current,
     title: String? = null,
@@ -355,7 +355,7 @@ public fun GlassDetentSheet(
 }
 
 @Composable
-private fun SheetScrim(state: DetentSheetState, onClick: () -> Unit) {
+private fun SheetScrim(state: GlassDetentSheetState, onClick: () -> Unit) {
     val closeLabel = stringResource(R.string.kinetica_ui_sheet_collapse)
     Box(
         Modifier
@@ -388,7 +388,7 @@ private fun SheetHandle(style: GlassStyle, onTap: () -> Unit) {
 
 /** 시트 이름, 현재 높이, 펼치기와 접기 동작을 TalkBack에 알린다. 완전히 숨으면 읽지 않는다. */
 @Composable
-private fun Modifier.sheetSemantics(state: DetentSheetState, title: String?, scope: kotlinx.coroutines.CoroutineScope): Modifier {
+private fun Modifier.sheetSemantics(state: GlassDetentSheetState, title: String?, scope: kotlinx.coroutines.CoroutineScope): Modifier {
     val current = state.currentDetent
     if (current == Detent.Hidden) return clearAndSetSemantics { }
     val expandLabel = stringResource(R.string.kinetica_ui_sheet_expand)
@@ -432,7 +432,7 @@ private fun Modifier.sheetSemantics(state: DetentSheetState, title: String?, sco
  * 시트와 안쪽 목록의 스크롤을 잇는다. 위로 밀면 시트가 맨 위에 닿을 때까지 시트가 먼저 움직이고, 아래로 끌면 목록이 맨 위에 닿은 뒤
  * 남은 양으로 시트가 내려간다. 플링은 시트가 높이 사이에 있을 때만 가로채 가장 알맞은 높이로 보낸다.
  */
-private class SheetScrollConnection(private val state: DetentSheetState) : NestedScrollConnection {
+private class SheetScrollConnection(private val state: GlassDetentSheetState) : NestedScrollConnection {
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset =
         if (available.y < 0f && source == NestedScrollSource.UserInput) Offset(0f, state.dragBy(available.y)) else Offset.Zero
 
@@ -446,7 +446,7 @@ private class SheetScrollConnection(private val state: DetentSheetState) : Neste
     }
 }
 
-private val DefaultDetents: List<Detent> = listOf(Detent.Peek(120.dp), Detent.Fraction(0.5f), Detent.Full)
+internal val DefaultDetents: List<Detent> = listOf(Detent.Peek(120.dp), Detent.Fraction(0.5f), Detent.Full)
 private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 private val FULL_GAP = 8.dp
 private val FLING_VELOCITY = 400.dp

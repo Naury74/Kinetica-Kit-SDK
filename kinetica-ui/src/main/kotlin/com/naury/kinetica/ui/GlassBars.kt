@@ -25,10 +25,10 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -72,6 +72,7 @@ public data class GlassTab(val label: String, val icon: ImageVector? = null)
 /**
  * 화면 아래에 떠 있는 글래스 탭 바. 선택한 탭의 인디케이터가 이동할 때 앞쪽 가장자리가 먼저 가고 뒤쪽이 따라와,
  * 액체처럼 늘어났다 줄어든다. 탭을 누르면 살짝 작아졌다가 돌아온다. [GlassScaffold]의 `bottomBar`에 넣어 쓴다.
+ * 폭은 최대 560dp이고, 더 넓은 화면에서는 가운데에 놓인다.
  *
  * @param tabs 탭 목록. 비어 있으면 [IllegalArgumentException]을 던진다.
  * @param selectedIndex 선택된 탭의 위치(0부터)
@@ -93,6 +94,8 @@ public fun GlassTabBar(
         modifier
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 12.dp)
+            // 태블릿처럼 넓은 화면에서 탭 사이가 너무 벌어지지 않게 폭을 제한한다.
+            .widthIn(max = TAB_BAR_MAX_WIDTH)
             .fillMaxWidth()
             .height(TAB_BAR_HEIGHT)
             .glass(style, CircleShape)
@@ -145,7 +148,7 @@ private fun TabItem(tab: GlassTab, selected: Boolean, style: GlassStyle, modifie
         tab.icon?.let {
             Image(rememberVectorPainter(it), contentDescription = null, Modifier.size(22.dp), colorFilter = ColorFilter.tint(color))
         }
-        BasicText(
+        ThemedText(
             tab.label,
             style = TextStyle(color = color, fontSize = 11.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium),
         )
@@ -175,9 +178,11 @@ public fun rememberGlassToastState(): GlassToastState = remember { GlassToastSta
 /**
  * 화면 위쪽에서 미끄러져 내려오는 글래스 토스트. 컴포지션 어디에 두어도 되고, [GlassToastState.show]로 띄운다. TalkBack이 내용을 읽어 준다.
  * 상태 표시줄과 화면 컷아웃 아래에 뜬다. [GlassScaffold] 밖에서는 내용 크기의 팝업 창에 띄우므로 뒤 화면의 터치를 막지 않는다.
+ *
+ * @param modifier 토스트 말풍선에 적용한다.
  */
 @Composable
-public fun GlassToastHost(state: GlassToastState, style: GlassStyle = LocalGlassStyle.current) {
+public fun GlassToastHost(state: GlassToastState, modifier: Modifier = Modifier, style: GlassStyle = LocalGlassStyle.current) {
     var last by remember { mutableStateOf("") }
     state.message?.let { last = it }
     val insets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
@@ -191,6 +196,7 @@ public fun GlassToastHost(state: GlassToastState, style: GlassStyle = LocalGlass
         Box(
             Modifier
                 .padding(top = 8.dp)
+                .then(modifier)
                 .graphicsLayer {
                     translationY = -(size.height + TOAST_TRAVEL.toPx()) * (1f - progress)
                     // 내려오는 동안 가로로 살짝 좁았다가 원래 너비로 돌아온다.
@@ -201,12 +207,13 @@ public fun GlassToastHost(state: GlassToastState, style: GlassStyle = LocalGlass
                 .semantics { liveRegion = LiveRegionMode.Polite }
                 .padding(horizontal = 22.dp, vertical = 12.dp),
         ) {
-            BasicText(last, style = TextStyle(color = style.onGlass, fontSize = 14.sp, fontWeight = FontWeight.Medium))
+            ThemedText(last, style = TextStyle(color = style.onGlass, fontSize = 14.sp, fontWeight = FontWeight.Medium))
         }
     }
 }
 
 private val TAB_BAR_HEIGHT = 64.dp
+private val TAB_BAR_MAX_WIDTH = 560.dp
 private val TAB_INSET = 6.dp
 private const val INDICATOR_ALPHA = 0.12f
 private const val UNSELECTED_ALPHA = 0.55f

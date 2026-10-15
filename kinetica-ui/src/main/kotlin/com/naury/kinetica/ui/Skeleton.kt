@@ -56,23 +56,15 @@ public fun Modifier.skeleton(
     color: Color = LocalGlassContentColor.current.copy(alpha = BLOCK_ALPHA),
 ): Modifier {
     val cover = animateFloatAsState(if (visible) 1f else 0f, tween(FADE_MS), label = "skeleton")
-    val shimmer = remember { mutableFloatStateOf(0f) }
     val still = reducedMotion()
-    LaunchedEffect(visible, still) {
-        if (!visible || still) return@LaunchedEffect
-        val start = withInfiniteAnimationFrameNanos { it }
-        while (true) {
-            withInfiniteAnimationFrameNanos { now ->
-                shimmer.floatValue = ((now - start) / NANOS_PER_MS % SHIMMER_MS) / SHIMMER_MS.toFloat()
-            }
-        }
-    }
+    val clock = rememberLoopClock(running = visible && !still)
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val highlight = color.copy(alpha = (color.alpha * HIGHLIGHT_GAIN).coerceAtMost(1f))
     val loading = stringResource(R.string.kinetica_ui_loading)
     val hidden = if (visible) Modifier.clearAndSetSemantics { contentDescription = loading } else Modifier
     return this
         .then(hidden)
+        .loopVisibility(clock)
         .drawWithCache {
             val outline = shape.createOutline(size, layoutDirection, this)
             val clip = Path().apply { addOutline(outline) }
@@ -94,7 +86,7 @@ public fun Modifier.skeleton(
                 if (c <= 0f) return@onDrawWithContent
                 drawOutline(outline, color, alpha = c)
                 if (still) return@onDrawWithContent
-                val travel = (size.width + band * 2) * shimmer.floatValue - band
+                val travel = (size.width + band * 2) * (clock.seconds * MS_PER_SECOND % SHIMMER_MS / SHIMMER_MS) - band
                 clipPath(clip) {
                     translate(left = if (rtl) size.width - travel - band else travel) {
                         drawRect(glow, topLeft = Offset(0f, -band), size = Size(band, size.height + band * 2), alpha = c)
@@ -128,8 +120,8 @@ public fun GlassSkeletonText(lines: Int, modifier: Modifier = Modifier, lineHeig
 private const val BLOCK_ALPHA = 0.1f
 private const val HIGHLIGHT_GAIN = 1.9f
 private const val FADE_MS = 280
-private const val SHIMMER_MS = 1_300L
-private const val NANOS_PER_MS = 1_000_000L
+private const val SHIMMER_MS = 1_300f
+private const val MS_PER_SECOND = 1_000f
 private const val BAND = 0.6f
 private const val SLANT = 0.35f
 private const val LINE_GAP = 0.7f

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -403,7 +402,7 @@ private fun ActionButton(action: SwipeAction, pinSide: Int, state: SwipeActionsS
             action.icon?.let {
                 Image(rememberVectorPainter(it), null, Modifier.size(22.dp), colorFilter = ColorFilter.tint(action.contentColor))
             }
-            BasicText(
+            ThemedText(
                 action.label,
                 Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                 style = TextStyle(

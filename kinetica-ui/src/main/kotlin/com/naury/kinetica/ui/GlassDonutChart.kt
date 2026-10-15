@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -320,12 +319,12 @@ private fun DonutCenter(slices: List<ChartSlice>, selected: Int?, valueFormatter
             val title = index?.let { slices[it].label } ?: stringResource(R.string.kinetica_ui_chart_total)
             val value = valueFormatter(index?.let { slices[it].value } ?: total)
             val small = TextStyle(color = ink.copy(alpha = CENTER_MUTED), fontSize = 12.sp, textAlign = TextAlign.Center)
-            BasicText(title, style = small, maxLines = 1)
-            BasicText(
+            ThemedText(title, style = small, maxLines = 1)
+            ThemedText(
                 value,
                 style = TextStyle(color = ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
             )
-            if (index != null && total > 0f) BasicText("${(slices[index].value / total * PERCENT).roundToInt()}%", style = small)
+            if (index != null && total > 0f) ThemedText("${(slices[index].value / total * PERCENT).roundToInt()}%", style = small)
         }
     }
 }

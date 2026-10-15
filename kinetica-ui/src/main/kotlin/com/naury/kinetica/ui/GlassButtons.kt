@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -88,7 +87,8 @@ public enum class GlassButtonSize(internal val height: Dp, internal val padding:
  *
  * @param icon 글자 앞에 놓을 아이콘. [GlassButtonKind]에 맞는 글자 색으로 칠한다.
  * @param enabled `false`면 누를 수 없고 흐리게 그린다.
- * @param accent [GlassButtonKind.Filled], [GlassButtonKind.Tinted], [GlassButtonKind.Plain]에 쓰는 강조색. 기본값은 iOS 파랑이다.
+ * @param accent [GlassButtonKind.Filled], [GlassButtonKind.Tinted], [GlassButtonKind.Plain]에 쓰는 강조색.
+ *   기본값은 [GlassTheme]의 `accent`다. [GlassButtonKind.Filled]의 글자 색은 `onAccent`를 쓴다.
  */
 @Composable
 public fun GlassButton(
@@ -100,7 +100,7 @@ public fun GlassButton(
     icon: ImageVector? = null,
     loading: Boolean = false,
     enabled: Boolean = true,
-    accent: Color = Color(BUTTON_BLUE),
+    accent: Color = GlassTheme.colors.accent,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -109,7 +109,7 @@ public fun GlassButton(
     val active = enabled && !loading
     val loadingLabel = stringResource(R.string.kinetica_ui_loading)
     val loadingLevel by animateFloatAsState(if (loading) 1f else 0f, tween(LOADING_FADE_MS), label = "button-loading")
-    val content = buttonContentColor(kind, accent, style)
+    val content = buttonContentColor(kind, accent, GlassTheme.colors.onAccent, style)
     Box(
         modifier
             .then(if (active) Modifier.jellyPress(JELLY_AMOUNT) else Modifier)
@@ -137,7 +137,7 @@ public fun GlassButton(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             icon?.let { Image(rememberVectorPainter(it), null, Modifier.size(size.icon), colorFilter = ColorFilter.tint(content)) }
-            BasicText(
+            ThemedText(
                 text,
                 style = TextStyle(color = content, fontSize = size.font, fontWeight = FontWeight.SemiBold),
                 maxLines = 1,
@@ -183,8 +183,8 @@ private fun DrawScope.drawSpinnerArc(color: Color) {
     )
 }
 
-private fun buttonContentColor(kind: GlassButtonKind, accent: Color, style: GlassStyle): Color = when (kind) {
-    GlassButtonKind.Filled -> Color.White
+private fun buttonContentColor(kind: GlassButtonKind, accent: Color, onAccent: Color, style: GlassStyle): Color = when (kind) {
+    GlassButtonKind.Filled -> onAccent
     GlassButtonKind.Tinted, GlassButtonKind.Plain -> accent
     GlassButtonKind.Glass -> style.onGlass
 }
@@ -209,4 +209,3 @@ private const val RING_STROKE = 0.14f
 private const val RING_SWEEP = 270f
 private const val QUARTER_TURN = 90f
 private const val FULL_TURN = 360f
-private const val BUTTON_BLUE = 0xFF0A84FF

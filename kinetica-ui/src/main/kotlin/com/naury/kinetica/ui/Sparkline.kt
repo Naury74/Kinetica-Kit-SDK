@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 public fun Sparkline(
     points: List<Float>,
     modifier: Modifier = Modifier,
-    color: Color = GlassChartDefaults.Blue,
+    color: Color = GlassTheme.colors.accent,
     fill: Boolean = true,
     lineWidth: Dp = 1.5.dp,
     valueFormatter: (Float) -> String = GlassChartDefaults::formatValue,

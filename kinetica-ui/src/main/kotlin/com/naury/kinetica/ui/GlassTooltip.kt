@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -60,7 +59,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /** 툴팁을 요소의 위와 아래 중 어디에 띄울지 정한다. 원하는 쪽에 공간이 모자라면 반대쪽에 띄운다. */
-public enum class TooltipPlacement {
+public enum class GlassTooltipPlacement {
     /** 위에 공간이 있으면 위, 없으면 아래에 띄운다. */
     Auto,
 
@@ -71,9 +70,9 @@ public enum class TooltipPlacement {
     Below,
 }
 
-/** [Modifier.tooltipOnLongPress]의 표시 상태. [rememberTooltipState]로 만든다. */
+/** [Modifier.tooltipOnLongPress]의 표시 상태. [rememberGlassTooltipState]로 만든다. */
 @Stable
-public class TooltipState internal constructor() {
+public class GlassTooltipState internal constructor() {
     /** 툴팁이 보이는 중인지 나타낸다. */
     public var isVisible: Boolean by mutableStateOf(false)
         private set
@@ -93,9 +92,9 @@ public class TooltipState internal constructor() {
         private set
 }
 
-/** 컴포지션에 유지되는 [TooltipState]를 만든다. */
+/** 컴포지션에 유지되는 [GlassTooltipState]를 만든다. */
 @Composable
-public fun rememberTooltipState(): TooltipState = remember { TooltipState() }
+public fun rememberGlassTooltipState(): GlassTooltipState = remember { GlassTooltipState() }
 
 /**
  * 이 요소 위나 아래에 화살표가 달린 글래스 말풍선을 띄운다. 말풍선은 화살표 끝에서 톡 튀어나오듯 커지고, 화면 가장자리에 닿으면
@@ -119,7 +118,7 @@ public fun Modifier.glassTooltip(
     text: String,
     visible: Boolean,
     onDismiss: () -> Unit,
-    placement: TooltipPlacement = TooltipPlacement.Auto,
+    placement: GlassTooltipPlacement = GlassTooltipPlacement.Auto,
     style: GlassStyle = LocalGlassStyle.current,
 ): Modifier {
     val anchor = remember { AnchorBounds() }
@@ -136,8 +135,8 @@ public fun Modifier.glassTooltip(
 @Composable
 public fun Modifier.tooltipOnLongPress(
     text: String,
-    state: TooltipState = rememberTooltipState(),
-    placement: TooltipPlacement = TooltipPlacement.Auto,
+    state: GlassTooltipState = rememberGlassTooltipState(),
+    placement: GlassTooltipPlacement = GlassTooltipPlacement.Auto,
     style: GlassStyle = LocalGlassStyle.current,
 ): Modifier {
     val adjust = rememberAccessibleTimeout(withControls = false)
@@ -186,7 +185,7 @@ private class AnchorBounds {
 
 private class TooltipSpec(
     val text: String,
-    val placement: TooltipPlacement,
+    val placement: GlassTooltipPlacement,
     val style: GlassStyle,
     val anchor: AnchorBounds,
     val onDismiss: () -> Unit,
@@ -278,7 +277,7 @@ private fun Bubble(spec: TooltipSpec, geometry: BubbleGeometry, progress: () -> 
             }
             .padding(horizontal = 14.dp, vertical = 10.dp + ARROW_HEIGHT),
     ) {
-        BasicText(spec.text, style = TextStyle(color = spec.style.onGlass, fontSize = 14.sp, lineHeight = 19.sp))
+        ThemedText(spec.text, style = TextStyle(color = spec.style.onGlass, fontSize = 14.sp, lineHeight = 19.sp))
     }
 }
 
@@ -346,7 +345,7 @@ internal fun placeTooltip(
     anchor: Rect,
     container: IntSize,
     bubble: IntSize,
-    placement: TooltipPlacement,
+    placement: GlassTooltipPlacement,
     spacing: TooltipSpacing,
 ): TooltipPosition {
     val w = bubble.width.toFloat()
@@ -354,9 +353,9 @@ internal fun placeTooltip(
     val fitsAbove = anchor.top - spacing.gap - h >= spacing.margin
     val fitsBelow = anchor.bottom + spacing.gap + h <= container.height - spacing.margin
     val above = when (placement) {
-        TooltipPlacement.Above -> fitsAbove || !fitsBelow
-        TooltipPlacement.Below -> !fitsBelow && fitsAbove
-        TooltipPlacement.Auto -> fitsAbove || (!fitsBelow && anchor.top > container.height - anchor.bottom)
+        GlassTooltipPlacement.Above -> fitsAbove || !fitsBelow
+        GlassTooltipPlacement.Below -> !fitsBelow && fitsAbove
+        GlassTooltipPlacement.Auto -> fitsAbove || (!fitsBelow && anchor.top > container.height - anchor.bottom)
     }
     val rawY = if (above) anchor.top - spacing.gap - h else anchor.bottom + spacing.gap
     val y = rawY.coerceIn(spacing.margin, (container.height - spacing.margin - h).coerceAtLeast(spacing.margin))

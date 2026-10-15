@@ -174,7 +174,7 @@ class GlassMediaTest {
 
     @Test
     fun `미니 플레이어는 누르면 펼치고 닫기 동작으로 접으며 위로 끌어도 펼친다`() {
-        val state = MiniPlayerState(false)
+        val state = GlassMiniPlayerState(false)
         compose.setContent {
             GlassScaffold(Modifier.fillMaxSize()) {
                 GlassMiniPlayer(
@@ -205,7 +205,7 @@ class GlassMediaTest {
 
     @Test
     fun `미니 플레이어 슬롯은 펼치는 동안 매 프레임 다시 구성되지 않는다`() {
-        val state = MiniPlayerState(false)
+        val state = GlassMiniPlayerState(false)
         var compositions = 0
         var lastProgress = 0f
         compose.setContent {
@@ -236,8 +236,8 @@ class GlassMediaTest {
     @Test
     fun `미니 플레이어 상태는 펼침 여부를 복원한다`() {
         val restore = StateRestorationTester(compose)
-        var state: MiniPlayerState? = null
-        restore.setContent { state = rememberMiniPlayerState(initiallyExpanded = true) }
+        var state: GlassMiniPlayerState? = null
+        restore.setContent { state = rememberGlassMiniPlayerState(initiallyExpanded = true) }
 
         state = null
         restore.emulateSavedInstanceStateRestore()

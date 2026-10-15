@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -127,7 +126,7 @@ private fun Initials(text: String, size: Dp, color: Color) {
             }
             ).toPx().toSp()
     }
-    BasicText(text, style = TextStyle(color = color, fontSize = fontSize, fontWeight = FontWeight.SemiBold), maxLines = 1)
+    ThemedText(text, style = TextStyle(color = color, fontSize = fontSize, fontWeight = FontWeight.SemiBold), maxLines = 1)
 }
 
 private fun Modifier.appearing(level: Animatable<Float, *>, offset: Float): Modifier = graphicsLayer {

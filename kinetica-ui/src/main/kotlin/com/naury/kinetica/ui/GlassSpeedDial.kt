@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -162,7 +161,7 @@ private fun DialLayer(spec: DialSpec, progress: () -> Float, close: () -> Unit) 
 
 @Composable
 private fun DialItem(item: GlassMenuItem, style: GlassStyle, fromButton: Int, count: Int, progress: () -> Float, onClick: () -> Unit) {
-    val color = if (item.destructive) Color(DESTRUCTIVE) else style.onGlass
+    val color = if (item.destructive) GlassTheme.colors.destructive else style.onGlass
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Row(
         Modifier
@@ -191,7 +190,7 @@ private fun DialItem(item: GlassMenuItem, style: GlassStyle, fromButton: Int, co
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(Modifier.glass(style, CircleShape).padding(horizontal = 16.dp, vertical = 9.dp)) {
-            BasicText(item.label, style = TextStyle(color = color, fontSize = 15.sp, fontWeight = FontWeight.Medium))
+            ThemedText(item.label, style = TextStyle(color = color, fontSize = 15.sp, fontWeight = FontWeight.Medium))
         }
         item.icon?.let { icon ->
             Box(Modifier.size(ICON_SIZE).glass(style, CircleShape), contentAlignment = Alignment.Center) {
@@ -266,4 +265,3 @@ private const val STAGGER = 0.07f
 private const val DIAL_DAMPING = 0.68f
 private const val DIAL_STIFFNESS = Spring.StiffnessMediumLow
 private const val CLOSE_MS = 180
-private const val DESTRUCTIVE = 0xFFFF3B30

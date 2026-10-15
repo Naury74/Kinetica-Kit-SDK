@@ -266,9 +266,9 @@ class GlassListsTest {
     fun `밀어서 확인 상태는 reset으로 되돌리고 확정은 다시 만들어도 유지된다`() {
         val restore = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
         val confirms = mutableIntStateOf(0)
-        lateinit var state: SlideToConfirmState
+        lateinit var state: GlassSlideToConfirmState
         restore.setContent {
-            state = rememberSlideToConfirmState()
+            state = rememberGlassSlideToConfirmState()
             GlassSlideToConfirm("밀어서 결제", state, { confirms.intValue++ }, Modifier.testTag("slide"))
         }
         compose.onNodeWithTag("slide").performSemanticsAction(SemanticsActions.OnClick)

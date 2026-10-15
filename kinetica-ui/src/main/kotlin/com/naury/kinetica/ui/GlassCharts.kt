@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -400,15 +399,15 @@ internal fun ChartBubbleRow(color: Color?, name: String?, value: String) {
     val ink = LocalGlassContentColor.current
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(BUBBLE_ROW_GAP)) {
         if (color != null) Box(Modifier.size(BUBBLE_DOT).background(color, CircleShape))
-        if (name != null) BasicText(name, style = TextStyle(color = ink.copy(alpha = MUTED_ALPHA), fontSize = SMALL_TEXT))
-        BasicText(value, style = TextStyle(color = ink, fontSize = VALUE_TEXT, fontWeight = FontWeight.SemiBold))
+        if (name != null) ThemedText(name, style = TextStyle(color = ink.copy(alpha = MUTED_ALPHA), fontSize = SMALL_TEXT))
+        ThemedText(value, style = TextStyle(color = ink, fontSize = VALUE_TEXT, fontWeight = FontWeight.SemiBold))
     }
 }
 
 /** 말풍선 맨 위의 작은 제목 */
 @Composable
 internal fun ChartBubbleTitle(text: String) {
-    BasicText(text, style = TextStyle(color = LocalGlassContentColor.current.copy(alpha = MUTED_ALPHA), fontSize = SMALL_TEXT))
+    ThemedText(text, style = TextStyle(color = LocalGlassContentColor.current.copy(alpha = MUTED_ALPHA), fontSize = SMALL_TEXT))
 }
 
 /** 말풍선 내용 묶음 */

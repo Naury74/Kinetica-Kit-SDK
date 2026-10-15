@@ -10,7 +10,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -70,7 +69,7 @@ public fun RollingText(text: String, modifier: Modifier = Modifier, style: TextS
                             } using SizeTransform(clip = false)
                         },
                         label = "rolling-$fromEnd",
-                    ) { shown -> BasicText(shown.toString(), style = style) }
+                    ) { shown -> ThemedText(shown.toString(), style = style) }
                 }
             }
         }
@@ -115,7 +114,7 @@ public fun TypewriterText(
         }
     }
     val caret = if (cursor && (blink || shown < text.length)) "▍" else " "
-    BasicText(text.take(shown) + if (cursor) caret else "", modifier.semantics { contentDescription = text }, style = style)
+    ThemedText(text.take(shown) + if (cursor) caret else "", modifier.semantics { contentDescription = text }, style = style)
 }
 
 private const val BLINK_MS = 530L

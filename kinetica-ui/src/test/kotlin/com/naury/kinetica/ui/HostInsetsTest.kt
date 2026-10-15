@@ -140,7 +140,7 @@ class HostInsetsTest {
         var peekTop by mutableStateOf(0f)
         compose.setContent {
             Screen(hosted = false) {
-                GlassDetentSheet(rememberDetentSheetState(listOf(Detent.Peek(PEEK.dp), Detent.Full)), Modifier.testTag("container")) {
+                GlassDetentSheet(rememberGlassDetentSheetState(listOf(Detent.Peek(PEEK.dp), Detent.Full)), Modifier.testTag("container")) {
                     BasicText("내용", Modifier.testTag("body"))
                 }
             }

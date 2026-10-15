@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
  * @param steps 양 끝 사이의 눈금 수. 0이면 연속 값이고, 1 이상이면 눈금 위치에만 멈춘다. 음수면 [IllegalArgumentException]을 던진다.
  * @param enabled `false`면 터치·키보드·TalkBack으로 값을 바꿀 수 없고 채워진 구간을 흐리게 그린다.
  * @param onValueChangeFinished 손을 떼거나 키보드·TalkBack으로 값을 바꾼 뒤 한 번 호출된다.
- * @param activeColor 채워진 구간의 색
+ * @param accent 채워진 구간의 색. 기본값은 [GlassTheme]의 `accent`다.
  */
 @Composable
 public fun GlassSlider(
@@ -65,7 +65,7 @@ public fun GlassSlider(
     steps: Int = 0,
     enabled: Boolean = true,
     onValueChangeFinished: (() -> Unit)? = null,
-    activeColor: Color = Color(ACCENT),
+    accent: Color = GlassTheme.colors.accent,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     require(steps >= 0) { "steps는 0 이상이어야 합니다." }
@@ -126,7 +126,7 @@ public fun GlassSlider(
                 },
             )
             .drawBehind {
-                val active = if (enabled) activeColor else style.onGlass.copy(alpha = DISABLED_ALPHA)
+                val active = if (enabled) accent else style.onGlass.copy(alpha = DISABLED_ALPHA)
                 drawSlider(SliderLook(fraction, grab.value, stretch.value, rtl), active, style.onGlass.copy(alpha = TRACK_ALPHA))
             },
     )
@@ -252,4 +252,3 @@ private const val RUBBER_MAX = 0.06f
 private const val RUBBER_THIN = 0.8f
 private const val KEY_FRACTION = 0.05f
 private const val DISABLED_ALPHA = 0.3f
-private const val ACCENT = 0xFF0A84FF

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,7 +99,7 @@ public fun GlassSegmentedControl(
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    BasicText(
+                    ThemedText(
                         label,
                         style = TextStyle(
                             color = style.onGlass.copy(alpha = (if (selected) 1f else UNSELECTED) * (if (enabled) 1f else DISABLED)),
@@ -116,7 +115,7 @@ public fun GlassSegmentedControl(
 
 /**
  * 글래스 스위치. 누르고 있는 동안 손잡이가 옆으로 늘어나고, 켜고 끌 때 iOS 26 스위치처럼 출렁이며 넘어간다.
- * 켜지면 트랙이 [onColor]로 바뀐다.
+ * 켜지면 트랙이 [accent]로 바뀐다. [accent] 기본값은 [GlassTheme]의 `positive`다.
  *
  * @param enabled `false`면 누를 수 없고 흐리게 그린다.
  */
@@ -126,7 +125,7 @@ public fun GlassSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onColor: Color = Color(ON_GREEN),
+    accent: Color = GlassTheme.colors.positive,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -137,7 +136,7 @@ public fun GlassSwitch(
         position.animateTo(if (checked) 1f else 0f, spring(dampingRatio = SWITCH_DAMPING, stiffness = Spring.StiffnessMediumLow))
     }
     LaunchedEffect(pressed) { stretch.animateTo(if (pressed) 1f else 0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
-    val track by animateColorAsState(if (checked) onColor else style.onGlass.copy(alpha = OFF_ALPHA), label = "switch-track")
+    val track by animateColorAsState(if (checked) accent else style.onGlass.copy(alpha = OFF_ALPHA), label = "switch-track")
     Box(
         modifier
             .size(SWITCH_WIDTH, SWITCH_HEIGHT)
@@ -181,4 +180,3 @@ private const val THUMB_STRETCH = 0.35f
 private const val THUMB_SHADOW = 0.15f
 private const val SWITCH_DAMPING = 0.62f
 private const val OFF_ALPHA = 0.18f
-private const val ON_GREEN = 0xFF34C759

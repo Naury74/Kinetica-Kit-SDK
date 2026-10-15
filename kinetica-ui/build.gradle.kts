@@ -19,4 +19,10 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.ui.test.manifest)
+    // 호스트 앱처럼 Material 3 컴포넌트에 효과를 붙여 시험한다.
+    testImplementation(libs.androidx.compose.material3)
+    // XML 호스트 구성(목록, 페이저, Fragment, CoordinatorLayout)에 넣었을 때의 동작을 시험한다.
+    testImplementation(libs.androidx.recyclerview)
+    testImplementation(libs.androidx.viewpager2)
+    testImplementation(libs.androidx.fragment.ktx)
 }

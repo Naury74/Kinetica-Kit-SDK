@@ -179,11 +179,11 @@ class HostIntegrationTest {
         val drawer = rememberGlassDrawerState(initiallyOpen = true)
         GlassDrawer(drawerContent = { LazyColumn(Modifier.testTag("drawer")) { items(100) { Row(it) } } }, state = drawer) {
             GlassScaffold(Modifier.fillMaxSize().testTag("screen")) {
-                GlassDetentSheet(rememberDetentSheetState(initialDetent = Detent.Full)) {
+                GlassDetentSheet(rememberGlassDetentSheetState(initialDetent = Detent.Full)) {
                     LazyColumn(Modifier.fillMaxSize().testTag("detent")) { items(100) { Row(it) } }
                 }
                 GlassMiniPlayer(
-                    rememberMiniPlayerState(initiallyExpanded = true),
+                    rememberGlassMiniPlayerState(initiallyExpanded = true),
                     collapsed = { BasicText("막대") },
                     expanded = {
                         Column(Modifier.fillMaxSize()) {

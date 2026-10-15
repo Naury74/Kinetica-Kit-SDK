@@ -26,6 +26,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,11 +44,16 @@ import androidx.compose.ui.unit.sp
  *
  * @param count 표시할 개수. `null`이거나 0 이하면 배지를 숨긴다. [dot]이 `true`면 무시한다.
  * @param dot `true`면 숫자 없이 작은 점만 그린다.
- * @param color 배지 색. 기본값은 iOS 빨강이다.
+ * @param color 배지 색. 기본값은 [GlassTheme]의 `destructive`다.
  * @param max 그대로 보여 줄 가장 큰 수. 1보다 작으면 [IllegalArgumentException]을 던진다.
  */
 @Composable
-public fun Modifier.glassBadge(count: Int?, dot: Boolean = false, color: Color = Color(BADGE_RED), max: Int = DEFAULT_MAX): Modifier {
+public fun Modifier.glassBadge(
+    count: Int?,
+    dot: Boolean = false,
+    color: Color = GlassTheme.colors.destructive,
+    max: Int = DEFAULT_MAX,
+): Modifier {
     require(max >= 1) { "max는 1 이상이어야 합니다." }
     val visible = dot || (count != null && count > 0)
     val label = if (dot || count == null) "" else badgeLabel(count, max)
@@ -55,7 +61,7 @@ public fun Modifier.glassBadge(count: Int?, dot: Boolean = false, color: Color =
     val measurer = rememberTextMeasurer()
     val drawn = badge.drawn
     val text = remember(drawn, measurer) {
-        if (drawn.isEmpty()) null else measurer.measure(drawn, TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold))
+        if (drawn.isEmpty()) null else measurer.measure(drawn, BadgeText)
     }
     val description = badgeDescription(visible, if (dot) null else count)
     val scale = badge.scale
@@ -155,5 +161,7 @@ private const val POP_SCALE = 1.3f
 private const val POP_MS = 90
 private const val POP_DAMPING = 0.4f
 private const val HIDE_MS = 150
-private const val BADGE_RED = 0xFFFF3B30
 private const val DEFAULT_MAX = 99
+
+// 숫자와 + 기호는 RTL 화면에서도 99+ 순서로 보여야 한다.
+private val BadgeText = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, textDirection = TextDirection.Ltr)

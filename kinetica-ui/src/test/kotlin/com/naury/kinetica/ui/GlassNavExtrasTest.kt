@@ -59,7 +59,7 @@ class GlassNavExtrasTest {
 
     @Test
     fun `시트는 손을 뗀 위치와 속도로 다음 높이를 고른다`() {
-        val state = DetentSheetState(detents, Detent.Peek(120.dp), dismissible = false)
+        val state = GlassDetentSheetState(detents, Detent.Peek(120.dp), dismissible = false)
         state.updateLayout(1000f, 50f, Density(1f))
         assertThat(state.offset).isEqualTo(880f)
 
@@ -77,8 +77,8 @@ class GlassNavExtrasTest {
 
     @Test
     fun `닫을 수 있는 시트만 아래로 숨길 수 있다`() {
-        val fixed = DetentSheetState(detents, Detent.Peek(120.dp), dismissible = false)
-        val closable = DetentSheetState(detents, Detent.Peek(120.dp), dismissible = true)
+        val fixed = GlassDetentSheetState(detents, Detent.Peek(120.dp), dismissible = false)
+        val closable = GlassDetentSheetState(detents, Detent.Peek(120.dp), dismissible = true)
         fixed.updateLayout(1000f, 50f, Density(1f))
         closable.updateLayout(1000f, 50f, Density(1f))
 
@@ -91,10 +91,10 @@ class GlassNavExtrasTest {
 
     @Test
     fun `시트 안 목록을 위로 밀면 목록보다 시트가 먼저 펼쳐지고 TalkBack 동작으로 접힌다`() {
-        lateinit var state: DetentSheetState
+        lateinit var state: GlassDetentSheetState
         lateinit var list: LazyListState
         compose.setContent {
-            state = rememberDetentSheetState(detents)
+            state = rememberGlassDetentSheetState(detents)
             list = rememberLazyListState()
             Box(Modifier.fillMaxSize()) {
                 GlassDetentSheet(state, Modifier.testTag("sheet"), title = "장소") {
@@ -147,19 +147,19 @@ class GlassNavExtrasTest {
         val container = IntSize(400, 800)
         val bubble = IntSize(200, 60)
 
-        val nearTop = placeTooltip(Rect(10f, 20f, 50f, 60f), container, bubble, TooltipPlacement.Auto, spacing)
+        val nearTop = placeTooltip(Rect(10f, 20f, 50f, 60f), container, bubble, GlassTooltipPlacement.Auto, spacing)
         assertThat(nearTop.above).isFalse()
         assertThat(nearTop.y).isEqualTo(64)
         assertThat(nearTop.x).isEqualTo(12)
         assertThat(nearTop.arrowX).isEqualTo(20f)
 
-        val nearRight = placeTooltip(Rect(360f, 400f, 396f, 436f), container, bubble, TooltipPlacement.Below, spacing)
+        val nearRight = placeTooltip(Rect(360f, 400f, 396f, 436f), container, bubble, GlassTooltipPlacement.Below, spacing)
         assertThat(nearRight.above).isFalse()
         assertThat(nearRight.x).isEqualTo(188)
         // 요소 가운데(378)는 말풍선 오른쪽 끝에 너무 가까워 모서리를 피할 만큼만 안쪽에 둔다.
         assertThat(nearRight.arrowX).isEqualTo(200f - 20f)
 
-        val nearBottom = placeTooltip(Rect(100f, 760f, 140f, 790f), container, bubble, TooltipPlacement.Below, spacing)
+        val nearBottom = placeTooltip(Rect(100f, 760f, 140f, 790f), container, bubble, GlassTooltipPlacement.Below, spacing)
         assertThat(nearBottom.above).isTrue()
     }
 

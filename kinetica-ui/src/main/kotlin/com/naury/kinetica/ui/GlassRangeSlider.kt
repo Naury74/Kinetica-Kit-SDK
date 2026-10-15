@@ -83,7 +83,7 @@ import kotlinx.coroutines.launch
  * @param enabled `false`면 터치, 키보드, TalkBack으로 값을 바꿀 수 없고 채워진 구간을 흐리게 그린다.
  * @param onRangeChangeFinished 손을 떼거나 키보드, TalkBack으로 값을 바꾼 뒤 한 번 호출된다.
  * @param valueLabel 말풍선과 TalkBack이 읽는 값 문구. 기본값은 기기 언어 형식에 소수 둘째 자리까지다.
- * @param activeColor 채워진 구간과 말풍선의 색
+ * @param accent 채워진 구간과 말풍선의 색. 기본값은 [GlassTheme]의 `accent`다.
  */
 @Composable
 public fun GlassRangeSlider(
@@ -95,7 +95,7 @@ public fun GlassRangeSlider(
     enabled: Boolean = true,
     onRangeChangeFinished: (() -> Unit)? = null,
     valueLabel: (Float) -> String = DefaultValueLabel,
-    activeColor: Color = Color(ACCENT),
+    accent: Color = GlassTheme.colors.accent,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     require(steps >= 0) { "steps는 0 이상이어야 합니다." }
@@ -121,7 +121,7 @@ public fun GlassRangeSlider(
         if (next != current) latestChange(next)
     }
     val finish: () -> Unit = { latestFinished?.invoke() }
-    val fill = if (enabled) activeColor else style.onGlass.copy(alpha = DISABLED_ALPHA)
+    val fill = if (enabled) accent else style.onGlass.copy(alpha = DISABLED_ALPHA)
     val track = style.onGlass.copy(alpha = TRACK_ALPHA)
     val startFraction = model.fraction(start)
     val endFraction = model.fraction(end)
@@ -392,4 +392,3 @@ private val BUBBLE_GAP = 6.dp
 private const val KEY_FRACTION = 0.05f
 private const val TIE = 0.001f
 private const val DISABLED_ALPHA = 0.3f
-private const val ACCENT = 0xFF0A84FF

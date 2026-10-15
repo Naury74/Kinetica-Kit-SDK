@@ -96,25 +96,31 @@ public object MeshGradients {
 public fun MeshGradientBackground(modifier: Modifier = Modifier, palette: MeshPalette = MeshGradients.Aurora, speed: Float = 1f) {
     require(speed >= 0f) { "speed는 0 이상이어야 합니다." }
     val still = reducedMotion() || speed == 0f
-    val time = remember { mutableFloatStateOf(STILL_TIME) }
-    if (!still) {
-        LaunchedEffect(speed) {
-            val from = time.floatValue
-            var start = -1L
-            while (true) {
-                withInfiniteAnimationFrameNanos { now ->
-                    if (start < 0) start = now
-                    time.floatValue = from + (now - start) / NANOS_PER_SECOND * speed
-                }
-            }
-        }
-    }
+    val clock = rememberLoopClock(running = !still)
     val painter = remember(palette) { MeshPainter(palette) }
+    val time = remember { MeshTime() }
     Spacer(
         modifier
             .fillMaxSize()
-            .drawBehind { painter.draw(this, time.floatValue) },
+            .loopVisibility(clock)
+            .drawBehind { painter.draw(this, time.at(clock.seconds, speed)) },
     )
+}
+
+/** 그림에 쓰는 시간. 속도가 바뀌면 바뀐 시점까지 흐른 시간을 기준으로 이어 가서 그림이 튀지 않는다. */
+private class MeshTime {
+    private var base = STILL_TIME
+    private var since = 0f
+    private var speed = Float.NaN
+
+    fun at(seconds: Float, newSpeed: Float): Float {
+        if (speed != newSpeed) {
+            if (!speed.isNaN()) base += (seconds - since) * speed
+            since = seconds
+            speed = newSpeed
+        }
+        return base + (seconds - since) * speed
+    }
 }
 
 /** 색 덩어리 위치를 계산하고 그린다. 프레임마다 객체를 만들지 않도록 셰이더와 배열을 재사용한다. */
@@ -245,7 +251,6 @@ private const val MIN_BLOBS = 2
 private const val MAX_BLOBS = 6
 private const val RGBA = 4
 private const val STILL_TIME = 7f
-private const val NANOS_PER_SECOND = 1_000_000_000f
 private const val HALF = 0.5f
 private const val ORBIT = 0.38f
 private const val BLOB_RADIUS = 0.62f

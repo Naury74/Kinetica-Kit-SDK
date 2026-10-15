@@ -120,12 +120,22 @@ public fun Modifier.glassBackdrop(backdrop: GlassBackdrop): Modifier = this
  * 글로우 테두리와 그림자, 노이즈 질감을 더한다. 콘텐츠는 그 위에 평소처럼 그린다.
  * [backdrop]이 `null`이거나 API 31 미만이면 [GlassStyle.fallback] 색을 칠한다.
  *
+ * 그림자와 모양은 이 수정자가 그리지만 콘텐츠를 자르지는 않는다. 누름 리플까지 모양 안에 가두려면 `clip(shape)`을 이어 붙인다.
+ * Material `Card`나 `Surface`처럼 자기 배경색을 칠하는 컴포넌트에 붙이면 그 배경이 글래스를 덮으므로, 배경색을 투명하게 하거나 `Box`에 붙인다.
+ *
+ * ```kotlin
+ * val shape = RoundedCornerShape(20.dp)
+ * Box(Modifier.glass(shape = shape).clip(shape).clickable { … }.padding(16.dp)) { Text("…") }
+ * ```
+ *
+ * @param style 기본값은 [LocalGlassStyle]이다.
+ *
  * @param intensity 효과 강도(0..1). 블러, 색 덮기, 그림자를 함께 줄인다. 다이얼로그 배경이 서서히 흐려지는 애니메이션에 쓴다.
  *   범위를 벗어난 값은 0..1로 맞춘다.
  */
 @Composable
 public fun Modifier.glass(
-    style: GlassStyle,
+    style: GlassStyle = LocalGlassStyle.current,
     shape: Shape = RectangleShape,
     backdrop: GlassBackdrop? = LocalGlassBackdrop.current,
     intensity: Float = 1f,

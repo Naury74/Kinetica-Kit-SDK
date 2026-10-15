@@ -14,7 +14,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -70,7 +69,7 @@ public fun GlassChipGroup(
     modifier: Modifier = Modifier,
     selection: GlassChipSelection = GlassChipSelection.Single,
     enabled: Boolean = true,
-    accent: Color = Color(CHIP_BLUE),
+    accent: Color = GlassTheme.colors.accent,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -153,7 +152,7 @@ private fun GlassChip(label: String, look: ChipLook, onTap: () -> Unit) {
                 .checkSlot { shown.value }
                 .drawBehind { drawCheck(accent, shown.value) },
         )
-        BasicText(
+        ThemedText(
             label,
             style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
             color = { lerp(ink, accent, shown.value.coerceIn(0f, 1f)) },
@@ -204,4 +203,3 @@ private const val CHIP_DAMPING = 0.7f
 private const val SELECTED_FILL = 0.16f
 private const val SELECTED_BORDER = 0.45f
 private const val DISABLED_ALPHA = 0.4f
-private const val CHIP_BLUE = 0xFF0A84FF

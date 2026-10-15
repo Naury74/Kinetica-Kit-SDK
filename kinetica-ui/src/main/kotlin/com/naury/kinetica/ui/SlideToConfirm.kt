@@ -68,7 +68,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
 /**
- * '밀어서 결제' 같은 글래스 캡슐. 손잡이를 끝까지 밀면 햅틱과 함께 확정되고, 손잡이의 화살표가 체크로 바뀌며 캡슐이 [color]로 채워진다.
+ * '밀어서 결제' 같은 글래스 캡슐. 손잡이를 끝까지 밀면 햅틱과 함께 확정되고, 손잡이의 화살표가 체크로 바뀌며 캡슐이 [accent]로 채워진다.
  * 끝까지 밀지 않고 놓으면 손잡이가 튕기며 처음 자리로 돌아온다. 가운데 글자는 빛이 지나가듯 반짝이고, 손잡이가 지나간 만큼 흐려진다.
  * RTL에서는 오른쪽에서 왼쪽으로 민다. 확정 상태는 화면 회전이나 프로세스 재생성 뒤에도 유지된다.
  *
@@ -83,8 +83,8 @@ import kotlinx.coroutines.launch
  * @param confirmed 확정된 상태로 보일지 여부. 이 값이 바뀔 때마다 그 값을 따르므로, 확정 뒤 `true`에서 `false`로 바꾸면 손잡이가 처음 자리로
  *   돌아와 다시 밀 수 있다. 계속 `false`로 두면 한 번 확정한 뒤로는 확정된 모습을 유지한다. 바뀐 값이 한 번도 화면에 반영되지 않고
  *   제자리로 돌아오면(같은 프레임 안에서 `false`, `true`, `false`) 바뀐 것으로 보지 않으므로, 확정 직후 곧바로 되돌리려면
- *   [SlideToConfirmState]를 받는 오버로드와 [SlideToConfirmState.reset]을 쓴다.
- * @param color 확정되었을 때 캡슐을 채우는 색
+ *   [GlassSlideToConfirmState]를 받는 오버로드와 [GlassSlideToConfirmState.reset]을 쓴다.
+ * @param accent 확정되었을 때 캡슐을 채우는 색. 기본값은 [GlassTheme]의 `positive`다.
  */
 @Composable
 public fun GlassSlideToConfirm(
@@ -92,10 +92,10 @@ public fun GlassSlideToConfirm(
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
     confirmed: Boolean = false,
-    color: Color = Color(CONFIRM_GREEN),
+    accent: Color = GlassTheme.colors.positive,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
-    val state = rememberSlideToConfirmState(confirmed)
+    val state = rememberGlassSlideToConfirmState(confirmed)
     // 키로 다시 시작하는 효과 대신 마지막으로 따른 값과 비교한다. 재생성 뒤에도 같은 값을 다시 적용하지 않도록 저장한다.
     val applied = rememberSaveable { mutableStateOf(confirmed) }
     SideEffect {
@@ -104,28 +104,28 @@ public fun GlassSlideToConfirm(
             state.isConfirmed = confirmed
         }
     }
-    GlassSlideToConfirm(text, state, onConfirm, modifier, color, style)
+    GlassSlideToConfirm(text, state, onConfirm, modifier, accent, style)
 }
 
 /**
- * 확정 상태를 [state]로 다루는 [GlassSlideToConfirm]. 확정은 [SlideToConfirmState.isConfirmed]로 읽고, [SlideToConfirmState.reset]으로
+ * 확정 상태를 [state]로 다루는 [GlassSlideToConfirm]. 확정은 [GlassSlideToConfirmState.isConfirmed]로 읽고, [GlassSlideToConfirmState.reset]으로
  * 언제든 되돌린다. 되돌리면 손잡이가 튕기며 처음 자리로 돌아온다.
  *
  * ```kotlin
- * val slide = rememberSlideToConfirmState()
+ * val slide = rememberGlassSlideToConfirmState()
  * GlassSlideToConfirm("밀어서 결제", slide, onConfirm = { pay(onFail = { slide.reset() }) })
  * ```
  *
- * @param onConfirm 사용자가 밀거나 TalkBack으로 확정하는 순간 한 번 부른다. 다시 확정하려면 먼저 [SlideToConfirmState.reset]해야 한다.
- * @param color 확정되었을 때 캡슐을 채우는 색
+ * @param onConfirm 사용자가 밀거나 TalkBack으로 확정하는 순간 한 번 부른다. 다시 확정하려면 먼저 [GlassSlideToConfirmState.reset]해야 한다.
+ * @param accent 확정되었을 때 캡슐을 채우는 색. 기본값은 [GlassTheme]의 `positive`다.
  */
 @Composable
 public fun GlassSlideToConfirm(
     text: String,
-    state: SlideToConfirmState,
+    state: GlassSlideToConfirmState,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
-    color: Color = Color(CONFIRM_GREEN),
+    accent: Color = GlassTheme.colors.positive,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     val scope = rememberCoroutineScope()
@@ -153,7 +153,7 @@ public fun GlassSlideToConfirm(
             .height(HEIGHT)
             .glass(style, CircleShape)
             .onSizeChanged { slide.travel = (it.width - base).coerceAtLeast(1f) }
-            .drawBehind { drawTrail(slide, color, base, rtl) }
+            .drawBehind { drawTrail(slide, accent, base, rtl) }
             .slideSemantics(text, done, confirmedLabel, confirm)
             .draggable(
                 rememberDraggableState { delta ->
@@ -175,7 +175,7 @@ public fun GlassSlideToConfirm(
             color = style.onGlass.copy(alpha = TEXT_ALPHA),
         )
         Thumb(
-            color,
+            accent,
             slide.check,
             Modifier
                 .align(Alignment.CenterStart)
@@ -185,9 +185,9 @@ public fun GlassSlideToConfirm(
     }
 }
 
-/** [GlassSlideToConfirm]의 확정 상태. [rememberSlideToConfirmState]로 만든다. */
+/** [GlassSlideToConfirm]의 확정 상태. [rememberGlassSlideToConfirmState]로 만든다. */
 @Stable
-public class SlideToConfirmState internal constructor(confirmed: Boolean) {
+public class GlassSlideToConfirmState internal constructor(confirmed: Boolean) {
     /** 확정된 상태인지 나타낸다. 사용자가 끝까지 밀거나 TalkBack으로 확정하면 `true`가 된다. */
     public var isConfirmed: Boolean by mutableStateOf(confirmed)
         internal set
@@ -217,14 +217,14 @@ public class SlideToConfirmState internal constructor(confirmed: Boolean) {
     }
 
     internal companion object {
-        val Saver: Saver<SlideToConfirmState, Boolean> = Saver({ it.isConfirmed }, { SlideToConfirmState(it) })
+        val Saver: Saver<GlassSlideToConfirmState, Boolean> = Saver({ it.isConfirmed }, { GlassSlideToConfirmState(it) })
     }
 }
 
-/** 화면 회전이나 프로세스 재생성 뒤에도 확정 여부가 유지되는 [SlideToConfirmState]를 만든다. [initiallyConfirmed]는 처음 만들 때만 쓴다. */
+/** 화면 회전이나 프로세스 재생성 뒤에도 확정 여부가 유지되는 [GlassSlideToConfirmState]를 만든다. [initiallyConfirmed]는 처음 만들 때만 쓴다. */
 @Composable
-public fun rememberSlideToConfirmState(initiallyConfirmed: Boolean = false): SlideToConfirmState =
-    rememberSaveable(saver = SlideToConfirmState.Saver) { SlideToConfirmState(initiallyConfirmed) }
+public fun rememberGlassSlideToConfirmState(initiallyConfirmed: Boolean = false): GlassSlideToConfirmState =
+    rememberSaveable(saver = GlassSlideToConfirmState.Saver) { GlassSlideToConfirmState(initiallyConfirmed) }
 
 /** TalkBack에서는 [text]를 이름으로 하는 버튼으로 읽히고, 확정된 뒤에는 상태를 알리며 누를 수 없다. */
 private fun Modifier.slideSemantics(text: String, done: Boolean, confirmedLabel: String, confirm: () -> Unit): Modifier =
@@ -243,7 +243,7 @@ private fun Modifier.slideSemantics(text: String, done: Boolean, confirmedLabel:
     }
 
 /** 손잡이가 지나간 자리를 [color]로 옅게 칠하고, 확정되면 캡슐 전체를 채운다. [base]는 손잡이와 양쪽 여백을 더한 너비(px)다. */
-private fun DrawScope.drawTrail(slide: SlideToConfirmState, color: Color, base: Float, rtl: Boolean) {
+private fun DrawScope.drawTrail(slide: GlassSlideToConfirmState, color: Color, base: Float, rtl: Boolean) {
     val progress = slide.position.value
     val level = slide.check.value
     val width = lerp(base + slide.travel * progress, size.width, level)
@@ -299,7 +299,6 @@ private fun Thumb(color: Color, check: Animatable<Float, *>, modifier: Modifier)
     )
 }
 
-private const val CONFIRM_GREEN = 0xFF34C759
 private val HEIGHT = 64.dp
 private val THUMB_SIZE = 54.dp
 private val THUMB_INSET = 5.dp

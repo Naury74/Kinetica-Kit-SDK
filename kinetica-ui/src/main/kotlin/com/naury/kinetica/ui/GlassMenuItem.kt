@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -233,12 +232,12 @@ private fun androidx.compose.ui.unit.Density.menuPlacement(
 
 @Composable
 private fun MenuRow(item: GlassMenuItem, style: GlassStyle, onClick: () -> Unit) {
-    val color = if (item.destructive) Color(DESTRUCTIVE) else style.onGlass
+    val color = if (item.destructive) GlassTheme.colors.destructive else style.onGlass
     Row(
         Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(horizontal = 18.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BasicText(item.label, Modifier.weight(1f), style = TextStyle(color = color, fontSize = 16.sp))
+        ThemedText(item.label, Modifier.weight(1f), style = TextStyle(color = color, fontSize = 16.sp))
         item.icon?.let { Image(rememberVectorPainter(it), null, Modifier.size(20.dp), colorFilter = ColorFilter.tint(color)) }
     }
 }
@@ -256,5 +255,4 @@ private val MENU_CORNER = 22.dp
 private val ITEM_HEIGHT = 46.dp
 private val EDGE = 16.dp
 private const val MENU_START_SCALE = 0.7f
-private const val DESTRUCTIVE = 0xFFFF3B30
 private const val MENU_ORIGIN_X = 0.1f

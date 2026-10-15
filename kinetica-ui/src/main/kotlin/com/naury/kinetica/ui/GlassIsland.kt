@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -389,7 +388,7 @@ private fun CompactBody(content: GlassIslandContent, accent: Color) {
         content.icon?.let { IslandIcon(it, accent, COMPACT_ICON) } ?: Spacer(Modifier.size(COMPACT_ICON))
         // 가운데는 비워 카메라 홀을 피한다.
         Spacer(Modifier.widthIn(min = COMPACT_GAP))
-        BasicText(
+        ThemedText(
             content.compactText.orEmpty(),
             style = TextStyle(color = accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = TABULAR),
             maxLines = 1,
@@ -411,14 +410,14 @@ private fun ExpandedBody(content: GlassIslandContent, accent: Color, style: Glas
             Spacer(Modifier.size(12.dp))
         }
         Column(Modifier.weight(1f)) {
-            BasicText(
+            ThemedText(
                 content.title,
                 style = TextStyle(color = style.onGlass, fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             content.subtitle?.let {
-                BasicText(
+                ThemedText(
                     it,
                     style = TextStyle(color = style.onGlass.copy(alpha = SUBTITLE_ALPHA), fontSize = 13.sp),
                     maxLines = 2,

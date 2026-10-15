@@ -16,7 +16,6 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -161,7 +160,7 @@ private fun RowScope.TopTab(tab: GlassTab, look: TopTabLook, activeness: () -> F
                     },
             )
         }
-        BasicText(
+        ThemedText(
             tab.label,
             style = TextStyle(fontSize = 15.sp, fontWeight = if (look.selected) FontWeight.SemiBold else FontWeight.Medium),
             maxLines = 1,

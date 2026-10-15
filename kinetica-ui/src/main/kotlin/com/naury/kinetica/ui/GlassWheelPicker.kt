@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -179,6 +178,7 @@ private fun WheelList(spec: WheelSpec, parts: WheelParts, modifier: Modifier, st
     val geometry = parts.geometry
     val itemHeight = wheelItemHeight()
     var focused by remember { mutableStateOf(false) }
+    val focusColor = GlassTheme.colors.accent
     val textStyle = TextStyle(
         color = style.onGlass,
         fontSize = WHEEL_FONT_SIZE,
@@ -198,7 +198,7 @@ private fun WheelList(spec: WheelSpec, parts: WheelParts, modifier: Modifier, st
                 val origin = Offset(BAND_INSET.toPx(), (size.height - band.height) / 2)
                 onDrawWithContent {
                     drawContent()
-                    if (focused) drawRoundRect(Color(FOCUS_COLOR), origin, band, CornerRadius(band.height / 2), style = ring)
+                    if (focused) drawRoundRect(focusColor, origin, band, CornerRadius(band.height / 2), style = ring)
                 }
             },
     ) {
@@ -210,7 +210,7 @@ private fun WheelList(spec: WheelSpec, parts: WheelParts, modifier: Modifier, st
             flingBehavior = rememberSnapFlingBehavior(state),
         ) {
             items(if (spec.cyclic) spec.items.size * CYCLE_REPEAT else spec.items.size) { index ->
-                BasicText(
+                ThemedText(
                     spec.items[index % spec.items.size],
                     Modifier
                         .fillMaxWidth()
@@ -308,7 +308,6 @@ private val WHEEL_FONT_SIZE = 20.sp
 private val BAND_INSET = 4.dp
 private val TEXT_INSET = 8.dp
 private val FOCUS_RING = 2.dp
-private const val FOCUS_COLOR = 0xFF0A84FF
 
 /** 가장 바깥 줄이 놓이는 원통 각도(도). 90도에 가까울수록 바깥 줄이 납작해진다. */
 private const val WHEEL_MAX_ANGLE = 70f

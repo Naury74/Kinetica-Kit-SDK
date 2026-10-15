@@ -170,7 +170,6 @@ public fun GlassExpandHost(
         progress.animateTo(if (open) 1f else 0f, spring(dampingRatio = damping, stiffness = Spring.StiffnessMediumLow))
         if (!open) state.activeKey = null
     }
-    BackHandler(enabled = open) { state.collapse() }
     val dismissDistance = with(LocalDensity.current) { DISMISS_DISTANCE.toPx() }
     fun release() {
         if (drag.value > dismissDistance * DISMISS_FRACTION) {
@@ -181,6 +180,8 @@ public fun GlassExpandHost(
     }
     val connection = remember(active) { dismissConnection(drag, ::release) }
     GlassOverlay(visible = true) { _ ->
+        // GlassScaffold 밖에서는 오버레이가 Dialog 창에 뜨고, 그 창의 뒤로 가기는 창 안의 BackHandler만 받으므로 오버레이 안에 둔다.
+        BackHandler(enabled = open) { state.collapse() }
         // 크기는 제약에서 바로 얻어 처음 여는 프레임부터 그린다(측정 뒤에 알게 되면 첫 프레임에 카드만 사라져 깜빡인다).
         BoxWithConstraints(modifier.fillMaxSize().onGloballyPositioned { state.hostOrigin = it.positionOnScreen() }) {
             val bounds = Rect(Offset.Zero, Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat()))
