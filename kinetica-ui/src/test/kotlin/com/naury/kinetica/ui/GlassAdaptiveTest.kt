@@ -30,6 +30,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -159,6 +160,75 @@ class GlassAdaptiveTest {
     }
 
     @Test
+    fun `toString과 hashCode가 같은 다른 항목을 바꿔도 상세 상태가 섞이지 않는다`() {
+        var selected by mutableStateOf<SameLooking?>(SameLooking(1))
+        compose.setContent {
+            GlassListDetail(selected, onBack = { selected = null }, list = {}) { item -> Counter("${item.id}") }
+        }
+        compose.onNodeWithText("1: 0").performClick()
+        compose.onNodeWithText("1: 1").assertIsDisplayed()
+
+        compose.runOnIdle { selected = SameLooking(2) }
+        compose.onNodeWithText("2: 0").assertIsDisplayed()
+    }
+
+    @Test
+    fun `다른 항목을 고르면 이전 항목의 상세 상태는 버리고 지금 항목 상태는 배치가 바뀌어도 남는다`() {
+        var width by mutableStateOf(840.dp)
+        var selected by mutableStateOf<String?>("a")
+        compose.setContent {
+            Box(Modifier.width(width)) {
+                GlassListDetail(selected, onBack = { selected = null }, list = {}) { Counter(it) }
+            }
+        }
+        compose.onNodeWithText("a: 0").performClick()
+        compose.runOnIdle { selected = "b" }
+        compose.onNodeWithText("b: 0").performClick()
+        compose.onNodeWithText("b: 1").performClick()
+
+        compose.runOnIdle { width = 400.dp }
+        compose.onNodeWithText("b: 2").assertIsDisplayed()
+        compose.runOnIdle { width = 840.dp }
+        compose.onNodeWithText("b: 2").assertIsDisplayed()
+
+        compose.runOnIdle { selected = "a" }
+        compose.onNodeWithText("a: 0").assertIsDisplayed()
+    }
+
+    @Test
+    fun `상세 상태와 목록 스크롤은 회전 뒤에도 남는다`() {
+        val restore = StateRestorationTester(compose)
+        var selected by mutableStateOf<String?>(null)
+        restore.setContent {
+            Box(Modifier.width(840.dp)) {
+                GlassListDetail(selected, onBack = { selected = null }, list = { MailList(Modifier.testTag("list")) { selected = it } }) {
+                    Counter(it)
+                }
+            }
+        }
+        compose.onNodeWithTag("list").performScrollToIndex(30)
+        compose.onNodeWithText("mail 30").performClick()
+        compose.onNodeWithText("mail 30: 0").performClick()
+
+        restore.emulateSavedInstanceStateRestore()
+        compose.onNodeWithText("mail 30: 1").assertIsDisplayed()
+        compose.onNodeWithText("mail 30").assertIsDisplayed()
+    }
+
+    @Test
+    fun `좁은 화면 목록에서 넓어져도 목록 스크롤이 남는다`() {
+        var width by mutableStateOf(400.dp)
+        compose.setContent {
+            Box(Modifier.width(width)) {
+                GlassListDetail<String>(null, onBack = {}, list = { MailList(Modifier.testTag("list")) {} }) {}
+            }
+        }
+        compose.onNodeWithTag("list").performScrollToIndex(30)
+        compose.runOnIdle { width = 840.dp }
+        compose.onNodeWithText("mail 30").assertIsDisplayed()
+    }
+
+    @Test
     fun `레일은 선택한 탭을 알리고 누르면 바꾼다`() {
         var selected by mutableIntStateOf(0)
         compose.setContent { GlassNavigationRail(tabs, selected, onSelect = { selected = it }, header = { BasicText("logo") }) }
@@ -264,4 +334,19 @@ private fun MailList(modifier: Modifier = Modifier, onOpen: (String) -> Unit) {
     LazyColumn(modifier.fillMaxSize(), rememberLazyListState()) {
         items(60) { index -> BasicText("mail $index", Modifier.height(40.dp).clickable { onOpen("mail $index") }) }
     }
+}
+
+/** toString과 hashCode는 모두 같지만 equals로는 다른 항목. */
+private class SameLooking(val id: Int) {
+    override fun equals(other: Any?): Boolean = other is SameLooking && other.id == id
+
+    override fun hashCode(): Int = 0
+
+    override fun toString(): String = "item"
+}
+
+@androidx.compose.runtime.Composable
+private fun Counter(name: String) {
+    var count by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(0) }
+    BasicText("$name: $count", Modifier.clickable { count++ })
 }

@@ -151,6 +151,7 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 | 구성 요소 | 하는 일 |
 | --- | --- |
 | `GlassMiniPlayer(rememberGlassMiniPlayerState(), artwork, collapsed, expanded)` | 아래 떠 있는 재생 막대를 누르거나 위로 끌면 전체 화면 플레이어로 커지고, 앨범 아트가 이어지며 커진다. 아래로 끌거나 뒤로 가기로 접는다 |
+| `GlassMiniPlayerBar(state, artwork) { 막대 내용 }` + `GlassMiniPlayerFullScreen(state, artwork) { 플레이어 }` | 막대와 전체 화면을 나눈 `GlassMiniPlayer`. 막대는 글래스 캡슐 없이 내용만 그리므로 `GlassFloatingTabBar`의 `accessory`처럼 다른 컴포넌트 안에 넣는다. 펼치면 막대가 놓인 자리에서 앨범 아트가 이어지며 커지고, 접으면 그 자리로 돌아간다 |
 | `PlayPauseIcon` / `MenuCloseIcon` / `PlusCloseIcon` | 모양이 매끄럽게 바뀌는 아이콘 |
 | `GlassRating(rating, onRatingChange, allowHalf)` / `LikeButton(liked, onLikedChange, count)` | 별점과 하트 좋아요. 좋아요를 누르면 하트가 튀며 입자가 터지고 숫자가 굴러간다 |
 | `AvatarStack(avatars, max)` / `Modifier.skeleton(visible)` / `GlassSkeletonText(lines)` | 겹친 아바타와 "+N", 불러오는 동안 빛이 흐르는 자리 표시 |
@@ -159,6 +160,39 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 | `Modifier.glassTooltip(text, visible, onDismiss)` / `Modifier.tooltipOnLongPress(text)` | 화살표가 달린 유리 말풍선 |
 | `CoachMarkHost(state, steps)` + `Modifier.coachMarkTarget(state, id)` | 처음 쓰는 사람을 위한 기능 안내. 화면이 어두워지고 대상 둘레만 밝게 뚫린다 |
 | `GlassDrawer(drawerContent, state) { 화면 }` | 가장자리에서 끌어 여는 서랍. 열리면 뒤 화면이 밀리며 작아지고 둥글어진다 |
+
+## 입력 2차
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `GlassCodeInput(value, onValueChange, length, mask, error, onComplete)` | 한 칸에 한 자리씩 받는 인증번호, PIN 입력란. 붙여 넣기와 SMS 자동 채우기를 받고, `error`가 켜지면 칸이 빨개지며 흔들린다 |
+| `GlassTagInput(tags, onTagsChange, placeholder, suggestions)` | 쉼표나 완료 키로 칩을 만드는 태그 입력란. 같은 태그는 다시 넣지 않고 그 칩을 흔든다. 빈 입력란에서 지우기를 두 번 누르면 마지막 칩이 지워진다. 추천 목록은 아래 내용을 밀어내지 않고 겹쳐 뜨며, 아래 공간이 모자라면(키보드가 올라왔을 때 등) 입력란 위로 뜬다 |
+| `GlassColorPicker(color, onColorChange, presets, showAlpha, showHexInput)` | 색조 고리와 채도·명도 사각형, 투명도 슬라이더, HEX 입력란, 최근 색과 프리셋 칩이 있는 색 선택기. 키보드로는 Tab으로 고리, 사각형, 투명도 슬라이더를 오가며 방향키로 조절한다 |
+| `GlassSignaturePad(modifier, rememberSignaturePadState())` | 속도에 따라 굵기가 바뀌는 서명란. `state.toImageBitmap()`이나 `state.toSvg()`로 내보내고, 되돌리기와 지우기 버튼이 있다 |
+| `GlassPasswordField(value, onValueChange, label, showStrength, showChecklist)` / `passwordStrength(password)` | 눈 아이콘으로 보이거나 숨기는 비밀번호 입력란. 강도 막대가 약함, 보통, 강함 색으로 차오르고 조건 체크리스트를 보여 줄 수 있다 |
+
+## 미디어와 피드백
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `GlassImageViewer(rememberGlassImageViewerState(), images)` + `Modifier.imageViewerSource(state, index)` | 전체 화면 사진 뷰어. 썸네일에서 커지며 열리고, 핀치로 1~5배 확대, 두 번 탭 확대, 위아래로 끌어 닫기를 지원한다. 확대한 사진이 가장자리에 닿은 뒤 바깥쪽으로 더 끌면 확대를 풀지 않고 옆 사진으로 넘어간다. 사진 대신 원하는 내용을 넣는 `pageCount` 버전도 있다. `images`의 Painter는 `intrinsicSize` 비율대로 맞춰 그리고, `BrushPainter`처럼 크기가 없으면 화면 전체를 채운다. 열린 채 목록이 비면 바로 닫히고 상태 없는 버전은 `onDismiss`를 부른다 |
+| `BeforeAfterSlider(before, after)` | 두 이미지를 겹쳐 놓고 가운데 손잡이를 끌어 비교한다. 가로 드래그만 받아 세로 스크롤을 막지 않는다 |
+| `GlassResultMark(state)` / `GlassResultDialog(visible, state, title, onDismissRequest)` | `GlassResult.Loading`이면 링이 돌고, 결과로 바뀌면 원이 닫힌 뒤 체크, ×, 느낌표가 획 순서대로 그려진다. 성공이면 파티클이 튄다 |
+| `GlassOnboarding(pages, onFinish)` + `OnboardingPage(title, body, background, art)` | 첫 실행 안내. 그림이 시차를 두고 따라오고 배경색이 섞이며, 마지막 페이지에서 버튼이 '시작하기'로 늘어난다 |
+| `GlassEmptyState(title, message, art, action)` / `GlassEmptyIcon(GlassEmptyIconKind)` | 빈 목록, 오프라인, 오류 화면. 글래스 원판 위 그림이 천천히 떠 있다. 기본 그림은 NoResults, Offline, EmptyInbox, Error |
+
+## 적응형 레이아웃
+
+폴더블과 태블릿에서 화면 폭에 따라 배치를 바꾼다. 기준 폭은 `GlassAdaptiveDefaults.TwoPaneMinWidth`(600dp)이고, 컴포저블이 받은 폭으로 판단하므로 멀티 윈도우에서도 맞게 동작한다.
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `GlassListDetail(selected, onBack, list = { … }) { item -> 상세 }` | 좁으면 상세가 옆에서 밀려 들어오고, 넓으면 목록과 상세를 두 칸으로 놓는다. 반쯤 접은 폴더블에서는 두 칸 경계를 힌지에 맞춘다. 접고 펼쳐도 선택과 스크롤 위치가 유지된다. 상세 상태는 지금 고른 항목 것만 기억하므로 예전 항목을 다시 고르면 처음 상태로 열린다. 두 칸 전환에 쓰려고 붙들어 두는 상세 내용도 최근 8개 항목까지라 많이 열어도 쌓이지 않는다. `detailBackground`에 목록과 같은 배경을 한 번 주면 상세마다 배경을 칠하지 않아도 된다 |
+| `GlassNavigationRail(items, selectedIndex, onSelect, header)` | 화면 시작 쪽에 세우는 내비게이션 레일. 인디케이터가 세로로 늘어났다 줄며 이동한다 |
+| `GlassAdaptiveNavigation(tabs, selectedIndex, onSelect) { padding -> }` | 좁으면 아래 탭 바, 넓으면 레일로 바꾼다. 바뀌어도 내용을 다시 만들지 않는다 |
+| `GlassFloatingTabBar(tabs, selectedIndex, onSelect, state, accessory)` | 화면 아래 떠 있는 탭 바. 목록에 `state.nestedScrollConnection`을 붙이면 아래로 스크롤할 때 선택한 탭 아이콘만 남은 캡슐로 줄어든다. `accessory`는 펼친 동안 탭 바 위에 붙어 있다가 접히면 캡슐 옆으로 내려온다. 여기에 `GlassMiniPlayerBar`를 넣으면 그 자리에서 전체 화면 플레이어가 펼쳐진다 |
+
+샘플의 메일 앱(앱 화면 예 → 메일)이 `GlassListDetail`을, 음악 앱이 `GlassFloatingTabBar`와 그 `accessory`에 넣은 `GlassMiniPlayerBar`를 쓴다.
 
 ## 고급 효과
 
@@ -196,11 +230,22 @@ Modifier
 시스템의 '애니메이션 삭제' 설정이 켜져 있으면 반복, 기울기, 색종이 효과는 모두 멈춘다. 반복 효과(`glowBorder`, `sparkle`, `skeleton`, 글자 효과, 움직이는 배경)는
 요소가 창 밖으로 스크롤되어 나가 있는 동안에도 멈추고, `motionTilt`는 앱이 백그라운드로 가면 센서를 놓는다. 리플, 터지기, 두근거림 같은 누름·등장·반복 효과는 [docs/33](33-effects.md)에서 다룬다.
 
+## 고급 효과 2차
+
+| 효과 | 사용법 |
+| --- | --- |
+| 물결 왜곡 | `Modifier.rippleDistortion(strength, wavelength)`. 누른 자리에서 물결이 퍼지며 내용이 굴절된다. Android 13 이상은 AGSL 셰이더로, 그보다 낮으면 밝은 고리로 대신한다. 물결은 최대 4개까지 겹친다 |
+| 파티클 | `ParticleField(ParticlePreset.Snow)`. 프리셋은 눈, 불꽃놀이, 거품, 불꽃. `rememberParticleFieldState()`의 `launch(at)`로 원하는 자리에서 터뜨린다 |
+| 뒤집는 카드 | `FlipCard(flipped, onFlippedChange, front = { … }, back = { … })`. 끌면 손을 따라 돌고, 놓으면 속도와 각도를 보고 가까운 면에 멈춘다. `axis`로 가로축, 세로축을 고른다. 기본으로는 보이지 않는 면을 컴포지션에서 빼므로 그 면의 입력 중인 글자나 스크롤 위치가 뒤집을 때 처음으로 돌아간다. `keepBothFaces = true`면 두 면을 모두 남겨 상태를 유지하고, 보이지 않는 면은 그리지도 터치나 TalkBack에 드러내지도 않는다 |
+| 액체 모양 | `Modifier.liquidMorph(color)` / `GlassBlobButton(text, onClick)`. 누른 자리가 오목하게 들어갔다가 출렁이며 돌아온다 |
+| 방울 묶음 | `GlassBlobGroup { Modifier.blob() }`. 가까운 방울끼리 메타볼처럼 녹아 붙는다. Android 12 이상에서 이어지고, 그보다 낮으면 따로 그린다 |
+| 홀로그램 | `Modifier.holographic(shape, useSensor)`. 누른 위치나 기기 기울기에 따라 무지개빛 광택이 움직인다. 누르는 동안 기울기만 주려면 `Modifier.tiltOnPress()` |
+
 ## 호스트 앱에서 쓸 때
 
 **어디서 부를 수 있나.** `GlassScaffold` 안에서 부르면 다이얼로그·시트·메뉴·토스트가 scaffold 위층에 그려지고 뒤 화면 전체를 블러로 비춘다.
 호스트가 자기 Scaffold(Material 등)나 그냥 `Column` 안에서 불러도 된다. 이때 다이얼로그·시트·메뉴·펼침 메뉴·기능 안내·펼친 카드는 전체 화면 Dialog 창으로,
-토스트·스낵바·아일랜드는 뒤 화면 터치를 막지 않는 Popup 창으로 뜨므로 부른 자리의 배치를 깨뜨리지 않는다. `GlassMiniPlayer`와 `GlassDetentSheet`는 부른 자리에 그리므로 화면을 채우는 `Box` 안에 둔다.
+토스트·스낵바·아일랜드는 뒤 화면 터치를 막지 않는 Popup 창으로 뜨므로 부른 자리의 배치를 깨뜨리지 않는다. `GlassMiniPlayer`, `GlassMiniPlayerFullScreen`, `GlassDetentSheet`는 부른 자리에 그리므로 화면을 채우는 `Box` 안에 둔다.
 
 **높이와 스크롤.**
 - 시트는 내용 높이에 맞추되 최대 높이는 위쪽 안전 영역에서 `GlassSheetDefaults.TopGap`(48dp) 아래까지다. 내용이 더 길면 시트 안에 `LazyColumn`이나 `verticalScroll`을 넣는다. 목록이 맨 위일 때 아래로 끌면 시트가 내려간다.

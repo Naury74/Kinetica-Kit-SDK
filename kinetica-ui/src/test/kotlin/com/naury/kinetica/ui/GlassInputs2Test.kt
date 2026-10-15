@@ -1,9 +1,11 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -19,6 +21,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -142,6 +145,52 @@ class GlassInputs2Test {
     }
 
     @Test
+    fun `태그 추천 목록은 아래 내용을 밀어내지 않고 팝업 창에서 눌러 추가된다`() = checkSuggestionOverlay(hosted = false)
+
+    @Test
+    fun `태그 추천 목록은 GlassScaffold 안에서 오버레이 레이어에 뜨고 눌러 추가된다`() = checkSuggestionOverlay(hosted = true)
+
+    private fun checkSuggestionOverlay(hosted: Boolean) {
+        val tags = mutableStateOf(listOf<String>())
+        compose.setContent {
+            val body = @androidx.compose.runtime.Composable {
+                androidx.compose.foundation.layout.Column {
+                    GlassTagInput(tags.value, { tags.value = it }, placeholder = "태그", suggestions = listOf("개발", "디자인"))
+                    BasicText("아래 내용", Modifier.testTag("below"))
+                }
+            }
+            if (hosted) GlassScaffold { body() } else body()
+        }
+        val before = compose.onNodeWithTag("below").getUnclippedBoundsInRoot().top
+        val field = compose.onNodeWithContentDescription("태그")
+        field.performClick()
+        field.performTextInput("디")
+        compose.waitForIdle()
+        compose.onNodeWithText("디자인").assertExists()
+        assertThat(compose.onNodeWithTag("below").getUnclippedBoundsInRoot().top).isEqualTo(before)
+        compose.onNodeWithText("디자인").performClick()
+        compose.waitForIdle()
+        assertThat(tags.value).containsExactly("디자인")
+    }
+
+    @Test
+    fun `태그 추천 목록은 아래 공간이 모자라면 입력란 위로 뜬다`() {
+        assertThat(suggestionTop(anchorTop = 100, anchorBottom = 160, windowHeight = 1000, height = 200, gap = 6)).isEqualTo(166)
+        assertThat(suggestionTop(anchorTop = 700, anchorBottom = 760, windowHeight = 900, height = 200, gap = 6)).isEqualTo(494)
+        // 위아래 모두 모자라면 넓은 쪽(여기서는 위)에 놓는다.
+        assertThat(suggestionTop(anchorTop = 150, anchorBottom = 210, windowHeight = 300, height = 200, gap = 6)).isEqualTo(-56)
+    }
+
+    @Test
+    fun `태그를 다음 컴포지션 전에 연달아 추가해도 앞 태그가 사라지지 않는다`() {
+        var latest = emptyList<String>()
+        val model = TagInputModel().apply { onChange = { latest = it } }
+        model.add(listOf("a"))
+        model.add(listOf("b"))
+        assertThat(latest).containsExactly("a", "b").inOrder()
+    }
+
+    @Test
     fun `색상 선택기는 색 이름과 HEX를 읽고 TalkBack 동작과 HEX 입력, 투명도로 색을 바꾼다`() {
         val color = mutableStateOf(Color(0xFF0000FF))
         compose.setContent { GlassColorPicker(color.value, { color.value = it }) }
@@ -161,6 +210,37 @@ class GlassInputs2Test {
         compose.waitForIdle()
         assertThat(color.value.alpha).isWithin(0.01f).of(0.5f)
         assertThat(color.value.red).isWithin(0.01f).of(1f)
+    }
+
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    @Test
+    fun `색상 선택기는 Tab으로 고리, 사각형, 투명도 순서로 옮겨 방향키로 조절한다`() {
+        val color = mutableStateOf(Color.hsv(200f, 0.5f, 0.5f, 0.8f))
+        compose.setContent {
+            androidx.compose.foundation.layout.Column {
+                BasicText("시작", Modifier.testTag("start").focusable())
+                GlassColorPicker(color.value, { color.value = it }, presets = emptyList(), showHexInput = false)
+            }
+        }
+        val start = compose.onNodeWithTag("start")
+        start.requestFocus()
+        start.performKeyInput { pressKey(Key.Tab) }
+        start.performKeyInput { pressKey(Key.DirectionRight) }
+        compose.waitForIdle()
+        assertThat(color.value.toPickerHsv().h).isWithin(0.5f).of(202f)
+
+        start.performKeyInput { pressKey(Key.Tab) }
+        start.performKeyInput { pressKey(Key.DirectionUp) }
+        start.performKeyInput { pressKey(Key.DirectionLeft) }
+        compose.waitForIdle()
+        assertThat(color.value.toPickerHsv().v).isWithin(0.01f).of(0.52f)
+        assertThat(color.value.toPickerHsv().s).isWithin(0.01f).of(0.48f)
+
+        start.performKeyInput { pressKey(Key.Tab) }
+        start.performKeyInput { pressKey(Key.DirectionLeft) }
+        compose.waitForIdle()
+        assertThat(color.value.alpha).isWithin(0.01f).of(0.78f)
+        assertThat(alphaKeyStep(Key.DirectionLeft, rtl = true)).isGreaterThan(0f)
     }
 
     @Test

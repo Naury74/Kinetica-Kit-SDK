@@ -17,10 +17,13 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.SaveableStateHolder
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -66,9 +69,10 @@ public object GlassAdaptiveDefaults {
  * 힌지 양쪽 중 한쪽이 200dp보다 좁으면 힌지를 무시한다.
  *
  * 선택 상태는 호스트가 들고 있으므로 접고 펼치거나 멀티 윈도우로 크기가 바뀌어도 그대로다. 목록과 상세의 `rememberSaveable` 상태(스크롤 위치 등)도
- * 배치가 바뀔 때 유지된다. 좁은 화면에서 상세를 보는 중이면 뒤로 가기와 시작 쪽 가장자리 드래그가 [onBack]을 부른다.
+ * 배치가 바뀌거나 화면이 회전할 때 유지된다. 상세 상태는 지금 고른 항목 것만 기억하고, 다른 항목을 고르면 이전 항목의 상태는 버린다.
+ * 그래서 많은 항목을 차례로 열어도 저장 상태가 쌓이지 않고, 예전 항목을 다시 고르면 처음 상태로 열린다. 좁은 화면에서 상세를 보는 중이면 뒤로 가기와 시작 쪽 가장자리 드래그가 [onBack]을 부른다.
  * 넓은 화면에서는 뒤로 가기를 가로채지 않는다. 좁은 화면에서는 상세가 목록 위로 밀려 들어오므로, 배경이 투명한 상세는 그동안 목록이 비쳐 보인다.
- * 상세 내용에 배경을 칠하거나 `Modifier.glass()`를 붙인다.
+ * 상세마다 배경을 칠하는 대신 [detailBackground]에 목록과 같은 배경을 한 번 주면 된다.
  *
  * ```kotlin
  * var selected by rememberSaveable { mutableStateOf<String?>(null) }
@@ -76,11 +80,14 @@ public object GlassAdaptiveDefaults {
  * ```
  *
  * @param selected 상세에 보일 항목. `null`이면 목록만 보이고, 두 칸 배치에서는 상세 칸에 [emptyDetail]을 그린다.
- *   상세의 `rememberSaveable` 상태는 항목의 `toString()`과 `hashCode()`로 구분하므로, 서로 다른 항목은 둘 중 하나가 달라야 한다.
+ *   항목은 `equals`로 구분한다. 같은 항목을 다시 넘기면 상세 상태가 그대로 이어진다.
  * @param onBack 좁은 화면에서 상세를 닫아 달라는 요청. 보통 [selected]를 `null`로 바꾼다.
  * @param listWidth 두 칸 배치에서 목록 칸 폭. 화면 폭의 절반을 넘으면 절반으로 줄인다.
  * @param twoPaneMinWidth 두 칸 배치로 바꾸는 최소 폭. 이 컴포저블이 받은 폭으로 판단하므로 멀티 윈도우에서도 맞게 동작한다.
  * @param emptyDetail 두 칸 배치에서 아무것도 고르지 않았을 때 상세 칸에 그릴 내용
+ * @param detailBackground 상세 칸 뒤에 깔 배경. 상세 칸 크기로 그리므로 내용에 `Modifier.fillMaxSize()`를 붙인다. 두 칸 배치에서는 상세가
+ *   바뀌어도 그대로 있고 [emptyDetail] 뒤에도 깔린다. 좁은 화면에서는 상세와 함께 밀려 들어와 아래 목록을 가린다. `null`이면 투명하다.
+ *   상세 안의 [GlassScaffold] 글래스는 자기 `background`만 블러로 비추므로, 상세 위 글래스에 배경이 비쳐야 하면 그쪽 `background`에 준다.
  */
 @Composable
 public fun <T : Any> GlassListDetail(
@@ -91,48 +98,95 @@ public fun <T : Any> GlassListDetail(
     twoPaneMinWidth: Dp = GlassAdaptiveDefaults.TwoPaneMinWidth,
     style: GlassStyle = LocalGlassStyle.current,
     emptyDetail: @Composable () -> Unit = {},
+    detailBackground: (@Composable () -> Unit)? = null,
     list: @Composable () -> Unit,
     detail: @Composable (T) -> Unit,
 ) {
     val holder = rememberSaveableStateHolder()
+    // 상세 저장 키의 번호. 회전이나 프로세스 재시작 뒤에도 지금 항목이 같은 키를 다시 쓰도록 저장한다.
+    val generation = rememberSaveable { IntArray(1) }
+    val panes = remember(holder) { Panes(holder, generation) }
     // 좁은 화면에서 상세를 빼는 애니메이션 동안에는 selected가 이미 null이므로 마지막 항목을 계속 그린다.
     var shown by remember { mutableStateOf(selected) }
-    if (selected != null) shown = selected
-    val panes = remember(holder) { Panes(holder) }
+    if (selected != null) {
+        shown = selected
+        panes.select(selected)
+    }
     panes.list = list
+    val latestDetail by rememberUpdatedState(detail)
+    // 상세 람다가 바뀔 때마다 상세 내용 전체를 무효화하지 않도록, 한 번 만든 람다가 최신 람다를 부르게 한다.
     @Suppress("UNCHECKED_CAST")
-    panes.detail = { item -> detail(item as T) }
+    panes.detail = remember { { item: Any -> latestDetail(item as T) } }
     BoxWithConstraints(modifier) {
         if (maxWidth < twoPaneMinWidth) {
             val stack = if (selected == null) listOf(LIST_KEY) else listOf(LIST_KEY, DETAIL_KEY)
             PushNavigation(stack, onBack, Modifier.fillMaxSize()) { key ->
-                if (key == LIST_KEY) panes.List() else shown?.let { panes.Detail(it) }
+                if (key == LIST_KEY) {
+                    panes.listContent()
+                } else {
+                    DetailPane(detailBackground) { shown?.let { panes.Detail(it) } }
+                }
             }
         } else {
-            TwoPane(listWidth, style, panes, selected, emptyDetail)
+            TwoPane(listWidth, style, panes, selected, emptyDetail, detailBackground)
         }
     }
 }
 
-/** 목록과 상세를 배치와 무관한 저장 키로 감싸, 한 칸과 두 칸 배치를 오가도 저장 상태가 이어지게 한다. */
-private class Panes(private val holder: SaveableStateHolder) {
-    var list: @Composable () -> Unit = {}
-    var detail: @Composable (Any) -> Unit = {}
+/**
+ * 목록과 상세를 배치가 바뀌어도 이어지는 내용으로 감싼다. 한 칸과 두 칸 배치는 같은 프레임에 서로 바뀌므로, 저장 키만으로는
+ * 새 배치가 상태를 읽은 뒤에야 이전 배치가 상태를 저장해 상태를 잃는다. 그래서 내용을 `movableContentOf`로 옮기고,
+ * 저장 키는 회전과 프로세스 재시작에 쓴다. 상세 키는 항목을 고를 때마다 새 번호로 만든다. 항목 자체는 Bundle에 넣을 수 없을 수 있어 키로 쓰지 않는다.
+ */
+internal class Panes(private val holder: SaveableStateHolder, private val generation: IntArray) {
+    var list: @Composable () -> Unit by mutableStateOf({})
+    var detail: @Composable (Any) -> Unit by mutableStateOf({})
 
-    @Composable
-    fun List() {
-        holder.SaveableStateProvider(LIST_KEY) { list() }
+    val listContent: @Composable () -> Unit = movableContentOf { holder.SaveableStateProvider(LIST_KEY) { list() } }
+
+    // 두 칸 배치에서는 바뀌는 동안 나가는 항목도 함께 그리므로, 최근에 고른 몇 항목의 내용을 기억한다.
+    private val details = LinkedHashMap<Any, DetailEntry>()
+    private var current: Any? = null
+
+    /** [item]을 지금 상세로 정한다. 다른 항목이면 새 키를 주고, 이전 항목의 저장 상태는 화면에서 빠질 때 버리게 한다. */
+    fun select(item: Any) {
+        if (item == current) return
+        val previous = current
+        if (previous != null) {
+            details[previous]?.let { holder.removeState(it.key) }
+            generation[0]++
+        }
+        details.remove(item)
+        details[item] = entry("$DETAIL_KEY:${generation[0]}")
+        while (details.size > MAX_REMEMBERED_DETAILS) details.remove(details.keys.first())
+        current = item
     }
 
     @Composable
     fun Detail(item: Any) {
-        // 두 칸 배치에서는 바뀌는 동안 이전 항목과 새 항목을 함께 그리므로 항목마다 다른 키를 쓴다. 키는 Bundle에 저장되므로 문자열로 만든다.
-        holder.SaveableStateProvider("$DETAIL_KEY:${item.hashCode()}:$item") { detail(item) }
+        val entry = details[item]
+        if (entry != null) {
+            entry.content(item)
+        } else {
+            // 기억에서 밀려난 아주 오래된 항목이 아직 나가는 중이면 임시 키로 그린다.
+            holder.SaveableStateProvider("$DETAIL_KEY:gone:${System.identityHashCode(item)}") { detail(item) }
+        }
     }
+
+    private fun entry(key: String) = DetailEntry(key, movableContentOf { item: Any -> holder.SaveableStateProvider(key) { detail(item) } })
 }
 
+internal class DetailEntry(val key: String, val content: @Composable (Any) -> Unit)
+
 @Composable
-private fun <T : Any> TwoPane(listWidth: Dp, style: GlassStyle, panes: Panes, selected: T?, emptyDetail: @Composable () -> Unit) {
+private fun <T : Any> TwoPane(
+    listWidth: Dp,
+    style: GlassStyle,
+    panes: Panes,
+    selected: T?,
+    emptyDetail: @Composable () -> Unit,
+    detailBackground: (@Composable () -> Unit)?,
+) {
     val fold = rememberVerticalFold()
     var origin by remember { mutableStateOf(Offset.Zero) }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -140,26 +194,14 @@ private fun <T : Any> TwoPane(listWidth: Dp, style: GlassStyle, panes: Panes, se
     val line = style.edgeLight.takeIf { it.alpha > 0f } ?: style.onGlass.copy(alpha = DIVIDER_FALLBACK_ALPHA)
     Layout(
         content = {
-            Box(Modifier.layoutId(LIST_KEY).semantics { isTraversalGroup = true }) { panes.List() }
+            Box(Modifier.layoutId(LIST_KEY).semantics { isTraversalGroup = true }) { panes.listContent() }
             Box(
                 Modifier.layoutId(DETAIL_KEY).semantics {
                     isTraversalGroup = true
                     traversalIndex = 1f
                 },
             ) {
-                AnimatedContent(
-                    targetState = selected,
-                    transitionSpec = {
-                        if (still) {
-                            fadeIn(snap()) togetherWith fadeOut(snap())
-                        } else {
-                            (fadeIn(tween(DETAIL_FADE_MS)) + scaleIn(spring(stiffness = Spring.StiffnessMediumLow), DETAIL_START_SCALE))
-                                .togetherWith(fadeOut(tween(DETAIL_FADE_MS / 2)))
-                        }
-                    },
-                    contentKey = { it },
-                    label = "glass-list-detail",
-                ) { item -> if (item == null) emptyDetail() else panes.Detail(item) }
+                DetailPane(detailBackground) { DetailSwitch(selected, still, panes, emptyDetail) }
             }
         },
         modifier = Modifier
@@ -179,6 +221,32 @@ private fun <T : Any> TwoPane(listWidth: Dp, style: GlassStyle, panes: Panes, se
             list.placeRelative(0, 0)
             detail.placeRelative(start + gap, 0)
         }
+    }
+}
+
+@Composable
+private fun <T : Any> DetailSwitch(selected: T?, still: Boolean, panes: Panes, emptyDetail: @Composable () -> Unit) {
+    AnimatedContent(
+        targetState = selected,
+        transitionSpec = {
+            if (still) {
+                fadeIn(snap()) togetherWith fadeOut(snap())
+            } else {
+                (fadeIn(tween(DETAIL_FADE_MS)) + scaleIn(spring(stiffness = Spring.StiffnessMediumLow), DETAIL_START_SCALE))
+                    .togetherWith(fadeOut(tween(DETAIL_FADE_MS / 2)))
+            }
+        },
+        contentKey = { it },
+        label = "glass-list-detail",
+    ) { item -> if (item == null) emptyDetail() else panes.Detail(item) }
+}
+
+/** 상세 칸. [background]를 상세 칸 크기로 먼저 깔고 그 위에 [content]를 그린다. */
+@Composable
+private fun DetailPane(background: (@Composable () -> Unit)?, content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxSize()) {
+        background?.invoke()
+        content()
     }
 }
 
@@ -256,6 +324,7 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
 
 private const val LIST_KEY = "kinetica-list"
 private const val DETAIL_KEY = "kinetica-detail"
+private const val MAX_REMEMBERED_DETAILS = 8
 private val MIN_FOLD_PANE = 200.dp
 private val DIVIDER_WIDTH = 1.dp
 private val DIVIDER_SHADE = 10.dp

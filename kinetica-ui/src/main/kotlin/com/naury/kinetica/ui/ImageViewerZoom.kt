@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.unit.Velocity
@@ -96,6 +97,12 @@ internal class ViewerZoom {
         }
     }
 
+    /** 가로로 [dx]만큼 끄는 방향의 가장자리에 이미 닿아 있는지. 닿아 있으면 그 끌기는 페이저에 넘겨 다음 사진으로 넘긴다. */
+    fun atHorizontalEdge(dx: Float): Boolean {
+        val l = limit(scale).x
+        return (dx < 0f && offset.x <= -l + EDGE_SLOP) || (dx > 0f && offset.x >= l - EDGE_SLOP)
+    }
+
     /** [s]배일 때 움직일 수 있는 최대 이동(px). 사진이 페이지보다 작은 축은 0이다. */
     private fun limit(s: Float): Offset {
         val c = if (content.isEmpty()) viewport else content
@@ -115,30 +122,55 @@ internal class ViewerZoom {
 
 /**
  * 두 손가락은 확대와 이동, 확대된 상태의 한 손가락은 이동으로 받는다. 확대되지 않은 한 손가락 드래그는 소비하지 않으므로
- * 바깥의 페이저(좌우)와 끌어서 닫기(위아래)가 받는다.
+ * 바깥의 페이저(좌우)와 끌어서 닫기(위아래)가 받는다. 확대한 사진이 이미 가장자리에 닿은 상태에서 그 바깥쪽으로 가로로 끌기 시작하면
+ * 그 제스처는 소비하지 않고 페이저에 넘겨, 확대를 풀지 않고도 다음 사진으로 넘길 수 있게 한다.
  */
 internal fun Modifier.viewerZoomGestures(zoom: ViewerZoom, scope: CoroutineScope): Modifier = pointerInput(zoom) {
     awaitEachGesture {
         awaitFirstDown(requireUnconsumed = false)
-        val tracker = VelocityTracker()
-        var handled = false
+        val route = ZoomGestureRoute(zoom)
         do {
             val event = awaitPointerEvent()
-            val fingers = event.changes.count { it.pressed }
-            val center = Offset(size.width / 2f, size.height / 2f)
-            if (fingers >= 2) {
-                zoom.transform(event.calculateCentroid(useCurrent = false) - center, event.calculateZoom(), event.calculatePan())
-                event.changes.forEach { it.consume() }
-                handled = true
-            } else if (fingers == 1 && zoom.zoomed && event.changes.none { it.isConsumed }) {
-                val change = event.changes.first { it.pressed }
-                tracker.addPosition(change.uptimeMillis, change.position)
-                zoom.panBy(event.calculatePan())
-                change.consume()
-                handled = true
-            }
+            route.handle(event, Offset(size.width / 2f, size.height / 2f))
         } while (event.changes.any { it.pressed })
-        if (handled) zoom.settle(scope, if (zoom.zoomed) tracker.calculateVelocity() else Velocity.Zero)
+        if (route.handled) zoom.settle(scope, if (zoom.zoomed) route.tracker.calculateVelocity() else Velocity.Zero)
+    }
+}
+
+/** 제스처 하나 동안 이벤트를 확대, 이동, 페이저 넘기기 가운데 어디로 보낼지 정한다. */
+private class ZoomGestureRoute(private val zoom: ViewerZoom) {
+    val tracker = VelocityTracker()
+    var handled = false
+        private set
+    private var decided = false
+    private var handedOff = false
+
+    /** [center]는 요소 가운데 좌표다. */
+    fun handle(event: PointerEvent, center: Offset) {
+        if (handedOff) return
+        val fingers = event.changes.count { it.pressed }
+        if (fingers >= 2) {
+            zoom.transform(event.calculateCentroid(useCurrent = false) - center, event.calculateZoom(), event.calculatePan())
+            event.changes.forEach { it.consume() }
+            handled = true
+            decided = true
+        } else if (fingers == 1 && zoom.zoomed && event.changes.none { it.isConsumed }) {
+            pan(event)
+        }
+    }
+
+    private fun pan(event: PointerEvent) {
+        val pan = event.calculatePan()
+        if (!decided && pan != Offset.Zero) {
+            decided = true
+            handedOff = abs(pan.x) > abs(pan.y) && zoom.atHorizontalEdge(pan.x)
+            if (handedOff) return
+        }
+        val change = event.changes.first { it.pressed }
+        tracker.addPosition(change.uptimeMillis, change.position)
+        zoom.panBy(pan)
+        change.consume()
+        handled = true
     }
 }
 
@@ -188,3 +220,4 @@ private const val MAX_OVERSHOOT = 6f
 private const val EDGE_RESISTANCE = 0.35f
 private const val FLING_SECONDS = 0.18f
 private const val SETTLE_DAMPING = 0.82f
+private const val EDGE_SLOP = 1f

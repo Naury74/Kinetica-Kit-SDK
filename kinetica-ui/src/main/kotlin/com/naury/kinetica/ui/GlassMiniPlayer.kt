@@ -15,7 +15,10 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +29,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,10 +42,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -55,6 +63,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.toSize
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -72,6 +81,10 @@ public class GlassMiniPlayerState internal constructor(initiallyExpanded: Boolea
     /** 펼치기로 정해졌거나 펼쳐져 있으면 true. 끄는 동안에는 손을 떼기 전 상태를 유지한다. */
     public var isExpanded: Boolean by mutableStateOf(initiallyExpanded)
         private set
+
+    // GlassMiniPlayerBar가 놓인 자리와 그 안 아트 자리(창 기준 px). 바깥 막대가 없으면 비어 있다. 배치 단계에서만 읽는다.
+    internal var barBounds: Rect by mutableStateOf(Rect.Zero)
+    internal var barArtBounds: Rect by mutableStateOf(Rect.Zero)
 
     /** 전체 화면으로 펼친다. 애니메이션이 끝날 때 돌아오고, 그 전에 다른 동작이 끼어들면 취소된다. */
     public suspend fun expand() {
@@ -125,6 +138,8 @@ private val MiniPlayerSaver = Saver<GlassMiniPlayerState, Boolean>(save = { it.i
  * 슬롯이 매 프레임 다시 구성되지 않도록 `Modifier.graphicsLayer { }`나 `Modifier.offset { }`처럼 그리기, 배치 단계의 람다 안에서 읽는다.
  *
  * [GlassScaffold] 안에서 부르면 오버레이 레이어에 그린다. 밖에서 부르면 호출한 자리를 화면 전체로 보고 그린다.
+ * 막대를 [GlassFloatingTabBar]의 `accessory`처럼 다른 컴포넌트 안에 두려면 이 함수 대신 [GlassMiniPlayerBar]와
+ * [GlassMiniPlayerFullScreen]을 같은 상태로 함께 쓴다.
  *
  * ```kotlin
  * val player = rememberGlassMiniPlayerState()
@@ -153,22 +168,158 @@ public fun GlassMiniPlayer(
     collapsed: @Composable (progress: () -> Float) -> Unit,
     expanded: @Composable (progress: () -> Float) -> Unit,
 ) {
+    MiniPlayerHost(state, modifier, style, artwork, PlayerLayout(barHeight, barBottomPadding, detached = false), collapsed, expanded)
+}
+
+/**
+ * [GlassMiniPlayer]의 막대 내용만 그린다. 글래스 캡슐은 그리지 않으므로 [GlassFloatingTabBar]의 `accessory`처럼 이미 글래스 바탕이 있는
+ * 슬롯에 넣는다. 받은 공간을 모두 채우며, 누르거나 위로 끌면 [state]를 펼친다. 펼친 화면은 같은 [state]로 부른
+ * [GlassMiniPlayerFullScreen]이 그리고, 이 막대가 놓인 자리에서 커지기 시작한다.
+ *
+ * [artwork]를 주면 시작 쪽에 막대 높이에서 위아래 8dp씩 뺀 정사각형으로 그린다. [GlassMiniPlayerFullScreen]에도 같은 아트를 주면
+ * 펼칠 때 그 자리에서 큰 아트로 이어지며 커진다. 펼치는 동안 막대 안의 아트는 숨기고 [content]는 흐려진다.
+ *
+ * ```kotlin
+ * val player = rememberGlassMiniPlayerState()
+ * GlassScaffold(
+ *     bottomBar = {
+ *         GlassFloatingTabBar(tabs, tab, { tab = it }, accessory = {
+ *             GlassMiniPlayerBar(player, artwork = { Cover() }) { Title() }
+ *         })
+ *     },
+ * ) { padding ->
+ *     Songs(padding)
+ *     GlassMiniPlayerFullScreen(player, artwork = { Cover() }) { PlayerControls() }
+ * }
+ * ```
+ *
+ * @param content 막대 내용. 펼침 진행도를 읽는 함수를 받는다. 재생 버튼처럼 따로 누를 수 있는 요소를 넣어도 된다.
+ */
+@Composable
+public fun GlassMiniPlayerBar(
+    state: GlassMiniPlayerState,
+    modifier: Modifier = Modifier,
+    artwork: (@Composable () -> Unit)? = null,
+    content: @Composable (progress: () -> Float) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val fullTop = WindowInsets.statusBars.getTop(density) + with(density) { FULL_TOP_GAP.toPx() }
+    val progress = remember(state) { { state.progress } }
+    DisposableEffect(state) {
+        onDispose {
+            state.barBounds = Rect.Zero
+            state.barArtBounds = Rect.Zero
+        }
+    }
+    Row(
+        modifier
+            .fillMaxSize()
+            .onGloballyPositioned { state.barBounds = it.windowRect() }
+            .clickable(onClickLabel = stringResource(R.string.kinetica_ui_player_expand), role = Role.Button) {
+                scope.launch { state.expand() }
+            }
+            .playerDrag(state) { state.barBounds.top - fullTop }
+            .padding(horizontal = DETACHED_ART_INSET),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (artwork != null) {
+            Box(
+                Modifier
+                    .padding(vertical = DETACHED_ART_INSET)
+                    .fillMaxHeight()
+                    .aspectRatio(1f, matchHeightConstraintsFirst = true)
+                    .onGloballyPositioned { state.barArtBounds = it.windowRect() }
+                    .graphicsLayer { alpha = if (state.progress > 0f) 0f else 1f }
+                    .clip(RoundedCornerShape(ART_CORNER_SMALL)),
+            ) { artwork() }
+        }
+        Box(
+            Modifier
+                .weight(1f)
+                .padding(horizontal = DETACHED_CONTENT_GAP)
+                .graphicsLayer { alpha = (1f - state.progress / COLLAPSED_GONE).coerceIn(0f, 1f) },
+            contentAlignment = Alignment.CenterStart,
+        ) { content(progress) }
+    }
+}
+
+/**
+ * [GlassMiniPlayerBar]와 짝을 이루는 전체 화면 플레이어. 막대는 그리지 않고, [state]가 펼쳐지는 동안에만 막대가 놓인 자리에서
+ * 전체 화면으로 커진다. 아래로 끌거나 뒤로 가기, 바깥 누르기로 접으면 막대 자리로 돌아가며 줄어든다. 펼칠수록 [GlassScaffold]의
+ * 콘텐츠가 뒤로 물러나고 블러 처리되는 것은 [GlassMiniPlayer]와 같다.
+ *
+ * 막대가 화면에 없을 때 펼치면 [GlassMiniPlayer]의 기본 막대 자리(화면 아래)에서 커진다. [GlassScaffold] 안에서는 오버레이 레이어에 그리고,
+ * 밖에서는 호출한 자리를 화면 전체로 보고 그린다. 막대와 같은 창 안에서 불러야 위치가 맞는다.
+ *
+ * @param artwork 큰 앨범 아트. [GlassMiniPlayerBar]에 준 아트와 같은 내용을 주면 막대의 작은 아트에서 이어지며 커진다.
+ * @param content 전체 화면 내용. 펼침 진행도를 읽는 함수를 받으며, 펼치기 시작하면 그리기 시작해 서서히 나타난다.
+ */
+@Composable
+public fun GlassMiniPlayerFullScreen(
+    state: GlassMiniPlayerState,
+    modifier: Modifier = Modifier,
+    style: GlassStyle = LocalGlassStyle.current,
+    artwork: (@Composable () -> Unit)? = null,
+    content: @Composable (progress: () -> Float) -> Unit,
+) {
+    MiniPlayerHost(state, modifier, style, artwork, PlayerLayout(DEFAULT_BAR, 0.dp, detached = true), null, content)
+}
+
+/** 막대 높이와 아래 여백. [detached]면 막대를 [GlassMiniPlayerBar]가 그리고, 이 값은 막대가 없을 때 대신 쓰는 자리에만 쓴다. */
+private class PlayerLayout(val barHeight: Dp, val barBottomPadding: Dp, val detached: Boolean)
+
+@Composable
+private fun MiniPlayerHost(
+    state: GlassMiniPlayerState,
+    modifier: Modifier,
+    style: GlassStyle,
+    artwork: (@Composable () -> Unit)?,
+    layout: PlayerLayout,
+    collapsed: (@Composable (() -> Float) -> Unit)?,
+    expanded: @Composable (() -> Float) -> Unit,
+) {
     val scope = rememberCoroutineScope()
     GlassOverlay(visible = true, kind = OverlayKind.InPlace) { _ ->
         BackHandler(enabled = state.isExpanded) { scope.launch { state.collapse() } }
         // 진행도는 매 프레임 바뀌므로 읽는 곳을 작은 컴포저블로 나눠 그 범위만 다시 구성되게 한다.
         PlayerPushBack(state)
-        BoxWithConstraints(modifier.fillMaxSize()) {
-            val bar = barHeight * LocalDensity.current.fontScale.coerceIn(1f, MAX_BAR_GROW)
-            val geometry = playerGeometry(constraints, bar, barBottomPadding, artwork != null)
+        val origin = remember { mutableStateOf(Offset.Zero) }
+        BoxWithConstraints(
+            modifier
+                .fillMaxSize()
+                .then(if (layout.detached) Modifier.onGloballyPositioned { origin.value = it.positionInWindow() } else Modifier),
+        ) {
+            val bar = layout.barHeight * LocalDensity.current.fontScale.coerceIn(1f, MAX_BAR_GROW)
+            val own = playerGeometry(constraints, bar, layout.barBottomPadding, artwork != null)
+            val geometry = if (layout.detached) remember(own, state) { own.attachedTo(state) { origin.value } } else own
             PlayerScrim(state, scope)
             val progress = remember(state) { { state.progress } }
             val slots = remember(scope, collapsed, expanded, artwork != null, progress) {
                 PlayerSlots(scope, collapsed, expanded, artwork != null, progress)
             }
-            PlayerFrame(state, geometry, style.forPopup(), slots)
-            if (artwork != null) Artwork(state, geometry, artwork)
+            if (layout.detached) {
+                DetachedPlayer(state, geometry, style.forPopup(), slots, artwork)
+            } else {
+                PlayerFrame(state, geometry, style.forPopup(), slots)
+                if (artwork != null) Artwork(state, geometry, artwork)
+            }
         }
+    }
+}
+
+/** 접혀 쉬는 동안에는 바깥 막대가 보이므로 아무것도 그리지 않는다. */
+@Composable
+private fun DetachedPlayer(
+    state: GlassMiniPlayerState,
+    geometry: PlayerGeometry,
+    style: GlassStyle,
+    slots: PlayerSlots,
+    artwork: (@Composable () -> Unit)?,
+) {
+    if (state.isExpanded || state.progress > 0f) {
+        PlayerFrame(state, geometry, style, slots)
+        if (artwork != null) Artwork(state, geometry, artwork)
     }
 }
 
@@ -187,16 +338,54 @@ private fun BoxScope.PlayerScrim(state: GlassMiniPlayerState, scope: CoroutineSc
 private class PlayerSlots(
     // 막대와 펼친 화면은 진행도에 따라 컴포지션에서 빠지므로, 그 안에서 만든 스코프로 애니메이션을 돌리면 도중에 취소된다.
     val scope: CoroutineScope,
-    val collapsed: @Composable (() -> Float) -> Unit,
+    val collapsed: (@Composable (() -> Float) -> Unit)?,
     val expanded: @Composable (() -> Float) -> Unit,
     val hasArtwork: Boolean,
     val progress: () -> Float,
 )
 
-/** 막대와 전체 화면, 두 아트 위치(px, 오버레이 기준). 아트의 x는 LTR 기준이며 RTL에서는 배치할 때 뒤집힌다. */
+/**
+ * 막대와 전체 화면, 두 아트 위치(px, 오버레이 기준). 막대 자리는 바깥 막대를 따라 움직일 수 있어 배치, 그리기 단계에서 읽는다.
+ * [artRelative]면 아트의 x가 LTR 기준이라 RTL에서 배치할 때 뒤집는다. 바깥 막대 자리는 이미 창 좌표라 뒤집지 않는다.
+ */
 @Stable
-private class PlayerGeometry(val screen: IntSize, val bar: Rect, val full: Rect, val barArt: Rect, val fullArt: Rect, val barCorner: Dp) {
+private class PlayerGeometry(
+    val screen: IntSize,
+    val full: Rect,
+    val fullArt: Rect,
+    val artRelative: Boolean,
+    private val barOf: () -> Rect,
+    private val barArtOf: () -> Rect,
+) {
+    val bar: Rect get() = barOf()
+    val barArt: Rect get() = barArtOf()
     val travel: Float get() = (bar.top - full.top).coerceAtLeast(1f)
+
+    /** 막대 자리를 [state]에 기록된 바깥 막대로 바꾼 사본. 바깥 막대가 놓인 적이 없으면 이 기본 자리를 쓴다. */
+    fun attachedTo(state: GlassMiniPlayerState, origin: () -> Offset): PlayerGeometry {
+        val ownBar = bar
+        val ownArt = barArt
+        return PlayerGeometry(
+            screen,
+            full,
+            fullArt,
+            artRelative = false,
+            barOf = { state.barBounds.takeUnless { it.isEmpty }?.translate(-origin()) ?: ownBar },
+            barArtOf = {
+                val art = state.barArtBounds
+                when {
+                    fullArt.isEmpty -> Rect.Zero
+
+                    !art.isEmpty -> art.translate(-origin())
+
+                    state.barBounds.isEmpty -> ownArt
+
+                    // 막대에 아트가 없으면 막대 시작 쪽 가운데의 한 점에서 커진다.
+                    else -> state.barBounds.translate(-origin()).let { Rect(it.centerLeft, it.centerLeft) }
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -216,13 +405,14 @@ private fun playerGeometry(constraints: Constraints, barHeight: Dp, barBottomPad
         val big = minOf(w - ART_SIDE.toPx() * 2, full.height * ART_MAX_HEIGHT, ART_MAX.toPx()).coerceAtLeast(small)
         val artTop = full.top + HANDLE_AREA.toPx()
         val fullArt = Rect((w - big) / 2f, artTop, (w + big) / 2f, artTop + big)
+        val art = if (hasArtwork) barArt else Rect.Zero
         PlayerGeometry(
             IntSize(constraints.maxWidth, constraints.maxHeight),
-            bar,
             full,
-            if (hasArtwork) barArt else Rect.Zero,
             if (hasArtwork) fullArt else Rect.Zero,
-            barHeight / 2,
+            artRelative = true,
+            barOf = { bar },
+            barArtOf = { art },
         )
     }
 }
@@ -230,9 +420,10 @@ private fun playerGeometry(constraints: Constraints, barHeight: Dp, barBottomPad
 @Composable
 private fun PlayerFrame(state: GlassMiniPlayerState, geometry: PlayerGeometry, style: GlassStyle, slots: PlayerSlots) {
     val level = state.progress.coerceIn(0f, 1f)
-    val shape = RoundedCornerShape(lerp(geometry.barCorner, FULL_CORNER, level))
+    val barCorner = with(LocalDensity.current) { (geometry.bar.height / 2f).toDp() }
+    val shape = RoundedCornerShape(lerp(barCorner, FULL_CORNER, level))
     // 이 함수는 모양 때문에 매 프레임 다시 구성되지만, 아래 슬롯은 인자가 그대로라 건너뛴다.
-    val showCollapsed = level < COLLAPSED_GONE
+    val showCollapsed = level < COLLAPSED_GONE && slots.collapsed != null
     val showExpanded = level > 0f
     Box(
         Modifier
@@ -241,7 +432,7 @@ private fun PlayerFrame(state: GlassMiniPlayerState, geometry: PlayerGeometry, s
             .background(style.fallback.copy(alpha = style.fallback.alpha * level), shape)
             .glass(style, shape)
             .clip(shape)
-            .playerDrag(state, geometry.travel),
+            .playerDrag(state) { geometry.travel },
     ) {
         CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) {
             if (showCollapsed) CollapsedBar(state, geometry, slots)
@@ -254,11 +445,12 @@ private fun PlayerFrame(state: GlassMiniPlayerState, geometry: PlayerGeometry, s
 private fun CollapsedBar(state: GlassMiniPlayerState, geometry: PlayerGeometry, slots: PlayerSlots) {
     val scope = slots.scope
     val density = LocalDensity.current
-    val start = if (slots.hasArtwork) with(density) { (geometry.barArt.right - geometry.bar.left).toDp() } + ART_INSET else BAR_PADDING
+    val bar = geometry.bar
+    val start = if (slots.hasArtwork) with(density) { (geometry.barArt.right - bar.left).toDp() } + ART_INSET else BAR_PADDING
     Box(
         Modifier
             .fillMaxWidth()
-            .height(with(density) { geometry.bar.height.toDp() })
+            .height(with(density) { bar.height.toDp() })
             .graphicsLayer { alpha = (1f - state.progress / COLLAPSED_GONE).coerceIn(0f, 1f) }
             .clickable(onClickLabel = stringResource(R.string.kinetica_ui_player_expand), role = Role.Button) {
                 scope.launch { state.expand() }
@@ -266,7 +458,7 @@ private fun CollapsedBar(state: GlassMiniPlayerState, geometry: PlayerGeometry, 
             .padding(start = start, end = BAR_PADDING),
         contentAlignment = Alignment.CenterStart,
     ) {
-        slots.collapsed(slots.progress)
+        slots.collapsed?.invoke(slots.progress)
     }
 }
 
@@ -315,21 +507,24 @@ private fun Artwork(state: GlassMiniPlayerState, geometry: PlayerGeometry, artwo
     val shape = RoundedCornerShape(lerp(ART_CORNER_SMALL, ART_CORNER_BIG, level))
     Box(
         Modifier
-            .placeAt(geometry.screen, relative = true) { lerp(geometry.barArt, geometry.fullArt, state.progress) }
+            .placeAt(geometry.screen, relative = geometry.artRelative) { lerp(geometry.barArt, geometry.fullArt, state.progress) }
             .shadow(lerp(ART_SHADOW_SMALL, ART_SHADOW_BIG, level), shape)
             .clip(shape),
     ) { artwork() }
 }
 
+/** [travel]은 막대에서 전체 화면까지 움직이는 거리(px)다. 끄는 동안 막대가 움직일 수 있어 끌 때마다 읽는다. */
 @Composable
-private fun Modifier.playerDrag(state: GlassMiniPlayerState, travel: Float): Modifier {
+private fun Modifier.playerDrag(state: GlassMiniPlayerState, travel: () -> Float): Modifier {
     val scope = rememberCoroutineScope()
     return draggable(
-        rememberDraggableState { delta -> scope.launch { state.dragBy(-delta / travel) } },
+        rememberDraggableState { delta -> scope.launch { state.dragBy(-delta / travel().coerceAtLeast(1f)) } },
         Orientation.Vertical,
-        onDragStopped = { velocity -> state.release(-velocity / travel) },
+        onDragStopped = { velocity -> state.release(-velocity / travel().coerceAtLeast(1f)) },
     )
 }
+
+private fun LayoutCoordinates.windowRect(): Rect = Rect(positionInWindow(), size.toSize())
 
 /** 화면 크기([screen]) 안의 [frameOf] 자리에 그 크기로 배치한다. [relative]면 RTL에서 x를 뒤집는다. [frameOf]는 배치 단계에서 읽는다. */
 private fun Modifier.placeAt(screen: IntSize, relative: Boolean, frameOf: () -> Rect): Modifier = layout { measurable, _ ->
@@ -361,6 +556,9 @@ private const val COLLAPSED_GONE = 0.5f
 private const val PANEL_FADE_START = 0.25f
 private const val HANDLE_ALPHA = 0.3f
 private val BAR_MARGIN = 12.dp
+private val DEFAULT_BAR = 64.dp
+private val DETACHED_ART_INSET = 8.dp
+private val DETACHED_CONTENT_GAP = 12.dp
 private val BAR_GAP = 8.dp
 private val BAR_PADDING = 16.dp
 private val FULL_TOP_GAP = 12.dp

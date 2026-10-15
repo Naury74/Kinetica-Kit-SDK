@@ -38,7 +38,12 @@
   - 메시 그라디언트 배경, 빛·색·뒤섞임 글자, 흔들기·반짝이·스크롤 시차·스포트라이트, 스타일 Mica·HarmonyOS·Obsidian·Pastel
   - 슬라이더·스위치·세그먼트 `enabled`, 슬라이더 키보드 조절, RTL 배치, TalkBack 문구(영어·한국어)
   - 고급 효과: `glowBorder`, `jellyPress`, `magnetic`, `motionTilt`, `RollingText`, `TypewriterText`, `ConfettiHost`
+  - 입력: `GlassCodeInput`(SMS 자동 채우기), `GlassTagInput`, `GlassColorPicker`, `GlassSignaturePad`(이미지, SVG 내보내기), `GlassPasswordField`와 `passwordStrength`
+  - 미디어와 피드백: `GlassImageViewer`, `BeforeAfterSlider`, `GlassResultMark`와 `GlassResultDialog`, `GlassOnboarding`, `GlassEmptyState`
+  - 적응형: `GlassListDetail`(폴더블 힌지 맞춤), `GlassNavigationRail`, `GlassAdaptiveNavigation`, `GlassFloatingTabBar`. `androidx.window` 의존성이 추가됨
+  - 효과 2차: `rippleDistortion`, `ParticleField`, `FlipCard`, `liquidMorph`, `GlassBlobButton`, `GlassBlobGroup`, `holographic`, `tiltOnPress`
 - 샘플: 샘플 앱을 `sample-showcase` 하나로 합침(글래스 UI, 모션 효과, 대시보드 보드, 앱 화면 예, 컴포넌트, 화면 이동, 장면 전환, 서버 화면, 화면 만들기, XML 화면 예). 소비자 확인 빌드 추가
+- 샘플: 컴포넌트 화면을 기본, 입력, 미디어, 효과 탭으로 나눔. 메일 앱은 펼친 폴더블과 태블릿에서 목록과 본문을 두 칸으로 보여 주고, 음악 앱은 스크롤하면 줄어드는 탭 바 위에 미니 플레이어를 붙임
 - 호스트 앱 연동: `GlassTheme`(다크 모드·호스트 강조색·글꼴을 한 번에), 화면 밖 반복 효과 정지, `GlassScaffold` 밖에서 쓰면 별도 창으로 띄우기, 시트·다이얼로그 `contentWindowInsets`, 모달 포커스 가두기, 스낵바 `bottomOffset`(스캐폴드 안이면 탭 바 위에 저절로)
 - XML 진입점: `GlassSheets`·`GlassDialogs`·`GlassToasts`·`GlassSurfaceView`, RecyclerView·ViewPager2·CoordinatorLayout·Fragment 대응, View 기본 스타일 테마 속성(`kinetica_glassSurfaceViewStyle`·`kinetica_boardViewStyle`·`kinetica_playerViewStyle`), `ViewEffects.effectsOf`
 - Java: `PressEffect.of`, `LoopEffect.of`, `NodeEffects`·`AppearEffect` 생성자 기본값, `NodeEffects.None` 필드
@@ -61,3 +66,6 @@
 - 보드: 저장본으로 열지 못하면 `restoreFailed`로 덮어쓰기 방지, 위젯 100개 편집 끌기에서 다른 위젯 틀을 다시 그리지 않음, 긴 키 `multiple` 위젯 추가 크래시
 - `SceneLayout`: 숨긴 노드(`visible = false`, 불투명도 0, 또는 그런 조상 아래) 안의 호스트 뷰가 컴포지션에서 빠져 스크롤 위치와 입력 중인 글자가 초기화되던 문제를 고쳤습니다. 이제 숨긴 동안에도 상태를 유지하고, 그리지 않으며 터치·포커스·TalkBack에서 빠집니다. 숨긴 동안 비용을 줄이려면 `hiddenSlots = HiddenSlotPolicy.Dispose`를 넘깁니다.
 - 성능: 글래스 블러를 반경에 맞춘 낮은 해상도로 기록(실기기 컴포넌트 화면 스크롤 끊김 5.15% → 0.1% 안팎)
+- 미니 플레이어: `GlassMiniPlayerBar`와 `GlassMiniPlayerFullScreen`을 추가했습니다. 막대를 `GlassFloatingTabBar`의 `accessory` 같은 다른 컴포넌트 안에 두고, 그 자리에서 앨범 아트가 이어지며 커지는 전체 화면 플레이어를 펼칩니다. 기존 `GlassMiniPlayer`는 그대로 씁니다.
+- `GlassListDetail`: 상세 칸 배경 `detailBackground`를 추가했습니다. 두 칸 배치에서는 상세가 바뀌어도 그대로 있고, 좁은 화면에서는 상세와 함께 밀려 들어옵니다.
+- `GlassImageViewer`: 크기가 없는 Painter(`BrushPainter` 등)를 화면 전체에 채워 그립니다. 전에는 세로 그라디언트처럼 한쪽 크기만 0인 Painter가 보이지 않았습니다. 열린 채 사진 목록이 비면 바로 닫히고 `onDismiss`를 부릅니다.

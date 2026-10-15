@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -56,10 +57,13 @@ public fun Modifier.rippleDistortion(
     if (!enabled || reducedMotion()) return this
     val waves = remember { RippleWaves() }
     val duration = durationMs / MS_PER_SECOND
-    LaunchedEffect(waves.generation, duration) {
-        do {
-            withFrameNanos { waves.tick(it / NANOS_PER_SECOND) }
-        } while (waves.activeCount(duration) > 0)
+    // 누를 때마다 컴포지션을 다시 하지 않도록 generation은 컴포지션이 아니라 이 코루틴에서 읽는다.
+    LaunchedEffect(waves, duration) {
+        snapshotFlow { waves.generation }.collect {
+            do {
+                withFrameNanos { waves.tick(it / NANOS_PER_SECOND) }
+            } while (waves.activeCount(duration) > 0)
+        }
     }
     val painter = remember { RipplePainter() }
     val base = this.pointerInput(Unit) {
@@ -154,7 +158,7 @@ internal class RippleWaves {
 }
 
 /** 셰이더에 넘길 그리기 값(px). */
-private class RippleLook(val size: Size, val strength: Float, val wavelength: Float, val highlight: Color)
+private data class RippleLook(val size: Size, val strength: Float, val wavelength: Float, val highlight: Color)
 
 /** 셰이더와 균일값 배열을 한 번 만들어 재사용한다. 물결이 없으면 효과를 끄고 레이어를 그대로 그린다. */
 private class RipplePainter {
@@ -164,8 +168,23 @@ private class RipplePainter {
     private val tint = FloatArray(VEC4)
     private var shader: Any? = null
     private var failed = false
+    private var lastNow = Float.NaN
+    private var lastLook: RippleLook? = null
+    private var lastEffect: androidx.compose.ui.graphics.RenderEffect? = null
 
+    /**
+     * 지금 프레임의 효과. 같은 프레임 시각과 같은 값으로 레이어를 다시 그리면(부모 무효화 등) 만들어 둔 효과를 그대로 쓴다.
+     * 물결이 움직이는 프레임마다 새로 만드는 비용은 남지만, 물결이 없으면 효과를 끄므로 그 비용은 물결이 보이는 동안만 든다.
+     */
     fun effect(waves: RippleWaves, now: Float, duration: Float, look: RippleLook): androidx.compose.ui.graphics.RenderEffect? {
+        if (now == lastNow && look == lastLook) return lastEffect
+        lastNow = now
+        lastLook = look
+        lastEffect = compute(waves, now, duration, look)
+        return lastEffect
+    }
+
+    private fun compute(waves: RippleWaves, now: Float, duration: Float, look: RippleLook): androidx.compose.ui.graphics.RenderEffect? {
         if (failed || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || look.size.minDimension <= 0f) return null
         var any = false
         for (i in 0 until MAX_WAVES) {

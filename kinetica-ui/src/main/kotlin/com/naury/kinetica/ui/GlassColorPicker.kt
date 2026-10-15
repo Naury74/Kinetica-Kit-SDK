@@ -8,8 +8,10 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +31,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -37,6 +41,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -79,6 +88,8 @@ public object GlassColorPickerDefaults {
  * 고리와 사각형 안에서 끄는 동안에는 바깥 스크롤이 움직이지 않는다.
  *
  * TalkBack은 "밝은 파랑, #7FB2FF"처럼 대략적인 색 이름과 HEX를 읽고, 색조와 밝기, 선명도를 한 단계씩 바꾸는 동작을 제공한다.
+ * 키보드로는 Tab으로 고리, 사각형, 투명도 슬라이더 순서로 초점을 옮긴다. 고리에서는 방향키로 색조를 돌리고, 사각형에서는 왼쪽과 오른쪽으로
+ * 선명도를, 위와 아래로 밝기를 바꾼다. 초점이 있는 손잡이에는 고리를 그린다.
  * 최근 색은 이 선택기 안에서만 기억하며 화면 회전 뒤에도 남는다.
  *
  * ```kotlin
@@ -180,6 +191,9 @@ private class PickerModel(initial: Color) {
     var hsv by mutableStateOf(initial.toPickerHsv())
     var emitted: Color = initial
 
+    /** 키보드 초점이 있는 부분. 그리기 단계에서 읽는다. */
+    var focused: HueWheelPart? by mutableStateOf(null)
+
     fun sync(color: Color) {
         if (color != emitted) {
             hsv = color.toPickerHsv(fallbackHue = hsv.h)
@@ -188,7 +202,7 @@ private class PickerModel(initial: Color) {
     }
 }
 
-private enum class HueWheelPart { Ring, Square }
+internal enum class HueWheelPart { Ring, Square }
 
 @Composable
 private fun HueWheel(model: PickerModel, onChange: (PickerHsv) -> Unit, onFinished: () -> Unit) {
@@ -243,7 +257,54 @@ private fun HueWheel(model: PickerModel, onChange: (PickerHsv) -> Unit, onFinish
                 }
             }
             .drawWheel(model, ringGrab, squareGrab),
+    ) {
+        for (part in HueWheelPart.entries) {
+            WheelKeys(part, model, { latestChange(it) }, { latestFinished() })
+        }
+    }
+}
+
+/** 고리나 사각형 하나를 키보드 초점 대상으로 만든다. 화면 읽기에는 따로 나타나지 않고, 화면 읽기는 부모의 사용자 지정 동작을 쓴다. */
+@Composable
+private fun BoxScope.WheelKeys(part: HueWheelPart, model: PickerModel, onChange: (PickerHsv) -> Unit, onFinished: () -> Unit) {
+    Spacer(
+        Modifier
+            .matchParentSize()
+            .onFocusChanged {
+                if (it.isFocused) {
+                    model.focused = part
+                } else if (model.focused == part) {
+                    model.focused = null
+                }
+            }
+            .onKeyEvent { event ->
+                val next = wheelKeyStep(part, event.key, model.hsv) ?: return@onKeyEvent false
+                when (event.type) {
+                    KeyEventType.KeyDown -> onChange(next)
+                    KeyEventType.KeyUp -> onFinished()
+                }
+                true
+            }
+            .focusTarget(),
     )
+}
+
+/** 방향키 한 번으로 바뀐 색. 고리는 오른쪽과 위로 색조를 올리고, 사각형은 가로로 선명도, 세로로 밝기를 바꾼다. 다른 키면 `null`. */
+internal fun wheelKeyStep(part: HueWheelPart, key: Key, hsv: PickerHsv): PickerHsv? {
+    val sign = when (key) {
+        Key.DirectionRight, Key.DirectionUp -> 1f
+        Key.DirectionLeft, Key.DirectionDown -> -1f
+        else -> return null
+    }
+    return when (part) {
+        HueWheelPart.Ring -> hsv.copy(h = ((hsv.h + sign * HUE_KEY_STEP) % FULL_TURN + FULL_TURN) % FULL_TURN)
+
+        HueWheelPart.Square -> if (key == Key.DirectionLeft || key == Key.DirectionRight) {
+            hsv.copy(s = (hsv.s + sign * COLOR_KEY_STEP).coerceIn(0f, 1f))
+        } else {
+            hsv.copy(v = (hsv.v + sign * COLOR_KEY_STEP).coerceIn(0f, 1f))
+        }
+    }
 }
 
 private fun CoroutineScope.grab(anim: Animatable<Float, *>, target: Float) {
@@ -333,8 +394,15 @@ private fun Modifier.drawWheel(model: PickerModel, ringGrab: Animatable<Float, *
             drawRoundRect(Color.hsv(hsv.h, 1f, 1f), squareOrigin, squareSize, corner)
             drawRoundRect(whiteFade, squareOrigin, squareSize, corner)
             drawRoundRect(blackFade, squareOrigin, squareSize, corner)
-            drawColorHandle(geometry.hueHandle(hsv.h), handle * (1f + HANDLE_GROW * ringGrab.value), Color.hsv(hsv.h, 1f, 1f))
-            drawColorHandle(geometry.squareHandle(hsv), handle * (1f + HANDLE_GROW * squareGrab.value), hsv.copy(a = 1f).toColor())
+            val ringHandle = handle * (1f + HANDLE_GROW * ringGrab.value)
+            val squareHandle = handle * (1f + HANDLE_GROW * squareGrab.value)
+            drawColorHandle(geometry.hueHandle(hsv.h), ringHandle, Color.hsv(hsv.h, 1f, 1f))
+            drawColorHandle(geometry.squareHandle(hsv), squareHandle, hsv.copy(a = 1f).toColor())
+            when (model.focused) {
+                HueWheelPart.Ring -> drawFocusRing(geometry.hueHandle(hsv.h), ringHandle)
+                HueWheelPart.Square -> drawFocusRing(geometry.squareHandle(hsv), squareHandle)
+                null -> Unit
+            }
         }
     }
 
@@ -358,6 +426,7 @@ private fun wheelActions(hsv: PickerHsv, apply: (PickerHsv) -> Unit): List<Custo
 private const val MAX_RECENTS = 6
 private const val HUE_TICK = 30f
 private const val HUE_STEP = 15f
+private const val HUE_KEY_STEP = 2f
 private const val TONE_STEP = 0.1f
 private const val HANDLE_GROW = 0.22f
 private const val EDGE_ROOM = 0.1f

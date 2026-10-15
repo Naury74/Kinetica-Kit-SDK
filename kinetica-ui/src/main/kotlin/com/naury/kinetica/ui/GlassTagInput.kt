@@ -1,12 +1,9 @@
 package com.naury.kinetica.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -14,10 +11,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
@@ -42,6 +42,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -55,6 +56,10 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -71,15 +76,26 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
+import kotlin.math.roundToInt
 
 /**
  * 태그를 입력하는 글래스 입력란. 글자를 입력하다 쉼표를 치거나 Enter(완료)를 누르면 입력한 글자가 칩이 된다. 칩의 ×를 누르면 지워지고,
  * 입력란이 비어 있을 때 지우기 키를 누르면 마지막 칩이 선택되었다가 한 번 더 누르면 지워진다. 칩이 많으면 다음 줄로 넘긴다.
  *
  * 이미 있는 태그는 대소문자를 가리지 않고 다시 추가하지 않으며, 대신 그 칩이 살짝 흔들린다. [suggestions]가 있으면 입력한 글자가
- * 들어간 추천 항목을 입력란 아래 글래스 목록으로 보여 주고, 누르면 바로 추가한다. TalkBack에서 칩마다 삭제 동작을 쓸 수 있다.
+ * 들어간 추천 항목을 입력란 아래에 뜨는 글래스 목록으로 보여 주고, 누르면 바로 추가한다. 목록은 아래 내용을 밀어내지 않고 위에 겹쳐 뜨며,
+ * 아래 공간(키보드 위)이 모자라면 입력란 위로 뜬다. [GlassScaffold] 안에서는 오버레이 레이어에, 밖에서는 팝업 창에 그린다.
+ * TalkBack에서 칩마다 삭제 동작을 쓸 수 있다.
  *
  * ```kotlin
  * var tags by remember { mutableStateOf(listOf("디자인")) }
@@ -109,11 +125,13 @@ public fun GlassTagInput(
     LaunchedEffect(model.focused) { focus.animateTo(if (model.focused) 1f else 0f) }
     val matches = remember(suggestions, tags, model.text) { matchSuggestions(suggestions, tags, model.text, MAX_SUGGESTIONS) }
     val accent = GlassTheme.colors.accent
-    Column(modifier) {
+    val anchor = remember { SuggestionAnchor() }
+    Box(modifier) {
         FlowRow(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = BOX_MIN_HEIGHT)
+                .onGloballyPositioned { anchor.bounds = it.boundsOnScreen() }
                 .glass(style, BOX_SHAPE)
                 .focusRing(accent) { focus.value }
                 .pointerInput(Unit) { detectTapGestures { requester.requestFocus() } }
@@ -131,7 +149,7 @@ public fun GlassTagInput(
             }
             TagField(model, placeholder, style, Modifier.weight(1f).focusRequester(requester))
         }
-        SuggestionList(model.focused && matches.isNotEmpty(), matches, model.text, style) { picked ->
+        SuggestionPopup(model.focused && matches.isNotEmpty(), SuggestionContent(matches, model.text, style, anchor)) { picked ->
             model.add(listOf(picked))
             model.text = ""
         }
@@ -139,7 +157,7 @@ public fun GlassTagInput(
 }
 
 /** 태그 입력란의 글자, 마지막 칩 선택 여부, 중복으로 흔들 칩을 담고 태그 목록 변경을 처리한다. */
-private class TagInputModel {
+internal class TagInputModel {
     var text by mutableStateOf("")
     var armed by mutableStateOf(false)
     var focused by mutableStateOf(false)
@@ -150,12 +168,19 @@ private class TagInputModel {
     fun add(parts: List<String>) {
         val result = mergeTags(tags, parts)
         result.duplicates.forEach { existing -> bumps[existing] = (bumps[existing] ?: 0) + 1 }
-        if (result.tags != tags) onChange(result.tags)
+        if (result.tags != tags) change(result.tags)
     }
 
     fun remove(tag: String) {
         armed = false
-        onChange(tags - tag)
+        change(tags - tag)
+    }
+
+    // 다음 컴포지션 전에 입력이 또 오면(빠른 키 입력, 붙여 넣은 뒤 바로 완료) 앞 변경을 덮어쓰지 않도록 보낸 목록을 바로 기준으로 삼는다.
+    // 호스트가 받아들이지 않으면 다음 컴포지션에서 호스트 값으로 돌아간다.
+    private fun change(next: List<String>) {
+        tags = next
+        onChange(next)
     }
 
     fun type(next: String) {
@@ -168,7 +193,7 @@ private class TagInputModel {
     /** 빈 입력란에서 지우기 키를 누르면 처음에는 마지막 칩을 고르고, 한 번 더 누르면 지운다. 처리했으면 `true`. */
     fun backspace(): Boolean {
         if (text.isNotEmpty() || tags.isEmpty()) return false
-        if (armed) onChange(tags.dropLast(1))
+        if (armed) change(tags.dropLast(1))
         armed = !armed
         return true
     }
@@ -318,35 +343,104 @@ private fun RemoveButton(label: String, color: () -> Color, onRemove: () -> Unit
     )
 }
 
+/** 추천 목록을 붙일 입력란의 화면 좌표 경계(px). 배치 단계에서만 읽는다. */
+@Stable
+private class SuggestionAnchor {
+    var bounds by mutableStateOf(Rect.Zero)
+}
+
+private class SuggestionContent(val items: List<String>, val query: String, val style: GlassStyle, val anchor: SuggestionAnchor)
+
+/**
+ * 입력란 아래(모자라면 위)에 추천 목록을 겹쳐 띄운다. 닫히는 동안에는 마지막 목록을 그대로 보인다.
+ * 팝업 창은 초점을 가져가지 않으므로 키보드와 입력란 초점이 그대로 남는다.
+ */
 @Composable
-private fun SuggestionList(visible: Boolean, items: List<String>, query: String, style: GlassStyle, onPick: (String) -> Unit) {
+private fun SuggestionPopup(visible: Boolean, content: SuggestionContent, onPick: (String) -> Unit) {
+    var last by remember { mutableStateOf(content) }
+    if (content.items.isNotEmpty()) last = content
+    val hosted = LocalGlassHost.current != null
+    val gap = with(LocalDensity.current) { LIST_GAP.roundToPx() }
+    GlassOverlay(visible, OverlayKind.InPlace) { transition ->
+        val progress = transition.animateFloat({ tween(LIST_FADE_MS) }, label = "glass-tag-suggestions") { if (it) 1f else 0f }
+        if (hosted) {
+            HostedSuggestions(last, gap, { progress.value }, onPick)
+        } else {
+            val position = remember(gap) { SuggestionPosition(gap) }
+            Popup(popupPositionProvider = position, properties = PopupProperties(focusable = false)) {
+                val width = with(LocalDensity.current) { last.anchor.bounds.width.toDp() }
+                SuggestionPanel(last, Modifier.width(width), { progress.value }, onPick)
+            }
+        }
+    }
+}
+
+/** [GlassScaffold]의 오버레이 레이어 전체를 차지하고 입력란 경계에 맞춰 목록을 놓는다. 빈 곳은 터치를 받지 않는다. */
+@Composable
+private fun HostedSuggestions(content: SuggestionContent, gap: Int, progress: () -> Float, onPick: (String) -> Unit) {
+    var origin by remember { mutableStateOf(Offset.Zero) }
+    Layout(
+        content = { SuggestionPanel(content, Modifier, progress, onPick) },
+        modifier = Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionOnScreen() },
+    ) { measurables, constraints ->
+        val anchor = content.anchor.bounds.translate(-origin)
+        val width = anchor.width.roundToInt().coerceIn(0, constraints.maxWidth)
+        val panel = measurables.first().measure(Constraints(minWidth = width, maxWidth = width))
+        val top = suggestionTop(anchor.top.roundToInt(), anchor.bottom.roundToInt(), constraints.maxHeight, panel.height, gap)
+        layout(constraints.maxWidth, constraints.maxHeight) { panel.place(anchor.left.roundToInt(), top) }
+    }
+}
+
+/** 팝업 창을 입력란 시작 쪽에 맞추고, 아래 공간이 모자라면 위로 올린다. */
+private class SuggestionPosition(private val gap: Int) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset =
+        IntOffset(anchorBounds.left, suggestionTop(anchorBounds.top, anchorBounds.bottom, windowSize.height, popupContentSize.height, gap))
+}
+
+/** 목록 위쪽 y(px). 아래에 들어가면 아래, 아니면 위에 들어가면 위, 둘 다 안 되면 공간이 넓은 쪽에 놓는다. */
+internal fun suggestionTop(anchorTop: Int, anchorBottom: Int, windowHeight: Int, height: Int, gap: Int): Int {
+    val below = anchorBottom + gap
+    val above = anchorTop - gap - height
+    return when {
+        below + height <= windowHeight -> below
+        above >= 0 -> above
+        windowHeight - anchorBottom >= anchorTop -> below
+        else -> above
+    }
+}
+
+@Composable
+private fun SuggestionPanel(content: SuggestionContent, modifier: Modifier, progress: () -> Float, onPick: (String) -> Unit) {
     val title = stringResource(R.string.kinetica_ui_tag_suggestions)
     val accent = GlassTheme.colors.accent
-    AnimatedVisibility(
-        visible,
-        enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
-        exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top),
-    ) {
-        Column(
-            Modifier
-                .padding(top = LIST_GAP)
-                .fillMaxWidth()
-                .glass(style.forPopup(), LIST_SHAPE)
-                .semantics { contentDescription = title }
-                .padding(vertical = LIST_PADDING),
-        ) {
-            items.forEach { item ->
-                BasicText(
-                    highlight(item, query, accent),
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) { onPick(item) }
-                        .heightIn(min = ROW_HEIGHT)
-                        .padding(horizontal = ROW_PADDING, vertical = ROW_VERTICAL_PADDING),
-                    style = themed(TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE)),
-                    maxLines = 1,
-                )
+    val style = content.style
+    Column(
+        modifier
+            .graphicsLayer {
+                val p = progress()
+                alpha = p.coerceIn(0f, 1f)
+                translationY = -LIST_SLIDE.toPx() * (1f - p)
             }
+            .glass(style.forPopup(), LIST_SHAPE)
+            .semantics { contentDescription = title }
+            .padding(vertical = LIST_PADDING),
+    ) {
+        content.items.forEach { item ->
+            BasicText(
+                highlight(item, content.query, accent),
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(role = Role.Button) { onPick(item) }
+                    .heightIn(min = ROW_HEIGHT)
+                    .padding(horizontal = ROW_PADDING, vertical = ROW_VERTICAL_PADDING),
+                style = themed(TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE)),
+                maxLines = 1,
+            )
         }
     }
 }
@@ -398,6 +492,8 @@ private val CROSS_WIDTH = 1.6.dp
 private val LIST_SHAPE = RoundedCornerShape(16.dp)
 private val LIST_GAP = 6.dp
 private val LIST_PADDING = 6.dp
+private val LIST_SLIDE = 6.dp
+private const val LIST_FADE_MS = 150
 private val ROW_HEIGHT = 44.dp
 private val ROW_PADDING = 16.dp
 private val ROW_VERTICAL_PADDING = 11.dp

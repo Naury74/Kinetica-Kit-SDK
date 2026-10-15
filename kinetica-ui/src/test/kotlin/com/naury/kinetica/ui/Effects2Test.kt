@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -69,6 +71,20 @@ class Effects2Test {
         assertThat(waves.activeCount(duration = 1.4f)).isEqualTo(0)
         // 가장 오래된 물결부터 지우므로 마지막 네 번 누른 자리가 남는다.
         assertThat(waves.x.sorted()).containsExactly(20f, 30f, 40f, 50f).inOrder()
+    }
+
+    @Test
+    fun `물결 왜곡은 누를 때마다 부르는 쪽을 다시 구성하지 않는다`() {
+        var compositions = 0
+        compose.setContent {
+            compositions++
+            Box(Modifier.size(200.dp).testTag("ripple").rippleDistortion())
+        }
+        compose.waitForIdle()
+        val before = compositions
+        repeat(3) { compose.onNodeWithTag("ripple").performClick() }
+        compose.waitForIdle()
+        assertThat(compositions).isEqualTo(before)
     }
 
     @Test
@@ -163,6 +179,48 @@ class Effects2Test {
     }
 
     @Test
+    fun `두 면 유지를 켜면 뒤집었다 돌아와도 앞면 상태가 남고 숨은 면은 화면 읽기에 없다`() {
+        var flipped by mutableStateOf(false)
+        compose.setContent {
+            FlipCard(flipped, { flipped = it }, Modifier.size(240.dp, 150.dp), keepBothFaces = true, front = {
+                var count by remember { mutableIntStateOf(0) }
+                BasicText("앞 $count", Modifier.clickable { count++ })
+            }, back = { BasicText("뒷면 글자") })
+        }
+        compose.onNodeWithText("앞 0", useUnmergedTree = true).performClick()
+        // 화면 읽기가 쓰는 병합 트리에는 보이는 면 글자만 있다.
+        compose.onNodeWithText("뒷면 글자").assertDoesNotExist()
+
+        compose.runOnIdle { flipped = true }
+        compose.waitForIdle()
+        compose.onNodeWithText("앞 1").assertDoesNotExist()
+        compose.onNodeWithText("뒷면 글자").assertExists()
+
+        compose.runOnIdle { flipped = false }
+        compose.waitForIdle()
+        compose.onNodeWithText("앞 1").assertExists()
+    }
+
+    @Test
+    fun `끌어서 뒤집어도 호스트가 받아들이지 않으면 원래 면으로 돌아간다`() {
+        val changes = mutableListOf<Boolean>()
+        compose.setContent {
+            FlipCard(
+                false,
+                { changes += it },
+                Modifier.size(240.dp, 150.dp).testTag("card"),
+                front = { BasicText("앞면 글자") },
+                back = { BasicText("뒷면 글자") },
+            )
+        }
+        compose.onNodeWithTag("card").performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+        assertThat(changes).containsExactly(true)
+        compose.onNodeWithText("앞면 글자", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("뒷면 글자", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
     fun `뒤집기 각도 계산은 가까운 면을 고른다`() {
         assertThat(isBackAngle(0f)).isFalse()
         assertThat(isBackAngle(91f)).isTrue()
@@ -218,6 +276,15 @@ class Effects2Test {
         assertThat(first.red).isGreaterThan(0.8f)
         assertThat(first.green).isLessThan(0.3f)
         assertThat(gap.green).isGreaterThan(0.8f)
+    }
+
+    @Test
+    fun `홀로그램 기울기는 가로 화면에서 화면 축으로 돌린다`() {
+        fun tilt(x: Float, y: Float, rotation: Int) = screenTilt(x, y, rotation).let { listOf(it.x + 0f, it.y + 0f) }
+        assertThat(tilt(5f, 0f, android.view.Surface.ROTATION_90)).containsExactly(0f, 5f).inOrder()
+        assertThat(tilt(0f, 5f, android.view.Surface.ROTATION_270)).containsExactly(5f, 0f).inOrder()
+        assertThat(tilt(1f, 2f, android.view.Surface.ROTATION_180)).containsExactly(-1f, -2f).inOrder()
+        assertThat(tilt(1f, 2f, android.view.Surface.ROTATION_0)).containsExactly(1f, 2f).inOrder()
     }
 
     @Test

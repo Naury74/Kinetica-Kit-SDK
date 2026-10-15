@@ -133,6 +133,37 @@ class GlassMedia2Test {
     }
 
     @Test
+    fun `확대한 사진을 가장자리까지 옮긴 뒤 한 번 더 밀면 다음 사진으로 넘어간다`() {
+        val state = setViewer()
+        compose.onRoot().performTouchInput { doubleClick(center) }
+        compose.waitForIdle()
+        compose.onRoot().performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+        assertThat(state.page).isEqualTo(0)
+
+        compose.onRoot().performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+        assertThat(state.page).isEqualTo(1)
+        compose.onNode(hasState("Photo 2 of 3")).assertExists()
+    }
+
+    @Test
+    fun `끌어서 닫는 도중에 다시 열면 사진이 제자리로 돌아온다`() {
+        val state = setViewer()
+        compose.mainClock.autoAdvance = false
+        compose.onRoot().performTouchInput { swipeDown(startY = centerY, endY = bottom) }
+        compose.mainClock.advanceTimeBy(FRAME_MS * 3)
+        assertThat(state.isOpen).isFalse()
+        compose.runOnIdle { state.open(0) }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertThat(state.isVisible).isTrue()
+        val bounds = compose.onNode(hasState("Photo 1 of 3")).fetchSemanticsNode().boundsInRoot
+        val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        assertThat(bounds.center.y).isWithin(2f).of(root.center.y)
+    }
+
+    @Test
     fun `아래로 조금 끌면 돌아오고 충분히 끌면 닫힌다`() {
         val state = setViewer()
         compose.onRoot().performTouchInput {
@@ -351,3 +382,5 @@ class GlassMedia2Test {
         assertThat(ko.getString(R.string.kinetica_ui_compare_state, 30, 70)).isEqualTo("전 30%, 후 70%")
     }
 }
+
+private const val FRAME_MS = 16L

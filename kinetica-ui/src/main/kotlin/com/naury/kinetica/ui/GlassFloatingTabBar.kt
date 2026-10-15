@@ -147,8 +147,8 @@ public fun rememberGlassFloatingTabBarState(initiallyCollapsed: Boolean = false)
  *
  * @param tabs 탭 목록. 비어 있으면 [IllegalArgumentException]을 던진다.
  * @param selectedIndex 선택된 탭의 위치(0부터). 접힌 캡슐은 이 탭의 아이콘을 보여 준다.
- * @param accessory 탭 바에 붙여 함께 움직일 내용(미니 플레이어 막대 등). 글래스 캡슐 안에 그리며, 펼친 동안 높이는 56dp다.
- *   접히면 캡슐과 같은 높이로 줄어든다.
+ * @param accessory 탭 바에 붙여 함께 움직일 내용. 글래스 캡슐 안에 그리며, 펼친 동안 높이는 56dp다.
+ *   접히면 캡슐과 같은 높이로 줄어든다. [GlassMiniPlayerBar]를 넣으면 누를 때 이 자리에서 전체 화면 플레이어로 커진다.
  */
 @Composable
 public fun GlassFloatingTabBar(

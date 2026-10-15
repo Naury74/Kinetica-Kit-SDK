@@ -20,8 +20,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -45,8 +47,12 @@ public enum class FlipAxis {
  * TalkBack에는 지금 보이는 면을 상태로 알리고 '뒤집기' 동작을 제공한다.
  * '애니메이션 삭제' 접근성 설정이 켜져 있으면 [flipped]가 바뀔 때 돌지 않고 바로 바뀐다.
  *
- * 보이지 않는 면은 컴포지션에서 빠지므로 그 면의 상태는 유지되지 않는다. 두 면은 같은 크기로 맞추는 것이 좋고,
- * 크기가 다르면 카드가 옆으로 선 순간에 크기가 바뀐다.
+ * 기본으로는 보이지 않는 면을 컴포지션에서 빼므로 그 면의 `remember` 상태(입력 중인 글자, 스크롤 위치 등)는 뒤집을 때 처음으로 돌아간다.
+ * [keepBothFaces]를 `true`로 주면 두 면을 모두 컴포지션에 두고 보이지 않는 면은 그리지도, 터치나 화면 읽기에 드러내지도 않는다.
+ * 두 면은 같은 크기로 맞추는 것이 좋다. [keepBothFaces]가 `false`이고 크기가 다르면 카드가 옆으로 선 순간에 크기가 바뀌고,
+ * `true`이면 카드는 두 면 중 큰 쪽 크기를 쓴다.
+ *
+ * 끌어서 뒤집은 결과를 호스트가 받아들이지 않고 [flipped]를 그대로 두면, 카드는 [flipped]가 가리키는 면으로 다시 돌아간다.
  *
  * ```kotlin
  * var flipped by remember { mutableStateOf(false) }
@@ -57,6 +63,7 @@ public enum class FlipAxis {
  * @param onFlippedChange 사용자가 끌거나 접근성 동작으로 뒤집었을 때 새 값을 받는다. null이면 끌어서 뒤집을 수 없고 '뒤집기' 동작도 없다.
  * @param axis 도는 축
  * @param front 앞면
+ * @param keepBothFaces 보이지 않는 면도 컴포지션에 남겨 그 면의 상태를 유지할지. 보이지 않는 면의 효과와 애니메이션도 계속 돈다.
  * @param back 뒷면
  */
 @Composable
@@ -65,6 +72,7 @@ public fun FlipCard(
     onFlippedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     axis: FlipAxis = FlipAxis.Y,
+    keepBothFaces: Boolean = false,
     front: @Composable () -> Unit,
     back: @Composable () -> Unit,
 ) {
@@ -84,7 +92,7 @@ public fun FlipCard(
         Modifier
     } else {
         Modifier.pointerInput(axis) {
-            flipDrag(axis, scope, angle) { landed -> if (landed != currentFlipped) currentChange?.invoke(landed) }
+            flipDrag(axis, scope, angle, { currentFlipped }) { landed -> if (landed != currentFlipped) currentChange?.invoke(landed) }
         }
     }
     Box(
@@ -107,14 +115,27 @@ public fun FlipCard(
             },
         propagateMinConstraints = true,
     ) {
-        if (showBack) {
-            Box(
-                Modifier.graphicsLayer { if (axis == FlipAxis.Y) rotationY = HALF_TURN else rotationX = HALF_TURN },
-                propagateMinConstraints = true,
-            ) { back() }
-        } else {
-            front()
+        val backTurn = Modifier.graphicsLayer { if (axis == FlipAxis.Y) rotationY = HALF_TURN else rotationX = HALF_TURN }
+        when {
+            keepBothFaces -> {
+                Box(Modifier.hiddenFace(showBack), propagateMinConstraints = true) { front() }
+                Box(Modifier.hiddenFace(!showBack).then(backTurn), propagateMinConstraints = true) { back() }
+            }
+
+            showBack -> Box(backTurn, propagateMinConstraints = true) { back() }
+
+            else -> front()
         }
+    }
+}
+
+/** [hidden]이면 컴포지션과 크기 측정에는 남기되 배치하지 않아, 그리지도 않고 터치와 화면 읽기에서도 빠지게 한다. */
+private fun Modifier.hiddenFace(hidden: Boolean): Modifier = if (!hidden) {
+    this
+} else {
+    clearAndSetSemantics { }.layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        layout(placeable.width, placeable.height) {}
     }
 }
 
@@ -123,6 +144,7 @@ private suspend fun PointerInputScope.flipDrag(
     axis: FlipAxis,
     scope: CoroutineScope,
     angle: Animatable<Float, *>,
+    flipped: () -> Boolean,
     onLanded: (Boolean) -> Unit,
 ) {
     val tracker = VelocityTracker()
@@ -144,7 +166,12 @@ private suspend fun PointerInputScope.flipDrag(
         val projected = dragged + degreesPerSecond * FLING_LOOKAHEAD
         // 세게 던져도 한 번에 한 면만 넘어가게 한다.
         val turns = (projected / HALF_TURN).roundToInt().coerceIn(startTurns - 1, startTurns + 1)
-        scope.launch { angle.animateTo(turns * HALF_TURN, spring(FLIP_DAMPING, FLIP_STIFFNESS), degreesPerSecond) }
+        scope.launch {
+            angle.animateTo(turns * HALF_TURN, spring(FLIP_DAMPING, FLIP_STIFFNESS), degreesPerSecond)
+            // 호스트가 바뀐 면을 받아들였다면 flipped가 바뀌어 위의 애니메이션이 취소되므로 여기까지 오지 않는다.
+            val target = nearestFace(angle.value, flipped())
+            if (target != angle.value) angle.animateTo(target, spring(FLIP_DAMPING, FLIP_STIFFNESS))
+        }
         onLanded(Math.floorMod(turns, 2) == 1)
     }
     val move: (androidx.compose.ui.input.pointer.PointerInputChange, Float) -> Unit = { change, delta ->

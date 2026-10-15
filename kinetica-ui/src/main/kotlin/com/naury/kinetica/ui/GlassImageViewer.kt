@@ -75,6 +75,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
@@ -91,6 +92,7 @@ import kotlinx.coroutines.launch
 
 /**
  * 전체 화면 사진 뷰어. 좌우로 넘기고, 두 손가락으로 1~5배 확대하며, 확대한 채로 끌어 옮긴다. 가장자리를 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다.
+ * 확대한 사진이 가장자리에 닿은 뒤 다시 바깥쪽으로 끌면 옆 사진으로 넘어간다.
  * 두 번 탭하면 그 지점을 2.5배로 확대하고, 다시 두 번 탭하면 원래 크기로 돌아온다. 한 번 탭하면 위아래 글래스 바를 숨기거나 보인다.
  * 확대하지 않은 상태에서 위나 아래로 끌면 배경이 옅어지며 사진이 따라오고, 충분히 끌거나 빠르게 던지면 닫힌다. 뒤로 가기로도 닫힌다.
  *
@@ -108,7 +110,9 @@ import kotlinx.coroutines.launch
  * GlassImageViewer(viewer, photos)
  * ```
  *
- * @param images 사진. 원래 비율 그대로 화면에 맞춰 그린다.
+ * @param images 사진. `intrinsicSize`의 비율 그대로 화면에 맞춰 그리고, 그 비율로 확대 중 이동 범위와 열고 닫는 전환을 계산한다.
+ *   `BrushPainter`, `ColorPainter`처럼 크기가 없는(`Size.Unspecified`이거나 가로, 세로가 0인) Painter는 화면 전체를 채워 그리고
+ *   화면 전체를 사진으로 본다. 열린 채 목록이 비면 애니메이션 없이 바로 닫는다.
  * @param contentDescriptions 사진마다 TalkBack이 읽을 설명. 짧으면 나머지는 설명 없이 둔다.
  * @param style 위아래 바의 글래스 스타일. 사진 위에 어둡게 뜨는 [GlassStyles.Vision]이 기본값이다.
  * @param caption 아래 바에 놓을 설명. `null`이면 사진이 둘 이상일 때 페이지 인디케이터를 놓는다.
@@ -123,7 +127,14 @@ public fun GlassImageViewer(
     caption: (@Composable (page: Int) -> Unit)? = null,
 ) {
     ViewerCore(state, images.size, { images.getOrNull(it)?.aspect() }, modifier, ViewerLook(style, caption)) { page ->
-        Image(images[page], contentDescriptions.getOrNull(page), Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+        // 목록이 줄어든 뒤 뷰어가 닫히기 전에 페이지가 한 번 더 그려질 수 있다.
+        val image = images.getOrNull(page)
+        val description = contentDescriptions.getOrNull(page)
+        when {
+            image == null -> Unit
+            image.aspect() != null -> Image(image, description, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            else -> SizelessImage(image, description)
+        }
     }
 }
 
@@ -131,7 +142,7 @@ public fun GlassImageViewer(
  * 사진 대신 원하는 내용을 페이지로 그리는 [GlassImageViewer]. [content]는 화면 크기로 그린다.
  * 내용의 비율을 모르므로 열고 닫을 때 페이지 전체가 썸네일 크기로 맞춰진다. 사진 비율을 알면 [aspectRatio]로 알려 준다.
  *
- * @param pageCount 페이지 수. 0 이하이면 아무것도 그리지 않는다.
+ * @param pageCount 페이지 수. 0 이하이면 아무것도 그리지 않고, 열린 채 0 이하가 되면 애니메이션 없이 바로 닫는다.
  * @param aspectRatio 페이지 안 그림의 가로/세로 비율. `null`이면 화면 전체를 그림으로 본다. 확대 중 이동 범위와 열고 닫는 전환에 쓴다.
  */
 @Composable
@@ -150,6 +161,7 @@ public fun GlassImageViewer(
 /**
  * 상태 없이 바로 띄우는 [GlassImageViewer]. 컴포지션에 들어오면 [startIndex]번 사진으로 열리고,
  * 닫힘 애니메이션이 끝나면 [onDismiss]를 부른다. 호출한 쪽은 그때 이 함수를 컴포지션에서 뺀다.
+ * [images]가 빈 목록이 되어도 바로 닫히고 [onDismiss]를 부른다.
  *
  * ```kotlin
  * viewing?.let { GlassImageViewer(photos, startIndex = it, onDismiss = { viewing = null }) }
@@ -166,11 +178,30 @@ public fun GlassImageViewer(images: List<Painter>, startIndex: Int, onDismiss: (
     GlassImageViewer(state, images, modifier)
 }
 
+/**
+ * 크기가 없는 Painter를 영역 전체에 그린다. `Image`는 가로나 세로 한쪽만 0인 크기(세로 그라디언트의 BrushPainter 등)를
+ * 크기가 있는 것으로 보고 배율을 무한대로 계산해 그리다 실패하므로, 영역 크기를 그대로 넘겨 직접 그린다.
+ */
+@Composable
+private fun SizelessImage(painter: Painter, description: String?) {
+    Spacer(
+        Modifier
+            .fillMaxSize()
+            .semantics {
+                if (description != null) {
+                    contentDescription = description
+                    role = Role.Image
+                }
+            }
+            .drawBehind { with(painter) { draw(size) } },
+    )
+}
+
 private class ViewerLook(val style: GlassStyle, val caption: (@Composable (page: Int) -> Unit)?)
 
 private fun Painter.aspect(): Float? {
     val size = intrinsicSize
-    return if (size.isSpecifiedSize() && size.height > 0f) size.width / size.height else null
+    return if (size.isSpecifiedSize() && size.width > 0f && size.height > 0f) size.width / size.height else null
 }
 
 private fun Size.isSpecifiedSize(): Boolean = this != Size.Unspecified && width.isFinite() && height.isFinite()
@@ -184,7 +215,17 @@ private fun ViewerCore(
     look: ViewerLook,
     content: @Composable (page: Int) -> Unit,
 ) {
-    if (!state.isVisible || pageCount <= 0) return
+    if (pageCount <= 0) {
+        // 보여 줄 사진이 없으니 전환 없이 닫는다. 상태 없는 GlassImageViewer는 isVisible을 보고 onDismiss를 부른다.
+        if (state.isVisible) {
+            LaunchedEffect(state) {
+                state.close()
+                state.isVisible = false
+            }
+        }
+        return
+    }
+    if (!state.isVisible) return
     val progress = remember { Animatable(if (state.restoredOpen) 1f else 0f).also { state.restoredOpen = false } }
     val drag = remember { ViewerDrag() }
     val zoom = remember { ViewerZoom() }
@@ -194,8 +235,12 @@ private fun ViewerCore(
     val height = remember { floatArrayOf(1f) }
     LaunchedEffect(state.isOpen) {
         if (state.isOpen) {
+            // 닫히는 도중에 다시 열면 끌어서 닫던 이동이 남아 있으므로 제자리로 돌린다.
+            if (drag.value != 0f) drag.settle(scope, 0f)
             progress.animateTo(1f, spring(dampingRatio = OPEN_DAMPING, stiffness = Spring.StiffnessMediumLow))
         } else {
+            // 확대한 채 닫으면 확대된 일부만 썸네일로 줄어드니 확대도 함께 푼다.
+            if (zoom.zoomed) zoom.zoomTo(scope, 1f)
             // 썸네일이 없으면 끌던 방향으로 조금 더 밀려나며 사라진다.
             if (state.sources[state.page] == null &&
                 drag.value != 0f
@@ -335,7 +380,6 @@ private fun ViewerBody(parts: ViewerParts, look: ViewerLook, content: @Composabl
 private fun ViewerPager(parts: ViewerParts, values: FrameValues, onTap: () -> Unit, content: @Composable (page: Int) -> Unit) {
     val scope = rememberCoroutineScope()
     val zoom = parts.zoom
-    val zoomed by remember { derivedStateOf { zoom.zoomed } }
     HorizontalPager(
         parts.pager,
         Modifier
@@ -354,7 +398,6 @@ private fun ViewerPager(parts: ViewerParts, values: FrameValues, onTap: () -> Un
                 alpha = values.alpha
             },
         pageSpacing = PAGE_SPACING,
-        userScrollEnabled = !zoomed,
     ) { page ->
         val current = page == parts.pager.currentPage
         Box(

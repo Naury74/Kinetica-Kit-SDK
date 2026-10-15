@@ -9,6 +9,9 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
+import android.view.Surface
+import android.view.WindowManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
@@ -39,6 +42,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LifecycleStartEffect
 import kotlin.math.max
@@ -153,6 +157,9 @@ private fun rememberHoloSensor(enabled: Boolean): HoloSensor? {
     if (!enabled) return null
     val context = LocalContext.current
     val sensor = remember { HoloSensor() }
+    // 가로 화면에서는 센서 축과 화면 축이 다르므로 화면 회전에 맞춰 돌린다. 회전을 직접 처리하는 앱도 있어 구성이 바뀔 때마다 다시 읽는다.
+    val configuration = LocalConfiguration.current
+    sensor.rotation = remember(context, configuration) { context.displayRotation() }
     LifecycleStartEffect(context) {
         val manager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         val device = manager?.getDefaultSensor(Sensor.TYPE_GRAVITY) ?: manager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -167,13 +174,36 @@ private class HoloSensor : SensorEventListener {
     var value by mutableStateOf(Offset.Zero)
         private set
 
+    @Volatile
+    var rotation: Int = Surface.ROTATION_0
+
     override fun onSensorChanged(event: SensorEvent) {
-        val x = (-event.values[0] / SensorManager.GRAVITY_EARTH).coerceIn(-1f, 1f)
-        val y = ((event.values[1] / SensorManager.GRAVITY_EARTH) - SENSOR_REST_Y).coerceIn(-1f, 1f)
+        val tilt = screenTilt(event.values[0], event.values[1], rotation)
+        val x = (-tilt.x / SensorManager.GRAVITY_EARTH).coerceIn(-1f, 1f)
+        val y = ((tilt.y / SensorManager.GRAVITY_EARTH) - SENSOR_REST_Y).coerceIn(-1f, 1f)
         value = Offset(value.x + (x - value.x) * SENSOR_SMOOTH, value.y + (y - value.y) * SENSOR_SMOOTH)
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+}
+
+/** 기기 기준 센서 값([x], [y])을 지금 화면 회전([rotation], `Surface.ROTATION_*`) 기준 축으로 돌린다. */
+internal fun screenTilt(x: Float, y: Float, rotation: Int): Offset = when (rotation) {
+    Surface.ROTATION_90 -> Offset(-y, x)
+    Surface.ROTATION_180 -> Offset(-x, -y)
+    Surface.ROTATION_270 -> Offset(y, -x)
+    else -> Offset(x, y)
+}
+
+@Suppress("DEPRECATION")
+private fun Context.displayRotation(): Int {
+    val display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        // 창이 없는 Context에서는 display를 읽을 수 없으므로 기본 방향으로 둔다.
+        runCatching { display }.getOrNull()
+    } else {
+        (getSystemService(Context.WINDOW_SERVICE) as? WindowManager)?.defaultDisplay
+    }
+    return display?.rotation ?: Surface.ROTATION_0
 }
 
 /**

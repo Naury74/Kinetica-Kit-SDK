@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -40,6 +41,11 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -159,10 +165,22 @@ internal fun ColorAlphaSlider(color: Color, onAlphaChange: (Float) -> Unit, onFi
     val finished by rememberUpdatedState(onFinished)
     val title = stringResource(R.string.kinetica_ui_color_opacity)
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    var focused by remember { mutableStateOf(false) }
+    val alpha by rememberUpdatedState(color.alpha)
     Box(
         modifier
             .fillMaxWidth()
             .height(ALPHA_HEIGHT)
+            .onFocusChanged { focused = it.isFocused }
+            .onKeyEvent { event ->
+                val step = alphaKeyStep(event.key, rtl) ?: return@onKeyEvent false
+                when (event.type) {
+                    KeyEventType.KeyDown -> latest((alpha + step).coerceIn(0f, 1f))
+                    KeyEventType.KeyUp -> finished()
+                }
+                true
+            }
+            .focusTarget()
             .semantics {
                 contentDescription = title
                 progressBarRangeInfo = ProgressBarRangeInfo(color.alpha, 0f..1f)
@@ -184,12 +202,12 @@ internal fun ColorAlphaSlider(color: Color, onAlphaChange: (Float) -> Unit, onFi
                     latest(alphaAt(change.position.x, size.width.toFloat(), size.height.toFloat(), rtl))
                 }
             }
-            .alphaTrack(color, rtl),
+            .alphaTrack(color, rtl) { focused },
     )
 }
 
 /** 체크무늬 위에 투명에서 불투명으로 이어지는 띠와 손잡이를 그린다. */
-private fun Modifier.alphaTrack(color: Color, rtl: Boolean): Modifier = drawWithCache {
+private fun Modifier.alphaTrack(color: Color, rtl: Boolean, focused: () -> Boolean): Modifier = drawWithCache {
     val opaque = color.copy(alpha = 1f)
     val trackHeight = size.height * ALPHA_TRACK_RATIO
     val top = (size.height - trackHeight) / 2
@@ -221,8 +239,27 @@ private fun Modifier.alphaTrack(color: Color, rtl: Boolean): Modifier = drawWith
             drawRect(ramp)
         }
         val x = inset + (size.width - inset * 2) * (if (rtl) 1f - color.alpha else color.alpha)
-        drawColorHandle(Offset(x, size.height / 2), size.height / 2 * ALPHA_HANDLE_RATIO, color.compositeOverWhite())
+        val handle = size.height / 2 * ALPHA_HANDLE_RATIO
+        drawColorHandle(Offset(x, size.height / 2), handle, color.compositeOverWhite())
+        if (focused()) drawFocusRing(Offset(x, size.height / 2), handle)
     }
+}
+
+/** 투명도 슬라이더 방향키 한 번의 변화량. 왼쪽과 오른쪽은 RTL에서 뒤집고, 위는 올리고 아래는 내린다. 다른 키면 `null`. */
+internal fun alphaKeyStep(key: Key, rtl: Boolean): Float? = when (key) {
+    Key.DirectionRight -> if (rtl) -COLOR_KEY_STEP else COLOR_KEY_STEP
+    Key.DirectionLeft -> if (rtl) COLOR_KEY_STEP else -COLOR_KEY_STEP
+    Key.DirectionUp -> COLOR_KEY_STEP
+    Key.DirectionDown -> -COLOR_KEY_STEP
+    else -> null
+}
+
+/** 키보드 초점이 있는 손잡이 둘레에 그리는 고리. 밝은 배경과 어두운 배경 모두에서 보이게 흰 고리 바깥에 어두운 고리를 두른다. */
+internal fun DrawScope.drawFocusRing(center: Offset, radius: Float) {
+    val width = FOCUS_RING_WIDTH.toPx()
+    val gap = FOCUS_RING_GAP.toPx()
+    drawCircle(Color.Black.copy(alpha = FOCUS_RING_SHADE), radius + gap + width + width / 2, center, style = Stroke(width))
+    drawCircle(Color.White, radius + gap + width / 2, center, style = Stroke(width))
 }
 
 /** 손잡이 중심이 양 끝에서 반지름만큼 들어가도록 [x]를 알파(0..1)로 바꾼다. */
@@ -398,3 +435,7 @@ private val SWATCH_RING = 2.dp
 private const val SWATCH_SHADOW = 0.12f
 private const val SWATCH_EDGE = 0.6f
 private const val SWATCH_RING_ALPHA = 0.8f
+internal const val COLOR_KEY_STEP = 0.02f
+private const val FOCUS_RING_SHADE = 0.45f
+private val FOCUS_RING_WIDTH = 2.dp
+private val FOCUS_RING_GAP = 2.dp
