@@ -42,10 +42,12 @@ import com.naury.kinetica.motion.Easing
 import java.util.Locale
 
 /**
- * 고른 키 구간의 easing을 고르고 큐빅 베지어 곡선을 직접 편집한다.
+ * 고른 키 구간의 easing을 고르고 값을 편집한다.
  *
- * 그래프의 두 조절점을 끌면 베지어가 되고, 손을 뗄 때 [onChange]를 한 번 부른다. x는 0..1, y는 [MIN_Y]..[MAX_Y]로 자른다.
- * 그래프 위의 점과 아래 막대의 점은 [segmentMs] 동안 곡선을 따라 움직이며 결과를 미리 보여 준다.
+ * 선형과 베지어는 그래프의 두 조절점을 끌어 베지어로 만든다. x는 0..1, y는 [MIN_Y]..[MAX_Y]로 자른다.
+ * 스프링은 감쇠비와 강성, 계단은 칸 수를 [EasingParams]의 슬라이더로 바꾼다. 어느 쪽이든 손을 뗄 때 [onChange]를 한 번 부른다.
+ * 그래프는 고른 easing의 실제 곡선(스프링은 넘침 포함, 계단은 계단 모양)을 그리고,
+ * 그래프 위의 점과 아래 막대의 점은 [segmentMs] 동안 그 곡선을 따라 움직이며 결과를 미리 보여 준다.
  */
 @Composable
 internal fun EasingEditor(
@@ -59,7 +61,7 @@ internal fun EasingEditor(
     Column(modifier.verticalScroll(rememberScrollState()).padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             EASING_PRESETS.forEach { (preset, label) ->
-                ToggleChip(label, draft == preset, theme) {
+                ToggleChip(label, sameKind(draft, preset), theme) {
                     draft = preset
                     onChange(preset)
                 }
@@ -67,6 +69,7 @@ internal fun EasingEditor(
         }
         Text(describe(draft), color = theme.onPanel)
         EasingGraph(draft, segmentMs, theme, onDraft = { draft = it }, onCommit = { onChange(draft) })
+        EasingParams(draft, theme, onDraft = { draft = it }, onCommit = { if (draft != easing) onChange(draft) })
     }
 }
 
@@ -95,12 +98,16 @@ private fun EasingGraph(easing: EasingSpec, segmentMs: Double, theme: StudioThem
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { start ->
-                        handle =
+                        handle = if (hasHandles(current)) {
                             GraphMapping(size.width.toFloat(), size.height.toFloat()).nearestHandle(current, start)
+                        } else {
+                            0
+                        }
                     },
-                    onDragEnd = onCommit,
-                    onDragCancel = onCommit,
+                    onDragEnd = { if (handle != 0) onCommit() },
+                    onDragCancel = { if (handle != 0) onCommit() },
                 ) { change, _ ->
+                    if (handle == 0) return@detectDragGestures
                     change.consume()
                     val point = GraphMapping(size.width.toFloat(), size.height.toFloat()).toCurve(change.position)
                     onDraft(moveHandle(current, handle, point))
@@ -110,7 +117,7 @@ private fun EasingGraph(easing: EasingSpec, segmentMs: Double, theme: StudioThem
         val mapping = GraphMapping(size.width, size.height)
         drawGrid(mapping, theme)
         drawCurve(mapping, easing, segmentMs, theme)
-        drawHandles(mapping, asBezier(easing), theme)
+        if (hasHandles(easing)) drawHandles(mapping, asBezier(easing), theme)
         val eased = Easing.evaluate(easing, progress.toDouble(), segmentMs).toFloat()
         drawCircle(theme.selection, PREVIEW_DOT.toPx(), mapping.toPx(progress, eased))
     }
@@ -165,12 +172,31 @@ private fun DrawScope.drawGrid(mapping: GraphMapping, theme: StudioTheme) {
 
 private fun DrawScope.drawCurve(mapping: GraphMapping, easing: EasingSpec, segmentMs: Double, theme: StudioTheme) {
     val path = Path()
-    for (i in 0..CURVE_SAMPLES) {
-        val u = i.toFloat() / CURVE_SAMPLES
-        val point = mapping.toPx(u, Easing.evaluate(easing, u.toDouble(), segmentMs).toFloat())
+    val points = if (easing is EasingSpec.Steps) stepPoints(easing.count) else curvePoints(easing, segmentMs)
+    points.forEachIndexed { i, (x, y) ->
+        val point = mapping.toPx(x, y.coerceIn(MIN_Y.toFloat(), MAX_Y.toFloat()))
         if (i == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
     }
     drawPath(path, theme.accent, style = Stroke(2.dp.toPx()))
+}
+
+// 스프링은 강성이 크면 한 구간에 여러 번 흔들리므로 더 촘촘히 잰다.
+private fun curvePoints(easing: EasingSpec, segmentMs: Double): List<Pair<Float, Float>> {
+    val samples = if (easing is EasingSpec.Spring) SPRING_SAMPLES else CURVE_SAMPLES
+    return (0..samples).map { i ->
+        val u = i.toFloat() / samples
+        u to Easing.evaluate(easing, u.toDouble(), segmentMs).toFloat()
+    }
+}
+
+/** `steps(n, jump-end)`의 꺾인 점. 각 칸이 끝날 때 값이 한 칸 오른다. */
+private fun stepPoints(count: Int): List<Pair<Float, Float>> {
+    val n = count.coerceAtLeast(1)
+    return listOf(0f to 0f) + (0 until n).flatMap { i ->
+        val level = i.toFloat() / n
+        val end = (i + 1).toFloat() / n
+        listOf(end to level, end to end)
+    }
 }
 
 private fun DrawScope.drawHandles(mapping: GraphMapping, bezier: EasingSpec.CubicBezier, theme: StudioTheme) {
@@ -180,6 +206,16 @@ private fun DrawScope.drawHandles(mapping: GraphMapping, bezier: EasingSpec.Cubi
     drawLine(theme.onPanel, mapping.toPx(1f, 1f), second)
     drawCircle(theme.onPanel, HANDLE_RADIUS.toPx(), first)
     drawCircle(theme.onPanel, HANDLE_RADIUS.toPx(), second)
+}
+
+/** 조절점을 끌어 편집하는 easing인지. 스프링과 계단은 슬라이더로 바꾼다. */
+private fun hasHandles(easing: EasingSpec): Boolean = easing is EasingSpec.CubicBezier || easing == EasingSpec.Linear
+
+/** 프리셋 칩을 켤지 정한다. 스프링과 계단은 값이 달라도 같은 종류면 켠다. */
+private fun sameKind(easing: EasingSpec, preset: EasingSpec): Boolean = when (preset) {
+    is EasingSpec.Spring -> easing is EasingSpec.Spring
+    is EasingSpec.Steps -> easing is EasingSpec.Steps
+    else -> easing == preset
 }
 
 /** 조절점을 보여 줄 베지어. 선형은 직선 위의 점, 스프링과 계단은 ease-in-out에서 시작한다. */
@@ -239,6 +275,7 @@ private val HANDLE_RADIUS = 7.dp
 private const val PAD_RATIO = 0.08f
 private const val GRID_ALPHA = 0.3f
 private const val CURVE_SAMPLES = 64
+private const val SPRING_SAMPLES = 160
 private const val THIRD = 1.0 / 3.0
 private const val ROUNDING = 100.0
 private const val MIN_PREVIEW_MS = 400

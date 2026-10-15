@@ -75,7 +75,9 @@ internal class TimelineControls(val state: EditorState, val view: TimelineView, 
  * - 탭: 키 하나를 고르고 재생 위치를 그 키로 옮긴다. Shift를 누르고 있거나 선택 모드면 선택에 넣거나 뺀다.
  * - 길게 누르기: 선택 모드를 켜고 그 키를 선택에 넣는다.
  * - 키에서 끌기: 고른 키를 모두 같은 양만큼 옮긴다. 손을 뗄 때 한 번에 적용한다.
- * - 빈 곳에서 끌기: 사각 선택. 두 손가락: 확대와 가로 스크롤.
+ * - 빈 곳에서 끌기: 터치 슬롭을 넘을 때 세로 움직임이 크면 줄 목록을 세로로 스크롤하도록 부모에게 넘긴다.
+ *   가로 움직임이 크거나, 선택 모드(길게 누르기)이거나, Shift를 누르고 있으면 사각 선택이다.
+ * - 두 손가락: 확대와 가로 스크롤.
  */
 @Composable
 internal fun KeyLanes(controls: TimelineControls, nodeId: NodeId, rows: List<LaneRow>, theme: StudioTheme, modifier: Modifier = Modifier) {
@@ -232,7 +234,8 @@ private sealed interface Pending {
 
     data object Pinch : Pending
 
-    data object Moved : Pending
+    /** 슬롭을 넘었다. [delta]는 누른 곳부터 넘은 순간까지의 움직임이다. */
+    data class Moved(val delta: Offset) : Pending
 }
 
 private suspend fun PointerInputScope.laneGestures(gesture: LaneGesture, slop: Float, longPressMs: Long) = awaitEachGesture {
@@ -248,10 +251,21 @@ private suspend fun PointerInputScope.laneGestures(gesture: LaneGesture, slop: F
     }
     when (outcome) {
         Pending.Up -> if (!longPressed) gesture.tap(key, additive)
+
         Pending.Pinch -> awaitPinch(gesture)
-        Pending.Moved -> awaitDrag(gesture, down, key, additive || longPressed)
+
+        is Pending.Moved -> if (!scrollsVertically(key, outcome.delta, additive || longPressed)) {
+            awaitDrag(gesture, down, key, additive || longPressed)
+        }
     }
 }
+
+/**
+ * 빈 곳에서 시작한 끌기를 세로 스크롤로 넘길지. 넘기면 이벤트를 소비하지 않으므로 부모의 verticalScroll이 이어받는다.
+ * 키에서 시작하면 키 이동, 사각 선택 모드면 사각 선택이므로 넘기지 않는다.
+ */
+private fun scrollsVertically(key: SelectedKey?, delta: Offset, marqueeMode: Boolean): Boolean =
+    key == null && !marqueeMode && abs(delta.y) > abs(delta.x)
 
 /** 손가락이 [slop]보다 움직이거나, 떼어지거나, 두 번째 손가락이 닿을 때까지 기다린다. */
 private suspend fun AwaitPointerEventScope.awaitPending(down: PointerInputChange, slop: Float): Pending {
@@ -261,7 +275,8 @@ private suspend fun AwaitPointerEventScope.awaitPending(down: PointerInputChange
         if (pressed.size >= 2) return Pending.Pinch
         val change = event.changes.firstOrNull { it.id == down.id }
         if (change == null || !change.pressed) return Pending.Up
-        if ((change.position - down.position).getDistance() > slop) return Pending.Moved
+        val delta = change.position - down.position
+        if (delta.getDistance() > slop) return Pending.Moved(delta)
     }
 }
 

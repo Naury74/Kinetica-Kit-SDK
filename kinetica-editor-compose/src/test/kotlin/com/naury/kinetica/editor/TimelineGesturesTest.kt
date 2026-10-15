@@ -2,6 +2,8 @@ package com.naury.kinetica.editor
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.KeyInjectionScope
 import androidx.compose.ui.test.ScrollWheel
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -18,11 +20,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pinch
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.withKeyDown
 import com.google.common.truth.Truth.assertThat
 import com.naury.kinetica.core.animation.AnimatableProperty
@@ -234,6 +238,187 @@ class TimelineGesturesTest {
         assertThat(easing.y1).isWithin(0.02).of(1.0)
         assertThat(easing.x2).isEqualTo(1.0)
         assertThat(easing.y2).isEqualTo(1.0)
+    }
+
+    private fun openCurve() {
+        openMotion()
+        addKey("X")
+        seek(keyX(1_000))
+        addKey("X")
+        lanes().performTouchInput { click(Offset(keyX(0), rowY(0))) }
+        compose.waitForIdle()
+        timelineButton("Curve").performClick()
+        compose.waitForIdle()
+    }
+
+    private fun firstEasing() = keys(AnimatableProperty.TranslationX).first().easing
+
+    private fun setSlider(name: String, value: Float) {
+        compose.onNodeWithContentDescription(name).performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) { it(value) }
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun `스프링의 감쇠와 강성을 슬라이더로 바꾸고 바꿀 때마다 실행 취소 한 단계다`() {
+        openCurve()
+        timelineButton("Spring").performClick()
+        compose.waitForIdle()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Spring(dampingRatio = 0.5, stiffness = 300.0))
+
+        setSlider("Damping", 0.8f)
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Spring(dampingRatio = 0.8, stiffness = 300.0))
+        val damping = compose.onNodeWithContentDescription("Damping").fetchSemanticsNode()
+        assertThat(damping.config[SemanticsProperties.StateDescription]).isEqualTo("0.80")
+
+        setSlider("Stiffness", 900f)
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Spring(dampingRatio = 0.8, stiffness = 900.0))
+
+        session.history.undo()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Spring(dampingRatio = 0.8, stiffness = 300.0))
+        session.history.undo()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Spring(dampingRatio = 0.5, stiffness = 300.0))
+    }
+
+    @Test
+    fun `스프링 슬라이더를 끄는 동안은 문서를 바꾸지 않고 손을 뗄 때 한 번만 남긴다`() {
+        openCurve()
+        timelineButton("Spring").performClick()
+        compose.waitForIdle()
+        val before = session.document.value
+
+        compose.onNodeWithContentDescription("Stiffness").performScrollTo().performTouchInput { swipeRight(centerX, right, 300) }
+        compose.waitForIdle()
+
+        val easing = firstEasing() as EasingSpec.Spring
+        assertThat(easing.stiffness).isGreaterThan(300.0)
+        session.history.undo()
+        assertThat(session.document.value).isEqualTo(before)
+    }
+
+    @Test
+    fun `계단 수를 1에서 20 사이로 바꾸고 실행 취소한다`() {
+        openCurve()
+        timelineButton("Steps").performClick()
+        compose.waitForIdle()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(4))
+
+        setSlider("Step count", 10f)
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(10))
+        val count = compose.onNodeWithContentDescription("Step count").fetchSemanticsNode()
+        assertThat(count.config[SemanticsProperties.StateDescription]).isEqualTo("10")
+
+        setSlider("Step count", 20f)
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(20))
+        session.history.undo()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(10))
+    }
+
+    @Test
+    fun `스프링 그래프에서는 조절점 끌기로 베지어가 되지 않는다`() {
+        openCurve()
+        timelineButton("Spring").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag(EASING_GRAPH_TAG).performScrollTo().performTouchInput { swipe(center, topLeft, durationMillis = 300) }
+        compose.waitForIdle()
+
+        assertThat(firstEasing()).isInstanceOf(EasingSpec.Spring::class.java)
+    }
+
+    // 키를 고르면 위에 도구 줄이 생겨 패널 전체가 내려가므로, 고정된 눈금자에서 잰 줄 영역의 위치로 스크롤을 본다.
+    private fun lanesTop() =
+        lanes().fetchSemanticsNode().positionInRoot.y - compose.onNodeWithTag(RULER_TAG).fetchSemanticsNode().positionInRoot.y
+
+    @Test
+    fun `키 줄의 빈 곳을 세로로 끌면 사각 선택 대신 줄 목록이 스크롤된다`() {
+        openMotion()
+        seek(keyX(1_000))
+        addKey("X")
+        addKey("Y")
+        val top = lanesTop()
+
+        // 가로로 x 1000ms 키를 지나가지만 세로 움직임이 더 크므로 스크롤이다.
+        lanes().performTouchInput { swipe(Offset(130f, rowY(3)), Offset(70f, 0f), durationMillis = 300) }
+        compose.waitForIdle()
+
+        assertThat(lanesTop()).isLessThan(top)
+        compose.onNodeWithText("0 selected").assertExists()
+    }
+
+    @Test
+    fun `키 줄의 빈 곳을 가로로 끌면 스크롤하지 않고 사각 선택한다`() {
+        openMotion()
+        seek(keyX(1_000))
+        addKey("X")
+        addKey("Y")
+        val top = lanesTop()
+
+        lanes().performTouchInput { swipe(Offset(30f, 4f), Offset(160f, rowY(1) + 14f), durationMillis = 300) }
+        compose.waitForIdle()
+
+        assertThat(lanesTop()).isEqualTo(top)
+        compose.onNodeWithText("2 selected").assertExists()
+    }
+
+    @Test
+    fun `선택 모드에서는 세로로 끌어도 사각 선택한다`() {
+        openMotion()
+        seek(keyX(1_000))
+        addKey("X")
+        addKey("Y")
+        // 길게 누르면 선택 모드와 함께 키 도구 줄이 나타나 줄 영역이 내려가므로, 먼저 켜 둔 뒤 위치를 잰다.
+        lanes().performTouchInput { longClick(Offset(300f, rowY(2))) }
+        compose.waitForIdle()
+        val top = lanesTop()
+
+        lanes().performTouchInput { swipe(Offset(124f, 4f), Offset(80f, rowY(1) + 14f), durationMillis = 300) }
+        compose.waitForIdle()
+
+        assertThat(lanesTop()).isEqualTo(top)
+        compose.onNodeWithText("2 selected").assertExists()
+    }
+
+    @Test
+    fun `길게 누른 채 이어서 끌어도 키 줄이 밀리지 않아 사각형이 손가락에서 시작한다`() {
+        openMotion()
+        seek(keyX(1_000))
+        addKey("X")
+        addKey("Y")
+        val top = lanesTop()
+        val rootTop = lanes().fetchSemanticsNode().positionInRoot.y
+
+        lanes().performTouchInput {
+            down(Offset(124f, 4f))
+            // longClick처럼 제자리 이동을 보내며 시간을 흘려야 길게 누르기 판정이 돈다.
+            repeat(((viewConfiguration.longPressTimeoutMillis + 100) / 50).toInt()) { moveBy(Offset.Zero, delayMillis = 50) }
+            moveTo(Offset(110f, 40f))
+            moveTo(Offset(80f, rowY(1) + 14f))
+            up()
+        }
+        compose.waitForIdle()
+
+        // 선택 모드가 켜져도 키 도구 줄의 높이가 그대로라 줄 영역이 화면에서 움직이지 않는다.
+        assertThat(lanes().fetchSemanticsNode().positionInRoot.y).isEqualTo(rootTop)
+        assertThat(lanesTop()).isEqualTo(top)
+        compose.onNodeWithText("2 selected").assertExists()
+    }
+
+    @Test
+    fun `키에서 시작한 끌기는 세로가 커도 키를 옮긴다`() {
+        openMotion()
+        addKey("X")
+        val top = lanesTop()
+
+        lanes().performTouchInput {
+            down(Offset(keyX(0), rowY(0)))
+            moveBy(Offset(20f, 30f))
+            moveBy(Offset(20f, 30f))
+            up()
+        }
+        compose.waitForIdle()
+
+        assertThat(lanesTop()).isEqualTo(top)
+        assertThat(times(AnimatableProperty.TranslationX)).containsExactly(500L)
     }
 
     @Test
