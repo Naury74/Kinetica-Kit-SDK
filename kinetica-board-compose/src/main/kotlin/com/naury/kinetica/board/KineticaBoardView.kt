@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 /**
@@ -67,6 +69,7 @@ public class KineticaBoardView @JvmOverloads constructor(
     private var permissionsState by mutableStateOf(BoardPermissions())
     private var stackAdvanceState by mutableLongStateOf(0L)
     private var colorsState by mutableStateOf<BoardColors?>(null)
+    private var cornerState by mutableFloatStateOf(DEFAULT_CORNER_DP)
     private var longPressState by mutableStateOf<OnBoardLongPressListener?>(null)
 
     /** 편집 모드. 켜면 위젯을 옮기고, 크기를 바꾸고, 삭제하거나 추가할 수 있다. */
@@ -97,11 +100,22 @@ public class KineticaBoardView @JvmOverloads constructor(
             colorsState = value
         }
 
+    /** 편집 테두리와 크기 조절 핸들의 모서리 반지름(dp, 0 이상). 위젯 View 카드의 모서리 반지름과 같게 주면 테두리가 위젯과 겹친다. */
+    public var widgetCornerRadiusDp: Float
+        get() = cornerState
+        set(value) {
+            cornerState = value.coerceAtLeast(0f)
+        }
+
     init {
         context.obtainStyledAttributes(attrs, R.styleable.KineticaBoardView, defStyleAttr, defStyleRes).apply {
             try {
                 editingState = getBoolean(R.styleable.KineticaBoardView_kinetica_editing, false)
                 stackAdvanceState = getInt(R.styleable.KineticaBoardView_kinetica_stackAutoAdvanceMs, 0).toLong()
+                if (hasValue(R.styleable.KineticaBoardView_kinetica_widgetCornerRadius)) {
+                    val px = getDimension(R.styleable.KineticaBoardView_kinetica_widgetCornerRadius, 0f)
+                    cornerState = px / resources.displayMetrics.density
+                }
                 if (hasValue(R.styleable.KineticaBoardView_kinetica_accentColor)) {
                     colorsState = BoardColors.fromAccent(getColor(R.styleable.KineticaBoardView_kinetica_accentColor, 0))
                 }
@@ -123,6 +137,7 @@ public class KineticaBoardView @JvmOverloads constructor(
                             colors = colorsState ?: BoardColors.fromMaterialTheme(),
                             onLongPress = listener?.let { { it.onLongPress() } },
                             stackAutoAdvanceMs = stackAdvanceState,
+                            widgetCornerRadius = cornerState.dp,
                         ) { id ->
                             AndroidView(factory = { viewContext -> factory.create(id, viewContext) }, modifier = Modifier.fillMaxSize())
                         }
@@ -177,3 +192,5 @@ public class KineticaBoardView @JvmOverloads constructor(
         }
     }
 }
+
+private const val DEFAULT_CORNER_DP = 16f

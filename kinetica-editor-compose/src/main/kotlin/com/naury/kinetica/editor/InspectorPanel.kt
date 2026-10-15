@@ -9,9 +9,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -183,15 +180,7 @@ internal fun ToggleChip(label: Int, checked: Boolean, theme: StudioTheme, onTogg
 
 @Composable
 internal fun ToggleChip(label: String, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
-    FilterChip(
-        selected = checked,
-        onClick = onToggle,
-        label = { Text(label) },
-        colors = FilterChipDefaults.filterChipColors(
-            labelColor = theme.onPanel,
-            selectedContainerColor = theme.accent.copy(alpha = CHIP_ALPHA),
-        ),
-    )
+    StudioChip(label, checked, onToggle, theme = theme)
 }
 
 @Composable
@@ -233,21 +222,17 @@ internal fun CommitTextField(
     DisposableEffect(key) {
         onDispose { if (focused && latestText != current) latestCommit(latestText) }
     }
-    OutlinedTextField(
+    StudioTextField(
         value = text,
         onValueChange = {
             text = it
             invalid = false
         },
-        label = { Text(label) },
+        label = label,
         singleLine = singleLine,
         enabled = enabled,
         isError = invalid,
-        supportingText = if (invalid) {
-            { Text(stringResource(R.string.kinetica_invalid_value)) }
-        } else {
-            null
-        },
+        supporting = if (invalid) stringResource(R.string.kinetica_invalid_value) else null,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = if (singleLine) ImeAction.Done else ImeAction.Default),
         keyboardActions = KeyboardActions(onDone = { commit() }),
         modifier = modifier.onFocusChanged {
@@ -259,7 +244,6 @@ internal fun CommitTextField(
 
 private const val DECIMALS_SCALE = 100.0
 private const val HINT_ALPHA = 0.6f
-private const val CHIP_ALPHA = 0.3f
 
 // 소수점 둘째 자리까지 쓰고 끝의 0은 뺀다. 기기 언어와 상관없이 소수점은 `.`이다.
 internal fun formatNumber(value: Double): String {

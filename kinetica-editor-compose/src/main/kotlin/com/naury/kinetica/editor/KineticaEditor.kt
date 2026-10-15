@@ -15,17 +15,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -106,7 +100,9 @@ public fun KineticaEditor(
 ) {
     // 입력란·칩·시트가 호스트 MaterialTheme이 아니라 편집기 색을 따르게 한다.
     MaterialTheme(colorScheme = remember(theme) { theme.colorScheme() }) {
-        EditorContent(session, modifier, images, theme, config, slots, hostViews, data, toolbarEnd)
+        CompositionLocalProvider(LocalStudioTheme provides theme) {
+            EditorContent(session, modifier, images, theme, config, slots, hostViews, data, toolbarEnd)
+        }
     }
 }
 
@@ -144,6 +140,8 @@ private fun EditorContent(
     BoxWithConstraints(modifier.background(theme.canvasBackground)) {
         val docked = maxWidth >= DOCKED_PANEL_MIN_WIDTH
         var sheet by remember { mutableStateOf<PanelSheet?>(null) }
+        // 폴더블을 펴서 패널이 오른쪽에 붙으면 시트는 닫는다. 다시 접었을 때 예전 시트가 저절로 뜨지 않게 한다.
+        LaunchedEffect(docked) { if (docked) sheet = null }
         Column(Modifier.fillMaxSize()) {
             EditorToolbar(state, theme, paddingPx, !docked, hostViews, onOpenSheet = { sheet = it }, toolbarEnd = toolbarEnd)
             Row(Modifier.weight(1f).fillMaxWidth()) {
@@ -220,10 +218,9 @@ private fun PropertiesFor(state: EditorState, edits: PropertyEdits, theme: Studi
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PanelBottomSheet(sheet: PanelSheet, state: EditorState, edits: PropertyEdits, theme: StudioTheme, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = theme.panel) {
+    StudioSheet(onDismissRequest = onDismiss) {
         when (sheet) {
             PanelSheet.Layers -> {
                 PanelTitle(R.string.kinetica_layers, theme)
@@ -232,7 +229,7 @@ private fun PanelBottomSheet(sheet: PanelSheet, state: EditorState, edits: Prope
 
             PanelSheet.Properties -> {
                 PanelTitle(R.string.kinetica_properties, theme)
-                PropertiesFor(state, edits, theme)
+                Box(Modifier.weight(1f, fill = false)) { PropertiesFor(state, edits, theme) }
             }
         }
     }
@@ -240,7 +237,12 @@ private fun PanelBottomSheet(sheet: PanelSheet, state: EditorState, edits: Prope
 
 @Composable
 private fun PanelTitle(label: Int, theme: StudioTheme) {
-    Text(stringResource(label), color = theme.onPanel, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+    Text(
+        stringResource(label),
+        color = theme.onPanel,
+        style = MaterialTheme.typography.titleSmall,
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+    )
 }
 
 // 캔버스가 그릴 때 쓰는 호스트 자원.
@@ -302,24 +304,23 @@ private fun EditorToolbar(
     val history by state.session.history.state.collectAsStateWithLifecycle()
     val selection by state.session.selection.collectAsStateWithLifecycle()
     val defaultText = stringResource(R.string.kinetica_default_text)
-    val colors = toolColors(theme)
     fun add(node: SceneNode) {
         if (state.session.commands.execute(SceneCommand.AddNode(node)) is CommandResult.Applied) state.select(listOf(node.id))
     }
     ToolRow(theme) {
-        ToolButton(R.string.kinetica_add_rectangle, colors) { add(NodeFactory.rectangle(state.visibleCenter(), state.nextSequence())) }
-        ToolButton(R.string.kinetica_add_ellipse, colors) { add(NodeFactory.ellipse(state.visibleCenter(), state.nextSequence())) }
-        ShapeMenu(colors) { make -> add(make(state.visibleCenter(), state.nextSequence())) }
-        ToolButton(R.string.kinetica_add_text, colors) { add(NodeFactory.text(state.visibleCenter(), defaultText)) }
-        ToolButton(R.string.kinetica_add_frame, colors) { add(NodeFactory.frame(state.visibleCenter())) }
-        if (hostViews.isNotEmpty()) HostViewMenu(hostViews, colors) { add(NodeFactory.hostView(state.visibleCenter(), it)) }
-        ToolButton(R.string.kinetica_undo, colors, enabled = history.canUndo) { state.session.history.undo() }
-        ToolButton(R.string.kinetica_redo, colors, enabled = history.canRedo) { state.session.history.redo() }
-        ToolButton(R.string.kinetica_fit, colors) { state.fit(paddingPx) }
-        ToolToggle(R.string.kinetica_motion, state.motionEnabled, colors, theme) { state.motionEnabled = !state.motionEnabled }
+        ToolButton(R.string.kinetica_add_rectangle) { add(NodeFactory.rectangle(state.visibleCenter(), state.nextSequence())) }
+        ToolButton(R.string.kinetica_add_ellipse) { add(NodeFactory.ellipse(state.visibleCenter(), state.nextSequence())) }
+        ShapeMenu { make -> add(make(state.visibleCenter(), state.nextSequence())) }
+        ToolButton(R.string.kinetica_add_text) { add(NodeFactory.text(state.visibleCenter(), defaultText)) }
+        ToolButton(R.string.kinetica_add_frame) { add(NodeFactory.frame(state.visibleCenter())) }
+        if (hostViews.isNotEmpty()) HostViewMenu(hostViews) { add(NodeFactory.hostView(state.visibleCenter(), it)) }
+        ToolButton(R.string.kinetica_undo, enabled = history.canUndo) { state.session.history.undo() }
+        ToolButton(R.string.kinetica_redo, enabled = history.canRedo) { state.session.history.redo() }
+        ToolButton(R.string.kinetica_fit) { state.fit(paddingPx) }
+        ToolToggle(R.string.kinetica_motion, state.motionEnabled, theme) { state.motionEnabled = !state.motionEnabled }
         if (showPanelButtons) {
-            ToolButton(R.string.kinetica_layers, colors) { onOpenSheet(PanelSheet.Layers) }
-            ToolButton(R.string.kinetica_properties, colors, enabled = selection.selectedIds.size == 1) {
+            ToolButton(R.string.kinetica_layers) { onOpenSheet(PanelSheet.Layers) }
+            ToolButton(R.string.kinetica_properties, enabled = selection.selectedIds.size == 1) {
                 onOpenSheet(PanelSheet.Properties)
             }
         }
@@ -334,30 +335,31 @@ private fun SelectionBar(state: EditorState, actions: EditorActions, theme: Stud
     val document by state.session.document.collectAsStateWithLifecycle()
     val count = selection.selectedIds.size
     if (count == 0) return
-    val colors = toolColors(theme)
     ToolRow(theme, alpha = SELECTION_BAR_ALPHA, modifier = modifier) {
-        ToolButton(R.string.kinetica_delete, colors, onClick = actions::delete)
+        ToolButton(R.string.kinetica_delete, onClick = actions::delete)
         val editableText = selection.selectedIds.singleOrNull()?.takeIf { document.node(it)?.content is NodeContent.Text }
-        if (editableText != null) ToolButton(R.string.kinetica_edit_text, colors) { state.editingText = editableText }
-        ToolButton(R.string.kinetica_auto_layout, colors, onClick = actions::wrapInAutoLayout)
+        if (editableText != null) ToolButton(R.string.kinetica_edit_text) { state.editingText = editableText }
+        ToolButton(R.string.kinetica_auto_layout, onClick = actions::wrapInAutoLayout)
         val linked =
             selection.selectedIds.singleOrNull()?.let(document::node)?.let { it.component != null || it.instanceOf != null } == true
-        if (!linked) ToolButton(R.string.kinetica_make_component, colors) { ComponentEdits(state).makeComponent(selection.selectedIds) }
-        ToolButton(R.string.kinetica_group, colors, enabled = count >= 2, onClick = actions::group)
-        ToolButton(R.string.kinetica_ungroup, colors, enabled = document.let { actions.canUngroup }, onClick = actions::ungroup)
-        ToolButton(R.string.kinetica_bring_forward, colors, onClick = actions::bringForward)
-        ToolButton(R.string.kinetica_send_backward, colors, onClick = actions::sendBackward)
-        ArrangeMenu(actions, colors)
+        if (!linked) ToolButton(R.string.kinetica_make_component) { ComponentEdits(state).makeComponent(selection.selectedIds) }
+        ToolButton(R.string.kinetica_group, enabled = count >= 2, onClick = actions::group)
+        ToolButton(R.string.kinetica_ungroup, enabled = document.let { actions.canUngroup }, onClick = actions::ungroup)
+        ToolButton(R.string.kinetica_bring_forward, onClick = actions::bringForward)
+        ToolButton(R.string.kinetica_send_backward, onClick = actions::sendBackward)
+        ArrangeMenu(actions)
     }
 }
 
 @Composable
 private fun ToolRow(theme: StudioTheme, modifier: Modifier = Modifier, alpha: Float = 1f, content: @Composable RowScope.() -> Unit) {
+    val scroll = rememberScrollState()
     Row(
         modifier
             .fillMaxWidth()
             .background(theme.panel.copy(alpha = alpha))
-            .horizontalScroll(rememberScrollState())
+            .fadingEdges(scroll)
+            .horizontalScroll(scroll)
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
@@ -365,18 +367,14 @@ private fun ToolRow(theme: StudioTheme, modifier: Modifier = Modifier, alpha: Fl
 }
 
 @Composable
-private fun toolColors(theme: StudioTheme): ButtonColors =
-    ButtonDefaults.textButtonColors(contentColor = theme.onPanel, disabledContentColor = theme.onPanel.copy(alpha = DISABLED_ALPHA))
-
-@Composable
-private fun HostViewMenu(options: List<HostViewOption>, colors: ButtonColors, onPick: (HostViewOption) -> Unit) {
+private fun HostViewMenu(options: List<HostViewOption>, onPick: (HostViewOption) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        ToolButton(R.string.kinetica_add_host_view, colors) { expanded = true }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ToolButton(R.string.kinetica_add_host_view) { expanded = true }
+        StudioMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option.label) },
+                StudioMenuItem(
+                    text = option.label,
                     onClick = {
                         expanded = false
                         onPick(option)
@@ -389,7 +387,7 @@ private fun HostViewMenu(options: List<HostViewOption>, colors: ButtonColors, on
 
 // 다각형, 별, 선, 화살표 메뉴.
 @Composable
-private fun ShapeMenu(colors: ButtonColors, onPick: (make: (Vec2, Int) -> SceneNode) -> Unit) {
+private fun ShapeMenu(onPick: (make: (Vec2, Int) -> SceneNode) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val items = listOf<Pair<Int, (Vec2, Int) -> SceneNode>>(
         R.string.kinetica_add_polygon to NodeFactory::polygon,
@@ -398,11 +396,11 @@ private fun ShapeMenu(colors: ButtonColors, onPick: (make: (Vec2, Int) -> SceneN
         R.string.kinetica_add_arrow to { center, sequence -> NodeFactory.line(center, sequence, arrow = true) },
     )
     Box {
-        ToolButton(R.string.kinetica_more_shapes, colors) { expanded = true }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ToolButton(R.string.kinetica_more_shapes) { expanded = true }
+        StudioMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             items.forEach { (label, make) ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(label)) },
+                StudioMenuItem(
+                    text = stringResource(label),
                     onClick = {
                         expanded = false
                         onPick(make)
@@ -414,11 +412,11 @@ private fun ShapeMenu(colors: ButtonColors, onPick: (make: (Vec2, Int) -> SceneN
 }
 
 @Composable
-private fun ArrangeMenu(actions: EditorActions, colors: ButtonColors) {
+private fun ArrangeMenu(actions: EditorActions) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        ToolButton(R.string.kinetica_arrange, colors) { expanded = true }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ToolButton(R.string.kinetica_arrange) { expanded = true }
+        StudioMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             val items = listOf(
                 R.string.kinetica_align_left to { actions.align(AlignMode.Left) },
                 R.string.kinetica_align_center_horizontal to { actions.align(AlignMode.CenterHorizontal) },
@@ -430,8 +428,8 @@ private fun ArrangeMenu(actions: EditorActions, colors: ButtonColors) {
                 R.string.kinetica_distribute_vertical to { actions.distribute(DistributeAxis.Vertical) },
             )
             items.forEach { (label, action) ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(label)) },
+                StudioMenuItem(
+                    text = stringResource(label),
                     onClick = {
                         expanded = false
                         action()
@@ -443,19 +441,18 @@ private fun ArrangeMenu(actions: EditorActions, colors: ButtonColors) {
 }
 
 @Composable
-private fun ToolButton(label: Int, colors: ButtonColors, enabled: Boolean = true, onClick: () -> Unit) {
-    TextButton(onClick = onClick, enabled = enabled, colors = colors, modifier = Modifier.heightIn(min = MIN_TOUCH_TARGET)) {
-        Text(stringResource(label))
+private fun ToolButton(label: Int, enabled: Boolean = true, onClick: () -> Unit) {
+    StudioTextButton(onClick = onClick, enabled = enabled, modifier = Modifier.heightIn(min = TOUCH_TARGET)) {
+        Text(stringResource(label), color = LocalStudioTheme.current.onPanel)
     }
 }
 
 @Composable
-private fun ToolToggle(label: Int, checked: Boolean, colors: ButtonColors, theme: StudioTheme, onToggle: () -> Unit) {
-    TextButton(
+private fun ToolToggle(label: Int, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
+    StudioTextButton(
         onClick = onToggle,
-        colors = colors,
         modifier = Modifier
-            .heightIn(min = MIN_TOUCH_TARGET)
+            .heightIn(min = TOUCH_TARGET)
             .semantics { stateDescription = if (checked) "on" else "off" },
     ) {
         Text(stringResource(label), color = if (checked) theme.accent else theme.onPanel)
@@ -475,10 +472,8 @@ private fun CancelGestureOnPause(controller: CanvasGestureController) {
 /** 테스트나 호스트가 캔버스를 찾을 때 쓰는 test tag. */
 public const val CANVAS_TAG: String = "kinetica-canvas"
 private val CANVAS_PADDING = 24.dp
-private val MIN_TOUCH_TARGET = 48.dp
 private val DOCKED_PANEL_MIN_WIDTH = 600.dp
 private val PANEL_WIDTH = 300.dp
 private val SHEET_MAX_HEIGHT = 480.dp
 private val TIMELINE_MAX_HEIGHT = 340.dp
-private const val DISABLED_ALPHA = 0.38f
 private const val SELECTION_BAR_ALPHA = 0.92f

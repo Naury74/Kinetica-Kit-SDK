@@ -78,6 +78,7 @@
     <string name="kinetica_edit_text">Edit text</string>
     <string name="kinetica_ok">OK</string>
     <string name="kinetica_cancel">Cancel</string>
+    <string name="kinetica_close_sheet">Close</string>
     <string name="kinetica_field_corner">Corner radius</string>
     <string name="kinetica_field_font_weight">Font weight (100–900)</string>
     <string name="kinetica_field_shadow">Shadow</string>

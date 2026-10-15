@@ -26,12 +26,13 @@ internal fun KeyToolbar(controls: TimelineControls, nodeId: NodeId, theme: Studi
     val selection = controls.selection
     val edits = controls.edits
     val keys = selection.keys
+    val scroll = rememberScrollState()
     // 길게 눌러 선택 모드를 켜거나 사각 선택 중에 키가 골라질 때 이 줄이 생기거나 높이가 바뀌면 아래 키 줄이 밀려
     // 손가락과 사각형이 어긋난다. 그래서 줄을 늘 같은 높이로 두고 내용만 바꾼다.
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
-        modifier = Modifier.fillMaxWidth().height(KEY_BAR_HEIGHT).horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp),
+        modifier = Modifier.fillMaxWidth().height(KEY_BAR_HEIGHT).fadingEdges(scroll).horizontalScroll(scroll).padding(horizontal = 8.dp),
     ) {
         Text(stringResource(R.string.kinetica_keys_selected, keys.size), color = theme.onPanel)
         ToggleChip(R.string.kinetica_select_mode, selection.selectMode, theme) { selection.selectMode = !selection.selectMode }

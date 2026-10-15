@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
@@ -76,9 +77,14 @@ internal fun StackBadge(rect: Rect, zoom: Float, count: Int, colors: BoardColors
         modifier = Modifier
             .offset { IntOffset(0, (rect.top * zoom).roundToInt()) }
             .offset(x = right - BADGE_WIDTH - 6.dp, y = 6.dp)
-            .background(colors.accent, RoundedCornerShape(12.dp))
+            .background(colors.accent, CapsuleShape)
             .semantics { contentDescription = description }
-            .clickable(onClick = onUnstack)
+            .clickable(
+                interactionSource = null,
+                indication = remember(colors.onAccent) { BoardIndication(CapsuleShape, colors.onAccent) },
+                role = Role.Button,
+                onClick = onUnstack,
+            )
             .padding(horizontal = 10.dp, vertical = 4.dp),
     )
 }

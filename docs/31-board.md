@@ -21,8 +21,11 @@ KineticaBoard(state, Modifier.fillMaxSize(), editing = editing, permissions = Bo
 ```
 
 XML 화면에서는 `KineticaBoardView`의 `setBoard(state) { id, context -> View }`, `isEditing`, `setOnLongPressListener`를 쓴다.
-위젯 키는 `state.widgetKeyOf(id)`로 얻는다. XML 속성으로는 `app:kinetica_editing`, `app:kinetica_stackAutoAdvanceMs`, `app:kinetica_accentColor`가 있고,
+위젯 키는 `state.widgetKeyOf(id)`로 얻는다. XML 속성으로는 `app:kinetica_editing`, `app:kinetica_stackAutoAdvanceMs`, `app:kinetica_accentColor`, `app:kinetica_widgetCornerRadius`가 있고,
 View에 id가 있으면 화면을 회전해도 편집 모드가 유지된다. Java에서는 `KineticaBoardState.create(catalog)`로 상태를 만든다.
+
+편집 테두리와 크기 조절 핸들의 모서리 반지름은 기본 16dp다. 위젯 카드의 모서리 반지름과 다르면 테두리가 카드 모서리와 어긋나 보이므로
+`KineticaBoard(widgetCornerRadius = 20.dp)`(View는 `widgetCornerRadiusDp`, XML은 `app:kinetica_widgetCornerRadius`)로 카드와 같게 맞춘다.
 
 XML 화면의 상태는 `BoardStates.obtain(activity, catalog, storage)`로 얻는다. Compose의 `rememberKineticaBoardState`와 마찬가지로
 화면을 회전해도 배치와 실행 취소 기록이 남고, 화면이 가려질 때(ON_STOP)마다 저장하며, 화면이 끝나면 알아서 닫힌다. `close()`를 직접 부르지 않아도 된다.

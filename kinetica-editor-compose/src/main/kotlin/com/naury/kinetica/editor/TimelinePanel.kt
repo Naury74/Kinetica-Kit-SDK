@@ -15,10 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -142,11 +139,12 @@ private fun TimelineToolbar(
 ) {
     val view = controls.view
     val follow = stringResource(R.string.kinetica_follow_playhead_description)
+    val scroll = rememberScrollState()
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 4.dp),
+        modifier = Modifier.fillMaxWidth().fadingEdges(scroll).horizontalScroll(scroll).padding(horizontal = 4.dp),
     ) {
-        TextButton(onClick = onPlayToggle) {
+        StudioTextButton(onClick = onPlayToggle) {
             Text(stringResource(if (playing) R.string.kinetica_pause else R.string.kinetica_play), color = theme.accent)
         }
         Text("${seconds(controls.state.playheadMs)} / ${seconds(durationMs.toDouble())}", color = theme.onPanel)
@@ -171,12 +169,9 @@ internal fun BarButton(
     highlighted: Boolean = false,
     onClick: () -> Unit,
 ) {
-    val color = when {
-        !enabled -> theme.onPanel.copy(alpha = HINT_ALPHA)
-        highlighted -> theme.accent
-        else -> theme.onPanel
-    }
-    TextButton(
+    // 비활성일 때 흐리게 그리는 것은 버튼이 한다.
+    val color = if (highlighted && enabled) theme.accent else theme.onPanel
+    StudioTextButton(
         onClick = onClick,
         enabled = enabled,
         modifier = if (description == null) Modifier else Modifier.semantics { contentDescription = description },
@@ -246,7 +241,7 @@ private fun TrackLabel(state: EditorState, nodeId: NodeId, property: AnimatableP
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f).padding(start = 8.dp),
         )
-        TextButton(onClick = { state.addKey(nodeId, property) }, modifier = Modifier.semantics { contentDescription = description }) {
+        StudioTextButton(onClick = { state.addKey(nodeId, property) }, modifier = Modifier.semantics { contentDescription = description }) {
             Text("+", color = theme.accent)
         }
     }
@@ -295,13 +290,13 @@ private fun Ruler(controls: TimelineControls, theme: StudioTheme, modifier: Modi
 private fun PresetMenu(state: EditorState, theme: StudioTheme, enabled: Boolean) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        TextButton(onClick = {
+        StudioTextButton(onClick = {
             expanded = true
         }, enabled = enabled) { Text(stringResource(R.string.kinetica_presets), color = theme.onPanel) }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        StudioMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             PRESETS.forEach { (id, label) ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(label)) },
+                StudioMenuItem(
+                    text = stringResource(label),
                     onClick = {
                         expanded = false
                         state.applyPreset(PresetRegistry.Default, id)

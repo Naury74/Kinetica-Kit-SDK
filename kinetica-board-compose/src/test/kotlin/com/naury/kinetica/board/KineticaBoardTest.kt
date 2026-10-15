@@ -13,6 +13,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -151,6 +152,64 @@ class KineticaBoardTest {
         compose.onNodeWithText("B").performClick()
 
         assertThat(state.placedKeys).containsExactly("a", "b")
+    }
+
+    @Test
+    fun `위젯 추가 메뉴는 뒤로 가기로 닫히고 넣을 위젯이 없으면 누를 수 없는 안내만 보인다`() {
+        val state = KineticaBoardState.create(catalog)
+        state.remove("b")
+        show(state, editing = true)
+
+        compose.onNodeWithText("Add widget").performClick()
+        compose.onNodeWithText("B").assertIsDisplayed()
+        pressBackOnTopWindow()
+        compose.onNodeWithText("B").assertDoesNotExist()
+        assertThat(state.placedKeys).containsExactly("a")
+
+        state.add("b")
+        compose.onNodeWithText("Add widget").performClick()
+        compose.onNodeWithText("All widgets are already on the board").assertIsDisplayed().assertIsNotEnabled()
+    }
+
+    @Test
+    @Config(qualifiers = "w900dp-h800dp-mdpi")
+    fun `끄는 도중에 접거나 펴서 보드 폭이 바뀌면 끌기를 취소하고 배치를 그대로 둔다`() {
+        val state = KineticaBoardState.create(catalog)
+        val width = mutableStateOf(400.dp)
+        compose.setContent {
+            Box(Modifier.size(width.value, 600.dp)) {
+                KineticaBoard(state, Modifier.fillMaxSize(), editing = true) { key -> Text("widget $key") }
+            }
+        }
+        val before = state.document.value
+        val widget = compose.onNodeWithTag("${BOARD_WIDGET_TAG}a")
+        widget.performTouchInput {
+            down(center)
+            moveBy(Offset(30f, 0f))
+            moveBy(Offset(30f, 20f))
+        }
+        width.value = 700.dp
+        compose.waitForIdle()
+        widget.performTouchInput {
+            moveBy(Offset(30f, 40f))
+            up()
+        }
+        compose.waitForIdle()
+
+        assertThat(state.rectOf("a")).isEqualTo(KineticaBoardState.rectOf(before.node(before.rootOrder.first())))
+        assertThat(state.document.value).isEqualTo(before)
+    }
+
+    // 맨 위 창(메뉴 팝업)에 뒤로 가기 키를 보낸다.
+    private fun pressBackOnTopWindow() {
+        val global = Class.forName("android.view.WindowManagerGlobal")
+        val instance = global.getMethod("getInstance").invoke(null)
+        val top = (global.getDeclaredField("mViews").apply { isAccessible = true }.get(instance) as List<*>).last() as android.view.View
+        compose.runOnUiThread {
+            top.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_BACK))
+            top.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_BACK))
+        }
+        compose.waitForIdle()
     }
 
     @Test

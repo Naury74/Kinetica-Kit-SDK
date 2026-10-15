@@ -8,6 +8,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,10 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
@@ -40,9 +39,13 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -61,6 +64,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -94,6 +98,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  * @param colors 편집 화면의 색. 기본값은 현재 MaterialTheme의 primary를 따른다.
  * @param stackAutoAdvanceMs 0보다 크면 사용 모드에서 위젯 스택이 이 간격(ms)마다 다음 위젯으로 넘어간다. 사용자가 직접 넘기면 그때부터
  *   다시 잰다. 편집 중이거나 시스템 애니메이션이 꺼져 있으면 넘어가지 않는다.
+ * @param widgetCornerRadius 편집 테두리, 틴트, 크기 조절 핸들의 모서리 반지름. 호스트 위젯 카드의 모서리 반지름과 같게 주면
+ *   테두리가 위젯 모서리와 겹친다. 0dp 이상.
  * @param onLongPress 사용 모드에서 위젯을 길게 누르면 호출된다. 보통 여기서 편집 모드로 바꾼다. 이 누름 이벤트는 위젯에 전달하지 않는다.
  * @param content 슬롯마다 호스트가 그릴 내용. 인자는 슬롯 id다. 한 번만 놓는 위젯은 위젯 키와 같고, 여러 개 놓는 위젯([BoardWidget.multiple])은
  *   슬롯마다 다르다. 위젯 키는 [KineticaBoardState.widgetKeyOf]로 얻는다. 보드가 정한 크기를 꽉 채우도록 그린다.
@@ -107,6 +113,7 @@ public fun KineticaBoard(
     colors: BoardColors = BoardColors.fromMaterialTheme(),
     onLongPress: (() -> Unit)? = null,
     stackAutoAdvanceMs: Long = 0L,
+    widgetCornerRadius: Dp = DEFAULT_CORNER,
     content: @Composable (id: String) -> Unit,
 ) {
     val stored by state.document.collectAsState()
@@ -118,7 +125,11 @@ public fun KineticaBoard(
     val hostDirection = LocalLayoutDirection.current
     val mirrored = hostDirection == LayoutDirection.Rtl
     val slots = rememberBoardSlots(stored, content, colors, StackAdvance(stackAutoAdvanceMs, editing), hostDirection)
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr, LocalBoardMirrored provides mirrored) {
+    CompositionLocalProvider(
+        LocalLayoutDirection provides LayoutDirection.Ltr,
+        LocalBoardMirrored provides mirrored,
+        LocalWidgetCorner provides widgetCornerRadius.coerceAtLeast(0.dp),
+    ) {
         BoardBody(state, stored, modifier, editing, permissions, colors, onLongPress, scroll, controller, slots, hostDirection, zoom)
     }
 }
@@ -171,6 +182,7 @@ private fun BoardBody(
         // 드래그 중인 위젯을 따라 보드를 늘리되 현재 내용 아래로 한 화면까지만 늘려서 자동 스크롤이 끝없이 이어지지 않게 한다.
         val dragBottom = drag?.rect?.bottom?.coerceAtMost(stableBottom + viewportHeight / zoom) ?: 0.0
         val contentBottom = maxOf(stableBottom, dragBottom) + gap + editRoom
+        CancelDragOnResize(controller, mapping)
         val heightPx = maxOf((contentBottom * zoom).toFloat(), viewportHeight)
         controller.frame = BoardFrame(
             mapping = mapping,
@@ -354,14 +366,14 @@ private fun TargetPreview(target: Rect, zoom: Float, colors: BoardColors) {
     Box(
         Modifier
             .rectPlacement(target, zoom)
-            .background(colors.zone, RoundedCornerShape(12.dp))
-            .border(2.dp, colors.accent, RoundedCornerShape(12.dp)),
+            .background(colors.zone, RoundedCornerShape(LocalWidgetCorner.current))
+            .border(2.dp, colors.accent, RoundedCornerShape(LocalWidgetCorner.current)),
     )
 }
 
 @Composable
 private fun DragOutline(rect: Rect, zoom: Float, colors: BoardColors) {
-    Box(Modifier.rectPlacement(rect, zoom).border(2.dp, colors.outline, RoundedCornerShape(8.dp)))
+    Box(Modifier.rectPlacement(rect, zoom).border(2.dp, colors.outline, RoundedCornerShape(LocalWidgetCorner.current)))
 }
 
 @Composable
@@ -383,13 +395,13 @@ private fun WidgetEditFrame(
     SideEffect { composed(key) }
     val outline = if (dragging) Color.Transparent else colors.outline
     var focused by remember { mutableStateOf(false) }
-    // 삭제 버튼은 시작쪽 위, 크기 조절 핸들은 끝쪽 아래에 둔다. 보드 내부는 왼쪽 기준이므로 RTL 화면이면 직접 바꾼다.
-    val mirrored = LocalBoardMirrored.current
+    val corner = LocalWidgetCorner.current
+    val frameShape = RoundedCornerShape(corner)
     Box(
         Modifier
             .rectPlacement(rect, zoom)
-            .editOutline(focused, outline, colors.accent)
-            .background(outline.copy(alpha = EDIT_TINT))
+            .background(outline.copy(alpha = EDIT_TINT), frameShape)
+            .editOutline(focused, outline, colors.accent, corner)
             .testTag("$BOARD_WIDGET_TAG$key")
             .semantics {
                 contentDescription = label
@@ -400,41 +412,8 @@ private fun WidgetEditFrame(
             .holdParentTouches(LocalView.current)
             .dragToMove(key, permissions.move, controller),
     ) {
-        if (permissions.remove) {
-            val description = stringResource(R.string.kinetica_board_remove, label)
-            Box(
-                Modifier
-                    .align(if (mirrored) Alignment.TopEnd else Alignment.TopStart)
-                    .offset(if (mirrored) BADGE_OUTSET else -BADGE_OUTSET, -BADGE_OUTSET)
-                    .size(BADGE_SIZE)
-                    .background(colors.accent, CircleShape)
-                    .semantics { contentDescription = description }
-                    .clickable(onClick = onRemove),
-                contentAlignment = Alignment.Center,
-            ) { RemoveMark(colors.onAccent) }
-        }
-        if (permissions.resize) {
-            val description = stringResource(R.string.kinetica_board_resize, label)
-            Box(
-                Modifier
-                    .align(if (mirrored) Alignment.BottomStart else Alignment.BottomEnd)
-                    .size(BADGE_SIZE)
-                    .background(colors.accent, if (mirrored) RoundedCornerShape(topEnd = 12.dp) else RoundedCornerShape(topStart = 12.dp))
-                    .semantics { contentDescription = description }
-                    .holdParentTouches(LocalView.current)
-                    .pointerInput(key) {
-                        detectDragGestures(
-                            onDragStart = { local -> controller.start(key, local) },
-                            onDrag = { change, _ ->
-                                change.consume()
-                                controller.resize(key, change.position)
-                            },
-                            onDragEnd = controller::end,
-                            onDragCancel = controller::cancel,
-                        )
-                    },
-            )
-        }
+        if (permissions.remove) RemoveBadge(label, colors, onRemove)
+        if (permissions.resize) ResizeHandle(key, label, colors, controller)
     }
 }
 
@@ -471,11 +450,95 @@ private fun Modifier.dragToMove(key: String, enabled: Boolean, controller: Board
     )
 }
 
+// 삭제 버튼은 시작쪽 위, 크기 조절 핸들은 끝쪽 아래에 둔다. 보드 내부는 왼쪽 기준이므로 RTL 화면이면 직접 바꾼다.
+@Composable
+private fun BoxScope.RemoveBadge(label: String, colors: BoardColors, onRemove: () -> Unit) {
+    val mirrored = LocalBoardMirrored.current
+    val description = stringResource(R.string.kinetica_board_remove, label)
+    val source = remember { MutableInteractionSource() }
+    // 보이는 원은 28dp지만 누르는 영역은 44dp로 넓힌다. 원의 위치는 그대로 둔다.
+    val outset = BADGE_OUTSET + (BADGE_TOUCH - BADGE_SIZE) / 2
+    Box(
+        Modifier
+            .align(if (mirrored) Alignment.TopEnd else Alignment.TopStart)
+            .offset(if (mirrored) outset else -outset, -outset)
+            .size(BADGE_TOUCH)
+            .semantics { contentDescription = description }
+            .clickable(source, indication = null, role = Role.Button, onClick = onRemove),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(BADGE_SIZE)
+                .background(colors.accent, CircleShape)
+                .indication(source, remember(colors.onAccent) { BoardIndication(CircleShape, colors.onAccent) }),
+            contentAlignment = Alignment.Center,
+        ) { RemoveMark(colors.onAccent) }
+    }
+}
+
+@Composable
+private fun BoxScope.ResizeHandle(key: String, label: String, colors: BoardColors, controller: BoardDragController) {
+    val mirrored = LocalBoardMirrored.current
+    val corner = LocalWidgetCorner.current
+    val description = stringResource(R.string.kinetica_board_resize, label)
+    Box(
+        Modifier
+            .align(if (mirrored) Alignment.BottomStart else Alignment.BottomEnd)
+            .size(BADGE_SIZE)
+            // 바깥 모서리는 위젯 테두리와 같은 반지름으로 둥글게 해 모서리를 덮지 않게 한다.
+            .background(
+                colors.accent,
+                if (mirrored) {
+                    RoundedCornerShape(topEnd = HANDLE_CORNER, bottomStart = corner)
+                } else {
+                    RoundedCornerShape(topStart = HANDLE_CORNER, bottomEnd = corner)
+                },
+            )
+            .semantics { contentDescription = description }
+            .holdParentTouches(LocalView.current)
+            .pointerInput(key) {
+                detectDragGestures(
+                    onDragStart = { local -> controller.start(key, local) },
+                    onDrag = { change, _ ->
+                        change.consume()
+                        controller.resize(key, change.position)
+                    },
+                    onDragEnd = controller::end,
+                    onDragCancel = controller::cancel,
+                )
+            },
+    )
+}
+
+// 폴더블을 접거나 펴서 폭이 바뀌면 드래그 시작 좌표가 새 배치와 맞지 않는다. 진행 중인 드래그는 놓지 않고 취소한다.
+@Composable
+private fun CancelDragOnResize(controller: BoardDragController, mapping: BoardMapping) {
+    val previous = controller.frame?.mapping ?: return
+    if (previous.displayWidth != mapping.displayWidth && controller.drag != null) SideEffect { controller.cancel() }
+}
+
 // 키보드로 선택한 위젯이 어느 것인지 알 수 있도록 포커스가 있으면 테두리를 굵고 진하게 그린다.
-private fun Modifier.editOutline(focused: Boolean, outline: Color, accent: Color): Modifier =
-    border(if (focused) FOCUS_BORDER else 2.dp, if (focused) accent else outline, RoundedCornerShape(8.dp))
+// border는 자식 위에 그려 삭제 배지의 − 기호를 가로지르므로, 테두리를 자식보다 먼저(뒤에) 그린다.
+private fun Modifier.editOutline(focused: Boolean, outline: Color, accent: Color, corner: Dp): Modifier = drawBehind {
+    val width = (if (focused) FOCUS_BORDER else 2.dp).toPx()
+    val radius = (corner.toPx() - width / 2).coerceAtLeast(0f)
+    drawRoundRect(
+        color = if (focused) accent else outline,
+        topLeft = Offset(width / 2, width / 2),
+        size = Size(size.width - width, size.height - width),
+        cornerRadius = CornerRadius(radius),
+        style = Stroke(width),
+    )
+}
+
+// 위젯 편집 테두리의 모서리 반지름. 호스트가 KineticaBoard에 준 값이다.
+private val LocalWidgetCorner = staticCompositionLocalOf { DEFAULT_CORNER }
+private val DEFAULT_CORNER: Dp = 16.dp
+private val HANDLE_CORNER: Dp = 12.dp
 private val BADGE_SIZE: Dp = 28.dp
 private val BADGE_OUTSET: Dp = 9.dp
+private val BADGE_TOUCH: Dp = 44.dp
 
 /** 슬롯마다 그릴 호스트 내용. 스택이면 넘겨 보는 페이저를 그린다. */
 @Composable

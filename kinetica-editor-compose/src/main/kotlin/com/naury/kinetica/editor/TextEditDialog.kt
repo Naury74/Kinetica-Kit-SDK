@@ -1,17 +1,11 @@
 package com.naury.kinetica.editor
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,44 +44,33 @@ internal fun TextEditDialog(state: EditorState, edits: PropertyEdits, id: NodeId
     fun confirm(unbind: Boolean) {
         if (edits.setText(id, draft.value.text, unbind, draft.spans)) onDismiss() else draft.invalid = true
     }
-    AlertDialog(
+    StudioDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.kinetica_edit_text)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StyleToolbar(draft, content, node.style.fill)
-                OutlinedTextField(
-                    value = draft.value,
-                    onValueChange = draft::change,
-                    isError = draft.invalid,
-                    visualTransformation = SpanPreview(draft.spans),
-                    supportingText = when {
-                        draft.invalid -> {
-                            { Text(stringResource(R.string.kinetica_invalid_value)) }
-                        }
-
-                        boundKey != null -> {
-                            { Text(stringResource(R.string.kinetica_text_bound, boundKey)) }
-                        }
-
-                        else -> null
-                    },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp).focusRequester(focus).testTag(TEXT_EDIT_TAG),
-                )
+        title = stringResource(R.string.kinetica_edit_text),
+        buttons = {
+            StudioTextButton(onClick = onDismiss) { Text(stringResource(R.string.kinetica_cancel)) }
+            if (boundKey != null) {
+                StudioTextButton(onClick = { confirm(unbind = true) }) { Text(stringResource(R.string.kinetica_unbind_and_save)) }
             }
+            StudioTextButton(onClick = { confirm(unbind = false) }) { Text(stringResource(R.string.kinetica_ok)) }
         },
-        confirmButton = { TextButton(onClick = { confirm(unbind = false) }) { Text(stringResource(R.string.kinetica_ok)) } },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.kinetica_cancel)) }
-                if (boundKey !=
-                    null
-                ) {
-                    TextButton(onClick = { confirm(unbind = true) }) { Text(stringResource(R.string.kinetica_unbind_and_save)) }
-                }
-            }
-        },
-    )
+    ) {
+        StyleToolbar(draft, content, node.style.fill)
+        StudioTextField(
+            value = draft.value,
+            onValueChange = draft::change,
+            label = null,
+            isError = draft.invalid,
+            singleLine = false,
+            visualTransformation = SpanPreview(draft.spans),
+            supporting = when {
+                draft.invalid -> stringResource(R.string.kinetica_invalid_value)
+                boundKey != null -> stringResource(R.string.kinetica_text_bound, boundKey)
+                else -> null
+            },
+            modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(TEXT_EDIT_TAG),
+        )
+    }
     LaunchedEffect(id) { focus.requestFocus() }
 }
 
@@ -179,7 +162,7 @@ private fun DecorationChip(label: Int, decoration: TextDecoration, current: Text
 
 @Composable
 private fun StyleChip(label: Int, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(selected = selected, onClick = onClick, label = { Text(stringResource(label)) })
+    StudioChip(stringResource(label), selected, onClick)
 }
 
 @Composable

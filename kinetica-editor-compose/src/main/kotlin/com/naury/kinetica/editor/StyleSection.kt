@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -118,7 +117,7 @@ internal fun EffectsSection(node: SceneNode, edits: EffectEdits, theme: StudioTh
                     color = theme.onPanel,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = {
+                StudioTextButton(onClick = {
                     edits.removeShadow(node.id, index)
                 }) { Text(stringResource(R.string.kinetica_remove), color = theme.accent) }
             }
@@ -141,10 +140,10 @@ internal fun EffectsSection(node: SceneNode, edits: EffectEdits, theme: StudioTh
         }
     }
     Chips {
-        TextButton(onClick = {
+        StudioTextButton(onClick = {
             edits.addShadow(node.id, inner = false)
         }) { AddLabel(stringResource(R.string.kinetica_drop_shadow), theme.accent) }
-        TextButton(onClick = {
+        StudioTextButton(onClick = {
             edits.addShadow(node.id, inner = true)
         }) { AddLabel(stringResource(R.string.kinetica_inner_shadow), theme.accent) }
     }

@@ -2,6 +2,8 @@ package com.naury.kinetica.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -11,10 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -52,11 +58,12 @@ internal fun LayerPanel(
             Row(
                 Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = ROW_INSET)
                     .heightIn(min = ROW_HEIGHT)
-                    .background(if (isSelected) theme.selection.copy(alpha = SELECTED_ALPHA) else theme.panel)
+                    .background(if (isSelected) theme.selection.copy(alpha = SELECTED_ALPHA) else Color.Transparent, RowShape)
                     .semantics { this.selected = isSelected }
-                    .clickable { onSelect(node.id) }
-                    .padding(start = INDENT * row.depth + 12.dp, end = 4.dp),
+                    .clickable(indication = studioIndication(RowShape), interactionSource = null) { onSelect(node.id) }
+                    .padding(start = INDENT * row.depth + 10.dp, end = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
@@ -76,14 +83,19 @@ internal fun LayerPanel(
 
 @Composable
 private fun LayerToggle(label: Int, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
     Box(
         Modifier
             .heightIn(min = ROW_HEIGHT)
-            .toggleable(value = checked, role = Role.Switch, onValueChange = { onToggle() })
-            .padding(horizontal = 8.dp),
+            .toggleable(value = checked, interactionSource = source, indication = null, role = Role.Switch, onValueChange = { onToggle() }),
         contentAlignment = Alignment.Center,
     ) {
-        Text(stringResource(label), color = if (checked) theme.accent else theme.onPanel.copy(alpha = MUTED_ALPHA))
+        Text(
+            stringResource(label),
+            color = if (checked) theme.accent else theme.onPanel.copy(alpha = MUTED_ALPHA),
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.indication(source, studioIndication(CapsuleShape)).padding(horizontal = 10.dp, vertical = 6.dp),
+        )
     }
 }
 
@@ -100,6 +112,8 @@ internal fun NodeKind.labelRes(): Int = when (this) {
 }
 
 private val ROW_HEIGHT = 48.dp
+private val ROW_INSET = 6.dp
+private val RowShape = RoundedCornerShape(10.dp)
 private val INDENT = 16.dp
 private const val MUTED_ALPHA = 0.5f
 private const val SELECTED_ALPHA = 0.18f

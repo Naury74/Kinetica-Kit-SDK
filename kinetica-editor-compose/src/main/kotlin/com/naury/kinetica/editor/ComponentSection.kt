@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,7 +51,9 @@ internal fun DocumentPanel(
                     enabled = true,
                     modifier = Modifier.weight(1f),
                 ) { edits.setToken(name, it) }
-                TextButton(onClick = { edits.removeToken(name) }) { Text(stringResource(R.string.kinetica_remove), color = theme.accent) }
+                StudioTextButton(onClick = {
+                    edits.removeToken(name)
+                }) { Text(stringResource(R.string.kinetica_remove), color = theme.accent) }
             }
         }
         NewToken(edits)
@@ -62,10 +63,12 @@ internal fun DocumentPanel(
         mains.forEach { main ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(main.component.orEmpty(), color = theme.onPanel, modifier = Modifier.weight(1f))
-                TextButton(onClick = { onInsert(main) }) { Text(stringResource(R.string.kinetica_insert_instance), color = theme.accent) }
+                StudioTextButton(onClick = {
+                    onInsert(main)
+                }) { Text(stringResource(R.string.kinetica_insert_instance), color = theme.accent) }
             }
         }
-        TextButton(onClick = {
+        StudioTextButton(onClick = {
             edits.insertStarterKit()
         }) { AddLabel(stringResource(R.string.kinetica_insert_kit), theme.accent) }
     }
@@ -115,7 +118,7 @@ internal fun ComponentNodeSection(node: SceneNode, document: SceneDocument, edit
                 enabled = true,
                 modifier = Modifier.fillMaxWidth(),
             ) { edits.rename(node.id, it) }
-            TextButton(onClick = { edits.variants.addVariant(node.id) }) {
+            StudioTextButton(onClick = { edits.variants.addVariant(node.id) }) {
                 AddLabel(stringResource(R.string.kinetica_add_variant), theme.accent)
             }
         }
@@ -132,13 +135,15 @@ internal fun ComponentNodeSection(node: SceneNode, document: SceneDocument, edit
                 }
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                TextButton(onClick = {
+                StudioTextButton(onClick = {
                     edits.selectMain(node.id)
                 }) { Text(stringResource(R.string.kinetica_go_to_main), color = theme.accent) }
-                TextButton(onClick = { edits.resetOverrides(node.id) }, enabled = link.overrides.isNotEmpty()) {
+                StudioTextButton(onClick = { edits.resetOverrides(node.id) }, enabled = link.overrides.isNotEmpty()) {
                     Text(stringResource(R.string.kinetica_reset_overrides, link.overrides.size), color = theme.accent)
                 }
-                TextButton(onClick = { edits.detach(node.id) }) { Text(stringResource(R.string.kinetica_detach), color = theme.accent) }
+                StudioTextButton(onClick = {
+                    edits.detach(node.id)
+                }) { Text(stringResource(R.string.kinetica_detach), color = theme.accent) }
             }
         }
     }

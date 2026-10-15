@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -51,7 +50,7 @@ internal fun EffectPreview(document: SceneDocument, node: SceneNode, theme: Stud
             // 다시 재생을 누르면 새로 구성해 등장 효과를 처음부터 보여 준다.
             key(replay, node.effects) { SceneLayout(preview, viewport, Modifier.matchParentSize(), interactive = true) }
         }
-        TextButton(onClick = { replay++ }) { Text(stringResource(R.string.kinetica_motion_replay), color = theme.accent) }
+        StudioTextButton(onClick = { replay++ }) { Text(stringResource(R.string.kinetica_motion_replay), color = theme.accent) }
     }
 }
 

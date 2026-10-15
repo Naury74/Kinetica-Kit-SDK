@@ -11,5 +11,7 @@
         <attr name="kinetica_stackAutoAdvanceMs" format="integer" />
         <!-- 편집 화면의 강조색. -->
         <attr name="kinetica_accentColor" format="color" />
+        <!-- 편집 테두리와 크기 조절 핸들의 모서리 반지름. 위젯 카드의 모서리 반지름과 같게 준다. -->
+        <attr name="kinetica_widgetCornerRadius" format="dimension" />
     </declare-styleable>
 </resources>
