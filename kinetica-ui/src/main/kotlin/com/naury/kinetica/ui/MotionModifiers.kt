@@ -78,29 +78,46 @@ public fun Modifier.glowBorder(
         label = "angle",
     )
     val argb = remember(colors) { (colors + colors.first()).map { it.toArgb() }.toIntArray() }
+    val brush = remember(argb) { GlowPaints(argb) }
     return drawWithContent {
         drawContent()
+        brush.update(size.width, size.height, width.toPx(), glow.toPx(), angle)
         val outline = shape.createOutline(size, layoutDirection, this)
         val path = outline.asPath().asAndroidPath()
-        val shader = SweepGradient(size.width / 2, size.height / 2, argb, null).apply {
-            setLocalMatrix(Matrix().apply { setRotate(angle, size.width / 2, size.height / 2) })
-        }
         drawIntoCanvas { canvas ->
-            val glowPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                style = android.graphics.Paint.Style.STROKE
-                strokeWidth = width.toPx() + glow.toPx()
-                this.shader = shader
-                alpha = GLOW_ALPHA
-                if (glow.value > 0f) maskFilter = BlurMaskFilter(glow.toPx(), BlurMaskFilter.Blur.NORMAL)
-            }
-            val linePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                style = android.graphics.Paint.Style.STROKE
-                strokeWidth = width.toPx()
-                this.shader = shader
-            }
-            canvas.nativeCanvas.drawPath(path, glowPaint)
-            canvas.nativeCanvas.drawPath(path, linePaint)
+            canvas.nativeCanvas.drawPath(path, brush.glow)
+            canvas.nativeCanvas.drawPath(path, brush.line)
         }
+    }
+}
+
+/** 빛 테두리 붓. 크기가 바뀔 때만 색 고리를 새로 만들고, 돌릴 때는 행렬만 바꾼다. */
+private class GlowPaints(private val colors: IntArray) {
+    val glow = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        style = android.graphics.Paint.Style.STROKE
+        alpha = GLOW_ALPHA
+    }
+    val line = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { style = android.graphics.Paint.Style.STROKE }
+    private val matrix = Matrix()
+    private var shader: SweepGradient? = null
+    private var size = 0f to 0f
+    private var blur = -1f
+
+    fun update(width: Float, height: Float, stroke: Float, glowPx: Float, angle: Float) {
+        if (shader == null || size != width to height) {
+            size = width to height
+            shader = SweepGradient(width / 2, height / 2, colors, null)
+            glow.shader = shader
+            line.shader = shader
+        }
+        if (blur != glowPx) {
+            blur = glowPx
+            glow.maskFilter = if (glowPx > 0f) BlurMaskFilter(glowPx, BlurMaskFilter.Blur.NORMAL) else null
+        }
+        glow.strokeWidth = stroke + glowPx
+        line.strokeWidth = stroke
+        matrix.setRotate(angle, width / 2, height / 2)
+        shader?.setLocalMatrix(matrix)
     }
 }
 

@@ -117,7 +117,7 @@ public fun Modifier.glass(
             if (backdrop?.recording == true) return@drawBehind
             val outline = shape.createOutline(size, layoutDirection, this)
             val level = intensity.coerceIn(0f, 1f)
-            drawOuterShadow(outline, style, level)
+            drawOuterShadow(outline, style, level, effects)
             val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             clipOutline(outline) {
                 if (canBlur && backdrop != null) {
@@ -140,6 +140,12 @@ private class PositionHolder {
 private class EffectCache {
     var key: Any? = null
     var effect: androidx.compose.ui.graphics.RenderEffect? = null
+
+    // 그림자 붓과 모양은 크기·반지름이 바뀔 때만 새로 만든다(프레임마다 만들면 흐림 무늬를 다시 굽는다).
+    val shadowPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    var shadowRadius = -1f
+    var outlineKey: Any? = null
+    var path: Path = Path()
 }
 
 /** 기록한 영역: 크기, 가장자리 여유, 모서리 반지름(px). */
@@ -268,22 +274,37 @@ private fun DrawScope.drawEdgeLight(outline: Outline, style: GlassStyle, level: 
 }
 
 /** 표면 밖에만 지는 부드러운 그림자. 반투명 유리 안으로 그림자가 비치지 않게 안쪽은 잘라 낸다. */
-private fun DrawScope.drawOuterShadow(outline: Outline, style: GlassStyle, level: Float) {
+private fun DrawScope.drawOuterShadow(outline: Outline, style: GlassStyle, level: Float, cache: EffectCache) {
     val radius = style.shadow.toPx() * level
     if (radius < MIN_PX) return
-    val path = outline.toPath()
+    val path = cachedPath(outline, cache)
+    if (cache.shadowRadius != radius) {
+        cache.shadowRadius = radius
+        cache.shadowPaint.maskFilter = BlurMaskFilter(radius, BlurMaskFilter.Blur.NORMAL)
+    }
+    cache.shadowPaint.color = Color.Black.copy(alpha = SHADOW_ALPHA * level).toArgb()
     clipPath(path, clipOp = ClipOp.Difference) {
         drawIntoCanvas { canvas ->
-            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.Black.copy(alpha = SHADOW_ALPHA * level).toArgb()
-                maskFilter = BlurMaskFilter(radius, BlurMaskFilter.Blur.NORMAL)
-            }
             canvas.nativeCanvas.save()
             canvas.nativeCanvas.translate(0f, radius * SHADOW_DROP)
-            canvas.nativeCanvas.drawPath(path.asAndroidPath(), paint)
+            canvas.nativeCanvas.drawPath(path.asAndroidPath(), cache.shadowPaint)
             canvas.nativeCanvas.restore()
         }
     }
+}
+
+/** 모양이 같으면 지난번 Path를 다시 쓴다. */
+private fun cachedPath(outline: Outline, cache: EffectCache): Path {
+    val key = when (outline) {
+        is Outline.Rectangle -> outline.rect
+        is Outline.Rounded -> outline.roundRect
+        is Outline.Generic -> outline.path
+    }
+    if (cache.outlineKey != key) {
+        cache.outlineKey = key
+        cache.path = outline.toPath()
+    }
+    return cache.path
 }
 
 /** 64×64 고운 알갱이 무늬. 한 번 만들어 반복해 깐다. */
