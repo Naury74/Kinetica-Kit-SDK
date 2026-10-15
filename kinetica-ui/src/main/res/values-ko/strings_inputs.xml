@@ -1,0 +1,13 @@
+<resources>
+    <string name="kinetica_ui_picker_next">다음</string>
+    <string name="kinetica_ui_picker_previous">이전</string>
+    <string name="kinetica_ui_picker_year">연도</string>
+    <string name="kinetica_ui_picker_month">월</string>
+    <string name="kinetica_ui_picker_day">일</string>
+    <string name="kinetica_ui_picker_hour">시</string>
+    <string name="kinetica_ui_picker_minute">분</string>
+    <string name="kinetica_ui_picker_am_pm">오전/오후</string>
+    <string name="kinetica_ui_search">검색</string>
+    <string name="kinetica_ui_search_cancel">취소</string>
+    <string name="kinetica_ui_clear_text">입력 지우기</string>
+</resources>

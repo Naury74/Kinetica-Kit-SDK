@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_notify_dismiss">알림 닫기</string>
+    <string name="kinetica_ui_notify_expand">펼치기</string>
+    <string name="kinetica_ui_notify_open">열기</string>
+</resources>

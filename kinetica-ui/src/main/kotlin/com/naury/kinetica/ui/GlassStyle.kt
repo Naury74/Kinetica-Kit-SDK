@@ -168,6 +168,68 @@ public object GlassStyles {
         fallback = Color(0xF2F7F7F7),
     )
 
+    /**
+     * Windows 11 Mica 스타일. 블러를 아주 크게 하고 바탕색을 넉넉히 덮어 배경은 색감만 은은하게 비친다. 테두리가 없다.
+     * 창 전체 배경이나 사이드바처럼 넓은 표면에 어울린다.
+     */
+    @JvmField
+    public val Mica: GlassStyle = GlassStyle(
+        blur = 64.dp,
+        saturation = 1.1f,
+        tint = Color(0xFFF3F3F3).copy(alpha = 0.84f),
+        edgeLight = Color.Transparent,
+        shadow = 4.dp,
+        fallback = Color(0xFFF3F3F3),
+    )
+
+    @JvmField
+    public val MicaDark: GlassStyle = Mica.copy(
+        tint = Color(0xFF202020).copy(alpha = 0.86f),
+        fallback = Color(0xFF202020),
+        onGlass = Color.White,
+    )
+
+    /** HarmonyOS 스타일. 맑고 밝게 블러 처리하고, 둥글게 번지는 부드러운 글로우 테두리를 두른다. */
+    @JvmField
+    public val HarmonyOs: GlassStyle = GlassStyle(
+        blur = 28.dp,
+        saturation = 1.5f,
+        brightness = 0.08f,
+        tint = Color.White.copy(alpha = 0.30f),
+        edgeLight = Color.White.copy(alpha = 0.62f),
+        edgeWidth = 1.5.dp,
+        shadow = 12.dp,
+        refraction = 0.15f,
+        fallback = Color(0xF0FAFBFF),
+    )
+
+    /** 아주 어둡고 진한 흑요석 유리 스타일. 은은한 보라색 테두리를 둘러 다크 테마의 카드나 플레이어 컨트롤에 어울린다. */
+    @JvmField
+    public val Obsidian: GlassStyle = GlassStyle(
+        blur = 32.dp,
+        saturation = 1.2f,
+        brightness = -0.18f,
+        tint = Color(0xFF0B0A12).copy(alpha = 0.62f),
+        edgeLight = Color(0xFFB39DFF).copy(alpha = 0.40f),
+        shadow = 28.dp,
+        refraction = 0.1f,
+        fallback = Color(0xF00E0D14),
+        onGlass = Color.White,
+    )
+
+    /** 옅은 분홍빛 파스텔 유리 스타일. 밝은 배경에서 부드럽고 귀여운 느낌을 낸다. */
+    @JvmField
+    public val Pastel: GlassStyle = GlassStyle(
+        blur = 26.dp,
+        saturation = 1.4f,
+        brightness = 0.05f,
+        tint = Color(0xFFFFD6E8).copy(alpha = 0.42f),
+        edgeLight = Color.White.copy(alpha = 0.7f),
+        shadow = 10.dp,
+        fallback = Color(0xF2FFE6F0),
+        onGlass = Color(0xFF3A2430),
+    )
+
     /** 블러만 있고 색이나 테두리가 없는 스타일. 다이얼로그 뒤 배경을 흐리게 할 때 쓴다. */
     @JvmField
     public val Clear: GlassStyle = GlassStyle(

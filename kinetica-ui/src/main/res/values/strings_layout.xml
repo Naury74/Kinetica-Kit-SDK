@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">Back</string>
+    <string name="kinetica_ui_page_state">Page %1$d of %2$d</string>
+    <string name="kinetica_ui_swipe_left">Swipe left</string>
+    <string name="kinetica_ui_swipe_right">Swipe right</string>
+    <string name="kinetica_ui_swipe_up">Swipe up</string>
+    <string name="kinetica_ui_swipe_undo">Undo last swipe</string>
+    <string name="kinetica_ui_speed_dial">Quick actions</string>
+    <string name="kinetica_ui_speed_dial_expanded">Expanded</string>
+    <string name="kinetica_ui_speed_dial_collapsed">Collapsed</string>
+</resources>

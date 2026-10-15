@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_loading">Loading</string>
+    <string name="kinetica_ui_increase">Increase</string>
+    <string name="kinetica_ui_decrease">Decrease</string>
+    <string name="kinetica_ui_badge_new">New</string>
+    <plurals name="kinetica_ui_badge_count">
+        <item quantity="one">%d new item</item>
+        <item quantity="other">%d new items</item>
+    </plurals>
+</resources>

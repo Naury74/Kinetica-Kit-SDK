@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_loading">불러오는 중</string>
+    <string name="kinetica_ui_increase">늘리기</string>
+    <string name="kinetica_ui_decrease">줄이기</string>
+    <string name="kinetica_ui_badge_new">새 항목</string>
+    <plurals name="kinetica_ui_badge_count">
+        <item quantity="other">새 항목 %d개</item>
+    </plurals>
+</resources>

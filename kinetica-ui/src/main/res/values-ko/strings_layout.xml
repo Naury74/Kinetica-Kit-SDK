@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">뒤로</string>
+    <string name="kinetica_ui_page_state">%2$d페이지 중 %1$d페이지</string>
+    <string name="kinetica_ui_swipe_left">왼쪽으로 넘기기</string>
+    <string name="kinetica_ui_swipe_right">오른쪽으로 넘기기</string>
+    <string name="kinetica_ui_swipe_up">위로 넘기기</string>
+    <string name="kinetica_ui_swipe_undo">마지막 카드 되돌리기</string>
+    <string name="kinetica_ui_speed_dial">빠른 실행</string>
+    <string name="kinetica_ui_speed_dial_expanded">펼쳐짐</string>
+    <string name="kinetica_ui_speed_dial_collapsed">접힘</string>
+</resources>
