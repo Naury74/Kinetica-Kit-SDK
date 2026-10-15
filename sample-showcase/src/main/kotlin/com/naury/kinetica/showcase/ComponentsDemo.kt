@@ -72,8 +72,8 @@ import com.naury.kinetica.ui.SwipeCardStack
 import com.naury.kinetica.ui.SwipeDirection
 import com.naury.kinetica.ui.glassBadge
 import com.naury.kinetica.ui.rememberGlassIslandState
+import com.naury.kinetica.ui.rememberGlassLargeTitleState
 import com.naury.kinetica.ui.rememberGlassSnackbarState
-import com.naury.kinetica.ui.rememberLargeTitleState
 import com.naury.kinetica.ui.rememberSwipeCardStackState
 import com.naury.kinetica.ui.shake
 import com.naury.kinetica.ui.sparkle
@@ -84,7 +84,7 @@ import kotlinx.coroutines.launch
 /** 컴포넌트 모음: kinetica-ui의 버튼, 입력, 피커, 캐러셀, 카드 더미, 알림, 글자 효과를 한 화면에서 눌러 본다. */
 @Composable
 internal fun ComponentsDemo(onBack: () -> Unit) {
-    val title = rememberLargeTitleState()
+    val title = rememberGlassLargeTitleState()
     val island = rememberGlassIslandState()
     val snackbar = rememberGlassSnackbarState()
     var dial by remember { mutableStateOf(false) }

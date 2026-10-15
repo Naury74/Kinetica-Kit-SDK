@@ -39,13 +39,13 @@ import com.naury.kinetica.ui.GlassSurface
 import com.naury.kinetica.ui.GlassTab
 import com.naury.kinetica.ui.GlassTopTabs
 import com.naury.kinetica.ui.Sparkline
-import com.naury.kinetica.ui.rememberDetentSheetState
+import com.naury.kinetica.ui.rememberGlassDetentSheetState
 import com.naury.kinetica.ui.tooltipOnLongPress
 
 /** 지도 앱: 그린 지도 위에 여러 높이에 멈추는 시트. 시트 안 탭을 넘기며 장소 목록을 본다. */
 @Composable
 internal fun MapApp(onBack: () -> Unit) {
-    val sheet = rememberDetentSheetState(detents = listOf(Detent.Peek(150.dp), Detent.Fraction(0.5f), Detent.Full))
+    val sheet = rememberGlassDetentSheetState(detents = listOf(Detent.Peek(150.dp), Detent.Fraction(0.5f), Detent.Full))
     var query by remember { mutableStateOf("") }
     GlassScaffold(Modifier.fillMaxSize(), style = GlassStyles.OneUi, background = { FakeMap(Modifier.fillMaxSize()) }) { _ ->
         Box(Modifier.fillMaxSize()) {

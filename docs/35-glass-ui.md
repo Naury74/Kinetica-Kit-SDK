@@ -10,7 +10,7 @@ implementation("com.naurylab:kinetica-ui:1.0.0-alpha01")
 
 ```kotlin
 GlassScaffold(
-    style = GlassStyles.Liquid,                       // 이 화면에서 쓸 글래스의 기본 스타일
+    // style을 빼면 GlassTheme이 정한 스타일을 쓴다(테마가 없으면 GlassStyles.Liquid).
     background = { Image(painterResource(R.drawable.photo), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) },
     topBar = { GlassSurface(shape = CircleShape) { Text("제목") } },
     bottomBar = { GlassTabBar(tabs, selected, onSelect = { selected = it }) },
@@ -47,12 +47,37 @@ GlassScaffold(
 블러는 Android 12(API 31)부터, 굴절은 Android 13(API 33)부터 동작한다. 그보다 낮은 버전에서는 `fallback` 색의 반투명 표면으로 그린다.
 다이얼로그와 바텀 시트는 `style.forPopup()`으로 블러를 더 강하게, 색을 더 진하게 덮어서 위에 놓인 글자가 잘 읽히게 한다.
 
+## 테마 맞추기 `GlassTheme`
+
+`GlassTheme`으로 글래스 스타일, 강조색, 글꼴을 한 번에 정한다. 화면 루트에 한 번 감싸면 그 안의 `GlassScaffold`와 모든 컴포넌트가 기본값으로 쓴다.
+컴포넌트에 직접 넘긴 값이 있으면 그 값이 우선한다.
+
+```kotlin
+MaterialTheme(colorScheme = scheme, typography = typography) {
+    GlassTheme(
+        darkTheme = isSystemInDarkTheme(),            // 기본값. 앱이 다크 모드를 직접 정하면 그 값을 넘긴다
+        colors = GlassColors(
+            accent = MaterialTheme.colorScheme.primary,
+            onAccent = MaterialTheme.colorScheme.onPrimary,
+            destructive = MaterialTheme.colorScheme.error,
+        ),
+        textStyle = MaterialTheme.typography.bodyLarge, // 글꼴만 가져오고 크기와 줄 높이는 컴포넌트가 정한다
+    ) { App() }
+}
+```
+
+- `style`을 주지 않으면 `darkTheme`에 따라 `GlassStyles.Liquid`나 `LiquidDark`를 고른다. 다른 계열을 쓰려면 `style = if (dark) GlassStyles.OneUiDark else GlassStyles.OneUi`처럼 넘긴다.
+- `GlassColors`의 `accent`는 버튼, 칩, 슬라이더, 진행 표시, 입력란 포커스, 달력 선택에, `positive`는 스위치와 밀어서 확인하기에,
+  `destructive`는 배지, 삭제 메뉴, 입력 오류에 쓴다.
+- kinetica-ui는 Material 3에 의존하지 않으므로 Material 테마 값은 위처럼 호스트가 넘긴다.
+- 직접 만든 컴포넌트를 같은 색으로 맞추려면 `GlassTheme.colors.accent`, `GlassTheme.style`, `GlassTheme.textStyle`을 읽는다.
+
 ## 다이얼로그, 바텀 시트, 토스트, 탭 바
 
 | 컴포넌트 | 동작 |
 | --- | --- |
 | `GlassDialog(visible, onDismissRequest, origin = …)` | 누른 버튼(`Modifier.glassOrigin { origin = it }`)에서 패널이 튀어나오듯 커지고, 배경은 서서히 흐려지며 어두워진다. 바깥을 누르거나 뒤로 가기로 닫는다 |
-| `GlassSheet(visible, onDismissRequest)` | iOS 시트처럼 아래에서 올라오고, 뒤쪽 콘텐츠는 조금 물러나며 모서리가 둥글어진다. 아래로 끌어서 닫는다 |
+| `GlassSheet(visible, onDismissRequest)` | iOS 시트처럼 아래에서 올라오고, 뒤쪽 콘텐츠는 조금 물러나며 모서리가 둥글어진다. 아래로 끌어서 닫는다. `title`은 TalkBack이 읽는 창 이름이고 화면에는 보이지 않는다 |
 | `GlassToastHost(state)` + `state.show("저장했어요")` | 위에서 미끄러져 내려오는 토스트. TalkBack이 내용을 읽어 준다 |
 | `GlassTabBar(tabs, selectedIndex, onSelect)` | 화면 위에 떠 있는 탭 바. 선택한 탭의 인디케이터가 늘어났다 줄어들며 액체처럼 이동한다 |
 | `GlassSurface(shape, style)` | 글래스 표면 하나. 안쪽 글자 색은 `LocalGlassContentColor`로 받는다 |
@@ -99,7 +124,7 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 
 | 구성 요소 | 하는 일 |
 | --- | --- |
-| `GlassLargeTitleBar(rememberLargeTitleState(), "제목")` | One UI·iOS식 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀐다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다 |
+| `GlassLargeTitleBar(rememberGlassLargeTitleState(), "제목")` | One UI·iOS식 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀐다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다 |
 | `GlassCarousel(pageCount) { page -> }` + `GlassPageIndicator(pagerState)` | 옆 카드가 살짝 보이고 멀어질수록 작아지며 기우는 캐러셀. 점 인디케이터는 넘기는 동안 액체처럼 늘어난다 |
 | `SwipeCardStack(items, onSwipe, overlay) { item -> }` | 틴더식 카드 더미. 끌면 기울며 따라오고 던지면 날아간다. `state.undo()`로 되돌린다 |
 | `GlassSpeedDial(expanded, onExpandedChange, items)` | 떠 있는 둥근 버튼. 누르면 +가 ×로 돌고 항목이 차례로 튀어 오르며 뒤가 흐려진다 |
@@ -117,7 +142,7 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 | `GlassLineChart(points 또는 series, labels)` | 선이 그려지며 나타나고, 손가락을 대고 옆으로 움직이면 값 말풍선이 따라온다. 데이터가 바뀌면 이전 모양에서 부드럽게 바뀐다 |
 | `GlassBarChart(values, labels)` / `GlassDonutChart(slices)` / `Sparkline(points)` | 막대는 차례로 자라고 누르면 강조된다. 도넛 조각은 누르면 튀어나오며 가운데에 값을 보여 준다 |
 | `ActivityRings(rings)` | Apple Watch 활동 링. 목표를 넘으면 겹쳐 돈다 |
-| `GlassCalendar(rememberGlassCalendarState(), selection, onSelect, events)` | 월 달력. 좌우로 넘기고, 하루(`Single`) 또는 기간(`Range`)을 고르며, 날짜 아래에 일정 점을 찍는다 |
+| `GlassCalendar(rememberGlassCalendarState(), selection, onSelectionChange, events)` | 월 달력. 좌우로 넘기고, 하루(`Single`) 또는 기간(`Range`)을 고르며, 날짜 아래에 일정 점을 찍는다 |
 | `FlipDigits(text)` / `FlipClock()` / `rememberCountdown(target)` | 기계식 플립 카드 숫자. 바뀐 자리만 위 반쪽이 접혀 내려간다 |
 | `GlassRangeSlider(range, onRangeChange, valueRange)` | 손잡이 두 개짜리 범위 슬라이더. 잡으면 값 말풍선이 뜬다 |
 
@@ -125,11 +150,11 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 
 | 구성 요소 | 하는 일 |
 | --- | --- |
-| `GlassMiniPlayer(rememberMiniPlayerState(), artwork, collapsed, expanded)` | 아래 떠 있는 재생 막대를 누르거나 위로 끌면 전체 화면 플레이어로 커지고, 앨범 아트가 이어지며 커진다. 아래로 끌거나 뒤로 가기로 접는다 |
+| `GlassMiniPlayer(rememberGlassMiniPlayerState(), artwork, collapsed, expanded)` | 아래 떠 있는 재생 막대를 누르거나 위로 끌면 전체 화면 플레이어로 커지고, 앨범 아트가 이어지며 커진다. 아래로 끌거나 뒤로 가기로 접는다 |
 | `PlayPauseIcon` / `MenuCloseIcon` / `PlusCloseIcon` | 모양이 매끄럽게 바뀌는 아이콘 |
 | `GlassRating(rating, onRatingChange, allowHalf)` / `LikeButton(liked, onLikedChange, count)` | 별점과 하트 좋아요. 좋아요를 누르면 하트가 튀며 입자가 터지고 숫자가 굴러간다 |
 | `AvatarStack(avatars, max)` / `Modifier.skeleton(visible)` / `GlassSkeletonText(lines)` | 겹친 아바타와 "+N", 불러오는 동안 빛이 흐르는 자리 표시 |
-| `GlassDetentSheet(rememberDetentSheetState(detents), header) { … }` | Apple 지도처럼 여러 높이(`Detent.Peek`·`Fraction`·`Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 자연스럽게 이어진다 |
+| `GlassDetentSheet(rememberGlassDetentSheetState(detents), header) { … }` | Apple 지도처럼 여러 높이(`Detent.Peek`·`Fraction`·`Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 자연스럽게 이어진다 |
 | `GlassTopTabs(tabs, pagerState)` | 페이저를 넘기는 동안 인디케이터가 액체처럼 따라가는 상단 탭 |
 | `Modifier.glassTooltip(text, visible, onDismiss)` / `Modifier.tooltipOnLongPress(text)` | 화살표가 달린 유리 말풍선 |
 | `CoachMarkHost(state, steps)` + `Modifier.coachMarkTarget(state, id)` | 처음 쓰는 사람을 위한 기능 안내. 화면이 어두워지고 대상 둘레만 밝게 뚫린다 |
@@ -153,7 +178,23 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 | 스크롤 시차 | `Modifier.parallaxScroll(scrollState, rate, pullState)`. 헤더가 느리게 움직이고, 맨 위에서 당기면 커진다 |
 | 스포트라이트 | `Modifier.spotlight(shape = …)`. 손가락을 대고 움직이면 그 자리에 빛이 따라다니고 테두리가 빛난다 |
 
-시스템의 '애니메이션 삭제' 설정이 켜져 있으면 반복, 기울기, 색종이 효과는 모두 멈춘다. 리플, 터지기, 두근거림 같은 누름·등장·반복 효과는 [docs/33](33-effects.md)에서 다룬다.
+모든 효과 수정자는 Material `Button`, `Card`, `Image`, `LazyColumn` 항목 같은 호스트 Composable에 그대로 붙는다. 터치를 소비하지 않으므로 클릭, 리플,
+TalkBack 역할은 그대로다. 수정자 순서는 다음을 권한다.
+
+```kotlin
+Modifier
+    .jellyPress()                  // 1. 움직임(jellyPress, magnetic, motionTilt, shake, kineticaEffects): 배경과 리플까지 함께 움직인다
+    .glowBorder(shape)             // 2. 겉에 그리는 효과(glowBorder, sparkle, glassBadge): 잘리지 않게 clip보다 앞에 둔다
+    .glass(shape = shape)          // 3. 배경(glass, background)
+    .clip(shape)                   // 4. 자르기
+    .clickable { … }               // 5. 입력(clickable, glassContextMenu, tooltipOnLongPress)
+    .padding(16.dp)
+```
+
+순서를 바꿔도 클릭은 동작하지만, 움직임 효과를 `background` 뒤에 두면 배경은 그대로 있고 안쪽 내용만 움직인다.
+
+시스템의 '애니메이션 삭제' 설정이 켜져 있으면 반복, 기울기, 색종이 효과는 모두 멈춘다. 반복 효과(`glowBorder`, `sparkle`, `skeleton`, 글자 효과, 움직이는 배경)는
+요소가 창 밖으로 스크롤되어 나가 있는 동안에도 멈추고, `motionTilt`는 앱이 백그라운드로 가면 센서를 놓는다. 리플, 터지기, 두근거림 같은 누름·등장·반복 효과는 [docs/33](33-effects.md)에서 다룬다.
 
 ## 호스트 앱에서 쓸 때
 
@@ -212,7 +253,9 @@ GlassPopupHandle sheet = GlassSheets.show(this, R.layout.sheet_share);
 ## 성능
 
 GPU 가속 에뮬레이터(Apple M5 호스트)에서 글래스 20개 남짓과 움직이는 배경이 있는 쇼케이스 화면을 재 보면 프레임 p50이 17 ms(60fps)이고 끊김은 1% 미만이다.
-글래스 하나마다 블러 층을 하나 더 그리므로, 작은 버튼마다 글래스를 쓰기보다 큰 카드나 바에 쓰는 편이 낫다. 소프트웨어 렌더러(SwiftShader 에뮬레이터)에서는 매우 느리다.
+글래스 하나마다 블러 층을 하나 더 그리므로, 작은 버튼마다 글래스를 쓰기보다 큰 카드나 바에 쓰는 편이 낫다.
+효과 값은 그리기 단계에서 읽으므로 애니메이션 중에 재구성하지 않는다. `LazyColumn` 항목 300개에 효과, 글래스, 배지를 붙여도 항목이 다시 구성되지 않는 것을
+`HostUsageTest`가 확인한다. 소프트웨어 렌더러(SwiftShader 에뮬레이터)에서는 매우 느리다.
 
 ## 확인
 

@@ -32,13 +32,17 @@
   AnimatedContent(tab, transitionSpec = { ContentTransitions.sharedAxisX(forward = targetState > initialState) }) { Page(it) }
   ```
 - 장면이나 서버 화면 안의 숫자는 재생기가 알아서 올라가게 애니메이션한다(`KineticaPlayer(numberAnimationMs = …)`, [docs/30](30-ui-composer.md)).
-- `animateNumberAsState(target)`는 값이 바뀌면 지금 보이는 숫자에서 새 값까지 올라가거나 내려간다. 대시보드 매출이나 카운터에 쓰면 된다. 큰 수도 Double로 계산한다.
+- `animateNumberAsState(targetValue)`는 값이 바뀌면 지금 보이는 숫자에서 새 값까지 올라가거나 내려간다. 대시보드 매출이나 카운터에 쓰면 된다. 큰 수도 Double로 계산한다.
 
 ## 어디에 붙일까
 
 - 보드 위젯에는 `BoardWidget(effects = …)`만 쓴다. 위젯 안 내용에도 `Modifier.kineticaEffects`로 등장 효과를 붙이면 두 번 등장한다.
   위젯 안의 버튼처럼 일부에만 누름 효과를 주려면 그 내용에 붙인다.
 - 장면 노드는 문서의 `effects`(편집기의 **모션 효과**)를, 호스트 Compose 뷰는 `Modifier.kineticaEffects`를, XML View는 `ViewEffects.apply`를 쓴다.
+- Compose에서는 `Modifier.kineticaEffects`를 수정자 체인 맨 앞, 적어도 `background`, `clip`, `clickable`보다 앞에 둔다. 그래야 크기와 기울기 변화가
+  배경과 리플까지 함께 움직이고, 어둡게나 리플이 배경 위에 덮인다.
+- `LazyColumn`은 스크롤해 새로 들어온 항목도 등장 애니메이션을 다시 재생한다. `EffectPresets.listItem(index)`의 지연은 10번째 항목(600ms)에서 멈추므로,
+  목록 전체 위치 대신 처음 화면에 보이는 순서를 넘긴다.
 
 ## 규칙
 
@@ -53,6 +57,7 @@
 - 버스트와 핑은 노드 바깥까지 그린다. Compose에서는 효과를 `clip`보다 앞에 붙이고, 이웃 요소보다 위에 보이게 하려면 `zIndex`를 준다.
   XML View에서는 부모 ViewGroup의 overlay에 그리므로 부모에 여백을 둔다.
 - 누르자마자 떼는 빠른 탭에서도 누름 상태를 바로 바꾸므로 떼는 애니메이션이나 버스트를 놓치지 않는다.
+- Compose 효과는 경로, 붓, Paint를 크기나 모양이 바뀔 때만 만들고 프레임마다 새로 만들지 않는다. 글로우의 블러 반경은 1px 단위로 바꾼다.
 - XML View의 리플, 어둡게, 시머는 `ViewEffects.apply(view, effects, cornerRadiusDp)`로 정한 둥근 사각형 안에 그린다.
   글로우는 그림자 높이로 흉내 내며 View 윤곽(`outlineProvider`)을 따른다.
 

@@ -48,7 +48,7 @@ import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.GlassSurface
 import com.naury.kinetica.ui.LikeButton
 import com.naury.kinetica.ui.PlayPauseIcon
-import com.naury.kinetica.ui.rememberMiniPlayerState
+import com.naury.kinetica.ui.rememberGlassMiniPlayerState
 import com.naury.kinetica.ui.skeleton
 import kotlinx.coroutines.delay
 
@@ -62,7 +62,7 @@ internal fun MusicApp(onBack: () -> Unit) {
         delay(1500)
         loading = false
     }
-    val player = rememberMiniPlayerState()
+    val player = rememberGlassMiniPlayerState()
     GlassScaffold(
         Modifier.fillMaxSize(),
         style = GlassStyles.LiquidDark,

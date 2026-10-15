@@ -45,14 +45,14 @@ import com.naury.kinetica.ui.MeshGradients
 import com.naury.kinetica.ui.countdownText
 import com.naury.kinetica.ui.rememberCountdown
 import com.naury.kinetica.ui.rememberGlassCalendarState
-import com.naury.kinetica.ui.rememberLargeTitleState
+import com.naury.kinetica.ui.rememberGlassLargeTitleState
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
 /** 건강 앱: 활동 링, 주간 걸음 수, 수면·지출 차트, 운동 달력, 다음 운동까지 플립 카운트다운, 심박 범위. */
 @Composable
 internal fun HealthApp(onBack: () -> Unit) {
-    val title = rememberLargeTitleState()
+    val title = rememberGlassLargeTitleState()
     GlassScaffold(
         Modifier.fillMaxSize(),
         style = GlassStyles.LiquidDark,

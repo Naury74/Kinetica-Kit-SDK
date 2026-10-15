@@ -76,7 +76,10 @@ class XmlActivity : ComponentActivity() {
     /** XML 화면에서 글래스 시트, 다이얼로그, 토스트를 띄우고 GlassSurfaceView 글자 색을 스타일에 맞춘다. */
     private fun setUpGlass() {
         val caption = findViewById<GlassSurfaceView>(R.id.promo_caption)
-        findViewById<TextView>(R.id.promo_caption_text).setTextColor(caption.contentColor)
+        val captionText = findViewById<TextView>(R.id.promo_caption_text)
+        captionText.setTextColor(caption.contentColor)
+        // auto 스타일은 다크 모드를 따라 바뀌므로 글자 색도 함께 바꾼다.
+        caption.setOnContentColorChangeListener { captionText.setTextColor(it) }
         findViewById<Button>(R.id.glass_sheet).setOnClickListener { showSheet() }
         findViewById<Button>(R.id.glass_dialog).setOnClickListener { showDialog() }
         findViewById<Button>(R.id.glass_toast).setOnClickListener { GlassToasts.show(this, "XML 화면에서 띄운 글래스 토스트") }

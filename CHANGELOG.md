@@ -39,3 +39,13 @@
   - 슬라이더·스위치·세그먼트 `enabled`, 슬라이더 키보드 조절, RTL 배치, TalkBack 문구(영어·한국어)
   - 고급 효과: `glowBorder`, `jellyPress`, `magnetic`, `motionTilt`, `RollingText`, `TypewriterText`, `ConfettiHost`
 - 샘플: 샘플 앱을 `sample-showcase` 하나로 합침(글래스 UI, 모션 효과, 대시보드 보드, 앱 화면 예, 컴포넌트, 화면 이동, 장면 전환, 서버 화면, 화면 만들기, XML 화면 예). 소비자 확인 빌드 추가
+- 호스트 앱 연동: `GlassTheme`(다크 모드·호스트 강조색·글꼴을 한 번에), 화면 밖 반복 효과 정지, `GlassScaffold` 밖에서 쓰면 별도 창으로 띄우기, 시트·다이얼로그 `contentWindowInsets`, 모달 포커스 가두기, 스낵바 `bottomOffset`(스캐폴드 안이면 탭 바 위에 저절로)
+- XML 진입점: `GlassSheets`·`GlassDialogs`·`GlassToasts`·`GlassSurfaceView`, RecyclerView·ViewPager2·CoordinatorLayout·Fragment 대응, View 기본 스타일 테마 속성(`kinetica_glassSurfaceViewStyle`·`kinetica_boardViewStyle`·`kinetica_playerViewStyle`), `ViewEffects.effectsOf`
+- Java: `PressEffect.of`, `LoopEffect.of`, `NodeEffects`·`AppearEffect` 생성자 기본값, `NodeEffects.None` 필드
+
+### 알파 동안 바뀐 이름
+- `GlassSlider`·`GlassRangeSlider`의 `activeColor`, `GlassSwitch`의 `onColor`, `GlassSlideToConfirm`의 `color` → `accent`
+- `GlassCalendar`의 `onSelect` → `onSelectionChange`, `animateNumberAsState`의 `target` → `targetValue`
+- `MiniPlayerState`·`DetentSheetState`·`TooltipState`·`TooltipPlacement`·`SlideToConfirmState`와 `remember*` 함수, `rememberLargeTitleState` → 앞에 `Glass`를 붙인 이름
+- `GlassMiniPlayer`의 `collapsed`·`expanded` 슬롯이 진행도를 `() -> Float`로 받음
+
