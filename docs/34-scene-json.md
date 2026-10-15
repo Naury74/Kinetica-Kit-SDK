@@ -145,7 +145,8 @@ keyframe의 키는 다음과 같다. 시각은 겹치지 않고 커지는 순서
 | --- | --- | --- |
 | `timeMs` | ○ | `0..durationMs` |
 | `value` | ○ | 숫자, 색 속성이면 색 문자열 |
-| `easing` | | 이 키에서 다음 키까지의 easing. `type`: `linear`(기본) `cubicBezier`(`x1` `y1` `x2` `y2`, x는 0..1) `steps`(`count`) `spring`(`dampingRatio` `stiffness`) |
+| `easing` | | 이 키에서 다음 키까지의 easing. `type`: `linear`(기본) `cubicBezier`(`x1` `y1` `x2` `y2`, x는 0..1) `steps`(`count`, 선택 `jump`) `spring`(`dampingRatio` `stiffness`) |
+| `easing.jump` | | 계단 easing에서 값이 오르는 시점. CSS `steps()`의 점프 방식과 같다. `end`(기본, 각 칸이 끝날 때) `start`(각 칸이 시작할 때) `none`(`count - 1`번 올라 첫 칸은 0, 마지막 칸은 1이다. `count`는 2 이상) `both`(`count + 1`번 올라 첫 칸도 0보다 크고 마지막 칸도 1보다 작다). 구간의 양 끝은 어느 방식이든 0과 1이다. `end`이면 쓰지 않고, 모르는 값은 `Malformed`로 거부한다 |
 | `rotationDirection` | | 회전 track에서 이 키부터 다음 키까지 도는 방향. `shortest`(기본, 가장 짧은 방향) `clockwise` `counterClockwise` `direct`(값 차이 그대로, 0에서 720이면 두 바퀴). 회전이 아닌 속성에서는 무시한다 |
 
 ```json
