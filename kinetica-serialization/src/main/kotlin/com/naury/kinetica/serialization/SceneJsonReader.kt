@@ -6,6 +6,7 @@ import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.KeyValueType
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.PropertyTrack
+import com.naury.kinetica.core.animation.RotationDirection
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.animation.TimelineMarker
 import com.naury.kinetica.core.geometry.Transform2D
@@ -280,6 +281,10 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             easing = json.optional(K.EASING)?.let {
                 readEasing(it.asObject("$path.${K.EASING}"), "$path.${K.EASING}")
             } ?: EasingSpec.Linear,
+            rotation = json.optional(K.ROTATION_DIRECTION)?.let {
+                val at = "$path.${K.ROTATION_DIRECTION}"
+                RotationDirection.fromWireName(it.asString(at)) ?: fail(at, "지원하지 않는 회전 방향입니다.")
+            } ?: RotationDirection.Shortest,
         )
     }
 

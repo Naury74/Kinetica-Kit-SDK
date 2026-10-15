@@ -3,9 +3,9 @@ package com.naury.kinetica.motion
 import com.naury.kinetica.core.animation.AnimatableProperties
 import com.naury.kinetica.core.animation.AnimatableProperty
 import com.naury.kinetica.core.animation.KeyValue
+import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.PropertyTrack
 import com.naury.kinetica.core.animation.Timeline
-import com.naury.kinetica.core.geometry.shortestDeltaDegrees
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
@@ -18,7 +18,7 @@ import kotlin.math.roundToInt
  * 구간 규칙: 시각 t가 `t0 <= t < t1`이면 `u = (t - t0) / (t1 - t0)`에 `t0` keyframe의 easing을 적용해 보간한다.
  * keyframe 시각에서는 그 keyframe 값을 그대로 돌려준다. 첫 keyframe 전과 마지막 keyframe 뒤에서는 가장 가까운 값을 유지한다.
  *
- * 값 규칙: 회전은 가장 짧은 방향으로, 색은 sRGB 채널별로 선형 보간한 뒤 반올림해 0..255로 맞춘다.
+ * 값 규칙: 회전은 시작 keyframe의 [Keyframe.rotation] 방향(기본은 가장 짧은 방향)으로, 색은 sRGB 채널별로 선형 보간한 뒤 반올림해 0..255로 맞춘다.
  * opacity는 0..1, 선 두께는 0 이상으로 맞추며, 스프링처럼 범위를 넘는 easing을 써도 이 범위를 지킨다.
  */
 public object TimelineEvaluator {
@@ -34,7 +34,7 @@ public object TimelineEvaluator {
         val to = keys[index + 1]
         val duration = (to.timeMs - from.timeMs).toDouble()
         val eased = Easing.evaluate(from.easing, (time - from.timeMs) / duration, duration)
-        return interpolate(track.property, from.value, to.value, eased)
+        return interpolate(track.property, from, to.value, eased)
     }
 
     /**
@@ -63,19 +63,22 @@ public object TimelineEvaluator {
         return low
     }
 
-    private fun interpolate(property: AnimatableProperty, from: KeyValue, to: KeyValue, fraction: Double): KeyValue = when {
-        from is KeyValue.Color && to is KeyValue.Color -> KeyValue.Color(lerpColor(from.color, to.color, fraction))
+    private fun interpolate(property: AnimatableProperty, key: Keyframe, to: KeyValue, fraction: Double): KeyValue {
+        val from = key.value
+        return when {
+            from is KeyValue.Color && to is KeyValue.Color -> KeyValue.Color(lerpColor(from.color, to.color, fraction))
 
-        from is KeyValue.Scalar && to is KeyValue.Scalar -> {
-            val delta = if (property == AnimatableProperty.RotationDegrees) {
-                shortestDeltaDegrees(from.value, to.value)
-            } else {
-                to.value - from.value
+            from is KeyValue.Scalar && to is KeyValue.Scalar -> {
+                val delta = if (property == AnimatableProperty.RotationDegrees) {
+                    key.rotation.deltaDegrees(from.value, to.value)
+                } else {
+                    to.value - from.value
+                }
+                KeyValue.Scalar(from.value + delta * fraction)
             }
-            KeyValue.Scalar(from.value + delta * fraction)
-        }
 
-        else -> from
+            else -> from
+        }
     }
 
     private fun lerpColor(from: ArgbColor, to: ArgbColor, fraction: Double): ArgbColor {

@@ -3,6 +3,7 @@ package com.naury.kinetica.serialization
 import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.Keyframe
+import com.naury.kinetica.core.animation.RotationDirection
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
@@ -213,6 +214,7 @@ internal object SceneJsonWriter {
             is KeyValue.Color -> put(K.VALUE, value.color.toHex())
         }
         if (keyframe.easing != EasingSpec.Linear) put(K.EASING, easing(keyframe.easing))
+        if (keyframe.rotation != RotationDirection.Shortest) put(K.ROTATION_DIRECTION, keyframe.rotation.wireName)
     }
 
     private fun easing(easing: EasingSpec): JsonObject = buildJsonObject {

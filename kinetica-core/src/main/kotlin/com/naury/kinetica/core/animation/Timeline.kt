@@ -34,8 +34,14 @@ public data class PropertyTrack(val nodeId: NodeId, val property: AnimatableProp
 /**
  * @property timeMs timeline 시작 시점부터 잰 밀리초. `0..durationMs`
  * @property easing 이 keyframe에서 다음 keyframe까지 구간의 easing. 마지막 keyframe의 easing은 쓰지 않는다.
+ * @property rotation 이 keyframe에서 다음 keyframe까지 도는 방향. 회전 track에서만 쓰고, 마지막 keyframe의 값은 쓰지 않는다.
  */
-public data class Keyframe(val timeMs: Long, val value: KeyValue, val easing: EasingSpec = EasingSpec.Linear)
+public data class Keyframe(
+    val timeMs: Long,
+    val value: KeyValue,
+    val easing: EasingSpec = EasingSpec.Linear,
+    val rotation: RotationDirection = RotationDirection.Shortest,
+)
 
 /** keyframe 값. 타입이 속성의 [AnimatableProperty.valueType]과 같아야 한다. */
 public sealed interface KeyValue {
@@ -49,7 +55,7 @@ public enum class KeyValueType { Scalar, Color }
 /**
  * 애니메이션할 수 있는 노드 속성. [wireName]은 JSON에 저장할 때 쓰는 이름이다.
  *
- * 회전은 기본적으로 가장 짧은 방향으로 보간한다. 색은 sRGB 채널 값을 그대로 선형 보간한다.
+ * 회전은 기본적으로 가장 짧은 방향으로 보간하고, keyframe의 [Keyframe.rotation]으로 방향을 바꿀 수 있다. 색은 sRGB 채널 값을 그대로 선형 보간한다.
  */
 public enum class AnimatableProperty(public val wireName: String, public val valueType: KeyValueType) {
     TranslationX("translationX", KeyValueType.Scalar),

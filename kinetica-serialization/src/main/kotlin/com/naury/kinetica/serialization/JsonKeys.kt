@@ -137,6 +137,7 @@ internal object JsonKeys {
     const val TIME_MS = "timeMs"
     const val VALUE = "value"
     const val EASING = "easing"
+    const val ROTATION_DIRECTION = "rotationDirection"
     const val X1 = "x1"
     const val Y1 = "y1"
     const val X2 = "x2"

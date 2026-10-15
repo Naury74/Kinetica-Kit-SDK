@@ -6,6 +6,7 @@ import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.PropertyTrack
+import com.naury.kinetica.core.animation.RotationDirection
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.testing.TestScenes
@@ -64,6 +65,32 @@ class TimelineEvaluatorTest {
 
         assertThat(rotation.at(50.0)).isWithin(1e-9).of(180.0)
         assertThat(rotation.at(100.0)).isEqualTo(-170.0)
+    }
+
+    @Test
+    fun `회전 방향을 정하면 그 방향으로 돌고 값 그대로는 여러 바퀴를 돈다`() {
+        fun spin(from: Double, to: Double, direction: RotationDirection) =
+            track(AnimatableProperty.RotationDegrees, Keyframe(0, KeyValue.Scalar(from), rotation = direction), scalar(100, to))
+
+        assertThat(spin(0.0, 90.0, RotationDirection.CounterClockwise).at(50.0)).isWithin(1e-9).of(-135.0)
+        assertThat(spin(0.0, -90.0, RotationDirection.Clockwise).at(50.0)).isWithin(1e-9).of(135.0)
+        assertThat(spin(0.0, 720.0, RotationDirection.Direct).at(25.0)).isWithin(1e-9).of(180.0)
+        assertThat(spin(0.0, 720.0, RotationDirection.Shortest).at(25.0)).isWithin(1e-9).of(0.0)
+        assertThat(spin(10.0, 370.0, RotationDirection.Clockwise).at(50.0)).isWithin(1e-9).of(190.0)
+        assertThat(spin(170.0, -170.0, RotationDirection.Shortest).at(50.0)).isWithin(1e-9).of(180.0)
+        // 끝 keyframe 시각에는 끝 값을 그대로 돌려준다.
+        assertThat(spin(0.0, 720.0, RotationDirection.Clockwise).at(100.0)).isEqualTo(720.0)
+    }
+
+    @Test
+    fun `회전 방향은 회전이 아닌 속성에서는 무시한다`() {
+        val move = track(
+            AnimatableProperty.TranslationX,
+            Keyframe(0, KeyValue.Scalar(0.0), rotation = RotationDirection.CounterClockwise),
+            scalar(100, 300.0),
+        )
+
+        assertThat(move.at(50.0)).isWithin(1e-9).of(150.0)
     }
 
     @Test
