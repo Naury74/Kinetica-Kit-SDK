@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -140,6 +141,47 @@ class SceneLayoutTest {
         compose.waitForIdle()
 
         assertThat(seen).isEqualTo(before)
+    }
+
+    @Test
+    fun `호스트가 재구성될 때마다 slots 맵을 새로 넘겨도 다른 노드는 다시 그리지 않고 호스트 뷰 상태도 유지한다`() {
+        val document = scene(
+            SceneNode(NodeId("photo"), NodeContent.Image(Size(50.0, 50.0), "content://photo")),
+            SceneNode(NodeId("slot"), NodeContent.HostSlot(Size(50.0, 50.0), "chart"), transform = Transform2D(translationX = 100.0)),
+        )
+        var imageReads = 0
+        val images = SceneImageProvider {
+            imageReads++
+            null
+        }
+        val tick = mutableStateOf(0)
+        val states = mutableSetOf<Any>()
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box(Modifier.size(200.dp)) {
+                    // 호스트 뷰가 쓰는 값이 바뀔 때마다 호스트 화면이 다시 그려지며 slots를 새 맵으로 만든다.
+                    val value = tick.value
+                    val slots: SceneSlots = mapOf(
+                        "chart" to {
+                            states += remember { Any() }
+                            BasicText("$value")
+                        },
+                    )
+                    SceneLayout(document, Viewport(0.0, 0.0, 1.0), Modifier.fillMaxSize(), images, slots)
+                }
+            }
+        }
+        compose.waitForIdle()
+        val first = imageReads
+
+        repeat(5) {
+            tick.value++
+            compose.waitForIdle()
+        }
+
+        assertThat(imageReads).isEqualTo(first)
+        assertThat(states).hasSize(1)
+        compose.onNodeWithText("5").assertExists()
     }
 
     @Test
