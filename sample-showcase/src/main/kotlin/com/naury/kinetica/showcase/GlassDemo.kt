@@ -72,7 +72,7 @@ internal fun GlassDemo(onBack: () -> Unit) {
         Modifier.fillMaxSize(),
         style = style,
         background = { Aurora(Modifier.fillMaxSize(), dark) },
-        topBar = { TopBar(option.name, onBack) },
+        topBar = { DemoTopBar("글래스 UI · ${option.name}", "뒤를 흐리게 비추는 유리 표면·팝업·시트·알림", onBack) },
         bottomBar = {
             GlassTabBar(
                 listOf(
@@ -167,16 +167,6 @@ private val STYLES = listOf(
 )
 
 @Composable
-private fun TopBar(name: String, onBack: () -> Unit) {
-    GlassSurface(Modifier.statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(), shape = CircleShape) {
-        Row(Modifier.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Label("‹", 22, FontWeight.Bold, Modifier.clickable(onClick = onBack).padding(end = 12.dp))
-            Label("글래스 UI · $name", 17, FontWeight.SemiBold)
-        }
-    }
-}
-
-@Composable
 private fun Intro(dark: Boolean) {
     val ink = if (dark) Color.White else Color(0xFF15161A)
     Column(Modifier.padding(top = 8.dp)) {
@@ -195,40 +185,6 @@ private fun Chips(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) 
         labels.forEachIndexed { i, label -> Pill(label, filled = i == selected) { onSelect(i) } }
     }
 }
-
-@Composable
-private fun Pill(text: String, modifier: Modifier = Modifier, filled: Boolean = false, onClick: () -> Unit) {
-    val content = LocalGlassContentColor.current
-    if (filled) {
-        Box(modifier.background(content, CircleShape).clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 10.dp)) {
-            BasicText(
-                text,
-                style = TextStyle(
-                    color = if (content.luminanceGuess() >
-                        0.5f
-                    ) {
-                        Color.Black
-                    } else {
-                        Color.White
-                    },
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-            )
-        }
-    } else {
-        GlassSurface(modifier.clickable(onClick = onClick), shape = CircleShape) {
-            Box(Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) { Label(text, 14, FontWeight.SemiBold) }
-        }
-    }
-}
-
-@Composable
-private fun Label(text: String, size: Int, weight: FontWeight = FontWeight.Normal, modifier: Modifier = Modifier) {
-    BasicText(text, modifier, style = TextStyle(color = LocalGlassContentColor.current, fontSize = size.sp, fontWeight = weight))
-}
-
-private fun Color.luminanceGuess(): Float = red * 0.3f + green * 0.59f + blue * 0.11f
 
 /** 사진 대신 색 카드. 유리 막대 뒤로 지나가며 비친다. */
 @Composable

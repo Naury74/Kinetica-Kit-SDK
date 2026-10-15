@@ -4,7 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
@@ -23,11 +29,15 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.toRect
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -46,6 +56,7 @@ import androidx.compose.ui.unit.dp
  *
  * @param background 내용 뒤 바탕(사진·그라디언트). 유리가 비출 색이 있어야 유리답게 보인다.
  * @param backdropColor 시트가 열려 내용이 물러날 때 드러나는 바탕 색
+ * @param edgeFade 스크롤된 내용이 상태 표시줄 아래에서 흐려지며 사라지게 한다(iOS 스크롤 가장자리처럼).
  */
 @Composable
 public fun GlassScaffold(
@@ -55,6 +66,7 @@ public fun GlassScaffold(
     topBar: @Composable BoxScope.() -> Unit = {},
     bottomBar: @Composable BoxScope.() -> Unit = {},
     backdropColor: Color = Color.Black,
+    edgeFade: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     // 기록은 세 겹이다: 바탕 ⊂ 바탕+내용 ⊂ 화면 전체(막대 포함). 유리는 자기를 담지 않은 겹을 비춘다.
@@ -100,6 +112,7 @@ public fun GlassScaffold(
                         }
                     }
                 }
+                if (edgeFade) EdgeFade(contentBackdrop, Modifier.align(Alignment.TopCenter))
                 CompositionLocalProvider(LocalGlassBackdrop provides contentBackdrop) {
                     Box(Modifier.align(Alignment.TopCenter).onSizeChanged { topHeight = it.height }, content = topBar)
                     Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomHeight = it.height }, content = bottomBar)
@@ -107,6 +120,24 @@ public fun GlassScaffold(
             }
             host.entries.forEach { entry -> key(entry.id) { entry.content() } }
         }
+    }
+}
+
+/** 상태 표시줄 아래로 들어간 내용을 흐리게 하고, 아래로 갈수록 옅어진다. */
+@Composable
+private fun EdgeFade(backdrop: GlassBackdrop, modifier: Modifier) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            // 상태 표시줄과 그 아래 조금(위 막대가 떠 있는 틈)까지.
+            .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + EDGE_EXTRA)
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+            .drawWithContent {
+                drawContent()
+                drawRect(Brush.verticalGradient(listOf(Color.Black, Color.Black, Color.Transparent)), blendMode = BlendMode.DstIn)
+            },
+    ) {
+        Box(Modifier.matchParentSize().glass(GlassStyles.Clear.copy(blur = EDGE_BLUR, fallback = Color.Transparent), backdrop = backdrop))
     }
 }
 
@@ -132,5 +163,7 @@ internal class OverlayEntry(val id: Any) {
 }
 
 private const val PUSH_SCALE = 0.07f
+private val EDGE_BLUR = 16.dp
+private val EDGE_EXTRA = 12.dp
 private val PUSH_DROP = 10.dp
 private val PUSH_CORNER = 28.dp

@@ -1,0 +1,108 @@
+// 화면 모양 값(간격·크기·색)은 그 자리에서 읽는 편이 낫다.
+@file:Suppress("MagicNumber")
+
+package com.naury.kinetica.showcase
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.naury.kinetica.ui.GlassSurface
+import com.naury.kinetica.ui.LocalGlassContentColor
+import com.naury.kinetica.ui.jellyPress
+
+/** 화면 위 유리 막대: 뒤로, 제목, 이 화면이 보여 주는 것 한 줄. */
+@Composable
+internal fun DemoTopBar(title: String, subtitle: String, onBack: () -> Unit) {
+    GlassSurface(
+        Modifier.statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clickable(role = Role.Button, onClick = onBack)
+                    .semantics { contentDescription = "뒤로" },
+                contentAlignment = Alignment.Center,
+            ) { Label("‹", 26, FontWeight.Bold) }
+            Column(Modifier.padding(start = 6.dp)) {
+                Label(title, 17, FontWeight.Bold)
+                Label(subtitle, 12, color = LocalGlassContentColor.current.copy(alpha = 0.65f))
+            }
+        }
+    }
+}
+
+/** 제목과 설명이 있는 유리 카드. 시연 내용은 [content]에 넣는다. */
+@Composable
+internal fun DemoCard(title: String, description: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    GlassSurface(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Label(title, 18, FontWeight.Bold)
+            Label(description, 13, color = LocalGlassContentColor.current.copy(alpha = 0.7f))
+            content()
+        }
+    }
+}
+
+/** 알약 버튼. [filled]면 진하게 칠한다. 누르면 젤리처럼 눌린다. */
+@Composable
+internal fun Pill(text: String, modifier: Modifier = Modifier, filled: Boolean = false, onClick: () -> Unit) {
+    val ink = LocalGlassContentColor.current
+    if (filled) {
+        Box(
+            modifier.jellyPress().background(
+                ink,
+                CircleShape,
+            ).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 18.dp, vertical = 10.dp),
+        ) {
+            BasicText(
+                text,
+                style = TextStyle(
+                    color = if (ink.isLight()) Color.Black else Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+            )
+        }
+    } else {
+        GlassSurface(modifier.jellyPress().clickable(role = Role.Button, onClick = onClick), shape = CircleShape) {
+            Box(Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) { Label(text, 14, FontWeight.SemiBold) }
+        }
+    }
+}
+
+@Composable
+internal fun Label(
+    text: String,
+    size: Int,
+    weight: FontWeight = FontWeight.Normal,
+    modifier: Modifier = Modifier,
+    color: Color = LocalGlassContentColor.current,
+) {
+    BasicText(text, modifier, style = TextStyle(color = color, fontSize = size.sp, fontWeight = weight, lineHeight = (size * 1.4f).sp))
+}
+
+internal fun Color.isLight(): Boolean = red * 0.3f + green * 0.59f + blue * 0.11f > 0.5f
