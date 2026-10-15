@@ -14,6 +14,8 @@ dependencies {
     api(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.kotlinx.coroutines.android)
+    // API 26·27에서 사진의 EXIF 회전을 읽는다(28부터는 ImageDecoder가 반영한다).
+    implementation(libs.androidx.exifinterface)
 
     testImplementation(testFixtures(project(":kinetica-core")))
     testImplementation(libs.robolectric)

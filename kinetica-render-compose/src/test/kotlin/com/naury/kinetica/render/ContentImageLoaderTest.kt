@@ -43,4 +43,27 @@ class ContentImageLoaderTest {
         assertThat(loader.load("file:///sdcard/a.png")).isNull()
         assertThat(loader.load("content://test/missing")).isNull()
     }
+
+    @Test
+    @org.robolectric.annotation.Config(sdk = [26])
+    fun `API 26에서도 EXIF 방향대로 돌려 읽는다`() = runBlocking<Unit> {
+        val bitmap = Bitmap.createBitmap(40, 20, Bitmap.Config.ARGB_8888).apply { eraseColor(0xFF4466FF.toInt()) }
+        val file = java.io.File.createTempFile("exif", ".jpg")
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+        androidx.exifinterface.media.ExifInterface(file.absolutePath).apply {
+            setAttribute(
+                androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
+                androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90.toString(),
+            )
+            saveAttributes()
+        }
+        val bytes = file.readBytes()
+        shadowOf(context.contentResolver).registerInputStreamSupplier(Uri.parse("content://test/rotated")) { bytes.inputStream() }
+        val loader = ContentImageLoader(context, ioDispatcher = Dispatchers.Unconfined)
+
+        val image = checkNotNull(loader.load("content://test/rotated"))
+
+        assertThat(image.width).isEqualTo(20)
+        assertThat(image.height).isEqualTo(40)
+    }
 }

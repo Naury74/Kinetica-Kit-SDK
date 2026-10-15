@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import androidx.compose.runtime.Composable
@@ -14,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.exifinterface.media.ExifInterface
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneDocument
 import java.io.IOException
@@ -25,7 +27,7 @@ import kotlinx.coroutines.withContext
 /**
  * 이미지 노드의 URI를 읽는 기본 구현. `content://`와 `android.resource://`만 열고, 웹이나 파일 같은 다른 scheme은 열지 않는다(docs 14).
  *
- * 디코딩 전에 크기를 먼저 읽고 [maxPixels] 안으로 줄여서 디코딩한다. API 28 이상에서는 EXIF 회전을 반영하고, 26과 27에서는 반영하지 않는다.
+ * 디코딩 전에 크기를 먼저 읽고 [maxPixels] 안으로 줄여서 디코딩한다. EXIF 회전·뒤집기 정보를 반영한다.
  * 권한이 없거나, 열 수 없거나, 이미지가 아니면 `null`을 돌려준다. 입출력은 [ioDispatcher]에서 실행한다.
  *
  * @param maxPixels 디코딩한 이미지의 최대 픽셀 수(기본 4MP)
@@ -76,10 +78,20 @@ public class ContentImageLoader(
         } else {
             var sample = 1
             while (bounds.outWidth.toLong() * bounds.outHeight / (sample.toLong() * sample) > maxPixels) sample *= 2
-            resolver.openInputStream(uri)?.use {
+            val bitmap = resolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
             }
+            bitmap?.let { applyExif(uri, it) }
         }
+    }
+
+    // BitmapFactory는 EXIF 방향을 무시하므로 직접 돌린다. 방향을 읽지 못하면 그대로 둔다.
+    private fun applyExif(uri: Uri, bitmap: Bitmap): Bitmap {
+        val orientation = resolver.openInputStream(uri)?.use {
+            ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+        } ?: ExifInterface.ORIENTATION_NORMAL
+        val matrix = exifMatrix(orientation) ?: return bitmap
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true).also { if (it !== bitmap) bitmap.recycle() }
     }
 
     private fun scaleFor(width: Int, height: Int): Double {
@@ -88,6 +100,37 @@ public class ContentImageLoader(
     }
 
     public companion object {
+        /** EXIF 방향 값을 그 방향을 바로 세우는 행렬로 바꾼다. 바꿀 필요가 없으면 `null`. */
+        internal fun exifMatrix(orientation: Int): Matrix? {
+            val matrix = Matrix()
+            when (orientation) {
+                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.setScale(-1f, 1f)
+
+                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.setRotate(HALF_TURN)
+
+                ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.setScale(1f, -1f)
+
+                ExifInterface.ORIENTATION_TRANSPOSE -> matrix.apply {
+                    setRotate(QUARTER_TURN)
+                    postScale(-1f, 1f)
+                }
+
+                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.setRotate(QUARTER_TURN)
+
+                ExifInterface.ORIENTATION_TRANSVERSE -> matrix.apply {
+                    setRotate(-QUARTER_TURN)
+                    postScale(-1f, 1f)
+                }
+
+                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.setRotate(-QUARTER_TURN)
+
+                else -> return null
+            }
+            return matrix
+        }
+
+        private const val QUARTER_TURN = 90f
+        private const val HALF_TURN = 180f
         public const val DEFAULT_MAX_PIXELS: Int = 4_000_000
         private val ALLOWED_SCHEMES = setOf(ContentResolver.SCHEME_CONTENT, ContentResolver.SCHEME_ANDROID_RESOURCE)
     }

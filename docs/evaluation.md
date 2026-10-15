@@ -160,7 +160,6 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 - 여러 도형을 한꺼번에 크기 조절·회전할 수 없습니다.
 - 타임라인 확대, 여러 키를 한꺼번에 끌기, easing 곡선 편집기는 아직 없습니다.
 - 그룹은 자식을 잘라 내지 않습니다. 그룹 불투명도는 자식마다 따로 곱하므로 겹친 자식이 더 진해 보입니다.
-- API 26·27에서는 사진의 EXIF 회전을 반영하지 않습니다.
 - 실기기는 Galaxy Z Fold7 한 대에서만 확인했습니다(보드 스크롤·편집 끌기·글래스 화면 프레임 측정, 키보드 편집, TalkBack 초점 이동). 저사양 기기와 Android 12 미만 기기는 확인하지 않았습니다.
 - TalkBack 사용자 정의 동작 메뉴는 adb로 넣은 터치로는 열 수 없어 Robolectric 테스트로만 검증했습니다.
 
