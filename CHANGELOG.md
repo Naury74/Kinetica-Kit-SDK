@@ -34,7 +34,8 @@
   - 길게 눌러 여는 메뉴(`glassContextMenu`), `GlassSegmentedControl`, `GlassSwitch`, `GlassSlider`, 당겨서 새로 고침(`GlassRefreshBox`)
   - 카드가 커지며 열리는 상세 화면(`GlassExpandHost`), iOS식으로 밀어 넣는 화면 이동(`PushNavigation`, 가장자리 스와이프와 예측 뒤로 가기 지원)
   - 버튼·스테퍼·칩·진행 표시·배지, 휠 피커·날짜·시간 선택기, 검색창·입력란, 접히는 큰 제목 바, 캐러셀·페이지 점, 카드 더미, 펼침 버튼 메뉴, 다이내믹 아일랜드식 알림, 되돌리기 스낵바
+  - 밀어서 동작·순서 바꾸기·아코디언·밀어서 확정, 선·막대·도넛 차트·스파크라인·활동 링, 월 달력·플립 시계·범위 슬라이더, 미니 플레이어·모핑 아이콘·별점·좋아요·아바타·스켈레톤, 여러 높이 바텀 시트·상단 탭·툴팁·기능 안내·서랍
   - 메시 그라디언트 배경, 빛·색·뒤섞임 글자, 흔들기·반짝이·스크롤 시차·스포트라이트, 스타일 Mica·HarmonyOS·Obsidian·Pastel
   - 슬라이더·스위치·세그먼트 `enabled`, 슬라이더 키보드 조절, RTL 배치, TalkBack 문구(영어·한국어)
   - 고급 효과: `glowBorder`, `jellyPress`, `magnetic`, `motionTilt`, `RollingText`, `TypewriterText`, `ConfettiHost`
-- 샘플: 샘플 앱을 `sample-showcase` 하나로 합침(글래스 UI, 모션 효과, 대시보드 보드, 컴포넌트, 화면 이동, 장면 전환, 서버 화면, 화면 만들기, XML 화면 예). 소비자 확인 빌드 추가
+- 샘플: 샘플 앱을 `sample-showcase` 하나로 합침(글래스 UI, 모션 효과, 대시보드 보드, 앱 화면 예, 컴포넌트, 화면 이동, 장면 전환, 서버 화면, 화면 만들기, XML 화면 예). 소비자 확인 빌드 추가

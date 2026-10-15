@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,21 +44,36 @@ import kotlinx.coroutines.launch
 public enum class SwipeDirection { Left, Right, Up }
 
 /**
- * [SwipeCardStack]의 상태. 넘긴 카드 수와 방향 기록을 가지고 있어 [undo]로 되돌릴 수 있다. 화면을 회전해도 유지된다.
+ * [SwipeCardStack]의 상태. 넘긴 카드의 키와 방향 기록을 가지고 있어 [undo]로 되돌릴 수 있다. 화면을 회전해도 유지되며,
+ * 키를 저장할 수 없으면(Bundle에 넣을 수 없는 키) 넘긴 카드 수만 저장해 위치로 복원한다.
  * [swipe]와 [undo]는 애니메이션이 끝날 때까지 일시 중단한다. 다른 애니메이션이 진행 중이면 아무 일도 하지 않고 `false`를 돌려준다.
  */
 @Stable
-public class SwipeCardStackState internal constructor(swiped: Int, history: List<SwipeDirection>) {
-    /** 지금까지 넘긴 카드 수. 맨 위 카드는 `items[swipedCount]`이고, 이 값이 `items.size`이면 남은 카드가 없다. */
-    public var swipedCount: Int by mutableIntStateOf(swiped)
-        private set
-
+public class SwipeCardStackState internal constructor(history: List<SwipeDirection>, swipedKeys: List<Any?>) {
     internal val history = mutableStateListOf<SwipeDirection>().apply { addAll(history) }
+
+    // history와 같은 순서로 넘긴 카드의 키를 담는다. null은 키를 저장하지 못하고 복원된 카드로, 목록 앞쪽부터 위치로 센다.
+    internal val swipedKeys = mutableStateListOf<Any?>().apply { addAll(swipedKeys) }
+
+    // 지금 items의 키. 컴포지션에서 items가 바뀔 때마다 맞춘다.
+    internal var keys: List<Any?> by mutableStateOf(emptyList())
+
+    /**
+     * 맨 위 카드의 위치. 맨 위 카드는 `items[swipedCount]`이고, 이 값이 `items.size`이면 남은 카드가 없다.
+     * 넘긴 카드를 items에서 지우거나 앞에 새 카드를 넣어도 키로 다시 찾으므로 넘기지 않은 카드를 건너뛰지 않는다.
+     */
+    public val swipedCount: Int
+        get() {
+            val known = swipedKeys.filterNotNullTo(HashSet())
+            val start = swipedKeys.count { it == null }.coerceAtMost(keys.size)
+            val top = (start until keys.size).firstOrNull { keys[it] !in known }
+            return top ?: keys.size
+        }
+
     internal val offset = Animatable(Offset.Zero, Offset.VectorConverter)
     internal var size by mutableStateOf(IntSize.Zero)
     internal var grabbedTop = true
     internal var flingPx = 1f
-    internal var itemCount = 0
     internal var onSwiped: (index: Int, direction: SwipeDirection) -> Unit = { _, _ -> }
     private var busy by mutableStateOf(false)
 
@@ -72,14 +86,20 @@ public class SwipeCardStackState internal constructor(swiped: Int, history: List
      */
     public suspend fun swipe(direction: SwipeDirection): Boolean = fly(direction, Offset.Zero)
 
-    /** 마지막으로 넘긴 카드를 넘긴 방향에서 다시 날아오게 해 맨 위로 되돌린다. `onSwipe`는 다시 호출하지 않는다. */
+    /**
+     * 마지막으로 넘긴 카드를 넘긴 방향에서 다시 날아오게 해 맨 위로 되돌린다. `onSwipe`는 다시 호출하지 않는다.
+     * 그 카드가 이미 items에서 빠졌으면 기록만 지우고 `false`를 돌려준다.
+     */
     public suspend fun undo(): Boolean {
         if (busy || history.isEmpty()) return false
         busy = true
         try {
+            val last = swipedKeys.lastIndex
+            val key = swipedKeys[last]
             val direction = history.removeAt(history.lastIndex)
+            swipedKeys.removeAt(last)
+            if (key != null && key !in keys) return false
             offset.snapTo(flyTarget(direction, Offset.Zero))
-            swipedCount -= 1
             offset.animateTo(Offset.Zero, spring(dampingRatio = RETURN_DAMPING, stiffness = Spring.StiffnessMediumLow))
         } finally {
             busy = false
@@ -88,13 +108,15 @@ public class SwipeCardStackState internal constructor(swiped: Int, history: List
     }
 
     internal suspend fun fly(direction: SwipeDirection, velocity: Offset): Boolean {
-        if (busy || swipedCount >= itemCount) return false
+        if (busy || swipedCount >= keys.size) return false
         busy = true
         try {
             offset.animateTo(flyTarget(direction, offset.value), spring(stiffness = FLY_STIFFNESS), initialVelocity = velocity)
             val index = swipedCount
+            // 날아가는 동안 items가 바뀌었을 수 있으므로 날아간 뒤의 맨 위 카드를 넘긴 것으로 기록한다.
+            if (index >= keys.size) return false
             history += direction
-            swipedCount = index + 1
+            swipedKeys += keys[index]
             offset.snapTo(Offset.Zero)
             onSwiped(index, direction)
         } finally {
@@ -153,8 +175,18 @@ public class SwipeCardStackState internal constructor(swiped: Int, history: List
 
     internal companion object {
         val Saver: Saver<SwipeCardStackState, Any> = listSaver(
-            save = { listOf(it.swipedCount) + it.history.map(SwipeDirection::ordinal) },
-            restore = { saved -> SwipeCardStackState(saved.first(), saved.drop(1).map { SwipeDirection.entries[it] }) },
+            save = { state ->
+                val directions = ArrayList(state.history.map(SwipeDirection::ordinal))
+                val keys = state.swipedKeys.toList()
+                // 키 하나라도 저장할 수 없으면 모두 null로 저장해 위치로 복원한다.
+                val saved = if (keys.all { it == null || canBeSaved(it) }) ArrayList(keys) else ArrayList(keys.map { null })
+                listOf(directions, saved)
+            },
+            restore = { saved ->
+                @Suppress("UNCHECKED_CAST")
+                val directions = (saved[0] as List<Int>).map { SwipeDirection.entries[it] }
+                SwipeCardStackState(directions, saved[1] as List<Any?>)
+            },
         )
     }
 }
@@ -162,13 +194,14 @@ public class SwipeCardStackState internal constructor(swiped: Int, history: List
 /** [SwipeCardStack]의 상태를 만든다. */
 @Composable
 public fun rememberSwipeCardStackState(): SwipeCardStackState =
-    rememberSaveable(saver = SwipeCardStackState.Saver) { SwipeCardStackState(0, emptyList()) }
+    rememberSaveable(saver = SwipeCardStackState.Saver) { SwipeCardStackState(emptyList(), emptyList()) }
 
 /**
  * 데이팅 앱처럼 넘기는 카드 더미. 맨 위 카드를 끌면 손가락을 따라오며 기울고, 충분히 끌거나 빠르게 던지면 날아간다.
  * 그러면 뒤 카드가 커지며 올라와 맨 위가 된다. 카드가 다 날아가면 [onSwipe]를 호출한다. 기준을 넘는 순간 햅틱이 울린다.
  *
- * [items]는 바꾸지 않고 그대로 두고, 넘긴 위치는 [state]가 기억한다. `state.undo()`로 마지막 카드를 되돌릴 수 있다.
+ * 넘긴 카드는 [state]가 [key]로 기억하므로, [items]를 그대로 두어도 되고 [onSwipe]에서 넘긴 카드를 지워도 된다.
+ * `state.undo()`로 마지막 카드를 되돌릴 수 있다(지운 카드는 되돌리지 않는다).
  * TalkBack에서는 맨 위 카드의 사용자 지정 동작으로 각 방향 넘기기와 되돌리기를 할 수 있다.
  *
  * ```kotlin
@@ -183,6 +216,8 @@ public fun rememberSwipeCardStackState(): SwipeCardStackState =
  *
  * @param directions 넘길 수 있는 방향. 화면 기준이다. 비어 있으면 끌어도 항상 제자리로 돌아온다.
  * @param visibleCount 겹쳐 보여 줄 카드 수(맨 위 포함). 1보다 작으면 1로 맞춘다.
+ * @param key 카드를 구별하는 키. 같은 목록 안에서 겹치면 안 되고, 화면 회전 뒤에도 기억하려면 Bundle에 넣을 수 있는 값이어야 한다.
+ *   기본값은 항목 자체다.
  * @param overlay 끄는 동안 카드 위에 겹쳐 보일 표시. 방향마다 한 번씩 만들고, 그 방향으로 끈 정도에 따라 투명도만 바뀐다.
  */
 @Composable
@@ -193,12 +228,15 @@ public fun <T> SwipeCardStack(
     state: SwipeCardStackState = rememberSwipeCardStackState(),
     directions: Set<SwipeDirection> = setOf(SwipeDirection.Left, SwipeDirection.Right),
     visibleCount: Int = 3,
+    key: (item: T) -> Any = { it ?: NullItemKey },
     overlay: @Composable BoxScope.(direction: SwipeDirection) -> Unit = {},
     content: @Composable BoxScope.(item: T) -> Unit,
 ) {
     val latestItems by rememberUpdatedState(items)
     val latestOnSwipe by rememberUpdatedState(onSwipe)
-    state.itemCount = items.size
+    // items가 같은 인스턴스의 상태 목록일 수 있으므로 매번 키를 다시 만든다. 내용이 같으면 상태가 바뀌지 않아 다시 구성을 일으키지 않는다.
+    val keys = items.map(key)
+    state.keys = keys
     state.flingPx = with(LocalDensity.current) { FLING_VELOCITY.toPx() }
     state.onSwiped = { index, direction -> latestItems.getOrNull(index)?.let { latestOnSwipe(it, direction) } }
     val depthCount = visibleCount.coerceAtLeast(1)
@@ -207,7 +245,7 @@ public fun <T> SwipeCardStack(
         for (depth in depthCount - 1 downTo 0) {
             val index = top + depth
             if (index >= items.size) continue
-            key(index) {
+            key(keys[index]) {
                 val cardModifier = if (depth == 0) Modifier.topCard(state, directions) else Modifier.clearAndSetSemantics {}
                 Box(
                     cardModifier
@@ -308,6 +346,9 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.dragCard
         past = nowPast
     }
 }
+
+/** `null` 항목의 기본 키 */
+private object NullItemKey
 
 private const val SWIPE_FRACTION = 0.35f
 private const val FLY_DISTANCE = 1.5f

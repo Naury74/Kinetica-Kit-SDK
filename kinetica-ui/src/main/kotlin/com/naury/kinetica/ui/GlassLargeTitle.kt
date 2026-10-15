@@ -7,6 +7,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -63,9 +65,13 @@ import kotlin.math.roundToInt
  * [GlassLargeTitleBar]의 접힘 상태. [connection]을 목록의 부모에 `Modifier.nestedScroll(state.connection)`로 붙이면
  * 목록 스크롤에 맞춰 큰 제목이 접힌다. 목록 스크롤을 가로채지 않으므로 목록은 평소처럼 움직인다.
  * 단, 맨 위에서 아래로 더 당긴 거리는 이 상태가 소비해 큰 제목을 키우는 데 쓴다.
+ *
+ * 인자 없는 [rememberLargeTitleState]로 만들면 중첩 스크롤로 전해진 거리만 세므로, `scrollToItem`처럼 코드로 옮긴 스크롤은
+ * 목록이 맨 위에 다시 닿을 때까지 접힘에 반영되지 않는다. 코드로도 스크롤하는 목록이면 `LazyListState`나 `ScrollState`를 받는
+ * 오버로드를 쓴다. 이때 접힘은 목록의 실제 위치로 정하고, [connection]은 당겨서 키우는 효과에만 쓰인다.
  */
 @Stable
-public class GlassLargeTitleState internal constructor(initialScrolled: Float) {
+public class GlassLargeTitleState internal constructor(initialScrolled: Float, private val position: (() -> Float)? = null) {
     // 목록이 맨 위에서 내려간 거리(px). 목록이 맨 위에 닿을 때마다 0으로 맞춰 오차가 쌓이지 않게 한다.
     internal var scrolled by mutableFloatStateOf(initialScrolled)
     internal var range by mutableFloatStateOf(0f)
@@ -73,7 +79,10 @@ public class GlassLargeTitleState internal constructor(initialScrolled: Float) {
     internal var stretchLimit = 1f
 
     /** 접힌 정도(0..1). 0이면 큰 제목이 모두 보이고, 1이면 큰 제목이 사라지고 바에 작은 제목이 보인다. 큰 제목을 아직 측정하지 못했으면 0이다. */
-    public val collapsedFraction: Float get() = if (range <= 0f) 0f else (scrolled / range).coerceIn(0f, 1f)
+    public val collapsedFraction: Float get() = if (range <= 0f) 0f else (offset / range).coerceIn(0f, 1f)
+
+    // 큰 제목이 올라간 거리(px). 목록 상태를 받았으면 실제 위치를, 아니면 중첩 스크롤로 센 거리를 쓴다.
+    internal val offset: Float get() = position?.invoke() ?: scrolled
 
     /** 맨 위에서 아래로 더 당긴 정도(0..1). 큰 제목이 이 값에 비례해 커진다. */
     public val stretchFraction: Float get() = (stretch / stretchLimit).coerceIn(0f, 1f)
@@ -115,10 +124,28 @@ public class GlassLargeTitleState internal constructor(initialScrolled: Float) {
     }
 }
 
-/** [GlassLargeTitleBar]의 상태를 만든다. 화면을 회전해도 접힌 정도가 유지된다. */
+/** [GlassLargeTitleBar]의 상태를 만든다. 화면을 회전해도 접힌 정도가 유지된다. 접힘은 중첩 스크롤로 전해진 거리로만 정한다. */
 @Composable
 public fun rememberLargeTitleState(): GlassLargeTitleState = rememberSaveable(saver = GlassLargeTitleState.Saver) {
     GlassLargeTitleState(0f)
+}
+
+/**
+ * [listState]의 실제 스크롤 위치로 접힘을 정하는 상태를 만든다. 첫 항목이 보이면 그 항목이 가려진 거리(px)로, 첫 항목이 지나갔으면
+ * 다 접힌 것으로 본다. `scrollToItem` 같은 코드 스크롤도 바로 반영된다. 첫 항목이 큰 제목 높이보다 낮으면 그 항목이 지나가는 순간
+ * 남은 만큼 한꺼번에 접힌다.
+ */
+@Composable
+public fun rememberLargeTitleState(listState: LazyListState): GlassLargeTitleState = remember(listState) {
+    GlassLargeTitleState(0f) {
+        if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset.toFloat() else Float.POSITIVE_INFINITY
+    }
+}
+
+/** [scrollState]의 스크롤 위치(px)로 접힘을 정하는 상태를 만든다. `scrollTo` 같은 코드 스크롤도 바로 반영된다. */
+@Composable
+public fun rememberLargeTitleState(scrollState: ScrollState): GlassLargeTitleState = remember(scrollState) {
+    GlassLargeTitleState(0f) { scrollState.value.toFloat() }
 }
 
 /**
@@ -226,7 +253,7 @@ private fun LargeTitle(state: GlassLargeTitleState, title: String, style: GlassS
                     val scale = 1f - LARGE_TITLE_SHRINK * collapsed + LARGE_TITLE_GROW * state.stretchFraction
                     scaleX = scale
                     scaleY = scale
-                    translationY = -state.scrolled.coerceAtMost(state.range)
+                    translationY = -state.offset.coerceAtMost(state.range)
                     alpha = (1f - collapsed * LARGE_TITLE_FADE).coerceIn(0f, 1f)
                     transformOrigin = TransformOrigin(if (rtl) 1f else 0f, CENTER)
                 }

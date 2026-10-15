@@ -165,6 +165,65 @@ class GlassLayoutTest {
         compose.onNodeWithText("공유").assertDoesNotExist()
     }
 
+    @Test
+    fun `목록 상태를 받은 큰 제목은 코드로 스크롤해도 접힘이 맞는다`() {
+        lateinit var state: GlassLargeTitleState
+        val list = androidx.compose.foundation.lazy.LazyListState()
+        compose.setContent {
+            state = rememberLargeTitleState(list)
+            GlassScaffold(Modifier.fillMaxSize(), topBar = { GlassLargeTitleBar(state, "설정") }) { padding ->
+                LazyColumn(Modifier.fillMaxSize().nestedScroll(state.connection), state = list, contentPadding = padding) {
+                    items(60) { BasicText("항목 $it", Modifier.fillMaxWidth().height(48.dp)) }
+                }
+            }
+        }
+        assertThat(state.collapsedFraction).isEqualTo(0f)
+
+        compose.runOnIdle { kotlinx.coroutines.runBlocking { list.scrollToItem(20) } }
+        compose.waitForIdle()
+        assertThat(state.collapsedFraction).isEqualTo(1f)
+
+        compose.runOnIdle { kotlinx.coroutines.runBlocking { list.scrollToItem(0) } }
+        compose.waitForIdle()
+        assertThat(state.collapsedFraction).isEqualTo(0f)
+    }
+
+    @Test
+    fun `카드 더미에서 넘긴 카드를 지워도 다음 카드를 건너뛰지 않는다`() {
+        val items = androidx.compose.runtime.mutableStateListOf("가", "나", "다")
+        lateinit var state: SwipeCardStackState
+        compose.setContent {
+            state = rememberSwipeCardStackState()
+            SwipeCardStack(
+                items,
+                onSwipe = { item, _ -> items.remove(item) },
+                modifier = Modifier.size(300.dp, 400.dp).testTag("stack"),
+                state = state,
+            ) { item -> BasicText(item, Modifier.fillMaxSize().testTag("card-$item")) }
+        }
+
+        compose.onNodeWithTag("stack").performTouchInput { swipeRight() }
+        compose.waitForIdle()
+
+        assertThat(items).containsExactly("나", "다").inOrder()
+        assertThat(state.swipedCount).isEqualTo(0)
+        compose.onNodeWithTag("card-나", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("card-가", useUnmergedTree = true).assertDoesNotExist()
+
+        // 지운 카드는 되돌릴 수 없으므로 기록만 지운다.
+        compose.runOnIdle { assertThat(kotlinx.coroutines.runBlocking { state.undo() }).isFalse() }
+        assertThat(state.canUndo).isFalse()
+    }
+
+    @Test
+    fun `스피드 다이얼은 항목이 많아도 출발 지연의 합이 진행도를 넘지 않는다`() {
+        assertThat(speedDialStagger(1)).isEqualTo(0f)
+        assertThat(speedDialStagger(3)).isEqualTo(0.07f)
+        for (count in 2..40) {
+            assertThat(speedDialStagger(count) * (count - 1)).isAtMost(0.5f + 1e-6f)
+        }
+    }
+
     private fun hasCustomAction(label: String) = SemanticsMatcher("동작 $label") { node ->
         node.config.getOrElseNullable(SemanticsActions.CustomActions) { null }?.any { it.label == label } == true
     }

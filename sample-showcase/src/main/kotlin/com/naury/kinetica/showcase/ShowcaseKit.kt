@@ -106,3 +106,16 @@ internal fun Label(
 }
 
 internal fun Color.isLight(): Boolean = red * 0.3f + green * 0.59f + blue * 0.11f > 0.5f
+
+/** 이 화면이 보이는 동안 상태 표시줄 아이콘을 [darkBackground]면 밝게, 아니면 어둡게 두고, 사라지면 원래대로 돌린다. */
+@Composable
+internal fun StatusBarIcons(darkBackground: Boolean) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(darkBackground) {
+        val window = (view.context as? android.app.Activity)?.window
+        val controller = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+        val before = controller?.isAppearanceLightStatusBars
+        controller?.isAppearanceLightStatusBars = !darkBackground
+        onDispose { if (before != null) controller.isAppearanceLightStatusBars = before }
+    }
+}

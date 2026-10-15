@@ -169,8 +169,10 @@ private fun DialItem(item: GlassMenuItem, style: GlassStyle, fromButton: Int, co
         Modifier
             .graphicsLayer {
                 // 버튼에 가까운 항목부터 조금씩 늦게 출발한다. 스프링이 넘치는 값은 그대로 두어 튀어 오르는 느낌을 살린다.
-                val delay = STAGGER * fromButton
-                val local = ((progress() - delay) / (1f - STAGGER * (count - 1).coerceAtLeast(0))).coerceAtLeast(0f)
+                // 항목이 많아도 늦게 출발하는 몫의 합이 MAX_STAGGER_TOTAL을 넘지 않게 간격을 줄인다.
+                val stagger = speedDialStagger(count)
+                val delay = stagger * fromButton
+                val local = ((progress() - delay) / (1f - stagger * (count - 1).coerceAtLeast(0))).coerceAtLeast(0f)
                 alpha = local.coerceAtMost(1f)
                 translationY = ITEM_RISE.toPx() * (1f - local)
                 val scale = ITEM_START_SCALE + (1f - ITEM_START_SCALE) * local
@@ -256,6 +258,11 @@ private val ITEM_SPACING = 12.dp
 private val ITEM_RISE = 28.dp
 private const val ITEM_START_SCALE = 0.6f
 private const val ITEM_ORIGIN_X = 0.9f
+
+/** 항목 [count]개일 때 한 항목씩 늦게 출발하는 간격(진행도 비율). 모든 항목의 지연 합이 [MAX_STAGGER_TOTAL] 이하다. */
+internal fun speedDialStagger(count: Int): Float = if (count <= 1) 0f else minOf(STAGGER, MAX_STAGGER_TOTAL / (count - 1))
+
+private const val MAX_STAGGER_TOTAL = 0.5f
 private const val STAGGER = 0.07f
 private const val DIAL_DAMPING = 0.68f
 private const val DIAL_STIFFNESS = Spring.StiffnessMediumLow

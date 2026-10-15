@@ -230,7 +230,7 @@ private class TimeLabels(locale: Locale, is24Hour: Boolean) {
     }
     val minutes: List<String> = (0 until MINUTES_PER_HOUR).map { String.format(locale, "%02d", it) }
     val amPm: List<String> = DateFormatSymbols.getInstance(locale).amPmStrings.toList()
-    val amPmFirst: Boolean = DateFormat.getBestDateTimePattern(locale, "hm").let { it.indexOf('a') in 0 until it.indexOf('h') }
+    val amPmFirst: Boolean = amPmComesFirst(DateFormat.getBestDateTimePattern(locale, "hm"))
 }
 
 private fun LocalDate.clampTo(range: ClosedRange<LocalDate>): LocalDate = when {
@@ -255,3 +255,12 @@ private const val WIDE_MONTH_WEIGHT = 1.5f
 private const val SAMPLE_YEAR = 2000
 private const val LONGEST_MONTH = 9
 private const val SHORT_MONTH = 4
+
+/** 날짜 형식 [pattern]에서 오전/오후('a')가 처음 나오는 시 문자('h', 'H', 'k', 'K')보다 앞에 있는지 본다. 둘 중 하나라도 없으면 `false`다. */
+internal fun amPmComesFirst(pattern: String): Boolean {
+    val hour = pattern.indexOfFirst { it in HOUR_LETTERS }
+    val amPm = pattern.indexOf('a')
+    return amPm >= 0 && hour >= 0 && amPm < hour
+}
+
+private const val HOUR_LETTERS = "hHkK"

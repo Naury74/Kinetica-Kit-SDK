@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -51,6 +52,7 @@ import kotlinx.coroutines.launch
 
 /**
  * 별점. 별을 누르거나 가로로 끌어 점수를 고르고, 새로 채워지는 별은 앞에서부터 차례로 톡 튀며 채워진다.
+ * 누르면 손을 뗄 때 고르고, 가로로 끌기 시작한 뒤에는 끄는 대로 바뀐다. 세로로 먼저 움직이면 부모 스크롤에 넘긴다.
  * RTL에서는 오른쪽 별이 첫 번째다. TalkBack에서는 값 조절 컨트롤로 읽히고 볼륨 키나 스와이프로 [allowHalf]에 맞는 단위씩 바꾼다.
  *
  * ```kotlin
@@ -58,7 +60,7 @@ import kotlinx.coroutines.launch
  * GlassRating(score, onRatingChange = { score = it }, allowHalf = true)
  * ```
  *
- * @param rating 현재 점수(0..[max]). 범위를 벗어나면 그 안으로 맞춰 그린다.
+ * @param rating 현재 점수(0..[max]). 범위를 벗어나면 그 안으로 맞춰 그리고, NaN은 0으로 본다.
  * @param onRatingChange 사용자가 고른 점수를 받는다. `null`이면 읽기 전용으로 그리고 입력을 받지 않는다.
  *   누르거나 끌어서는 최소 한 단위(별 반 개 또는 한 개)를 고르며, 0은 TalkBack 값 조절로만 고를 수 있다.
  * @param max 별 개수. 1 미만이면 [IllegalArgumentException]을 던진다.
@@ -77,7 +79,7 @@ public fun GlassRating(
     color: Color = Color(STAR_GOLD),
 ) {
     require(max >= 1) { "max는 1 이상이어야 합니다." }
-    val shown = rating.coerceIn(0f, max.toFloat())
+    val shown = if (rating.isNaN()) 0f else rating.coerceIn(0f, max.toFloat())
     val step = if (allowHalf) HALF else 1f
     val motion = remember(max) { RatingMotion(max, shown) }
     LaunchedEffect(motion, shown) { motion.animateTo(shown, this) }
@@ -95,6 +97,7 @@ public fun GlassRating(
                 if (onRatingChange != null) {
                     progressBarRangeInfo = ProgressBarRangeInfo(shown, 0f..max.toFloat(), steps = (max / step).roundToInt() - 1)
                     setProgress { target ->
+                        if (target.isNaN()) return@setProgress false
                         val next = (Math.round(target / step) * step).coerceIn(0f, max.toFloat())
                         if (next != shown) onRatingChange(next)
                         true
@@ -160,9 +163,18 @@ private fun Modifier.ratingInput(rating: Float, onChange: (Float) -> Unit, grid:
         awaitEachGesture {
             val down = awaitFirstDown()
             picked = latest
-            pick(down.position.x)
-            down.consume()
-            horizontalDrag(down.id) { change ->
+            val start = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
+            if (start == null) {
+                // 움직이지 않고 뗐을 때만 탭이다. 세로 스크롤이 가져갔으면(소비됨) 고르지 않는다.
+                val up = currentEvent.changes.firstOrNull { it.id == down.id }
+                if (up != null && !up.pressed && !up.isConsumed) {
+                    pick(up.position.x)
+                    up.consume()
+                }
+                return@awaitEachGesture
+            }
+            pick(start.position.x)
+            horizontalDrag(start.id) { change ->
                 pick(change.position.x)
                 change.consume()
             }

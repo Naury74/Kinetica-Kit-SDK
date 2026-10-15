@@ -20,8 +20,11 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,7 +89,9 @@ public fun GlassTopTabs(
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     if (scrollable) {
         LaunchedEffect(pagerState, bounds, rtl) {
-            snapshotFlow { pagerState.targetPage.coerceIn(0, tabs.size - 1) }.collect { page ->
+            // 탭 위치가 재어지기 전(복원 직후 등)에 고른 탭은 잰 뒤에 다시 맞추도록 측정 횟수도 함께 본다.
+            snapshotFlow { pagerState.targetPage.coerceIn(0, tabs.size - 1) to bounds.version }.collect { (page, _) ->
+                if (bounds.width[page] <= 0f || bounds.viewport <= 0f) return@collect
                 // RTL에서는 스크롤 0이 오른쪽 끝이므로 오른쪽에서 잰 거리로 바꾼다.
                 val center = if (rtl) bounds.content - bounds.centerOf(page) else bounds.centerOf(page)
                 val target = edge + center - bounds.viewport / 2f
@@ -99,10 +104,10 @@ public fun GlassTopTabs(
     } else {
         Modifier.fillMaxWidth()
     }
-    Box(modifier.onSizeChanged { bounds.viewport = it.width.toFloat() }.padding(vertical = 6.dp)) {
+    Box(modifier.onSizeChanged { bounds.setViewport(it.width.toFloat()) }.padding(vertical = 6.dp)) {
         Row(
             rowModifier
-                .onSizeChanged { bounds.content = it.width.toFloat() }
+                .onSizeChanged { bounds.setContent(it.width.toFloat()) }
                 .drawBehind { drawLiquidIndicator(bounds, position(), style) }
                 .selectableGroup(),
             horizontalArrangement = if (scrollable) Arrangement.spacedBy(2.dp) else Arrangement.Start,
@@ -172,11 +177,31 @@ private class TabBounds(count: Int) {
     val left = FloatArray(count)
     val width = FloatArray(count)
     var viewport = 0f
+        private set
     var content = 0f
+        private set
+
+    /** 잰 값이 바뀔 때마다 1씩 는다. 스크롤 위치를 다시 맞출 때를 알리는 데만 쓴다. */
+    var version by mutableIntStateOf(0)
+        private set
 
     fun set(index: Int, x: Float, w: Float) {
+        if (left[index] == x && width[index] == w) return
         left[index] = x
         width[index] = w
+        version++
+    }
+
+    fun setViewport(value: Float) {
+        if (viewport == value) return
+        viewport = value
+        version++
+    }
+
+    fun setContent(value: Float) {
+        if (content == value) return
+        content = value
+        version++
     }
 
     fun centerOf(index: Int): Float = left[index] + width[index] / 2f

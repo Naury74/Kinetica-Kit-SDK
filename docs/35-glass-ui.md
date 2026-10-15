@@ -106,6 +106,35 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 | `GlassIslandHost(state)` + `state.show(GlassIslandContent(…))` | 다이내믹 아일랜드식 알림. 작은 캡슐이 부풀어 알림이 되고, `compactText`가 있으면 좁은 캡슐(예: 타이머)로 시작해 누르면 펼쳐진다. 위로 쓸어 닫는다 |
 | `GlassSnackbarHost(state)` + `state.show(message, actionLabel)` | 아래에서 떠오르는 스낵바. "되돌리기" 같은 동작 버튼과 남은 시간을 보여 주는 링이 있고, 옆으로 쓸어 닫는다. 결과를 `Action`/`Dismissed`로 돌려준다 |
 
+## 목록, 차트, 달력
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `SwipeActionsRow(endActions, startActions = …) { 행 }` + `SwipeAction(label, color, removesRow)` | iOS 메일처럼 행을 밀면 뒤에서 동작 버튼이 드러나고, 끝까지 밀면 첫 동작이 바로 실행된다. `removesRow`면 행이 줄어들며 사라진다. `rememberSwipeActionsGroup()`으로 한 번에 한 행만 열리게 한다 |
+| `ReorderableItem(rememberReorderableListState(listState, onMove), key) { … }` | LazyColumn에서 길게 누르면 항목이 떠오르고 끌어서 순서를 바꾼다. 다른 항목은 비켜 주고, 가장자리에서는 자동으로 스크롤된다 |
+| `GlassExpandable(expanded, onExpandedChange, header) { … }` / `GlassExpandableGroup` | 아코디언. 화살표가 돌고 내용 높이가 용수철로 펼쳐진다 |
+| `GlassSlideToConfirm(text, onConfirm)` | 손잡이를 끝까지 밀어야 확정되는 버튼(결제, 잠금 해제) |
+| `GlassLineChart(points 또는 series, labels)` | 선이 그려지며 나타나고, 손가락을 대고 옆으로 움직이면 값 말풍선이 따라온다. 데이터가 바뀌면 이전 모양에서 부드럽게 바뀐다 |
+| `GlassBarChart(values, labels)` / `GlassDonutChart(slices)` / `Sparkline(points)` | 막대는 차례로 자라고 누르면 강조된다. 도넛 조각은 누르면 튀어나오며 가운데에 값을 보여 준다 |
+| `ActivityRings(rings)` | Apple Watch 활동 링. 목표를 넘으면 겹쳐 돈다 |
+| `GlassCalendar(rememberGlassCalendarState(), selection, onSelect, events)` | 월 달력. 좌우로 넘기고, 하루(`Single`) 또는 기간(`Range`)을 고르며, 날짜 아래에 일정 점을 찍는다 |
+| `FlipDigits(text)` / `FlipClock()` / `rememberCountdown(target)` | 기계식 플립 카드 숫자. 바뀐 자리만 위 반쪽이 접혀 내려간다 |
+| `GlassRangeSlider(range, onRangeChange, valueRange)` | 손잡이 두 개짜리 범위 슬라이더. 잡으면 값 말풍선이 뜬다 |
+
+## 미디어, 내비게이션, 안내
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `GlassMiniPlayer(rememberMiniPlayerState(), artwork, collapsed, expanded)` | 아래 떠 있는 재생 막대를 누르거나 위로 끌면 전체 화면 플레이어로 커지고, 앨범 아트가 이어지며 커진다. 아래로 끌거나 뒤로 가기로 접는다 |
+| `PlayPauseIcon` / `MenuCloseIcon` / `PlusCloseIcon` | 모양이 매끄럽게 바뀌는 아이콘 |
+| `GlassRating(rating, onRatingChange, allowHalf)` / `LikeButton(liked, onLikedChange, count)` | 별점과 하트 좋아요. 좋아요를 누르면 하트가 튀며 입자가 터지고 숫자가 굴러간다 |
+| `AvatarStack(avatars, max)` / `Modifier.skeleton(visible)` / `GlassSkeletonText(lines)` | 겹친 아바타와 "+N", 불러오는 동안 빛이 흐르는 자리 표시 |
+| `GlassDetentSheet(rememberDetentSheetState(detents), header) { … }` | Apple 지도처럼 여러 높이(`Detent.Peek`·`Fraction`·`Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 자연스럽게 이어진다 |
+| `GlassTopTabs(tabs, pagerState)` | 페이저를 넘기는 동안 인디케이터가 액체처럼 따라가는 상단 탭 |
+| `Modifier.glassTooltip(text, visible, onDismiss)` / `Modifier.tooltipOnLongPress(text)` | 화살표가 달린 유리 말풍선 |
+| `CoachMarkHost(state, steps)` + `Modifier.coachMarkTarget(state, id)` | 처음 쓰는 사람을 위한 기능 안내. 화면이 어두워지고 대상 둘레만 밝게 뚫린다 |
+| `GlassDrawer(drawerContent, state) { 화면 }` | 가장자리에서 끌어 여는 서랍. 열리면 뒤 화면이 밀리며 작아지고 둥글어진다 |
+
 ## 고급 효과
 
 | 효과 | 사용법 |

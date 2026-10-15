@@ -216,6 +216,7 @@ public fun SwipeActionsRow(
                 reverseDirection = rtl,
                 onDragStarted = { state.group?.open = state },
                 onDragStopped = { velocity ->
+                    if (state.busy) return@draggable
                     val side = state.armedSide
                     val action = if (side > 0) startActions.firstOrNull() else endActions.firstOrNull()
                     if (side != 0 && action != null) perform(action, side, true) else state.release(velocity, swipe)
@@ -253,6 +254,8 @@ internal class SwipeSetup(
 
 /** 손가락이 움직인 만큼 행을 옮긴다. 끝까지 미는 상태가 새로 시작되면 `true`를 돌려준다. */
 private fun SwipeActionsState.dragBy(delta: Float, setup: SwipeSetup, scope: CoroutineScope): Boolean {
+    // 동작을 실행하는 동안 다시 끌면 밀어 내는 애니메이션이 끊기므로 손가락을 무시한다.
+    if (busy) return false
     val current = offset.value
     var next = current + delta
     if (setup.start.isEmpty()) next = next.coerceAtMost(0f)
@@ -288,21 +291,25 @@ private suspend fun SwipeActionsState.release(velocity: Float, setup: SwipeSetup
 /**
  * [action]을 실행한다. [travel]이 0보다 크면 먼저 행을 그 거리만큼 끝까지 밀어 낸다.
  * 행을 지우는 동작이면 높이를 0으로 줄인 뒤 실행하고, 잠시 뒤에도 행이 남아 있으면 다시 펼친다.
+ * 밀어 내거나 줄이는 애니메이션이 중간에 취소되어도 [SwipeAction.onAction]은 한 번 부른다.
  */
 private suspend fun SwipeActionsState.perform(action: SwipeAction, side: Int, travel: Float) {
+    if (busy) return
     busy = true
     try {
-        if (travel > 0f) offset.animateTo(travel * side, tween(FULL_SWIPE_MS))
-        if (action.removesRow) {
-            height.animateTo(0f, tween(REMOVE_MS))
+        try {
+            if (travel > 0f) offset.animateTo(travel * side, tween(FULL_SWIPE_MS))
+            if (action.removesRow) height.animateTo(0f, tween(REMOVE_MS))
+        } finally {
             action.onAction()
+        }
+        if (action.removesRow) {
             delay(RESTORE_DELAY_MS)
             offset.snapTo(0f)
             fill.snapTo(0f)
             armedSide = 0
             height.animateTo(1f, SETTLE_SPEC)
         } else {
-            action.onAction()
             armedSide = 0
             settle(0f)
             fill.snapTo(0f)

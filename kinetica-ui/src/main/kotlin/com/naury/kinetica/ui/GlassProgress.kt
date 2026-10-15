@@ -61,7 +61,7 @@ import kotlin.math.sin
  * GlassProgressBar(downloaded / total.toFloat(), Modifier.fillMaxWidth(), wave = true)
  * ```
  *
- * @param progress 0..1 사이의 진행 비율. 범위를 벗어나면 가까운 끝 값으로 그린다. `null`이면 진행 정도를 모르는 상태다.
+ * @param progress 0..1 사이의 진행 비율. 범위를 벗어나면 가까운 끝 값으로 그리고, NaN은 0으로 본다. `null`이면 진행 정도를 모르는 상태다.
  * @param color 채워지는 부분의 색. 기본값은 iOS 파랑이다.
  * @param thickness 막대 두께. 물결을 켜면 10dp 이상일 때 잘 보인다.
  * @param wave 앞 끝을 물결 모양으로 출렁이게 할지 여부
@@ -115,7 +115,7 @@ public fun GlassProgressBar(
  * GlassProgressRing(0.72f, Modifier.size(96.dp), wave = true) { BasicText("72%") }
  * ```
  *
- * @param progress 0..1 사이의 진행 비율. 범위를 벗어나면 가까운 끝 값으로 그린다. `null`이면 진행 정도를 모르는 상태다.
+ * @param progress 0..1 사이의 진행 비율. 범위를 벗어나면 가까운 끝 값으로 그리고, NaN은 0으로 본다. `null`이면 진행 정도를 모르는 상태다.
  * @param color 원호 색. 기본값은 iOS 파랑이다.
  * @param thickness 원호 두께
  * @param wave 링 안쪽에 물결치는 수면을 그릴지 여부. [progress]가 `null`이면 그리지 않는다.
@@ -175,10 +175,10 @@ public fun GlassProgressRing(
 /** 진행 값을 용수철로 따라가는 값. `null`이 되면 마지막 값에 머문다. */
 @Composable
 private fun followProgress(progress: Float?): Animatable<Float, *> {
-    val shown = remember { Animatable((progress ?: 0f).coerceIn(0f, 1f)) }
+    val shown = remember { Animatable(progressFraction(progress ?: 0f)) }
     LaunchedEffect(progress) {
         if (progress != null) {
-            shown.animateTo(progress.coerceIn(0f, 1f), spring(dampingRatio = FOLLOW_DAMPING, stiffness = Spring.StiffnessLow))
+            shown.animateTo(progressFraction(progress), spring(dampingRatio = FOLLOW_DAMPING, stiffness = Spring.StiffnessLow))
         }
     }
     return shown
@@ -200,9 +200,12 @@ private fun Modifier.progressSemantics(progress: Float?): Modifier = semantics {
     progressBarRangeInfo = if (progress == null) {
         ProgressBarRangeInfo.Indeterminate
     } else {
-        ProgressBarRangeInfo(progress.coerceIn(0f, 1f), 0f..1f)
+        ProgressBarRangeInfo(progressFraction(progress), 0f..1f)
     }
 }
+
+/** 진행 비율을 0..1로 맞춘다. NaN은 0으로 본다. */
+private fun progressFraction(progress: Float): Float = if (progress.isNaN()) 0f else progress.coerceIn(0f, 1f)
 
 /** 물결 모양. [phase]는 0..1 반복 위치, [speed]는 진행 값이 변하는 속도(1초당 비율)로 클수록 크게 출렁인다. */
 private class WaveLook(val phase: Float, val speed: Float)

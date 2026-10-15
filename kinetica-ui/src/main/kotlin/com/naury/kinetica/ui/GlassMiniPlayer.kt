@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +29,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -119,7 +121,8 @@ private val MiniPlayerSaver = Saver<MiniPlayerState, Boolean>(save = { it.isExpa
  *
  * [artwork]를 주면 앨범 아트를 플레이어가 직접 배치한다. 막대에서는 왼쪽(RTL이면 오른쪽) 작은 사각형에, 펼치면 위쪽 가운데 큰 사각형에
  * 놓이고 그 사이를 공유 요소처럼 커지며 이동한다. 이때 [collapsed]는 아트 옆 남은 공간에, [expanded]는 아트 아래 공간에 그린다.
- * 아트를 직접 그리려면 [artwork]를 비우고 두 람다가 받는 진행도(0..1)로 위치를 맞춘다.
+ * 아트를 직접 그리려면 [artwork]를 비우고 두 람다가 받는 진행도(0..1)로 위치를 맞춘다. 진행도는 매 프레임 바뀌므로 함수로 넘기며,
+ * 슬롯이 매 프레임 다시 구성되지 않도록 `Modifier.graphicsLayer { }`나 `Modifier.offset { }`처럼 그리기, 배치 단계의 람다 안에서 읽는다.
  *
  * [GlassScaffold] 안에서 부르면 오버레이 레이어에 그린다. 밖에서 부르면 호출한 자리를 화면 전체로 보고 그린다.
  *
@@ -136,8 +139,8 @@ private val MiniPlayerSaver = Saver<MiniPlayerState, Boolean>(save = { it.isExpa
  *
  * @param barHeight 글꼴 배율이 1일 때의 막대 높이. 글꼴을 키우면 최대 1.4배까지 함께 커진다. 아트는 막대 높이에서 위아래 10dp씩 뺀 크기다.
  * @param barBottomPadding 막대 아래 여백. 탭 바 위에 띄우려면 탭 바 높이를 준다. 내비게이션 바 높이는 따로 더한다.
- * @param collapsed 막대 내용. 펼침 진행도를 받으며, 펼쳐지는 동안 흐려지다가 반 넘게 펼치면 그리지 않는다.
- * @param expanded 전체 화면 내용. 펼침 진행도를 받으며, 펼치기 시작하면 그리기 시작해 서서히 나타난다.
+ * @param collapsed 막대 내용. 펼침 진행도를 읽는 함수를 받으며, 펼쳐지는 동안 흐려지다가 반 넘게 펼치면 그리지 않는다.
+ * @param expanded 전체 화면 내용. 펼침 진행도를 읽는 함수를 받으며, 펼치기 시작하면 그리기 시작해 서서히 나타난다.
  */
 @Composable
 public fun GlassMiniPlayer(
@@ -147,33 +150,51 @@ public fun GlassMiniPlayer(
     artwork: (@Composable () -> Unit)? = null,
     barHeight: Dp = 64.dp,
     barBottomPadding: Dp = 0.dp,
-    collapsed: @Composable (progress: Float) -> Unit,
-    expanded: @Composable (progress: Float) -> Unit,
+    collapsed: @Composable (progress: () -> Float) -> Unit,
+    expanded: @Composable (progress: () -> Float) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     GlassOverlay(visible = true) { _ ->
         BackHandler(enabled = state.isExpanded) { scope.launch { state.collapse() } }
-        val level = state.progress.coerceIn(0f, 1f)
-        ReportPushBack(level)
+        // 진행도는 매 프레임 바뀌므로 읽는 곳을 작은 컴포저블로 나눠 그 범위만 다시 구성되게 한다.
+        PlayerPushBack(state)
         BoxWithConstraints(modifier.fillMaxSize()) {
             val bar = barHeight * LocalDensity.current.fontScale.coerceIn(1f, MAX_BAR_GROW)
             val geometry = playerGeometry(constraints, bar, barBottomPadding, artwork != null)
-            if (level > 0f) Scrim(level) { scope.launch { state.collapse() } }
-            PlayerFrame(state, geometry, style.forPopup(), PlayerSlots(scope, collapsed, expanded, artwork != null))
-            if (artwork != null) Artwork(state.progress, geometry, artwork)
+            PlayerScrim(state, scope)
+            val progress = remember(state) { { state.progress } }
+            val slots = remember(scope, collapsed, expanded, artwork != null, progress) {
+                PlayerSlots(scope, collapsed, expanded, artwork != null, progress)
+            }
+            PlayerFrame(state, geometry, style.forPopup(), slots)
+            if (artwork != null) Artwork(state, geometry, artwork)
         }
     }
 }
 
+@Composable
+private fun PlayerPushBack(state: MiniPlayerState) {
+    ReportPushBack(state.progress.coerceIn(0f, 1f))
+}
+
+@Composable
+private fun BoxScope.PlayerScrim(state: MiniPlayerState, scope: CoroutineScope) {
+    val level = state.progress.coerceIn(0f, 1f)
+    if (level > 0f) Scrim(level) { scope.launch { state.collapse() } }
+}
+
+@Stable
 private class PlayerSlots(
     // 막대와 펼친 화면은 진행도에 따라 컴포지션에서 빠지므로, 그 안에서 만든 스코프로 애니메이션을 돌리면 도중에 취소된다.
     val scope: CoroutineScope,
-    val collapsed: @Composable (Float) -> Unit,
-    val expanded: @Composable (Float) -> Unit,
+    val collapsed: @Composable (() -> Float) -> Unit,
+    val expanded: @Composable (() -> Float) -> Unit,
     val hasArtwork: Boolean,
+    val progress: () -> Float,
 )
 
 /** 막대와 전체 화면, 두 아트 위치(px, 오버레이 기준). 아트의 x는 LTR 기준이며 RTL에서는 배치할 때 뒤집힌다. */
+@Stable
 private class PlayerGeometry(val screen: IntSize, val bar: Rect, val full: Rect, val barArt: Rect, val fullArt: Rect, val barCorner: Dp) {
     val travel: Float get() = (bar.top - full.top).coerceAtLeast(1f)
 }
@@ -208,12 +229,14 @@ private fun playerGeometry(constraints: Constraints, barHeight: Dp, barBottomPad
 
 @Composable
 private fun PlayerFrame(state: MiniPlayerState, geometry: PlayerGeometry, style: GlassStyle, slots: PlayerSlots) {
-    val progress = state.progress
-    val level = progress.coerceIn(0f, 1f)
+    val level = state.progress.coerceIn(0f, 1f)
     val shape = RoundedCornerShape(lerp(geometry.barCorner, FULL_CORNER, level))
+    // 이 함수는 모양 때문에 매 프레임 다시 구성되지만, 아래 슬롯은 인자가 그대로라 건너뛴다.
+    val showCollapsed = level < COLLAPSED_GONE
+    val showExpanded = level > 0f
     Box(
         Modifier
-            .placeAt(lerp(geometry.bar, geometry.full, progress), geometry.screen, relative = false)
+            .placeAt(geometry.screen, relative = false) { lerp(geometry.bar, geometry.full, state.progress) }
             // 화면 가장자리에 닿으면 블러가 화면 밖의 빈 픽셀을 끌어와 테두리가 어두워진다. 펼칠수록 바탕색을 깔아 가린다.
             .background(style.fallback.copy(alpha = style.fallback.alpha * level), shape)
             .glass(style, shape)
@@ -221,8 +244,8 @@ private fun PlayerFrame(state: MiniPlayerState, geometry: PlayerGeometry, style:
             .playerDrag(state, geometry.travel),
     ) {
         CompositionLocalProvider(LocalGlassContentColor provides style.onGlass) {
-            if (level < COLLAPSED_GONE) CollapsedBar(state, geometry, slots)
-            if (level > 0f) ExpandedPanel(state, geometry, slots)
+            if (showCollapsed) CollapsedBar(state, geometry, slots)
+            if (showExpanded) ExpandedPanel(state, geometry, slots)
         }
     }
 }
@@ -230,28 +253,26 @@ private fun PlayerFrame(state: MiniPlayerState, geometry: PlayerGeometry, style:
 @Composable
 private fun CollapsedBar(state: MiniPlayerState, geometry: PlayerGeometry, slots: PlayerSlots) {
     val scope = slots.scope
-    val progress = state.progress
     val density = LocalDensity.current
     val start = if (slots.hasArtwork) with(density) { (geometry.barArt.right - geometry.bar.left).toDp() } + ART_INSET else BAR_PADDING
     Box(
         Modifier
             .fillMaxWidth()
             .height(with(density) { geometry.bar.height.toDp() })
-            .graphicsLayer { alpha = (1f - progress / COLLAPSED_GONE).coerceIn(0f, 1f) }
+            .graphicsLayer { alpha = (1f - state.progress / COLLAPSED_GONE).coerceIn(0f, 1f) }
             .clickable(onClickLabel = stringResource(R.string.kinetica_ui_player_expand), role = Role.Button) {
                 scope.launch { state.expand() }
             }
             .padding(start = start, end = BAR_PADDING),
         contentAlignment = Alignment.CenterStart,
     ) {
-        slots.collapsed(progress)
+        slots.collapsed(slots.progress)
     }
 }
 
 @Composable
 private fun ExpandedPanel(state: MiniPlayerState, geometry: PlayerGeometry, slots: PlayerSlots) {
     val scope = slots.scope
-    val progress = state.progress
     val density = LocalDensity.current
     val title = stringResource(R.string.kinetica_ui_player_now_playing)
     val collapseLabel = stringResource(R.string.kinetica_ui_player_collapse)
@@ -266,6 +287,7 @@ private fun ExpandedPanel(state: MiniPlayerState, geometry: PlayerGeometry, slot
         Modifier
             .fixedSize(geometry.full.width.roundToInt(), geometry.full.height.roundToInt())
             .graphicsLayer {
+                val progress = state.progress
                 alpha = ((progress - PANEL_FADE_START) / (1f - PANEL_FADE_START)).coerceIn(0f, 1f)
                 translationY = PANEL_RISE.toPx() * (1f - progress)
             }
@@ -283,17 +305,17 @@ private fun ExpandedPanel(state: MiniPlayerState, geometry: PlayerGeometry, slot
                 .size(HANDLE_WIDTH, HANDLE_HEIGHT)
                 .background(LocalGlassContentColor.current.copy(alpha = HANDLE_ALPHA), RoundedCornerShape(HANDLE_HEIGHT)),
         )
-        Box(Modifier.fillMaxSize().padding(top = top)) { slots.expanded(progress) }
+        Box(Modifier.fillMaxSize().padding(top = top)) { slots.expanded(slots.progress) }
     }
 }
 
 @Composable
-private fun Artwork(progress: Float, geometry: PlayerGeometry, artwork: @Composable () -> Unit) {
-    val level = progress.coerceIn(0f, 1f)
+private fun Artwork(state: MiniPlayerState, geometry: PlayerGeometry, artwork: @Composable () -> Unit) {
+    val level = state.progress.coerceIn(0f, 1f)
     val shape = RoundedCornerShape(lerp(ART_CORNER_SMALL, ART_CORNER_BIG, level))
     Box(
         Modifier
-            .placeAt(lerp(geometry.barArt, geometry.fullArt, progress), geometry.screen, relative = true)
+            .placeAt(geometry.screen, relative = true) { lerp(geometry.barArt, geometry.fullArt, state.progress) }
             .shadow(lerp(ART_SHADOW_SMALL, ART_SHADOW_BIG, level), shape)
             .clip(shape),
     ) { artwork() }
@@ -309,8 +331,9 @@ private fun Modifier.playerDrag(state: MiniPlayerState, travel: Float): Modifier
     )
 }
 
-/** 화면 크기([screen]) 안의 [frame] 자리에 [frame] 크기로 배치한다. [relative]면 RTL에서 x를 뒤집는다. */
-private fun Modifier.placeAt(frame: Rect, screen: IntSize, relative: Boolean): Modifier = layout { measurable, _ ->
+/** 화면 크기([screen]) 안의 [frameOf] 자리에 그 크기로 배치한다. [relative]면 RTL에서 x를 뒤집는다. [frameOf]는 배치 단계에서 읽는다. */
+private fun Modifier.placeAt(screen: IntSize, relative: Boolean, frameOf: () -> Rect): Modifier = layout { measurable, _ ->
+    val frame = frameOf()
     val placeable = measurable.measure(
         Constraints.fixed(frame.width.roundToInt().coerceAtLeast(1), frame.height.roundToInt().coerceAtLeast(1)),
     )

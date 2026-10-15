@@ -15,6 +15,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -230,5 +231,32 @@ class GlassCalendarTest {
         compose.waitForIdle()
         assertThat(range.value.start).isLessThan(50f)
         assertThat(range.value.endInclusive).isEqualTo(50f)
+    }
+
+    @Test
+    fun `구간 슬라이더는 범위와 눈금이 바뀌면 새 기준으로 누른 위치를 읽는다`() {
+        val setup = mutableStateOf(Triple(0f..100f, 0, 0f..100f))
+        compose.setContent {
+            val (valueRange, steps, range) = setup.value
+            Box(Modifier.width(300.dp)) {
+                GlassRangeSlider(
+                    range,
+                    { setup.value = setup.value.copy(third = it) },
+                    Modifier.testTag("slider"),
+                    valueRange = valueRange,
+                    steps = steps,
+                )
+            }
+        }
+        // 한 번 눌러 제스처 입력을 시작해 둔 뒤 범위와 눈금을 바꾼다.
+        compose.onNodeWithTag("slider").performTouchInput { click(percentOffset(0.1f, 0.5f)) }
+        compose.waitForIdle()
+        setup.value = Triple(0f..10f, 1, 0f..10f)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("slider").performTouchInput { click(percentOffset(0.35f, 0.5f)) }
+        compose.waitForIdle()
+
+        assertThat(setup.value.third).isEqualTo(5f..10f)
     }
 }

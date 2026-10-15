@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -20,6 +21,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -289,5 +291,55 @@ class GlassNavExtrasTest {
         contentClicks = 0
         compose.onNodeWithTag("root").performClick()
         assertThat(contentClicks).isEqualTo(1)
+    }
+
+    @Test
+    fun `기능 안내 단계가 보이는 중에 비어도 닫히는 동안 그리다가 끝난다`() {
+        val state = CoachMarkState()
+        val steps = mutableStateOf(listOf(CoachStep("a", "검색", "여기서 찾아요")))
+        compose.setContent {
+            GlassScaffold(Modifier.fillMaxSize()) {
+                Box(Modifier.size(40.dp).coachMarkTarget(state, "a"))
+            }
+            CoachMarkHost(state, steps.value)
+        }
+        state.start()
+        compose.waitForIdle()
+        compose.onNodeWithText("검색").assertExists()
+
+        compose.mainClock.autoAdvance = false
+        steps.value = emptyList()
+        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithText("검색").assertExists()
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        compose.onNodeWithText("검색").assertDoesNotExist()
+    }
+
+    @Test
+    fun `스크롤 상단 탭은 처음부터 고른 페이지의 탭을 화면 안에 보인다`() {
+        val tabs = (0 until 12).map { GlassTab("탭 $it") }
+        compose.setContent {
+            val pager = rememberPagerState(initialPage = 10) { tabs.size }
+            Box(Modifier.width(300.dp)) { GlassTopTabs(tabs, pager) }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("탭 10").assertIsDisplayed().assertIsSelected()
+    }
+
+    @Test
+    fun `서랍은 시작 가장자리를 시스템 뒤로 가기 제스처에서 뺀다`() {
+        lateinit var view: android.view.View
+        compose.setContent {
+            view = androidx.compose.ui.platform.LocalView.current
+            GlassDrawer(drawerContent = { BasicText("받은편지함") }) { Box(Modifier.fillMaxSize()) }
+        }
+        compose.waitForIdle()
+
+        val rects = view.systemGestureExclusionRects
+        assertThat(rects).isNotEmpty()
+        assertThat(rects.first().left).isEqualTo(0)
+        assertThat(rects.first().height()).isAtMost(200)
     }
 }

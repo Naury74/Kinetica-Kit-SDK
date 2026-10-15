@@ -179,13 +179,24 @@ public fun CoachMarkHost(
         state.onFinished = { finish(it) }
     }
     val visible = state.isShowing && state.currentStep < steps.size
-    // 닫히는 애니메이션 동안에도 마지막 단계를 그리도록 기억해 둔다.
-    val shown = remember { mutableIntStateOf(0) }
-    if (visible) shown.intValue = state.currentStep
-    GlassOverlay(visible) { transition ->
-        val index = shown.intValue.coerceIn(steps.indices)
-        CoachLayer(CoachFrame(state, steps, index, style), transition, modifier)
+    // 닫히는 동안 steps가 줄거나 비어도 마지막으로 보인 단계를 그리도록 목록과 위치를 함께 기억해 둔다.
+    val shown = remember { ShownStep() }
+    if (visible) {
+        shown.steps = steps
+        shown.index = state.currentStep
     }
+    GlassOverlay(visible) { transition ->
+        val last = shown.steps
+        if (last.isNotEmpty()) {
+            CoachLayer(CoachFrame(state, last, shown.index.coerceIn(last.indices), style), transition, modifier)
+        }
+    }
+}
+
+/** 마지막으로 보인 단계 */
+private class ShownStep {
+    var steps: List<CoachStep> by mutableStateOf(emptyList())
+    var index: Int by mutableIntStateOf(0)
 }
 
 /** 한 프레임에 그릴 안내 내용. 파라미터 수를 줄이려고 묶었다. */

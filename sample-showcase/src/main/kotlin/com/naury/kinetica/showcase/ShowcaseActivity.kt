@@ -70,6 +70,7 @@ internal enum class Demo(val title: String, val summary: String, val icon: Image
     Glass("글래스 UI", "배경이 비치는 글래스 UI입니다. 스타일을 바꿔 가며 다이얼로그, 시트, 토스트, 탭 바를 살펴보세요.", ShowcaseIcons.Sparkle, Color(0xFF7AA2FF)),
     Motion("모션 효과", "글로우 테두리, 젤리 버튼, 기울이면 움직이는 3D 카드, 숫자 롤링, 컨페티와 프리셋 애니메이션을 직접 눌러 보세요.", ShowcaseIcons.Bell, Color(0xFFFF7EB3)),
     Board("대시보드 보드", "사용자가 위젯을 직접 배치하는 홈 화면입니다. 위로 끌면 스냅 레이아웃을 고르고, 가장자리로 끌면 절반이나 4분의 1에 붙습니다.", ShowcaseIcons.Grid, Color(0xFF5EF0C8)),
+    Apps("앱 화면 예", "컴포넌트를 조합한 음악, 지도, 메일, 건강 앱 화면입니다. 미니 플레이어, 여러 높이 시트, 밀어서 삭제, 차트를 실제처럼 써 보세요.", ShowcaseIcons.Home, Color(0xFFFFD36E)),
     Components("컴포넌트", "버튼, 휠 피커, 검색창, 캐러셀, 카드 더미, 다이내믹 아일랜드 알림, 글자 효과를 모았습니다.", ShowcaseIcons.Pen, Color(0xFFFFA8E0)),
     Navigation("화면 이동", "App Store처럼 카드가 제자리에서 커지며 열리고, 목록은 iOS처럼 옆에서 밀려 들어옵니다. 가장자리를 밀면 뒤로 갑니다.", ShowcaseIcons.Grid, Color(0xFFA0F08C)),
     Transition("장면 전환", "카드가 자연스럽게 상세 화면으로 이어지고, 아래로 끌면 닫힙니다. 재생기 모듈만 씁니다.", ShowcaseIcons.Home, Color(0xFF7AE0FF)),
@@ -83,7 +84,7 @@ private fun Showcase() {
     BackHandler(enabled = current != null) { current = null }
     // 첫 화면은 배경이 어두워 상태 표시줄 아이콘을 밝게 두고, 나머지는 배경이 밝아 어둡게 둔다. 편집기는 시스템 테마를 따른다.
     val view = LocalView.current
-    val darkScreen = current == null || current == Demo.Transition || (current == Demo.Studio && isSystemInDarkTheme())
+    val darkScreen = isDarkScreen(current, isSystemInDarkTheme())
     SideEffect {
         val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkScreen
@@ -93,20 +94,28 @@ private fun Showcase() {
         transitionSpec = { ContentTransitions.sharedAxisZ(forward = targetState != null) },
         label = "showcase",
     ) { demo ->
-        val back = { current = null }
-        when (demo) {
-            null -> Home { current = it }
-            Demo.Glass -> GlassDemo(back)
-            Demo.Motion -> MotionDemo(back)
-            Demo.Board -> BoardDemo(back)
-            Demo.Components -> ComponentsDemo(back)
-            Demo.Navigation -> NavigationDemo(back)
-            Demo.Transition -> TransitionDemo(back)
-            Demo.Server -> ServerDemo(back)
-            Demo.Studio -> StudioDemo(back)
-        }
+        if (demo == null) Home { current = it } else DemoScreen(demo) { current = null }
     }
 }
+
+@Composable
+private fun DemoScreen(demo: Demo, back: () -> Unit) {
+    when (demo) {
+        Demo.Glass -> GlassDemo(back)
+        Demo.Motion -> MotionDemo(back)
+        Demo.Board -> BoardDemo(back)
+        Demo.Apps -> AppsDemo(back)
+        Demo.Components -> ComponentsDemo(back)
+        Demo.Navigation -> NavigationDemo(back)
+        Demo.Transition -> TransitionDemo(back)
+        Demo.Server -> ServerDemo(back)
+        Demo.Studio -> StudioDemo(back)
+    }
+}
+
+/** 첫 화면, 장면 전환, 앱 화면 예는 어두운 바탕이고 편집기는 시스템 테마를 따른다. */
+private fun isDarkScreen(demo: Demo?, systemDark: Boolean): Boolean =
+    demo == null || demo == Demo.Transition || demo == Demo.Apps || (demo == Demo.Studio && systemDark)
 
 @Composable
 private fun Home(open: (Demo) -> Unit) {

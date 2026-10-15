@@ -15,12 +15,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,7 +70,7 @@ import kotlinx.coroutines.launch
 /**
  * '밀어서 결제' 같은 글래스 캡슐. 손잡이를 끝까지 밀면 햅틱과 함께 확정되고, 손잡이의 화살표가 체크로 바뀌며 캡슐이 [color]로 채워진다.
  * 끝까지 밀지 않고 놓으면 손잡이가 튕기며 처음 자리로 돌아온다. 가운데 글자는 빛이 지나가듯 반짝이고, 손잡이가 지나간 만큼 흐려진다.
- * RTL에서는 오른쪽에서 왼쪽으로 민다.
+ * RTL에서는 오른쪽에서 왼쪽으로 민다. 확정 상태는 화면 회전이나 프로세스 재생성 뒤에도 유지된다.
  *
  * TalkBack에서는 [text]를 이름으로 하는 버튼으로 읽히고, 두 번 탭하면 확정된다. 터치로 누르기만 해서는 확정되지 않는다.
  *
@@ -76,8 +80,10 @@ import kotlinx.coroutines.launch
  * ```
  *
  * @param onConfirm 확정되는 순간 한 번 부른다.
- * @param confirmed 확정된 상태로 보일지 여부. 확정 뒤 이 값을 `true`에서 `false`로 바꾸면 손잡이가 처음 자리로 돌아와 다시 밀 수 있다.
- *   계속 `false`로 두면 한 번 확정한 뒤로는 확정된 모습을 유지한다.
+ * @param confirmed 확정된 상태로 보일지 여부. 이 값이 바뀔 때마다 그 값을 따르므로, 확정 뒤 `true`에서 `false`로 바꾸면 손잡이가 처음 자리로
+ *   돌아와 다시 밀 수 있다. 계속 `false`로 두면 한 번 확정한 뒤로는 확정된 모습을 유지한다. 바뀐 값이 한 번도 화면에 반영되지 않고
+ *   제자리로 돌아오면(같은 프레임 안에서 `false`, `true`, `false`) 바뀐 것으로 보지 않으므로, 확정 직후 곧바로 되돌리려면
+ *   [SlideToConfirmState]를 받는 오버로드와 [SlideToConfirmState.reset]을 쓴다.
  * @param color 확정되었을 때 캡슐을 채우는 색
  */
 @Composable
@@ -89,18 +95,54 @@ public fun GlassSlideToConfirm(
     color: Color = Color(CONFIRM_GREEN),
     style: GlassStyle = LocalGlassStyle.current,
 ) {
+    val state = rememberSlideToConfirmState(confirmed)
+    // 키로 다시 시작하는 효과 대신 마지막으로 따른 값과 비교한다. 재생성 뒤에도 같은 값을 다시 적용하지 않도록 저장한다.
+    val applied = rememberSaveable { mutableStateOf(confirmed) }
+    SideEffect {
+        if (applied.value != confirmed) {
+            applied.value = confirmed
+            state.isConfirmed = confirmed
+        }
+    }
+    GlassSlideToConfirm(text, state, onConfirm, modifier, color, style)
+}
+
+/**
+ * 확정 상태를 [state]로 다루는 [GlassSlideToConfirm]. 확정은 [SlideToConfirmState.isConfirmed]로 읽고, [SlideToConfirmState.reset]으로
+ * 언제든 되돌린다. 되돌리면 손잡이가 튕기며 처음 자리로 돌아온다.
+ *
+ * ```kotlin
+ * val slide = rememberSlideToConfirmState()
+ * GlassSlideToConfirm("밀어서 결제", slide, onConfirm = { pay(onFail = { slide.reset() }) })
+ * ```
+ *
+ * @param onConfirm 사용자가 밀거나 TalkBack으로 확정하는 순간 한 번 부른다. 다시 확정하려면 먼저 [SlideToConfirmState.reset]해야 한다.
+ * @param color 확정되었을 때 캡슐을 채우는 색
+ */
+@Composable
+public fun GlassSlideToConfirm(
+    text: String,
+    state: SlideToConfirmState,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = Color(CONFIRM_GREEN),
+    style: GlassStyle = LocalGlassStyle.current,
+) {
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val slide = remember { SlideState(confirmed) }
-    LaunchedEffect(confirmed) { slide.follow(confirmed) }
-    LaunchedEffect(slide.done) { slide.check.animateTo(if (slide.done) 1f else 0f, SNAP_SPEC) }
+    val slide = state
+    val done = slide.isConfirmed
+    LaunchedEffect(slide, done) {
+        launch { slide.check.animateTo(if (done) 1f else 0f, SNAP_SPEC) }
+        slide.position.animateTo(if (done) 1f else 0f, if (done) SNAP_SPEC else RETURN_SPEC)
+    }
+    val latestConfirm by rememberUpdatedState(onConfirm)
     val confirm = {
-        if (!slide.done) {
-            slide.done = true
+        if (!slide.isConfirmed) {
+            slide.isConfirmed = true
             haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-            scope.launch { slide.position.animateTo(1f, SNAP_SPEC) }
-            onConfirm()
+            latestConfirm()
         }
     }
     val base = with(LocalDensity.current) { (THUMB_INSET * 2 + THUMB_SIZE).toPx() }
@@ -112,13 +154,13 @@ public fun GlassSlideToConfirm(
             .glass(style, CircleShape)
             .onSizeChanged { slide.travel = (it.width - base).coerceAtLeast(1f) }
             .drawBehind { drawTrail(slide, color, base, rtl) }
-            .slideSemantics(text, slide.done, confirmedLabel, confirm)
+            .slideSemantics(text, done, confirmedLabel, confirm)
             .draggable(
                 rememberDraggableState { delta ->
                     if (slide.dragBy(delta, scope)) haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
                 },
                 Orientation.Horizontal,
-                enabled = !slide.done,
+                enabled = !done,
                 reverseDirection = rtl,
                 onDragStopped = { velocity -> if (!slide.release(velocity)) confirm() },
             ),
@@ -143,40 +185,46 @@ public fun GlassSlideToConfirm(
     }
 }
 
-/** 손잡이 위치(0..1)와 확정 상태. */
+/** [GlassSlideToConfirm]의 확정 상태. [rememberSlideToConfirmState]로 만든다. */
 @Stable
-private class SlideState(confirmed: Boolean) {
-    val position = Animatable(if (confirmed) 1f else 0f)
-    val check = Animatable(if (confirmed) 1f else 0f)
-    var done by mutableStateOf(confirmed)
-    var travel by mutableFloatStateOf(1f)
+public class SlideToConfirmState internal constructor(confirmed: Boolean) {
+    /** 확정된 상태인지 나타낸다. 사용자가 끝까지 밀거나 TalkBack으로 확정하면 `true`가 된다. */
+    public var isConfirmed: Boolean by mutableStateOf(confirmed)
+        internal set
 
-    /** 바깥에서 준 확정 값을 따른다. 확정이 풀리면 손잡이를 처음 자리로 돌린다. */
-    suspend fun follow(confirmed: Boolean) {
-        if (confirmed) {
-            done = true
-            position.animateTo(1f, SNAP_SPEC)
-        } else if (done) {
-            done = false
-            position.animateTo(0f, RETURN_SPEC)
-        }
+    internal val position = Animatable(if (confirmed) 1f else 0f)
+    internal val check = Animatable(if (confirmed) 1f else 0f)
+    internal var travel by mutableFloatStateOf(1f)
+
+    /** 확정을 풀어 손잡이를 처음 자리로 돌린다. 확정되지 않았으면 아무 일도 하지 않는다. */
+    public fun reset() {
+        isConfirmed = false
     }
 
     /** 손을 놓았을 때 확정 지점 앞이면 튕기며 돌아가고 `true`를 돌려준다. 확정 지점을 넘었으면 `false`다. */
-    suspend fun release(velocity: Float): Boolean {
+    internal suspend fun release(velocity: Float): Boolean {
         if (position.value >= CONFIRM_AT) return false
         position.animateTo(0f, RETURN_SPEC, velocity / travel)
         return true
     }
 
     /** 손잡이를 [delta](px)만큼 옮긴다. 확정 지점을 막 넘었으면 `true`를 돌려준다. */
-    fun dragBy(delta: Float, scope: CoroutineScope): Boolean {
+    internal fun dragBy(delta: Float, scope: CoroutineScope): Boolean {
         val before = position.value
         val next = (before + delta / travel).coerceIn(0f, 1f)
         scope.launch(start = CoroutineStart.UNDISPATCHED) { position.snapTo(next) }
         return before < CONFIRM_AT && next >= CONFIRM_AT
     }
+
+    internal companion object {
+        val Saver: Saver<SlideToConfirmState, Boolean> = Saver({ it.isConfirmed }, { SlideToConfirmState(it) })
+    }
 }
+
+/** 화면 회전이나 프로세스 재생성 뒤에도 확정 여부가 유지되는 [SlideToConfirmState]를 만든다. [initiallyConfirmed]는 처음 만들 때만 쓴다. */
+@Composable
+public fun rememberSlideToConfirmState(initiallyConfirmed: Boolean = false): SlideToConfirmState =
+    rememberSaveable(saver = SlideToConfirmState.Saver) { SlideToConfirmState(initiallyConfirmed) }
 
 /** TalkBack에서는 [text]를 이름으로 하는 버튼으로 읽히고, 확정된 뒤에는 상태를 알리며 누를 수 없다. */
 private fun Modifier.slideSemantics(text: String, done: Boolean, confirmedLabel: String, confirm: () -> Unit): Modifier =
@@ -195,7 +243,7 @@ private fun Modifier.slideSemantics(text: String, done: Boolean, confirmedLabel:
     }
 
 /** 손잡이가 지나간 자리를 [color]로 옅게 칠하고, 확정되면 캡슐 전체를 채운다. [base]는 손잡이와 양쪽 여백을 더한 너비(px)다. */
-private fun DrawScope.drawTrail(slide: SlideState, color: Color, base: Float, rtl: Boolean) {
+private fun DrawScope.drawTrail(slide: SlideToConfirmState, color: Color, base: Float, rtl: Boolean) {
     val progress = slide.position.value
     val level = slide.check.value
     val width = lerp(base + slide.travel * progress, size.width, level)

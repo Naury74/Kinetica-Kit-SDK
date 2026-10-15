@@ -97,6 +97,23 @@ class GlassNotifyTest {
     }
 
     @Test
+    fun `아일랜드가 줄어드는 중에 취소되어도 캡슐이 남지 않는다`() {
+        val state = GlassIslandState()
+        setUp(island = state)
+        compose.mainClock.autoAdvance = false
+        val job = scope.launch { state.show(GlassIslandContent("업로드 완료"), durationMs = 1_000) }
+        step(1_100)
+        assertThat(state.isShowing).isFalse()
+        assertThat(state.visible).isTrue()
+
+        // 시간이 다 되어 줄어드는 애니메이션을 기다리는 동안 취소한다.
+        job.cancel()
+        step(16)
+        assertThat(state.visible).isFalse()
+        compose.mainClock.autoAdvance = true
+    }
+
+    @Test
     fun `스낵바는 동작 버튼을 누르면 Action을 돌려주고 다음 스낵바를 차례로 보여 준다`() {
         val state = GlassSnackbarState()
         setUp(snackbar = state)

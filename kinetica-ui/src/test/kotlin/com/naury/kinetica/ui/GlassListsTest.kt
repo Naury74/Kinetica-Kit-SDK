@@ -90,6 +90,20 @@ class GlassListsTest {
     }
 
     @Test
+    fun `끝까지 민 뒤 애니메이션 중에 다시 끌어도 동작은 한 번 실행된다`() {
+        swipeRow()
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithTag("row").performTouchInput { swipeLeft(startX = right - 10f, endX = left + 10f, durationMillis = 400) }
+        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithTag("row").performTouchInput { swipeRight(startX = centerX - 100f, endX = centerX + 60f, durationMillis = 100) }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+
+        assertThat(deleted.intValue).isEqualTo(1)
+        assertThat(pinned.intValue).isEqualTo(0)
+    }
+
+    @Test
     fun `RTL에서는 오른쪽으로 밀어야 끝 쪽 동작이 드러난다`() {
         swipeRow(rtl = true)
         compose.onNodeWithTag("row").performTouchInput { swipeRight(startX = left + 10f, endX = right - 10f, durationMillis = 400) }
@@ -246,5 +260,43 @@ class GlassListsTest {
         confirmed.value = false
         compose.waitForIdle()
         compose.onNodeWithTag("slide").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Disabled))
+    }
+
+    @Test
+    fun `밀어서 확인 상태는 reset으로 되돌리고 확정은 다시 만들어도 유지된다`() {
+        val restore = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
+        val confirms = mutableIntStateOf(0)
+        lateinit var state: SlideToConfirmState
+        restore.setContent {
+            state = rememberSlideToConfirmState()
+            GlassSlideToConfirm("밀어서 결제", state, { confirms.intValue++ }, Modifier.testTag("slide"))
+        }
+        compose.onNodeWithTag("slide").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertThat(state.isConfirmed).isTrue()
+        assertThat(confirms.intValue).isEqualTo(1)
+
+        restore.emulateSavedInstanceStateRestore()
+        assertThat(state.isConfirmed).isTrue()
+        compose.onNodeWithTag("slide").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Disabled))
+
+        // 확정 직후 같은 프레임 안에서 되돌려도 다시 밀 수 있다.
+        compose.runOnIdle { state.reset() }
+        compose.onNodeWithTag("slide").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Disabled))
+        compose.onNodeWithTag("slide").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertThat(confirms.intValue).isEqualTo(2)
+    }
+
+    @Test
+    fun `confirmed 값으로 확정한 밀어서 확인은 다시 만들어도 확정을 유지한다`() {
+        val restore = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
+        restore.setContent { GlassSlideToConfirm("밀어서 결제", {}, Modifier.testTag("slide")) }
+        compose.onNodeWithTag("slide").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+
+        restore.emulateSavedInstanceStateRestore()
+
+        compose.onNodeWithTag("slide").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Confirmed"))
     }
 }

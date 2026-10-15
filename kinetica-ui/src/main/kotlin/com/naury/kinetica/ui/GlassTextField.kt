@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,6 +58,12 @@ import kotlinx.coroutines.launch
  * @param error 오류 문구. `null`이면 오류가 없는 상태다.
  * @param keyboardOptions 키보드 종류와 IME 동작
  * @param visualTransformation 화면에 보이는 글자 변환. 비밀번호는 `PasswordVisualTransformation()`을 넘긴다.
+ * @param keyboardActions IME 동작 키(완료, 검색 등)를 눌렀을 때 할 일
+ * @param enabled `false`면 포커스와 입력을 받지 않고 흐리게 그린다.
+ * @param readOnly `true`면 글자를 고칠 수 없지만 포커스, 선택, 복사는 된다.
+ * @param singleLine `true`면 한 줄로 가로 스크롤하고 Enter 키로 줄을 바꾸지 않는다. 이때 [maxLines]는 무시한다.
+ * @param maxLines [singleLine]이 `false`일 때 보이는 최대 줄 수. 1 미만이면 [IllegalArgumentException]을 던진다.
+ * @param interactionSource 포커스, 누름 같은 상호작용을 바깥에서 관찰할 때 넘긴다. `null`이면 안에서 만든다.
  */
 @Composable
 public fun GlassTextField(
@@ -66,8 +74,15 @@ public fun GlassTextField(
     error: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    singleLine: Boolean = true,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    interactionSource: MutableInteractionSource? = null,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
+    require(maxLines >= 1) { "maxLines는 1 이상이어야 합니다." }
     var focused by remember { mutableStateOf(false) }
     val motion = remember { FieldMotion(value.isNotEmpty(), error) }
     val still = reducedMotion()
@@ -82,12 +97,20 @@ public fun GlassTextField(
             onValueChange,
             Modifier
                 .fillMaxWidth()
-                .graphicsLayer { translationX = motion.shake.value * density }
+                .graphicsLayer {
+                    translationX = motion.shake.value * density
+                    alpha = if (enabled) 1f else DISABLED_ALPHA
+                }
                 .glass(style, FIELD_SHAPE)
                 .fieldBorder(motion)
                 .onFocusChanged { focused = it.isFocused }
                 .semantics { if (error != null) error(error) },
-            singleLine = true,
+            enabled = enabled,
+            readOnly = readOnly,
+            singleLine = singleLine,
+            maxLines = if (singleLine) 1 else maxLines,
+            interactionSource = interactionSource,
+            keyboardActions = keyboardActions,
             textStyle = TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE),
             cursorBrush = SolidColor(Color(FIELD_ACCENT)),
             keyboardOptions = keyboardOptions,
@@ -191,6 +214,7 @@ private const val LABEL_REST = 17f
 private const val LABEL_FLOAT = 7f
 private const val LABEL_SCALE = 0.75f
 private const val LABEL_ALPHA = 0.55f
+private const val DISABLED_ALPHA = 0.5f
 private const val SHAKE_MS = 360
 private const val SHAKE_AT_1 = 60
 private const val SHAKE_AT_2 = 120

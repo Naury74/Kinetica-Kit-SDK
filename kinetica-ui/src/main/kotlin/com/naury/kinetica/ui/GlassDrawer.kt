@@ -19,10 +19,13 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
@@ -100,6 +103,7 @@ public fun rememberGlassDrawerState(initiallyOpen: Boolean = false): GlassDrawer
  * 시작 쪽 가장자리(RTL이면 오른쪽)에서 끌어 여는 글래스 서랍. 열리면 One UI나 Telegram처럼 [content]가 옆으로 밀리면서 작아지고
  * 모서리가 둥글어지며, 서랍 유리에는 밀려난 화면이 블러 처리되어 비친다. 화면 가장자리 24dp 안에서 끌면 열리고, 열린 동안에는
  * 어디서든 반대로 끌거나 밀려난 화면을 누르거나 뒤로 가기를 하면 닫힌다. 뒤로 가기 예측 제스처를 따라 조금씩 닫히기도 한다.
+ * 제스처 내비게이션(Android 10 이상)에서는 시작 가장자리의 세로 가운데 200dp를 시스템 뒤로 가기 제스처에서 빼서 서랍이 먼저 받는다.
  *
  * TalkBack에서는 가장자리 끌기를 쓸 수 없으므로 메뉴 버튼에서 [GlassDrawerState.open]을 불러 연다.
  *
@@ -146,7 +150,24 @@ public fun GlassDrawer(
             }
         }
         DrawerPanel(DrawerLook(state, direction, style, backdrop), { scope.launch { state.close() } }, drawerContent)
+        if (gesturesEnabled) EdgeGestureGuard()
     }
+}
+
+/**
+ * 시작 가장자리 일부를 시스템 뒤로 가기 제스처에서 빼서 끌어 열기가 먹히게 한다(Android 10 이상).
+ * 시스템이 한 가장자리에 200dp까지만 빼 주므로 세로 가운데 200dp만 뺀다. 터치는 받지 않는다.
+ */
+@Composable
+private fun BoxScope.EdgeGestureGuard() {
+    Box(
+        Modifier
+            .align(Alignment.CenterStart)
+            .width(EDGE_WIDTH)
+            .heightIn(max = EDGE_EXCLUSION_HEIGHT)
+            .fillMaxHeight()
+            .systemGestureExclusion(),
+    )
 }
 
 @Composable
@@ -282,6 +303,7 @@ private val LightBehind = Color(0xFFE4E7EE)
 private val DarkBehind = Color(0xFF0D0E12)
 private val DRAWER_MAX_WIDTH = 304.dp
 private val EDGE_WIDTH = 24.dp
+private val EDGE_EXCLUSION_HEIGHT = 200.dp
 private val PUSH_SHADOW = 24.dp
 private val FLING_VELOCITY = 400.dp
 private const val MAX_CORNER_DP = 32

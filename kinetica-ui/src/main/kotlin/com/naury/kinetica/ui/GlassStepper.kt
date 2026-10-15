@@ -33,6 +33,8 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -52,6 +54,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -59,7 +62,8 @@ import kotlinx.coroutines.launch
 /**
  * 빼기와 더하기 버튼이 붙은 캡슐 모양 글래스 스테퍼. 가운데 값은 [RollingText]처럼 자릿수가 위아래로 굴러가며 바뀐다.
  *
- * 버튼을 길게 누르고 있으면 값이 계속 바뀌고, 오래 누를수록 빨라진다. 값이 [range] 끝에 닿으면 그쪽 버튼이 흐려지고 눌러도 바뀌지 않는다.
+ * 버튼을 눌렀다 떼면 한 칸 바뀐다. 길게 누르고 있으면 길게 누름이 확정될 때부터 값이 계속 바뀌고, 오래 누를수록 빨라진다.
+ * 누른 채 터치 슬롭 넘게 움직이면 바꾸지 않으므로 스크롤 목록 안에서도 스크롤을 막지 않는다. 값이 [range] 끝에 닿으면 그쪽 버튼이 흐려지고 눌러도 바뀌지 않는다.
  * 값이 바뀔 때마다 가벼운 햅틱을 준다. 키보드 방향키(위와 오른쪽은 증가, RTL에서는 왼쪽이 증가)로도 조절할 수 있다.
  * TalkBack은 스테퍼 전체를 하나의 조절 항목으로 읽고, 볼륨 키나 '늘리기', '줄이기' 동작으로 값을 바꿀 수 있다.
  *
@@ -141,7 +145,7 @@ public fun GlassStepper(
 }
 
 /**
- * 스테퍼의 버튼 한 칸. 누르면 바로 한 번 바꾸고, 계속 누르고 있으면 점점 빠르게 반복한다.
+ * 스테퍼의 버튼 한 칸. 탭하면 손을 뗄 때 한 번 바꾸고, 길게 누름이 확정되면 그때부터 점점 빠르게 반복한다.
  * [onStep]은 직전 결과 값(첫 번째는 `null`)을 받아 새 값을 돌려준다. 재구성을 기다리지 않고 이어서 셀 수 있게 하려는 것이다.
  */
 @Composable
@@ -157,14 +161,19 @@ private fun StepButton(plus: Boolean, enabled: Boolean, color: Color, onStep: (I
             .widthIn(min = BUTTON_WIDTH)
             .pointerInput(Unit) {
                 awaitEachGesture {
-                    awaitFirstDown()
+                    val down = awaitFirstDown()
                     if (!latestEnabled) return@awaitEachGesture
                     scope.launch { press.animateTo(1f, tween(PRESS_IN_MS)) }
-                    val repeat = scope.launch { repeatWhilePressed { latestStep(it) } }
                     try {
-                        waitForUpOrCancellation()
+                        val tapped = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                            awaitTapOrMove(down, viewConfiguration.touchSlop)
+                        }
+                        when (tapped) {
+                            true -> latestStep(null)
+                            false -> Unit
+                            null -> holdToRepeat(scope) { latestStep(it) }
+                        }
                     } finally {
-                        repeat.cancel()
                         scope.launch { press.animateTo(0f, tween(PRESS_OUT_MS)) }
                     }
                 }
@@ -184,16 +193,40 @@ private fun StepButton(plus: Boolean, enabled: Boolean, color: Color, onStep: (I
     )
 }
 
-/** 누르자마자 한 번 바꾸고, [REPEAT_DELAY_MS] 뒤부터 간격을 줄여 가며 반복한다. 끝에 닿아 값이 그대로면 멈춘다. */
+/**
+ * 손을 떼면 `true`(탭), 터치 슬롭 넘게 움직이거나 다른 쪽(부모 스크롤 등)이 이벤트를 가져가면 `false`(취소)를 돌려준다.
+ */
+private suspend fun AwaitPointerEventScope.awaitTapOrMove(down: PointerInputChange, slop: Float): Boolean {
+    while (true) {
+        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: return false
+        if (change.isConsumed) return false
+        if (!change.pressed) {
+            change.consume()
+            return true
+        }
+        if ((change.position - down.position).getDistance() > slop) return false
+    }
+}
+
+/** 길게 누름이 확정된 뒤 손을 뗄 때까지 반복한다. */
+private suspend fun AwaitPointerEventScope.holdToRepeat(scope: CoroutineScope, onStep: (Int?) -> Int) {
+    val repeat = scope.launch { repeatWhilePressed(onStep) }
+    try {
+        waitForUpOrCancellation()?.consume()
+    } finally {
+        repeat.cancel()
+    }
+}
+
+/** 곧바로 한 번 바꾸고, 간격을 줄여 가며 반복한다. 끝에 닿아 값이 그대로면 멈춘다. */
 private suspend fun repeatWhilePressed(onStep: (Int?) -> Int) = coroutineScope {
     var last = onStep(null)
-    delay(REPEAT_DELAY_MS)
     var interval = REPEAT_START_MS
     while (true) {
+        delay(interval)
         val next = onStep(last)
         if (next == last) break
         last = next
-        delay(interval)
         interval = (interval * REPEAT_SPEED_UP).toLong().coerceAtLeast(REPEAT_MIN_MS)
     }
 }
@@ -259,7 +292,6 @@ private const val DISABLED_ALPHA = 0.5f
 private const val EDGE_FADE_MS = 160
 private const val PRESS_IN_MS = 60
 private const val PRESS_OUT_MS = 220
-private const val REPEAT_DELAY_MS = 420L
 private const val REPEAT_START_MS = 140L
 private const val REPEAT_MIN_MS = 35L
 private const val REPEAT_SPEED_UP = 0.86f

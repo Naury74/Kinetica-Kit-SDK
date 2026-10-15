@@ -199,4 +199,57 @@ class GlassInputsTest {
         compose.waitForIdle()
         compose.onNode(hasSetTextAction()).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Error))
     }
+
+    @Test
+    fun `입력란은 IME 동작과 사용 안 함과 읽기 전용과 여러 줄을 전달한다`() {
+        val value = mutableStateOf("")
+        var done = 0
+        val enabled = mutableStateOf(true)
+        val readOnly = mutableStateOf(false)
+        compose.setContent {
+            androidx.compose.foundation.layout.Column {
+                GlassTextField(
+                    value.value,
+                    { value.value = it },
+                    "이름",
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { done++ }),
+                    enabled = enabled.value,
+                    readOnly = readOnly.value,
+                    modifier = Modifier.testTag("name"),
+                )
+                GlassTextField("첫 줄", {}, "메모", singleLine = false, maxLines = 3, modifier = Modifier.testTag("memo"))
+            }
+        }
+        fun name() = compose.onNode(
+            SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText) and
+                androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("name")),
+        )
+        name().performTextInput("민지")
+        name().performImeAction()
+        assertThat(done).isEqualTo(1)
+
+        readOnly.value = true
+        compose.waitForIdle()
+        name().assert(SemanticsMatcher.expectValue(SemanticsProperties.IsEditable, false))
+
+        enabled.value = false
+        compose.waitForIdle()
+        name().assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Disabled))
+
+        compose.onNode(hasSetTextAction() and androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("memo")))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, androidx.compose.ui.text.AnnotatedString("첫 줄")))
+    }
+
+    @Test
+    fun `12시간 형식에서 오전 오후 위치는 처음 나오는 시 문자를 기준으로 본다`() {
+        assertThat(amPmComesFirst("a h:mm")).isTrue()
+        assertThat(amPmComesFirst("h:mm a")).isFalse()
+        assertThat(amPmComesFirst("a K:mm")).isTrue()
+        assertThat(amPmComesFirst("K:mm a")).isFalse()
+        assertThat(amPmComesFirst("H:mm")).isFalse()
+        assertThat(amPmComesFirst("ah:mm")).isTrue()
+    }
 }

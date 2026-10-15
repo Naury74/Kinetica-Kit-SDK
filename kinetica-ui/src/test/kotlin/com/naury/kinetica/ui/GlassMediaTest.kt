@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
@@ -25,6 +27,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
@@ -83,6 +86,33 @@ class GlassMediaTest {
         node.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3.5 of 5 stars"))
         node.performSemanticsAction(SemanticsActions.SetProgress) { it(1.2f) }
         assertThat(rating.floatValue).isEqualTo(1f)
+    }
+
+    @Test
+    fun `별점은 손을 뗄 때 고르고 세로로 끌면 부모 스크롤에 넘긴다`() {
+        val rating = mutableFloatStateOf(1f)
+        val scroll = androidx.compose.foundation.ScrollState(0)
+        compose.setContent {
+            androidx.compose.foundation.layout.Column(Modifier.size(300.dp).verticalScroll(scroll)) {
+                GlassRating(rating.floatValue, { rating.floatValue = it }, Modifier.testTag("rating"), starSize = 40.dp)
+                Box(Modifier.size(300.dp, 1000.dp))
+            }
+        }
+        val node = compose.onNodeWithTag("rating")
+
+        node.performTouchInput {
+            down(percentOffset(0f, 0.5f).copy(x = (45 * 3 + 20).dp.toPx()))
+            moveBy(androidx.compose.ui.geometry.Offset(0f, -200f))
+            up()
+        }
+        assertThat(rating.floatValue).isEqualTo(1f)
+        assertThat(scroll.value).isGreaterThan(0)
+
+        compose.runOnIdle { kotlinx.coroutines.runBlocking { scroll.scrollTo(0) } }
+        node.performTouchInput { down(percentOffset(0f, 0.5f).copy(x = (45 * 3 + 20).dp.toPx())) }
+        assertThat(rating.floatValue).isEqualTo(1f)
+        node.performTouchInput { up() }
+        assertThat(rating.floatValue).isEqualTo(4f)
     }
 
     @Test
@@ -171,6 +201,36 @@ class GlassMediaTest {
         }
         compose.waitForIdle()
         assertThat(state.isExpanded).isTrue()
+    }
+
+    @Test
+    fun `미니 플레이어 슬롯은 펼치는 동안 매 프레임 다시 구성되지 않는다`() {
+        val state = MiniPlayerState(false)
+        var compositions = 0
+        var lastProgress = 0f
+        compose.setContent {
+            GlassScaffold(Modifier.fillMaxSize()) {
+                GlassMiniPlayer(
+                    state,
+                    collapsed = { BasicText("막대") },
+                    expanded = { progress ->
+                        androidx.compose.runtime.SideEffect { compositions++ }
+                        BasicText("전체 화면", Modifier.drawBehind { lastProgress = progress() })
+                    },
+                )
+            }
+        }
+        compose.mainClock.autoAdvance = false
+
+        compose.onNodeWithText("막대").performClick()
+        repeat(30) { compose.mainClock.advanceTimeByFrame() }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+
+        assertThat(state.progress).isWithin(0.01f).of(1f)
+        compose.onRoot().captureToImage()
+        assertThat(lastProgress).isWithin(0.01f).of(1f)
+        assertThat(compositions).isAtMost(2)
     }
 
     @Test

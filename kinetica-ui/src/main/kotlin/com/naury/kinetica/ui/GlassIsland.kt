@@ -163,16 +163,10 @@ public class GlassIslandState {
             visible = true
             this.content = content
             expanded = content.compactText == null
-            val result = try {
-                if (durationMs == null) {
-                    done.await()
-                } else {
-                    withTimeoutOrNull(timeoutAdjust(durationMs)) { done.await() } ?: GlassIslandResult.TimedOut
-                }
-            } catch (e: CancellationException) {
-                clear()
-                visible = waiting > 0
-                throw e
+            val result = if (durationMs == null) {
+                done.await()
+            } else {
+                withTimeoutOrNull(timeoutAdjust(durationMs)) { done.await() } ?: GlassIslandResult.TimedOut
             }
             clear()
             // 다음 알림이 기다리고 있으면 캡슐을 남겨 두고 바로 다시 부풀린다.
@@ -182,6 +176,11 @@ public class GlassIslandState {
                 delay(HIDE_MS)
             }
             return result
+        } catch (e: CancellationException) {
+            // 표시 중이든 줄어드는 중이든 취소되면 캡슐이 남지 않게 한다.
+            clear()
+            visible = waiting > 0
+            throw e
         } finally {
             queue.unlock()
         }

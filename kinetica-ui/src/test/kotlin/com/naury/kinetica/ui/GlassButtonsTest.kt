@@ -131,6 +131,30 @@ class GlassButtonsTest {
     }
 
     @Test
+    fun `스테퍼는 손을 뗄 때 한 칸 바꾸고 누른 채 움직이면 바꾸지 않는다`() {
+        val value = mutableIntStateOf(5)
+        compose.setContent {
+            GlassScaffold {
+                GlassStepper(value.intValue, { value.intValue = it }, Modifier.testTag("stepper"), range = 0..50)
+            }
+        }
+        val stepper = compose.onNodeWithTag("stepper")
+
+        stepper.performTouchInput { down(centerRight.copy(x = right - 10f)) }
+        assertThat(value.intValue).isEqualTo(5)
+        stepper.performTouchInput { up() }
+        assertThat(value.intValue).isEqualTo(6)
+
+        // 목록 스크롤처럼 누른 채 세로로 움직이면 취소된다.
+        stepper.performTouchInput {
+            down(centerRight.copy(x = right - 10f))
+            moveBy(androidx.compose.ui.geometry.Offset(0f, 60f))
+            up()
+        }
+        assertThat(value.intValue).isEqualTo(6)
+    }
+
+    @Test
     fun `칩은 단일 선택이면 옮겨 가고 다중 선택이면 켜고 끈다`() {
         val single = mutableStateOf(setOf(0))
         val multi = mutableStateOf(setOf<Int>())
@@ -180,6 +204,26 @@ class GlassButtonsTest {
         val unknown = SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo.Indeterminate)
         compose.onNodeWithTag("bar").assert(unknown)
         compose.onNodeWithTag("ring").assert(unknown)
+    }
+
+    @Test
+    fun `진행 막대와 링과 별점은 NaN을 0으로 본다`() {
+        compose.setContent {
+            GlassScaffold {
+                androidx.compose.foundation.layout.Column {
+                    GlassProgressBar(Float.NaN, Modifier.testTag("bar"), wave = true)
+                    GlassProgressRing(Float.NaN, Modifier.testTag("ring"), wave = true)
+                    GlassRating(Float.NaN, onRatingChange = {}, Modifier.testTag("rating"))
+                }
+            }
+        }
+
+        val zero = SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo(0f, 0f..1f))
+        compose.onNodeWithTag("bar").assert(zero)
+        compose.onNodeWithTag("ring").assert(zero)
+        compose.onNodeWithTag("rating").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo(0f, 0f..5f, 4)),
+        )
     }
 
     @Test

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -125,6 +126,8 @@ public fun GlassRangeSlider(
     val startFraction = model.fraction(start)
     val endFraction = model.fraction(end)
     val thumbSpec = ThumbShared(model, enabled, rtl, fill, valueLabel)
+    // 제스처 입력은 다시 시작하지 않고, 누를 때마다 지금의 범위, 눈금, 방향을 읽는다.
+    val gesture = rememberUpdatedState(RangeGesture(rtl, { latestRange }, model, move, finish))
     Layout(
         content = {
             RangeThumb(stringResource(R.string.kinetica_ui_range_slider_start), start, thumbs.start, thumbSpec, scope, {
@@ -139,7 +142,7 @@ public fun GlassRangeSlider(
             .height(SLIDER_HEIGHT)
             .then(
                 if (enabled) {
-                    Modifier.rangeGesture(RangeGesture(rtl, { latestRange }, model, move, finish), thumbs, scope)
+                    Modifier.rangeGesture(gesture, thumbs, scope)
                 } else {
                     Modifier
                 },
@@ -302,40 +305,42 @@ private class RangeGesture(
     }
 }
 
-private fun Modifier.rangeGesture(gesture: RangeGesture, thumbs: RangeThumbs, scope: CoroutineScope): Modifier = pointerInput(gesture.rtl) {
-    awaitEachGesture {
-        val down = awaitFirstDown()
-        val width = size.width.toFloat()
-        val inset = THUMB_WIDTH.toPx() / 2
-        val usable = (width - inset * 2).coerceAtLeast(1f)
-        fun fractionAt(x: Float): Float = (((if (gesture.rtl) width - x else x) - inset) / usable).coerceIn(0f, 1f)
-        var overSlop = 0f
-        val drag = awaitHorizontalTouchSlopOrCancellation(down.id) { change, over ->
-            change.consume()
-            overSlop = over
-        }
-        if (drag == null) {
-            // 움직이지 않고 뗐으면 탭이다. 세로 스크롤이 가져갔으면(소비됨) 아무것도 하지 않는다.
-            val up = currentEvent.changes.firstOrNull { it.id == down.id }
-            if (up != null && !up.pressed && !up.isConsumed) {
-                val fraction = fractionAt(up.position.x)
-                gesture.move(gesture.pickStart(fraction, null), gesture.model.valueAt(fraction))
-                gesture.finish()
+private fun Modifier.rangeGesture(latest: State<RangeGesture>, thumbs: RangeThumbs, scope: CoroutineScope): Modifier =
+    pointerInput(latest) {
+        awaitEachGesture {
+            val down = awaitFirstDown()
+            val gesture = latest.value
+            val width = size.width.toFloat()
+            val inset = THUMB_WIDTH.toPx() / 2
+            val usable = (width - inset * 2).coerceAtLeast(1f)
+            fun fractionAt(x: Float): Float = (((if (gesture.rtl) width - x else x) - inset) / usable).coerceIn(0f, 1f)
+            var overSlop = 0f
+            val drag = awaitHorizontalTouchSlopOrCancellation(down.id) { change, over ->
+                change.consume()
+                overSlop = over
             }
-            return@awaitEachGesture
+            if (drag == null) {
+                // 움직이지 않고 뗐으면 탭이다. 세로 스크롤이 가져갔으면(소비됨) 아무것도 하지 않는다.
+                val up = currentEvent.changes.firstOrNull { it.id == down.id }
+                if (up != null && !up.pressed && !up.isConsumed) {
+                    val fraction = fractionAt(up.position.x)
+                    gesture.move(gesture.pickStart(fraction, null), gesture.model.valueAt(fraction))
+                    gesture.finish()
+                }
+                return@awaitEachGesture
+            }
+            val isStart = gesture.pickStart(fractionAt(down.position.x), (overSlop > 0f) != gesture.rtl)
+            val grab = if (isStart) thumbs.start else thumbs.end
+            scope.launch { grab.animateTo(1f, GrabSpring) }
+            gesture.move(isStart, gesture.model.valueAt(fractionAt(drag.position.x)))
+            horizontalDrag(drag.id) { change ->
+                gesture.move(isStart, gesture.model.valueAt(fractionAt(change.position.x)))
+                change.consume()
+            }
+            scope.launch { grab.animateTo(0f, GrabSpring) }
+            gesture.finish()
         }
-        val isStart = gesture.pickStart(fractionAt(down.position.x), (overSlop > 0f) != gesture.rtl)
-        val grab = if (isStart) thumbs.start else thumbs.end
-        scope.launch { grab.animateTo(1f, GrabSpring) }
-        gesture.move(isStart, gesture.model.valueAt(fractionAt(drag.position.x)))
-        horizontalDrag(drag.id) { change ->
-            gesture.move(isStart, gesture.model.valueAt(fractionAt(change.position.x)))
-            change.consume()
-        }
-        scope.launch { grab.animateTo(0f, GrabSpring) }
-        gesture.finish()
     }
-}
 
 /** 방향키를 값 변화 방향(+1 증가, -1 감소)으로 바꾼다. RTL에서는 좌우가 뒤집힌다. 슬라이더 키가 아니면 `null`. */
 private fun rangeKeyStep(key: Key, rtl: Boolean): Int? = when (key) {
