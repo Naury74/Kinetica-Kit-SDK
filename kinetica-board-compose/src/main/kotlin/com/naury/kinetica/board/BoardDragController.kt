@@ -10,9 +10,16 @@ import com.naury.kinetica.core.geometry.Vec2
 
 /**
  * 끌고 있는 위젯. [rect]는 손가락을 따라가는 자리, [target]은 놓으면 들어갈 자리(분할·칸·붙임). 모두 화면 폭 문서 단위.
- * [stackOnto]가 있으면 놓을 때 그 위젯과 묶음이 된다.
+ * [stackOnto]가 있으면 놓을 때 그 위젯과 묶음이 된다. [picker]가 있으면 배치 틀 고르기판이 떠 있다.
  */
-internal data class BoardDrag(val key: String, val rect: Rect, val target: Rect, val zone: SnapZone?, val stackOnto: String? = null)
+internal data class BoardDrag(
+    val key: String,
+    val rect: Rect,
+    val target: Rect,
+    val zone: SnapZone?,
+    val stackOnto: String? = null,
+    val picker: PickerHover? = null,
+)
 
 /** 편집 모드의 옮기기·크기 바꾸기. 끄는 동안은 문서를 바꾸지 않고, 놓을 때 한 번 [KineticaBoardState.place]한다. */
 internal class BoardDragController(private val state: KineticaBoardState) {
@@ -27,6 +34,12 @@ internal class BoardDragController(private val state: KineticaBoardState) {
     private var lastLocal: Offset = Offset.Zero
     private var pointerY: Double? = null
 
+    /** 위쪽 가장자리에 닿아 배치 틀 고르기판이 열렸는지. 손가락이 판 아래로 내려가면 닫힌다. */
+    private var pickerOpen = false
+
+    /** 지금 화면의 배치 틀 고르기판 모양. */
+    fun picker(): SnapLayouts.Picker? = frame?.let { SnapLayouts.picker(it.visible, it.mapping.gap, it.unit) }
+
     /**
      * 끌기 시작. [local]은 위젯 편집 틀(끄는 동안 제자리에 있다) 안의 손가락 위치(픽셀)다.
      * 이후 [move]·[resize]도 같은 틀 기준 위치를 받으므로, 끌기 감지 여유(touch slop)와 상관없이 손가락을 정확히 따라간다.
@@ -37,6 +50,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         startLocal = local
         lastLocal = local
         pointerY = null
+        pickerOpen = false
         drag = BoardDrag(key, rect, rect, null)
     }
 
@@ -54,6 +68,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         lastLocal = local
         pointerY = pointer.y
         val zone = if (state.arrangement is BoardArrangement.Free) BoardGeometry.zoneAt(pointer, frame.visible, frame.edge) else null
+        if (pickFromLayouts(key, raw, pointer, zone)) return
         val snapped = BoardGeometry.snapMove(raw, others, frame.mapping.displayWidth, frame.mapping.gap, frame.snap)
         // 손가락이 다른 위젯의 가운데에 있으면 그 위젯과 묶는다(가장자리 근처는 평소처럼 붙이거나 밀어낸다).
         val onto = if (zone ==
@@ -99,6 +114,25 @@ internal class BoardDragController(private val state: KineticaBoardState) {
     }
 
     /**
+     * 위쪽 가장자리(화면 가득 자리)에 닿으면 배치 틀 고르기판을 연다. 열려 있는 동안 손가락이 올라간 칸이 놓을 자리다.
+     * 판 아래로 [BoardFrame.edge]만큼 내려가면 닫고 평소 끌기로 돌아간다. 고르기판을 다룬 동안 `true`.
+     */
+    private fun pickFromLayouts(key: String, raw: Rect, pointer: Vec2, zone: SnapZone?): Boolean {
+        if (zone == SnapZone.Maximize) pickerOpen = true
+        val frame = frame?.takeIf { pickerOpen } ?: return false
+        val picker = picker()?.takeIf { pointer.y <= it.panel.bottom + frame.edge }
+        if (picker == null) {
+            pickerOpen = false
+            return false
+        }
+        val slot = picker.slotAt(pointer.x, pointer.y)
+        val target = slot?.let { SnapLayouts.zoneRect(SnapLayouts.layouts[it.layout][it.zone], frame.visible, frame.mapping.gap) } ?: raw
+        drag = BoardDrag(key, raw, target, null, picker = PickerHover(slot?.layout, slot?.zone))
+        scrollDirection = 0
+        return true
+    }
+
+    /**
      * 끄는 중 손가락이 보이는 영역 위·아래 자동 스크롤 띠에 있으면 -1(위)·1(아래), 아니면 0. 옮길 때마다 갱신한다.
      * 띠는 가장자리 분할 자리 바로 안쪽이라, 맨 끝에 놓으면 분할이고 그 조금 안쪽에 머물면 스크롤된다.
      */
@@ -108,7 +142,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
     private fun directionNow(): Int {
         val frame = frame ?: return 0
         val y = pointerY ?: return 0
-        if (drag?.zone != null) return 0
+        if (drag?.zone != null || drag?.picker != null) return 0
         // 위쪽 가장자리는 화면 가득 분할 자리라 그 안에서는 이미 위에서 0을 돌려준다. 아래 가운데는 분할 자리가 없다.
         return when {
             y - frame.visible.top <= frame.edge + frame.scrollBand -> -1
@@ -125,6 +159,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
 
     fun end() {
         scrollDirection = 0
+        pickerOpen = false
         val current = drag ?: return
         val frame = frame
         drag = null
@@ -141,6 +176,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
 
     fun cancel() {
         scrollDirection = 0
+        pickerOpen = false
         drag = null
         origin = null
     }
@@ -163,6 +199,8 @@ internal data class BoardFrame(
     val viewportHeight: Double = 0.0,
     val bottomInset: Double = 0.0,
     val scrollTop: () -> Double = { 0.0 },
+    /** 1dp의 문서 단위. */
+    val unit: Double = KineticaBoardState.UNITS,
 ) {
     val visible: Rect
         get() {

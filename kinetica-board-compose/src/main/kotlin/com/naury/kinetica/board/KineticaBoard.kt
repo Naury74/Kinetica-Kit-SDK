@@ -199,6 +199,7 @@ private fun EditLayer(
         TargetPreview(it.target, zoom, colors)
         DragOutline(it.rect, zoom, colors)
     }
+    val picker = drag?.picker?.let { hover -> controller.picker()?.let { it to hover } }
     stored.rootOrder.forEach { id ->
         val key = id.value
         val widget = state.widgetKeyOf(key)?.let { widgetKey -> state.catalog.firstOrNull { it.key == widgetKey } }
@@ -226,6 +227,8 @@ private fun EditLayer(
         )
         if (members.isNotEmpty()) StackBadge(stable.getValue(key), zoom, members.size, colors) { state.unstack(key) }
     }
+    // 위쪽 가장자리로 끌면 배치 틀 고르기판이 위젯 틀 위에 뜬다.
+    picker?.let { (geometry, hover) -> SnapPickerView(geometry, hover, zoom, colors) }
 }
 
 /** 끄는 동안 손가락이 위·아래 자동 스크롤 띠에 있으면 매 프레임 보드를 스크롤하고 끄는 위치를 맞춘다. */
@@ -387,7 +390,7 @@ private fun WidgetEditFrame(
 }
 
 @Composable
-private fun Modifier.rectPlacement(rect: Rect, zoom: Float): Modifier {
+internal fun Modifier.rectPlacement(rect: Rect, zoom: Float): Modifier {
     val density = LocalDensity.current
     return offset { IntOffset((rect.left * zoom).roundToInt(), (rect.top * zoom).roundToInt()) }
         .size(with(density) { (rect.width * zoom).toFloat().toDp() }, with(density) { (rect.height * zoom).toFloat().toDp() })

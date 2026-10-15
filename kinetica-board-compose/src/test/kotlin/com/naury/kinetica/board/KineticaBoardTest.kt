@@ -94,6 +94,32 @@ class KineticaBoardTest {
     }
 
     @Test
+    fun `위쪽 가장자리로 끌면 배치 틀 고르기판이 뜨고 고른 칸 자리에 놓인다`() {
+        val state = KineticaBoardState.create(catalog)
+        show(state, editing = true)
+        val unit = KineticaBoardState.UNITS
+        val picker = SnapLayouts.picker(com.naury.kinetica.core.geometry.Rect(0.0, 0.0, 400 * unit, 600 * unit), 12 * unit, unit)
+        // 반반 틀의 오른쪽 칸. 고르기판 좌표는 문서 단위이고, 위젯 a는 화면 (12dp, 12dp)에 있다.
+        val slot = picker.slots.first { it.layout == 0 && it.zone == 1 }
+        val target = Offset((slot.hit.center.x / unit - 12).toFloat(), (slot.hit.center.y / unit - 12).toFloat())
+
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "a").performTouchInput {
+            down(center)
+            moveTo(Offset(center.x + 30f, center.y))
+            moveTo(Offset(center.x, -10f))
+            moveTo(target)
+            up()
+        }
+        compose.waitForIdle()
+
+        val placed = state.rectOf("a")!!
+        val scale = 400.0 * unit / KineticaBoardState.REFERENCE_WIDTH
+        assertThat(placed.left * scale).isWithin(0.5).of(206.0 * unit)
+        assertThat(placed.right * scale).isWithin(0.5).of(388.0 * unit)
+        assertThat(placed.height).isWithin(0.5).of(488.0 * unit)
+    }
+
+    @Test
     fun `오른쪽 아래 손잡이로 크기를 바꾸고 빼기 표시로 뺀다`() {
         val state = KineticaBoardState.create(catalog)
         show(state, editing = true)
