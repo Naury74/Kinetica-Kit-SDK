@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-/** 시스템 "애니메이션 삭제"가 켜져 있는지. 켜져 있으면 반복·기울기 효과를 멈춘다. */
+/** 시스템의 '애니메이션 삭제' 접근성 설정이 켜져 있는지 확인한다. 켜져 있으면 반복 애니메이션과 기울기 효과를 멈춘다. */
 @Composable
 internal fun reducedMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
@@ -56,10 +56,13 @@ internal fun reducedMotion(): Boolean {
 }
 
 /**
- * 가장자리를 따라 색이 돌아가는 빛 테두리(Siri·Apple Intelligence 느낌). 바깥으로 [glow]만큼 은은히 번진다.
- * 화면 전체 가장자리에 붙이면 "듣는 중" 표시가 된다. 애니메이션 삭제 설정이면 돌지 않는다.
+ * Siri나 Apple Intelligence처럼 가장자리를 따라 색이 회전하는 글로우 테두리를 그린다. 바깥쪽으로 [glow]만큼 은은하게 번진다.
+ * 화면 전체 가장자리에 붙이면 음성 입력 중임을 알리는 표시로 쓸 수 있다. '애니메이션 삭제' 접근성 설정이 켜져 있으면 회전하지 않는다.
  *
- * @param periodMs 한 바퀴 시간
+ * @param colors 테두리 색. 두 개 미만이면 [IllegalArgumentException]을 던진다.
+ * @param width 테두리 두께
+ * @param glow 테두리 바깥으로 번지는 블러 반경
+ * @param periodMs 한 바퀴 도는 시간(ms)
  */
 @Composable
 public fun Modifier.glowBorder(
@@ -69,7 +72,7 @@ public fun Modifier.glowBorder(
     glow: Dp = 14.dp,
     periodMs: Int = 3_000,
 ): Modifier {
-    require(colors.size >= 2) { "색이 둘 이상이어야 합니다." }
+    require(colors.size >= 2) { "colors는 두 개 이상이어야 합니다." }
     val still = reducedMotion()
     val angle by rememberInfiniteTransition(label = "glow-border").animateFloat(
         0f,
@@ -91,7 +94,7 @@ public fun Modifier.glowBorder(
     }
 }
 
-/** 빛 테두리 붓. 크기가 바뀔 때만 색 고리를 새로 만들고, 돌릴 때는 행렬만 바꾼다. */
+/** 글로우 테두리용 Paint. 크기가 바뀔 때만 SweepGradient를 새로 만들고, 회전할 때는 행렬만 바꾼다. */
 private class GlowPaints(private val colors: IntArray) {
     val glow = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         style = android.graphics.Paint.Style.STROKE
@@ -121,13 +124,13 @@ private class GlowPaints(private val colors: IntArray) {
     }
 }
 
-/** Siri 느낌의 기본 빛 색. */
+/** [glowBorder]의 기본 색. Siri와 비슷한 색 조합이다. */
 public val GlowColors: List<Color> = listOf(Color(0xFF7B61FF), Color(0xFFFF5CAA), Color(0xFFFF9F43), Color(0xFF2ED3FF))
 
 /**
- * 누르면 젤리처럼 납작해졌다가 떼면 출렁이며 돌아온다. 손가락은 관찰만 하므로 클릭·스크롤은 그대로다.
+ * 누르면 젤리처럼 납작해졌다가 손을 떼면 출렁이며 돌아온다. 터치 이벤트를 소비하지 않으므로 클릭과 스크롤은 그대로 동작한다.
  *
- * @param amount 납작해지는 정도(0..0.3)
+ * @param amount 납작해지는 정도(0..0.3). 범위를 벗어나면 [IllegalArgumentException]을 던진다.
  */
 @Composable
 public fun Modifier.jellyPress(amount: Float = 0.08f): Modifier {
@@ -155,9 +158,9 @@ public fun Modifier.jellyPress(amount: Float = 0.08f): Modifier {
 }
 
 /**
- * 손가락을 대고 움직이면 요소가 손가락 쪽으로 끌려가고, 떼면 튕기며 제자리로 돌아온다(자석 버튼).
+ * 자석 버튼 효과. 손가락을 대고 움직이면 요소가 손가락 쪽으로 끌려가고, 손을 떼면 튕기며 제자리로 돌아온다.
  *
- * @param strength 손가락이 가운데에서 떨어진 거리의 몇 배만큼 따라갈지(0..1)
+ * @param strength 손가락이 중심에서 떨어진 거리에 곱할 비율(0..1). 범위를 벗어나면 [IllegalArgumentException]을 던진다.
  */
 @Composable
 public fun Modifier.magnetic(strength: Float = 0.25f): Modifier {
@@ -186,10 +189,11 @@ public fun Modifier.magnetic(strength: Float = 0.25f): Modifier {
 }
 
 /**
- * 기기를 기울이면 요소가 3D로 따라 기울고 빛 반사가 반대쪽으로 흐른다(Apple TV 포스터 느낌). 가속도 센서를 쓰며
- * 화면에 보이는 동안만 듣는다. 센서가 없거나 애니메이션 삭제 설정이면 움직이지 않는다.
+ * Apple TV 포스터처럼 기기를 기울이면 요소가 3D로 따라 기울고, 빛 반사가 반대쪽으로 흐른다.
+ * 중력 센서(없으면 가속도 센서)를 쓰며, 컴포지션에 있는 동안에만 센서 이벤트를 받는다.
+ * 센서가 없거나 '애니메이션 삭제' 접근성 설정이 켜져 있으면 움직이지 않는다.
  *
- * @param maxDegrees 가장 많이 기우는 각도
+ * @param maxDegrees 최대 기울기 각도(도)
  * @param shine 빛 반사의 진하기(0..1). 0이면 반사를 그리지 않는다.
  */
 @Composable
@@ -202,7 +206,7 @@ public fun Modifier.motionTilt(maxDegrees: Float = 10f, shine: Float = 0.25f): M
         val sensor = manager?.getDefaultSensor(Sensor.TYPE_GRAVITY) ?: manager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
-                // 중력 방향(x: 좌우, y: 위아래)을 -1..1로 줄이고 부드럽게 따라간다.
+                // 중력 방향(x는 좌우, y는 위아래)을 -1..1로 정규화하고, 떨림을 줄이려고 조금씩 따라가게 한다.
                 val x = (event.values[0] / SensorManager.GRAVITY_EARTH).coerceIn(-1f, 1f)
                 val y = ((event.values[1] / SensorManager.GRAVITY_EARTH) - REST_Y).coerceIn(-1f, 1f)
                 tilt = Offset(tilt.x + (x - tilt.x) * SMOOTH, tilt.y + (y - tilt.y) * SMOOTH)
@@ -222,7 +226,7 @@ public fun Modifier.motionTilt(maxDegrees: Float = 10f, shine: Float = 0.25f): M
         .drawWithContent {
             drawContent()
             if (shine > 0f) {
-                // 빛은 기운 반대쪽으로 흐른다.
+                // 빛 반사는 기울어진 반대쪽으로 이동한다.
                 val center = Offset(size.width * (HALF - tilt.x * SHINE_TRAVEL), size.height * (SHINE_TOP + tilt.y * SHINE_TRAVEL))
                 drawRect(
                     Brush.radialGradient(
@@ -235,7 +239,7 @@ public fun Modifier.motionTilt(maxDegrees: Float = 10f, shine: Float = 0.25f): M
         }
 }
 
-/** 손가락 누름·뗌을 관찰만 한다(소비하지 않음). */
+/** 누르고 떼는 순간만 관찰하고 이벤트는 소비하지 않는다. */
 private fun Modifier.observePress(onDown: () -> Unit, onUp: () -> Unit): Modifier = pointerInput(Unit) {
     awaitEachGesture {
         awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)

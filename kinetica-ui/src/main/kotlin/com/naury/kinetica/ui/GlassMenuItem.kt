@@ -56,14 +56,15 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.withTimeoutOrNull
 
-/** 길게 눌러 여는 메뉴의 항목. [destructive]면 빨간 글자(삭제 등)다. */
+/** [glassContextMenu]의 항목. 삭제처럼 되돌리기 어려운 동작은 [destructive]를 true로 두면 빨간색으로 표시한다. */
 @Immutable
 public data class GlassMenuItem(val label: String, val icon: ImageVector? = null, val destructive: Boolean = false, val onClick: () -> Unit)
 
 /**
- * 길게 누르면 iOS 컨텍스트 메뉴처럼 열린다: 진동과 함께 이 요소가 살짝 떠오르고, 뒤 화면이 흐려지며, 그 아래(자리가 없으면 위)에 유리 메뉴가 뜬다.
- * 바깥·뒤로 가기로 닫고, 항목을 누르면 닫은 뒤 그 동작을 부른다. 짧게 누르기·스크롤은 요소가 그대로 받는다.
- * 화면 읽기에서는 같은 항목이 요소의 사용자 정의 동작으로 보인다. [GlassScaffold] 안에서 쓴다.
+ * 길게 누르면 iOS 컨텍스트 메뉴처럼 열리는 글래스 메뉴를 붙인다. 햅틱과 함께 이 요소가 살짝 떠오르고 배경이 흐려지며,
+ * 요소 아래에 메뉴가 뜬다. 아래에 공간이 없으면 위에 뜬다. 메뉴 바깥을 누르거나 뒤로 가기를 하면 닫히고,
+ * 항목을 누르면 메뉴를 닫은 뒤 그 항목의 동작을 실행한다. 짧은 탭과 스크롤은 요소가 그대로 받는다.
+ * TalkBack에서는 같은 항목이 요소의 사용자 지정 동작으로 노출된다. [GlassScaffold] 안에서 쓴다.
  */
 @Composable
 public fun Modifier.glassContextMenu(items: List<GlassMenuItem>, style: GlassStyle = LocalGlassStyle.current): Modifier {
@@ -83,7 +84,7 @@ public fun Modifier.glassContextMenu(items: List<GlassMenuItem>, style: GlassSty
     return this
         .onGloballyPositioned { bounds = it.boundsInRoot() }
         .drawWithContent {
-            // 메뉴가 열리면 위층에 이 요소를 그대로 다시 그리기 위해 그림을 기록해 둔다.
+            // 메뉴가 열렸을 때 오버레이 레이어에 이 요소를 똑같이 다시 그리려고 그리기 내용을 기록해 둔다.
             layer.record { this@drawWithContent.drawContent() }
             drawLayer(layer)
         }
@@ -98,7 +99,7 @@ public fun Modifier.glassContextMenu(items: List<GlassMenuItem>, style: GlassSty
         .pointerInput(Unit) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                // 길게 누르는 시간 안에 떼거나 움직이면 평소 누르기·스크롤이다.
+                // 길게 누르기 시간 안에 손을 떼거나 움직이면 일반 탭이나 스크롤로 넘긴다.
                 val released = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
                     var holding = true
                     while (holding) {
@@ -112,7 +113,7 @@ public fun Modifier.glassContextMenu(items: List<GlassMenuItem>, style: GlassSty
                 if (released == null) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     open = true
-                    // 뗄 때까지 요소에 손가락을 넘기지 않아 짧게 누르기로 처리되지 않게 한다.
+                    // 손을 뗄 때까지 이벤트를 소비해서, 요소가 이를 탭으로 처리하지 않게 한다.
                     do {
                         val event = awaitPointerEvent(PointerEventPass.Initial)
                         event.changes.forEach { it.consume() }
@@ -135,7 +136,7 @@ private fun ContextMenuLayer(
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Scrim(level, close)
-        // 떠오른 요소: 원래 자리에서 살짝 커진다.
+        // 떠오른 요소는 원래 위치에서 살짝 커진다.
         Canvas(
             Modifier
                 .offset { IntOffset(bounds.left.roundToInt(), bounds.top.roundToInt()) }

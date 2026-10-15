@@ -46,28 +46,28 @@ import androidx.compose.ui.util.lerp
 import kotlin.math.roundToInt
 
 /**
- * 카드에서 상세 화면으로 커지며 이어지는 전환(App Store 오늘 탭 카드처럼)의 상태. [Modifier.expandSource]로 카드 자리를 알리고
- * [expand]로 연다. 열린 상세는 [GlassExpandHost]가 그린다.
+ * App Store의 투데이 탭 카드처럼 카드가 커지며 상세 화면으로 이어지는 전환의 상태. [Modifier.expandSource]로 카드 위치를 등록하고
+ * [expand]로 연다. 열린 상세 화면은 [GlassExpandHost]가 그린다.
  */
 @Stable
 public class GlassExpandState internal constructor() {
     internal val sources = mutableStateMapOf<Any, Rect>()
 
-    /** 열려 있거나 열려 가는 카드의 열쇠. 닫는 중이면 `null`이다. */
+    /** 열려 있거나 열리는 중인 카드의 키. 닫히는 중이면 `null`이다. */
     public var expandedKey: Any? by mutableStateOf(null)
         private set
 
-    /** 화면에 그려지고 있는 카드의 열쇠(닫히는 움직임 포함). 이 카드의 원래 자리는 숨긴다. */
+    /** 지금 화면에 그려지는 카드의 키. 닫힘 애니메이션이 진행 중일 때도 값이 남아 있다. 이 카드의 원래 위치는 숨긴다. */
     public var activeKey: Any? by mutableStateOf(null)
         internal set
 
-    /** [key] 카드를 연다. 그 카드에 [Modifier.expandSource]가 붙어 있지 않으면 화면 가운데에서 커진다. */
+    /** [key] 카드를 연다. 그 카드에 [Modifier.expandSource]가 없으면 화면 가운데에서 커진다. */
     public fun expand(key: Any) {
         expandedKey = key
         activeKey = key
     }
 
-    /** 열린 카드를 닫는다. 카드 자리로 줄어들며 돌아간다. */
+    /** 열린 카드를 닫는다. 상세 화면이 원래 카드 위치로 줄어들며 돌아간다. */
     public fun collapse() {
         expandedKey = null
     }
@@ -76,7 +76,7 @@ public class GlassExpandState internal constructor() {
 @Composable
 public fun rememberGlassExpandState(): GlassExpandState = remember { GlassExpandState() }
 
-/** 이 요소를 [key] 카드의 자리로 알린다. 그 카드가 열려 있는 동안 이 자리는 비워 둔다(커진 카드가 대신 보인다). */
+/** 이 요소를 [key] 카드의 원래 위치로 등록한다. 카드가 열려 있는 동안에는 커진 카드가 대신 보이므로 이 요소를 숨긴다. */
 public fun Modifier.expandSource(state: GlassExpandState, key: Any): Modifier = onGloballyPositioned {
     val bounds = it.boundsInRoot()
     if (state.sources[key] != bounds) state.sources[key] = bounds
@@ -84,13 +84,14 @@ public fun Modifier.expandSource(state: GlassExpandState, key: Any): Modifier = 
     .graphicsLayer { alpha = if (state.activeKey == key) 0f else 1f }
 
 /**
- * 열린 카드의 상세 화면을 그린다. 카드 자리에서 화면 가득 커지고 모서리가 펴지며, 뒤 화면은 흐려진다.
- * 상세를 아래로 끌면(스크롤이 맨 위일 때) 작아지며 둥글어지고, 충분히 끌거나 뒤로 가기를 하면 카드 자리로 돌아간다.
+ * 열린 카드의 상세 화면을 그린다. 카드 위치에서 화면 전체로 커지면서 모서리가 펴지고, 배경은 흐려진다.
+ * 스크롤이 맨 위일 때 상세 화면을 아래로 끌면 작아지며 모서리가 둥글어지고, 충분히 끌거나 뒤로 가기를 하면 카드 위치로 돌아간다.
  *
- * [content]는 화면 크기로 그려진 뒤 카드 폭에 맞게 줄여 보이므로, 상세 위쪽을 카드와 같은 모습으로 두면 끊김 없이 이어진다.
- * [GlassScaffold] 안에 두면 위층에 그린다.
+ * [content]는 화면 크기로 그린 뒤 카드 너비에 맞게 축소해 보여 준다. 상세 화면 위쪽을 카드와 똑같이 구성하면 전환이 자연스럽게 이어진다.
+ * [GlassScaffold] 안에 두면 오버레이 레이어에 그린다.
  *
- * @param cornerRadius 카드의 모서리 반지름. 커지며 0으로 펴진다.
+ * @param cornerRadius 카드의 모서리 반경. 상세 화면이 커지면서 0이 된다.
+ * @param title 열린 상세 화면의 이름. TalkBack이 창 제목으로 읽는다.
  */
 @Composable
 public fun GlassExpandHost(
@@ -136,7 +137,7 @@ public fun GlassExpandHost(
             Scrim(level * (1f - dragged * SCRIM_DRAG)) { state.collapse() }
             if (bounds.width <= 0f) return@Box
             val from = state.sources[active]?.translate(-origin) ?: bounds.deflate(bounds.minDimension * FALLBACK_INSET)
-            // 끌수록 화면이 작아지며 가운데로 모인다.
+            // 많이 끌수록 화면이 작아지며 가운데로 모인다.
             val full = bounds.scaleAround(1f - dragged * DRAG_SHRINK)
             val frame = lerp(from, full, progress.value)
             val radius = lerp(cornerRadius.value, cornerRadius.value * dragged, level).dp
@@ -166,7 +167,7 @@ public fun GlassExpandHost(
     }
 }
 
-/** 화면 크기([fullWidth]×[fullHeight]) 안 [frame] 자리에 그 크기로 놓는다. */
+/** 화면 크기([fullWidth]×[fullHeight]) 안의 [frame] 위치에 [frame] 크기로 배치한다. */
 private fun Modifier.placeAt(frame: Rect, fullWidth: Int, fullHeight: Int): Modifier = layout { measurable, _ ->
     val placeable = measurable.measure(
         Constraints.fixed(frame.width.roundToInt().coerceAtLeast(1), frame.height.roundToInt().coerceAtLeast(1)),
@@ -174,7 +175,7 @@ private fun Modifier.placeAt(frame: Rect, fullWidth: Int, fullHeight: Int): Modi
     layout(fullWidth, fullHeight) { placeable.place(frame.left.roundToInt(), frame.top.roundToInt()) }
 }
 
-/** 상세는 화면 크기([fullWidth]×[fullHeight])로 그리고 [scale]만큼 줄여 카드 폭에 맞춘다. 카드 높이 밖은 잘린다. */
+/** 상세 화면을 화면 크기([fullWidth]×[fullHeight])로 그린 뒤 [scale]만큼 축소해 카드 너비에 맞춘다. 카드 높이를 넘는 부분은 잘린다. */
 @Composable
 private fun ScaledToFrame(scale: Float, fullWidth: Int, fullHeight: Int, content: @Composable () -> Unit) {
     Box(
@@ -191,7 +192,7 @@ private fun ScaledToFrame(scale: Float, fullWidth: Int, fullHeight: Int, content
     ) { content() }
 }
 
-/** 상세 안 스크롤이 맨 위에서 더 내려가려는 만큼을 끌어 닫기로 받는다. 위로 밀면 끈 만큼을 먼저 거둔다. */
+/** 상세 화면의 스크롤이 맨 위에서 더 내려가려는 만큼을 드래그해 닫기로 받는다. 다시 위로 밀면 끌어 내린 거리부터 되돌린다. */
 private fun dismissConnection(drag: DragOffset, release: () -> Unit): NestedScrollConnection = object : NestedScrollConnection {
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
         if (available.y >= 0f || drag.value <= 0f) return Offset.Zero

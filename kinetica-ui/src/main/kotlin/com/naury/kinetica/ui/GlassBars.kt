@@ -60,13 +60,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** 탭 하나. [icon]이 없으면 글자만 보인다. */
+/** [GlassTabBar]의 탭 항목. [icon]이 없으면 텍스트만 표시한다. */
 @Immutable
 public data class GlassTab(val label: String, val icon: ImageVector? = null)
 
 /**
- * 떠 있는 유리 탭 막대. 고른 탭을 가리키는 알약이 옮겨 갈 때 앞쪽 가장자리가 먼저 가고 뒤쪽이 따라와 늘어났다 줄어든다(액체처럼).
- * 누르면 탭이 살짝 눌린다. [GlassScaffold]의 `bottomBar`에 넣는다.
+ * 화면 아래에 떠 있는 글래스 탭 바. 선택한 탭의 인디케이터가 이동할 때 앞쪽 가장자리가 먼저 가고 뒤쪽이 따라와,
+ * 액체처럼 늘어났다 줄어든다. 탭을 누르면 살짝 작아졌다가 돌아온다. [GlassScaffold]의 `bottomBar`에 넣어 쓴다.
+ *
+ * @param tabs 탭 목록. 비어 있으면 [IllegalArgumentException]을 던진다.
+ * @param selectedIndex 선택된 탭의 위치(0부터)
  */
 @Composable
 public fun GlassTabBar(
@@ -76,7 +79,7 @@ public fun GlassTabBar(
     modifier: Modifier = Modifier,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
-    require(tabs.isNotEmpty()) { "탭이 하나 이상 있어야 합니다." }
+    require(tabs.isNotEmpty()) { "tabs가 비어 있으면 안 됩니다." }
     var width by remember { mutableIntStateOf(0) }
     val indicator = remember { LiquidIndicator() }
     LaunchedEffect(selectedIndex, width, tabs.size) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat()) }
@@ -143,13 +146,13 @@ private fun TabItem(tab: GlassTab, selected: Boolean, style: GlassStyle, modifie
     }
 }
 
-/** [GlassToastHost]에 띄울 알림. 한 번에 하나씩 차례로 보인다. */
+/** [GlassToastHost]에 토스트를 띄우는 상태. 여러 개를 요청하면 한 번에 하나씩 순서대로 보여 준다. */
 @Stable
 public class GlassToastState {
     internal var message by mutableStateOf<String?>(null)
     private val queue = Mutex()
 
-    /** [text]를 [durationMs] 동안 보이고 사라질 때까지 기다린다. */
+    /** [text]를 [durationMs](ms) 동안 보여 주고, 토스트가 사라질 때까지 일시 중단한다. 앞선 토스트가 있으면 그 뒤에 보여 준다. */
     public suspend fun show(text: String, durationMs: Long = DEFAULT_TOAST_MS) {
         queue.withLock {
             message = text
@@ -163,7 +166,7 @@ public class GlassToastState {
 @Composable
 public fun rememberGlassToastState(): GlassToastState = remember { GlassToastState() }
 
-/** 위에서 미끄러져 내려오는 유리 알림. 화면 아무 곳에나 두고 [GlassToastState.show]로 띄운다. 화면 읽기는 알림을 읽어 준다. */
+/** 화면 위쪽에서 미끄러져 내려오는 글래스 토스트. 컴포지션 어디에 두어도 되고, [GlassToastState.show]로 띄운다. TalkBack이 내용을 읽어 준다. */
 @Composable
 public fun GlassToastHost(state: GlassToastState, style: GlassStyle = LocalGlassStyle.current) {
     var last by remember { mutableStateOf("") }
@@ -181,7 +184,7 @@ public fun GlassToastHost(state: GlassToastState, style: GlassStyle = LocalGlass
                     .padding(top = 8.dp)
                     .graphicsLayer {
                         translationY = -(size.height + TOAST_TRAVEL.toPx()) * (1f - progress)
-                        // 내려오며 가로로 살짝 늘었다 돌아온다.
+                        // 내려오는 동안 가로로 살짝 좁았다가 원래 너비로 돌아온다.
                         scaleX = TOAST_START_SCALE + (1f - TOAST_START_SCALE) * progress
                         alpha = progress.coerceIn(0f, 1f)
                     }

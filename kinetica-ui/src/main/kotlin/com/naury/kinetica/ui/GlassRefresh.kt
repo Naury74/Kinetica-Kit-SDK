@@ -42,15 +42,16 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 
 /**
- * 당겨서 새로 고침. 맨 위에서 더 당기면 내용이 고무줄처럼 버티며 내려오고, 위에 유리 물방울이 차오르다가 [threshold]를 넘으면
- * 톡 하고(진동) 길쭉해진다. 그때 놓으면 [onRefresh]를 부르고, [refreshing]이 `false`가 될 때까지 물방울이 돈다.
- * 화면 읽기에는 "새로 고침" 동작으로 보인다.
+ * 당겨서 새로 고침 컨테이너. 목록 맨 위에서 더 당기면 콘텐츠가 고무줄처럼 버티며 내려오고, 위쪽에 글래스 물방울이 차오른다.
+ * 당긴 거리가 [threshold]를 넘으면 햅틱과 함께 물방울이 길쭉해지고, 이때 손을 떼면 [onRefresh]를 호출한다.
+ * 물방울은 [refreshing]이 `false`가 될 때까지 돈다. TalkBack에서는 "새로 고침" 사용자 지정 동작으로 실행할 수 있다.
  *
- * [content]에는 세로로 스크롤되는 목록(LazyColumn 등)을 넣는다. 스크롤이 맨 위가 아니면 당겨지지 않는다.
+ * [content]에는 LazyColumn처럼 세로로 스크롤되는 목록을 넣는다. 스크롤이 맨 위에 있지 않으면 당겨지지 않는다.
  *
- * @param refreshing 새로 고치는 중이면 `true`. 호스트가 일을 마치면 `false`로 바꾼다.
- * @param threshold 놓았을 때 새로 고침이 되는 당김 거리
- * @param indicatorTop 물방울이 나오는 위치(이 상자 위에서부터). [GlassScaffold] 안이면 위 막대 높이(`padding.calculateTopPadding()`)를 넘겨 막대 아래에 보이게 한다.
+ * @param refreshing 새로 고침이 진행 중이면 `true`. 작업이 끝나면 호출하는 쪽에서 `false`로 바꾼다.
+ * @param threshold 손을 뗐을 때 새로 고침이 실행되는 최소 당김 거리
+ * @param indicatorTop 이 컨테이너 위쪽 끝에서 물방울까지의 거리. [GlassScaffold] 안에서는 상단 바 높이
+ *   (`padding.calculateTopPadding()`)를 넘겨야 물방울이 바에 가리지 않는다.
  */
 @Composable
 public fun GlassRefreshBox(
@@ -67,7 +68,7 @@ public fun GlassRefreshBox(
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val trigger = with(LocalDensity.current) { threshold.toPx() }
-    // 끄는 동안은 여러 번의 스크롤이 한 프레임 안에 쌓이므로 상태에 바로 더하고, 놓은 뒤의 움직임만 애니메이션으로 한다.
+    // 드래그 중에는 한 프레임에 스크롤이 여러 번 들어오므로 상태에 바로 더하고, 손을 뗀 뒤의 복귀만 애니메이션으로 처리한다.
     val pull = remember { DragOffset() }
     LaunchedEffect(refreshing, trigger) {
         pull.settle(scope, if (refreshing) trigger * REST_FRACTION else 0f, Spring.DampingRatioLowBouncy)
@@ -75,7 +76,7 @@ public fun GlassRefreshBox(
     val connection = remember(trigger) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // 당긴 채 위로 밀면 목록보다 먼저 당김을 거둔다.
+                // 당긴 상태에서 다시 위로 밀면 목록을 스크롤하기 전에 당긴 거리부터 되돌린다.
                 if (available.y >= 0f || pull.value <= 0f || latestRefreshing) return Offset.Zero
                 val used = maxOf(available.y, -pull.value)
                 pull.drag(used)
@@ -84,7 +85,7 @@ public fun GlassRefreshBox(
 
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
                 if (available.y <= 0f || source != NestedScrollSource.UserInput || latestRefreshing) return Offset.Zero
-                // 멀리 당길수록 덜 따라온다(고무줄).
+                // 멀리 당길수록 덜 따라오게 해서 고무줄처럼 버틴다.
                 val resistance = (1f - pull.value / (trigger * MAX_FRACTION)).coerceIn(0f, 1f) * DRAG_RATE
                 val before = pull.value
                 pull.drag(available.y * resistance)
@@ -126,7 +127,7 @@ public fun GlassRefreshBox(
     }
 }
 
-/** 당긴 정도([level], 1이면 문턱)만큼 차오르는 유리 물방울. 문턱을 넘으면 세로로 길쭉해지고, 새로 고치는 중이면 고리가 돈다. */
+/** 당긴 정도([level], 1이면 임계값)만큼 차오르는 글래스 물방울. 임계값을 넘으면 세로로 길쭉해지고, 새로 고침 중에는 링이 돈다. */
 @Composable
 private fun RefreshDrop(level: Float, refreshing: Boolean, style: GlassStyle, modifier: Modifier) {
     if (level <= 0f && !refreshing) return

@@ -43,10 +43,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 
 /**
- * 유리 UI 화면의 뼈대. 화면을 뒤 화면으로 기록해, 위·아래 막대([topBar]·[bottomBar])와 이 안에서 연 팝업·시트·토스트가
- * 그 위에서 흐리게 비춰 보이게 한다. [content] 안의 유리(카드 등)는 [background]를 비춘다. 내용은 막대 아래까지 그려지며(막대 뒤로 스크롤되어 보임) 막대 높이는 [content]의 여백으로 받는다.
+ * 글래스 UI 화면의 기본 골격. 화면을 배경으로 기록해 두고, 상단·하단 바([topBar], [bottomBar])와 이 안에서 연 다이얼로그,
+ * 바텀 시트, 토스트가 그 배경을 블러 처리해 비춰 보이게 한다. [content] 안의 카드 같은 글래스 요소는 [background]를 비춘다.
+ * 콘텐츠는 바 아래까지 그려지므로 스크롤하면 바 뒤로 지나가는 모습이 보이고, 바 높이는 [content]가 받는 패딩으로 전달된다.
  *
- * 시트가 열려 있으면 내용이 살짝 뒤로 물러나고 둥글어진다(iOS 시트처럼). [style]은 이 안의 유리 요소가 쓰는 기본 모양이다.
+ * 바텀 시트가 열려 있으면 iOS 시트처럼 콘텐츠가 살짝 뒤로 물러나며 모서리가 둥글어진다. [style]은 이 안의 글래스 요소가 쓰는 기본 스타일이다.
  *
  * ```kotlin
  * GlassScaffold(style = GlassStyles.Liquid, background = { Image(...) }, bottomBar = { GlassTabBar(...) }) { padding ->
@@ -54,9 +55,9 @@ import androidx.compose.ui.unit.dp
  * }
  * ```
  *
- * @param background 내용 뒤 바탕(사진·그라디언트). 유리가 비출 색이 있어야 유리답게 보인다.
- * @param backdropColor 시트가 열려 내용이 물러날 때 드러나는 바탕 색
- * @param edgeFade 스크롤된 내용이 상태 표시줄 아래에서 흐려지며 사라지게 한다(iOS 스크롤 가장자리처럼).
+ * @param background 콘텐츠 뒤에 깔리는 배경. 사진이나 그라디언트처럼 비칠 색이 있어야 글래스 효과가 살아난다.
+ * @param backdropColor 바텀 시트가 열려 콘텐츠가 물러날 때 드러나는 배경색
+ * @param edgeFade true면 스크롤된 콘텐츠가 상태 표시줄 아래에서 iOS처럼 흐려지며 사라진다.
  */
 @Composable
 public fun GlassScaffold(
@@ -69,8 +70,8 @@ public fun GlassScaffold(
     edgeFade: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    // 기록은 세 겹이다: 바탕 ⊂ 바탕+내용 ⊂ 화면 전체(막대 포함). 유리는 자기를 담지 않은 겹을 비춘다.
-    // 내용 안의 유리는 바탕을, 막대는 바탕+내용을, 팝업은 화면 전체를 비춘다.
+    // 배경 기록은 세 겹이다(배경 ⊂ 배경과 콘텐츠 ⊂ 바까지 포함한 화면 전체). 글래스는 자기를 포함하지 않는 겹을 비춰야
+    // 자기 자신을 다시 그리지 않는다. 그래서 콘텐츠 안 글래스는 배경을, 바는 배경과 콘텐츠를, 오버레이는 화면 전체를 비춘다.
     val backdrop = rememberGlassBackdrop()
     val contentBackdrop = rememberGlassBackdrop()
     val backgroundBackdrop = rememberGlassBackdrop()
@@ -82,12 +83,12 @@ public fun GlassScaffold(
         Box(modifier) {
             Box(Modifier.fillMaxSize().glassBackdrop(backdrop)) {
                 Box(Modifier.fillMaxSize().glassBackdrop(contentBackdrop).background(backdropColor)) {
-                    // 층(graphicsLayer)을 만들지 않고 그릴 때만 줄여, 안쪽 유리가 뒤 화면 기록에서 빠지게 한다.
+                    // graphicsLayer를 만들지 않고 그리기 단계에서만 축소해야 안쪽 글래스가 배경 기록에서 빠진다.
                     Box(
                         Modifier
                             .fillMaxSize()
                             .drawWithContent {
-                                // 그리기 단계에서 읽어, 시트가 움직이는 동안 내용을 다시 구성하지 않는다.
+                                // 그리기 단계에서 읽어야 시트가 움직이는 동안 콘텐츠를 다시 컴포지션하지 않는다.
                                 val push = host.pushBack
                                 if (push <= 0f) {
                                     drawContent()
@@ -123,13 +124,13 @@ public fun GlassScaffold(
     }
 }
 
-/** 상태 표시줄 아래로 들어간 내용을 흐리게 하고, 아래로 갈수록 옅어진다. */
+/** 상태 표시줄 아래로 들어간 콘텐츠를 블러 처리한다. 블러는 아래로 갈수록 옅어진다. */
 @Composable
 private fun EdgeFade(backdrop: GlassBackdrop, modifier: Modifier) {
     Box(
         modifier
             .fillMaxWidth()
-            // 상태 표시줄과 그 아래 조금(위 막대가 떠 있는 틈)까지.
+            // 상단 바가 떠 있는 틈까지 덮도록 상태 표시줄보다 조금 더 내려온다.
             .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + EDGE_EXTRA)
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .drawWithContent {
@@ -141,18 +142,18 @@ private fun EdgeFade(backdrop: GlassBackdrop, modifier: Modifier) {
     }
 }
 
-/** 지금 유리 요소가 쓰는 기본 모양([GlassScaffold]의 `style`). */
+/** 글래스 요소가 기본으로 쓰는 스타일. [GlassScaffold]의 `style`이 여기에 들어간다. */
 public val LocalGlassStyle: androidx.compose.runtime.ProvidableCompositionLocal<GlassStyle> =
     staticCompositionLocalOf { GlassStyles.Liquid }
 
 internal val LocalGlassHost = staticCompositionLocalOf<GlassOverlayHost?> { null }
 
-/** [GlassScaffold] 위층에 그릴 팝업들. 여는 곳은 화면 어디든 되고, 그리는 곳은 뒤 화면 기록 밖이다. */
+/** [GlassScaffold]의 오버레이 레이어에 그릴 항목들. 어디서 열든 배경 기록 바깥에 그린다. */
 @Stable
 internal class GlassOverlayHost {
     val entries = mutableStateListOf<OverlayEntry>()
 
-    /** 열린 시트들의 물러남 정도 중 가장 큰 값(0..1). */
+    /** 열린 시트들이 콘텐츠를 밀어내는 정도 중 가장 큰 값(0..1). */
     val pushBack: Float get() = entries.maxOfOrNull { it.pushBack } ?: 0f
 }
 

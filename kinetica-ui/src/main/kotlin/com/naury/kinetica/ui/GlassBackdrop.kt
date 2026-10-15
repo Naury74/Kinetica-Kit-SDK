@@ -50,35 +50,37 @@ import kotlin.math.ceil
 import kotlin.random.Random
 
 /**
- * 유리 표면이 비춰 볼 뒤 화면. [glassBackdrop]을 붙인 요소의 그림을 기록해 두고, [glass] 표면이 자기 자리만큼 흐려서 그린다.
+ * 글래스 표면이 비춰 보일 배경. [glassBackdrop]을 붙인 요소의 그리기 내용을 기록해 두면, [glass] 표면이 자기 위치에 해당하는
+ * 부분을 블러 처리해 그린다.
  *
- * 유리 표면은 뒤 화면 요소 밖(형제·위층)에 둔다. [GlassScaffold]는 이를 알아서 맞춘다: 막대·팝업은 화면 전체를,
- * 내용 안의 유리는 바탕([GlassScaffold]의 `background`)만 비춘다.
+ * 글래스 표면은 배경 요소 바깥, 즉 형제나 그 위 레이어에 둬야 한다. [GlassScaffold]는 이 배치를 알아서 맞춘다.
+ * 바와 다이얼로그는 화면 전체를 비추고, 콘텐츠 안의 글래스는 [GlassScaffold]의 `background`만 비춘다.
  */
 @Stable
 public class GlassBackdrop internal constructor(internal val layer: GraphicsLayer) {
     internal var origin by mutableStateOf(Offset.Zero)
     internal var size by mutableStateOf(IntSize.Zero)
 
-    /** 지금 뒤 화면을 기록하는 중인지. 잘못해 이 뒤 화면 안에 둔 유리가 자기 자신을 담지 않도록(그리기 순환) 이때는 그리지 않는다. */
+    /** 배경을 기록하는 중인지 나타낸다. 실수로 배경 안에 둔 글래스가 자기 자신을 기록해 그리기가 순환하지 않도록, 이때는 글래스를 그리지 않는다. */
     internal var recording: Boolean = false
 }
 
-/** 이 화면에서 쓸 [GlassBackdrop]. */
+/** 컴포지션에 유지되는 [GlassBackdrop]을 만든다. */
 @Composable
 public fun rememberGlassBackdrop(): GlassBackdrop {
     val layer = rememberGraphicsLayer()
     return remember(layer) { GlassBackdrop(layer) }
 }
 
-/** 가장 가까운 [GlassScaffold]·[ProvideGlassBackdrop]의 뒤 화면. 없으면 `null`이며 유리는 [GlassStyle.fallback] 색으로 보인다. */
+/** 가장 가까운 [GlassScaffold]가 제공하는 배경. 없으면 `null`이고, 이때 글래스는 [GlassStyle.fallback] 색으로 칠해진다. */
 public val LocalGlassBackdrop: androidx.compose.runtime.ProvidableCompositionLocal<GlassBackdrop?> = staticCompositionLocalOf { null }
 
 /**
- * 이 요소의 그림을 [backdrop]에 기록한다. 화면에는 평소처럼 그린다.
+ * 이 요소의 그리기 내용을 [backdrop]에 기록한다. 화면에는 평소처럼 그린다.
  *
- * 이 [backdrop]을 비추는 유리는 이 요소 **밖**에 둔다. 안에 두면 기록이 자기 자신을 담게 되므로 그리지 않는다.
- * 카드 안 사진 위의 유리처럼 안쪽에 유리가 필요하면, 그 사진에 따로 [glassBackdrop]을 붙이고 유리에 그 뒤 화면을 넘긴다.
+ * 이 [backdrop]을 비추는 글래스는 반드시 이 요소 바깥에 둔다. 안쪽에 두면 기록에 자기 자신이 들어가므로 그리지 않는다.
+ * 카드 안 사진 위에 글래스를 올리는 경우처럼 안쪽에 글래스가 필요하면, 그 사진에 따로 [glassBackdrop]을 붙이고
+ * 글래스에 그 [GlassBackdrop]을 넘긴다.
  */
 public fun Modifier.glassBackdrop(backdrop: GlassBackdrop): Modifier = this
     .onGloballyPositioned {
@@ -96,10 +98,12 @@ public fun Modifier.glassBackdrop(backdrop: GlassBackdrop): Modifier = this
     }
 
 /**
- * 유리 표면을 그린다: [shape] 안에 [backdrop]의 같은 자리를 [style]대로 흐리고 색을 덮은 뒤, 빛 테두리·그림자·알갱이를 더한다.
- * 내용은 그 위에 평소처럼 그린다. [backdrop]이 `null`이거나 API 31 미만이면 [GlassStyle.fallback] 색을 칠한다.
+ * 글래스 표면을 그린다. [shape] 안에 [backdrop]의 같은 위치를 [style]에 따라 블러 처리하고 색을 덮은 뒤,
+ * 글로우 테두리와 그림자, 노이즈 질감을 더한다. 콘텐츠는 그 위에 평소처럼 그린다.
+ * [backdrop]이 `null`이거나 API 31 미만이면 [GlassStyle.fallback] 색을 칠한다.
  *
- * @param intensity 0..1. 흐림·색 덮기·그림자를 함께 줄인다(팝업 배경이 서서히 흐려질 때 쓴다).
+ * @param intensity 효과 강도(0..1). 블러, 색 덮기, 그림자를 함께 줄인다. 다이얼로그 배경이 서서히 흐려지는 애니메이션에 쓴다.
+ *   범위를 벗어난 값은 0..1로 맞춘다.
  */
 @Composable
 public fun Modifier.glass(
@@ -136,22 +140,22 @@ private class PositionHolder {
     var offset: Offset = Offset.Zero
 }
 
-/** 매 프레임 효과를 새로 만들지 않도록 마지막 값을 둔다. */
+/** 프레임마다 RenderEffect를 새로 만들지 않도록 마지막 값을 보관한다. */
 private class EffectCache {
     var key: Any? = null
     var effect: androidx.compose.ui.graphics.RenderEffect? = null
 
-    // 그림자 붓과 모양은 크기·반지름이 바뀔 때만 새로 만든다(프레임마다 만들면 흐림 무늬를 다시 굽는다).
+    // 그림자 Paint와 Path는 크기나 반경이 바뀔 때만 새로 만든다. 프레임마다 만들면 블러 마스크를 매번 다시 계산한다.
     val shadowPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
     var shadowRadius = -1f
     var outlineKey: Any? = null
     var path: Path = Path()
 }
 
-/** 기록한 영역: 크기, 가장자리 여유, 모서리 반지름(px). */
+/** 기록한 영역의 크기, 가장자리 여백, 모서리 반경(px). */
 private class Region(val size: IntSize, val pad: Float, val corner: Float)
 
-/** 유리 하나가 뒤 화면을 옮겨 그릴 때 쓰는 층·효과 캐시와 화면 위치. */
+/** 글래스 하나가 배경을 옮겨 그릴 때 쓰는 레이어, 효과 캐시, 루트 기준 위치. */
 private class Sampler(val layer: GraphicsLayer, val cache: EffectCache, val offset: Offset)
 
 private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, style: GlassStyle, outline: Outline, level: Float) {
@@ -159,7 +163,7 @@ private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, st
     val cache = sampler.cache
     val offset = sampler.offset
     val blurPx = style.blur.toPx() * level
-    // 흐림이 가장자리 밖을 끌어오므로 그만큼 넓게 기록한다. 굴절도 바깥을 끌어온다.
+    // 블러와 굴절은 가장자리 바깥의 픽셀을 끌어오므로 그만큼 넓게 기록한다.
     val pad = ceil(blurPx * 2f + style.refraction * REFRACTION_DP * density).toInt()
     val recordSize = IntSize(ceil(size.width).toInt() + pad * 2, ceil(size.height).toInt() + pad * 2)
     if (recordSize.width <= 0 || recordSize.height <= 0) return
@@ -203,7 +207,7 @@ private fun glassEffect(blurPx: Float, style: GlassStyle, level: Float, region: 
     }
     val refraction = style.refraction * level
     if (refraction > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        // 기기 GPU가 셰이더를 못 쓰면 굴절 없이 그린다.
+        // 기기 GPU가 셰이더를 지원하지 않으면 굴절 없이 그린다.
         runCatching { refractionEffect(region.size, region.pad, region.corner, refraction) }.getOrNull()?.let {
             effect =
                 RenderEffect.createChainEffect(effect, it)
@@ -222,7 +226,7 @@ private fun refractionEffect(size: IntSize, pad: Float, corner: Float, strength:
     return RenderEffect.createRuntimeShaderEffect(shader, "content")
 }
 
-/** 둥근 사각형 가장자리 가까이에서 바깥쪽 화면을 끌어와 렌즈처럼 휘게 한다. */
+/** 둥근 사각형 가장자리 근처에서 바깥쪽 픽셀을 끌어와 렌즈처럼 휘어 보이게 한다. */
 private const val REFRACTION_SHADER = """
 uniform shader content;
 uniform float2 size;
@@ -257,7 +261,7 @@ private fun Outline.toPath(): Path = when (this) {
     is Outline.Generic -> path
 }
 
-/** 위·왼쪽이 밝고 아래·오른쪽으로 옅어지는 빛 테두리. */
+/** 위쪽과 왼쪽이 밝고 아래쪽과 오른쪽으로 갈수록 옅어지는 글로우 테두리. */
 private fun DrawScope.drawEdgeLight(outline: Outline, style: GlassStyle, level: Float) {
     if (style.edgeLight.alpha == 0f || style.edgeWidth.value == 0f) return
     val light = style.edgeLight.copy(alpha = style.edgeLight.alpha * level)
@@ -273,7 +277,7 @@ private fun DrawScope.drawEdgeLight(outline: Outline, style: GlassStyle, level: 
     clipPath(path) { drawPath(path, brush, style = Stroke(stroke * 2)) }
 }
 
-/** 표면 밖에만 지는 부드러운 그림자. 반투명 유리 안으로 그림자가 비치지 않게 안쪽은 잘라 낸다. */
+/** 표면 바깥에만 드리우는 부드러운 그림자. 반투명한 글래스 안으로 그림자가 비치지 않도록 안쪽은 잘라 낸다. */
 private fun DrawScope.drawOuterShadow(outline: Outline, style: GlassStyle, level: Float, cache: EffectCache) {
     val radius = style.shadow.toPx() * level
     if (radius < MIN_PX) return
@@ -293,7 +297,7 @@ private fun DrawScope.drawOuterShadow(outline: Outline, style: GlassStyle, level
     }
 }
 
-/** 모양이 같으면 지난번 Path를 다시 쓴다. */
+/** 모양이 같으면 이전 Path를 재사용한다. */
 private fun cachedPath(outline: Outline, cache: EffectCache): Path {
     val key = when (outline) {
         is Outline.Rectangle -> outline.rect
@@ -307,7 +311,7 @@ private fun cachedPath(outline: Outline, cache: EffectCache): Path {
     return cache.path
 }
 
-/** 64×64 고운 알갱이 무늬. 한 번 만들어 반복해 깐다. */
+/** 64×64 노이즈 텍스처. 한 번만 만들어 타일로 반복한다. */
 private object GrainBrush {
     val value: Brush by lazy { ShaderBrush(ImageShader(noise(), TileMode.Repeated, TileMode.Repeated)) }
 

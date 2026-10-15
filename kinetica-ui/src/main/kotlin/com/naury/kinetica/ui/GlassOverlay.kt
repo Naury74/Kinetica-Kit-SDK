@@ -11,8 +11,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 
 /**
- * [visible]인 동안과 닫히는 움직임이 끝날 때까지 [content]를 [GlassScaffold] 위층에 그린다. [GlassScaffold] 밖이면 이 자리에 그린다.
- * [content]는 열림 전환(`true`가 열림)을 받아 움직임을 맞춘다.
+ * [visible]인 동안, 그리고 닫힘 애니메이션이 끝날 때까지 [content]를 [GlassScaffold]의 오버레이 레이어에 그린다.
+ * [GlassScaffold] 밖에서 부르면 호출한 위치에 그린다. [content]는 열림 전환(`true`가 열린 상태)을 받아 애니메이션을 맞춘다.
  */
 @Composable
 internal fun GlassOverlay(visible: Boolean, content: @Composable (Transition<Boolean>) -> Unit) {
@@ -26,7 +26,7 @@ internal fun GlassOverlay(visible: Boolean, content: @Composable (Transition<Boo
         latest.value(rememberTransition(state, label = "glass-overlay"))
         return
     }
-    // 내용은 한 번만 정하고 최신 람다를 상태로 읽어, 구성 중에 위층 상태를 다시 쓰지 않는다.
+    // content는 한 번만 정하고 최신 람다는 상태로 읽는다. 컴포지션 도중에 오버레이 상태를 다시 쓰지 않기 위해서다.
     val entry = remember {
         OverlayEntry(Any()).also { entry ->
             entry.content = {
@@ -45,7 +45,7 @@ internal fun GlassOverlay(visible: Boolean, content: @Composable (Transition<Boo
     }
 }
 
-/** 열린 시트가 뒤 내용을 물러나게 할 정도(0..1)를 알린다. [GlassScaffold] 밖이면 아무 일도 없다. */
+/** 열린 시트가 뒤쪽 콘텐츠를 얼마나 밀어낼지(0..1) 알린다. [GlassScaffold] 밖에서는 아무 일도 하지 않는다. */
 @Composable
 internal fun ReportPushBack(amount: Float) {
     LocalOverlayEntry.current?.pushBack = amount

@@ -40,18 +40,20 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /**
- * iOS식 밀어 넣기 화면 쌓기. [stack]에 화면을 더하면 새 화면이 옆에서 밀려 들어오고 아래 화면은 조금 물러나며 어두워진다.
- * 빼면 반대로 움직인다. 화면 가장자리에서 끌거나 예측 뒤로 가기(Android 14+) 몸짓을 하면 손을 따라 되돌아가고,
- * 충분히 끌면 [onBack]을 부른다. 아래 화면의 `rememberSaveable` 상태는 다시 보일 때까지 남는다.
+ * iOS 내비게이션 스택처럼 화면을 밀어 넣는 컨테이너. [stack]에 화면을 추가하면 새 화면이 옆에서 밀려 들어오고,
+ * 아래 화면은 조금 물러나며 어두워진다. 화면을 빼면 반대로 움직인다. 화면 가장자리에서 드래그하거나
+ * 예측형 뒤로 가기(Android 14 이상) 제스처를 하면 손가락을 따라 이전 화면으로 돌아가고, 충분히 드래그하면 [onBack]을 호출한다.
+ * 아래 화면의 `rememberSaveable` 상태는 다시 보일 때까지 유지된다.
  *
  * ```kotlin
  * var stack by rememberSaveable { mutableStateOf(listOf("list")) }
  * PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen -> ... }
  * ```
  *
- * @param stack 아래부터 위로 쌓인 화면. 비어 있으면 안 된다. 항목은 화면을 가리는 열쇠로도 쓰므로 `rememberSaveable`에 담을 수 있는 값이어야 한다.
- * @param onBack 맨 위 화면을 빼 달라는 요청. [stack]이 하나뿐이면 부르지 않는다(뒤로 가기는 호스트로 간다).
- * @param swipeBack 가장자리에서 끌어 되돌아가기를 쓸지
+ * @param stack 아래부터 위 순서로 쌓인 화면. 비어 있으면 [IllegalArgumentException]을 던진다. 항목은 화면을 구분하는 키로도 쓰므로
+ *   `rememberSaveable`에 저장할 수 있는 값이어야 한다.
+ * @param onBack 맨 위 화면을 빼 달라는 요청. [stack]에 화면이 하나뿐이면 호출하지 않고, 뒤로 가기는 호스트가 처리한다.
+ * @param swipeBack 가장자리에서 드래그해 뒤로 가는 동작을 쓸지 여부
  */
 @Composable
 public fun <T : Any> PushNavigation(
@@ -61,10 +63,10 @@ public fun <T : Any> PushNavigation(
     swipeBack: Boolean = true,
     content: @Composable (T) -> Unit,
 ) {
-    require(stack.isNotEmpty()) { "화면이 하나 이상 있어야 합니다." }
+    require(stack.isNotEmpty()) { "stack이 비어 있으면 안 됩니다." }
     val latestBack by rememberUpdatedState(onBack)
     val holder = rememberSaveableStateHolder()
-    // 1이면 맨 위 화면이 제자리, 0이면 옆으로 다 나가 아래 화면만 보인다.
+    // 1이면 맨 위 화면이 제자리에 있고, 0이면 옆으로 완전히 빠져 아래 화면만 보인다.
     val progress = remember { Animatable(1f) }
     var shown by remember { mutableStateOf(stack) }
     var width by remember { mutableFloatStateOf(1f) }
@@ -91,7 +93,7 @@ public fun <T : Any> PushNavigation(
         val below = shown.getOrNull(shown.size - 2)
         val p = progress.value
         val visible = if (below != null && p < 1f) listOf(below, top) else listOf(top)
-        // 맨 위였던 화면이 아래 화면이 될 때 새로 만들지 않고 옮겨지도록 한 자리에서 열쇠로 그린다(스크롤 등 상태 유지).
+        // 맨 위 화면이 아래 화면으로 바뀔 때 새로 만들지 않고 그대로 옮겨지도록 같은 위치에서 key로 그린다. 그래야 스크롤 같은 상태가 유지된다.
         visible.forEach { screen ->
             key(screen) {
                 val isTop = screen == top
@@ -114,7 +116,7 @@ public fun <T : Any> PushNavigation(
     }
 }
 
-/** 뒤로 가기 몸짓을 따라 맨 위 화면을 옆으로 밀고, 끝나면 [onBack]을 부른다. 몸짓을 거두면 제자리로 돌아온다. */
+/** 뒤로 가기 제스처를 따라 맨 위 화면을 옆으로 밀고, 제스처가 끝나면 [onBack]을 호출한다. 제스처를 취소하면 제자리로 돌아온다. */
 @Composable
 private fun PushBackHandler(enabled: Boolean, progress: Animatable<Float, *>, onBack: () -> Unit) {
     PredictiveBackHandler(enabled = enabled) { events ->
@@ -129,11 +131,11 @@ private fun PushBackHandler(enabled: Boolean, progress: Animatable<Float, *>, on
     }
 }
 
-/** 시작 쪽 가장자리 띠. 끌면 맨 위 화면이 손을 따라 옆으로 나가고, 충분히 끌거나 튕기면 [onBack]을 부른다. */
+/** 시작 쪽 가장자리의 드래그 영역. 드래그하면 맨 위 화면이 손가락을 따라 옆으로 빠지고, 충분히 끌거나 플링하면 [onBack]을 호출한다. */
 @Composable
 private fun BoxScope.EdgeSwipe(direction: Float, width: () -> Float, progress: Animatable<Float, *>, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
-    // 끄는 값을 직접 쌓아 두고 그 값으로 맞춘다. Animatable 값을 읽어 더하면 한 프레임에 여러 번 끌 때 값이 빠진다.
+    // 드래그 값을 따로 누적해 그 값으로 맞춘다. Animatable 값을 읽어서 더하면 한 프레임에 드래그가 여러 번 들어올 때 값이 빠진다.
     val dragTarget = remember { floatArrayOf(1f) }
     Box(
         Modifier
@@ -160,7 +162,7 @@ private fun BoxScope.EdgeSwipe(direction: Float, width: () -> Float, progress: A
     )
 }
 
-/** 밀려 들어오는 화면: 옆에서 들어오며 앞쪽 가장자리에 그림자를 드리워 겹친 깊이를 보인다. */
+/** 밀려 들어오는 화면. 옆에서 들어오면서 앞쪽 가장자리에 그림자를 드리워 겹쳐 있는 깊이감을 준다. */
 private fun Modifier.pushedLayer(direction: Float, width: () -> Float, progress: () -> Float): Modifier =
     graphicsLayer { translationX = direction * width() * (1f - progress()) }
         .drawWithContent {
@@ -188,7 +190,7 @@ private fun Modifier.pushedLayer(direction: Float, width: () -> Float, progress:
             drawContent()
         }
 
-/** 덮이는 아래 화면: 조금 물러나며 어두워진다. 화면 읽기에서는 감춘다. */
+/** 가려지는 아래 화면. 조금 물러나며 어두워지고, TalkBack에서는 숨긴다. */
 private fun Modifier.coveredLayer(direction: Float, width: () -> Float, progress: () -> Float): Modifier =
     graphicsLayer { translationX = -direction * width() * PARALLAX * progress() }
         .drawWithContent {

@@ -28,8 +28,8 @@ import androidx.compose.ui.text.TextStyle
 import kotlinx.coroutines.delay
 
 /**
- * 자리마다 숫자가 위아래로 굴러가며 바뀌는 글자(주행 거리계). 커지면 아래에서 올라오고 작아지면 위에서 내려온다.
- * 바뀐 자리만 움직이고 쉼표·글자는 그대로다. 화면 읽기는 전체 글자를 한 번에 읽는다.
+ * 자릿수마다 숫자가 위아래로 굴러가며 바뀌는 텍스트로, 주행 거리계와 비슷하다. 값이 커지면 새 숫자가 아래에서 올라오고,
+ * 작아지면 위에서 내려온다. 바뀐 자릿수만 움직이고 쉼표나 다른 문자는 그대로 둔다. TalkBack은 전체 텍스트를 한 번에 읽는다.
  *
  * ```kotlin
  * RollingText(NumberFormat.getInstance().format(sales) + "원", style = TextStyle(fontSize = 32.sp))
@@ -46,7 +46,7 @@ public fun RollingText(text: String, modifier: Modifier = Modifier, style: TextS
         },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 자리 맞춤은 오른쪽부터 한다(자릿수가 늘어도 끝자리끼리 비교).
+        // 자릿수가 늘어도 끝자리끼리 맞춰 비교하도록 오른쪽부터 센다.
         text.forEachIndexed { index, char ->
             val fromEnd = text.length - index
             key(fromEnd) {
@@ -71,7 +71,7 @@ public fun RollingText(text: String, modifier: Modifier = Modifier, style: TextS
     }
 }
 
-/** 두 글자 속 숫자를 비교한다. 숫자가 없으면 0. */
+/** 두 문자열에 든 숫자를 비교한다. 숫자를 읽을 수 없으면 0을 돌려준다. */
 private fun compareNumbers(a: String, b: String): Int {
     val x = a.filter { it.isDigit() || it == '-' || it == '.' }.toBigDecimalOrNull() ?: return 0
     val y = b.filter { it.isDigit() || it == '-' || it == '.' }.toBigDecimalOrNull() ?: return 0
@@ -79,9 +79,11 @@ private fun compareNumbers(a: String, b: String): Int {
 }
 
 /**
- * 한 글자씩 써 내려가는 글자와 깜박이는 커서. [text]가 바뀌면 처음부터 다시 쓴다. 애니메이션 삭제 설정이면 바로 다 보인다.
+ * 한 글자씩 타이핑되는 텍스트와 깜박이는 커서. [text]가 바뀌면 처음부터 다시 타이핑한다.
+ * '애니메이션 삭제' 접근성 설정이 켜져 있으면 처음부터 전체 텍스트를 보여 준다. TalkBack은 전체 텍스트를 읽는다.
  *
- * @param charMs 한 글자 시간
+ * @param charMs 한 글자를 표시하는 간격(ms)
+ * @param cursor 깜박이는 커서를 표시할지 여부
  */
 @Composable
 public fun TypewriterText(

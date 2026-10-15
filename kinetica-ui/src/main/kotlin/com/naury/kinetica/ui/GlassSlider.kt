@@ -37,13 +37,15 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 /**
- * 유리 슬라이더(iOS 26 음량 막대 느낌). 잡으면 막대가 굵어지고 손잡이가 커지며, 끝을 넘어 끌면 막대가 고무줄처럼 늘어났다가
- * 놓으면 튕겨 돌아온다. 막대 아무 곳이나 눌러도 그 값으로 간다. 화면 읽기는 값 범위를 읽고 값을 바꿀 수 있다.
+ * iOS 26의 볼륨 슬라이더를 닮은 글래스 슬라이더. 잡으면 트랙이 굵어지고 손잡이가 커진다. 끝을 넘어서 드래그하면
+ * 트랙이 고무줄처럼 늘어났다가 손을 떼면 튕겨 돌아온다. 트랙의 아무 곳이나 눌러도 그 값으로 이동한다.
+ * TalkBack은 값과 범위를 읽고, 값을 바꿀 수도 있다.
  *
- * @param value [valueRange] 안의 값. 밖이면 가까운 끝으로 맞춰 그린다.
- * @param steps 양 끝 사이 눈금 수. 0이면 연속 값이고, 1 이상이면 그 눈금에만 멈춘다.
- * @param onValueChangeFinished 손을 뗄 때 한 번 부른다.
- * @param activeColor 채워진 부분 색
+ * @param value [valueRange] 안의 값. 범위를 벗어나면 가까운 끝 값으로 그린다.
+ * @param valueRange 값 범위. 끝이 시작보다 크지 않으면 [IllegalArgumentException]을 던진다.
+ * @param steps 양 끝 사이의 눈금 수. 0이면 연속 값이고, 1 이상이면 눈금 위치에만 멈춘다. 음수면 [IllegalArgumentException]을 던진다.
+ * @param onValueChangeFinished 손을 뗄 때 한 번 호출된다.
+ * @param activeColor 채워진 구간의 색
  */
 @Composable
 public fun GlassSlider(
@@ -56,8 +58,8 @@ public fun GlassSlider(
     activeColor: Color = Color(ACCENT),
     style: GlassStyle = LocalGlassStyle.current,
 ) {
-    require(steps >= 0) { "눈금 수는 0 이상이어야 합니다." }
-    require(valueRange.endInclusive > valueRange.start) { "범위의 끝이 시작보다 커야 합니다." }
+    require(steps >= 0) { "steps는 0 이상이어야 합니다." }
+    require(valueRange.endInclusive > valueRange.start) { "valueRange의 끝이 시작보다 커야 합니다." }
     val latestChange by rememberUpdatedState(onValueChange)
     val latestFinished by rememberUpdatedState(onValueChangeFinished)
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -98,7 +100,7 @@ public fun GlassSlider(
                     drag(down.id) { change ->
                         val raw = rawAt(change.position.x)
                         latestChange(valueAt(raw.coerceIn(0f, 1f)))
-                        // 끝을 넘은 만큼 줄어드는 비율로 늘어나 고무줄처럼 버틴다.
+                        // 끝을 넘은 거리가 커질수록 늘어나는 비율을 줄여 고무줄처럼 버티게 한다.
                         val over = (if (raw < 0f) raw else (raw - 1f).coerceAtLeast(0f)) * usable
                         scope.launch { stretch.snapTo(over / (abs(over) + RUBBER_SOFTNESS * density)) }
                         change.consume()
@@ -116,7 +118,7 @@ public fun GlassSlider(
     )
 }
 
-/** 그릴 때 쓰는 슬라이더 상태: 채운 비율, 잡은 정도(0..1), 끝 너머로 끈 정도(음수면 시작 쪽), 오른쪽에서 왼쪽인지. */
+/** 그리기에 쓰는 슬라이더 상태. 채운 비율, 잡은 정도(0..1), 끝을 넘어 늘어난 정도(음수면 시작 쪽), RTL 여부를 담는다. */
 private class SliderLook(val fraction: Float, val grab: Float, val stretch: Float, val rtl: Boolean)
 
 private fun DrawScope.drawSlider(look: SliderLook, active: Color, track: Color) {
@@ -129,7 +131,7 @@ private fun DrawScope.drawSlider(look: SliderLook, active: Color, track: Color) 
     val inset = THUMB_WIDTH.toPx() / 2
     val trackHeight = TRACK_HEIGHT.toPx() * (1f + TRACK_GROW * grab)
     val top = (size.height - trackHeight) / 2
-    // 넘친 쪽 끝을 기준으로 가로로 늘리고 세로는 살짝 가늘게 한다(고무줄).
+    // 고무줄처럼 보이도록 넘친 쪽 반대편 끝을 고정점으로 가로로 늘리고 세로는 살짝 가늘게 한다.
     val pull = abs(stretch) * RUBBER_MAX
     val pivot = if ((stretch < 0f) != rtl) size.width else 0f
     scale(1f + pull, 1f - pull * RUBBER_THIN, Offset(pivot, size.height / 2)) {
@@ -148,7 +150,7 @@ private fun DrawScope.drawSlider(look: SliderLook, active: Color, track: Color) 
             Size(thumbWidth, thumbHeight),
             thumbRadius,
         )
-        // 잡으면 손잡이가 유리처럼 비쳐 뒤 막대가 보인다.
+        // 잡은 동안에는 손잡이를 반투명하게 해 뒤의 트랙이 비쳐 보이게 한다.
         drawRoundRect(
             Color.White.copy(alpha = 1f - THUMB_CLEAR * grab),
             Offset(thumbLeft, thumbTop),

@@ -48,11 +48,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-/** 유리 위 글자·아이콘 색. 유리 요소 안에서 [GlassStyle.onGlass]로 정해진다. */
+/** 글래스 위 텍스트와 아이콘 색. 글래스 요소 안에서는 [GlassStyle.onGlass] 값이 들어간다. */
 public val LocalGlassContentColor: androidx.compose.runtime.ProvidableCompositionLocal<Color> =
     staticCompositionLocalOf { Color(0xFF15161A) }
 
-/** 유리 표면 하나. [backdrop]을 비추며(기본은 둘러싼 화면) 내용 색은 [LocalGlassContentColor]로 받는다. */
+/** 글래스 표면. [backdrop]을 비춰 보이고, 기본값은 감싸고 있는 화면의 배경이다. 안쪽 콘텐츠는 [LocalGlassContentColor]로 색을 받는다. */
 @Composable
 public fun GlassSurface(
     modifier: Modifier = Modifier,
@@ -67,10 +67,12 @@ public fun GlassSurface(
 }
 
 /**
- * 유리 팝업. 열리면 뒤 화면이 서서히 흐려지고 어두워지며, 판이 [origin](누른 자리, 화면 좌표)에서 튀어나오듯 커진다.
- * 바깥을 누르거나 뒤로 가기로 [onDismissRequest]를 부른다. [GlassScaffold] 안에서 쓰면 뒤 화면을 흐리게 비춘다.
+ * 글래스 다이얼로그. 열리면 배경이 서서히 흐려지고 어두워지며, 패널이 [origin]에서 튀어나오듯 커진다.
+ * 바깥을 누르거나 뒤로 가기를 하면 [onDismissRequest]를 호출한다. [GlassScaffold] 안에서 쓰면 배경이 블러 처리되어 비친다.
  *
- * @param origin 판이 커져 나올 자리. [Modifier.glassOrigin]으로 버튼 가운데를 얻는다. `null`이면 화면 가운데에서 커진다.
+ * @param origin 패널이 커지기 시작하는 위치(루트 좌표, px). [Modifier.glassOrigin]으로 누른 버튼의 중심을 얻을 수 있다.
+ *   `null`이면 화면 가운데에서 커진다.
+ * @param title 다이얼로그 이름. TalkBack이 창 제목으로 읽는다.
  */
 @Composable
 public fun GlassDialog(
@@ -104,7 +106,7 @@ public fun GlassDialog(
                         scaleX = scale
                         scaleY = scale
                         alpha = level
-                        // 누른 자리에서 가운데로 날아오며 커진다.
+                        // 누른 위치에서 가운데로 이동하면서 커진다.
                         val from = origin ?: panelCenter
                         translationX = (from.x - panelCenter.x) * (1f - level)
                         translationY = (from.y - panelCenter.y) * (1f - level)
@@ -128,7 +130,10 @@ public fun GlassDialog(
 }
 
 /**
- * 아래에서 올라오는 유리 시트. 열리면 뒤 내용이 살짝 물러나고 둥글어지며([GlassScaffold] 안), 손잡이·내용을 아래로 끌어 닫는다.
+ * 아래에서 올라오는 글래스 바텀 시트. [GlassScaffold] 안에서 열면 뒤쪽 콘텐츠가 살짝 물러나며 모서리가 둥글어진다.
+ * 핸들이나 시트 내용을 아래로 끌면 닫힌다. 높이의 30% 넘게 끌거나 빠르게 플링하면 [onDismissRequest]를 호출한다.
+ *
+ * @param title 시트 이름. TalkBack이 창 제목으로 읽는다.
  */
 @Composable
 public fun GlassSheet(
@@ -187,7 +192,7 @@ public fun GlassSheet(
     }
 }
 
-/** 아래로 끌어 닫기. 높이의 30% 넘게 끌거나 빠르게 튕기면 닫고, 아니면 제자리로 돌아온다. */
+/** 아래로 끌어 닫는 동작. 높이의 30% 넘게 끌거나 빠르게 플링하면 닫고, 그렇지 않으면 제자리로 돌아온다. */
 @Composable
 private fun Modifier.dragToDismiss(drag: Animatable<Float, *>, height: () -> Float, onDismiss: () -> Unit): Modifier {
     val scope = rememberCoroutineScope()
@@ -205,7 +210,7 @@ private fun Modifier.dragToDismiss(drag: Animatable<Float, *>, height: () -> Flo
     )
 }
 
-/** 팝업 뒤 배경: 서서히 흐려지고 어두워진다. 누르면 닫는다. */
+/** 다이얼로그 뒤에 까는 스크림. 서서히 흐려지고 어두워지며, 누르면 닫는다. */
 @Composable
 internal fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
     Box(
@@ -217,7 +222,7 @@ internal fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
     )
 }
 
-/** 이 요소 가운데(화면 좌표)를 [onOrigin]으로 알린다. [GlassDialog]의 `origin`에 넘겨 누른 버튼에서 팝업이 커져 나오게 한다. */
+/** 이 요소의 중심(루트 좌표, px)을 [onOrigin]으로 알린다. 이 값을 [GlassDialog]의 `origin`에 넘기면 누른 버튼에서 다이얼로그가 커져 나온다. */
 public fun Modifier.glassOrigin(onOrigin: (Offset) -> Unit): Modifier = onGloballyPositioned { onOrigin(it.boundsInRoot().center) }
 
 private const val DIALOG_DAMPING = 0.72f

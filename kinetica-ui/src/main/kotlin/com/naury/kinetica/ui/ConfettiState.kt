@@ -22,15 +22,18 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-/** [ConfettiHost]에 색종이를 터뜨린다. 여러 번 불러도 겹쳐서 날린다. */
+/** [ConfettiHost]에 색종이를 터뜨리는 상태. 여러 번 호출하면 앞서 터뜨린 색종이와 겹쳐서 날린다. */
 @Stable
 public class ConfettiState {
     internal val pieces = mutableStateListOf<Piece>()
     internal var running by mutableLongStateOf(0L)
 
     /**
-     * [origin](호스트 안 좌표, px)에서 [count]개를 위로 퍼지게 터뜨린다.
-     * @param colors 색종이 색
+     * [origin]에서 색종이 [count]개를 위쪽으로 퍼지게 터뜨린다.
+     *
+     * @param origin 터뜨릴 위치. [ConfettiHost] 안 좌표(px)다.
+     * @param count 색종이 개수. 1..400이 아니면 [IllegalArgumentException]을 던진다.
+     * @param colors 색종이 색. 순서대로 돌아가며 쓴다.
      */
     public fun burst(origin: Offset, count: Int = DEFAULT_COUNT, colors: List<Color> = ConfettiColors) {
         require(count in 1..MAX_COUNT) { "count는 1..${MAX_COUNT}이어야 합니다." }
@@ -59,8 +62,8 @@ public class ConfettiState {
 public fun rememberConfettiState(): ConfettiState = remember { ConfettiState() }
 
 /**
- * 색종이를 그리는 층. 화면 위에 덮어 두고 [ConfettiState.burst]로 터뜨린다. 손가락 입력은 받지 않는다.
- * 색종이는 중력·공기 저항을 받으며 떨어지고 뒤집히며 돈다. 애니메이션 삭제 설정이면 그리지 않는다.
+ * 색종이를 그리는 레이어. 화면 위에 덮어 두고 [ConfettiState.burst]로 터뜨린다. 터치 입력은 받지 않는다.
+ * 색종이는 중력과 공기 저항을 받아 떨어지면서 뒤집히고 회전한다. '애니메이션 삭제' 접근성 설정이 켜져 있으면 그리지 않는다.
  */
 @Composable
 public fun ConfettiHost(state: ConfettiState, modifier: Modifier = Modifier.fillMaxSize()) {
@@ -87,7 +90,7 @@ public fun ConfettiHost(state: ConfettiState, modifier: Modifier = Modifier.fill
         }
     }
     Canvas(modifier) {
-        frame // 프레임마다 다시 그린다.
+        frame // 이 값을 읽어야 프레임마다 다시 그린다.
         state.pieces.forEach { piece ->
             val fade = (1f - (piece.age - FADE_FROM) / (LIFE_SECONDS - FADE_FROM)).coerceIn(0f, 1f)
             rotate(piece.angle, piece.position) {

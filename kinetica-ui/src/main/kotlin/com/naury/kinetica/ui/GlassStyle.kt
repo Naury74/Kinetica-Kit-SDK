@@ -6,22 +6,25 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * 유리 표면의 모양. 뒤 화면을 [blur]만큼 흐리고 [saturation]·[brightness]로 색을 살린 뒤 [tint]를 덮고,
- * 가장자리에 빛 테두리([edgeLight])와 그림자([shadow])를 그린다.
+ * 글래스 표면의 스타일. 배경을 [blur]만큼 블러 처리하고 [saturation]과 [brightness]로 색을 살린 뒤 [tint]를 덮는다.
+ * 가장자리에는 글로우 테두리([edgeLight])와 그림자([shadow])를 그린다.
  *
- * 흐림은 Android 12(API 31)부터다. 그보다 낮으면 [fallback] 색을 칠한 반투명 표면으로 보인다.
+ * 블러는 Android 12(API 31)부터 동작한다. 그보다 낮은 버전에서는 [fallback] 색을 칠한 반투명 표면으로 보인다.
  *
- * @property blur 뒤 화면 흐림 반지름. 0이면 흐리지 않는다(맑은 유리).
- * @property saturation 채도 배율. 1은 그대로, 1보다 크면 뒤 색이 더 선명하다(유리 특유의 색 번짐).
- * @property brightness 밝기 더하기(-1..1). 밝은 유리는 양수, 어두운 유리는 음수.
- * @property tint 흐린 뒤 화면 위에 덮는 색(투명도 포함).
- * @property edgeLight 가장자리 빛 테두리 색. 위·왼쪽이 밝고 아래·오른쪽으로 옅어진다. 투명이면 그리지 않는다.
- * @property edgeWidth 빛 테두리 두께
- * @property shadow 표면 그림자 높이. 0이면 그림자 없음.
- * @property grain 고운 알갱이 무늬의 진하기(0..1). Windows Acrylic처럼 유리 질감을 준다.
- * @property refraction 가장자리 굴절(0..1). 가장자리 가까이의 뒤 화면을 안쪽으로 휘어 렌즈처럼 보인다(Liquid Glass). API 33부터.
- * @property fallback 흐림을 쓸 수 없을 때 칠할 색
- * @property onGlass 유리 위 글자·아이콘 색
+ * 생성할 때 [blur], [edgeWidth], [shadow]가 음수이거나 [saturation]이 음수, [brightness]가 -1..1 밖,
+ * [grain]이나 [refraction]이 0..1 밖이면 [IllegalArgumentException]을 던진다.
+ *
+ * @property blur 배경 블러 반경. 0이면 블러 없이 맑은 유리가 된다.
+ * @property saturation 채도 배율. 1이면 그대로이고, 1보다 크면 배경 색이 더 진하게 번져 유리 특유의 느낌이 난다.
+ * @property brightness 더할 밝기(-1..1). 밝은 유리는 양수, 어두운 유리는 음수를 쓴다.
+ * @property tint 블러 처리한 배경 위에 덮는 색. 알파로 덮는 정도를 정한다.
+ * @property edgeLight 글로우 테두리 색. 위쪽과 왼쪽이 밝고 아래쪽과 오른쪽으로 갈수록 옅어진다. 투명하면 그리지 않는다.
+ * @property edgeWidth 글로우 테두리 두께
+ * @property shadow 그림자 elevation. 0이면 그림자를 그리지 않는다.
+ * @property grain 노이즈 질감의 진하기(0..1). Windows Acrylic처럼 유리에 질감을 준다.
+ * @property refraction 가장자리 굴절 정도(0..1). 가장자리 근처의 배경을 안쪽으로 휘어 Liquid Glass처럼 렌즈 효과를 낸다. API 33부터 동작한다.
+ * @property fallback 블러를 쓸 수 없을 때 칠할 색
+ * @property onGlass 글래스 위에 올리는 텍스트와 아이콘 색
  */
 @Immutable
 public data class GlassStyle(
@@ -38,8 +41,8 @@ public data class GlassStyle(
     val onGlass: Color = Color(INK),
 ) {
     /**
-     * 팝업·시트용으로 더 흐리고 진하게 덮은 모양. 판 뒤 내용이 비쳐도 글자가 잘 읽힌다.
-     * 원래보다 덜 흐리거나 옅어지지는 않는다.
+     * 다이얼로그와 바텀 시트에 맞게 블러를 키우고 [tint]를 진하게 한 스타일을 돌려준다. 뒤쪽 콘텐츠가 비쳐도 텍스트가 잘 읽힌다.
+     * 원래 스타일보다 블러가 약해지거나 색이 옅어지지는 않는다.
      */
     public fun forPopup(): GlassStyle = copy(
         blur = maxOf(blur, POPUP_MIN_BLUR),
@@ -48,18 +51,18 @@ public data class GlassStyle(
     )
 
     init {
-        require(blur >= 0.dp && edgeWidth >= 0.dp && shadow >= 0.dp) { "흐림·테두리·그림자는 0 이상이어야 합니다." }
+        require(blur >= 0.dp && edgeWidth >= 0.dp && shadow >= 0.dp) { "blur, edgeWidth, shadow는 0 이상이어야 합니다." }
         require(saturation >= 0f && brightness in -1f..1f && grain in 0f..1f && refraction in 0f..1f) {
-            "채도는 0 이상, 밝기는 -1..1, 알갱이·굴절은 0..1이어야 합니다."
+            "saturation은 0 이상, brightness는 -1..1, grain과 refraction은 0..1이어야 합니다."
         }
     }
 }
 
 /**
- * 세계 여러 UI에서 가져온 유리 모양. 그대로 쓰거나 `copy`로 고쳐 쓴다. `dark`가 붙은 것은 어두운 화면용이다.
+ * 여러 플랫폼의 디자인을 참고한 글래스 스타일 프리셋. 그대로 쓰거나 `copy`로 값을 바꿔 쓴다. 이름이 `Dark`로 끝나는 것은 다크 테마용이다.
  */
 public object GlassStyles {
-    /** iOS 26 Liquid Glass 느낌: 맑고 선명하며 가장자리가 렌즈처럼 휘고 빛 테두리가 또렷하다. */
+    /** iOS 26 Liquid Glass 스타일. 맑고 선명하며, 가장자리가 렌즈처럼 휘고 글로우 테두리가 또렷하다. */
     @JvmField
     public val Liquid: GlassStyle = GlassStyle(
         blur = 8.dp,
@@ -82,7 +85,7 @@ public object GlassStyles {
         onGlass = Color.White,
     )
 
-    /** Windows 11 Acrylic 느낌: 많이 흐리고 옅은 색을 덮으며 고운 알갱이가 있다. */
+    /** Windows 11 Acrylic 스타일. 블러가 강하고 옅은 색을 덮으며, 고운 노이즈 질감이 있다. */
     @JvmField
     public val Acrylic: GlassStyle = GlassStyle(
         blur = 30.dp,
@@ -102,7 +105,7 @@ public object GlassStyles {
         onGlass = Color.White,
     )
 
-    /** One UI 느낌: 부드럽게 흐리고 밝은 바탕을 넉넉히 덮으며 테두리 없이 둥글다. */
+    /** One UI 스타일. 블러가 부드럽고 밝은 색을 넉넉히 덮으며, 테두리가 없다. */
     @JvmField
     public val OneUi: GlassStyle = GlassStyle(
         blur = 24.dp,
@@ -120,7 +123,7 @@ public object GlassStyles {
         onGlass = Color.White,
     )
 
-    /** visionOS 느낌: 어둡고 깊은 유리에 은은한 빛 테두리. 사진·영상 위 조작판에 어울린다. */
+    /** visionOS 스타일. 어둡고 깊은 유리에 은은한 글로우 테두리를 둘러, 사진이나 영상 위 컨트롤 패널에 어울린다. */
     @JvmField
     public val Vision: GlassStyle = GlassStyle(
         blur = 36.dp,
@@ -134,7 +137,7 @@ public object GlassStyles {
         onGlass = Color.White,
     )
 
-    /** Material 3 Expressive 느낌: 은은히 흐린 색조 표면, 테두리 없이 큰 그림자. 색은 앱 색에 맞춰 `tint`를 바꾼다. */
+    /** Material 3 Expressive 스타일. 은은하게 블러 처리한 색조 표면에 테두리 없이 큰 그림자를 준다. 앱 색에 맞추려면 `tint`를 바꾼다. */
     @JvmField
     public val Material: GlassStyle = GlassStyle(
         blur = 16.dp,
@@ -153,7 +156,7 @@ public object GlassStyles {
         onGlass = Color(0xFFE6E0E9),
     )
 
-    /** 예전 iOS의 서리 유리: 아주 많이 흐리고 하얗게 덮어 뒤가 색으로만 비친다. 알림·메뉴 판에 어울린다. */
+    /** 예전 iOS의 반투명 유리 스타일. 블러를 아주 강하게 하고 흰색을 덮어 배경이 색으로만 비친다. 알림이나 메뉴 패널에 어울린다. */
     @JvmField
     public val Frosted: GlassStyle = GlassStyle(
         blur = 44.dp,
@@ -165,7 +168,7 @@ public object GlassStyles {
         fallback = Color(0xF2F7F7F7),
     )
 
-    /** 흐림만 있는 맑은 유리(팝업 뒤 배경 처리용). */
+    /** 블러만 있고 색이나 테두리가 없는 스타일. 다이얼로그 뒤 배경을 흐리게 할 때 쓴다. */
     @JvmField
     public val Clear: GlassStyle = GlassStyle(
         blur = 20.dp,

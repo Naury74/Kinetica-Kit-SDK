@@ -7,7 +7,7 @@ import androidx.compose.runtime.Stable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-/** 고른 탭 알약의 두 가장자리. 가는 쪽 가장자리는 빠르게, 반대쪽은 늦게 따라가 늘어난다. */
+/** 선택 인디케이터의 양쪽 가장자리. 이동하는 방향의 가장자리가 먼저 가고 반대쪽이 늦게 따라와서 인디케이터가 늘어났다 줄어든다. */
 @Stable
 internal class LiquidIndicator {
     val left = Animatable(0f)

@@ -38,7 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 유리 세그먼트 버튼(보기 전환 등). 고른 칸 알약이 옮겨 갈 때 탭 막대처럼 늘어났다 줄어든다. 화면 읽기는 칸마다 선택 상태를 읽는다.
+ * 글래스 세그먼트 버튼. 보기 방식 전환 같은 곳에 쓴다. 선택 인디케이터가 [GlassTabBar]처럼 늘어났다 줄어들며 이동하고,
+ * TalkBack은 항목마다 선택 상태를 읽는다.
+ *
+ * @param options 항목 이름. 두 개 미만이면 [IllegalArgumentException]을 던진다.
+ * @param selectedIndex 선택된 항목의 위치(0부터)
  */
 @Composable
 public fun GlassSegmentedControl(
@@ -48,7 +52,7 @@ public fun GlassSegmentedControl(
     modifier: Modifier = Modifier,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
-    require(options.size >= 2) { "칸이 둘 이상이어야 합니다." }
+    require(options.size >= 2) { "options는 두 개 이상이어야 합니다." }
     var width by remember { mutableIntStateOf(0) }
     val indicator = remember { LiquidIndicator() }
     LaunchedEffect(selectedIndex, width, options.size) { indicator.moveTo(selectedIndex, options.size, width.toFloat()) }
@@ -104,7 +108,8 @@ public fun GlassSegmentedControl(
 }
 
 /**
- * 유리 스위치. 누르는 동안 손잡이가 옆으로 늘어나고, 켜고 끌 때 출렁이며 넘어간다(iOS 26 느낌). 켜지면 바탕이 [onColor]로 차오른다.
+ * 글래스 스위치. 누르고 있는 동안 손잡이가 옆으로 늘어나고, 켜고 끌 때 iOS 26 스위치처럼 출렁이며 넘어간다.
+ * 켜지면 트랙이 [onColor]로 바뀐다.
  */
 @Composable
 public fun GlassSwitch(

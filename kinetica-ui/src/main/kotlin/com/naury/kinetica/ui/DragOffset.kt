@@ -11,8 +11,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
- * 손으로 끈 거리(px, 0 이상). 한 프레임에 스크롤이 여러 번 와도 빠지지 않게 상태에 바로 더하고,
- * 놓은 뒤의 움직임만 애니메이션으로 한다. 다시 끌면 진행 중인 움직임을 멈춘다.
+ * 드래그한 거리(px, 0 이상). 한 프레임에 스크롤 이벤트가 여러 번 들어와도 빠뜨리지 않도록 상태에 바로 더하고,
+ * 손을 뗀 뒤의 복귀만 애니메이션으로 처리한다. 다시 드래그하면 진행 중인 애니메이션을 멈춘다.
  */
 @Stable
 internal class DragOffset {
