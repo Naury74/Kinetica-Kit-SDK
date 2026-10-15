@@ -5,33 +5,33 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** 전환이 어디서 멈췄는지. */
+/** 전환이 멈춘 위치. */
 public enum class TransitionEnd {
-    /** 끝(진행률 1)에 닿았다. 호스트는 이때 화면 이동(navigation)을 확정한다. */
+    /** 진행률 1, 즉 끝에 닿았다. 호스트는 이때 화면 이동을 확정한다. */
     Completed,
 
-    /** 처음(진행률 0)으로 돌아왔다. */
+    /** 진행률 0, 즉 처음으로 돌아왔다. */
     Canceled,
 }
 
 /**
- * @property progress 0..1
- * @property isDragging 손가락이 잡고 있는 중
- * @property isSettling 손을 뗀 뒤 0이나 1로 가는 중
+ * @property progress 진행률. 0..1
+ * @property isDragging 사용자가 드래그하는 중이면 `true`
+ * @property isSettling 손을 뗀 뒤 0이나 1로 이동하는 중이면 `true`
  */
 public data class TransitionState(val progress: Double = 0.0, val isDragging: Boolean = false, val isSettling: Boolean = false)
 
 /**
- * 손으로 끌 수 있는 전환의 진행률(docs 09 interactive dismiss). 화면·navigation과 무관한 순수 상태 기계다.
+ * 드래그로 조작할 수 있는 전환의 진행률을 관리한다(docs 09 interactive dismiss). 화면이나 내비게이션과 무관한 순수 상태 기계다.
  *
- * - [drag]로 진행률을 직접 정하고, [release]하면 속도를 반영해 0이나 1 중 가까운 쪽으로 [settleDurationMs] 동안 간다.
- * - 가는 도중 다시 [startDrag]하면 그 자리에서 이어 잡는다.
- * - [onEnd]는 1에 닿거나 0으로 돌아왔을 때 불린다. 끝([TransitionEnd.Completed])은 이 객체가 살아 있는 동안 한 번만 알린다.
+ * - [drag]로 진행률을 직접 정하고, [release]하면 속도를 반영해 0과 1 중 가까운 쪽으로 [settleDurationMs] 동안 이동한다.
+ * - 이동하는 도중에 다시 [startDrag]하면 그 위치에서 이어서 잡는다.
+ * - [onEnd]는 1에 닿거나 0으로 돌아왔을 때 호출된다. [TransitionEnd.Completed]는 이 객체가 살아 있는 동안 한 번만 알린다.
  *
- * 프레임마다 [onFrame]을 부른다. main 스레드에서만 쓴다.
+ * 프레임마다 [onFrame]을 호출해야 하며, 메인 스레드에서만 쓴다.
  *
- * @param projectionSeconds 손을 뗄 때 속도를 이 시간만큼 앞으로 내다봐 결정한다.
- * @param threshold 내다본 진행률이 이 값 이상이면 끝까지 간다.
+ * @param projectionSeconds 손을 뗄 때 현재 속도로 이 시간만큼 더 움직였다고 가정해 도착 지점을 예측한다.
+ * @param threshold 예측한 진행률이 이 값 이상이면 끝까지 간다.
  */
 public class TransitionDriver(
     private val clock: FrameClock = FrameClock.System,
@@ -47,7 +47,7 @@ public class TransitionDriver(
 
     public val state: StateFlow<TransitionState> = mutableState.asStateFlow()
 
-    /** 끝난 뒤에는 아무 동작도 하지 않는다. */
+    /** 완료된 뒤에는 아무것도 하지 않는다. */
     public val isCompleted: Boolean get() = completed
 
     public fun startDrag() {
@@ -56,13 +56,13 @@ public class TransitionDriver(
         mutableState.value = TransitionState(progress = mutableState.value.progress, isDragging = true)
     }
 
-    /** 잡고 있는 동안 진행률을 정한다. 0..1로 맞춘다. */
+    /** 드래그하는 동안 진행률을 정한다. 값은 0..1로 맞춘다. */
     public fun drag(progress: Double) {
         if (completed || !mutableState.value.isDragging) return
         mutableState.value = mutableState.value.copy(progress = clamp(progress))
     }
 
-    /** 손을 뗀다. [progressPerSecond]는 끄는 방향으로의 속도를 이동 거리로 나눈 값이다([projectedVelocity]). */
+    /** 드래그를 끝낸다. [progressPerSecond]는 드래그 방향의 속도를 이동 거리로 나눈 값이며 [projectedVelocity]로 구한다. */
     public fun release(progressPerSecond: Double) {
         if (completed || !mutableState.value.isDragging) return
         val velocity = if (progressPerSecond.isFinite()) progressPerSecond else 0.0
@@ -70,13 +70,13 @@ public class TransitionDriver(
         settleTo(if (projected >= threshold) 1.0 else 0.0)
     }
 
-    /** 끌지 않고 끝까지(예: 뒤로 버튼) 또는 처음으로 간다. */
+    /** 드래그 없이 끝이나 처음으로 이동한다. 뒤로 버튼을 눌렀을 때 등에 쓴다. */
     public fun animateTo(forward: Boolean) {
         if (completed) return
         settleTo(if (forward) 1.0 else 0.0)
     }
 
-    /** 프레임마다 부른다. 가는 중이면 진행률을 갱신하고, 닿으면 [onEnd]를 부른다. */
+    /** 프레임마다 호출한다. 이동 중이면 진행률을 갱신하고, 끝이나 처음에 닿으면 [onEnd]를 호출한다. */
     public fun onFrame(): TransitionState {
         val current = settle ?: return mutableState.value
         val elapsedMs = (clock.timeNanos() - current.startNanos).coerceAtLeast(0L) / NANOS_PER_MILLI
@@ -117,8 +117,8 @@ public class TransitionDriver(
         private const val NANOS_PER_MILLI = 1_000_000.0
 
         /**
-         * 손가락 속도([velocityX]·[velocityY], px/s)를 끄는 방향([axisX]·[axisY], 단위 벡터)으로 투영하고 이동 거리 [travelPx]로 나눈다.
-         * 거리가 0 이하이면 0이다.
+         * 손가락 속도([velocityX], [velocityY], px/s)를 드래그 방향의 단위 벡터([axisX], [axisY])에 투영한 뒤 이동 거리 [travelPx]로 나눈다.
+         * 거리가 0 이하이면 0을 돌려준다.
          */
         public fun projectedVelocity(velocityX: Double, velocityY: Double, axisX: Double, axisY: Double, travelPx: Double): Double =
             if (travelPx > 0.0) (velocityX * axisX + velocityY * axisY) / travelPx else 0.0

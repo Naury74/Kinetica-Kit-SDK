@@ -5,9 +5,9 @@ import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.geometry.Viewport
 
 /**
- * 선택 테두리. 노드 하나를 고르면 노드와 함께 돌아간 사각형이고, 여러 개나 그룹이면 축 정렬 사각형이다.
+ * 선택 테두리. 노드 하나를 선택하면 노드와 함께 회전한 사각형이고, 여러 개나 그룹을 선택하면 축 정렬 사각형이다.
  *
- * @property corners 문서 좌표의 네 꼭짓점. 왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래 순서(노드 local 축 기준)다.
+ * @property corners 문서 좌표의 네 꼭짓점. 노드 로컬 축 기준으로 왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래 순서다.
  */
 public data class SelectionFrame(val corners: List<Vec2>) {
     init {
@@ -16,7 +16,7 @@ public data class SelectionFrame(val corners: List<Vec2>) {
 
     public val center: Vec2 get() = (corners[0] + corners[2]) * HALF
 
-    /** viewport 좌표의 손잡이 위치. 회전 손잡이는 위 변 가운데에서 바깥으로 [rotateOffsetPx] 떨어져 있다. */
+    /** viewport 좌표의 핸들 위치. 회전 핸들은 위쪽 변 가운데에서 바깥으로 [rotateOffsetPx]만큼 떨어져 있다. */
     public fun handles(viewport: Viewport, rotateOffsetPx: Double): Map<SelectionHandle, Vec2> {
         val points = corners.map(viewport::toViewport)
         val topLeft = points[0]
@@ -42,7 +42,7 @@ public data class SelectionFrame(val corners: List<Vec2>) {
         )
     }
 
-    /** viewport 좌표 [viewportPoint]가 테두리 안(경계 포함)에 있는지. 테두리는 볼록 사각형이다. */
+    /** viewport 좌표 [viewportPoint]가 경계를 포함해 테두리 안에 있으면 `true`. 테두리는 볼록 사각형이다. */
     public fun contains(viewport: Viewport, viewportPoint: Vec2): Boolean {
         val points = corners.map(viewport::toViewport)
         val signs = points.indices.map { i ->
@@ -57,7 +57,7 @@ public data class SelectionFrame(val corners: List<Vec2>) {
         private const val CORNER_COUNT = 4
         private const val HALF = 0.5
 
-        /** [ids]의 선택 테두리. 그릴 범위가 없으면 `null`. */
+        /** [ids]의 선택 테두리. 그릴 범위가 없으면 `null`이다. */
         public fun of(graph: SceneGraph, ids: List<NodeId>): SelectionFrame? {
             val single = ids.singleOrNull()?.let(graph.document.nodes::get)
             val local = single?.localBounds
@@ -68,7 +68,7 @@ public data class SelectionFrame(val corners: List<Vec2>) {
     }
 }
 
-/** 선택 테두리의 손잡이. 반대쪽 손잡이가 크기 조절의 고정점이다. */
+/** 선택 테두리의 핸들. 크기를 조절할 때는 반대쪽 핸들이 고정점이 된다. */
 public enum class SelectionHandle {
     TopLeft,
     Top,
@@ -81,7 +81,7 @@ public enum class SelectionHandle {
     Rotate,
     ;
 
-    /** viewport 좌표 [viewportPoint]에서 [touchRadiusPx] 안에 있는 가장 가까운 손잡이. */
+    /** viewport 좌표 [viewportPoint]에서 [touchRadiusPx] 안에 있는 가장 가까운 핸들. */
     public companion object {
         public fun at(handles: Map<SelectionHandle, Vec2>, viewportPoint: Vec2, touchRadiusPx: Double): SelectionHandle? = handles.entries
             .filter { it.value.distanceTo(viewportPoint) <= touchRadiusPx }

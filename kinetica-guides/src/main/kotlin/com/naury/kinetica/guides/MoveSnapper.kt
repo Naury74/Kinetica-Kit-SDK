@@ -9,11 +9,11 @@ import kotlin.math.abs
 import kotlin.math.roundToLong
 
 /**
- * 옮기는 동안 선택 범위를 안내선에 붙인다(docs 07). 제스처 하나에 하나를 만들고 프레임마다 [snap]을 부른다.
+ * 노드를 옮기는 동안 선택 범위를 가이드선에 스냅한다(docs 07). 제스처마다 인스턴스를 하나 만들고 프레임마다 [snap]을 호출한다.
  *
- * - 후보: artboard 가장자리·가운데, 보이고 잠기지 않았고 옮기지 않는 최상위 노드의 가장자리·가운데, 격자.
- * - 축마다 따로 고른다. 들어갈 거리 안의 후보 중 종류 순서([SnapKind]) → 화면 거리 → 노드 id 순으로 하나를 고른다.
- * - 한 번 붙으면 나갈 거리를 벗어날 때까지 같은 선에 머문다(떨림 방지).
+ * - 후보는 아트보드의 가장자리와 가운데, 보이고 잠기지 않았으며 옮기는 중이 아닌 최상위 노드의 가장자리와 가운데, 그리고 격자다.
+ * - 축마다 따로 고른다. enter 거리 안의 후보 중에서 [SnapKind] 순서, 화면 거리, 노드 id 순으로 비교해 하나를 고른다.
+ * - 한 번 스냅되면 exit 거리를 벗어날 때까지 같은 선에 머물러 떨림을 막는다.
  *
  * 범위는 축 정렬 범위로 계산하므로 회전한 노드는 감싸는 사각형의 가장자리를 쓴다.
  */
@@ -51,8 +51,8 @@ public class MoveSnapper(graph: SceneGraph, moving: Collection<NodeId>, private 
     }
 
     /**
-     * @param delta 제스처 시작 뒤 손가락이 움직인 문서 거리
-     * @param zoom 지금 viewport 배율. 문서 거리를 화면 거리로 바꾸는 데 쓴다.
+     * @param delta 제스처를 시작한 뒤 손가락이 움직인 거리(문서 좌표)
+     * @param zoom 현재 viewport 배율. 문서 거리를 화면 거리로 바꾸는 데 쓴다.
      */
     public fun snap(delta: Vec2, zoom: Double): SnapResult {
         val bounds = movingBounds ?: return SnapResult(delta, emptyList())

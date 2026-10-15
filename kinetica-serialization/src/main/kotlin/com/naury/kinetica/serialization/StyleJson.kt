@@ -15,7 +15,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 
-/** 그림자·그라디언트·점선·흐림·선 끝·모서리의 JSON. 기본값인 항목은 쓰지 않는다. */
+/** 그림자, 그라디언트, 점선, 블러, 선 끝 모양, 모서리를 JSON으로 읽고 쓴다. 기본값인 항목은 쓰지 않는다. */
 internal object StyleJson {
     fun write(builder: JsonObjectBuilder, style: NodeStyle) = with(builder) {
         if (style.shadows.isNotEmpty()) putJsonArray(K.SHADOWS) { style.shadows.forEach { add(shadow(it)) } }
@@ -28,7 +28,7 @@ internal object StyleJson {
         style.strokeToken?.let { put(K.STROKE_TOKEN, it) }
     }
 
-    /** 예전 형식의 그림자 하나(`shadow`)도 읽는다. */
+    /** 그림자를 하나만 담던 이전 형식(`shadow`)도 읽는다. */
     fun readShadows(json: JsonObject, path: String): List<Shadow> {
         val list = json.optional(K.SHADOWS)?.asArray("$path.${K.SHADOWS}")
             ?.mapIndexed { i, element -> readShadow(element.asObject("$path.${K.SHADOWS}[$i]"), "$path.${K.SHADOWS}[$i]") }
@@ -42,7 +42,7 @@ internal object StyleJson {
         Gradient(
             type =
                 GradientType.fromWireName(gradient.string(K.TYPE, gradientPath))
-                    ?: fail("$gradientPath.${K.TYPE}", "linear·radial 중 하나여야 합니다."),
+                    ?: fail("$gradientPath.${K.TYPE}", "linear, radial 중 하나여야 합니다."),
             stops = gradient.required(K.STOPS, gradientPath).asArray("$gradientPath.${K.STOPS}").mapIndexed { i, stop ->
                 val stopPath = "$gradientPath.${K.STOPS}[$i]"
                 val stopJson = stop.asObject(stopPath)
@@ -56,7 +56,7 @@ internal object StyleJson {
         json.optional(K.DASH)?.asArray("$path.${K.DASH}")?.mapIndexed { i, value -> value.asFinite("$path.${K.DASH}[$i]") }.orEmpty()
 
     fun readCap(json: JsonObject, key: String, path: String): LineCap =
-        json.optional(key)?.let { LineCap.fromWireName(it.asString("$path.$key")) ?: fail("$path.$key", "none·arrow·circle 중 하나여야 합니다.") }
+        json.optional(key)?.let { LineCap.fromWireName(it.asString("$path.$key")) ?: fail("$path.$key", "none, arrow, circle 중 하나여야 합니다.") }
             ?: LineCap.None
 
     fun corners(corners: CornerRadii): JsonArray = JsonArray(
@@ -67,7 +67,7 @@ internal object StyleJson {
 
     fun readCorners(json: JsonObject, path: String): CornerRadii? = json.optional(K.CORNERS)?.asArray("$path.${K.CORNERS}")?.let { array ->
         val values = array.mapIndexed { i, value -> value.asFinite("$path.${K.CORNERS}[$i]") }
-        if (values.size != CORNER_COUNT) fail("$path.${K.CORNERS}", "왼쪽 위·오른쪽 위·오른쪽 아래·왼쪽 아래 네 값이어야 합니다.")
+        if (values.size != CORNER_COUNT) fail("$path.${K.CORNERS}", "왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래 순서의 값 네 개여야 합니다.")
         CornerRadii(values[0], values[1], values[2], values[CORNER_COUNT - 1])
     }
 

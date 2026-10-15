@@ -13,7 +13,7 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
-/** 글꼴·기울임·밑줄과 리치 텍스트 구간의 JSON. 기본값인 항목은 쓰지 않는다. */
+/** 글꼴, 기울임, 밑줄과 리치 텍스트 구간을 JSON으로 읽고 쓴다. 기본값인 항목은 쓰지 않는다. */
 internal object TextJson {
     fun write(builder: JsonObjectBuilder, text: NodeContent.Text) = with(builder) {
         text.fontFamily?.let { put(K.FONT_FAMILY, it) }
@@ -44,12 +44,12 @@ internal object TextJson {
 
     fun readAutoSize(json: JsonObject, path: String): TextAutoSize = json.optional(K.AUTO_SIZE)?.let {
         TextAutoSize.fromWireName(it.asString("$path.${K.AUTO_SIZE}"))
-            ?: fail("$path.${K.AUTO_SIZE}", "fixed·height·auto 중 하나여야 합니다.")
+            ?: fail("$path.${K.AUTO_SIZE}", "fixed, height, auto 중 하나여야 합니다.")
     } ?: TextAutoSize.Fixed
 
     fun readDecoration(json: JsonObject, path: String): TextDecoration = json.optional(K.DECORATION)?.let {
         TextDecoration.fromWireName(it.asString("$path.${K.DECORATION}"))
-            ?: fail("$path.${K.DECORATION}", "none·underline·strike 중 하나여야 합니다.")
+            ?: fail("$path.${K.DECORATION}", "none, underline, strike 중 하나여야 합니다.")
     } ?: TextDecoration.None
 
     fun readSpans(json: JsonObject, path: String): List<TextSpan> = json.optional(K.SPANS)?.asArray("$path.${K.SPANS}")

@@ -1,17 +1,17 @@
 package com.naury.kinetica.core.scene
 
 /**
- * 문서가 넘을 수 없는 상한. 외부에서 받은 문서가 메모리·CPU를 과하게 쓰지 못하게 막는다.
+ * 문서가 넘을 수 없는 한도. 외부에서 받은 문서가 메모리나 CPU를 과하게 쓰지 못하게 막는다.
  *
- * @property maxDepth 그룹 중첩 깊이. 최상위 노드가 1이다. [HARD_MAX_DEPTH]를 넘을 수 없다.
- * @property maxTextBytes 글자 노드 하나의 UTF-8 바이트 수(기본 64 KiB)
- * @property maxTimelineDurationMs timeline 하나의 최대 길이(기본 1시간)
- * @property maxExtensionBytes 확장 데이터 전체의 UTF-8 바이트 수(기본 256 KiB)
- * @property maxCoordinateMagnitude 이동·pivot·크기·경로 좌표의 절댓값 상한(문서 단위)
- * @property allowFlip 음수 배율(반전)을 허용할지
- * @property allowedImageUriSchemes 이미지 노드가 쓸 수 있는 URI scheme. 기본은 `content`와 `android.resource`이며
- * `http`·`https`·`file`은 넣지 않는 것을 권장한다.
- * @throws IllegalArgumentException 상한이 0 이하이거나 [maxDepth]가 [HARD_MAX_DEPTH]를 넘을 때
+ * @property maxDepth 그룹 중첩 깊이. 최상위 노드가 1이며 [HARD_MAX_DEPTH]를 넘을 수 없다.
+ * @property maxTextBytes 텍스트 노드 하나의 최대 UTF-8 바이트 수. 기본값은 64 KiB다.
+ * @property maxTimelineDurationMs timeline 하나의 최대 길이. 기본값은 1시간이다.
+ * @property maxExtensionBytes 확장 데이터 전체의 최대 UTF-8 바이트 수. 기본값은 256 KiB다.
+ * @property maxCoordinateMagnitude 이동, pivot, 크기, 경로 좌표의 최대 절댓값(문서 단위)
+ * @property allowFlip 음수 배율로 반전하는 것을 허용할지 여부
+ * @property allowedImageUriSchemes 이미지 노드가 쓸 수 있는 URI scheme. 기본값은 `content`와 `android.resource`이며,
+ * `http`, `https`, `file`은 넣지 않기를 권장한다.
+ * @throws IllegalArgumentException 한도가 0 이하이거나 [maxDepth]가 [HARD_MAX_DEPTH]를 넘는 경우
  */
 public data class SceneLimits(
     val maxNodes: Int = 10_000,
@@ -46,8 +46,8 @@ public data class SceneLimits(
                 maxTimelines,
                 maxExtensionBytes,
             ).all { it > 0 },
-        ) { "상한은 0보다 커야 합니다." }
-        require(maxTimelineDurationMs > 0 && maxCoordinateMagnitude > 0.0 && maxFontSize > 0.0) { "상한은 0보다 커야 합니다." }
+        ) { "한도 값은 0보다 커야 합니다." }
+        require(maxTimelineDurationMs > 0 && maxCoordinateMagnitude > 0.0 && maxFontSize > 0.0) { "한도 값은 0보다 커야 합니다." }
     }
 
     public companion object {

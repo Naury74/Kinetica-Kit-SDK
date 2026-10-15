@@ -10,16 +10,16 @@ private const val MAX_FONT_WEIGHT = 900
 private const val MAX_SPANS = 256
 private val dataKeyPattern = Regex("[A-Za-z0-9._-]{1,128}")
 
-/** 데이터 키·동작 이름·HostSlot 키 형식. 영문자·숫자와 `.` `_` `-`로 된 1..128자. */
+/** 데이터 키, 액션 이름, HostSlot 키의 형식. 영문자, 숫자, `.` `_` `-`로 이루어진 1..128자다. */
 public fun isValidDataKey(key: String): Boolean = dataKeyPattern.matches(key)
 
 private val actionQueryPattern = Regex("[A-Za-z0-9._~%=&+-]{0,512}")
 
-/** 동작 이름 형식: 데이터 키와 같은 이름에, `?` 뒤로 URL 안전 글자의 값(최대 512자)을 붙일 수 있다([SceneAction]). */
+/** 액션 형식. 데이터 키와 같은 형식의 이름 뒤에 `?`와 URL에 안전한 문자로 된 파라미터를 최대 512자까지 붙일 수 있다([SceneAction]). */
 public fun isValidAction(action: String): Boolean =
     isValidDataKey(action.substringBefore('?')) && actionQueryPattern.matches(action.substringAfter('?', ""))
 
-/** 노드 하나의 값 범위를 확인한다. 부모·자식 관계는 [checkStructure]가 본다. */
+/** 노드 하나의 값 범위를 확인한다. 부모와 자식 관계는 [checkStructure]가 확인한다. */
 internal fun checkNode(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
     val id = node.id
     if (node.name.length > limits.maxNameLength) sink.add(ViolationCode.InvalidName, "이름이 너무 깁니다.", id)
@@ -44,18 +44,18 @@ private fun checkSizeLimits(node: SceneNode, limits: SceneLimits, sink: Violatio
     val crossed = listOf(size.minWidth to size.maxWidth, size.minHeight to size.maxHeight)
         .any { (min, max) -> min != null && max != null && min > max }
     if (badValue || crossed) {
-        sink.add(ViolationCode.InvalidGeometry, "크기 최소·최대는 0 이상 유한하고 최소가 최대 이하여야 합니다.", node.id)
+        sink.add(ViolationCode.InvalidGeometry, "최소·최대 크기는 0 이상의 유한한 값이고 최솟값이 최댓값 이하여야 합니다.", node.id)
     }
 }
 
 private fun checkBindings(node: SceneNode, sink: ViolationSink) {
     if (node.bindings.values.any { !isValidDataKey(it) } || node.action?.let(::isValidAction) == false) {
-        sink.add(ViolationCode.InvalidBinding, "데이터 키나 동작 이름 형식이 올바르지 않습니다.", node.id)
+        sink.add(ViolationCode.InvalidBinding, "데이터 키나 액션 이름 형식이 올바르지 않습니다.", node.id)
     }
     val textOnly = BoundProperty.Text in node.bindings && node.content !is NodeContent.Text
     val imageOnly = BoundProperty.ImageUri in node.bindings && node.content !is NodeContent.Image
     val instanceOnly = BoundProperty.Variant in node.bindings && node.instanceOf == null
-    if (textOnly || imageOnly || instanceOnly) sink.add(ViolationCode.InvalidBinding, "이 노드 종류에는 묶을 수 없는 속성입니다.", node.id)
+    if (textOnly || imageOnly || instanceOnly) sink.add(ViolationCode.InvalidBinding, "이 노드 종류에는 바인딩할 수 없는 속성입니다.", node.id)
 }
 
 private fun checkMetadata(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
@@ -65,7 +65,7 @@ private fun checkMetadata(node: SceneNode, limits: SceneLimits, sink: ViolationS
             key.isEmpty() || key.length > MAX_METADATA_KEY_LENGTH || value.length > limits.maxMetadataValueLength ||
                 !isWellFormedUtf16(key) || !isWellFormedUtf16(value)
         }
-    if (invalid) sink.add(ViolationCode.InvalidMetadata, "metadata 개수나 길이가 상한을 넘거나 형식이 잘못되었습니다.", node.id)
+    if (invalid) sink.add(ViolationCode.InvalidMetadata, "metadata 개수나 길이가 한도를 넘거나 형식이 잘못되었습니다.", node.id)
 }
 
 private fun checkTransform(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
@@ -83,11 +83,11 @@ private fun checkTransform(node: SceneNode, limits: SceneLimits, sink: Violation
     when {
         magnitudes.any { abs(it) > max } -> sink.add(ViolationCode.InvalidTransform, "변환 값의 크기가 $max 를 넘습니다.", node.id)
         transform.isDegenerate -> sink.add(ViolationCode.InvalidTransform, "배율이 0에 너무 가깝습니다.", node.id)
-        transform.isFlipped && !limits.allowFlip -> sink.add(ViolationCode.InvalidTransform, "반전(음수 배율)이 허용되지 않습니다.", node.id)
+        transform.isFlipped && !limits.allowFlip -> sink.add(ViolationCode.InvalidTransform, "음수 배율로 인한 반전은 허용되지 않습니다.", node.id)
     }
 }
 
-// 노드 종류마다 한 갈래인 분기다. 나누면 어느 종류를 어디서 검사하는지 오히려 흐려진다.
+// 노드 종류마다 갈래가 하나씩인 분기다. 쪼개면 어느 종류를 어디서 검사하는지 오히려 알기 어려워진다.
 @Suppress("CyclomaticComplexMethod")
 private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
     val id = node.id
@@ -133,7 +133,7 @@ private fun checkContent(node: SceneNode, limits: SceneLimits, sink: ViolationSi
 
         is NodeContent.HostSlot -> {
             requireSize(content.size)
-            if (!isValidDataKey(content.key)) sink.add(ViolationCode.InvalidBinding, "호스트 뷰 키 형식이 올바르지 않습니다.", id)
+            if (!isValidDataKey(content.key)) sink.add(ViolationCode.InvalidBinding, "HostSlot 키 형식이 올바르지 않습니다.", id)
         }
     }
 }
@@ -147,7 +147,7 @@ private fun checkFrame(frame: NodeContent.Frame, id: NodeId, limits: SceneLimits
 private fun checkLayout(layout: AutoLayout, id: NodeId, limits: SceneLimits, sink: ViolationSink) {
     val values = layout.padding.values + layout.gap + layout.lineGap
     if (values.any { !it.isFinite() || it < 0.0 || it > limits.maxCoordinateMagnitude }) {
-        sink.add(ViolationCode.InvalidGeometry, "자동 배치 간격·여백은 0 이상 상한 이하여야 합니다.", id)
+        sink.add(ViolationCode.InvalidGeometry, "자동 레이아웃의 간격과 여백은 0 이상이고 한도 이하여야 합니다.", id)
     }
 }
 
@@ -171,9 +171,9 @@ private fun checkPath(path: NodeContent.Path, id: NodeId, limits: SceneLimits, s
 
 private fun checkText(text: NodeContent.Text, id: NodeId, limits: SceneLimits, sink: ViolationSink) {
     if (!isWellFormedUtf16(text.text)) {
-        sink.add(ViolationCode.InvalidText, "글자에 잘못된 유니코드가 있습니다.", id)
+        sink.add(ViolationCode.InvalidText, "텍스트에 잘못된 유니코드가 있습니다.", id)
     } else if (utf8Length(text.text) > limits.maxTextBytes) {
-        sink.add(ViolationCode.InvalidText, "글자가 ${limits.maxTextBytes}바이트를 넘습니다.", id)
+        sink.add(ViolationCode.InvalidText, "텍스트가 ${limits.maxTextBytes}바이트를 넘습니다.", id)
     }
     if (!text.fontSize.isFinite() || text.fontSize <= 0.0 || text.fontSize > limits.maxFontSize) {
         sink.add(ViolationCode.InvalidText, "글자 크기가 범위를 벗어났습니다.", id)
@@ -181,7 +181,7 @@ private fun checkText(text: NodeContent.Text, id: NodeId, limits: SceneLimits, s
     val styleOk = text.fontWeight in MIN_FONT_WEIGHT..MAX_FONT_WEIGHT &&
         text.lineHeight.isFinite() && text.lineHeight in 0.0..limits.maxFontSize * 2 &&
         text.letterSpacing.isFinite() && abs(text.letterSpacing) <= limits.maxFontSize
-    if (!styleOk) sink.add(ViolationCode.InvalidText, "글자 굵기·줄 높이·자간이 범위를 벗어났습니다.", id)
+    if (!styleOk) sink.add(ViolationCode.InvalidText, "글자 굵기, 줄 높이, 자간 중 범위를 벗어난 값이 있습니다.", id)
     checkSpans(text, id, limits, sink)
 }
 
@@ -192,12 +192,12 @@ private fun checkSpans(text: NodeContent.Text, id: NodeId, limits: SceneLimits, 
             (span.fontSize?.let { it.isFinite() && it > 0.0 && it <= limits.maxFontSize } ?: true) &&
             (span.fontWeight?.let { it in MIN_FONT_WEIGHT..MAX_FONT_WEIGHT } ?: true)
     }
-    if (!nameOk || !spansOk) sink.add(ViolationCode.InvalidText, "글꼴 이름이나 글자 구간이 범위를 벗어났습니다.", id)
+    if (!nameOk || !spansOk) sink.add(ViolationCode.InvalidText, "글꼴 이름이나 리치 텍스트 구간이 범위를 벗어났습니다.", id)
 }
 
 private val fontNamePattern = Regex("[A-Za-z0-9 ._-]{1,64}")
 
-/** 글꼴 이름 형식. 영문자·숫자·공백과 `.` `_` `-`로 된 1..64자. */
+/** 글꼴 이름 형식. 영문자, 숫자, 공백, `.` `_` `-`로 이루어진 1..64자다. */
 public fun isValidFontName(name: String): Boolean = fontNamePattern.matches(name)
 
 private fun Vec2.isWithin(max: Double): Boolean = abs(x) <= max && abs(y) <= max

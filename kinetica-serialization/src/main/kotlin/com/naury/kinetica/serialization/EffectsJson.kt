@@ -14,7 +14,7 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
-/** 노드 움직임 효과(`effects`)의 JSON. 기본값인 항목은 쓰지 않는다. */
+/** 노드 모션 효과(`effects`)를 JSON으로 읽고 쓴다. 기본값인 항목은 쓰지 않는다. */
 internal object EffectsJson {
     fun write(effects: NodeEffects): JsonObject = buildJsonObject {
         if (effects.press.isNotEmpty()) {

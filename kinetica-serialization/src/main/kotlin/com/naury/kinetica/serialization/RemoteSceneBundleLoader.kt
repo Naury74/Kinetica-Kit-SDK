@@ -25,8 +25,9 @@ import kotlinx.serialization.json.jsonPrimitive
 /**
  * [RemoteSceneBundleLoader] 설정.
  *
- * @param verifier 있으면 서명이 맞는 묶음만 읽는다.
- * @param minRefreshIntervalMs 이 시간(ms) 안에 다시 부른 `refresh()`는 받지 않고 지금 상태를 돌려준다. `refresh(force = true)`는 늘 받는다.
+ * @param verifier 있으면 서명이 맞는 번들만 읽는다.
+ * @param minRefreshIntervalMs 마지막 요청 뒤 이 시간(ms)이 지나기 전에 호출한 `refresh()`는 서버에 요청하지 않고 현재 상태를 돌려준다.
+ *   `refresh(force = true)`는 항상 요청한다.
  */
 public data class RemoteBundleSettings @JvmOverloads constructor(
     val codec: SceneBundleCodec = SceneBundleCodec(),
@@ -35,14 +36,14 @@ public data class RemoteBundleSettings @JvmOverloads constructor(
 )
 
 /**
- * 서버가 여러 화면을 한 번에 내려줄 때 쓴다([SceneBundleCodec] 형식). [RemoteSceneLoader]와 같은 규칙을 화면마다 적용한다.
+ * 서버가 [SceneBundleCodec] 형식으로 여러 화면을 한 번에 내려줄 때 쓴다. 화면마다 [RemoteSceneLoader]와 같은 규칙을 적용한다.
  *
- * - 처음 [refresh]에서 화면마다 캐시를 먼저 꺼내고, 캐시도 없으면 [fallback]의 같은 id 문서를 보여 준다.
- * - 받은 묶음에서 올바르고 [accept]를 통과한 화면만 바꾼다. 깨지거나 거절된 화면은 이전 문서를 유지하며 그 이유만 남긴다.
- *   묶음에 없는 화면은 그대로 둔다.
- * - 서명([RemoteBundleSettings.verifier])과 버전 표시는 묶음 전체에 하나다. 버전 표시는 캐시에 함께 저장한다.
- * - 동시에 여러 번 [refresh]하면(화면 여러 개가 함께 열릴 때) 진행 중인 받기 하나를 함께 기다리고,
- *   마지막 받기가 [RemoteBundleSettings.minRefreshIntervalMs] 안에 끝났으면 다시 받지 않는다.
+ * - 처음 [refresh]할 때 화면마다 캐시를 먼저 읽고, 캐시가 없으면 [fallback]에서 같은 id의 문서를 보여 준다.
+ * - 받은 번들에서 올바르고 [accept]를 통과한 화면만 교체한다. 깨졌거나 거절된 화면은 이전 문서를 유지하고 실패 이유만 남긴다.
+ *   번들에 없는 화면은 건드리지 않는다.
+ * - 서명([RemoteBundleSettings.verifier])과 ETag는 번들 전체에 하나씩이며, ETag는 캐시에 함께 저장한다.
+ * - 여러 화면이 함께 열려 [refresh]가 동시에 호출되면 진행 중인 요청 하나의 결과를 같이 기다린다.
+ *   마지막 요청이 [RemoteBundleSettings.minRefreshIntervalMs] 안에 끝났다면 다시 요청하지 않는다.
  *
  * @param cache 화면마다 `"<prefix>-<화면 id>"` 이름으로 저장한다.
  */
@@ -62,17 +63,17 @@ public class RemoteSceneBundleLoader(
     private var etag: String? = null
     private var cacheRead = false
 
-    /** 화면 id마다의 상태. 아직 보여 줄 것이 없는 화면은 없다. */
+    /** 화면 id별 상태. 아직 보여 줄 문서가 없는 화면은 맵에 들어 있지 않다. */
     public val states: StateFlow<Map<String, RemoteSceneState>> = mutable.asStateFlow()
 
     /**
-     * 화면 하나의 상태. 그 화면이 아직 없으면 받는 중에는 [RemoteSceneState.Loading], 마지막 받기가 실패했으면 [RemoteSceneState.Failed]다.
+     * 화면 하나의 상태. 아직 문서가 없는 화면은 요청 중이면 [RemoteSceneState.Loading], 마지막 요청이 실패했으면 [RemoteSceneState.Failed]다.
      */
     public fun state(sceneId: String): Flow<RemoteSceneState> = combine(states, failure) { all, error ->
         all[sceneId] ?: error?.let(RemoteSceneState::Failed) ?: RemoteSceneState.Loading
     }.distinctUntilChanged()
 
-    /** 서버에서 다시 받는다. 다른 [refresh]가 진행 중이면 그 결과를 함께 기다린다. */
+    /** 서버에서 번들을 다시 받는다. 다른 [refresh]가 진행 중이면 그 결과를 같이 기다린다. */
     @JvmOverloads
     public suspend fun refresh(force: Boolean = false): Map<String, RemoteSceneState> {
         val (job, owner) = lock.withLock {
@@ -84,7 +85,7 @@ public class RemoteSceneBundleLoader(
             }
         }
         if (!owner) return job.await()
-        // 기다리는 다른 호출도 같은 결과(실패·취소 포함)를 받도록 결과를 그대로 넘긴다.
+        // 실패나 취소까지 포함해, 기다리던 다른 호출도 똑같은 결과를 받게 한다.
         val result = runCatching { fetchAndApply() }
         lock.withLock {
             inFlight = null
@@ -112,7 +113,7 @@ public class RemoteSceneBundleLoader(
         return mutable.value
     }
 
-    // 호스트 구현이 던질 예외 종류를 알 수 없다. 화면을 지키는 것이 우선이라 취소 외에는 모두 네트워크 실패로 다룬다.
+    // 호스트 구현이 어떤 예외를 던질지 알 수 없다. 화면을 유지하는 게 우선이라 취소를 뺀 모든 예외를 네트워크 실패로 본다.
     @Suppress("TooGenericExceptionCaught")
     private suspend fun fetchSafely(): SceneFetch = try {
         fetcher.fetch(etag)
@@ -125,7 +126,7 @@ public class RemoteSceneBundleLoader(
     private suspend fun readCache() {
         val repository = cache?.repository ?: return
         val meta = (repository.load(metaId()) as? LoadResult.Loaded)?.document
-        // 확장 값은 JSON 글자로 저장되므로 화면 id 목록도 JSON 배열로 둔다.
+        // extensions 값은 문자열로만 저장되므로 화면 id 목록은 JSON 배열 문자열로 넣어 둔다.
         val ids = meta?.extensions?.get(IDS_KEY)?.let { raw ->
             runCatching { Json.parseToJsonElement(raw).jsonArray.mapNotNull { it.jsonPrimitive.contentOrNull } }.getOrNull()
         }.orEmpty()
@@ -137,7 +138,7 @@ public class RemoteSceneBundleLoader(
     }
 
     private suspend fun receive(body: SceneFetch.Body) {
-        // 서명 확인과 읽기는 화면 스레드가 아닌 곳에서 한다.
+        // 서명 확인과 파싱은 메인 스레드를 막지 않도록 다른 스레드에서 한다.
         val (verified, decodedResult) = withContext(Dispatchers.Default) {
             val ok = settings.verifier?.verify(body.bytes, body.signature) != false
             ok to if (ok) settings.codec.decode(body.bytes) else null

@@ -1,6 +1,6 @@
 package com.naury.kinetica.serialization
 
-/** 형식 버전 1의 필드 이름. 바꾸면 golden fixture와 migration을 함께 바꾼다. */
+/** 스키마 버전 1의 필드 이름. 바꿀 때는 golden fixture와 마이그레이션도 함께 고친다. */
 internal object JsonKeys {
     const val SCHEMA_VERSION = "schemaVersion"
     const val DOCUMENT_ID = "documentId"

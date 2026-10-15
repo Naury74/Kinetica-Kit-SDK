@@ -9,10 +9,10 @@ import com.naury.kinetica.core.scene.TextMeasurer
 import com.naury.kinetica.core.scene.Tokens
 
 /**
- * 명령을 문서에 적용하는 순수 함수. 상태를 갖지 않으며 같은 입력이면 항상 같은 결과다.
+ * 명령을 문서에 적용하는 순수 함수. 상태가 없으며 입력이 같으면 항상 같은 결과를 낸다.
  *
  * 적용한 결과 문서 전체를 [SceneValidator]로 검사해 규칙을 어기면 거부한다. 거부해도 입력 문서는 바뀌지 않는다.
- * 통과하면 [Layouts]로 자동 배치·크기 제약을 반영한 문서를 돌려준다.
+ * 통과하면 [Layouts]로 자동 레이아웃과 제약을 반영한 문서를 돌려준다.
  */
 public class SceneReducer
 @JvmOverloads
@@ -22,7 +22,7 @@ constructor(
 ) {
     private val validator = SceneValidator(limits)
 
-    // 명령 종류마다 한 갈래인 분기다. 나누면 어느 명령이 어디서 처리되는지 오히려 흐려진다.
+    // 명령 종류마다 갈래가 하나씩인 분기다. 쪼개면 어느 명령을 어디서 처리하는지 오히려 알기 어려워진다.
     @Suppress("CyclomaticComplexMethod")
     public fun apply(document: SceneDocument, command: SceneCommand): CommandResult {
         val proposed = when (command) {
@@ -63,7 +63,7 @@ constructor(
         return if (proposed is CommandResult.Applied) settle(document, proposed.document) else proposed
     }
 
-    // 배치는 검사를 통과한 값으로만 계산하고, 배치가 만든 값(위치·크기)도 다시 검사한다.
+    // 레이아웃은 검사를 통과한 값으로만 계산하고, 레이아웃이 만든 위치와 크기도 다시 검사한다.
     private fun settle(before: SceneDocument, proposed: SceneDocument): CommandResult {
         val violations = validator.validate(proposed)
         val settled = if (violations.isEmpty()) settleDocument(before, proposed, textMeasurer) else proposed
@@ -73,8 +73,14 @@ constructor(
 }
 
 /**
- * 명령 뒤 문서를 맞춘다: 인스턴스에서 고친 값을 덮어쓴 값으로 남기고 → 직접 고친 토큰 색의 연결을 끊고 → 토큰 색을 반영하고 →
- * 인스턴스를 원본에 맞추고 → 제약·자동 배치를 계산한다. 순서가 바뀌면 고친 값이 동기화로 지워진다.
+ * 명령을 적용한 뒤 문서를 정리한다. 순서는 다음과 같다.
+ * 1. 인스턴스에서 고친 값을 오버라이드로 남긴다.
+ * 2. 직접 고친 색의 토큰 연결을 끊는다.
+ * 3. 토큰 색을 반영한다.
+ * 4. 인스턴스를 원본에 맞춘다.
+ * 5. 제약과 자동 레이아웃을 계산한다.
+ *
+ * 순서가 바뀌면 사용자가 고친 값이 동기화 과정에서 지워진다.
  */
 internal fun settleDocument(before: SceneDocument, after: SceneDocument, measurer: TextMeasurer? = null): SceneDocument {
     val captured = Components.captureOverrides(before, after)

@@ -5,17 +5,17 @@ import kotlin.math.atan2
 import kotlin.math.hypot
 
 /**
- * 노드의 local 좌표를 부모 좌표로 옮기는 변환.
+ * 노드의 로컬 좌표를 부모 좌표로 옮기는 변환.
  *
  * ```
  * p_parent = T(translationX, translationY) × T(pivot) × R(rotationDegrees) × S(scaleX, scaleY) × T(-pivot) × p_local
  * ```
  *
- * pivot은 정규화 비율이 아니라 node-local 좌표다. 회전·확대는 pivot을 중심으로 일어난다.
- * 생성자는 값이 유한한지만 확인한다. 0에 가까운 배율과 반전(음수 배율) 허용 여부는 문서 검증이 판단한다.
+ * pivot은 정규화된 비율이 아니라 노드 로컬 좌표다. 회전과 확대는 pivot을 중심으로 일어난다.
+ * 생성자는 값이 유한한지만 확인한다. 0에 가까운 배율이나 음수 배율로 인한 반전을 허용할지는 문서 검증이 판단한다.
  *
- * @property rotationDegrees 도 단위. 양수는 화면에서 시계 방향이다.
- * @throws IllegalArgumentException 값 중 하나라도 유한하지 않을 때
+ * @property rotationDegrees 회전 각도(도). 양수는 화면에서 시계 방향이다.
+ * @throws IllegalArgumentException 값 중 하나라도 유한하지 않은 경우
  */
 public data class Transform2D(
     val translationX: Double = 0.0,
@@ -36,7 +36,7 @@ public data class Transform2D(
     public val translation: Vec2 get() = Vec2(translationX, translationY)
     public val pivot: Vec2 get() = Vec2(pivotX, pivotY)
 
-    /** 두 배율 중 하나라도 크기가 [MIN_SCALE_MAGNITUDE] 이하이면 역변환을 믿을 수 없어 편집할 수 없다. */
+    /** 두 배율 중 하나라도 절댓값이 [MIN_SCALE_MAGNITUDE] 이하이면 역변환을 신뢰할 수 없으므로 편집할 수 없다. */
     public val isDegenerate: Boolean
         get() = abs(scaleX) <= MIN_SCALE_MAGNITUDE || abs(scaleY) <= MIN_SCALE_MAGNITUDE
 
@@ -58,8 +58,8 @@ public data class Transform2D(
 private const val SHEAR_TOLERANCE = 1e-6
 
 /**
- * 행렬 [matrix]를 pivot이 [pivotX]·[pivotY]인 [Transform2D]로 나눈다. 회전·배율·이동만으로 나타낼 수 없으면(기울임,
- * 특이 행렬) `null`이다. 반전이 있으면 y 배율이 음수가 된다.
+ * 행렬 [matrix]를 pivot이 ([pivotX], [pivotY])인 [Transform2D]로 분해한다. 기울임이 있거나 특이 행렬이라
+ * 회전, 배율, 이동만으로 나타낼 수 없으면 `null`이다. 반전이 있으면 y 배율이 음수가 된다.
  */
 public fun Transform2D.Companion.fromMatrix(matrix: Mat3, pivotX: Double = 0.0, pivotY: Double = 0.0): Transform2D? {
     val scaleX = hypot(matrix.a, matrix.b)

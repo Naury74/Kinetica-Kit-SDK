@@ -6,23 +6,23 @@ import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.geometry.Vec2
 
 /**
- * scene graph의 노드 하나. 도형은 [content]가 정한 node-local 좌표에 정의되고 [transform]으로 부모 좌표에 놓인다.
+ * 장면 그래프의 노드 하나다. 도형은 [content]가 정한 노드 로컬 좌표로 정의하고, [transform]으로 부모 좌표계에 배치한다.
  *
  * 생성자는 구조를 검사하지 않는다. 문서에 넣기 전에 [SceneValidator]가 부모·자식 관계와 값 범위를 확인한다.
  *
  * @property parentId 부모 그룹 id. 최상위 노드면 `null`이며 이때는 [SceneDocument.rootOrder]에 있어야 한다.
  * @property name 레이어 이름. 화면 표시용이며 로그에 남기지 않는다.
- * @property locked 잠긴 노드는 화면 조작으로 선택·변형되지 않는다. 명령으로는 바꿀 수 있다.
+ * @property locked 잠긴 노드는 화면에서 선택하거나 변형할 수 없다. 명령으로는 바꿀 수 있다.
  * @property metadata 호스트가 붙이는 문자열 값. SDK는 해석하지 않는다.
- * @property bindings 속성을 호스트 데이터 키에 묶는다. 데이터에 값이 있으면 저장된 값 대신 쓴다(docs 30).
- * @property action 사용 모드에서 누르면 호스트에 넘기는 동작 이름. 코드를 실행하지 않는다.
- * @property constraints 부모(Frame·artboard) 크기가 바뀔 때 따라가는 방식. 자동 배치 Frame의 자식이면 쓰지 않는다.
- * @property component 이 Frame을 컴포넌트 원본으로 쓰며 그 이름이다. 원본을 고치면 모든 인스턴스가 바뀐다.
- * @property instanceOf 이 Frame이 컴포넌트 인스턴스이며 자식은 원본에서 만든다([Components]). 자식의 글자·색·보임·이미지를 고치면 덮어쓴 값으로 남는다.
- * @property effects 누를 때·나타날 때·반복하는 미리 만든 움직임 효과. 호스트 뷰 자리에도 붙는다.
- * @property sizeLimits 크기 최소·최대. 자동 배치·제약이 크기를 바꿀 때 이 범위를 지킨다. 크기가 없는 노드에는 쓰지 않는다.
- * @property accessibility 화면 읽기(TalkBack)에 알리는 이름·역할. 장식이면 읽지 않게 숨긴다.
- * @property layoutFill 자동 배치 Frame의 자식일 때 배치 방향의 남는 공간을 다른 채움 자식과 똑같이 나눠 차지한다(Figma의 Fill container).
+ * @property bindings 속성과 호스트 데이터 키의 바인딩. 데이터에 값이 있으면 저장된 값 대신 그 값을 쓴다. docs/30 참고.
+ * @property action 사용 모드에서 노드를 누르면 호스트에 전달하는 액션 이름. SDK가 코드를 실행하지는 않는다.
+ * @property constraints 부모 Frame이나 아트보드의 크기가 바뀔 때 노드가 따라가는 방식. 자동 레이아웃 Frame의 자식이면 무시한다.
+ * @property component 이 Frame을 컴포넌트 원본으로 쓸 때의 컴포넌트 이름. 원본을 고치면 모든 인스턴스에 반영된다.
+ * @property instanceOf 이 Frame이 인스턴스로서 가리키는 컴포넌트. 자식은 원본에서 만들며([Components]), 자식의 텍스트, 색, 표시 여부, 이미지를 고치면 오버라이드로 남는다.
+ * @property effects 누를 때, 등장할 때, 반복해서 재생하는 프리셋 모션 효과. HostSlot에도 적용된다.
+ * @property sizeLimits 최소·최대 크기. 자동 레이아웃이나 제약이 크기를 바꿀 때 이 범위를 지킨다. 크기가 없는 노드에는 적용하지 않는다.
+ * @property accessibility TalkBack 같은 스크린 리더에 알리는 이름과 역할. 장식용 노드는 읽지 않도록 숨길 수 있다.
+ * @property layoutFill `true`면 자동 레이아웃 Frame 안에서 배치 방향의 남는 공간을 다른 fill 자식과 똑같이 나눠 차지한다. Figma의 Fill container와 같다.
  */
 public data class SceneNode(
     val id: NodeId,
@@ -46,11 +46,11 @@ public data class SceneNode(
 ) {
     public val kind: NodeKind get() = content.kind
 
-    /** node-local 좌표의 도형 범위. 그룹은 자식에서 계산하므로 `null`이다. */
+    /** 노드 로컬 좌표의 도형 범위. 그룹은 자식에서 범위를 계산하므로 `null`이다. */
     public val localBounds: Rect? get() = content.localBounds()
 }
 
-/** 노드 종류. [wireName]은 저장 형식에서 쓰는 이름이다. */
+/** 노드 종류. [wireName]은 JSON에 저장할 때 쓰는 이름이다. */
 public enum class NodeKind(public val wireName: String) {
     Group("group"),
     Rectangle("rect"),
@@ -68,13 +68,13 @@ public enum class NodeKind(public val wireName: String) {
     }
 }
 
-/** 노드 종류별 내용. 크기와 도형 좌표는 모두 node-local 문서 단위다. */
+/** 노드 종류별 내용. 크기와 도형 좌표는 모두 노드 로컬 좌표계의 문서 단위다. */
 public sealed interface NodeContent {
     public val kind: NodeKind
 
     public fun localBounds(): Rect?
 
-    /** 자식을 갖는 노드. 목록 순서가 z-order이며 뒤에 있을수록 위에 그려진다. 자식 좌표는 이 노드의 local 좌표다. */
+    /** 자식을 갖는 노드. 목록 순서가 z-order이며 뒤에 있을수록 위에 그려진다. 자식 좌표는 이 노드의 로컬 좌표다. */
     public sealed interface Container : NodeContent {
         public val childIds: List<NodeId>
 
@@ -82,7 +82,7 @@ public sealed interface NodeContent {
         public fun withChildren(childIds: List<NodeId>): Container
     }
 
-    /** 범위 없이 자식만 묶는다. 범위는 자식에서 계산한다. */
+    /** 자체 크기 없이 자식만 묶는 그룹. 범위는 자식에서 계산한다. */
     public data class Group(override val childIds: List<NodeId> = emptyList()) : Container {
         override val kind: NodeKind get() = NodeKind.Group
 
@@ -92,11 +92,12 @@ public sealed interface NodeContent {
     }
 
     /**
-     * 크기·배경·모서리·테두리·그림자를 갖는 컨테이너(Figma의 frame). 배경은 `style.fill`, 테두리는 `style.stroke`다.
+     * 크기와 배경, 둥근 모서리, 테두리, 그림자를 가질 수 있는 컨테이너로 Figma의 frame에 해당한다.
+     * 배경은 `style.fill`, 테두리는 `style.stroke`로 정한다.
      *
-     * @property clip `true`면 자식을 이 상자(모서리 포함) 밖으로 그리지 않는다.
-     * @property corners 있으면 모서리마다 이 반지름을 쓰고 [cornerRadius]는 쓰지 않는다.
-     * @property layout 자식 자동 배치. `null`이면 자식은 각자 위치에 있고 [SceneNode.constraints]로 Frame 크기를 따라간다.
+     * @property clip `true`면 둥근 모서리를 포함한 이 상자 밖으로 자식을 그리지 않는다.
+     * @property corners 있으면 모서리마다 이 반지름을 쓰고 [cornerRadius]는 무시한다.
+     * @property layout 자식의 자동 레이아웃. `null`이면 자식은 각자 위치에 있고 [SceneNode.constraints]에 따라 Frame 크기를 따라간다.
      */
     public data class Frame(
         val size: Size,
@@ -114,8 +115,8 @@ public sealed interface NodeContent {
     }
 
     /**
-     * 호스트 앱이 [key]로 주는 Composable(또는 View)을 [size] 상자에 그린다. 문서에는 키·크기·배치만 저장한다.
-     * 호스트가 키를 모르면 빈 틀로 그린다.
+     * 호스트 앱이 [key]로 제공하는 Composable이나 View를 [size] 상자에 그린다. 문서에는 키와 크기, 위치만 저장한다.
+     * 호스트가 모르는 키면 빈 플레이스홀더를 그린다.
      */
     public data class HostSlot(val size: Size, val key: String) : NodeContent {
         override val kind: NodeKind get() = NodeKind.HostSlot
@@ -126,15 +127,15 @@ public sealed interface NodeContent {
     /**
      * [size] 상자에 맞춘 정다각형 또는 별. 꼭짓점은 위 가운데에서 시작해 시계 방향이다.
      *
-     * @property sides 꼭짓점 수(별이면 뾰족한 끝 수). 3..64
-     * @property innerRatio 1이면 정다각형, 1보다 작으면 별(안쪽 꼭짓점이 바깥 반지름의 이 비율). 0보다 크고 1 이하
+     * @property sides 꼭짓점 수. 별이면 바깥쪽 뾰족한 끝의 수다. 3..64
+     * @property innerRatio 바깥 반지름에 대한 안쪽 꼭짓점의 비율. 1이면 정다각형, 1보다 작으면 별이다. 0 초과 1 이하
      */
     public data class Polygon(val size: Size, val sides: Int = 5, val innerRatio: Double = 1.0) : NodeContent {
         override val kind: NodeKind get() = NodeKind.Polygon
 
         override fun localBounds(): Rect = Rect.fromSize(size)
 
-        /** 노드 좌표의 꼭짓점. */
+        /** 노드 로컬 좌표로 계산한 꼭짓점 목록. */
         public fun vertices(): List<Vec2> {
             val count = if (innerRatio < 1.0) sides * 2 else sides
             val rx = size.width / 2.0
@@ -170,7 +171,7 @@ public sealed interface NodeContent {
         override fun localBounds(): Rect = Rect.fromSize(size)
     }
 
-    /** 직선·2차·3차 곡선으로 이루어진 경로. 범위는 제어점을 포함한 볼록 껍질 기준이라 실제 곡선보다 클 수 있다. */
+    /** 직선과 2차, 3차 베지어 곡선으로 이루어진 경로. 범위는 제어점까지 포함해 계산하므로 실제 곡선보다 클 수 있다. */
     public data class Path(val commands: List<PathCommand>) : NodeContent {
         override val kind: NodeKind get() = NodeKind.Path
 
@@ -181,17 +182,17 @@ public sealed interface NodeContent {
     }
 
     /**
-     * [size] 상자 안에 줄을 바꿔 배치하는 글자. 상자를 넘는 줄은 잘린다.
+     * [size] 상자 안에서 줄을 바꿔 배치하는 텍스트. 상자를 넘는 줄은 잘린다.
      *
      * @property fontSize 문서 단위 글자 크기
-     * @property fontWeight 100..900(400 보통, 700 굵게)
-     * @property lineHeight 문서 단위 줄 높이. 0이면 글꼴 기본값이다.
+     * @property fontWeight 100..900. 400이 보통, 700이 굵게다.
+     * @property lineHeight 문서 단위 줄 높이. 0이면 글꼴 기본값을 쓴다.
      * @property letterSpacing 문서 단위 자간
-     * @property fontFamily 글꼴 이름. `sans`·`serif`·`monospace`·`cursive`는 어디서나 쓰고, 그 밖의 이름은 호스트가 등록한 글꼴이다.
-     * 모르는 이름이면 기본 글꼴로 그린다. `null`이면 기본 글꼴이다.
-     * @property spans 글자 일부의 모양(리치 텍스트). 뒤의 것이 앞의 것을 덮는다.
-     * @property autoSize 글자에 맞춰 [size]를 바꾸는 방식. 측정은 [TextMeasurer]가 하며, 측정기가 없으면 저장된 크기를 쓴다.
-     * @property numberFormat 글자에 숫자 데이터를 묶었을 때 보여 주는 형식(예: `1,284,000원`). `null`이면 숫자 그대로다.
+     * @property fontFamily 글꼴 이름. `sans`, `serif`, `monospace`, `cursive`는 어디서나 쓸 수 있고, 그 밖의 이름은 호스트가 등록한 글꼴이다.
+     * 모르는 이름이거나 `null`이면 기본 글꼴로 그린다.
+     * @property spans 텍스트 일부에 적용하는 스타일(리치 텍스트). 범위가 겹치면 뒤의 것이 앞의 것을 덮는다.
+     * @property autoSize 텍스트에 맞춰 [size]를 바꾸는 방식. 측정은 [TextMeasurer]가 맡으며, 측정기가 없으면 저장된 크기를 그대로 쓴다.
+     * @property numberFormat 숫자 데이터를 바인딩했을 때의 표시 형식. 예를 들어 `1,284,000원`처럼 보여 준다. `null`이면 숫자를 그대로 보여 준다.
      */
     public data class Text(
         val size: Size,
@@ -225,15 +226,15 @@ public sealed interface NodeContent {
 
 public enum class TextAlignment { Start, Center, End }
 
-/** 글자 상자 크기를 글자에 맞추는 방식. [wireName]은 저장 형식에서 쓰는 이름이다. */
+/** 텍스트 상자 크기를 내용에 맞추는 방식. [wireName]은 JSON에 저장할 때 쓰는 이름이다. */
 public enum class TextAutoSize(public val wireName: String) {
-    /** 저장된 크기 그대로. 넘치는 줄은 잘린다. */
+    /** 저장된 크기를 그대로 쓴다. 넘치는 줄은 잘린다. */
     Fixed("fixed"),
 
     /** 너비는 그대로 두고 높이를 줄 수에 맞춘다. */
     Height("height"),
 
-    /** 줄을 바꾸지 않고 너비·높이를 글자에 맞춘다(줄바꿈 문자로만 줄이 바뀐다). */
+    /** 자동 줄 바꿈 없이 너비와 높이를 텍스트에 맞춘다. 줄은 줄바꿈 문자에서만 바뀐다. */
     WidthAndHeight("auto"),
     ;
 
@@ -243,18 +244,18 @@ public enum class TextAutoSize(public val wireName: String) {
 }
 
 /**
- * 글자 노드가 차지할 크기를 잰다. 렌더러가 화면과 같은 글꼴·규칙으로 구현한다(`kinetica-render-compose`의 `SceneTextMeasurer`).
- * 같은 입력에는 같은 크기를 돌려줘야 한다.
+ * 텍스트 노드가 차지할 크기를 측정한다. 렌더러가 화면에 그릴 때와 같은 글꼴과 규칙으로 구현하며,
+ * `kinetica-render-compose`의 `SceneTextMeasurer`가 그 예다. 같은 입력에는 항상 같은 크기를 돌려줘야 한다.
  */
 public fun interface TextMeasurer {
     /**
-     * [text]를 [maxWidth](문서 단위) 안에서 줄을 바꿔 배치한 크기. [maxWidth]가 `null`이면 줄을 바꾸지 않는다.
-     * 결과는 유한한 양수(문서 단위)여야 한다.
+     * [text]를 너비 [maxWidth] 안에서 줄 바꿈해 배치했을 때의 크기를 돌려준다. [maxWidth]가 `null`이면 줄을 바꾸지 않는다.
+     * 입력과 결과는 모두 문서 단위이며, 결과는 유한한 양수여야 한다.
      */
     public fun measure(text: NodeContent.Text, maxWidth: Double?): Size
 }
 
-/** 밑줄·취소선. */
+/** 텍스트 장식. 밑줄과 취소선이 있다. */
 public enum class TextDecoration(public val wireName: String) {
     None("none"),
     Underline("underline"),
@@ -267,7 +268,7 @@ public enum class TextDecoration(public val wireName: String) {
 }
 
 /**
- * 글자 [start]..[end](UTF-16 위치, 끝은 포함하지 않음)의 모양. `null`인 값은 노드 값을 그대로 쓴다.
+ * 텍스트의 [start]부터 [end] 직전까지 적용하는 스타일. 위치는 UTF-16 인덱스다. `null`인 값은 노드 값을 따른다.
  *
  * @property fontSize 문서 단위 글자 크기
  * @property fontWeight 100..900
@@ -283,7 +284,7 @@ public data class TextSpan(
     val color: ArgbColor? = null,
 )
 
-/** 경로 명령. 점은 node-local 문서 좌표다. */
+/** 경로 명령. 점은 노드 로컬 문서 좌표다. */
 public sealed interface PathCommand {
     public val points: List<Vec2>
 
@@ -309,19 +310,20 @@ public sealed interface PathCommand {
 }
 
 /**
- * 노드 모양. 그룹은 [opacity]·[blur]만 쓰고, 글자는 [fill]·[gradient]를 글자 색으로 쓰며, 이미지는 [fill]·[stroke]를 쓰지 않는다.
+ * 노드 스타일. 그룹은 [opacity]와 [blur]만 쓰고, 텍스트는 [fill]이나 [gradient]를 글자 색으로 쓰며, 이미지는 [fill]과 [stroke]를 쓰지 않는다.
  *
- * @property fill 단색 채우기. [gradient]가 있으면 그것을 쓴다.
- * @property gradient 그라디언트 채우기. 있으면 [fill]보다 먼저다.
+ * @property fill 단색 채우기. [gradient]가 있으면 무시한다.
+ * @property gradient 그라디언트 채우기. 있으면 [fill]보다 우선한다.
  * @property strokeWidth 문서 단위 선 두께. 0이면 선을 그리지 않는다.
- * @property strokeDash 점선 무늬(선·빈칸 길이를 번갈아, 문서 단위). 비어 있으면 실선이다.
+ * @property strokeDash 점선 패턴. 선과 빈칸의 길이를 번갈아 문서 단위로 적는다. 비어 있으면 실선이다.
  * @property opacity 0..1. 부모 그룹의 opacity와 곱해진다.
- * @property shadows 사각형·타원·다각형·Frame·HostSlot에 그리는 그림자. 앞의 것부터 그린다. 바깥 그림자는 노드 아래, 안쪽 그림자는 채우기 위에 그린다.
- * @property blur 노드 전체를 흐리는 반지름(문서 단위, 0 이상). Android 12(API 31) 미만에서는 흐림 없이 그린다.
- * @property startCap 열린 경로 시작점 모양
- * @property endCap 열린 경로 끝점 모양
- * @property fillToken 있으면 채우기 색을 문서의 이 디자인 토큰 색으로 맞춘다([SceneDocument.tokens]). 채우기 색을 직접 고치면 연결이 끊긴다.
- * @property strokeToken 선 색 토큰. [fillToken]과 같다.
+ * @property shadows 그림자 목록. 사각형, 타원, 다각형, Frame, HostSlot에만 그리며 앞의 것부터 그린다.
+ * 바깥 그림자는 노드 아래에, 안쪽 그림자는 채우기 위에 그린다.
+ * @property blur 노드 전체에 거는 블러 반지름. 문서 단위이며 0 이상이다. Android 12(API 31) 미만에서는 블러 없이 그린다.
+ * @property startCap 열린 경로의 시작점 모양
+ * @property endCap 열린 경로의 끝점 모양
+ * @property fillToken 채우기 색으로 쓸 디자인 토큰 이름([SceneDocument.tokens]). 채우기 색을 직접 고치면 토큰 연결이 끊긴다.
+ * @property strokeToken 선 색으로 쓸 디자인 토큰 이름. 동작은 [fillToken]과 같다.
  */
 public data class NodeStyle(
     val fill: ArgbColor? = null,
@@ -353,8 +355,8 @@ public enum class LineCap(public val wireName: String) {
 /**
  * 그림자. 값은 모두 문서 단위다.
  *
- * @property blur 0 이상. 클수록 흐리다.
- * @property spread 바깥 그림자는 모양을 이만큼 넓혀(음수면 좁혀) 만들고, 안쪽 그림자는 클수록 안쪽으로 두꺼워진다.
+ * @property blur 블러 반지름. 0 이상이며 클수록 흐리다.
+ * @property spread 바깥 그림자는 모양을 이만큼 넓혀서 만들고 음수면 좁힌다. 안쪽 그림자는 클수록 안쪽으로 두꺼워진다.
  * @property inner `true`면 모양 안쪽 가장자리에 그리는 안쪽 그림자다.
  */
 public data class Shadow(
@@ -369,7 +371,8 @@ public data class Shadow(
 /**
  * 그라디언트. [stops]는 위치(0..1) 순서이며 2개 이상이다.
  *
- * @property angleDegrees 선형일 때 방향. 0이면 왼쪽→오른쪽, 90이면 위→아래. 원형이면 쓰지 않는다(가운데에서 바깥으로).
+ * @property angleDegrees 선형 그라디언트의 방향(도). 0이면 왼쪽에서 오른쪽, 90이면 위에서 아래로 진행한다.
+ * 원형 그라디언트는 가운데에서 바깥으로 퍼지므로 이 값을 쓰지 않는다.
  */
 public data class Gradient(val type: GradientType, val stops: List<GradientStop>, val angleDegrees: Double = 90.0)
 
@@ -383,10 +386,10 @@ public enum class GradientType(public val wireName: String) {
     }
 }
 
-/** 그라디언트 색 하나. [position]은 0..1. */
+/** 그라디언트 색 지점 하나. [position]은 0..1이다. */
 public data class GradientStop(val position: Double, val color: ArgbColor)
 
-/** 모서리마다 다른 둥근 반지름(문서 단위, 0 이상). */
+/** 모서리별 반지름. 문서 단위이며 0 이상이다. */
 public data class CornerRadii(val topLeft: Double, val topRight: Double, val bottomRight: Double, val bottomLeft: Double) {
     internal val values: List<Double> get() = listOf(topLeft, topRight, bottomRight, bottomLeft)
 
@@ -395,15 +398,15 @@ public data class CornerRadii(val topLeft: Double, val topRight: Double, val bot
     }
 }
 
-/** 데이터에 묶을 수 있는 속성. [wireName]은 저장 형식 이름이다. */
+/** 데이터에 바인딩할 수 있는 속성. [wireName]은 JSON에 저장할 때 쓰는 이름이다. */
 public enum class BoundProperty(public val wireName: String) {
-    /** 글자 노드의 내용. 데이터의 글자·숫자를 쓴다. */
+    /** 텍스트 노드의 내용. 데이터의 문자열이나 숫자를 쓴다. */
     Text("text"),
 
-    /** 보임. 데이터의 참·거짓을 쓴다. */
+    /** 표시 여부. 데이터의 불리언 값을 쓴다. */
     Visible("visible"),
 
-    /** 이미지 노드의 URI. 데이터의 글자를 쓴다(이미지 URI 규칙을 그대로 지킨다). */
+    /** 이미지 노드의 URI. 데이터의 문자열을 쓰며 이미지 URI 규칙을 똑같이 적용한다. */
     ImageUri("imageUri"),
 
     /** 채우기 색. 데이터의 색을 쓴다. */
@@ -412,7 +415,7 @@ public enum class BoundProperty(public val wireName: String) {
     /** 불투명도 0..1. 데이터의 숫자를 쓴다. */
     Opacity("opacity"),
 
-    /** 컴포넌트 인스턴스의 변형([ComponentVariants]). 데이터의 글자(변형 이름)를 쓰며 같은 세트에 없는 이름이면 그대로 둔다. */
+    /** 컴포넌트 인스턴스의 변형([ComponentVariants]). 데이터의 문자열을 변형 이름으로 쓰며, 같은 세트에 없는 이름이면 바꾸지 않는다. */
     Variant("variant"),
     ;
 

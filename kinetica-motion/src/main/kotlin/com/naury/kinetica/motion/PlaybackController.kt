@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** 단조 증가하는 시계. 테스트에서는 직접 움직이는 시계를 넣는다. */
+/** 단조 증가하는 시계. 테스트에서는 직접 시간을 움직이는 시계를 넣는다. */
 public fun interface FrameClock {
     public fun timeNanos(): Long
 
@@ -17,9 +17,9 @@ public fun interface FrameClock {
 }
 
 /**
- * @property timeMs 지금 보여 줄 timeline 시각(ms). 이 값으로 [TimelineEvaluator]를 부른다.
- * @property isFinished [RepeatMode.Once]에서 끝에 닿았다.
- * @property rate 배속, `[MIN_RATE, MAX_RATE]`
+ * @property timeMs 지금 보여 줄 timeline 시각(ms). 이 값으로 [TimelineEvaluator]를 호출한다.
+ * @property isFinished [RepeatMode.Once]에서 끝에 닿았으면 `true`
+ * @property rate 재생 배속. `[MIN_RATE, MAX_RATE]` 범위다.
  */
 public data class PlaybackState(
     val timeMs: Double = 0.0,
@@ -36,12 +36,12 @@ public data class PlaybackState(
 }
 
 /**
- * timeline 하나의 재생 상태. 문서를 바꾸지 않는다.
+ * timeline 하나의 재생 상태를 관리한다. 문서는 바꾸지 않는다.
  *
- * 재생 위치는 프레임마다 더해 가지 않고 "기준 시계 값 + 기준 위치"에서 계산하므로 프레임이 빠지거나 늦어도 어긋나지 않는다.
- * 화면은 프레임마다 [onFrame]을 부르고, 돌려받은 시각으로 문서를 평가한다. 스레드 안전하지 않으므로 한 스레드(보통 main)에서 쓴다.
+ * 재생 위치를 프레임마다 더해 가지 않고 기준 시계 값과 기준 위치에서 계산하므로, 프레임이 빠지거나 늦어도 어긋나지 않는다.
+ * 화면은 프레임마다 [onFrame]을 호출하고 돌려받은 시각으로 문서를 평가한다. 스레드 안전하지 않으므로 한 스레드, 보통 메인 스레드에서만 쓴다.
  *
- * @param reducedMotion 시스템 동작 줄이기가 켜져 있으면 `true`. 재생하면 애니메이션 없이 바로 끝 상태로 간다.
+ * @param reducedMotion 시스템의 '애니메이션 삭제' 설정이 켜져 있으면 `true`. 이때는 재생하면 애니메이션 없이 바로 끝 상태로 간다.
  */
 public class PlaybackController(
     public val timeline: Timeline,
@@ -77,7 +77,7 @@ public class PlaybackController(
         publish(isPlaying = false)
     }
 
-    /** 재생 중이든 아니든 [timelineTimeMs] 시각으로 옮긴다. 범위 밖은 0..길이로 맞추고, 지나친 marker는 알리지 않는다. */
+    /** 재생 여부와 관계없이 [timelineTimeMs] 시각으로 이동한다. 범위 밖의 값은 0..길이로 맞추고, 건너뛴 marker는 알리지 않는다. */
     public fun seek(timelineTimeMs: Double) {
         val duration = timeline.durationMs.toDouble()
         val target = if (timelineTimeMs.isNaN()) 0.0 else timelineTimeMs.coerceIn(0.0, duration)
@@ -101,7 +101,7 @@ public class PlaybackController(
         publish(isPlaying = mutableState.value.isPlaying)
     }
 
-    /** 방향을 바꾼다. 지금 보이는 시각은 그대로 두고 그 자리에서 반대로 진행한다. */
+    /** 재생 방향을 바꾼다. 현재 시각은 그대로 두고 그 위치에서 반대 방향으로 진행한다. */
     public fun setReversed(reversed: Boolean) {
         val current = mutableState.value
         if (current.reversed == reversed) return
@@ -111,8 +111,8 @@ public class PlaybackController(
     }
 
     /**
-     * 프레임마다 부른다. 지금 상태와, 지난 호출 뒤 지나친 marker를 지나친 순서대로 돌려준다.
-     * 한 번에 여러 바퀴를 건너뛴 경우 marker는 마지막 [MAX_REPORTED_CYCLES]바퀴 것만 알린다.
+     * 프레임마다 호출한다. 현재 상태와 함께, 지난 호출 이후 지나간 marker를 지나간 순서대로 돌려준다.
+     * 한 번에 여러 바퀴를 건너뛰었다면 마지막 [MAX_REPORTED_CYCLES]바퀴의 marker만 알린다.
      */
     public fun onFrame(): FrameUpdate {
         val current = mutableState.value
@@ -173,7 +173,7 @@ public class PlaybackController(
         }
     }
 
-    /** 한 바퀴 안에서 진행 시간 [from]..[to]를 지날 때 지나친 marker. */
+    /** 한 바퀴 안에서 진행 시간 [from]..[to] 사이에 지나간 marker. */
     private fun markersPassed(from: Double, to: Double, cycle: Long, state: PlaybackState, includeStart: Boolean): List<TimelineMarker> {
         val duration = timeline.durationMs.toDouble()
         val backward = state.reversed != (state.repeat == RepeatMode.PingPong && cycle % 2L == 1L)

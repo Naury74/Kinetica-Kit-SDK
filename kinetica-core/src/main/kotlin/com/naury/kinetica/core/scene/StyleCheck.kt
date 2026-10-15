@@ -7,13 +7,13 @@ private const val MAX_DASH = 8
 private const val MIN_STOPS = 2
 private const val MAX_STOPS = 16
 
-/** 모양 값의 범위. 개수 상한은 외부 문서가 그리기 비용을 키우지 못하게 막는다. */
+/** 스타일 값의 범위를 확인한다. 개수 한도는 외부 문서가 그리기 비용을 지나치게 키우지 못하게 막는다. */
 internal fun checkStyle(node: SceneNode, limits: SceneLimits, sink: ViolationSink) {
     val style = node.style
     val max = limits.maxCoordinateMagnitude
     if (!style.opacity.isFinite() || style.opacity !in 0.0..1.0) sink.add(ViolationCode.InvalidStyle, "opacity는 0..1 범위여야 합니다.", node.id)
     if (!style.strokeWidth.isFinite() || style.strokeWidth !in 0.0..max) sink.add(ViolationCode.InvalidStyle, "선 두께가 범위를 벗어났습니다.", node.id)
-    if (!style.blur.isFinite() || style.blur !in 0.0..max) sink.add(ViolationCode.InvalidStyle, "흐림 반지름이 범위를 벗어났습니다.", node.id)
+    if (!style.blur.isFinite() || style.blur !in 0.0..max) sink.add(ViolationCode.InvalidStyle, "블러 반지름이 범위를 벗어났습니다.", node.id)
     checkShadows(node, max, sink)
     checkDash(node, max, sink)
     style.gradient?.let { checkGradient(it, node.id, sink) }

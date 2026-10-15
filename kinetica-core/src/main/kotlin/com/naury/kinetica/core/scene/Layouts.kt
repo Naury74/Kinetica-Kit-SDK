@@ -5,14 +5,14 @@ import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Vec2
 
 /**
- * 자동 배치([AutoLayout])와 크기 제약([LayoutConstraints])을 문서에 반영하는 순수 함수 모음.
- * [com.naury.kinetica.core.command.SceneReducer]가 명령마다 부르므로 저장된 문서는 항상 배치가 끝난 상태다.
- * 바인딩으로 숨김이 바뀌는 등 문서 밖 값이 배치에 영향을 줄 때는 그린 직전에 [apply]를 다시 부른다.
+ * 자동 레이아웃([AutoLayout])과 제약([LayoutConstraints])을 문서에 반영하는 순수 함수 모음.
+ * [com.naury.kinetica.core.command.SceneReducer]가 명령마다 호출하므로 저장된 문서는 항상 레이아웃이 끝난 상태다.
+ * 바인딩으로 표시 여부가 바뀌는 것처럼 문서 밖의 값이 레이아웃에 영향을 줄 때는 그리기 직전에 [apply]를 다시 호출한다.
  */
 public object Layouts {
     /**
-     * 자동 배치 Frame의 자식 위치·늘이기와 내용 맞춤 크기를 계산하고, 크기를 [SceneNode.sizeLimits] 안으로 자른다.
-     * 안쪽 Frame부터 계산하며, 바뀐 것이 없으면 같은 문서를 돌려준다.
+     * 자동 레이아웃 Frame에서 자식의 위치와 stretch, hug 크기를 계산하고 크기를 [SceneNode.sizeLimits] 안으로 맞춘다.
+     * 안쪽 Frame부터 계산하며, 바뀐 것이 없으면 같은 문서 인스턴스를 돌려준다.
      */
     @JvmOverloads
     public fun apply(document: SceneDocument, measurer: TextMeasurer? = null): SceneDocument {
@@ -27,11 +27,11 @@ public object Layouts {
         val anyLayout = document.nodes.values.any { (it.content as? NodeContent.Frame)?.layout != null }
         if (limited.isEmpty() && autoText.isEmpty() && !anyLayout) return document
         val nodes = LinkedHashMap(document.nodes)
-        // 직접 크기를 바꾼 노드도 범위 안에 둔다. 배치 중 크기 변경은 resize가 자른다.
+        // 직접 크기를 바꾼 노드도 범위 안으로 맞춘다. 레이아웃 중의 크기 변경은 resize가 맞춘다.
         limited.forEach { node -> node.content.sizeOrNull()?.let { resize(nodes, node.id, it) } }
-        // 바깥 Frame이 안쪽 Frame을 늘이면 안쪽 배치를 다시 해야 한다. 깊이만큼 반복하면 충분하고, 보통 두 번 안에 멈춘다.
+        // 바깥 Frame이 안쪽 Frame을 늘이면 안쪽 레이아웃을 다시 계산해야 한다. 중첩 깊이만큼 반복하면 충분하고 보통 두 번 안에 끝난다.
         repeat(MAX_PASSES) {
-            // 늘이기·채움으로 너비가 바뀐 글자는 높이를 다시 재야 하므로 배치마다 먼저 잰다.
+            // stretch나 fill로 너비가 바뀐 텍스트는 높이를 다시 재야 하므로 레이아웃을 계산할 때마다 먼저 측정한다.
             var changed = measurer != null && autoText.fold(false) { any, id -> measureText(nodes, id, measurer) || any }
             SceneGraph(document.copy(nodes = nodes)).drawOrder.asReversed().forEach { id ->
                 if (layoutFrame(nodes, id)) changed = true
@@ -42,13 +42,13 @@ public object Layouts {
     }
 
     /**
-     * artboard 크기를 [width]×[height]로 바꾸고 최상위 노드를 각자의 [LayoutConstraints]대로 옮긴다.
-     * 재생기가 화면 크기에 맞춰 장면을 펼칠 때 쓴다.
+     * 아트보드 크기를 [width]×[height]로 바꾸고 최상위 노드를 각자의 [LayoutConstraints]에 따라 옮긴다.
+     * 재생기가 화면 크기에 맞춰 장면을 늘릴 때 쓴다.
      *
-     * @throws IllegalArgumentException 크기가 유한한 양수가 아닐 때
+     * @throws IllegalArgumentException 크기가 유한한 양수가 아닌 경우
      */
     public fun resizeArtboard(document: SceneDocument, width: Double, height: Double): SceneDocument {
-        require(width.isFinite() && height.isFinite() && width > 0.0 && height > 0.0) { "artboard 크기는 유한한 양수여야 합니다." }
+        require(width.isFinite() && height.isFinite() && width > 0.0 && height > 0.0) { "artboard 크기는 유한한 양수여야 합니다: ${width}x$height" }
         val old = Size(document.artboard.width, document.artboard.height)
         val resized = document.copy(artboard = document.artboard.copy(width = width, height = height))
         if (old == Size(width, height)) return resized
@@ -58,7 +58,8 @@ public object Layouts {
     }
 
     /**
-     * 명령 전후를 비교해 크기가 바뀐 Frame(자동 배치가 아닌 것)·artboard의 자식을 제약대로 옮긴 뒤 자동 배치를 다시 한다.
+     * 명령 전후를 비교해 크기가 바뀐 Frame과 아트보드의 자식을 제약에 따라 옮긴 뒤 자동 레이아웃을 다시 계산한다.
+     * 자동 레이아웃 Frame의 자식은 제약 대신 레이아웃을 따른다.
      */
     internal fun settle(before: SceneDocument, after: SceneDocument, measurer: TextMeasurer? = null): SceneDocument {
         val nodes = LinkedHashMap(after.nodes)
@@ -68,7 +69,7 @@ public object Layouts {
         after.nodes.values.forEach { node ->
             val frame = node.content as? NodeContent.Frame ?: return@forEach
             val old = (before.nodes[node.id]?.content as? NodeContent.Frame)?.size ?: return@forEach
-            // 인스턴스 자식은 컴포넌트 동기화가 원본 크기 기준으로 이미 맞췄다.
+            // 인스턴스 자식은 컴포넌트 동기화 단계에서 원본 크기를 기준으로 이미 맞췄다.
             if (frame.layout == null && node.instanceOf == null && old != frame.size) follow(nodes, frame.childIds, old, frame.size)
         }
         val constrained = if (nodes == after.nodes) after else after.copy(nodes = nodes)
@@ -76,8 +77,9 @@ public object Layouts {
     }
 
     /**
-     * 자동 배치 Frame의 자식 [id]를 문서 좌표로 [documentDelta]만큼 끌었을 때 들어갈 자식 순서 자리(`ReorderNode`의 `toIndex`).
-     * 끈 노드의 가운데를 형제들과 비교하며, 줄 바꿈 배치는 줄을 먼저 본다. 부모가 자동 배치 Frame이 아니면 `null`이다.
+     * 자동 레이아웃 Frame의 자식 [id]를 문서 좌표로 [documentDelta]만큼 끌었을 때 들어갈 순서 인덱스를 돌려준다.
+     * `ReorderNode`의 `toIndex`로 쓸 수 있다. 끈 노드의 가운데를 형제 노드와 비교하며, 줄 바꿈 레이아웃에서는 어느 줄인지 먼저 정한다.
+     * 부모가 자동 레이아웃 Frame이 아니면 `null`이다.
      */
     public fun dropIndex(graph: SceneGraph, id: NodeId, documentDelta: Vec2): Int? {
         val nodes = graph.document.nodes
@@ -99,7 +101,7 @@ public object Layouts {
         return if (firstAfter < 0) others.size else firstAfter
     }
 
-    /** [id]를 [documentDelta]만큼 옮겼을 때 부모 좌표의 가운데. */
+    /** [id]를 [documentDelta]만큼 옮겼을 때 부모 좌표계에서의 가운데 점. */
     private fun draggedCenter(graph: SceneGraph, id: NodeId, documentDelta: Vec2): Vec2? {
         val node = graph.document.nodes[id] ?: return null
         val moved = TransformOps.move(graph, listOf(id), documentDelta)[id] ?: return null
@@ -110,7 +112,7 @@ public object Layouts {
         )
     }
 
-    /** 부모 기준 축 정렬 범위. 크기가 없는 그룹은 자손 범위의 합이고, 자손이 없으면 `null`이다. */
+    /** 부모 좌표계의 축 정렬 범위. 크기가 없는 그룹은 자손 범위를 합친 것이고, 자손이 없으면 `null`이다. */
     internal fun boundsInParent(nodes: Map<NodeId, SceneNode>, id: NodeId): Rect? {
         val node = nodes[id] ?: return null
         val local = node.localBounds ?: (node.content as? NodeContent.Container)?.childIds
@@ -137,7 +139,7 @@ public object Layouts {
         return FramePass(nodes, id, frame, layout).run()
     }
 
-    /** Frame 하나의 자동 배치 한 번. 늘이기 → 내용 맞춤 크기 → 위치 순서로 계산한다. */
+    /** Frame 하나의 자동 레이아웃을 한 번 계산한다. stretch, hug 크기, 위치 순서로 계산한다. */
     private class FramePass(
         val nodes: MutableMap<NodeId, SceneNode>,
         val id: NodeId,
@@ -162,7 +164,7 @@ public object Layouts {
             val totalMain = bounds.sumOf { axis.main(it.second.width, it.second.height) } + layout.gap * (bounds.size - 1).coerceAtLeast(0)
             val frameMain = if (hugMain) padStart + totalMain + padEnd else axis.main(frame.size.width, frame.size.height)
             val resized = resizeFrame(frameMain, innerCross)
-            // 크기 최소·최대로 잘렸을 수 있으므로 실제 크기 기준으로 놓는다.
+            // 최소·최대 크기에 맞춰 잘렸을 수 있으므로 실제 크기를 기준으로 배치한다.
             val actual = nodes.getValue(id).content.sizeOrNull() ?: frame.size
             val actualMain = axis.main(actual.width, actual.height)
             val actualCross = if (hugCross) axis.cross(actual.width, actual.height) - crossStart - crossEnd else innerCross
@@ -170,7 +172,7 @@ public object Layouts {
             return stretched || filled || resized || placed
         }
 
-        /** 줄 바꿈 배치. 자식을 안쪽 길이에 맞춰 줄로 나누고, 줄마다 배치 방향 정렬을, 줄 안에서 교차 정렬을 한다. */
+        /** 줄 바꿈 레이아웃. 자식을 안쪽 길이에 맞춰 여러 줄로 나누고, 줄마다 배치 방향 정렬을, 줄 안에서는 교차 정렬을 적용한다. */
         private fun runWrapped(): Boolean {
             val innerMain = axis.main(frame.size.width, frame.size.height) - padStart - padEnd
             val bounds = items.mapNotNull { child -> boundsInParent(nodes, child)?.let { child to it } }
@@ -178,7 +180,7 @@ public object Layouts {
             val lineCross = lines.map { line -> line.maxOf { axis.cross(it.second.width, it.second.height) } }
             val contentCross = lineCross.sum() + layout.lineGap * (lines.size - 1).coerceAtLeast(0)
             val resized = resizeFrame(axis.main(frame.size.width, frame.size.height), contentCross)
-            // 고정 크기 Frame이면 줄 묶음 전체도 교차 정렬을 따른다.
+            // 고정 크기 Frame이면 여러 줄 전체도 교차 정렬을 따른다.
             val spare = if (hugCross) 0.0 else innerCross() - contentCross
             var offset = crossStart + when (layout.crossAlign) {
                 CrossAlign.Start, CrossAlign.Stretch -> 0.0
@@ -211,7 +213,7 @@ public object Layouts {
             return lines
         }
 
-        /** 채움 자식이 배치 방향의 남는 공간을 똑같이 나눈다. 내용에 맞추는 Frame에서는 남는 공간이 없어 쓰지 않는다. */
+        /** fill 자식끼리 배치 방향의 남는 공간을 똑같이 나눈다. hug Frame에는 남는 공간이 없으므로 적용하지 않는다. */
         private fun fill(): Boolean {
             val fillers = items.filter { child ->
                 nodes.getValue(child).let {
@@ -245,7 +247,7 @@ public object Layouts {
             resize(nodes, child, next) || changed
         }
 
-        // 자식 Frame이 이 축을 내용에 맞추고 있으면 늘이지 않는다. 늘이면 두 규칙이 번갈아 크기를 바꾼다.
+        // 자식 Frame이 이 축을 내용에 맞추고 있으면 늘이지 않는다. 늘이면 두 규칙이 번갈아 크기를 바꾸게 된다.
         private fun hugsCross(node: SceneNode): Boolean {
             val childLayout = (node.content as? NodeContent.Frame)?.layout ?: return false
             return if (axis.horizontal) childLayout.hugHeight else childLayout.hugWidth
@@ -281,7 +283,7 @@ public object Layouts {
         }
     }
 
-    /** 부모 크기가 [old]에서 [new]로 바뀔 때 [childIds]를 각자의 제약대로 옮기고 늘인다. */
+    /** 부모 크기가 [old]에서 [new]로 바뀔 때 [childIds]를 각자의 제약에 따라 옮기고 늘인다. */
     internal fun follow(nodes: MutableMap<NodeId, SceneNode>, childIds: List<NodeId>, old: Size, new: Size) {
         childIds.forEach { child ->
             val node = nodes[child] ?: return@forEach
@@ -294,7 +296,7 @@ public object Layouts {
         }
     }
 
-    /** 한 축의 새 시작 위치와 크기. 크기는 [Pin.Both]·[Pin.Scale]일 때만 바뀐다. */
+    /** 한 축의 새 시작 위치와 크기. 크기는 [Pin.Both]나 [Pin.Scale]일 때만 바뀐다. */
     private fun pinned(pin: Pin, start: Double, length: Double, old: Double, new: Double): Pair<Double, Double> = when (pin) {
         Pin.Start -> start to length
         Pin.End -> start + (new - old) to length
@@ -316,8 +318,8 @@ public object Layouts {
     }
 
     /**
-     * 크기가 있는 노드의 크기를 바꾼다. pivot은 같은 비율 자리에 두어 회전 없는 노드의 왼쪽 위가 그대로다.
-     * 자동 배치가 아닌 Frame이면 자식도 제약대로 따라간다.
+     * 크기가 있는 노드의 크기를 바꾼다. pivot을 같은 비율 위치로 옮기므로 회전이 없는 노드는 왼쪽 위 모서리가 움직이지 않는다.
+     * 자동 레이아웃이 아닌 Frame이면 자식도 제약에 따라 따라간다.
      */
     private fun resize(nodes: MutableMap<NodeId, SceneNode>, id: NodeId, wanted: Size): Boolean {
         val node = nodes.getValue(id)
@@ -335,7 +337,7 @@ public object Layouts {
         return true
     }
 
-    /** 글자 측정이 정하는 축이면 `true`. 늘이기·채움이 그 축을 바꾸면 측정과 번갈아 바뀌므로 건드리지 않는다. */
+    /** 텍스트 측정이 크기를 정하는 축이면 `true`. stretch나 fill이 그 축을 바꾸면 측정 결과와 번갈아 바뀌므로 건드리지 않는다. */
     private fun SceneNode.measures(width: Boolean): Boolean = when (autoSize) {
         TextAutoSize.Fixed -> false
         TextAutoSize.Height -> !width
@@ -361,7 +363,7 @@ public object Layouts {
     private const val FULL_TURN = 360.0
 }
 
-/** 크기가 있는 내용의 크기. 경로·그룹은 `null`이다. */
+/** 크기가 있는 내용의 크기. 경로와 그룹은 `null`이다. */
 public fun NodeContent.sizeOrNull(): Size? = when (this) {
     is NodeContent.Rectangle -> size
     is NodeContent.Ellipse -> size
@@ -373,7 +375,7 @@ public fun NodeContent.sizeOrNull(): Size? = when (this) {
     is NodeContent.Group, is NodeContent.Path -> null
 }
 
-/** 크기가 있는 내용은 [size]로 바꾸고, 경로·그룹은 그대로 돌려준다. */
+/** 크기가 있는 내용은 [size]로 바꾸고, 경로와 그룹은 그대로 돌려준다. */
 public fun NodeContent.withSize(size: Size): NodeContent = when (this) {
     is NodeContent.Rectangle -> copy(size = size)
     is NodeContent.Ellipse -> copy(size = size)

@@ -47,7 +47,7 @@ internal object GroupEdits {
         val children = (group.content as NodeContent.Group).childIds
         val bounds = children.associateWith { Layouts.boundsInParent(nodes, it) }
         val padding = command.layout?.padding ?: Insets.Zero
-        // 크기가 없는(빈 그룹·한 점 경로) 노드만 감싸면 Frame 크기가 0이 되어 받을 수 없다.
+        // 빈 그룹이나 점 하나짜리 경로처럼 크기가 없는 노드만 감싸면 Frame 크기가 0이 되므로 거부한다.
         val union = bounds.values.filterNotNull().reduceOrNull(Rect::union)
             ?.takeIf { it.width + padding.left + padding.right > 0.0 && it.height + padding.top + padding.bottom > 0.0 }
             ?: return rejected(CommandError.StructureChange(command.frameId))

@@ -3,7 +3,7 @@ package com.naury.kinetica.core.geometry
 private const val FULL_TURN = 360.0
 private const val HALF_TURN = 180.0
 
-/** 각도를 `(-180, 180]` 범위로 옮긴다. */
+/** 각도를 `(-180, 180]` 범위로 정규화한다. */
 public fun normalizeDegrees(degrees: Double): Double {
     val wrapped = degrees % FULL_TURN
     return when {

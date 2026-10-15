@@ -3,11 +3,11 @@ package com.naury.kinetica.core.scene
 /**
  * 컴포넌트 인스턴스. [main]은 [SceneNode.component]가 있는 원본 Frame이다.
  *
- * @property overrides 원본 자손 id(원본 Frame 자신 포함) → 이 인스턴스에서 덮어쓴 값
+ * @property overrides 원본 Frame 자신을 포함한 원본 자손 id별로, 이 인스턴스에서 덮어쓴 값
  */
 public data class InstanceOf(val main: NodeId, val overrides: Map<NodeId, Override> = emptyMap())
 
-/** 인스턴스에서 덮어쓴 값. `null`인 값은 원본을 따른다. */
+/** 인스턴스에서 덮어쓴 값(오버라이드). `null`인 값은 원본을 따른다. */
 public data class Override(
     val text: String? = null,
     val fill: ArgbColor? = null,
@@ -18,14 +18,14 @@ public data class Override(
 }
 
 /**
- * 컴포넌트 원본과 인스턴스를 맞추고, 인스턴스 자식에서 고친 값을 덮어쓴 값으로 남기는 순수 함수 모음.
- * [com.naury.kinetica.core.command.SceneReducer]가 명령마다 부른다.
+ * 컴포넌트 원본과 인스턴스를 동기화하고, 인스턴스 자식에서 고친 값을 오버라이드로 남기는 순수 함수 모음.
+ * [com.naury.kinetica.core.command.SceneReducer]가 명령마다 호출한다.
  */
 public object Components {
     /**
-     * 인스턴스마다 원본 자손을 복사해 자식을 다시 만든다. 위치·크기·모양은 원본을 따르고 덮어쓴 값만 인스턴스 것이다.
-     * 인스턴스 자신의 위치·크기는 그대로다. 원본이 없어진 인스턴스는 지금 자식을 둔 채 일반 Frame이 된다.
-     * 원본 안에 다른 컴포넌트 인스턴스가 있으면 안쪽부터 맞추도록 깊이만큼 반복한다.
+     * 인스턴스마다 원본 자손을 복사해 자식을 다시 만든다. 위치, 크기, 모양은 원본을 따르고 오버라이드한 값만 인스턴스 값을 쓴다.
+     * 인스턴스 자신의 위치와 크기는 바꾸지 않는다. 원본이 사라진 인스턴스는 현재 자식을 그대로 둔 채 일반 Frame이 된다.
+     * 원본 안에 다른 컴포넌트 인스턴스가 있으면 안쪽부터 맞도록 중첩 깊이만큼 반복한다.
      */
     public fun sync(document: SceneDocument): SceneDocument {
         if (document.nodes.values.none { it.instanceOf != null }) return document
@@ -38,7 +38,7 @@ public object Components {
         return current
     }
 
-    /** 인스턴스 [instanceId] 안에서 원본 [sourceId]를 복사한 자식의 id. 같은 입력이면 늘 같다. */
+    /** 인스턴스 [instanceId] 안에서 원본 [sourceId]를 복사한 자식의 id. 입력이 같으면 항상 같은 id를 돌려준다. */
     public fun childId(instanceId: NodeId, sourceId: NodeId): NodeId {
         var hash = FNV_OFFSET
         "${instanceId.value}|${sourceId.value}".forEach { char ->
@@ -49,8 +49,8 @@ public object Components {
     }
 
     /**
-     * 명령 전후를 비교해, 인스턴스 자식에서 바뀐 글자·채우기·보임·이미지를 그 인스턴스의 덮어쓴 값으로 옮긴다.
-     * 원본과 같은 값으로 되돌리면 덮어쓴 값을 지운다.
+     * 명령 전후를 비교해 인스턴스 자식에서 바뀐 텍스트, 채우기, 표시 여부, 이미지를 그 인스턴스의 오버라이드로 옮긴다.
+     * 원본과 같은 값으로 되돌리면 오버라이드를 지운다.
      */
     internal fun captureOverrides(before: SceneDocument, after: SceneDocument): SceneDocument {
         val updated = after.nodes.values.filter { it.instanceOf != null }.mapNotNull { instance ->
@@ -59,7 +59,7 @@ public object Components {
         return if (updated.isEmpty()) after else after.copy(nodes = after.nodes + updated)
     }
 
-    /** [instance] 자식에서 바뀐 값을 담은 새 연결. 바뀐 것이 없으면 `null`. */
+    /** [instance] 자식에서 바뀐 값을 반영한 새 [InstanceOf]. 바뀐 것이 없으면 `null`이다. */
     private fun captured(instance: SceneNode, before: SceneDocument, after: SceneDocument): InstanceOf? {
         val link = instance.instanceOf ?: return null
         val main = after.nodes[link.main] ?: return null
@@ -75,7 +75,7 @@ public object Components {
         return link.copy(overrides = overrides).takeIf { overrides != link.overrides }
     }
 
-    /** 바뀐 값만 덮어쓴 값에 반영한다. 원본과 같아지면 그 값은 덮어쓰지 않는다. */
+    /** 바뀐 값만 오버라이드에 반영한다. 원본과 같아진 값은 오버라이드에서 뺀다. */
     private fun overrideOf(now: SceneNode, source: SceneNode, current: Override, was: SceneNode): Override {
         var result = current
         val text = (now.content as? NodeContent.Text)?.text
@@ -94,13 +94,13 @@ public object Components {
     private fun syncOnce(document: SceneDocument): SceneDocument {
         val nodes = LinkedHashMap(document.nodes)
         document.nodes.values.filter { it.instanceOf != null }.forEach { snapshot ->
-            // 바깥 인스턴스가 이번 차례에 이 노드를 새로 복사했을 수 있으므로(안쪽 인스턴스의 원본 바뀜) 지금 값을 쓴다.
+            // 안쪽 인스턴스의 원본이 바뀌어 바깥 인스턴스가 이번 반복에서 이 노드를 새로 복사했을 수 있으므로 현재 값을 쓴다.
             val instance = nodes[snapshot.id]?.takeIf { it.instanceOf != null } ?: return@forEach
             val link = requireNotNull(instance.instanceOf)
             val main = document.nodes[link.main]
             val mainFrame = main?.content as? NodeContent.Frame
             if (main?.component == null || mainFrame == null || isInside(document, instance.id, main.id)) {
-                // 원본이 없거나 컴포넌트가 아니면 지금 모습 그대로 일반 Frame이 된다.
+                // 원본이 없거나 컴포넌트가 아니면 현재 모습 그대로 일반 Frame이 된다.
                 nodes[instance.id] = instance.copy(instanceOf = null, bindings = instance.bindings - BoundProperty.Variant)
                 return@forEach
             }
@@ -109,7 +109,7 @@ public object Components {
             val old = descendants(document, instance.id)
             old.filterNot(copies::containsKey).forEach(nodes::remove)
             nodes.putAll(copies)
-            // 인스턴스 크기가 원본과 다르면 자식은 원본 크기 기준 제약대로 따라간다. 자동 배치면 배치가 정한다.
+            // 인스턴스 크기가 원본과 다르면 자식은 원본 크기를 기준으로 제약을 따른다. 자동 레이아웃이면 레이아웃이 위치를 정한다.
             if (mainFrame.layout == null && mainFrame.size != frame.size) {
                 Layouts.follow(nodes, mainFrame.childIds.map { childId(instance.id, it) }, mainFrame.size, frame.size)
             }
@@ -123,7 +123,7 @@ public object Components {
         return document.copy(nodes = nodes)
     }
 
-    /** 원본의 자손을 인스턴스 아래로 복사한다. 원본 루트는 빼고 그 아래만이다. */
+    /** 원본 루트를 뺀 자손 전체를 인스턴스 아래로 복사한다. */
     private fun copySubtree(
         document: SceneDocument,
         main: SceneNode,
@@ -136,7 +136,7 @@ public object Components {
             val id = childId(instance.id, sourceId)
             val override = overrides[sourceId]
             val content = copiedContent(source.content, instance.id, override)
-            // 원본 안의 인스턴스는 자기 자식을 스스로 맞추므로, 그 자식 대신 원본 인스턴스의 정보만 옮긴다.
+            // 원본 안의 인스턴스는 자기 자식을 직접 동기화하므로, 그 자식 대신 인스턴스 정보만 옮긴다.
             copies[id] = source.copy(
                 id = id,
                 parentId = parent,
@@ -163,7 +163,7 @@ public object Components {
     private fun NodeStyle.withOverride(override: Override?): NodeStyle =
         override?.fill?.let { copy(fill = it, gradient = null, fillToken = null) } ?: this
 
-    /** 원본 자신과 모든 자손 id. */
+    /** 원본 자신과 모든 자손의 id. */
     private fun sourceIds(document: SceneDocument, mainId: NodeId): List<NodeId> = listOf(mainId) + descendants(document, mainId)
 
     private fun descendants(document: SceneDocument, id: NodeId): List<NodeId> {
@@ -179,7 +179,7 @@ public object Components {
         return result
     }
 
-    /** [nodeId]가 [ancestorId] 자신이거나 그 안에 있는지. 원본 안에 자기 인스턴스를 넣는 순환을 막는다. */
+    /** [nodeId]가 [ancestorId] 자신이거나 그 자손이면 `true`. 원본 안에 자기 인스턴스를 넣는 순환을 막는 데 쓴다. */
     private fun isInside(document: SceneDocument, nodeId: NodeId, ancestorId: NodeId): Boolean =
         generateSequence(document.nodes[nodeId]) { node -> node.parentId?.let(document.nodes::get) }.take(document.nodes.size + 1).any {
             it.id ==
@@ -194,7 +194,7 @@ public object Components {
 
 /** 디자인 토큰을 노드 색에 반영하는 순수 함수 모음. */
 public object Tokens {
-    /** 토큰에 연결된 채우기·선 색을 토큰 색으로 맞춘다. 문서에 없는 토큰이면 지금 색을 둔다. */
+    /** 토큰에 연결된 채우기 색과 선 색을 토큰 값으로 맞춘다. 문서에 없는 토큰이면 현재 색을 그대로 둔다. */
     public fun resolve(document: SceneDocument): SceneDocument {
         if (document.nodes.values.none { it.style.fillToken != null || it.style.strokeToken != null }) return document
         val nodes = document.nodes.mapValues { (_, node) ->
@@ -224,7 +224,7 @@ public object Tokens {
         return if (nodes == document.nodes) document else document.copy(nodes = nodes)
     }
 
-    /** 명령이 토큰에 연결된 색을 직접 바꿨으면 그 노드의 연결을 끊는다(토큰 값으로 되돌리지 않게). */
+    /** 명령이 토큰에 연결된 색을 직접 바꿨으면 그 노드의 토큰 연결을 끊는다. 그래야 다음 동기화에서 토큰 값으로 되돌아가지 않는다. */
     internal fun unlinkEdited(before: SceneDocument, after: SceneDocument): SceneDocument {
         var changed = false
         val nodes = after.nodes.mapValues { (id, node) ->

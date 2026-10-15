@@ -1,7 +1,7 @@
 package com.naury.kinetica.core.scene
 
 /**
- * sRGB 색. 8비트 alpha·red·green·blue를 `0xAARRGGBB` 하나의 정수로 담는다. alpha는 premultiplied가 아니다.
+ * sRGB 색. 8비트 alpha, red, green, blue를 `0xAARRGGBB` 형태의 정수 하나에 담는다. alpha는 premultiplied가 아니다.
  */
 @JvmInline
 public value class ArgbColor(public val argb: Int) {
@@ -10,7 +10,7 @@ public value class ArgbColor(public val argb: Int) {
     public val green: Int get() = argb ushr GREEN_SHIFT and CHANNEL_MASK
     public val blue: Int get() = argb and CHANNEL_MASK
 
-    /** 불투명하면 `#RRGGBB`, 아니면 `#AARRGGBB`. 영문 대문자를 쓴다. */
+    /** 불투명하면 `#RRGGBB`, 아니면 `#AARRGGBB` 형식의 대문자 문자열. */
     public fun toHex(): String = if (alpha == CHANNEL_MASK) {
         "#%06X".format(argb and RGB_MASK)
     } else {
@@ -34,7 +34,7 @@ public value class ArgbColor(public val argb: Int) {
             return ArgbColor((alpha shl ALPHA_SHIFT) or (red shl RED_SHIFT) or (green shl GREEN_SHIFT) or blue)
         }
 
-        /** `#RRGGBB`(불투명) 또는 `#AARRGGBB`를 읽는다. 형식이 다르면 `null`. */
+        /** `#RRGGBB`(불투명) 또는 `#AARRGGBB`를 읽는다. 형식이 다르면 `null`을 돌려준다. */
         public fun parseHexOrNull(hex: String): ArgbColor? {
             if (!hexPattern.matches(hex)) return null
             val digits = hex.substring(1)

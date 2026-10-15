@@ -154,7 +154,7 @@ class SceneCodecTest {
         val http = """{"schemaVersion":1,"documentId":"d","canvas":{"width":10,"height":10},"nodes":[""" +
             """{"id":"i","type":"image","bounds":{"width":1,"height":1},"uri":"https://example.com/x.png"}],"rootOrder":["i"]}"""
 
-        assertThat(failure(duplicate)).isEqualTo(SceneLoadError.Malformed("nodes[1].id", "id가 겹칩니다."))
+        assertThat(failure(duplicate)).isEqualTo(SceneLoadError.Malformed("nodes[1].id", "id가 중복됩니다."))
         assertThat((failure(cycle) as SceneLoadError.Invalid).violations.map { it.code }).contains(ViolationCode.Cycle)
         assertThat((failure(http) as SceneLoadError.Invalid).violations.map { it.code }).containsExactly(ViolationCode.InvalidUri)
         assertThat(failure(text.replace("\"type\":\"rect\"", "\"type\":\"video\""))).isInstanceOf(SceneLoadError.Malformed::class.java)

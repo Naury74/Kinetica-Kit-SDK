@@ -1,4 +1,4 @@
-// 효과 묶음의 세기·시간은 디자인 값이라 이름 붙인 상수로 빼지 않는다.
+// 프리셋의 세기와 시간은 디자인 값이라 이름 붙인 상수로 빼지 않는다.
 @file:Suppress("MagicNumber")
 
 package com.naury.kinetica.presets
@@ -13,74 +13,74 @@ import com.naury.kinetica.core.scene.PressEffect
 import com.naury.kinetica.core.scene.PressKind
 
 /**
- * 자주 쓰는 움직임 효과 묶음. 그대로 쓰거나 `copy`로 고쳐 쓴다.
- * Compose는 `Modifier.kineticaEffects(EffectPresets.button)`, XML View는 `ViewEffects.apply(view, EffectPresets.button)`,
- * 장면 노드는 `SceneNode.effects`, 보드 위젯은 `BoardWidget(effects = …)`에 넣는다.
+ * 자주 쓰는 모션 효과 프리셋. 그대로 쓰거나 `copy`로 일부만 바꿔 쓴다.
+ * Compose에서는 `Modifier.kineticaEffects(EffectPresets.button)`, XML View에서는 `ViewEffects.apply(view, EffectPresets.button)`로 적용하고,
+ * 장면 노드는 `SceneNode.effects`에, 보드 위젯은 `BoardWidget(effects = …)`에 넣는다.
  */
 public object EffectPresets {
-    /** 버튼: 리플 + 살짝 눌림. */
+    /** 버튼. 리플과 함께 살짝 작아진다. */
     @JvmField
     public val button: NodeEffects = NodeEffects(press = listOf(PressEffect(PressKind.Ripple), PressEffect(PressKind.Scale, amount = 0.96)))
 
-    /** 카드: 누르면 기울고, 아래에서 올라오며 나타남. */
+    /** 카드. 누르면 기울어지고, 아래에서 올라오며 등장한다. */
     @JvmField
     public val card: NodeEffects = NodeEffects(
         press = listOf(PressEffect(PressKind.Tilt, amount = 6.0), PressEffect(PressKind.Scale, amount = 0.98)),
         appear = AppearEffect(AppearKind.SlideUp, durationMs = 450),
     )
 
-    /** 목록 항목: 어둡게 + 페이드로 나타남. [index]만큼 늦게 나타나 차례로 보인다. */
+    /** 목록 항목. 누르면 어두워지고, 아래에서 올라오며 등장한다. [index]에 비례해 늦게 시작하므로 항목이 차례로 나타난다. */
     @JvmStatic
     public fun listItem(index: Int): NodeEffects = NodeEffects(
         press = listOf(PressEffect(PressKind.Dim)),
         appear = AppearEffect(AppearKind.SlideUp, durationMs = 350, delayMs = 60L * index.coerceIn(0, 30)),
     )
 
-    /** 새 알림 배지: 두근두근. */
+    /** 새 알림 배지. 튀어나오듯 등장한 뒤 맥박처럼 커졌다 작아진다. */
     @JvmField
     public val badge: NodeEffects =
         NodeEffects(appear = AppearEffect(AppearKind.Pop), loop = LoopEffect(LoopKind.Pulse, periodMs = 1_200, amount = 1.12))
 
-    /** 불러오는 중 자리(스켈레톤): 빛 띠가 지나감. */
+    /** 로딩 중 스켈레톤. 빛 띠가 지나간다. */
     @JvmField
     public val skeleton: NodeEffects = NodeEffects(loop = LoopEffect(LoopKind.Shimmer, periodMs = 1_400))
 
-    /** 강조 버튼(구매·시작): 리플 + 눌림 + 빛 번짐. */
+    /** 구매나 시작 같은 강조 버튼. 리플, 축소, 글로우를 함께 쓴다. */
     @JvmField
     public val callToAction: NodeEffects = button.copy(loop = LoopEffect(LoopKind.Glow, periodMs = 2_000, amount = 18.0))
 
-    /** 오류·주의: 이따금 흔들림. */
+    /** 오류나 주의 표시. 이따금 흔들린다. */
     @JvmField
     public val attention: NodeEffects = NodeEffects(loop = LoopEffect(LoopKind.Shake, periodMs = 2_400, amount = 8.0))
 
-    /** 떠 있는 아이콘·일러스트: 둥실. */
+    /** 떠 있는 아이콘이나 일러스트. 위아래로 둥실 떠다닌다. */
     @JvmField
     public val floating: NodeEffects =
         NodeEffects(appear = AppearEffect(AppearKind.Zoom), loop = LoopEffect(LoopKind.Float, periodMs = 3_000, amount = 10.0))
 
-    /** 좋아요·완료 버튼: 누르면 작아졌다가 놓을 때 조각이 터진다. */
+    /** 좋아요나 완료 버튼. 누르면 작아졌다가 손을 뗄 때 조각이 터진다. */
     @JvmField
     public val like: NodeEffects = NodeEffects(
         press = listOf(PressEffect(PressKind.Scale, amount = 0.85), PressEffect(PressKind.Burst, color = ArgbColor(0xFFFF4D6D.toInt()))),
     )
 
-    /** 떠오르는 카드: 누르면 그림자가 커지며 떠오르고, 흐림이 걷히며 나타남. */
+    /** 떠오르는 카드. 누르면 그림자가 커지며 떠오르고, 블러가 걷히며 등장한다. */
     @JvmField
     public val liftCard: NodeEffects = NodeEffects(
         press = listOf(PressEffect(PressKind.Lift)),
         appear = AppearEffect(AppearKind.Blur, durationMs = 500),
     )
 
-    /** 실시간·연결됨 점: 고리가 퍼진다. */
+    /** 실시간 상태나 연결됨을 나타내는 점. 고리가 퍼져 나간다. */
     @JvmField
     public val live: NodeEffects =
         NodeEffects(loop = LoopEffect(LoopKind.Ping, periodMs = 1_800, amount = 10.0, color = ArgbColor(0xFF22C55E.toInt())))
 
-    /** 새 소식 하트·아이콘: 콩닥. */
+    /** 새 소식을 알리는 하트나 아이콘. 콩닥콩닥 뛴다. */
     @JvmField
     public val heartbeat: NodeEffects = NodeEffects(loop = LoopEffect(LoopKind.Heartbeat, periodMs = 1_400))
 
-    /** 이름으로 고를 때 쓰는 목록. */
+    /** 이름으로 프리셋을 고를 때 쓰는 목록. */
     @JvmField
     public val all: Map<String, NodeEffects> = mapOf(
         "button" to button,

@@ -30,8 +30,8 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 
 /**
- * 형식 버전 1의 JSON 트리를 문서로 바꾼다. 필드 형식만 확인하고, 문서 규칙은 이후 [com.naury.kinetica.core.scene.SceneValidator]가 본다.
- * 개수 상한은 객체를 만들기 전에 확인한다.
+ * 스키마 버전 1의 JSON 트리를 문서로 바꾼다. 여기서는 필드 타입만 확인하고, 문서 규칙은 이후 [com.naury.kinetica.core.scene.SceneValidator]가 검사한다.
+ * 개수 제한은 객체를 만들기 전에 확인한다.
  */
 internal class SceneJsonReader(private val limits: SceneLimits) {
     private var keyframeCount = 0L
@@ -56,12 +56,12 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
     }
 
     private fun readNodes(array: JsonArray): Map<NodeId, SceneNode> {
-        if (array.size > limits.maxNodes) fail(K.NODES, "노드 수가 상한 ${limits.maxNodes}개를 넘습니다.")
+        if (array.size > limits.maxNodes) fail(K.NODES, "노드 수가 최대 ${limits.maxNodes}개를 넘습니다.")
         val nodes = LinkedHashMap<NodeId, SceneNode>(array.size)
         array.forEachIndexed { index, element ->
             val path = "${K.NODES}[$index]"
             val node = readNode(element.asObject(path), path)
-            if (nodes.put(node.id, node) != null) fail("$path.${K.ID}", "id가 겹칩니다.")
+            if (nodes.put(node.id, node) != null) fail("$path.${K.ID}", "id가 중복됩니다.")
         }
         return nodes
     }
@@ -102,7 +102,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
         )
     }
 
-    // 모르는 역할은 버린다. 서버가 새 역할을 보내도 화면 전체를 거부하지 않게 한다.
+    // 모르는 역할은 버린다. 서버가 새 역할을 보내더라도 화면 전체를 거부하지 않기 위해서다.
     private fun readAccessibility(node: JsonObject, nodePath: String): NodeAccessibility {
         val path = "$nodePath.${K.ACCESSIBILITY}"
         val json = node.optional(K.ACCESSIBILITY)?.asObject(path) ?: return NodeAccessibility.Default
@@ -121,7 +121,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
         }
     }
 
-    // 노드 종류마다 한 갈래인 분기다.
+    // 노드 종류마다 갈래가 하나씩인 분기다.
     @Suppress("CyclomaticComplexMethod")
     private fun readContent(kind: NodeKind, json: JsonObject, path: String): NodeContent = when (kind) {
         NodeKind.Group -> NodeContent.Group(readChildren(json, path))
@@ -149,7 +149,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             alignment = json.optional(K.ALIGN)?.let { element ->
                 val name = element.asString("$path.${K.ALIGN}")
                 TextAlignment.entries.firstOrNull { it.name.lowercase() == name }
-                    ?: fail("$path.${K.ALIGN}", "start·center·end 중 하나여야 합니다.")
+                    ?: fail("$path.${K.ALIGN}", "start, center, end 중 하나여야 합니다.")
             } ?: TextAlignment.Start,
             fontWeight = json.optional(K.FONT_WEIGHT)?.asInt("$path.${K.FONT_WEIGHT}") ?: DEFAULT_FONT_WEIGHT,
             lineHeight = json.finiteOr(K.LINE_HEIGHT, path, 0.0),
@@ -206,7 +206,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
     )
 
     private fun readPath(array: JsonArray, path: String): List<PathCommand> {
-        if (array.size > limits.maxPathCommands) fail(path, "경로 명령 수가 상한을 넘습니다.")
+        if (array.size > limits.maxPathCommands) fail(path, "경로 명령 수가 최대치를 넘습니다.")
         return array.mapIndexed { index, element ->
             val itemPath = "$path[$index]"
             val json = element.asObject(itemPath)
@@ -225,14 +225,14 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
 
                 K.OP_CLOSE -> PathCommand.Close
 
-                else -> fail("$itemPath.${K.OP}", "M·L·Q·C·Z 중 하나여야 합니다.")
+                else -> fail("$itemPath.${K.OP}", "M, L, Q, C, Z 중 하나여야 합니다.")
             }
         }
     }
 
     private fun readTimelines(array: JsonArray?): List<Timeline> {
         if (array == null) return emptyList()
-        if (array.size > limits.maxTimelines) fail(K.ANIMATIONS, "timeline 수가 상한을 넘습니다.")
+        if (array.size > limits.maxTimelines) fail(K.ANIMATIONS, "timeline 수가 최대치를 넘습니다.")
         return array.mapIndexed { index, element ->
             val path = "${K.ANIMATIONS}[$index]"
             val json = element.asObject(path)
@@ -259,7 +259,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             ?: fail("$path.${K.PROPERTY}", "지원하지 않는 속성입니다.")
         val keys = json.required(K.KEYFRAMES, path).asArray("$path.${K.KEYFRAMES}")
         keyframeCount += keys.size
-        if (keyframeCount > limits.maxTotalKeyframes) fail("$path.${K.KEYFRAMES}", "keyframe 수가 상한을 넘습니다.")
+        if (keyframeCount > limits.maxTotalKeyframes) fail("$path.${K.KEYFRAMES}", "keyframe 수가 최대치를 넘습니다.")
         return PropertyTrack(
             nodeId = json.required(K.NODE_ID, path).asNodeId("$path.${K.NODE_ID}"),
             property = property,

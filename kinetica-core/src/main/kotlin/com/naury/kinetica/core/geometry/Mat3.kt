@@ -5,7 +5,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * 열 벡터 기준 2차원 affine 변환 행렬.
+ * 열 벡터 기준의 2차원 아핀 변환 행렬.
  *
  * ```
  * | a  c  tx |
@@ -13,9 +13,9 @@ import kotlin.math.sin
  * | 0  0  1  |
  * ```
  *
- * 마지막 행은 항상 `0 0 1`이라 저장하지 않는다. `A × B`는 B를 먼저 적용한 뒤 A를 적용한다.
+ * 마지막 행은 항상 `0 0 1`이므로 저장하지 않는다. `A × B`는 B를 먼저 적용한 뒤 A를 적용한다.
  *
- * @throws IllegalArgumentException 성분 중 하나라도 유한하지 않을 때
+ * @throws IllegalArgumentException 성분 중 하나라도 유한하지 않은 경우
  */
 public data class Mat3(val a: Double, val b: Double, val c: Double, val d: Double, val tx: Double, val ty: Double) {
     init {
@@ -26,7 +26,7 @@ public data class Mat3(val a: Double, val b: Double, val c: Double, val d: Doubl
 
     public val determinant: Double get() = a * d - b * c
 
-    /** `this × other`. 점에는 [other]가 먼저 적용된다. */
+    /** `this × other`를 돌려준다. 점에는 [other]가 먼저 적용된다. */
     public operator fun times(other: Mat3): Mat3 = Mat3(
         a = a * other.a + c * other.b,
         b = b * other.a + d * other.b,
@@ -36,7 +36,7 @@ public data class Mat3(val a: Double, val b: Double, val c: Double, val d: Doubl
         ty = b * other.tx + d * other.ty + ty,
     )
 
-    /** 점을 변환한다. 이동 성분이 적용된다. */
+    /** 점을 변환한다. 이동 성분도 적용한다. */
     public fun map(point: Vec2): Vec2 = Vec2(a * point.x + c * point.y + tx, b * point.x + d * point.y + ty)
 
     /** 방향 벡터를 변환한다. 이동 성분은 적용하지 않는다. */
@@ -46,7 +46,7 @@ public data class Mat3(val a: Double, val b: Double, val c: Double, val d: Doubl
     public fun mapBounds(rect: Rect): Rect = Rect.enclosing(rect.corners().map(::map))
 
     /**
-     * 역행렬. 행렬식의 절댓값이 [SINGULAR_DETERMINANT] 이하이면 역변환이 수치적으로 의미가 없으므로 `null`이다.
+     * 역행렬을 돌려준다. 행렬식의 절댓값이 [SINGULAR_DETERMINANT] 이하이면 역변환이 수치적으로 의미가 없으므로 `null`이다.
      */
     public fun inverseOrNull(): Mat3? {
         val det = determinant

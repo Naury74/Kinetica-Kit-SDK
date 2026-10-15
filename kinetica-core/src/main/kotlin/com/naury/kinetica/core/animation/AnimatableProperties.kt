@@ -9,11 +9,11 @@ import com.naury.kinetica.core.scene.sizeOrNull
 import com.naury.kinetica.core.scene.withSize
 
 /**
- * 노드에서 애니메이션 속성 값을 읽고 쓴다. 재생(평가)·keyframe 넣기·자동 키가 같은 규칙을 쓴다.
- * 그 노드에 없는 속성(크기 없는 노드의 너비, 그림자 없는 노드의 그림자 흐림 등)은 읽으면 `null`이고 쓰면 그대로다.
+ * 노드에서 애니메이션 속성 값을 읽고 쓴다. 재생 시 평가, keyframe 추가, 자동 키가 모두 같은 규칙을 쓴다.
+ * 크기가 없는 노드의 너비나 그림자가 없는 노드의 그림자 블러처럼 노드에 없는 속성은 읽으면 `null`이고, 써도 바뀌지 않는다.
  */
 public object AnimatableProperties {
-    // 속성마다 한 갈래인 분기다. 나누면 어느 속성을 어디서 다루는지 오히려 흐려진다.
+    // 속성마다 갈래가 하나씩인 분기다. 쪼개면 어느 속성을 어디서 다루는지 오히려 알기 어려워진다.
     @Suppress("CyclomaticComplexMethod")
     public fun read(node: SceneNode, property: AnimatableProperty): KeyValue? {
         val style = node.style
@@ -66,7 +66,7 @@ public object AnimatableProperties {
         }
     }
 
-    /** [value]를 노드에 쓴다. 범위를 벗어난 값(음수 크기 등)은 허용 범위로 맞춘다. */
+    /** [value]를 노드에 쓴다. 음수 크기처럼 범위를 벗어난 값은 허용 범위 안으로 맞춘다. */
     @Suppress("CyclomaticComplexMethod")
     public fun write(node: SceneNode, property: AnimatableProperty, value: KeyValue): SceneNode {
         val scalar = (value as? KeyValue.Scalar)?.value
@@ -136,7 +136,7 @@ public object AnimatableProperties {
         } ?: node
     }
 
-    // 모서리별 반지름이 있으면 그것이 그려지므로, 전체 반지름은 왼쪽 위 값을 읽고 네 모서리에 같이 쓴다.
+    // 모서리별 반지름이 있으면 그 값으로 그려지므로, 전체 반지름은 왼쪽 위 값을 읽고 네 모서리에 함께 쓴다.
     private fun corner(content: NodeContent): Double? = radii(content)?.topLeft
 
     private fun radii(content: NodeContent): CornerRadii? = when (content) {
@@ -145,7 +145,7 @@ public object AnimatableProperties {
         else -> null
     }
 
-    // 모서리별 반지름이 있으면 왼쪽 위와의 차이만큼 네 모서리를 함께 옮긴다. 키 값이 지금 값이면 모양이 그대로다.
+    // 모서리별 반지름이 있으면 왼쪽 위 값과의 차이만큼 네 모서리를 함께 옮긴다. keyframe 값이 현재 값과 같으면 모양은 바뀌지 않는다.
     private fun withCorner(node: SceneNode, radius: Double): SceneNode? {
         val shifted = { corners: CornerRadii ->
             val delta = radius - corners.topLeft
@@ -197,7 +197,7 @@ public object AnimatableProperties {
 
     private const val MIN_SIZE = 1.0
 
-    // CornerRadii.values와 같은 순서.
+    // CornerRadii.values와 순서가 같다.
     private val CORNERS = listOf(
         AnimatableProperty.CornerTopLeft,
         AnimatableProperty.CornerTopRight,

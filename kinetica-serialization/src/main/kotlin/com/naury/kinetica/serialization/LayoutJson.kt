@@ -15,7 +15,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 
-/** Frame 자동 배치(`layout`)와 노드 제약(`constraints`)의 JSON. 기본값인 항목은 쓰지 않는다. */
+/** Frame 자동 레이아웃(`layout`)과 노드 제약(`constraints`)을 JSON으로 읽고 쓴다. 기본값인 항목은 쓰지 않는다. */
 internal object LayoutJson {
     fun layout(layout: AutoLayout): JsonObject = buildJsonObject {
         put(K.DIRECTION, layout.direction.wireName)
@@ -55,7 +55,7 @@ internal object LayoutJson {
     fun readLayout(json: JsonObject, path: String): AutoLayout {
         val padding = json.optional(K.PADDING)?.asArray("$path.${K.PADDING}")?.let { array ->
             val values = array.mapIndexed { i, element -> element.asFinite("$path.${K.PADDING}[$i]") }
-            if (values.size != PADDING_SIDES) fail("$path.${K.PADDING}", "왼쪽·위·오른쪽·아래 네 값이어야 합니다.")
+            if (values.size != PADDING_SIDES) fail("$path.${K.PADDING}", "왼쪽, 위, 오른쪽, 아래 순서의 값 네 개여야 합니다.")
             Insets(left = values[0], top = values[1], right = values[2], bottom = values[PADDING_SIDES - 1])
         } ?: Insets.Zero
         return AutoLayout(

@@ -17,16 +17,16 @@ private const val MAX_STIFFNESS = 1_000_000.0
 internal fun checkTimelines(document: SceneDocument, limits: SceneLimits, sink: ViolationSink) {
     val timelines = document.timelines
     if (timelines.size > limits.maxTimelines) {
-        sink.add(ViolationCode.InvalidTimeline, "timeline 수가 상한 ${limits.maxTimelines}개를 넘습니다.")
+        sink.add(ViolationCode.InvalidTimeline, "timeline 수가 최대 ${limits.maxTimelines}개를 넘습니다.")
         return
     }
     val totalKeyframes = timelines.sumOf { timeline -> timeline.tracks.sumOf { it.keyframes.size.toLong() } }
     if (totalKeyframes > limits.maxTotalKeyframes) {
-        sink.add(ViolationCode.TooManyKeyframes, "keyframe 수가 상한 ${limits.maxTotalKeyframes}개를 넘습니다.")
+        sink.add(ViolationCode.TooManyKeyframes, "keyframe 수가 최대 ${limits.maxTotalKeyframes}개를 넘습니다.")
         return
     }
     if (timelines.map { it.id }.toSet().size != timelines.size) {
-        sink.add(ViolationCode.InvalidTimeline, "timeline id가 겹칩니다.")
+        sink.add(ViolationCode.InvalidTimeline, "timeline id가 중복됩니다.")
     }
     timelines.forEach { checkTimeline(it, document, limits, sink) }
 }
@@ -45,7 +45,7 @@ private fun checkTimeline(timeline: Timeline, document: SceneDocument, limits: S
     val seen = HashSet<Pair<NodeId, AnimatableProperty>>()
     timeline.tracks.forEach { track ->
         if (!seen.add(track.nodeId to track.property)) {
-            sink.add(ViolationCode.InvalidTrack, "같은 노드·속성의 track이 둘 이상입니다.", track.nodeId)
+            sink.add(ViolationCode.InvalidTrack, "같은 노드와 속성에 대한 track이 둘 이상입니다.", track.nodeId)
         }
         checkTrack(track, timeline.durationMs, document, limits, sink)
     }
@@ -53,7 +53,7 @@ private fun checkTimeline(timeline: Timeline, document: SceneDocument, limits: S
 
 private fun checkTrack(track: PropertyTrack, durationMs: Long, document: SceneDocument, limits: SceneLimits, sink: ViolationSink) {
     val nodeId = track.nodeId
-    if (!document.nodes.containsKey(nodeId)) sink.add(ViolationCode.MissingNode, "track이 없는 노드를 가리킵니다.", nodeId)
+    if (!document.nodes.containsKey(nodeId)) sink.add(ViolationCode.MissingNode, "track이 존재하지 않는 노드를 가리킵니다.", nodeId)
     val keyframes = track.keyframes
     when {
         keyframes.isEmpty() -> sink.add(ViolationCode.InvalidTrack, "track에 keyframe이 없습니다.", nodeId)
@@ -66,9 +66,9 @@ private fun checkTrack(track: PropertyTrack, durationMs: Long, document: SceneDo
     }
     keyframes.forEach { keyframe ->
         if (!isValueAllowed(track.property, keyframe.value, limits)) {
-            sink.add(ViolationCode.InvalidKeyframe, "${track.property.wireName} 값의 종류나 범위가 올바르지 않습니다.", nodeId)
+            sink.add(ViolationCode.InvalidKeyframe, "${track.property.wireName} 값의 타입이나 범위가 올바르지 않습니다.", nodeId)
         }
-        if (!isEasingValid(keyframe.easing)) sink.add(ViolationCode.InvalidEasing, "easing 매개변수가 범위를 벗어났습니다.", nodeId)
+        if (!isEasingValid(keyframe.easing)) sink.add(ViolationCode.InvalidEasing, "easing 파라미터가 범위를 벗어났습니다.", nodeId)
     }
 }
 
@@ -92,7 +92,7 @@ private fun isValueAllowed(property: AnimatableProperty, value: KeyValue, limits
     }
 }
 
-/** 시간 축이 되돌아가지 않도록 Bezier의 x 제어점은 0..1이어야 한다. */
+/** 시간 축이 거꾸로 가지 않도록 베지어 곡선의 x 제어점은 0..1이어야 한다. */
 internal fun isEasingValid(easing: EasingSpec): Boolean = when (easing) {
     EasingSpec.Linear -> true
     is EasingSpec.CubicBezier -> isBezierValid(easing)

@@ -3,16 +3,18 @@ package com.naury.kinetica.core.scene
 /**
  * 문서가 구조와 값 범위 규칙을 지키는지 확인한다. 외부 입력, 명령 적용 결과, 세션 시작 문서는 모두 이 검사를 거친다.
  *
- * 확인하는 것: id 형식·중복, 부모·자식 목록의 일치, 순환, 깊이, 노드 수, 유한한 값과 범위, 글자 길이와 유니코드,
- * 이미지 URI scheme, keyframe 순서·개수·값 종류, easing 매개변수, 확장 데이터 크기.
+ * 확인하는 항목은 다음과 같다.
+ * - id 형식과 중복, 부모와 자식 목록의 일치, 순환, 중첩 깊이, 노드 수
+ * - 값이 유한한지와 범위, 텍스트 길이와 유니코드, 이미지 URI scheme
+ * - keyframe 순서와 개수, 값 타입, easing 파라미터, 확장 데이터 크기
  */
 public class SceneValidator(private val limits: SceneLimits = SceneLimits.Default) {
-    /** 찾은 문제 목록. 비어 있으면 올바른 문서다. 문제는 최대 [MAX_REPORTED_VIOLATIONS]개까지 모은다. */
+    /** 찾은 문제 목록을 돌려준다. 비어 있으면 올바른 문서다. 문제는 최대 [MAX_REPORTED_VIOLATIONS]개까지 모은다. */
     public fun validate(document: SceneDocument): List<SceneViolation> {
         val sink = ViolationSink(MAX_REPORTED_VIOLATIONS)
         checkHeader(document, sink)
         if (document.nodes.size > limits.maxNodes) {
-            sink.add(ViolationCode.TooManyNodes, "노드 수 ${document.nodes.size}개가 상한 ${limits.maxNodes}개를 넘습니다.")
+            sink.add(ViolationCode.TooManyNodes, "노드 수 ${document.nodes.size}개가 최대 ${limits.maxNodes}개를 넘습니다.")
             return sink.violations
         }
         checkStructure(document, limits, sink)

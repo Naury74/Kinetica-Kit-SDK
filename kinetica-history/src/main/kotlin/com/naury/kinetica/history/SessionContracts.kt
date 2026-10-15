@@ -8,28 +8,28 @@ import com.naury.kinetica.core.scene.TextMeasurer
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * 문서를 바꾸는 명령의 입구. 모든 쓰기는 이곳을 지나 직렬화된다.
+ * 문서를 바꾸는 명령의 진입점. 모든 쓰기는 여기를 거쳐 직렬화된다.
  *
- * 트랜잭션 밖의 [execute]는 명령 하나가 실행 취소 한 단계다. 트랜잭션 안에서는 결과가 바로 [KineticaSession.document]에
- * 반영되지만(미리보기) 실행 취소 기록은 [commitTransaction] 때 한 단계로만 남는다. 트랜잭션은 중첩할 수 없다.
+ * 트랜잭션 밖에서는 [execute]로 실행한 명령 하나가 실행 취소 한 단계가 된다. 트랜잭션 안에서는 미리보기를 위해 결과가
+ * 바로 [KineticaSession.document]에 반영되지만, 실행 취소 기록은 [commitTransaction]할 때 한 단계로만 남는다. 트랜잭션은 중첩할 수 없다.
  */
 public interface CommandDispatcher {
     public val isInTransaction: Boolean
 
-    /** 명령을 적용한다. 거부되면 문서는 그대로다. 세션이 닫혔으면 [com.naury.kinetica.core.command.CommandError.TransactionState]로 거부한다. */
+    /** 명령을 적용한다. 거부되면 문서는 바뀌지 않는다. 세션이 닫혔으면 [com.naury.kinetica.core.command.CommandError.TransactionState]로 거부한다. */
     public fun execute(command: SceneCommand): CommandResult
 
-    /** 트랜잭션을 연다. 이미 열려 있거나 세션이 닫혔으면 `false`. [label]은 실행 취소 메뉴 등에 쓰는 이름이다. */
+    /** 트랜잭션을 연다. 이미 열려 있거나 세션이 닫혔으면 `false`를 돌려준다. [label]은 실행 취소 메뉴 등에 보여 줄 이름이다. */
     public fun beginTransaction(label: String): Boolean
 
-    /** 열린 트랜잭션의 변경을 실행 취소 한 단계로 남긴다. 바뀐 것이 없으면 단계를 남기지 않는다. 열린 트랜잭션이 없으면 `false`. */
+    /** 열린 트랜잭션의 변경을 실행 취소 한 단계로 남긴다. 바뀐 것이 없으면 단계를 남기지 않고, 열린 트랜잭션이 없으면 `false`를 돌려준다. */
     public fun commitTransaction(): Boolean
 
-    /** 열린 트랜잭션을 시작 전 문서로 되돌린다. 열린 트랜잭션이 없으면 `false`. */
+    /** 열린 트랜잭션을 시작 전 문서로 되돌린다. 열린 트랜잭션이 없으면 `false`를 돌려준다. */
     public fun rollbackTransaction(): Boolean
 }
 
-/** 실행 취소·다시 실행. 트랜잭션이 열려 있으면 동작하지 않는다. */
+/** 실행 취소와 다시 실행. 트랜잭션이 열려 있으면 동작하지 않는다. */
 public interface HistoryController {
     public val state: StateFlow<HistoryState>
 
@@ -40,7 +40,7 @@ public interface HistoryController {
     public fun redo(): Boolean
 }
 
-/** 화면의 실행 취소·다시 실행 버튼 상태. */
+/** 화면의 실행 취소, 다시 실행 버튼 상태. */
 public data class HistoryState(
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
@@ -51,7 +51,7 @@ public data class HistoryState(
 /**
  * 선택한 노드. 선택은 문서가 아니므로 실행 취소 기록에 남지 않는다. 문서에서 사라진 노드는 선택에서 빠진다.
  *
- * @property selectedIds 선택한 순서. 마지막이 가장 최근에 고른 노드다.
+ * @property selectedIds 선택한 순서대로의 id. 마지막이 가장 최근에 선택한 노드다.
  */
 public data class SelectionState(val selectedIds: List<NodeId> = emptyList()) {
     public val isEmpty: Boolean get() = selectedIds.isEmpty()
@@ -60,9 +60,9 @@ public data class SelectionState(val selectedIds: List<NodeId> = emptyList()) {
 }
 
 /**
- * @property historyCapacity 실행 취소 단계 수 상한
- * @property historyMaxChangedNodes 실행 취소 기록 전체에 보관하는 바뀐 노드 수 상한
- * @property textMeasurer 글자에 맞춰 크기가 바뀌는 글자 노드를 잴 측정기. 없으면 저장된 크기를 쓴다.
+ * @property historyCapacity 실행 취소 단계의 최대 수
+ * @property historyMaxChangedNodes 실행 취소 기록 전체에 보관하는 바뀐 노드 수의 최대치
+ * @property textMeasurer 자동 크기 텍스트 노드를 측정할 측정기. 없으면 저장된 크기를 쓴다.
  */
 public data class SessionConfig(
     val limits: SceneLimits = SceneLimits.Default,

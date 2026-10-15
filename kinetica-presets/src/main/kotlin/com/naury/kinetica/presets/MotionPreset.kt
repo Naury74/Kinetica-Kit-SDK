@@ -11,11 +11,11 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 
 /**
- * 프리셋을 적용할 위치와 길이.
+ * 프리셋을 적용할 시작 시각과 길이.
  *
- * @property startMs 첫 키를 넣을 시각
- * @property durationMs 노드 하나의 움직임 길이
- * @throws IllegalArgumentException 시각이 음수이거나 길이가 0 이하일 때
+ * @property startMs 첫 keyframe을 넣을 시각(ms)
+ * @property durationMs 노드 하나의 애니메이션 길이(ms)
+ * @throws IllegalArgumentException 시각이 음수이거나 길이가 0 이하인 경우
  */
 public data class PresetParams(val timelineId: String = "main", val startMs: Long = 0L, val durationMs: Long = 450L) {
     init {
@@ -24,15 +24,15 @@ public data class PresetParams(val timelineId: String = "main", val startMs: Lon
 }
 
 /**
- * 노드들의 지금 값(원래 문서)을 끝 상태로 두고 움직임을 만드는 레시피. 상태가 없고 같은 입력이면 같은 키를 만든다.
+ * 원래 문서에 있는 노드의 현재 값을 끝 상태로 삼아 애니메이션을 만드는 레시피. 상태가 없으며 입력이 같으면 같은 keyframe을 만든다.
  * 결과는 일반 keyframe이므로 적용한 뒤에도 timeline에서 고칠 수 있다.
  */
 public fun interface MotionPreset {
-    /** [targets] 순서대로 노드별 키 목록. 문서에 없는 노드는 빼고 넘긴다. */
+    /** [nodes] 순서대로 노드별 keyframe 목록을 돌려준다. 호출하는 쪽은 문서에 없는 노드를 빼고 넘긴다. */
     public fun keys(nodes: List<SceneNode>, params: PresetParams): List<PresetKey>
 }
 
-/** 프리셋이 만든 키 하나. */
+/** 프리셋이 만든 keyframe 하나. */
 public data class PresetKey(
     val nodeId: NodeId,
     val property: AnimatableProperty,
@@ -42,7 +42,7 @@ public data class PresetKey(
 )
 
 /**
- * 이름으로 프리셋을 찾아 명령으로 바꾼다. 문서를 직접 바꾸지 않으며, 호스트가 돌려받은 명령을 트랜잭션 하나로 적용한다(docs 23).
+ * 이름으로 프리셋을 찾아 명령 목록으로 바꾼다. 문서를 직접 바꾸지 않으며, 호스트가 돌려받은 명령을 트랜잭션 하나로 적용한다(docs 23).
  */
 public class PresetRegistry(private val presets: Map<String, MotionPreset>) {
     public val ids: List<String> get() = presets.keys.toList()
@@ -71,7 +71,7 @@ public class PresetRegistry(private val presets: Map<String, MotionPreset>) {
     }
 
     public companion object {
-        /** 기본 프리셋. 이름은 바꾸지 않는다(저장된 설정이 가리킬 수 있다). */
+        /** 기본 프리셋. 저장된 설정이 이름으로 가리킬 수 있으므로 이름을 바꾸지 않는다. */
         public val Default: PresetRegistry = PresetRegistry(
             linkedMapOf(
                 "fade.in" to BuiltInPresets.fadeIn,
@@ -86,7 +86,7 @@ public class PresetRegistry(private val presets: Map<String, MotionPreset>) {
 }
 
 public sealed interface PresetResult {
-    /** 순서대로 적용할 명령. 하나라도 거부되면 모두 되돌리는 것이 좋다. */
+    /** 순서대로 적용할 명령. 하나라도 거부되면 전체를 되돌리는 편이 좋다. */
     public data class Commands(val commands: List<SceneCommand>) : PresetResult
 
     public data class UnknownPreset(val id: String) : PresetResult

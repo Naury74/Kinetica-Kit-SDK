@@ -16,7 +16,7 @@ internal fun checkStructure(document: SceneDocument, limits: SceneLimits, sink: 
             val parent = nodes[parentId]
             when {
                 parent == null -> sink.add(ViolationCode.MissingNode, "부모 노드가 없습니다.", node.id)
-                parent.content !is NodeContent.Container -> sink.add(ViolationCode.ParentNotGroup, "부모가 그룹·Frame이 아닙니다.", node.id)
+                parent.content !is NodeContent.Container -> sink.add(ViolationCode.ParentNotGroup, "부모가 그룹이나 Frame이 아닙니다.", node.id)
             }
         }
         if (!container.containsKey(node.id)) {
@@ -29,14 +29,14 @@ internal fun checkStructure(document: SceneDocument, limits: SceneLimits, sink: 
     }
 }
 
-/** 자식 id마다 그 id를 담은 곳(최상위면 `null`)을 돌려준다. */
+/** 자식 id마다 그 id를 담은 컨테이너 id를 돌려준다. 최상위 노드면 `null`이다. */
 private fun collectPlacements(document: SceneDocument, sink: ViolationSink): Map<NodeId, NodeId?> {
     val nodes = document.nodes
     val container = HashMap<NodeId, NodeId?>()
     fun place(childId: NodeId, containerId: NodeId?) {
         val child = nodes[childId]
         when {
-            child == null -> sink.add(ViolationCode.MissingNode, "자식 목록이 없는 노드를 가리킵니다.", containerId)
+            child == null -> sink.add(ViolationCode.MissingNode, "자식 목록에 존재하지 않는 노드 id가 있습니다.", containerId)
 
             container.containsKey(childId) -> sink.add(ViolationCode.DuplicateChild, "노드가 자식 목록에 두 번 이상 있습니다.", childId)
 

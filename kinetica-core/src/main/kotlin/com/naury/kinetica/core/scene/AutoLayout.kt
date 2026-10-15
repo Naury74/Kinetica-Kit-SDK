@@ -3,17 +3,17 @@ package com.naury.kinetica.core.scene
 import com.naury.kinetica.core.geometry.Size
 
 /**
- * Frame 자식을 한 줄로 자동 배치하는 규칙(Figma의 Auto Layout). 자식 위치는 이 규칙이 정하므로 자식의 이동 값은 저장할 때마다 다시 계산된다.
- * 숨긴 자식은 자리를 차지하지 않는다. 자식 순서([NodeContent.Frame.childIds])가 배치 순서다.
+ * Frame의 자식을 한 줄로 자동 배치하는 규칙으로 Figma의 Auto Layout에 해당한다. 자식 위치는 이 규칙이 정하므로
+ * 자식의 이동 값은 저장할 때마다 다시 계산된다. 숨긴 자식은 공간을 차지하지 않으며, [NodeContent.Frame.childIds] 순서대로 배치한다.
  *
- * @property gap 자식 사이 간격(문서 단위, 0 이상)
- * @property padding Frame 안쪽 여백(문서 단위, 0 이상)
- * @property hugWidth `true`면 Frame 너비를 자식에 맞춘다
- * @property hugHeight `true`면 Frame 높이를 자식에 맞춘다
- * @property wrap `true`면 배치 방향 안쪽 길이를 넘는 자식을 다음 줄로 넘긴다. 배치 방향을 내용에 맞추는 Frame에서는 쓰지 않는다.
- *   줄을 바꿀 때는 채움([SceneNode.layoutFill])과 늘이기([CrossAlign.Stretch])를 쓰지 않는다.
- *   교차 정렬은 각 줄 안에서, 고정 크기 Frame이면 줄 묶음 전체에도 적용한다.
- * @property lineGap 줄 바꿈할 때 줄 사이 간격(문서 단위, 0 이상)
+ * @property gap 자식 사이 간격. 문서 단위이며 0 이상이다.
+ * @property padding Frame 안쪽 여백. 문서 단위이며 0 이상이다.
+ * @property hugWidth `true`면 Frame 너비를 자식에 맞춘다.
+ * @property hugHeight `true`면 Frame 높이를 자식에 맞춘다.
+ * @property wrap `true`면 배치 방향의 안쪽 길이를 넘는 자식을 다음 줄로 넘긴다. 배치 방향 크기를 내용에 맞추는 Frame에서는 무시한다.
+ *   줄 바꿈을 켜면 [SceneNode.layoutFill]과 [CrossAlign.Stretch]는 적용하지 않는다.
+ *   교차 정렬은 각 줄 안에 적용하고, 고정 크기 Frame이면 여러 줄 전체에도 적용한다.
+ * @property lineGap 줄 바꿈할 때의 줄 간격. 문서 단위이며 0 이상이다.
  */
 public data class AutoLayout(
     val direction: LayoutDirection = LayoutDirection.Vertical,
@@ -27,7 +27,7 @@ public data class AutoLayout(
     val lineGap: Double = 0.0,
 )
 
-/** 자동 배치 방향. [wireName]은 저장 형식에서 쓰는 이름이다. */
+/** 자동 레이아웃 방향. [wireName]은 JSON에 저장할 때 쓰는 이름이다. */
 public enum class LayoutDirection(public val wireName: String) {
     Horizontal("row"),
     Vertical("column"),
@@ -38,7 +38,7 @@ public enum class LayoutDirection(public val wireName: String) {
     }
 }
 
-/** 배치 방향 정렬. [SpaceBetween]은 남는 공간을 자식 사이에 고르게 나눈다(간격은 최소값이 된다). */
+/** 배치 방향 정렬. [SpaceBetween]은 남는 공간을 자식 사이에 고르게 나누며, 이때 [AutoLayout.gap]은 최소 간격이 된다. */
 public enum class MainAlign(public val wireName: String) {
     Start("start"),
     Center("center"),
@@ -52,8 +52,8 @@ public enum class MainAlign(public val wireName: String) {
 }
 
 /**
- * 교차 방향 정렬. [Stretch]는 크기가 있고 회전·배율이 없는 자식을 Frame 안쪽 폭(높이)까지 늘인다.
- * 그 축을 내용에 맞추는 자동 배치 Frame 자식은 늘이지 않고 시작에 둔다.
+ * 교차 방향 정렬. [Stretch]는 크기가 있고 회전이나 배율이 없는 자식을 Frame의 안쪽 너비 또는 높이까지 늘인다.
+ * 자식이 그 축의 크기를 내용에 맞추는 자동 레이아웃 Frame이면 늘이지 않고 시작 쪽에 둔다.
  */
 public enum class CrossAlign(public val wireName: String) {
     Start("start"),
@@ -68,8 +68,8 @@ public enum class CrossAlign(public val wireName: String) {
 }
 
 /**
- * 노드 크기의 최소·최대(문서 단위). `null`이면 제한이 없다. 자동 배치·제약·채움·늘이기가 크기를 바꿀 때 이 범위로 자르며,
- * 저장된 문서는 늘 범위 안이다. 같은 축의 최소는 최대보다 클 수 없다.
+ * 노드의 최소·최대 크기. 문서 단위이며 `null`이면 제한이 없다. 자동 레이아웃, 제약, fill, stretch가 크기를 바꿀 때
+ * 이 범위 안으로 맞추므로 저장된 문서는 항상 범위를 지킨다. 같은 축의 최솟값은 최댓값보다 클 수 없다.
  */
 public data class SizeLimits(
     val minWidth: Double? = null,
@@ -77,7 +77,7 @@ public data class SizeLimits(
     val minHeight: Double? = null,
     val maxHeight: Double? = null,
 ) {
-    /** [size]를 이 범위로 자른 크기. */
+    /** [size]를 이 범위 안으로 맞춘 크기를 돌려준다. */
     public fun clamp(size: Size): Size = Size(clampAxis(size.width, minWidth, maxWidth), clampAxis(size.height, minHeight, maxHeight))
 
     internal val values: List<Double> get() = listOfNotNull(minWidth, maxWidth, minHeight, maxHeight)
@@ -92,7 +92,7 @@ public data class SizeLimits(
     }
 }
 
-/** 안쪽 여백(문서 단위). */
+/** 안쪽 여백. 문서 단위다. */
 public data class Insets(val left: Double = 0.0, val top: Double = 0.0, val right: Double = 0.0, val bottom: Double = 0.0) {
     internal val values: List<Double> get() = listOf(left, top, right, bottom)
 
@@ -104,7 +104,8 @@ public data class Insets(val left: Double = 0.0, val top: Double = 0.0, val righ
 }
 
 /**
- * 부모(Frame 또는 artboard)의 크기가 바뀔 때 노드가 따라가는 방식(Figma의 constraints). 자동 배치 Frame의 자식에는 쓰지 않는다.
+ * 부모 Frame이나 아트보드의 크기가 바뀔 때 노드가 따라가는 방식으로 Figma의 constraints에 해당한다.
+ * 자동 레이아웃 Frame의 자식에는 적용하지 않는다.
  */
 public data class LayoutConstraints(val horizontal: Pin = Pin.Start, val vertical: Pin = Pin.Start) {
     public companion object {
@@ -115,11 +116,11 @@ public data class LayoutConstraints(val horizontal: Pin = Pin.Start, val vertica
 /**
  * 한 축의 고정 방식.
  *
- * - [Start]: 왼쪽(위쪽)과의 거리 유지
- * - [End]: 오른쪽(아래쪽)과의 거리 유지
- * - [Both]: 양쪽 거리를 유지하며 크기가 늘어난다(크기가 없는 노드는 [Start]처럼 움직인다)
- * - [Center]: 가운데로부터의 거리 유지
- * - [Scale]: 위치·크기가 부모 크기 비율대로 바뀐다
+ * - [Start]: 왼쪽 또는 위쪽과의 거리를 유지한다.
+ * - [End]: 오른쪽 또는 아래쪽과의 거리를 유지한다.
+ * - [Both]: 양쪽 거리를 유지하며 크기가 늘어난다. 크기가 없는 노드는 [Start]처럼 움직인다.
+ * - [Center]: 가운데로부터의 거리를 유지한다.
+ * - [Scale]: 위치와 크기가 부모 크기 비율대로 바뀐다.
  */
 public enum class Pin(public val wireName: String) {
     Start("start"),

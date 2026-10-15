@@ -9,7 +9,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
-/** 디자인 토큰·컴포넌트 인스턴스의 JSON. */
+/** 디자인 토큰과 컴포넌트 인스턴스를 JSON으로 읽고 쓴다. */
 internal object ComponentJson {
     fun tokens(tokens: Map<String, ArgbColor>): JsonObject =
         buildJsonObject { tokens.toSortedMap().forEach { (name, color) -> put(name, color.toHex()) } }

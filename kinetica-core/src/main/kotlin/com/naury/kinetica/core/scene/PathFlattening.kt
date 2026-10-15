@@ -6,7 +6,7 @@ import com.naury.kinetica.core.geometry.Vec2
 public object PathFlattening {
     public const val SEGMENTS_PER_CURVE: Int = 16
 
-    /** MoveTo마다 새 선이 시작된다. Close를 만나면 그 선은 닫힌 선이다. */
+    /** MoveTo마다 새 선이 시작되고, Close를 만나면 그 선은 닫힌 선이 된다. */
     public data class Polyline(val points: List<Vec2>, val closed: Boolean)
 
     public fun polylines(commands: List<PathCommand>): List<Polyline> {

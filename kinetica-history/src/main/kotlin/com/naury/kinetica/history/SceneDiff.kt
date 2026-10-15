@@ -7,9 +7,9 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 
 /**
- * 두 문서 사이에서 바뀐 부분만 담는다. 바뀌지 않은 노드는 참조가 같으므로 비교가 빠르고, 기록은 바뀐 노드 수에 비례한다.
+ * 두 문서 사이에서 바뀐 부분만 담는다. 바뀌지 않은 노드는 참조가 같아 비교가 빠르고, 기록 크기는 바뀐 노드 수에 비례한다.
  *
- * 노드 값이 `null`이면 그 쪽 문서에 노드가 없다는 뜻이다.
+ * 노드 값이 `null`이면 그쪽 문서에 노드가 없다는 뜻이다.
  */
 internal class SceneDiff private constructor(
     private val nodesBefore: Map<NodeId, SceneNode?>,

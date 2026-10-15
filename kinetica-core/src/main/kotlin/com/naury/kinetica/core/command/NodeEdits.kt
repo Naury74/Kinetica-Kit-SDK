@@ -86,7 +86,7 @@ internal object NodeEdits {
     }
 }
 
-/** [parentId]의 자식 순서를 바꾼 문서. `null`이면 최상위 순서를 바꾼다. 부모는 컨테이너(그룹·Frame)여야 한다. */
+/** [parentId]의 자식 순서를 바꾼 문서를 돌려준다. `null`이면 최상위 순서를 바꾼다. 부모는 그룹이나 Frame 같은 컨테이너여야 한다. */
 internal fun SceneDocument.withChildren(parentId: NodeId?, children: List<NodeId>): SceneDocument {
     if (parentId == null) return copy(rootOrder = children)
     val parent = checkNotNull(nodes[parentId]) { "부모 노드가 있어야 합니다." }

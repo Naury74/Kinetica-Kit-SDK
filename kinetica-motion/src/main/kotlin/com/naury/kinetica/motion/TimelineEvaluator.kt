@@ -12,17 +12,17 @@ import com.naury.kinetica.core.scene.SceneNode
 import kotlin.math.roundToInt
 
 /**
- * timeline의 한 시각에서 노드 속성 값을 계산한다. 상태가 없어 어느 시각으로 건너뛰어도(seek) 결과가 같다.
+ * timeline의 특정 시각에서 노드 속성 값을 계산한다. 상태가 없으므로 어느 시각으로 seek해도 결과가 같고,
  * 이전 프레임 값을 누적하지 않는다.
  *
- * 구간 규칙: 시각 t가 `t0 <= t < t1`이면 `t0` keyframe의 easing으로 `u = (t - t0) / (t1 - t0)`를 바꿔 보간한다.
- * keyframe 시각에서는 그 keyframe 값을 그대로 돌려준다. 첫 keyframe 전과 마지막 keyframe 뒤는 가장 가까운 값을 유지한다.
+ * 구간 규칙: 시각 t가 `t0 <= t < t1`이면 `u = (t - t0) / (t1 - t0)`에 `t0` keyframe의 easing을 적용해 보간한다.
+ * keyframe 시각에서는 그 keyframe 값을 그대로 돌려준다. 첫 keyframe 전과 마지막 keyframe 뒤에서는 가장 가까운 값을 유지한다.
  *
- * 값 규칙: 회전은 가장 짧은 방향, 색은 sRGB 채널별 선형 보간(반올림, 0..255로 맞춤),
- * opacity는 0..1, 선 두께는 0 이상으로 맞춘다. 용수철처럼 넘치는 easing의 결과도 이 범위를 지킨다.
+ * 값 규칙: 회전은 가장 짧은 방향으로, 색은 sRGB 채널별로 선형 보간한 뒤 반올림해 0..255로 맞춘다.
+ * opacity는 0..1, 선 두께는 0 이상으로 맞추며, 스프링처럼 범위를 넘는 easing을 써도 이 범위를 지킨다.
  */
 public object TimelineEvaluator {
-    /** [track]의 [timeMs] 시각 값. keyframe이 없는 track은 만들 수 없으므로(검증) 비어 있으면 예외다. */
+    /** [track]의 [timeMs] 시각 값을 돌려준다. 검증을 거친 문서에는 빈 track이 없으므로, 비어 있으면 예외를 던진다. */
     public fun valueAt(track: PropertyTrack, timeMs: Double): KeyValue {
         val keys = track.keyframes
         require(keys.isNotEmpty()) { "keyframe이 없는 track입니다." }
@@ -38,7 +38,7 @@ public object TimelineEvaluator {
     }
 
     /**
-     * [timeline]을 [timeMs]에 적용한 문서. 원래 문서는 바꾸지 않으며 결과는 저장·편집용이 아닌 그리기용이다.
+     * [timeline]을 [timeMs] 시각에 적용한 문서를 돌려준다. 원래 문서는 바꾸지 않으며, 결과는 저장이나 편집이 아닌 그리기에만 쓴다.
      * 지워진 노드를 가리키는 track은 무시한다.
      */
     public fun evaluate(document: SceneDocument, timeline: Timeline, timeMs: Double): SceneDocument {
@@ -51,7 +51,7 @@ public object TimelineEvaluator {
         return document.copy(nodes = nodes)
     }
 
-    /** `keys[i].timeMs <= time < keys[i + 1].timeMs`인 i. */
+    /** `keys[i].timeMs <= time < keys[i + 1].timeMs`를 만족하는 i. */
     private fun segmentStart(track: PropertyTrack, time: Double): Int {
         val keys = track.keyframes
         var low = 0

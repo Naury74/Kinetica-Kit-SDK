@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * 편집 중인 문서 하나의 상태. 문서·선택·실행 취소 상태를 [StateFlow]로 내보내고, 모든 쓰기를 [commands]로 받는다.
+ * 편집 중인 문서 하나의 상태. 문서, 선택, 실행 취소 상태를 [StateFlow]로 내보내고 모든 쓰기는 [commands]로 받는다.
  *
- * 쓰기는 내부 lock으로 직렬화되므로 여러 스레드에서 불러도 된다. 무거운 작업을 하지 않으므로 main 스레드에서 불러도 된다.
- * 저장소에 접근하지 않는다. 저장 시점과 위치는 호스트가 정한다.
+ * 쓰기는 내부 lock으로 직렬화되므로 여러 스레드에서 호출해도 된다. 무거운 작업이 없으므로 메인 스레드에서 호출해도 된다.
+ * 세션은 저장소에 접근하지 않으며, 저장 시점과 위치는 호스트가 정한다.
  */
 public class KineticaSession private constructor(initial: SceneDocument, config: SessionConfig) {
     private val lock = Any()
@@ -36,8 +36,8 @@ public class KineticaSession private constructor(initial: SceneDocument, config:
     public val history: HistoryController = History()
 
     /**
-     * 글자에 맞춰 크기가 바뀌는 글자 노드([com.naury.kinetica.core.scene.TextAutoSize])를 잴 측정기. 다음 명령부터 쓴다.
-     * 편집기(`KineticaEditor`)는 비어 있으면 화면 글꼴로 재는 측정기를 넣는다.
+     * 자동 크기 텍스트 노드([com.naury.kinetica.core.scene.TextAutoSize])를 측정할 측정기. 바꾸면 다음 명령부터 적용된다.
+     * 편집기(`KineticaEditor`)는 이 값이 비어 있으면 화면 글꼴로 측정하는 측정기를 넣는다.
      */
     public var textMeasurer: TextMeasurer? = config.textMeasurer
         set(value) {
@@ -47,7 +47,7 @@ public class KineticaSession private constructor(initial: SceneDocument, config:
             }
         }
 
-    /** 선택을 바꾼다. 문서에 없는 id는 무시하고 중복은 한 번만 남긴다. */
+    /** 선택을 바꾼다. 문서에 없는 id는 무시하고 중복된 id는 하나만 남긴다. */
     public fun select(ids: Collection<NodeId>) {
         synchronized(lock) {
             val nodes = documentState.value.nodes
@@ -57,7 +57,7 @@ public class KineticaSession private constructor(initial: SceneDocument, config:
 
     public fun clearSelection(): Unit = select(emptyList())
 
-    /** 세션을 닫는다. 열린 트랜잭션은 되돌리고, 이후 모든 쓰기를 거부한다. 여러 번 불러도 된다. */
+    /** 세션을 닫는다. 열린 트랜잭션은 되돌리고 이후의 모든 쓰기를 거부한다. 여러 번 호출해도 된다. */
     public fun close() {
         synchronized(lock) {
             transaction?.let { publish(it.before) }
@@ -81,7 +81,7 @@ public class KineticaSession private constructor(initial: SceneDocument, config:
         override val isInTransaction: Boolean get() = synchronized(lock) { transaction != null }
 
         override fun execute(command: SceneCommand): CommandResult = synchronized(lock) {
-            if (closed) return CommandResult.Rejected(CommandError.TransactionState("세션이 닫혔습니다."))
+            if (closed) return CommandResult.Rejected(CommandError.TransactionState("이미 닫힌 세션입니다."))
             val before = documentState.value
             val result = reducer.apply(before, command)
             if (result is CommandResult.Applied) {
@@ -129,7 +129,7 @@ public class KineticaSession private constructor(initial: SceneDocument, config:
     }
 
     public companion object {
-        /** 문서가 [SessionConfig.limits] 규칙을 지키면 세션을 연다. 실행 취소 기록은 비어 있다. */
+        /** 문서가 [SessionConfig.limits] 규칙을 지키면 세션을 연다. 실행 취소 기록은 빈 상태로 시작한다. */
         public fun create(document: SceneDocument, config: SessionConfig = SessionConfig()): SessionOpenResult {
             val violations = SceneValidator(config.limits).validate(document)
             if (violations.isNotEmpty()) return SessionOpenResult.Rejected(violations)

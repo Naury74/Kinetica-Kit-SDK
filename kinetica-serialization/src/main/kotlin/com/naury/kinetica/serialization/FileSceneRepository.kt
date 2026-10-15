@@ -13,10 +13,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * [directory] 안에 문서마다 `<id>.kinetica.json` 파일 하나로 저장한다. 앱 전용 폴더(`Context.filesDir` 아래)를 넘긴다.
+ * 문서마다 [directory] 안에 `<id>.kinetica.json` 파일 하나로 저장한다. [directory]에는 `Context.filesDir` 아래 같은 앱 전용 폴더를 넘긴다.
  *
- * 저장은 같은 폴더의 임시 파일에 쓰고 디스크에 확정(fsync)한 뒤 이름을 바꿔 교체하므로, 저장 중 앱이 죽거나 실패해도
- * 이전 파일이 깨지지 않는다. 읽기는 [codec]의 크기 상한과 검증을 그대로 거친다. 모든 입출력은 [ioDispatcher]에서 한다.
+ * 저장할 때는 같은 폴더의 임시 파일에 쓰고 fsync로 디스크에 반영한 뒤 이름을 바꿔 교체한다. 그래서 저장 중에 앱이 죽거나
+ * 실패해도 이전 파일은 깨지지 않는다. 읽을 때는 [codec]의 크기 제한과 검증을 그대로 거친다. 모든 파일 입출력은 [ioDispatcher]에서 한다.
  */
 public class FileSceneRepository(
     private val directory: File,

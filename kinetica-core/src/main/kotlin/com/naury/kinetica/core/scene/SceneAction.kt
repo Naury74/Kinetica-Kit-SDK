@@ -3,8 +3,8 @@ package com.naury.kinetica.core.scene
 import java.net.URLDecoder
 
 /**
- * 노드 동작([SceneNode.action]) 글자를 이름과 값으로 나눈 것. 동작은 `이름?키=값&키=값` 형식으로 쓴다(예: `open_order?id=42`).
- * 값은 URL 인코딩(`%20` 등)을 풀어 준다. 문서에 저장되는 것은 여전히 글자 하나이며 코드는 실행하지 않는다.
+ * 노드 액션([SceneNode.action]) 문자열을 이름과 파라미터로 나눈 것. 액션은 `open_order?id=42`처럼 `이름?키=값&키=값` 형식으로 쓴다.
+ * `%20` 같은 URL 인코딩은 디코딩해 준다. 문서에는 여전히 문자열 하나로 저장되며 SDK가 코드를 실행하지는 않는다.
  *
  * ```kotlin
  * KineticaPlayer(document, onAction = { raw ->
@@ -18,8 +18,9 @@ public data class SceneAction(val name: String, val params: Map<String, String> 
 
     public companion object {
         /**
-         * [raw]를 나눈다. 너그럽게 읽으며 예외를 던지지 않는다: `?`가 없으면 값 없이 이름만, `=`가 없는 키는 빈 값,
-         * 같은 키가 여러 번이면 마지막 값, 빈 글자면 이름도 빈 글자다. 문서에 저장된 동작은 검증([isValidAction])을 통과한 것이라 이름이 비지 않는다.
+         * [raw]를 이름과 파라미터로 나눈다. 형식이 어긋나도 예외를 던지지 않고 최대한 읽는다.
+         * `?`가 없으면 파라미터 없이 이름만 쓰고, `=`가 없는 키는 빈 값이 된다. 같은 키가 여러 번 나오면 마지막 값을 쓰고,
+         * 빈 문자열이면 이름도 빈 문자열이다. 문서에 저장된 액션은 [isValidAction] 검증을 통과했으므로 이름이 비어 있지 않다.
          */
         @JvmStatic
         public fun parse(raw: String): SceneAction {

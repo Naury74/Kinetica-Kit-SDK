@@ -70,7 +70,7 @@ internal object SceneJsonWriter {
         put(K.STYLE, style(node.style))
     }
 
-    // 노드 종류마다 한 갈래인 분기다.
+    // 노드 종류마다 갈래가 하나씩인 분기다.
     @Suppress("CyclomaticComplexMethod")
     private fun JsonObjectBuilder.content(content: NodeContent) {
         when (content) {
@@ -244,7 +244,7 @@ internal object SceneJsonWriter {
         put(key, numberPrimitive(value))
     }
 
-    /** 확장 값은 JSON 문자열이어야 한다. JSON이 아니면 문자열 값 하나로 쓴다. */
+    /** extensions 값은 JSON 문자열이어야 한다. JSON으로 파싱되지 않으면 문자열 값 하나로 쓴다. */
     private fun extensionValue(raw: String): JsonElement = try {
         Json.parseToJsonElement(raw)
     } catch (_: SerializationException) {
@@ -252,7 +252,7 @@ internal object SceneJsonWriter {
     }
 }
 
-/** 배치·크기 제한·움직임 효과. 기본값이면 쓰지 않는다. */
+/** 레이아웃, 크기 제한, 모션 효과를 쓴다. 기본값이면 생략한다. */
 private fun JsonObjectBuilder.layout(node: SceneNode) {
     if (node.constraints != LayoutConstraints.Default) put(K.CONSTRAINTS, LayoutJson.constraints(node.constraints))
     if (node.layoutFill) put(K.LAYOUT_FILL, true)

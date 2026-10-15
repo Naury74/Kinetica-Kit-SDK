@@ -1,4 +1,4 @@
-// 기본 컴포넌트의 크기·간격은 디자인 값이라 이름 붙인 상수로 빼지 않는다.
+// 기본 컴포넌트의 크기와 간격은 디자인 값이라 이름 붙인 상수로 빼지 않는다.
 @file:Suppress("MagicNumber")
 
 package com.naury.kinetica.presets
@@ -19,17 +19,18 @@ import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.Shadow
 import com.naury.kinetica.core.scene.TextAlignment
 
-/** 문서에 넣을 기본 컴포넌트 묶음. [roots]를 최상위에 차례로 넣고 [tokens]를 문서 토큰에 더한다. */
+/** 문서에 넣을 기본 컴포넌트 모음. [roots]를 최상위에 차례로 넣고 [tokens]를 문서 토큰에 추가한다. */
 public data class UiKitInsert(val tokens: Map<String, ArgbColor>, val nodes: List<SceneNode>, val roots: List<NodeId>)
 
 /**
- * 앱 화면을 빨리 조립하는 기본 컴포넌트(버튼·칩·카드·토글·입력·목록 항목·탭 바). 모두 자동 배치 Frame이고 색은 디자인 토큰에
- * 연결되어 있어, 토큰을 바꾸면 키트 전체 색이 바뀐다. 원본은 [origin]부터 아래로 놓으므로 artboard 밖에 두면 재생기에는 보이지 않는다.
- * 버튼은 `Button` 세트의 변형(Primary·Secondary·Disabled)이라 인스턴스에서 변형을 바꾸거나 데이터로 고를 수 있다
- * ([com.naury.kinetica.core.scene.ComponentVariants]).
+ * 앱 화면을 빠르게 조립하기 위한 기본 컴포넌트. 버튼, 칩, 카드, 토글, 입력 필드, 목록 항목, 탭 바가 있다.
+ * 모두 자동 레이아웃 Frame이고 색은 디자인 토큰에 연결되어 있어서 토큰을 바꾸면 키트 전체의 색이 바뀐다.
+ * 원본은 [origin]에서 아래쪽으로 배치하므로 아트보드 밖에 두면 재생기에는 보이지 않는다.
+ * 버튼은 `Button` 세트의 Primary, Secondary, Disabled 변형이므로 인스턴스에서 변형을 바꾸거나 데이터로 고를 수 있다.
+ * [com.naury.kinetica.core.scene.ComponentVariants] 참고.
  */
 public object UiKit {
-    /** 토큰 이름. 호스트가 같은 이름으로 브랜드 색을 정하면 키트가 따른다. */
+    /** 토큰 이름. 호스트가 같은 이름의 토큰으로 브랜드 색을 정하면 키트도 그 색을 따른다. */
     public object Token {
         public const val BRAND: String = "color.brand"
         public const val ON_BRAND: String = "color.onBrand"
@@ -51,9 +52,9 @@ public object UiKit {
     )
 
     /**
-     * 기본 컴포넌트 원본들. id는 [prefix]로 시작하므로 같은 문서에 다시 넣으려면 다른 [prefix]를 쓴다.
+     * 기본 컴포넌트 원본을 만든다. id가 [prefix]로 시작하므로 같은 문서에 한 번 더 넣으려면 다른 [prefix]를 써야 한다.
      *
-     * @param tokens 문서에 이미 있는 토큰. 같은 이름이면 그 색을 쓴다(브랜드 색 유지).
+     * @param tokens 문서에 이미 있는 토큰. 이름이 같은 토큰은 기존 색을 그대로 써서 브랜드 색을 유지한다.
      */
     public fun starter(origin: Vec2, prefix: String = "kit", tokens: Map<String, ArgbColor> = emptyMap()): UiKitInsert {
         val palette = defaultTokens + tokens.filterKeys { it in defaultTokens }
@@ -82,13 +83,13 @@ public object UiKit {
     private const val GAP = 80.0
 }
 
-/** 한 번 넣을 키트의 노드를 만든다. 각 함수는 원본 Frame을 맨 앞에 둔 노드 목록을 돌려준다. */
+/** 한 번에 넣을 키트의 노드를 만든다. 각 함수는 원본 Frame을 맨 앞에 둔 노드 목록을 돌려준다. */
 private class KitBuilder(private val prefix: String, private val palette: Map<String, ArgbColor>) {
     private fun id(name: String) = NodeId("$prefix-$name")
 
     private fun color(token: String) = palette.getValue(token)
 
-    // 키트 Frame마다 다른 설정이라 매개변수가 많다. 묶으면 오히려 각 컴포넌트 정의가 길어진다.
+    // 키트 Frame마다 설정이 달라 파라미터가 많다. 객체로 묶으면 오히려 컴포넌트 정의마다 코드가 길어진다.
     @Suppress("LongParameterList")
     private fun frame(
         name: String,

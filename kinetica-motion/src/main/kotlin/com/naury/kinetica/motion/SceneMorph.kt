@@ -15,27 +15,28 @@ import kotlin.math.atan2
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
-/** 원본 장면의 노드 [sourceId]가 대상 장면의 [targetId]로 바뀐다. */
+/** 원본 장면의 노드 [sourceId]가 대상 장면의 노드 [targetId]로 바뀐다는 짝 정보. */
 public data class TransitionMapping(val sourceId: NodeId, val targetId: NodeId)
 
 public sealed interface MorphResult {
     public data class Ready(val morph: SceneMorph) : MorphResult
 
-    /** 한 노드가 여러 노드와 짝지어졌다(docs 09: 일대다 금지). */
+    /** 한 노드가 여러 노드와 짝지어졌다. docs 09에 따라 일대다 짝은 허용하지 않는다. */
     public data class AmbiguousMapping(val nodeId: NodeId) : MorphResult
 
     public data class UnknownNode(val nodeId: NodeId) : MorphResult
 }
 
 /**
- * 두 장면 사이의 전환(docs 09 내부 morph). 진행률마다 그릴 장면을 만든다. 두 문서는 바꾸지 않는다.
+ * 두 장면 사이의 morph 전환(docs 09). 진행률마다 그릴 장면을 만들며 두 문서는 바꾸지 않는다.
  *
- * - 짝지은 노드가 같은 종류(사각형·타원·이미지끼리, 글자는 내용까지 같을 때)면 world 변환·크기·모서리·색·불투명도·선 두께를 보간한다.
- * - 종류가 다른 짝은 원본이 사라지며 대상이 나타난다(dissolve).
- * - 짝이 없는 원본 노드는 사라지고 대상 노드는 나타난다.
+ * - 짝지은 노드의 종류가 같으면 월드 변환, 크기, 모서리, 색, 불투명도, 선 두께를 보간한다.
+ *   사각형, 타원, 이미지는 종류만 같으면 되고, 텍스트는 내용까지 같아야 한다.
+ * - 종류가 다른 짝은 원본이 사라지면서 대상이 나타나는 dissolve로 처리한다.
+ * - 짝이 없는 원본 노드는 사라지고, 짝이 없는 대상 노드는 나타난다.
  *
- * 결과 장면은 계층이 없는 평평한 목록이다. 그룹 변환은 각 노드에 합쳐지며, 기울임은 회전·배율로 근사한다.
- * 진행률 0이면 원본, 1이면 대상과 같은 모습이다. artboard는 대상 것을 쓴다.
+ * 결과 장면은 계층 없이 평평한 목록이다. 그룹 변환은 각 노드에 합치며, 기울임은 회전과 배율로 근사한다.
+ * 진행률 0이면 원본, 1이면 대상과 같은 모습이다. 아트보드는 대상 장면의 것을 쓴다.
  */
 public class SceneMorph private constructor(
     private val source: Flattened,
@@ -43,7 +44,7 @@ public class SceneMorph private constructor(
     private val pairs: Map<NodeId, NodeId>,
     private val artboardDocument: SceneDocument,
 ) {
-    /** [progress](0..1, 넘치면 맞춤)에서 그릴 장면. easing은 호출하는 쪽이 적용한다. */
+    /** 진행률 [progress]에서 그릴 장면. [progress]는 0..1이며 벗어난 값은 범위 안으로 맞춘다. easing은 호출하는 쪽이 적용한다. */
     public fun frame(progress: Double): SceneDocument {
         val p = if (progress.isNaN()) 0.0 else progress.coerceIn(0.0, 1.0)
         val output = ArrayList<SceneNode>()
@@ -89,7 +90,7 @@ public class SceneMorph private constructor(
         return b.copy(transform = transform, style = style, content = blendContent(a.content, b.content, p))
     }
 
-    // 노드 종류마다 한 갈래인 분기다.
+    // 노드 종류마다 갈래가 하나씩인 분기다.
     @Suppress("CyclomaticComplexMethod")
     private fun blendContent(a: NodeContent, b: NodeContent, p: Double): NodeContent = when {
         a is NodeContent.Rectangle && b is NodeContent.Rectangle ->
@@ -114,7 +115,7 @@ public class SceneMorph private constructor(
         else -> b
     }
 
-    /** 노드를 world 변환·누적 불투명도로 펼친 것. pivot은 도형 가운데라 회전이 가운데를 축으로 보간된다. */
+    /** 노드를 월드 변환과 누적 불투명도로 펼친 값. pivot이 도형 가운데이므로 회전도 가운데를 축으로 보간된다. */
     private class Leaf(val node: SceneNode, val alpha: Double) {
         fun faded(factor: Double): SceneNode = node.copy(style = node.style.copy(opacity = (alpha * factor).coerceIn(0.0, 1.0)))
     }
@@ -126,11 +127,12 @@ public class SceneMorph private constructor(
     }
 
     public companion object {
-        /** 짝짓기 기준 metadata 키. 두 장면에서 같은 값이면 짝이 된다. */
+        /** 짝을 지을 때 기준이 되는 metadata 키. 두 장면에서 값이 같은 노드끼리 짝이 된다. */
         public const val MORPH_KEY: String = "morphKey"
 
         /**
-         * [mappings]가 없으면 `morphKey` metadata가 같은 노드, 그다음 id가 같은 노드끼리 짝짓는다. 그룹은 짝짓지 않고 자식을 짝짓는다.
+         * [mappings]가 없으면 `morphKey` metadata가 같은 노드끼리 먼저 짝짓고, 그다음 id가 같은 노드끼리 짝짓는다.
+         * 그룹 자체는 짝짓지 않고 그 자식을 짝짓는다.
          */
         public fun create(source: SceneDocument, target: SceneDocument, mappings: List<TransitionMapping>? = null): MorphResult {
             val from = flatten(source)
@@ -173,7 +175,7 @@ public class SceneMorph private constructor(
             return Flattened(leaves)
         }
 
-        /** 기울임이 있으면 회전·배율만 남긴 근사값을 쓴다. */
+        /** 기울임이 있으면 회전과 배율만 남긴 근삿값을 쓴다. */
         private fun decompose(world: Mat3, pivotX: Double, pivotY: Double): Transform2D =
             Transform2D.fromMatrix(world, pivotX, pivotY) ?: run {
                 val scaleX = hypot(world.a, world.b)
@@ -211,7 +213,7 @@ public class SceneMorph private constructor(
 
         private fun lerpSize(a: Size, b: Size, p: Double): Size = Size(lerp(a.width, b.width, p), lerp(a.height, b.height, p))
 
-        /** 한쪽이 없으면 다른 쪽 색을 투명하게 한 것과 보간한다. */
+        /** 한쪽 색이 없으면 다른 쪽 색을 투명하게 만든 값과 보간한다. */
         private fun lerpColor(a: ArgbColor?, b: ArgbColor?, p: Double): ArgbColor? {
             if (a == null && b == null) return null
             val from = a ?: ArgbColor(checkNotNull(b).argb and RGB_MASK)

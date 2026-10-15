@@ -50,7 +50,7 @@ internal fun utf8Length(text: String): Int {
 private val uriPattern = Regex("([A-Za-z][A-Za-z0-9+.-]*):(.+)")
 private val traversalPattern = Regex("(^|/)(\\.|%2[eE]){2}(/|$)")
 
-/** scheme이 허용 목록에 있고, 제어 문자·공백과 상위 경로(`..`) 이동이 없는 URI인지 확인한다. */
+/** scheme이 허용 목록에 있고 제어 문자, 공백, 상위 경로 이동(`..`)이 없는 URI인지 확인한다. */
 internal fun isAllowedImageUri(uri: String, limits: SceneLimits): Boolean {
     if (uri.length > limits.maxUriLength || uri.any { it.isWhitespace() || it.isISOControl() }) return false
     val match = uriPattern.matchEntire(uri) ?: return false

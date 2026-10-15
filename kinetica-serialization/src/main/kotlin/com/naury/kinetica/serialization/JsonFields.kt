@@ -50,7 +50,7 @@ internal fun JsonElement.asColor(path: String): ArgbColor =
 
 internal fun JsonObject.required(key: String, path: String): JsonElement = this[key] ?: fail("$path.$key", "필드가 없습니다.")
 
-/** 필드가 없거나 `null`이면 `null`. */
+/** 필드가 없거나 값이 `null`이면 `null`을 돌려준다. */
 internal fun JsonObject.optional(key: String): JsonElement? = this[key]?.takeUnless { it is JsonNull }
 
 internal fun JsonObject.finite(key: String, path: String): Double = required(key, path).asFinite("$path.$key")

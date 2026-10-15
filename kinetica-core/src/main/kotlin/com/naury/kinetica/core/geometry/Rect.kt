@@ -3,7 +3,7 @@ package com.naury.kinetica.core.geometry
 /**
  * 축 정렬 사각형. `left <= right`, `top <= bottom`이고 y축은 아래로 향한다.
  *
- * @throws IllegalArgumentException 값이 유한하지 않거나 너비·높이가 음수일 때
+ * @throws IllegalArgumentException 값이 유한하지 않거나 너비 또는 높이가 음수인 경우
  */
 public data class Rect(val left: Double, val top: Double, val right: Double, val bottom: Double) {
     init {
@@ -15,7 +15,7 @@ public data class Rect(val left: Double, val top: Double, val right: Double, val
     public val height: Double get() = bottom - top
     public val center: Vec2 get() = Vec2((left + right) / 2.0, (top + bottom) / 2.0)
 
-    /** 왼쪽 위부터 시계 방향(왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래) 꼭짓점. */
+    /** 네 꼭짓점. 왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래 순서다. */
     public fun corners(): List<Vec2> = listOf(Vec2(left, top), Vec2(right, top), Vec2(right, bottom), Vec2(left, bottom))
 
     /** 경계 위의 점도 포함한다. */
@@ -37,7 +37,7 @@ public data class Rect(val left: Double, val top: Double, val right: Double, val
     public companion object {
         public fun fromSize(size: Size): Rect = Rect(0.0, 0.0, size.width, size.height)
 
-        /** [points]를 모두 감싸는 가장 작은 사각형. */
+        /** [points]를 모두 감싸는 가장 작은 사각형을 돌려준다. */
         public fun enclosing(points: List<Vec2>): Rect {
             require(points.isNotEmpty()) { "점이 하나 이상 있어야 합니다." }
             return Rect(points.minOf { it.x }, points.minOf { it.y }, points.maxOf { it.x }, points.maxOf { it.y })
@@ -48,7 +48,7 @@ public data class Rect(val left: Double, val top: Double, val right: Double, val
 /**
  * 너비와 높이. 둘 다 유한하고 0 이상이다.
  *
- * @throws IllegalArgumentException 값이 유한하지 않거나 음수일 때
+ * @throws IllegalArgumentException 값이 유한하지 않거나 음수인 경우
  */
 public data class Size(val width: Double, val height: Double) {
     init {

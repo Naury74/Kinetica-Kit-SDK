@@ -1,10 +1,10 @@
 package com.naury.kinetica.core.scene
 
-/** 글자를 고칠 때 리치 텍스트 구간을 함께 옮기는 계산. */
+/** 텍스트를 고칠 때 리치 텍스트 구간을 함께 옮기는 계산. */
 public object TextSpans {
     /**
-     * [before]를 [after]로 고쳤을 때 [spans]를 옮긴다. 앞뒤가 같은 부분을 뺀 가운데 하나를 바꾼 것으로 보고,
-     * 바뀐 곳보다 뒤 구간은 길이 차이만큼 밀고, 바뀐 곳에 걸친 구간은 늘이거나 줄인다. 길이가 0이 된 구간은 지운다.
+     * [before]를 [after]로 고쳤을 때 [spans]를 옮긴다. 앞뒤 공통 부분을 뺀 가운데 한 곳만 바뀌었다고 보고,
+     * 바뀐 곳보다 뒤에 있는 구간은 길이 차이만큼 밀고, 바뀐 곳에 걸친 구간은 늘이거나 줄인다. 길이가 0이 된 구간은 지운다.
      */
     public fun remap(spans: List<TextSpan>, before: String, after: String): List<TextSpan> {
         if (before == after || spans.isEmpty()) return spans
@@ -15,18 +15,18 @@ public object TextSpans {
         }
     }
 
-    /** 앞 [prefix]자와 뒤가 같고, 그 사이 [removedEnd]까지를 지우고 [delta]만큼 길이가 바뀐 한 번의 수정. */
+    /** 한 번의 수정. 앞 [prefix]자와 뒷부분은 같고, 그 사이 [removedEnd]까지를 지워 길이가 [delta]만큼 바뀌었다. */
     private class Edit(val prefix: Int, val removedEnd: Int, val delta: Int) {
         private val insertedEnd = removedEnd + delta
 
-        // 지운 곳 안에서 시작한 구간은 새로 쓴 글자 뒤에서 시작한다(지운 글자의 모양을 새 글자에 주지 않는다).
+        // 지운 범위 안에서 시작한 구간은 새로 입력한 글자 뒤에서 시작한다. 지운 글자의 스타일을 새 글자에 넘기지 않기 위해서다.
         fun moveStart(index: Int): Int = when {
             index < prefix -> index
             index >= removedEnd -> maxOf(index + delta, insertedEnd)
             else -> insertedEnd
         }
 
-        // 구간 끝에서 바로 이어 쓴 글자는 그 구간에 들어간다(굵은 글자 끝에서 계속 쓰면 굵게).
+        // 구간 끝에 바로 이어 입력한 글자는 그 구간에 포함한다. 굵은 글자 끝에서 계속 입력하면 굵게 나오는 식이다.
         fun moveEnd(index: Int, start: Int): Int = when {
             index < prefix -> index
             index == prefix && start < prefix -> if (prefix == removedEnd) insertedEnd else prefix
@@ -46,11 +46,11 @@ public object TextSpans {
         }
     }
 
-    /** 글자 길이에 맞지 않는 구간을 잘라 낸다. 데이터로 글자가 바뀌어 짧아졌을 때 그리기 전에 쓴다. */
+    /** 텍스트 길이를 벗어난 구간을 잘라 낸다. 바인딩된 데이터로 텍스트가 짧아졌을 때 그리기 전에 쓴다. */
     public fun clamp(spans: List<TextSpan>, length: Int): List<TextSpan> =
         spans.mapNotNull { span -> span.copy(end = span.end.coerceAtMost(length)).takeIf { it.start < it.end } }
 
-    /** [index] 글자에 실제로 적용되는 구간 모양(뒤 구간이 앞을 덮는다). 없으면 모든 값이 `null`이다. */
+    /** [index] 위치의 글자에 실제로 적용되는 구간 스타일. 뒤 구간이 앞 구간을 덮으며, 적용되는 구간이 없으면 모든 값이 `null`이다. */
     public fun styleAt(spans: List<TextSpan>, index: Int): TextSpan = spans.filter { index in it.start until it.end }.fold(
         TextSpan(
             index,
@@ -68,7 +68,8 @@ public object TextSpans {
     }
 
     /**
-     * [start]..[end]에 [style]의 값(`null`이 아닌 것)을 준다. 그 범위 안에 들어 있고 같은 값만 정하던 앞 구간은 지워 구간이 쌓이지 않게 한다.
+     * [start]..[end]에 [style]에서 `null`이 아닌 값을 적용한다. 이 범위 안에 있으면서 같은 속성만 정하던 이전 구간은 지워
+     * 구간이 계속 쌓이지 않게 한다.
      */
     public fun apply(spans: List<TextSpan>, start: Int, end: Int, style: TextSpan): List<TextSpan> {
         if (end <= start) return spans

@@ -2,7 +2,7 @@ package com.naury.kinetica.motion
 
 import kotlin.math.floor
 
-/** 끝에 닿았을 때의 동작. */
+/** 재생이 끝에 닿았을 때의 동작. */
 public enum class RepeatMode {
     /** 끝에서 멈춘다. */
     Once,
@@ -15,11 +15,11 @@ public enum class RepeatMode {
 }
 
 /**
- * 재생이 지나온 시간(진행 시간)을 timeline 안의 시각으로 바꾸는 순수 함수.
+ * 재생이 진행된 시간을 timeline 안의 시각으로 바꾸는 순수 함수.
  *
- * @param travelMs 재생을 시작한 뒤 배속을 반영해 지나온 시간(ms). 0 이상으로 맞춘다.
- * @param durationMs timeline 길이. 0이면 항상 0이다.
- * @param reversed 끝에서 처음 쪽으로 재생한다.
+ * @param travelMs 재생을 시작한 뒤 배속을 반영해 진행된 시간(ms). 음수나 NaN은 0으로 본다.
+ * @param durationMs timeline 길이(ms). 0이면 결과는 항상 0이다.
+ * @param reversed `true`면 끝에서 처음 쪽으로 재생한다.
  */
 public fun timelineTimeAt(travelMs: Double, durationMs: Long, repeat: RepeatMode, reversed: Boolean): Double {
     if (durationMs <= 0L) return 0.0

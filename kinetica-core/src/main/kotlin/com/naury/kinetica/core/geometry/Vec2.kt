@@ -5,9 +5,9 @@ import kotlin.math.hypot
 /**
  * 2차원 점 또는 벡터.
  *
- * 어느 좌표 공간인지는 값이 아니라 변수 이름(`documentPoint`, `viewportPoint`, `localPoint`)으로 드러낸다.
+ * 어느 좌표 공간의 값인지는 타입이 아니라 `documentPoint`, `viewportPoint`, `localPoint` 같은 변수 이름으로 드러낸다.
  *
- * @throws IllegalArgumentException 성분이 NaN이거나 무한대일 때
+ * @throws IllegalArgumentException 성분이 NaN이거나 무한대인 경우
  */
 public data class Vec2(val x: Double, val y: Double) {
     init {
