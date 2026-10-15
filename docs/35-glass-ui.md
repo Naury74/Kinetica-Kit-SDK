@@ -177,6 +177,36 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 - 키보드로 쓰는 중일 때만 포커스를 모달 안으로 옮긴다. 터치로 열었을 때는 시트 안 입력란이 저절로 키보드를 띄우지 않는다.
 - 토스트·스낵바·툴팁은 뒤 화면을 가리지 않는다.
 
+**팝업 안의 글래스.** 다이얼로그·시트·여러 높이 시트·서랍·미니 플레이어 안에 놓은 글래스(입력란, 칩, 버튼 등)는 판 뒤 화면을 다시 비추지 않고, 판 위에 얹힌 한 겹으로 옅게 그린다.
+다른 배경을 비추게 하려면 `backdrop`을 직접 넘긴다.
+
+**닫을 때 키보드.** 팝업 안 입력란이 포커스를 가진 채 닫히면 포커스를 거두고 키보드를 내린다.
+
+**호스트 View를 넣을 때(AndroidView).** EditText, RecyclerView, ScrollView, WebView, TextureView는 글래스 안에서 터치·스크롤·입력이 그대로 동작하고, 배경에 두면 블러로 비친다.
+SurfaceView(지도, 영상, 카메라)는 창과 다른 표면에 그려져 기록되지 않는다. 그 위의 글래스는 블러 없이 색만 덮이므로, 블러가 필요하면 TextureView를 쓰거나 `backdrop = null`로 fallback 색을 쓴다.
+
+**XML(View) 화면에서.** Compose 코드 없이 `com.naury.kinetica.ui.view`의 진입점을 쓴다.
+
+```kotlin
+val sheet = GlassSheets.show(this, R.layout.sheet_share, GlassPopupOptions(title = "공유"))
+sheet.contentView?.findViewById<Button>(R.id.close)?.setOnClickListener { sheet.dismiss() }
+GlassDialogs.show(this, confirmView)
+GlassToasts.show(this, "저장했습니다")
+```
+```java
+GlassPopupHandle sheet = GlassSheets.show(this, R.layout.sheet_share);
+```
+```xml
+<com.naury.kinetica.ui.view.GlassSurfaceView
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    app:kinetica_glassStyle="acrylic" app:kinetica_cornerRadius="20dp"> … </com.naury.kinetica.ui.view.GlassSurfaceView>
+```
+
+- 액티비티는 `ComponentActivity`(AppCompatActivity, FragmentActivity 포함)여야 한다. Fragment에서는 `requireActivity()`와 `GlassPopupOptions(lifecycleOwner = viewLifecycleOwner)`를 넘긴다.
+- 시트·다이얼로그는 액티비티 화면 위에 겹친 레이어에 그려지고 그 아래 View를 블러로 비춘다(API 31 이상). 키보드가 올라오면 함께 올라오고, 뒤로 가기로 닫힌다(`cancelable = false`면 닫히지 않음).
+- 화면 회전 등으로 액티비티가 다시 만들어지면 열린 창은 애니메이션 없이 정리된다. 회전 뒤에도 열어 두려면 `onSaveInstanceState`에 열림 여부를 저장했다가 다시 띄운다.
+- 메인 스레드에서만 부른다.
+
 **뒤로 가기.** 가장 안쪽이 먼저 받는다. 시트 안에서 호스트가 `BackHandler`를 두면 그것이 먼저, 그다음 시트가 닫히고, 그다음 화면 순서다.
 
 ## 성능

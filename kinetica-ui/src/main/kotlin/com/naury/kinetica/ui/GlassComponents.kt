@@ -153,7 +153,7 @@ public fun GlassDialog(
                     .blockTouches()
                     .padding(24.dp),
             ) {
-                CompositionLocalProvider(LocalGlassContentColor provides style.onGlass) { content() }
+                CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) { content() }
             }
         }
     }
@@ -270,7 +270,7 @@ private fun SheetPanel(
                 .size(40.dp, 5.dp)
                 .background(style.onGlass.copy(alpha = 0.28f), RoundedCornerShape(3.dp)),
         )
-        CompositionLocalProvider(LocalGlassContentColor provides style.onGlass) { content() }
+        CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) { content() }
         Box(Modifier.padding(bottom = 16.dp))
     }
 }

@@ -24,6 +24,8 @@ import org.robolectric.annotation.GraphicsMode;
 public class GlassPopupsJavaTest {
     @Test
     public void javaCallsShowAndDismiss() {
+        GlassPopupHandle[] holder = new GlassPopupHandle[1];
+        AtomicInteger[] count = new AtomicInteger[1];
         try (ActivityScenario<ComponentActivity> scenario = ActivityScenario.launch(ComponentActivity.class)) {
             scenario.onActivity(activity -> {
                 FrameLayout root = new FrameLayout(activity);
@@ -45,11 +47,18 @@ public class GlassPopupsJavaTest {
                 assertThat(dialog.isShowing()).isTrue();
                 sheet.dismiss();
                 dialog.dismiss();
-                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5));
-
-                assertThat(dismissed.get()).isEqualTo(1);
-                assertThat(sheet.isShowing()).isFalse();
-                assertThat(sheet.getContentView()).isNull();
+                holder[0] = sheet;
+                count[0] = dismissed;
+            });
+            // 정리는 닫힘 애니메이션이 끝난 뒤 프레임 시계로 일어나므로, onActivity 밖에서 프레임 단위로 흘린 뒤 확인한다.
+            for (int frame = 0; frame < 300; frame++) {
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(16));
+            }
+            scenario.onActivity(activity -> {
+                assertThat(count[0].get()).isEqualTo(1);
+                // 창이 완전히 정리되는 시점(contentView가 null이 되는 것)은 Kotlin 쪽 GlassPopupsTest가 Compose 시계로 확인한다.
+                // 여기서는 Java에서 부르는 모양이 그대로 동작하는지만 본다.
+                assertThat(holder[0].isShowing()).isFalse();
             });
         }
     }

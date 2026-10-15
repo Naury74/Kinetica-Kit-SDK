@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
@@ -100,6 +101,11 @@ internal class GlassViewHost private constructor(private val activity: Component
     /** 닫힘 애니메이션을 시작한다. 애니메이션이 끝나면 [remove]가 불린다. */
     fun close(entry: PopupEntry) {
         entry.closing = true
+        // 창 안 입력란이 포커스를 가진 채 닫히면 키보드가 화면에 남으므로 함께 내린다.
+        entry.view.findFocus()?.let { focused ->
+            focused.context.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(focused.windowToken, 0)
+            focused.clearFocus()
+        }
         updateHiddenSiblings()
     }
 

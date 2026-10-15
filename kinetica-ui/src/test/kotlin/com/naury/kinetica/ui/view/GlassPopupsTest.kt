@@ -109,6 +109,27 @@ class GlassPopupsTest {
     }
 
     @Test
+    fun `입력란에 포커스가 있는 채 시트를 닫으면 포커스를 거둬 키보드가 남지 않는다`() {
+        val activity = compose.activity
+        lateinit var handle: GlassPopupHandle
+        lateinit var input: android.widget.EditText
+        compose.runOnUiThread {
+            setSplitContent(activity)
+            input = android.widget.EditText(activity)
+            handle = GlassSheets.show(activity, input)
+        }
+        settle()
+        compose.runOnUiThread { input.requestFocus() }
+        settle()
+        assertThat(input.hasFocus()).isTrue()
+
+        compose.runOnUiThread { handle.dismiss() }
+        settle()
+
+        assertThat(input.hasFocus()).isFalse()
+    }
+
+    @Test
     fun `뒤에 SurfaceView가 있으면 블러 대신 fallback 색을 칠한다`() {
         val activity = compose.activity
         compose.runOnUiThread {

@@ -56,6 +56,7 @@ import com.naury.kinetica.ui.GlassSurface
 import com.naury.kinetica.ui.GlassSwitch
 import com.naury.kinetica.ui.GlassTab
 import com.naury.kinetica.ui.GlassTabBar
+import com.naury.kinetica.ui.GlassTextField
 import com.naury.kinetica.ui.GlassToastHost
 import com.naury.kinetica.ui.LocalGlassContentColor
 import com.naury.kinetica.ui.glassBackdrop
@@ -178,7 +179,11 @@ private fun DemoPopups(
     }
     GlassSheet(sheet, closeSheet, title = "공유") {
         Label("공유하기", 20, FontWeight.Bold)
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
+        // 입력란을 누르면 시트가 키보드 위로 올라온다(contentWindowInsets 기본값).
+        var note by remember { mutableStateOf("") }
+        GlassTextField(note, { note = it }, "함께 보낼 메모", Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
         listOf("메시지", "메일", "링크 복사", "저장").forEach { item ->
             Box(Modifier.fillMaxWidth().clickable(onClick = closeSheet).padding(vertical = 14.dp)) { Label(item, 16) }
         }

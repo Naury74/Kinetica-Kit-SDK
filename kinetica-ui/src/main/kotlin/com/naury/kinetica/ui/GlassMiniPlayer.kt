@@ -243,7 +243,7 @@ private fun PlayerFrame(state: MiniPlayerState, geometry: PlayerGeometry, style:
             .clip(shape)
             .playerDrag(state, geometry.travel),
     ) {
-        CompositionLocalProvider(LocalGlassContentColor provides style.onGlass) {
+        CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) {
             if (showCollapsed) CollapsedBar(state, geometry, slots)
             if (showExpanded) ExpandedPanel(state, geometry, slots)
         }

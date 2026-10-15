@@ -346,7 +346,7 @@ public fun GlassDetentSheet(
                 val next = state.higher() ?: state.lowestVisible
                 scope.launch { state.animateTo(next) }
             }
-            CompositionLocalProvider(LocalGlassContentColor provides style.onGlass) {
+            CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) {
                 header()
                 Column(Modifier.weight(1f).windowInsetsPadding(insets), content = content)
             }

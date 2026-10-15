@@ -83,6 +83,11 @@ public fun rememberGlassBackdrop(): GlassBackdrop {
 /** 가장 가까운 [GlassScaffold]가 제공하는 배경. 없으면 `null`이고, 이때 글래스는 [GlassStyle.fallback] 색으로 칠해진다. */
 public val LocalGlassBackdrop: androidx.compose.runtime.ProvidableCompositionLocal<GlassBackdrop?> = staticCompositionLocalOf { null }
 
+// 다이얼로그·시트 같은 팝업 판 안이면 true. 그 안의 글래스는 판 위에 얹힌 한 겹으로 그린다.
+internal val LocalGlassLayered = staticCompositionLocalOf { false }
+
+private const val LAYERED_ALPHA = 0.06f
+
 /**
  * 이 요소의 그리기 내용을 [backdrop]에 기록한다. 화면에는 평소처럼 그린다.
  *
@@ -126,6 +131,9 @@ public fun Modifier.glass(
     intensity: Float = 1f,
 ): Modifier {
     val blurLayer = rememberGraphicsLayer()
+    // 팝업 판 안에 놓인 글래스가 주변 배경을 그대로 비추면 판을 뚫고 뒤 화면이 또렷하게 보인다.
+    // 그래서 따로 배경을 넘기지 않았다면 판 위에 한 겹 얹힌 유리처럼 옅은 색만 덮는다.
+    val layered = LocalGlassLayered.current && backdrop === LocalGlassBackdrop.current
     val position = remember { PositionHolder() }
     val effects = remember { EffectCache() }
     return this
@@ -140,7 +148,10 @@ public fun Modifier.glass(
             drawOuterShadow(outline, style, level, effects)
             val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             clipOutline(outline) {
-                if (canBlur && backdrop != null) {
+                if (layered) {
+                    drawRect(style.tint.copy(alpha = style.tint.alpha * level))
+                    drawRect(style.onGlass.copy(alpha = LAYERED_ALPHA * level))
+                } else if (canBlur && backdrop != null) {
                     val at = if (backdrop.rootRelative) position.root else position.offset
                     drawBackdrop(backdrop, Sampler(blurLayer, effects, at), style, outline, level)
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))

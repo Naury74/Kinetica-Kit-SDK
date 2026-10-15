@@ -252,7 +252,11 @@ private fun BoxScope.DrawerPanel(
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start))
             .padding(vertical = 12.dp),
     ) {
-        CompositionLocalProvider(LocalGlassContentColor provides look.style.onGlass, LocalGlassBackdrop provides look.backdrop) {
+        CompositionLocalProvider(
+            LocalGlassContentColor provides look.style.onGlass,
+            LocalGlassBackdrop provides look.backdrop,
+            LocalGlassLayered provides true,
+        ) {
             drawerContent()
         }
     }
