@@ -25,12 +25,14 @@
 - 그라디언트 애니메이션, 서버 화면 etag 저장과 서명 확인, 보드에 같은 위젯 여러 개 두기, 키보드 편집
 - 보드 정리: 뺀 위젯의 id를 다시 쓰지 않음(`itemIds`), XML 상태 저장과 길게 누르기, RTL 언어 지원, 위로 끌면 열리는 Windows식 스냅 레이아웃 선택(`SnapLayouts`)
 - 장면: 접근성 정보(`NodeAccessibility`), 숫자 서식(`TextNumberFormat`), 동작에 값 넘기기(`SceneAction.parse("name?key=value")`), 잘못된 문서 저장 거부(`SceneCodec.validate`), 숫자 올라가는 애니메이션, pressed 상태 변형, 재생기의 "애니메이션 삭제" 대응, XML 재생기 `KineticaPlayerView`
-- 편집기: 효과 미리보기, 밝은 테마(`StudioTheme.light`/`system`)
+- 편집기: 효과 미리보기, 밝은 테마(`StudioTheme.light`/`system`), 여러 노드를 한꺼번에 크기 조절·회전(`TransformOps.resizeMany`/`rotateMany`)
+- 그리기: 반투명 그룹을 레이어 하나로 합성해 겹친 자식이 더 진해 보이지 않음, API 26·27에서도 사진 EXIF 방향 반영
 - `kinetica-ui`(새 모듈): 글래스 UI 키트
   - `GlassScaffold`, `GlassSurface`
   - 스타일 8종: Liquid, Acrylic, One UI, Vision, Material, Frosted, Clear와 다크 테마용 변형
   - `GlassDialog`, `GlassSheet`, `GlassToast`, `GlassTabBar`
   - 길게 눌러 여는 메뉴(`glassContextMenu`), `GlassSegmentedControl`, `GlassSwitch`, `GlassSlider`, 당겨서 새로 고침(`GlassRefreshBox`)
   - 카드가 커지며 열리는 상세 화면(`GlassExpandHost`), iOS식으로 밀어 넣는 화면 이동(`PushNavigation`, 가장자리 스와이프와 예측 뒤로 가기 지원)
+  - 슬라이더·스위치·세그먼트 `enabled`, 슬라이더 키보드 조절, RTL 배치, TalkBack 문구(영어·한국어)
   - 고급 효과: `glowBorder`, `jellyPress`, `magnetic`, `motionTilt`, `RollingText`, `TypewriterText`, `ConfettiHost`
 - 샘플: 샘플 앱을 `sample-showcase` 하나로 합침(글래스 UI, 모션 효과, 대시보드 보드, 화면 이동, 장면 전환, 서버 화면, 화면 만들기, XML 화면 예). 소비자 확인 빌드 추가
