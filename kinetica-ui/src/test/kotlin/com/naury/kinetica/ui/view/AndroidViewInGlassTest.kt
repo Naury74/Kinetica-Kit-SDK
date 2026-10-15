@@ -45,8 +45,8 @@ import com.naury.kinetica.ui.GlassSheet
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.GlassSurface
 import com.naury.kinetica.ui.glassBackdrop
-import com.naury.kinetica.ui.rememberDetentSheetState
 import com.naury.kinetica.ui.rememberGlassBackdrop
+import com.naury.kinetica.ui.rememberGlassDetentSheetState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -160,7 +160,7 @@ class AndroidViewInGlassTest {
                         AndroidView({ WebView(it).also(views::add) }, Modifier.fillMaxSize())
                     }
                 }
-                GlassDetentSheet(rememberDetentSheetState(initialDetent = Detent.Full)) {
+                GlassDetentSheet(rememberGlassDetentSheetState(initialDetent = Detent.Full)) {
                     AndroidView({ context -> tallScroll(context).also(views::add) }, Modifier.fillMaxSize())
                 }
             }

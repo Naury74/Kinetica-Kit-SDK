@@ -4,6 +4,7 @@ import android.os.Looper
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import com.google.common.truth.Truth.assertThat
 import com.naury.kinetica.core.geometry.Size
@@ -13,6 +14,7 @@ import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -24,6 +26,10 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "w400dp-h800dp-mdpi")
 class KineticaPlayerViewTest {
+    // Compose 프레임을 테스트 시계로 돌린다. 기본 프레임 시계는 다른 테스트 뒤에 실행되면 프레임을 받지 못한다.
+    @get:Rule
+    val compose = createEmptyComposeRule()
+
     @Test
     fun `XML 화면 재생기가 호스트 View를 넣고 동작을 알린다`() {
         val slot = SceneNode(NodeId("chart"), NodeContent.HostSlot(Size(500.0, 300.0), "chart"))
@@ -48,6 +54,7 @@ class KineticaPlayerViewTest {
                 player.setOnActionListener { actions += it }
                 player.setDocument(document)
                 shadowOf(Looper.getMainLooper()).idle()
+                compose.waitForIdle()
 
                 val chart = player.findViewWithTag<TextView>("chart")
                 assertThat(chart.text.toString()).isEqualTo("host chart")

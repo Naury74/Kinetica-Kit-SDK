@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 앱 테마에서 모든 GlassSurfaceView의 기본 스타일을 정하는 테마 속성. 예: <item name="kinetica_glassSurfaceViewStyle">@style/MyGlass</item> -->
+    <attr name="kinetica_glassSurfaceViewStyle" format="reference" />
+
     <!-- GlassSurfaceView XML 속성. 코드에서 이름이 같은 속성과 같은 역할을 한다. -->
     <declare-styleable name="KineticaGlassSurfaceView">
         <!-- 글래스 스타일. auto는 시스템 다크 모드에 따라 liquid나 liquidDark를 고른다. -->

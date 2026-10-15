@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 앱 테마에서 모든 KineticaPlayerView의 기본 스타일을 정하는 테마 속성. -->
+    <attr name="kinetica_playerViewStyle" format="reference" />
+
     <!-- KineticaPlayerView XML 속성. 코드에서 이름이 같은 속성과 같은 역할을 한다. -->
     <declare-styleable name="KineticaPlayerView">
         <!-- 장면을 영역에 맞추는 방식. -->

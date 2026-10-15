@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 앱 테마에서 모든 KineticaBoardView의 기본 스타일을 정하는 테마 속성. -->
+    <attr name="kinetica_boardViewStyle" format="reference" />
+
     <!-- KineticaBoardView XML 속성. 코드에서 이름이 같은 속성과 같은 역할을 한다. -->
     <declare-styleable name="KineticaBoardView">
         <!-- 처음부터 편집 모드로 연다. -->

@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
@@ -60,6 +61,13 @@ import kotlinx.coroutines.launch
  * Float, Bounce, Glow 같은 효과의 거리 값은 dp다. 시스템의 '애니메이션 삭제' 설정(애니메이터 배율 0)이 켜져 있으면 등장 애니메이션과
  * 반복 애니메이션은 재생하지 않는다.
  *
+ * 수정자 체인의 맨 앞, 적어도 `background`, `clip`, `clickable`보다 앞에 둔다. 그래야 크기와 기울기 변화가 배경과 리플까지 함께 움직이고,
+ * Dim이나 Ripple이 배경 위에 덮인다. 뒤에 두면 클릭은 그대로 되지만 배경은 움직이지 않는다.
+ *
+ * ```kotlin
+ * Button(onClick = ::buy, modifier = Modifier.kineticaEffects(EffectPresets.button, CircleShape)) { Text("구매") }
+ * ```
+ *
  * @param shape 리플, 어둡게 덮기, Glow에 쓸 모양. 둥근 버튼이면 버튼과 같은 모양을 넘긴다.
  * @param enabled `false`면 효과 없이 그대로 그린다. 편집 화면 등에서 쓴다.
  */
@@ -72,11 +80,12 @@ public fun Modifier.kineticaEffects(effects: NodeEffects, shape: Shape = Rectang
 internal fun Modifier.nodeEffects(effects: NodeEffects, shape: Shape, enabled: Boolean, unitPx: Float): Modifier {
     if (!enabled || effects.isEmpty) return this
     val reduced = rememberReducedMotion()
+    val cache = remember { EffectDrawCache() }
     val running = RunningEffects(
+        cache = cache,
         effects = effects,
         appear = appearProgress(effects.appear.takeUnless { reduced }),
         loop = loopProgress(effects.loop.takeUnless { reduced }),
-        press = remember { PressState() },
         appearBlur = effects.appear?.kind == AppearKind.Blur && !reduced,
         unitPx = unitPx,
     )
@@ -102,13 +111,14 @@ private fun Modifier.watchPress(press: PressState, scope: kotlinx.coroutines.Cor
 
 /** 재생 중인 효과. 값은 그리기 단계에서 읽으므로 재구성 없이 프레임마다 반영된다. */
 private class RunningEffects(
+    val cache: EffectDrawCache,
     val effects: NodeEffects,
     val appear: State<Float>,
     val loop: State<Float>?,
-    val press: PressState,
     val unitPx: Float,
     val appearBlur: Boolean,
 ) {
+    val press: PressState get() = cache.press
     private val kinds = effects.press.associateBy { it.kind }
 
     init {
@@ -116,7 +126,8 @@ private class RunningEffects(
     }
 
     fun applyTo(layer: androidx.compose.ui.graphics.GraphicsLayerScope, shape: Shape) {
-        val transform = EffectTransform().apply {
+        val transform = cache.transform.apply {
+            reset()
             applyAppear(effects.appear?.kind, appear.value, unitPx * SLIDE_DISTANCE)
             loop?.let { applyLoop(effects.loop, it.value, unitPx) }
             applyPress(kinds, press, unitPx)
@@ -152,15 +163,71 @@ private class RunningEffects(
     fun draw(scope: ContentDrawScope, shape: Shape) = with(scope) {
         val looping = effects.loop
         val t = loop?.value
-        if (looping?.kind == LoopKind.Glow && t != null) drawGlow(shape, looping, t, unitPx)
-        if (looping?.kind == LoopKind.Ping && t != null) drawPing(shape, looping, t, unitPx)
+        if (looping?.kind == LoopKind.Glow && t != null) drawGlow(cache, shape, looping, t, unitPx)
+        if (looping?.kind == LoopKind.Ping && t != null) drawPing(cache.path(this, shape), looping, t, unitPx)
         drawContent()
-        if (looping?.kind == LoopKind.Shimmer && t != null) drawShimmer(looping, t)
+        if (looping?.kind == LoopKind.Shimmer && t != null) drawShimmer(cache, looping, t)
         kinds[PressKind.Dim]?.let { dim ->
-            drawShape(shape, (dim.color?.toColor() ?: Color.Black).copy(alpha = dim.resolvedAmount.toFloat() * press.amount.value))
+            val color = (dim.color?.toColor() ?: Color.Black).copy(alpha = dim.resolvedAmount.toFloat() * press.amount.value)
+            if (color.alpha > 0f) clipPath(cache.path(this, shape)) { drawRect(color) }
         }
-        kinds[PressKind.Ripple]?.let { ripple -> drawRipple(shape, press, ripple.color?.toColor(), ripple.resolvedAmount.toFloat()) }
+        kinds[PressKind.Ripple]?.let { ripple ->
+            drawRipple(cache.path(this, shape), press, ripple.color?.toColor(), ripple.resolvedAmount.toFloat())
+        }
         kinds[PressKind.Burst]?.let { burst -> drawBurst(burst, press.burst.value, unitPx) }
+    }
+}
+
+/**
+ * 프레임마다 객체를 만들지 않도록 모양 경로, 붓, Paint를 보관한다. 크기나 모양이 바뀔 때만 새로 만든다.
+ * 목록에 효과를 수백 개 붙여도 프레임마다 쓰레기가 생기지 않게 하려는 것이다.
+ */
+private class EffectDrawCache {
+    val transform = EffectTransform()
+    val press = PressState()
+    private val outline = androidx.compose.ui.graphics.Path()
+    private var outlineSize = androidx.compose.ui.geometry.Size.Unspecified
+    private var outlineDirection: androidx.compose.ui.unit.LayoutDirection? = null
+    private var outlineShape: Shape? = null
+    private var shimmerBrush: Brush? = null
+    private var shimmerSize = androidx.compose.ui.geometry.Size.Unspecified
+    private var shimmerColor = Color.Unspecified
+    private val glow = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private var glowRadius = -1f
+
+    fun path(scope: ContentDrawScope, shape: Shape): androidx.compose.ui.graphics.Path {
+        if (scope.size != outlineSize || scope.layoutDirection != outlineDirection || shape != outlineShape) {
+            outlineSize = scope.size
+            outlineDirection = scope.layoutDirection
+            outlineShape = shape
+            outline.reset()
+            outline.addOutline(shape.createOutline(scope.size, scope.layoutDirection, scope))
+        }
+        return outline
+    }
+
+    fun shimmer(size: androidx.compose.ui.geometry.Size, color: Color, amount: Float, band: Float): Brush {
+        val tint = color.copy(alpha = amount)
+        val cached = shimmerBrush
+        if (cached != null && size == shimmerSize && tint == shimmerColor) return cached
+        shimmerSize = size
+        shimmerColor = tint
+        return Brush.linearGradient(
+            listOf(Color.Transparent, tint, Color.Transparent),
+            start = Offset.Zero,
+            end = Offset(band * 2, size.height),
+        ).also { shimmerBrush = it }
+    }
+
+    /** 블러 반경은 1px 단위로 바꿔서 BlurMaskFilter를 프레임마다 새로 만들지 않게 한다. */
+    fun glowPaint(argb: Int, radius: Float): android.graphics.Paint {
+        val rounded = kotlin.math.ceil(radius)
+        if (rounded != glowRadius) {
+            glowRadius = rounded
+            glow.maskFilter = android.graphics.BlurMaskFilter(rounded, android.graphics.BlurMaskFilter.Blur.OUTER)
+        }
+        glow.color = argb
+        return glow
     }
 }
 
@@ -208,6 +275,16 @@ private class EffectTransform {
     var rotationX = 0f
     var rotationY = 0f
     var rotationZ = 0f
+
+    fun reset() {
+        scale = 1f
+        alpha = 1f
+        x = 0f
+        y = 0f
+        rotationX = 0f
+        rotationY = 0f
+        rotationZ = 0f
+    }
 
     // 효과 종류마다 분기가 하나씩이다. 함수를 나누면 어느 효과가 어떤 값을 바꾸는지 알아보기 어려워진다.
     @Suppress("CyclomaticComplexMethod")
@@ -348,48 +425,33 @@ private class PressState {
     }
 }
 
-private fun ContentDrawScope.drawShape(shape: Shape, color: Color) {
-    if (color.alpha <= 0f) return
-    val path = androidx.compose.ui.graphics.Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawShape)) }
-    clipPath(path) { drawRect(color) }
-}
-
-private fun ContentDrawScope.drawRipple(shape: Shape, press: PressState, color: Color?, opacity: Float) {
+private fun ContentDrawScope.drawRipple(path: androidx.compose.ui.graphics.Path, press: PressState, color: Color?, opacity: Float) {
     val p = press.ripple.value
     // 누르는 동안은 퍼진 상태를 유지하고, 손을 떼면 다 퍼진 뒤 페이드 아웃된다.
     val fade = if (press.down) 1f else press.amount.value
     if (p <= 0f || fade <= 0f) return
     val radius = hypot(size.width, size.height) * p
-    val path = androidx.compose.ui.graphics.Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawRipple)) }
     clipPath(path) { drawCircle((color ?: Color.Black).copy(alpha = opacity * fade), radius, press.origin) }
 }
 
-private fun ContentDrawScope.drawShimmer(loop: LoopEffect, t: Float) {
+private fun ContentDrawScope.drawShimmer(cache: EffectDrawCache, loop: LoopEffect, t: Float) {
     val band = size.width * SHIMMER_BAND
     val start = -band + (size.width + 2 * band) * t
-    val color = loop.color?.toColor() ?: Color.White
-    val brush = Brush.linearGradient(
-        listOf(Color.Transparent, color.copy(alpha = loop.resolvedAmount.toFloat()), Color.Transparent),
-        start = Offset(start - band, 0f),
-        end = Offset(start + band, size.height),
-    )
-    drawRect(brush, blendMode = androidx.compose.ui.graphics.BlendMode.SrcAtop)
+    val brush = cache.shimmer(size, loop.color?.toColor() ?: Color.White, loop.resolvedAmount.toFloat(), band)
+    // 붓은 크기가 바뀔 때만 만들고, 프레임마다 옮겨 그린다.
+    val left = start - band
+    translate(left = left) {
+        drawRect(brush, topLeft = Offset(-left, 0f), size = size, blendMode = androidx.compose.ui.graphics.BlendMode.SrcAtop)
+    }
 }
 
-private fun ContentDrawScope.drawGlow(shape: Shape, loop: LoopEffect, t: Float, unitPx: Float) {
+private fun ContentDrawScope.drawGlow(cache: EffectDrawCache, shape: Shape, loop: LoopEffect, t: Float, unitPx: Float) {
     val wave = sin(PI * t).toFloat()
     val radius = loop.resolvedAmount.toFloat() * unitPx * (GLOW_MIN + (1f - GLOW_MIN) * wave * wave)
     if (radius <= 0f) return
     val color = loop.color?.toColor() ?: Color.White
-    val outline = shape.createOutline(size, layoutDirection, this)
-    val path = androidx.compose.ui.graphics.Path().apply { addOutline(outline) }
-    drawContext.canvas.nativeCanvas.drawPath(
-        path.asAndroidPath(),
-        android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            this.color = color.copy(alpha = color.alpha * GLOW_ALPHA).toArgb()
-            maskFilter = android.graphics.BlurMaskFilter(radius, android.graphics.BlurMaskFilter.Blur.OUTER)
-        },
-    )
+    val paint = cache.glowPaint(color.copy(alpha = color.alpha * GLOW_ALPHA).toArgb(), radius)
+    drawContext.canvas.nativeCanvas.drawPath(cache.path(this, shape).asAndroidPath(), paint)
 }
 
 /** 한 주기 앞부분에서 두 번 뛰는 크기 변화(0..1). */
@@ -401,16 +463,18 @@ private fun heartbeat(t: Float): Float {
     return maxOf(beat(0f), beat(SECOND_BEAT) * SECOND_BEAT_STRENGTH)
 }
 
-private fun ContentDrawScope.drawPing(shape: Shape, loop: LoopEffect, t: Float, unitPx: Float) {
+private fun ContentDrawScope.drawPing(path: androidx.compose.ui.graphics.Path, loop: LoopEffect, t: Float, unitPx: Float) {
     val distance = loop.resolvedAmount.toFloat() * unitPx
     if (distance <= 0f || size.width <= 0f || size.height <= 0f) return
     val color = loop.color?.toColor() ?: ACCENT
-    val path = androidx.compose.ui.graphics.Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawPing)) }
-    listOf(t, (t + HALF) % 1f).forEach { phase ->
-        val grow = distance * phase
-        withTransform({ scale((size.width + 2 * grow) / size.width, (size.height + 2 * grow) / size.height, center) }) {
-            drawPath(path, color.copy(alpha = color.alpha * PING_ALPHA * (1f - phase)))
-        }
+    drawPingRing(path, color, distance, t)
+    drawPingRing(path, color, distance, (t + HALF) % 1f)
+}
+
+private fun ContentDrawScope.drawPingRing(path: androidx.compose.ui.graphics.Path, color: Color, distance: Float, phase: Float) {
+    val grow = distance * phase
+    withTransform({ scale((size.width + 2 * grow) / size.width, (size.height + 2 * grow) / size.height, center) }) {
+        drawPath(path, color.copy(alpha = color.alpha * PING_ALPHA * (1f - phase)))
     }
 }
 

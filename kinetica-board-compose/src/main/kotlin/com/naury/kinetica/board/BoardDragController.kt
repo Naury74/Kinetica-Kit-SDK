@@ -199,13 +199,18 @@ internal data class BoardFrame(
     val viewportHeight: Double = 0.0,
     val bottomInset: Double = 0.0,
     val scrollTop: () -> Double = { 0.0 },
+    /** 보드 바깥 상자에서 창에 실제로 보이는 세로 범위(문서 단위). `null`이면 전부 보인다고 본다. 컴포지션 밖에서 필요할 때 읽는다. */
+    val clip: () -> ClosedFloatingPointRange<Double>? = { null },
     /** 1dp에 해당하는 문서 단위. */
     val unit: Double = KineticaBoardState.UNITS,
 ) {
     val visible: Rect
         get() {
             val top = scrollTop()
-            return Rect(0.0, top, mapping.displayWidth, top + viewportHeight - bottomInset)
+            val shown = clip()
+            val visibleTop = top + (shown?.start ?: 0.0)
+            val visibleBottom = top + minOf(viewportHeight - bottomInset, shown?.endInclusive ?: Double.MAX_VALUE)
+            return Rect(0.0, visibleTop, mapping.displayWidth, maxOf(visibleTop, visibleBottom))
         }
 }
 

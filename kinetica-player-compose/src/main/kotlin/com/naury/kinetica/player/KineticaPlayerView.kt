@@ -42,10 +42,16 @@ public fun interface OnSceneActionListener {
  * ```
  *
  * 문서, 로더, 데이터는 메인 스레드에서 바꾼다. [setLoader]로 로더를 지정하면 바로 서버에서 받아 오고, 다시 받으려면 [refresh]를 호출한다.
- * XML 속성: `app:kinetica_fit`(`contain`, `responsive`), `app:kinetica_autoplay`(boolean).
+ * XML 속성: `app:kinetica_fit`(`contain`, `responsive`), `app:kinetica_autoplay`(boolean). 앱 테마의 `kinetica_playerViewStyle`에
+ * 스타일을 지정하면 모든 재생기의 기본값이 된다. 코드로 만들면 `contain`, 자동 재생이다.
+ * Fragment 안에서는 `onViewCreated`마다 문서와 리스너를 다시 지정한다. View를 새로 만들면 호스트 View도 [SceneViewFactory]로 다시 만든다.
  */
-public class KineticaPlayerView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
-    FrameLayout(context, attrs, defStyleAttr) {
+public class KineticaPlayerView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = R.attr.kinetica_playerViewStyle,
+    defStyleRes: Int = 0,
+) : FrameLayout(context, attrs, defStyleAttr, defStyleRes) {
     private var source by mutableStateOf<Source?>(null)
     private var dataState by mutableStateOf(SceneData.Empty)
     private var factory by mutableStateOf<SceneViewFactory?>(null)
@@ -76,7 +82,7 @@ public class KineticaPlayerView @JvmOverloads constructor(context: Context, attr
         }
 
     init {
-        context.obtainStyledAttributes(attrs, R.styleable.KineticaPlayerView, defStyleAttr, 0).apply {
+        context.obtainStyledAttributes(attrs, R.styleable.KineticaPlayerView, defStyleAttr, defStyleRes).apply {
             try {
                 if (getInt(R.styleable.KineticaPlayerView_kinetica_fit, 0) == 1) fitState = SceneFit.Responsive
                 autoplayState = getBoolean(R.styleable.KineticaPlayerView_kinetica_autoplay, true)

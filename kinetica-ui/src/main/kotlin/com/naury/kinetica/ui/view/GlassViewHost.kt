@@ -74,6 +74,18 @@ internal class GlassViewHost private constructor(private val activity: Component
     internal val usesFallback: Boolean get() = backdrop?.hasSurface == true
     private val activityObserver = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_DESTROY) destroy() }
 
+    // 앱이 android.R.id.content에 Fragment나 View를 나중에 넣으면 오버레이보다 위에 그려진다. 배치가 끝날 때마다 맨 위로 되돌린다.
+    private val keepOnTop = android.view.ViewTreeObserver.OnGlobalLayoutListener {
+        if (!destroyed && content.indexOfChild(this) != content.childCount - 1) {
+            bringToFront()
+            updateHiddenSiblings()
+        }
+    }
+
+    /** 마지막으로 그린, 스타일을 지정하지 않은 창의 기본 스타일. 테스트에서 다크 모드 전환이 반영됐는지 확인할 때 쓴다. */
+    internal var drawnFallbackStyle: GlassStyle? = null
+        private set
+
     init {
         id = R.id.kinetica_ui_glass_host
         setViewTreeLifecycleOwner(activity)
@@ -128,7 +140,13 @@ internal class GlassViewHost private constructor(private val activity: Component
         destroy()
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        viewTreeObserver.addOnGlobalLayoutListener(keepOnTop)
+    }
+
     override fun onDetachedFromWindow() {
+        viewTreeObserver.removeOnGlobalLayoutListener(keepOnTop)
         super.onDetachedFromWindow()
         // 앱이 setContentView를 다시 불러 오버레이가 떨어진 경우에도 창을 정리해 핸들이 열린 채로 남지 않게 한다.
         destroy()
@@ -175,13 +193,14 @@ internal class GlassViewHost private constructor(private val activity: Component
         backdrop = viewBackdrop
         val night = isSystemInDarkTheme()
         val fallbackStyle = if (night) GlassStyles.LiquidDark else GlassStyles.Liquid
+        drawnFallbackStyle = fallbackStyle
         // 시트와 다이얼로그가 새 창을 띄우지 않고 이 오버레이 안에 그려지도록 GlassScaffold와 같은 오버레이 레이어를 준다.
         val overlay = remember { GlassOverlayHost() }
         CompositionLocalProvider(LocalGlassBackdrop provides viewBackdrop.usable, LocalGlassHost provides overlay) {
             Box(Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize().focusRequester(overlay.background).focusGroup())
                 entries.forEach { entry -> key(entry) { Entry(entry, entry.options.style ?: fallbackStyle) } }
-                GlassToastHost(toasts, fallbackStyle)
+                GlassToastHost(toasts, style = fallbackStyle)
                 OverlayLayer(overlay)
             }
         }

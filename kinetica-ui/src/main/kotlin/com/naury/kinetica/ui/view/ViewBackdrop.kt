@@ -71,23 +71,50 @@ internal fun rememberViewBackdrop(target: View): ViewBackdrop {
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
     DisposableEffect(target, state, density, direction) {
-        val observer = target.viewTreeObserver
-        // 프레임마다 그리기 직전에 다시 기록한다. 여기서 기록하면 Compose 상태를 바꾸지 않으므로 다음 프레임을 또 부르지 않는다.
-        val preDraw = ViewTreeObserver.OnPreDrawListener {
-            state.record(target, density, direction)
-            true
-        }
-        val layout = ViewTreeObserver.OnGlobalLayoutListener { state.markTreeChanged() }
-        observer.addOnPreDrawListener(preDraw)
-        observer.addOnGlobalLayoutListener(layout)
-        state.record(target, density, direction)
+        val registration = BackdropRegistration(target, state, density, direction)
+        // RecyclerView 풀에 들어간 항목처럼 창에서 떨어져도 컴포지션이 살아 있을 수 있다. 떨어진 동안에는 기록을 멈춘다.
+        target.addOnAttachStateChangeListener(registration)
+        if (target.isAttachedToWindow) registration.onViewAttachedToWindow(target)
         onDispose {
-            val current = if (observer.isAlive) observer else target.viewTreeObserver
-            current.removeOnPreDrawListener(preDraw)
-            current.removeOnGlobalLayoutListener(layout)
+            target.removeOnAttachStateChangeListener(registration)
+            registration.onViewDetachedFromWindow(target)
         }
     }
     return state
+}
+
+/** 창에 붙어 있는 동안만 [target]의 ViewTreeObserver에 프레임마다 기록하는 리스너를 단다. */
+private class BackdropRegistration(
+    private val target: View,
+    private val state: ViewBackdrop,
+    private val density: Density,
+    private val direction: LayoutDirection,
+) : View.OnAttachStateChangeListener {
+    private var observer: ViewTreeObserver? = null
+
+    // 프레임마다 그리기 직전에 다시 기록한다. 여기서 기록하면 Compose 상태를 바꾸지 않으므로 다음 프레임을 또 부르지 않는다.
+    private val preDraw = ViewTreeObserver.OnPreDrawListener {
+        state.record(target, density, direction)
+        true
+    }
+    private val layout = ViewTreeObserver.OnGlobalLayoutListener { state.markTreeChanged() }
+
+    override fun onViewAttachedToWindow(v: View) {
+        if (observer != null) return
+        val current = target.viewTreeObserver
+        current.addOnPreDrawListener(preDraw)
+        current.addOnGlobalLayoutListener(layout)
+        observer = current
+        state.markTreeChanged()
+        state.record(target, density, direction)
+    }
+
+    override fun onViewDetachedFromWindow(v: View) {
+        val current = observer?.takeIf { it.isAlive } ?: target.viewTreeObserver
+        current.removeOnPreDrawListener(preDraw)
+        current.removeOnGlobalLayoutListener(layout)
+        observer = null
+    }
 }
 
 /** [target]의 조상마다, 그 조상 안에서 [target]을 품은 자식보다 먼저 그려지는 형제 View들. */
@@ -140,15 +167,39 @@ internal fun drawViewsBehind(target: View, canvas: Canvas) {
         val saved = canvas.save()
         canvas.translate((location[0] - targetLocation[0]).toFloat(), (location[1] - targetLocation[1]).toFloat())
         canvas.clipRect(0, 0, group.width, group.height)
-        group.background?.draw(canvas)
+        group.background?.let { background ->
+            // View는 처음 그릴 때 배경 크기를 정한다. 그보다 먼저 기록하면 크기가 0이라 배경이 빠지므로 여기서 같은 크기로 맞춘다.
+            val bounds = background.bounds
+            val sized = bounds.left == 0 && bounds.top == 0
+            if (!sized || bounds.right != group.width ||
+                bounds.bottom != group.height
+            ) {
+                background.setBounds(0, 0, group.width, group.height)
+            }
+            background.draw(canvas)
+        }
         canvas.translate(-group.scrollX.toFloat(), -group.scrollY.toFloat())
+        // 목록 항목마다 글래스가 있으면 앞선 항목을 모두 그리게 되므로, target과 겹치지 않는 형제는 건너뛴다.
+        val left = targetLocation[0] - location[0] + group.scrollX
+        val top = targetLocation[1] - location[1] + group.scrollY
+        val area = android.graphics.Rect(left, top, left + target.width, top + target.height)
         for (i in 0 until group.childCount) {
             val sibling = group.getChildAt(i)
             if (sibling === inChain) break
-            drawSibling(canvas, sibling)
+            if (sibling.overlaps(area)) drawSibling(canvas, sibling)
         }
         canvas.restoreToCount(saved)
     }
+}
+
+/** 부모 좌표의 [area]와 겹치는지. 회전이나 크기 변환이 있으면 정확히 계산하지 않고 겹친다고 본다. */
+private fun View.overlaps(area: android.graphics.Rect): Boolean {
+    val rotated = rotation != 0f || rotationX != 0f || rotationY != 0f
+    val scaled = scaleX != 1f || scaleY != 1f
+    if (rotated || scaled) return true
+    val l = left + translationX
+    val t = top + translationY
+    return l < area.right && l + width > area.left && t < area.bottom && t + height > area.top
 }
 
 private fun drawSibling(canvas: Canvas, view: View) {

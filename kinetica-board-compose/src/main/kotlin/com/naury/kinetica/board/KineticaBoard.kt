@@ -8,7 +8,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -48,10 +47,15 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -70,8 +74,10 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.render.SceneLayout
 import com.naury.kinetica.render.SceneSlots
 import kotlin.math.roundToInt
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -132,7 +138,16 @@ private fun BoardBody(
     zoom: Float,
 ) {
     val mirrored = LocalBoardMirrored.current
-    BoxWithConstraints(modifier.clipToBounds()) {
+    val view = LocalView.current
+    val visibility = remember(view) { BoardVisibility(view) }
+    val dispatcher = remember { NestedScrollDispatcher() }
+    val connection = remember { object : NestedScrollConnection {} }
+    BoxWithConstraints(
+        modifier
+            .clipToBounds()
+            .nestedScroll(connection, dispatcher)
+            .onGloballyPositioned { visibility.coordinates = it },
+    ) {
         val gap = gapDp(state.arrangement) * KineticaBoardState.UNITS
         val mapping = BoardMapping(state.arrangement, constraints.maxWidth / zoom.toDouble(), gap, mirrored)
         val stable = stored.rootOrder.associate { id ->
@@ -165,14 +180,22 @@ private fun BoardBody(
             snap = SNAP_DP * KineticaBoardState.UNITS,
             minSize = MIN_WIDGET_DP * KineticaBoardState.UNITS,
             scrollBand = SCROLL_BAND_DP * KineticaBoardState.UNITS,
+            clip = { visibility.visibleDocumentRows(zoom) },
         )
-        AutoScroll(controller, scroll, drag?.key)
+        AutoScroll(controller, scroll, dispatcher, drag?.key)
         // 120Hz에서 프레임을 놓치지 않도록, 드래그하는 동안 다른 위젯 노드는 같은 객체로 유지해 렌더러가 재구성하지 않게 한다.
         val base = remember(state, stored, stable, mapping.displayWidth) { displayDocument(state, stored, stable, mapping.displayWidth) }
         val shown = withDrag(base, drag, contentBottom)
         val longPress = if (!editing && onLongPress != null) Modifier.longPressToEdit(onLongPress) else Modifier
-        Box(Modifier.fillMaxWidth().verticalScroll(scroll, enabled = drag == null).then(longPress)) {
-            Box(Modifier.fillMaxWidth().height(with(LocalDensity.current) { heightPx.toDp() })) {
+        val contentHeight = with(LocalDensity.current) { heightPx.toDp() }
+        Box(
+            Modifier.fillMaxWidth().heightIfUnbounded(constraints.hasBoundedHeight, contentHeight).verticalScroll(
+                scroll,
+                enabled =
+                    drag == null,
+            ).then(longPress),
+        ) {
+            Box(Modifier.fillMaxWidth().height(contentHeight)) {
                 SceneLayout(shown, Viewport(0.0, 0.0, zoom.toDouble()), Modifier.matchParentSize(), slots = slots, interactive = !editing)
                 if (editing) EditLayer(state, stored, stable, drag, zoom, permissions, colors, controller)
             }
@@ -233,24 +256,36 @@ private fun EditLayer(
 
 /** 드래그 중 손가락이 위나 아래 자동 스크롤 영역에 있으면 매 프레임 보드를 스크롤하고 드래그 위치를 보정한다. */
 @Composable
-private fun AutoScroll(controller: BoardDragController, scroll: androidx.compose.foundation.ScrollState, dragging: String?) {
+private fun AutoScroll(
+    controller: BoardDragController,
+    scroll: androidx.compose.foundation.ScrollState,
+    dispatcher: NestedScrollDispatcher,
+    dragging: String?,
+) {
     val speed = with(LocalDensity.current) { AUTO_SCROLL_DP_PER_FRAME.dp.toPx() }
     androidx.compose.runtime.LaunchedEffect(dragging) {
         val key = dragging ?: return@LaunchedEffect
-        // 자동 스크롤 영역 안에 있을 때만 프레임마다 스크롤한다. 끝에 닿으면 프레임을 요청하지 않고 보드가 늘어날 때까지 기다린다.
-        // 손가락이 영역에 막 들어온 순간에는 보드가 아직 늘어나기 전이라 끝에 닿아 있을 수 있다. 이때 멈추면 다시 시작하지 않는다.
-        androidx.compose.runtime.snapshotFlow { controller.scrollDirection }.collectLatest { direction ->
-            while (direction != 0) {
-                androidx.compose.runtime.withFrameNanos { }
-                val moved = scroll.scrollBy(direction * speed)
-                if (moved == 0f) {
-                    if (direction < 0) break
-                    val end = scroll.value
-                    androidx.compose.runtime.snapshotFlow { scroll.maxValue }.first { it > end }
-                } else {
-                    controller.scrolled(key, moved)
+        val usedParent = booleanArrayOf(false)
+        try {
+            // 자동 스크롤 영역 안에 있을 때만 프레임마다 스크롤한다. 보드가 끝에 닿으면 바깥 스크롤 컨테이너에 넘기고, 그것도 끝이면
+            // 프레임을 요청하지 않고 보드가 늘어나거나 손가락이 움직일 때까지 기다린다.
+            // 손가락이 영역에 막 들어온 순간에는 보드가 아직 늘어나기 전이라 끝에 닿아 있을 수 있다. 이때 멈추면 다시 시작하지 않는다.
+            androidx.compose.runtime.snapshotFlow { controller.scrollDirection }.collectLatest { direction ->
+                while (direction != 0) {
+                    androidx.compose.runtime.withFrameNanos { }
+                    val moved = scrollBoardOrParent(scroll, dispatcher, direction * speed, usedParent)
+                    if (moved == 0f) {
+                        if (direction < 0) break
+                        val end = scroll.maxValue
+                        val drag = controller.drag
+                        androidx.compose.runtime.snapshotFlow { scroll.maxValue > end || controller.drag != drag }.first { it }
+                    } else {
+                        controller.scrolled(key, moved)
+                    }
                 }
             }
+        } finally {
+            if (usedParent[0]) withContext(NonCancellable) { finishParentScroll(dispatcher) }
         }
     }
 }
@@ -279,6 +314,9 @@ private fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointe
         }
     }
 }
+
+/** NestedScrollView처럼 높이 제한 없이 재는 부모 안에서는 내용 높이만큼 커지고 스크롤은 부모에게 맡긴다. */
+private fun Modifier.heightIfUnbounded(bounded: Boolean, height: Dp): Modifier = if (bounded) this else height(height)
 
 private fun gapDp(arrangement: BoardArrangement): Float = when (arrangement) {
     is BoardArrangement.Free -> arrangement.gapDp
@@ -350,6 +388,7 @@ private fun WidgetEditFrame(
             }
             .onFocusChanged { focused = it.isFocused }
             .then(modifier)
+            .holdParentTouches(LocalView.current)
             .dragToMove(key, permissions.move, controller),
     ) {
         if (permissions.remove) {
@@ -373,6 +412,7 @@ private fun WidgetEditFrame(
                     .size(BADGE_SIZE)
                     .background(colors.accent, if (mirrored) RoundedCornerShape(topEnd = 12.dp) else RoundedCornerShape(topStart = 12.dp))
                     .semantics { contentDescription = description }
+                    .holdParentTouches(LocalView.current)
                     .pointerInput(key) {
                         detectDragGestures(
                             onDragStart = { local -> controller.start(key, local) },

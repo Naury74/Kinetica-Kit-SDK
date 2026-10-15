@@ -6,8 +6,10 @@ import android.util.SparseArray
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import com.google.common.truth.Truth.assertThat
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -20,6 +22,10 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "w400dp-h800dp-mdpi")
 class KineticaBoardViewTest {
+    // Compose 프레임을 테스트 시계로 돌린다. 기본 프레임 시계는 다른 테스트 뒤에 실행되면 프레임을 받지 못한다.
+    @get:Rule
+    val compose = createEmptyComposeRule()
+
     @Test
     fun `XML 화면에서 호스트 View를 위젯으로 놓고 편집 모드를 바꾼다`() {
         ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
@@ -35,6 +41,7 @@ class KineticaBoardViewTest {
                 }
                 board.isEditing = true
                 shadowOf(Looper.getMainLooper()).idle()
+                compose.waitForIdle()
 
                 val widget = board.findViewWithTag<TextView>("orders")
                 assertThat(widget).isNotNull()
