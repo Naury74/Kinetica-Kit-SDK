@@ -46,12 +46,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.coroutineScope
@@ -82,7 +84,8 @@ public fun GlassTabBar(
     require(tabs.isNotEmpty()) { "tabs가 비어 있으면 안 됩니다." }
     var width by remember { mutableIntStateOf(0) }
     val indicator = remember { LiquidIndicator() }
-    LaunchedEffect(selectedIndex, width, tabs.size) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat()) }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    LaunchedEffect(selectedIndex, width, tabs.size, rtl) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl) }
     Box(
         modifier
             .navigationBarsPadding()

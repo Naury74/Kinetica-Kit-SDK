@@ -42,6 +42,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
@@ -210,15 +213,23 @@ private fun Modifier.dragToDismiss(drag: Animatable<Float, *>, height: () -> Flo
     )
 }
 
-/** 다이얼로그 뒤에 까는 스크림. 서서히 흐려지고 어두워지며, 누르면 닫는다. */
+/** 다이얼로그 뒤에 까는 스크림. 서서히 흐려지고 어두워지며, 누르면 닫는다. TalkBack에서는 "닫기" 버튼으로 읽힌다. */
 @Composable
 internal fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
+    val closeLabel = stringResource(R.string.kinetica_ui_close)
     Box(
         Modifier
             .matchParentSize()
             .glass(GlassStyles.Clear, intensity = level)
             .background(Color.Black.copy(alpha = SCRIM_ALPHA * level))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClickLabel = closeLabel,
+                role = Role.Button,
+                onClick = onDismiss,
+            )
+            .semantics { contentDescription = closeLabel },
     )
 }
 

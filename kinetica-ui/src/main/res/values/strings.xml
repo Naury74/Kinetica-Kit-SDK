@@ -1,0 +1,5 @@
+<resources>
+    <string name="kinetica_ui_refresh">Refresh</string>
+    <string name="kinetica_ui_refreshing">Refreshing</string>
+    <string name="kinetica_ui_close">Close</string>
+</resources>

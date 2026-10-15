@@ -55,7 +55,7 @@ GlassScaffold(
 | `Modifier.glassContextMenu(items)` | 길게 누르면 햅틱과 함께 요소가 떠오르고 배경이 흐려지며, 요소 위나 아래에 글래스 메뉴(`GlassMenuItem`)가 뜬다. `destructive` 항목은 빨간 글자로 보인다. TalkBack에서는 사용자 정의 동작으로 제공한다 |
 | `GlassSegmentedControl(options, selectedIndex, onSelect)` | 선택한 칸의 인디케이터가 늘어났다 줄어들며 이동하는 세그먼트 버튼 |
 | `GlassSwitch(checked, onCheckedChange)` | 누르는 동안 손잡이가 늘어나고, 출렁이며 반대쪽으로 넘어가는 iOS 26 스타일 스위치 |
-| `GlassSlider(value, onValueChange, valueRange, steps)` | 잡으면 트랙이 굵어지고 손잡이가 투명하게 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다. TalkBack으로도 값을 조절할 수 있다 |
+| `GlassSlider(value, onValueChange, valueRange, steps)` | 잡으면 트랙이 굵어지고 손잡이가 투명하게 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다. 가로로 움직여야 드래그로 보므로 세로 목록 스크롤을 막지 않는다. 방향키와 TalkBack으로도 조절할 수 있고 `enabled = false`로 끌 수 있다 |
 | `GlassRefreshBox(refreshing, onRefresh) { LazyColumn { … } }` | 맨 위에서 당기면 콘텐츠가 저항감 있게 내려오고 글래스 물방울이 차오른다. 기준 거리를 넘으면 햅틱과 함께 물방울이 길쭉해지고, 놓으면 새로 고친다. TalkBack에서는 "새로 고침" 동작으로 제공한다 |
 
 ## 화면 이동
@@ -63,7 +63,7 @@ GlassScaffold(
 | 컴포넌트 | 동작 |
 | --- | --- |
 | `GlassExpandHost(state) { key -> 상세 }` + `Modifier.expandSource(state, key)` + `state.expand(key)` | App Store의 투데이 탭처럼 카드가 제자리에서 화면 가득 커지며 상세 화면이 된다. 배경은 흐려지고, 상세 화면을 아래로 끌면 작아지면서 모서리가 둥글어지며, 놓으면 원래 카드 위치로 돌아간다. 상세 화면 위쪽을 카드와 똑같이 꾸미면 끊김 없이 이어진다 |
-| `PushNavigation(stack, onBack) { screen -> … }` | iOS식 push 전환. 새 화면이 옆에서 들어오고 아래 화면은 조금 물러나며 어두워진다. 왼쪽 가장자리에서 끌거나 예측 뒤로 가기 제스처를 하면 손가락을 따라 되돌아간다. 아래 화면의 `rememberSaveable` 상태(스크롤 위치 등)는 유지된다. RTL 언어에서는 방향이 반대가 된다 |
+| `PushNavigation(stack, onBack) { screen -> … }` | iOS식 push 전환. 새 화면이 옆에서 들어오고 아래 화면은 조금 물러나며 어두워진다. 왼쪽 가장자리에서 끌거나 예측 뒤로 가기 제스처를 하면 손가락을 따라 되돌아간다. 아래 화면의 `rememberSaveable` 상태(스크롤 위치 등)는 유지되고, 스택에서 빠진 화면의 상태는 지운다. 같은 화면을 두 번 쌓을 수 없다. 호스트가 `onBack`에서 스택을 바꾸지 않으면 화면이 제자리로 돌아온다. RTL 언어에서는 방향이 반대가 된다. 모든 화면이 같은 ViewModelStoreOwner를 쓰므로 화면별 ViewModel은 `viewModel(key = …)`로 나눈다 |
 
 ```kotlin
 var stack by rememberSaveable { mutableStateOf(listOf("home")) }

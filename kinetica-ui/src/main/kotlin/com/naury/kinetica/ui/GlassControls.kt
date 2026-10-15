@@ -30,10 +30,13 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.sp
  *
  * @param options 항목 이름. 두 개 미만이면 [IllegalArgumentException]을 던진다.
  * @param selectedIndex 선택된 항목의 위치(0부터)
+ * @param enabled `false`면 누를 수 없고 흐리게 그린다.
  */
 @Composable
 public fun GlassSegmentedControl(
@@ -50,12 +54,14 @@ public fun GlassSegmentedControl(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     require(options.size >= 2) { "options는 두 개 이상이어야 합니다." }
     var width by remember { mutableIntStateOf(0) }
     val indicator = remember { LiquidIndicator() }
-    LaunchedEffect(selectedIndex, width, options.size) { indicator.moveTo(selectedIndex, options.size, width.toFloat()) }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    LaunchedEffect(selectedIndex, width, options.size, rtl) { indicator.moveTo(selectedIndex, options.size, width.toFloat(), rtl) }
     Box(modifier.height(SEGMENT_HEIGHT).glass(style, CircleShape).padding(SEGMENT_INSET)) {
         Box(
             Modifier
@@ -83,6 +89,7 @@ public fun GlassSegmentedControl(
                         .fillMaxHeight()
                         .selectable(
                             selected,
+                            enabled = enabled,
                             role = Role.Tab,
                             interactionSource = remember {
                                 MutableInteractionSource()
@@ -96,7 +103,7 @@ public fun GlassSegmentedControl(
                     BasicText(
                         label,
                         style = TextStyle(
-                            color = style.onGlass.copy(alpha = if (selected) 1f else UNSELECTED),
+                            color = style.onGlass.copy(alpha = (if (selected) 1f else UNSELECTED) * (if (enabled) 1f else DISABLED)),
                             fontSize = 14.sp,
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                         ),
@@ -110,12 +117,15 @@ public fun GlassSegmentedControl(
 /**
  * 글래스 스위치. 누르고 있는 동안 손잡이가 옆으로 늘어나고, 켜고 끌 때 iOS 26 스위치처럼 출렁이며 넘어간다.
  * 켜지면 트랙이 [onColor]로 바뀐다.
+ *
+ * @param enabled `false`면 누를 수 없고 흐리게 그린다.
  */
 @Composable
 public fun GlassSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     onColor: Color = Color(ON_GREEN),
     style: GlassStyle = LocalGlassStyle.current,
 ) {
@@ -131,7 +141,15 @@ public fun GlassSwitch(
     Box(
         modifier
             .size(SWITCH_WIDTH, SWITCH_HEIGHT)
-            .toggleable(checked, interactionSource = interaction, indication = null, role = Role.Switch, onValueChange = onCheckedChange)
+            .toggleable(
+                checked,
+                interactionSource = interaction,
+                indication = null,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            )
+            .graphicsLayer { alpha = if (enabled) 1f else DISABLED }
             .drawBehind {
                 drawRoundRect(track, cornerRadius = CornerRadius(size.height / 2))
                 val inset = THUMB_INSET.toPx()
@@ -153,6 +171,7 @@ public fun GlassSwitch(
 private val SEGMENT_HEIGHT = 44.dp
 private val SEGMENT_INSET = 4.dp
 private const val SEGMENT_ALPHA = 0.14f
+private const val DISABLED = 0.4f
 private const val UNSELECTED = 0.6f
 private val SWITCH_WIDTH = 56.dp
 private val SWITCH_HEIGHT = 32.dp

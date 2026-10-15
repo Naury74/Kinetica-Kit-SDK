@@ -12,17 +12,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -30,9 +34,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
@@ -43,14 +50,18 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
@@ -79,7 +90,7 @@ public fun Modifier.glassContextMenu(items: List<GlassMenuItem>, style: GlassSty
             label = "glass-menu",
         ) { if (it) 1f else 0f }
         androidx.activity.compose.BackHandler(enabled = open) { open = false }
-        ContextMenuLayer(bounds, progress, style, latestItems, { open = false }) { drawLayer(layer) }
+        ContextMenuLayer(bounds, progress, transition.targetState, style, latestItems, { open = false }) { drawLayer(layer) }
     }
     return this
         .onGloballyPositioned { bounds = it.boundsInRoot() }
@@ -125,8 +136,9 @@ public fun Modifier.glassContextMenu(items: List<GlassMenuItem>, style: GlassSty
 
 @Composable
 private fun ContextMenuLayer(
-    bounds: Rect,
+    rootBounds: Rect,
     progress: Float,
+    active: Boolean,
     style: GlassStyle,
     items: List<GlassMenuItem>,
     close: () -> Unit,
@@ -134,12 +146,17 @@ private fun ContextMenuLayer(
 ) {
     val level = progress.coerceIn(0f, 1f)
     val density = LocalDensity.current
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    // 오버레이가 루트 (0,0)에 있지 않을 수 있으므로(GlassScaffold 위에 다른 바가 있는 경우) 루트 좌표를 이 상자 좌표로 옮긴다.
+    var origin by remember { mutableStateOf(Offset.Zero) }
+    var menuHeight by remember { mutableIntStateOf(0) }
+    val bounds = rootBounds.translate(-origin)
+    BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionInRoot() }) {
         Scrim(level, close)
-        // 떠오른 요소는 원래 위치에서 살짝 커진다.
+        // 떠오른 요소는 원래 위치에서 살짝 커진다. RTL에서도 물리 좌표 그대로 놓는다.
         Canvas(
             Modifier
-                .offset { IntOffset(bounds.left.roundToInt(), bounds.top.roundToInt()) }
+                .absoluteOffset { IntOffset(bounds.left.roundToInt(), bounds.top.roundToInt()) }
                 .size(with(density) { bounds.width.toDp() }, with(density) { bounds.height.toDp() })
                 .graphicsLayer {
                     val scale = 1f + LIFT_SCALE * progress
@@ -151,45 +168,68 @@ private fun ContextMenuLayer(
                 },
             onDraw = drawTarget,
         )
-        val menuWidthPx = with(density) { MENU_WIDTH.toPx() }
-        val screenWidth = constraints.maxWidth.toFloat()
-        val below = bounds.bottom + with(density) { MENU_GAP.toPx() }
-        val estimatedHeight = with(density) { (ITEM_HEIGHT * items.size + MENU_PADDING * 2).toPx() }
-        val top = if (below + estimatedHeight <=
-            constraints.maxHeight
-        ) {
-            below
-        } else {
-            bounds.top - with(density) { MENU_GAP.toPx() } - estimatedHeight
+        val place = with(density) {
+            menuPlacement(bounds, rtl, Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat()), menuHeight, items.size)
         }
-        val left = bounds.left.coerceIn(
-            with(density) {
-                EDGE.toPx()
-            },
-            (screenWidth - menuWidthPx - with(density) { EDGE.toPx() }).coerceAtLeast(0f),
-        )
         Column(
             Modifier
-                .offset { IntOffset(left.roundToInt(), top.coerceAtLeast(0f).roundToInt()) }
+                .absoluteOffset { IntOffset(place.left.roundToInt(), place.top.roundToInt()) }
                 .width(MENU_WIDTH)
+                .heightIn(max = with(density) { (constraints.maxHeight - EDGE.toPx() * 2).coerceAtLeast(0f).toDp() })
+                .onSizeChanged { menuHeight = it.height }
                 .graphicsLayer {
                     val scale = MENU_START_SCALE + (1f - MENU_START_SCALE) * progress
                     scaleX = scale
                     scaleY = scale
                     alpha = level
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(MENU_ORIGIN_X, if (top >= bounds.bottom) 0f else 1f)
+                    transformOrigin = TransformOrigin(if (rtl) 1f - MENU_ORIGIN_X else MENU_ORIGIN_X, if (place.below) 0f else 1f)
                 }
                 .glass(style.forPopup(), RoundedCornerShape(MENU_CORNER))
+                .verticalScroll(rememberScrollState())
                 .padding(vertical = MENU_PADDING),
         ) {
             items.forEach { item ->
                 MenuRow(item, style) {
-                    close()
-                    item.onClick()
+                    // 닫히는 애니메이션 동안에는 항목이 다시 눌려 동작이 두 번 실행되지 않게 한다.
+                    if (active) {
+                        close()
+                        item.onClick()
+                    }
                 }
             }
         }
     }
+}
+
+private class MenuPlace(val left: Float, val top: Float, val below: Boolean)
+
+/**
+ * 메뉴 위치. 요소 아래에 들어가면 아래, 아니면 위, 둘 다 안 되면 화면 안에 들어가도록 맞춘다. RTL이면 요소의 끝(오른쪽)에 맞춘다.
+ * [measured]가 0이면(첫 프레임) 항목 수로 높이를 어림한다.
+ */
+private fun androidx.compose.ui.unit.Density.menuPlacement(
+    bounds: Rect,
+    rtl: Boolean,
+    screen: Size,
+    measured: Int,
+    count: Int,
+): MenuPlace {
+    val width = screen.width
+    val height = screen.height
+    val menuWidth = MENU_WIDTH.toPx()
+    val gap = MENU_GAP.toPx()
+    val edge = EDGE.toPx()
+    val menuHeight = if (measured > 0) measured.toFloat() else (ITEM_HEIGHT * count + MENU_PADDING * 2).toPx()
+    val below = bounds.bottom + gap
+    val above = bounds.top - gap - menuHeight
+    val top = when {
+        below + menuHeight <= height - edge -> below
+        above >= edge -> above
+        else -> (height - edge - menuHeight).coerceAtLeast(edge)
+    }
+    val start = if (rtl) bounds.right - menuWidth else bounds.left
+    val left = start.coerceIn(edge, (width - menuWidth - edge).coerceAtLeast(edge))
+    return MenuPlace(left, top, top >= bounds.bottom)
 }
 
 @Composable

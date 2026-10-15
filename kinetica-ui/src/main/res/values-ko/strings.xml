@@ -1,0 +1,5 @@
+<resources>
+    <string name="kinetica_ui_refresh">새로 고침</string>
+    <string name="kinetica_ui_refreshing">새로 고치는 중</string>
+    <string name="kinetica_ui_close">닫기</string>
+</resources>

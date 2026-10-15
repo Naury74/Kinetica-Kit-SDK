@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -18,6 +19,8 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,10 +33,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.paneTitle
@@ -52,6 +59,12 @@ import kotlin.math.roundToInt
 @Stable
 public class GlassExpandState internal constructor() {
     internal val sources = mutableStateMapOf<Any, Rect>()
+
+    // 오버레이의 루트 좌표. 다음에 열 때 첫 프레임부터 바로 쓰도록 남겨 둔다.
+    internal var hostOrigin by mutableStateOf(Offset.Zero)
+
+    // 상태를 복원해 다시 열린 경우 애니메이션 없이 열린 채로 보인다.
+    internal var restoredOpen = false
 
     /** 열려 있거나 열리는 중인 카드의 키. 닫히는 중이면 `null`이다. */
     public var expandedKey: Any? by mutableStateOf(null)
@@ -73,15 +86,62 @@ public class GlassExpandState internal constructor() {
     }
 }
 
+/**
+ * 화면 회전이나 프로세스 재시작 뒤에도 열린 카드를 기억하는 [GlassExpandState]를 만든다.
+ * 열린 카드의 키가 `Bundle`에 담을 수 없는 값이면 기억하지 않고 닫힌 상태로 돌아온다.
+ */
 @Composable
-public fun rememberGlassExpandState(): GlassExpandState = remember { GlassExpandState() }
+public fun rememberGlassExpandState(): GlassExpandState = rememberSaveable(saver = ExpandSaver) { GlassExpandState() }
 
-/** 이 요소를 [key] 카드의 원래 위치로 등록한다. 카드가 열려 있는 동안에는 커진 카드가 대신 보이므로 이 요소를 숨긴다. */
-public fun Modifier.expandSource(state: GlassExpandState, key: Any): Modifier = onGloballyPositioned {
-    val bounds = it.boundsInRoot()
-    if (state.sources[key] != bounds) state.sources[key] = bounds
+private val ExpandSaver = Saver<GlassExpandState, Any>(
+    save = { state -> state.expandedKey?.takeIf { canBeSaved(it) } ?: NOTHING_OPEN },
+    restore = { key ->
+        GlassExpandState().apply {
+            if (key != NOTHING_OPEN) {
+                restoredOpen = true
+                expand(key)
+            }
+        }
+    },
+)
+
+private const val NOTHING_OPEN = "kinetica.expand.none"
+
+/**
+ * 이 요소를 [key] 카드의 원래 위치로 등록한다. 카드가 열려 있는 동안에는 커진 카드가 대신 보이므로 이 요소를 숨긴다.
+ * 요소가 화면에서 빠지면(목록에서 스크롤되어 사라지는 등) 등록을 지우고, 그때 닫으면 화면 가운데로 줄어든다.
+ */
+public fun Modifier.expandSource(state: GlassExpandState, key: Any): Modifier =
+    this then ExpandSourceElement(state, key) then Modifier.graphicsLayer { alpha = if (state.activeKey == key) 0f else 1f }
+
+private data class ExpandSourceElement(val state: GlassExpandState, val key: Any) : ModifierNodeElement<ExpandSourceNode>() {
+    override fun create(): ExpandSourceNode = ExpandSourceNode(state, key)
+
+    override fun update(node: ExpandSourceNode) {
+        if (node.key != key || node.state !== state) node.forget()
+        node.state = state
+        node.key = key
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "expandSource"
+    }
 }
-    .graphicsLayer { alpha = if (state.activeKey == key) 0f else 1f }
+
+private class ExpandSourceNode(var state: GlassExpandState, var key: Any) :
+    Modifier.Node(),
+    GlobalPositionAwareModifierNode {
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        val bounds = coordinates.boundsInRoot()
+        if (state.sources[key] != bounds) state.sources[key] = bounds
+    }
+
+    override fun onDetach() = forget()
+
+    fun forget() {
+        state.sources.remove(key)
+    }
+}
 
 /**
  * 열린 카드의 상세 화면을 그린다. 카드 위치에서 화면 전체로 커지면서 모서리가 펴지고, 배경은 흐려진다.
@@ -103,7 +163,7 @@ public fun GlassExpandHost(
 ) {
     val active = state.activeKey ?: return
     val open = state.expandedKey != null
-    val progress = remember(active) { Animatable(0f) }
+    val progress = remember(active) { Animatable(if (state.restoredOpen) 1f else 0f).also { state.restoredOpen = false } }
     val drag = remember(active) { DragOffset() }
     val scope = rememberCoroutineScope()
     LaunchedEffect(active, open) {
@@ -112,8 +172,6 @@ public fun GlassExpandHost(
         if (!open) state.activeKey = null
     }
     BackHandler(enabled = open) { state.collapse() }
-    var origin by remember { mutableStateOf(Offset.Zero) }
-    var bounds by remember { mutableStateOf(Rect.Zero) }
     val dismissDistance = with(LocalDensity.current) { DISMISS_DISTANCE.toPx() }
     fun release() {
         if (drag.value > dismissDistance * DISMISS_FRACTION) {
@@ -124,18 +182,14 @@ public fun GlassExpandHost(
     }
     val connection = remember(active) { dismissConnection(drag, ::release) }
     GlassOverlay(visible = true) { _ ->
-        Box(
-            modifier
-                .fillMaxSize()
-                .onGloballyPositioned {
-                    origin = it.positionInRoot()
-                    bounds = Rect(Offset.Zero, Size(it.size.width.toFloat(), it.size.height.toFloat()))
-                },
-        ) {
+        // 크기는 제약에서 바로 얻어 처음 여는 프레임부터 그린다(측정 뒤에 알게 되면 첫 프레임에 카드만 사라져 깜빡인다).
+        BoxWithConstraints(modifier.fillMaxSize().onGloballyPositioned { state.hostOrigin = it.positionInRoot() }) {
+            val bounds = Rect(Offset.Zero, Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat()))
+            val origin = state.hostOrigin
             val level = progress.value.coerceIn(0f, 1f)
             val dragged = (drag.value / dismissDistance).coerceIn(0f, 1f)
             Scrim(level * (1f - dragged * SCRIM_DRAG)) { state.collapse() }
-            if (bounds.width <= 0f) return@Box
+            if (bounds.width <= 0f) return@BoxWithConstraints
             val from = state.sources[active]?.translate(-origin) ?: bounds.deflate(bounds.minDimension * FALLBACK_INSET)
             // 많이 끌수록 화면이 작아지며 가운데로 모인다.
             val full = bounds.scaleAround(1f - dragged * DRAG_SHRINK)

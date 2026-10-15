@@ -16,9 +16,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -31,8 +34,12 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
@@ -40,6 +47,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * 당겨서 새로 고침 컨테이너. 목록 맨 위에서 더 당기면 콘텐츠가 고무줄처럼 버티며 내려오고, 위쪽에 글래스 물방울이 차오른다.
@@ -73,6 +83,19 @@ public fun GlassRefreshBox(
     LaunchedEffect(refreshing, trigger) {
         pull.settle(scope, if (refreshing) trigger * REST_FRACTION else 0f, Spring.DampingRatioLowBouncy)
     }
+    fun release() {
+        if (pull.value >= trigger) {
+            latestRefresh()
+            pull.settle(scope, trigger * REST_FRACTION, Spring.DampingRatioLowBouncy)
+            // 호스트가 refreshing을 켜지 않았거나 같은 프레임에 바로 껐으면 LaunchedEffect가 돌지 않으므로 여기서 되돌린다.
+            scope.launch {
+                withFrameNanos { }
+                if (!latestRefreshing) pull.settle(scope, 0f, Spring.DampingRatioNoBouncy)
+            }
+        } else {
+            pull.settle(scope, 0f, Spring.DampingRatioNoBouncy)
+        }
+    }
     val connection = remember(trigger) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -95,22 +118,35 @@ public fun GlassRefreshBox(
 
             override suspend fun onPreFling(available: Velocity): Velocity {
                 if (pull.value <= 0f || latestRefreshing) return Velocity.Zero
-                if (pull.value >= trigger) {
-                    latestRefresh()
-                    pull.settle(scope, trigger * REST_FRACTION, Spring.DampingRatioLowBouncy)
-                } else {
-                    pull.settle(scope, 0f, Spring.DampingRatioNoBouncy)
-                }
+                release()
                 return available
             }
         }
     }
+    val refreshLabel = stringResource(R.string.kinetica_ui_refresh)
+    val refreshingLabel = stringResource(R.string.kinetica_ui_refreshing)
+    var wheelRelease by remember { mutableStateOf<Job?>(null) }
     Box(
         modifier
             .nestedScroll(connection)
+            .pointerInput(trigger) {
+                // 마우스 휠·터치패드 스크롤은 플링이 없어 onPreFling이 오지 않는다. 휠이 잠시 멈추면 손을 뗀 것으로 본다.
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        if (event.type == PointerEventType.Scroll) {
+                            wheelRelease?.cancel()
+                            wheelRelease = scope.launch {
+                                delay(WHEEL_RELEASE_MS)
+                                if (pull.value > 0f && !latestRefreshing) release()
+                            }
+                        }
+                    }
+                }
+            }
             .semantics {
                 customActions = listOf(
-                    CustomAccessibilityAction("새로 고침") {
+                    CustomAccessibilityAction(refreshLabel) {
                         if (!latestRefreshing) latestRefresh()
                         true
                     },
@@ -122,6 +158,7 @@ public fun GlassRefreshBox(
             pull.value / trigger,
             refreshing,
             style,
+            refreshingLabel,
             Modifier.align(Alignment.TopCenter).padding(top = indicatorTop).graphicsLayer { translationY = pull.value / 2 },
         )
     }
@@ -129,7 +166,7 @@ public fun GlassRefreshBox(
 
 /** 당긴 정도([level], 1이면 임계값)만큼 차오르는 글래스 물방울. 임계값을 넘으면 세로로 길쭉해지고, 새로 고침 중에는 링이 돈다. */
 @Composable
-private fun RefreshDrop(level: Float, refreshing: Boolean, style: GlassStyle, modifier: Modifier) {
+private fun RefreshDrop(level: Float, refreshing: Boolean, style: GlassStyle, label: String, modifier: Modifier) {
     if (level <= 0f && !refreshing) return
     val spin by rememberInfiniteTransition(label = "refresh-spin").animateFloat(
         0f,
@@ -149,7 +186,7 @@ private fun RefreshDrop(level: Float, refreshing: Boolean, style: GlassStyle, mo
                 alpha = grow.coerceAtLeast(if (refreshing) 1f else 0f)
             }
             .glass(style, CircleShape)
-            .semantics { if (refreshing) contentDescription = "새로 고치는 중" }
+            .semantics { if (refreshing) contentDescription = label }
             .drawWithContent {
                 drawContent()
                 val stroke = RING_WIDTH.toPx()
@@ -168,6 +205,7 @@ private fun RefreshDrop(level: Float, refreshing: Boolean, style: GlassStyle, mo
     )
 }
 
+private const val WHEEL_RELEASE_MS = 200L
 private const val DRAG_RATE = 0.55f
 private const val MAX_FRACTION = 2.2f
 private const val REST_FRACTION = 0.75f
