@@ -56,6 +56,12 @@ internal class EditorState(val session: KineticaSession) : GestureHost {
     /** 재생 위치(ms). */
     var playheadMs by mutableDoubleStateOf(0.0)
 
+    /** 타임라인에서 고른 키. 캔버스와 타임라인의 키보드 단축키가 함께 쓴다. */
+    val keySelection = KeySelection()
+
+    /** 고른 키를 바꾸는 동작과 복사해 둔 키. */
+    val keyEdits: KeyframeEdits by lazy { KeyframeEdits(this) }
+
     val timeline: Timeline? get() = session.document.value.timelines.firstOrNull { it.id == MAIN_TIMELINE }
 
     /** keyframe을 넣을 시각(ms). 재생 위치를 정수로 맞추고 timeline 범위 안으로 자른다. */

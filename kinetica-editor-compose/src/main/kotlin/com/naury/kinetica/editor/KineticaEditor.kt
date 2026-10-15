@@ -281,7 +281,7 @@ private fun EditorCanvas(
                 }
                 .canvasGestures(controller)
                 .focusRequester(focus)
-                .editorShortcuts(state.session, actions)
+                .editorShortcuts(state, actions)
                 .focusable()
                 .semantics { contentDescription = description }
                 .testTag(CANVAS_TAG),

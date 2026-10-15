@@ -15,9 +15,16 @@ import com.naury.kinetica.history.KineticaSession
 private const val NUDGE = 1.0
 private const val BIG_NUDGE = 10.0
 
-/** 캔버스에 포커스가 있을 때의 키보드 동작. 처리한 키만 소비한다. */
-internal fun Modifier.editorShortcuts(session: KineticaSession, actions: EditorActions): Modifier = onKeyEvent { event ->
-    val action = if (event.type == KeyEventType.KeyDown) shortcutFor(event, session, actions) else null
+/**
+ * 캔버스에 포커스가 있을 때의 키보드 동작. 처리한 키만 소비한다.
+ * 타임라인에서 고른 키가 있으면 Delete, Esc, 복사, 붙여넣기는 노드보다 키에 먼저 적용한다([timelineShortcut]).
+ */
+internal fun Modifier.editorShortcuts(state: EditorState, actions: EditorActions): Modifier = onKeyEvent { event ->
+    val action = if (event.type == KeyEventType.KeyDown) {
+        timelineShortcut(event, state, timelineFocused = false) ?: shortcutFor(event, state.session, actions)
+    } else {
+        null
+    }
     action?.invoke()
     action != null
 }

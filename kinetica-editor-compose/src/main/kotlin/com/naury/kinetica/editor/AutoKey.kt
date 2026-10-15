@@ -2,7 +2,6 @@ package com.naury.kinetica.editor
 
 import com.naury.kinetica.core.animation.AnimatableProperties
 import com.naury.kinetica.core.animation.AnimatableProperty
-import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.Timeline
@@ -75,8 +74,9 @@ internal object AutoKey {
     }
 
     private fun key(timeline: Timeline, id: NodeId, property: AnimatableProperty, value: KeyValue, timeMs: Long): SceneCommand {
-        val easing = timeline.track(id, property)?.keyframes?.firstOrNull { it.timeMs == timeMs }?.easing ?: EasingSpec.Linear
-        return SceneCommand.SetKeyframe(timeline.id, id, property, Keyframe(timeMs, value, easing))
+        // 같은 시각에 키가 있으면 easing과 회전 방향은 그대로 두고 값만 바꾼다.
+        val existing = timeline.track(id, property)?.keyframes?.firstOrNull { it.timeMs == timeMs }
+        return SceneCommand.SetKeyframe(timeline.id, id, property, existing?.copy(value = value) ?: Keyframe(timeMs, value))
     }
 
     fun AnimatableProperty.read(transform: Transform2D): Double = when (this) {

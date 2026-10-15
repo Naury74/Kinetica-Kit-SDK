@@ -249,4 +249,23 @@
     <string name="kinetica_number_prefix">Prefix</string>
     <string name="kinetica_number_suffix">Suffix</string>
     <string name="kinetica_number_decimals">Decimals</string>
+    <string name="kinetica_easing_steps">Steps</string>
+    <string name="kinetica_easing_curve">Easing curve</string>
+    <string name="kinetica_easing_preview">Easing preview</string>
+    <string name="kinetica_zoom_in">Zoom in</string>
+    <string name="kinetica_zoom_out">Zoom out</string>
+    <string name="kinetica_zoom_fit">Fit</string>
+    <string name="kinetica_follow_playhead">Follow</string>
+    <string name="kinetica_follow_playhead_description">Scroll to keep the playhead visible</string>
+    <string name="kinetica_keys_selected">%1$d selected</string>
+    <string name="kinetica_key_curve">Curve</string>
+    <string name="kinetica_copy_keys">Copy</string>
+    <string name="kinetica_paste_keys">Paste</string>
+    <string name="kinetica_delete_keys">Delete</string>
+    <string name="kinetica_select_mode">Select mode</string>
+    <string name="kinetica_rotation_direction">Rotation</string>
+    <string name="kinetica_rotation_shortest">Shortest</string>
+    <string name="kinetica_rotation_clockwise">Clockwise</string>
+    <string name="kinetica_rotation_counter_clockwise">Counterclockwise</string>
+    <string name="kinetica_rotation_direct">As written</string>
 </resources>
