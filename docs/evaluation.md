@@ -162,7 +162,7 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ## 4. 알려진 제한 (검증 중 막힐 수 있는 부분)
 
 - 그룹 안의 도형은 캔버스에서 하나만 따로 고를 수 없습니다. 레이어 패널에서 골라야 합니다.
-- 타임라인 확대, 여러 키를 한꺼번에 끌기, easing 곡선 편집기는 아직 없습니다.
+- 타임라인 easing 곡선 편집기는 큐빅 베지어만 직접 편집합니다. 스프링과 계단은 프리셋 값만 고를 수 있습니다.
 - 그룹은 자식을 잘라 내지 않습니다. 잘라 내려면 Frame을 씁니다.
 - 실기기는 Galaxy Z Fold7 한 대에서만 확인했습니다(보드 스크롤·편집 끌기·글래스 화면 프레임 측정, 키보드 편집, TalkBack 초점 이동). 저사양 기기와 Android 12 미만 기기는 확인하지 않았습니다.
 - TalkBack 사용자 정의 동작 메뉴는 adb로 넣은 터치로는 열 수 없어 Robolectric 테스트로만 검증했습니다.

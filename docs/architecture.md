@@ -58,6 +58,6 @@ p_viewport = T(pan) × S(zoom) × p_document          zoom ∈ [0.1, 16]
 ## 애니메이션
 
 - keyframe 구간 `t0 ≤ t < t1`은 `t0` keyframe의 easing으로 보간합니다. keyframe 시각에서는 입력한 값을 그대로 쓰고, 첫 keyframe 전과 마지막 keyframe 뒤에는 가장 가까운 keyframe 값을 유지합니다.
-- 회전은 가장 짧은 방향으로, 색은 sRGB 채널별로 보간합니다. 불투명도는 0..1, 선 두께는 0 이상으로 제한합니다.
+- 회전은 구간 시작 keyframe의 `rotation`(기본은 가장 짧은 방향, 그 밖에 시계, 반시계, 값 그대로)에 따라, 색은 sRGB 채널별로 보간합니다. 불투명도는 0..1, 선 두께는 0 이상으로 제한합니다.
 - `PlaybackController`는 프레임 시간을 누적하지 않고 "기준 시계 + 기준 위치"로 현재 시각을 계산합니다. marker는 지나갈 때 한 번 알립니다.
 - `SceneMorph`는 `morphKey` metadata나 같은 id로 노드 짝을 찾고, 계층을 펼친 world 변환을 보간합니다. pivot을 도형 가운데에 두므로 회전은 도형 가운데를 축으로 보간됩니다.

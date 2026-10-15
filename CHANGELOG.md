@@ -42,6 +42,10 @@
 - 호스트 앱 연동: `GlassTheme`(다크 모드·호스트 강조색·글꼴을 한 번에), 화면 밖 반복 효과 정지, `GlassScaffold` 밖에서 쓰면 별도 창으로 띄우기, 시트·다이얼로그 `contentWindowInsets`, 모달 포커스 가두기, 스낵바 `bottomOffset`(스캐폴드 안이면 탭 바 위에 저절로)
 - XML 진입점: `GlassSheets`·`GlassDialogs`·`GlassToasts`·`GlassSurfaceView`, RecyclerView·ViewPager2·CoordinatorLayout·Fragment 대응, View 기본 스타일 테마 속성(`kinetica_glassSurfaceViewStyle`·`kinetica_boardViewStyle`·`kinetica_playerViewStyle`), `ViewEffects.effectsOf`
 - Java: `PressEffect.of`, `LoopEffect.of`, `NodeEffects`·`AppearEffect` 생성자 기본값, `NodeEffects.None` 필드
+- 편집기 timeline: 두 손가락·Ctrl+휠·버튼으로 시간 축 확대, 맞춤, 배율에 맞춰 바뀌는 눈금자, 재생 위치 따라가기
+- 편집기 timeline: 탭, Shift 탭, 길게 눌러 켜는 선택 모드, 사각 선택으로 여러 키 선택. 고른 키를 함께 끌기(실행 취소 한 단계), 복사·붙여넣기(재생 위치로), 삭제. 단축키 Delete, Ctrl+C/V/A, Esc
+- 편집기 timeline: easing 곡선 편집기(베지어 조절점 끌기, 프리셋 6종, 곡선을 따라 움직이는 미리보기)
+- 회전 보간 방향: `Keyframe.rotation`(`RotationDirection`: 가장 짧게, 시계, 반시계, 값 그대로). JSON keyframe에 선택 필드 `rotationDirection`이 추가되며, 없으면 예전처럼 가장 짧은 방향으로 보간합니다. 스키마 버전은 그대로 1입니다.
 
 ### 알파 동안 바뀐 이름
 - `GlassSlider`·`GlassRangeSlider`의 `activeColor`, `GlassSwitch`의 `onColor`, `GlassSlideToConfirm`의 `color` → `accent`

@@ -127,9 +127,37 @@ RemoteKineticaPlayer(
 | `appear` | `kind`: `fade` `slideUp` `slideDown` `slideLeft` `slideRight` `pop` `zoom` `flip` `blur`, `durationMs`, `delayMs` |
 | `loop` | `kind`: `pulse` `breathe` `float` `bounce` `shake` `shimmer` `glow` `spin` `heartbeat` `wiggle` `ping`, `periodMs`(100 이상), `amount`, `color` |
 
+## 타임라인 `animations`
+
+| 키 | 필수 | 내용 |
+| --- | --- | --- |
+| `id` | ○ | 타임라인 id. 편집기가 만드는 타임라인은 `main`이다 |
+| `durationMs` | ○ | 재생 길이(ms) |
+| `tracks` | | 목록. `nodeId`, `property`, `keyframes` |
+| `markers` | | 목록. `name`, `timeMs` |
+| `fpsHint` | | 미리보기와 내보내기의 권장 초당 프레임 수. 기본값 60 |
+
+`property`는 `translationX` `translationY` `scaleX` `scaleY` `rotationDegrees` `opacity` `fill` `strokeWidth` `width` `height` `cornerRadius` `stroke` `blur` `shadowBlur` `shadowX` `shadowY` `shadowSpread` `shadowColor` `cornerTopLeft` `cornerTopRight` `cornerBottomRight` `cornerBottomLeft` `gradientStart` `gradientEnd` `gradientAngle` 중 하나다.
+
+keyframe의 키는 다음과 같다. 시각은 겹치지 않고 커지는 순서여야 한다.
+
+| 키 | 필수 | 내용 |
+| --- | --- | --- |
+| `timeMs` | ○ | `0..durationMs` |
+| `value` | ○ | 숫자, 색 속성이면 색 문자열 |
+| `easing` | | 이 키에서 다음 키까지의 easing. `type`: `linear`(기본) `cubicBezier`(`x1` `y1` `x2` `y2`, x는 0..1) `steps`(`count`) `spring`(`dampingRatio` `stiffness`) |
+| `rotationDirection` | | 회전 track에서 이 키부터 다음 키까지 도는 방향. `shortest`(기본, 가장 짧은 방향) `clockwise` `counterClockwise` `direct`(값 차이 그대로, 0에서 720이면 두 바퀴). 회전이 아닌 속성에서는 무시한다 |
+
+```json
+{ "nodeId": "logo", "property": "rotationDegrees", "keyframes": [
+  { "timeMs": 0, "value": 0, "rotationDirection": "direct", "easing": { "type": "cubicBezier", "x1": 0.42, "y1": 0, "x2": 0.58, "y2": 1 } },
+  { "timeMs": 1200, "value": 720 }
+] }
+```
+
 ## 읽을 때의 규칙
 
 - 크기 상한(기본 10 MiB), JSON 문법, 스키마 버전, 필드 형식과 유한한 숫자, 문서 검증 순서로 확인한다. 하나라도 실패하면 문서 전체를 쓰지 않는다.
   서버 화면은 이때 지금 보이는 문서를 그대로 두고, 실패 이유를 `RemoteSceneState.Ready.lastError`에 남긴다. 실패 정보에는 위치(`nodes[3].bounds`)와 코드가 들어 있다.
-- 모르는 키와 모르는 `accessibility.role`은 무시한다. 하지만 모르는 `type`이나 효과 `kind`가 있으면 실패로 처리한다.
+- 모르는 키와 모르는 `accessibility.role`은 무시한다. 하지만 모르는 `type`, 효과 `kind`, `rotationDirection` 값이 있으면 실패로 처리한다.
 - 동작, 데이터 키, 호스트 뷰 키는 이름일 뿐이고 어떤 코드도 실행하지 않는다.
