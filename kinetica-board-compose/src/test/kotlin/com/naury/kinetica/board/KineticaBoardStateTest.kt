@@ -2,6 +2,14 @@ package com.naury.kinetica.board
 
 import com.google.common.truth.Truth.assertThat
 import com.naury.kinetica.core.geometry.Rect
+import com.naury.kinetica.core.geometry.Size
+import com.naury.kinetica.core.geometry.Transform2D
+import com.naury.kinetica.core.scene.Artboard
+import com.naury.kinetica.core.scene.NodeContent
+import com.naury.kinetica.core.scene.NodeId
+import com.naury.kinetica.core.scene.SceneDocument
+import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.serialization.SceneCodec
 import org.junit.Test
 
 class KineticaBoardStateTest {
@@ -146,5 +154,40 @@ class KineticaBoardStateTest {
 
         assertThat(reopened.addItem("memo")).isEqualTo("memo.4")
         assertThat(reopened.itemIds).containsExactly("sales", "orders", "memo", "memo.4")
+    }
+
+    @Test
+    fun `키가 길어 번호를 붙일 수 없는 여러 개 위젯은 더 놓지 않고 멈추지도 않는다`() {
+        val long = "m".repeat(127)
+        val state = KineticaBoardState.create(listOf(BoardWidget(long, "메모", multiple = true)))
+
+        assertThat(state.placedKeys).containsExactly(long)
+        assertThat(state.addItem(long)).isNull()
+        assertThat(state.add(long)).isFalse()
+    }
+
+    @Test
+    fun `목록과 맞춘 저장본이 올바르지 않으면 기본 배치로 시작하고 읽지 못한 것으로 알린다`() {
+        // 스택에서 목록에 없는 위젯을 빼면 남은 "orders" 슬롯이 이미 따로 놓인 "orders"와 id가 겹친다.
+        fun slot(id: String, x: Double, metadata: Map<String, String> = emptyMap()) = SceneNode(
+            NodeId(id),
+            NodeContent.HostSlot(Size(200.0, 200.0), id),
+            transform = Transform2D(translationX = x),
+            metadata = metadata,
+        )
+        val stack = """[{"id":"orders","key":"orders"},{"id":"gone","key":"gone"}]"""
+        val saved = SceneCodec().encode(
+            SceneDocument(
+                documentId = "board",
+                artboard = Artboard(KineticaBoardState.REFERENCE_WIDTH, KineticaBoardState.REFERENCE_WIDTH),
+                nodes = listOf(slot("orders", 0.0), slot("stack.1", 400.0, mapOf("kinetica.stack" to stack))).associateBy { it.id },
+                rootOrder = listOf(NodeId("orders"), NodeId("stack.1")),
+            ),
+        )
+
+        val state = KineticaBoardState.create(listOf(BoardWidget("orders", "주문")), saved = saved)
+
+        assertThat(state.restoreFailed).isTrue()
+        assertThat(state.placedKeys).containsExactly("orders")
     }
 }

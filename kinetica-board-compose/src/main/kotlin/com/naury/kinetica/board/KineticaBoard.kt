@@ -29,8 +29,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -149,10 +151,12 @@ private fun BoardBody(
             .onGloballyPositioned { visibility.coordinates = it },
     ) {
         val gap = gapDp(state.arrangement) * KineticaBoardState.UNITS
-        val mapping = BoardMapping(state.arrangement, constraints.maxWidth / zoom.toDouble(), gap, mirrored)
-        val stable = stored.rootOrder.associate { id ->
-            id.value to
-                mapping.toDisplay(requireNotNull(KineticaBoardState.rectOf(stored.node(id))))
+        val displayWidth = constraints.maxWidth / zoom.toDouble()
+        val mapping =
+            remember(state.arrangement, displayWidth, gap, mirrored) { BoardMapping(state.arrangement, displayWidth, gap, mirrored) }
+        // 드래그하는 동안 이 화면은 프레임마다 다시 그려진다. 위치가 그대로인 위젯은 같은 Rect 객체를 넘겨야 편집 틀이 다시 그려지지 않는다.
+        val stable = remember(stored, mapping) {
+            stored.rootOrder.associate { id -> id.value to mapping.toDisplay(requireNotNull(KineticaBoardState.rectOf(stored.node(id)))) }
         }
         val drag = controller.drag
         val rects = drag?.let { stable + (it.key to it.rect) } ?: stable
@@ -223,32 +227,35 @@ private fun EditLayer(
         DragOutline(it.rect, zoom, colors)
     }
     val picker = drag?.picker?.let { hover -> controller.picker()?.let { it to hover } }
+    val mirrored = LocalBoardMirrored.current
     stored.rootOrder.forEach { id ->
-        val key = id.value
-        val widget = state.widgetKeyOf(key)?.let { widgetKey -> state.catalog.firstOrNull { it.key == widgetKey } }
-        val members = state.stackMembers(key)
-        val label = if (members.isEmpty()) widget?.label ?: key else stackLabel(state, members)
-        WidgetEditFrame(
-            key = key,
-            label = label,
-            // 손가락 위치의 기준이 흔들리지 않도록 드래그하는 동안 테두리는 제자리에 둔다. 움직이는 모습은 DragOutline이 그린다.
-            rect = stable.getValue(key),
-            dragging = drag?.key == key,
-            zoom = zoom,
-            permissions = permissions.copy(remove = permissions.remove && widget?.removable != false),
-            colors = colors,
-            controller = controller,
-            actions = accessibilityActions(state, key, permissions.copy(remove = permissions.remove && widget?.removable != false)) +
-                unstackActions(state, key, members),
-            modifier = Modifier.keyboardEditing(
-                state,
-                key,
-                permissions.copy(remove = permissions.remove && widget?.removable != false),
-                LocalBoardMirrored.current,
-            ),
-            onRemove = { state.remove(key) },
-        )
-        if (members.isNotEmpty()) StackBadge(stable.getValue(key), zoom, members.size, colors) { state.unstack(key) }
+        // 순서가 바뀌어도 위젯마다 기억한 값이 다른 위젯으로 넘어가지 않도록 슬롯 id로 구분한다.
+        key(id) {
+            val key = id.value
+            val widget = state.widgetKeyOf(key)?.let { widgetKey -> state.catalog.firstOrNull { it.key == widgetKey } }
+            val members = state.stackMembers(key)
+            val label = if (members.isEmpty()) widget?.label ?: key else stackLabel(state, members)
+            val allowed = permissions.copy(remove = permissions.remove && widget?.removable != false)
+            val moves = accessibilityActions(state, key, allowed)
+            val unstack = unstackActions(state, key, members)
+            val actions = remember(moves, unstack) { moves + unstack }
+            val keyboard = remember(state, key, allowed, mirrored) { Modifier.keyboardEditing(state, key, allowed, mirrored) }
+            WidgetEditFrame(
+                key = key,
+                label = label,
+                // 손가락 위치의 기준이 흔들리지 않도록 드래그하는 동안 테두리는 제자리에 둔다. 움직이는 모습은 DragOutline이 그린다.
+                rect = stable.getValue(key),
+                dragging = drag?.key == key,
+                zoom = zoom,
+                permissions = allowed,
+                colors = colors,
+                controller = controller,
+                actions = actions,
+                modifier = keyboard,
+                onRemove = { state.remove(key) },
+            )
+            if (members.isNotEmpty()) StackBadge(stable.getValue(key), zoom, members.size, colors) { state.unstack(key) }
+        }
     }
     // 위쪽 가장자리로 끌면 레이아웃 선택 패널이 위젯 테두리 위에 뜬다.
     picker?.let { (geometry, hover) -> SnapPickerView(geometry, hover, zoom, colors) }
@@ -372,6 +379,8 @@ private fun WidgetEditFrame(
     modifier: Modifier,
     onRemove: () -> Unit,
 ) {
+    val composed = LocalEditFrameComposed.current
+    SideEffect { composed(key) }
     val outline = if (dragging) Color.Transparent else colors.outline
     var focused by remember { mutableStateOf(false) }
     // 삭제 버튼은 시작쪽 위, 크기 조절 핸들은 끝쪽 아래에 둔다. 보드 내부는 왼쪽 기준이므로 RTL 화면이면 직접 바꾼다.
@@ -492,6 +501,9 @@ private fun rememberBoardSlots(
 }
 
 private class StackAdvance(val intervalMs: Long, val editing: Boolean)
+
+/** 위젯 편집 틀이 다시 그려질 때마다 슬롯 id와 함께 호출된다. 드래그 중 재구성 횟수를 세는 테스트에서 쓴다. */
+internal val LocalEditFrameComposed = staticCompositionLocalOf<(String) -> Unit> { {} }
 
 /** RTL 언어 때문에 보드 화면 좌표가 좌우로 뒤집혀 있는지. */
 internal val LocalBoardMirrored = staticCompositionLocalOf { false }

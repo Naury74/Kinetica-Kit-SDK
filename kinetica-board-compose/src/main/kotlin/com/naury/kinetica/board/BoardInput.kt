@@ -3,6 +3,7 @@ package com.naury.kinetica.board
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -52,6 +53,20 @@ internal fun accessibilityActions(state: KineticaBoardState, key: String, permis
     val larger = stringResource(R.string.kinetica_board_larger)
     val smaller = stringResource(R.string.kinetica_board_smaller)
     val remove = stringResource(R.string.kinetica_board_remove_action)
+    // 드래그 프레임마다 새 목록을 넘기면 움직이지 않는 위젯 틀까지 모두 다시 그려지므로 같은 입력이면 같은 목록을 돌려준다.
+    return remember(state, key, permissions, moves, larger, smaller, remove) {
+        actionList(state, key, permissions, moves, Triple(larger, smaller, remove))
+    }
+}
+
+private fun actionList(
+    state: KineticaBoardState,
+    key: String,
+    permissions: BoardPermissions,
+    moves: List<Pair<String, Pair<Float, Float>>>,
+    labels: Triple<String, String, String>,
+): List<CustomAccessibilityAction> {
+    val (larger, smaller, remove) = labels
     return buildList {
         if (permissions.move) {
             moves.forEach { (label, delta) ->

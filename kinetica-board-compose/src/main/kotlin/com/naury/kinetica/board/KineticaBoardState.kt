@@ -53,7 +53,7 @@ public class KineticaBoardState private constructor(
     public val history: HistoryController get() = session.history
 
     /**
-     * [create]에 넘긴 저장본을 읽지 못해 기본 배치로 시작했으면 `true`. 이때는 저장본을 바로 덮어쓰지 말고 따로 보관하거나 사용자에게 알린다.
+     * [create]에 넘긴 저장본을 읽지 못했거나 목록과 맞춘 결과가 올바른 배치가 아니어서 기본 배치로 시작했으면 `true`. 이때는 저장본을 바로 덮어쓰지 말고 따로 보관하거나 사용자에게 알린다.
      * 저장본이 없었으면 `false`다.
      */
     public var restoreFailed: Boolean = false
@@ -113,7 +113,7 @@ public class KineticaBoardState private constructor(
         val document = session.document.value
         val taken = document.nodes.values.flatMap { node -> node.stackMembers().map { it.id } }.toSet()
         // 한 번만 놓는 위젯은 슬롯 id가 늘 위젯 키다. 여러 개 놓는 위젯만 번호를 이어서 붙인다.
-        val id = newItemId(key, document, widgets.keys, taken, if (widget.multiple) issued[key] else 0)
+        val id = newItemId(key, document, widgets.keys, taken, if (widget.multiple) issued[key] else 0) ?: return null
         issued.record(key, id)
         val node = placementFor(widget, document, id)
         return id.takeIf { session.commands.execute(SceneCommand.AddNode(node)) is CommandResult.Applied }
@@ -288,21 +288,25 @@ public class KineticaBoardState private constructor(
                     timelines = emptyList(),
                 )
             } ?: emptyBoard()
-            val opened = KineticaSession.create(base) as? SessionOpenResult.Opened
-                ?: (KineticaSession.create(emptyBoard()) as SessionOpenResult.Opened)
+            // 목록과 맞춘 저장본이 검증을 통과하지 못하면 기본 배치로 시작하고, 저장본은 읽지 못한 것으로 알린다.
+            val reopened = KineticaSession.create(base) as? SessionOpenResult.Opened
+            val opened = reopened ?: (KineticaSession.create(emptyBoard()) as SessionOpenResult.Opened)
             // 기본 배치와 목록 맞춤은 사용자가 실행 취소할 대상이 아니다. 임시 세션에서 배치한 결과로 기록이 빈 세션을 연다.
             val draft = KineticaBoardState(catalog, arrangement, opened.session)
-            val placed = base.rootOrder.flatMap { id ->
-                val node = base.nodes.getValue(id)
+            val start = opened.session.document.value
+            val placed = start.rootOrder.flatMap { id ->
+                val node = start.nodes.getValue(id)
                 node.stackMembers().map { it.key }.ifEmpty { listOf(widgetKeyOf(node)) }
             }.toSet()
-            catalog.filter { widget -> widget.placedByDefault && widget.key !in placed && (known == null || widget.key !in known) }
+            // 지난번 목록에 있었는데 놓여 있지 않으면 사용자가 뺀 위젯이다. 저장본을 쓰지 못했으면 기본 배치를 그대로 놓는다.
+            val removedByUser = known.takeIf { reopened != null }.orEmpty()
+            catalog.filter { widget -> widget.placedByDefault && widget.key !in placed && widget.key !in removedByUser }
                 .forEach { draft.add(it.key) }
             val initial = draft.document.value
             draft.close()
             val state = KineticaBoardState(catalog, arrangement, (KineticaSession.create(initial) as SessionOpenResult.Opened).session)
             state.issued.restore(restored?.let(::issuedNumbers).orEmpty(), draft.issued.all, state.document.value)
-            state.restoreFailed = saved != null && restored == null
+            state.restoreFailed = saved != null && (restored == null || reopened == null)
             return state
         }
 
@@ -351,10 +355,12 @@ public class KineticaBoardState private constructor(
 }
 
 // 첫 슬롯은 예전 저장본과 id가 같도록 위젯 키를 그대로 쓰고, 그다음부터는 `.2`, `.3`처럼 다른 위젯 키와 겹치지 않는 첫 번호를 붙인다.
-private fun newItemId(key: String, document: SceneDocument, widgetKeys: Set<String>, taken: Set<String>, issued: Int): String =
+// 키가 길어 번호를 붙이면 id 길이 한도를 넘는 경우에는 더 놓을 수 없으므로 `null`을 돌려준다.
+private fun newItemId(key: String, document: SceneDocument, widgetKeys: Set<String>, taken: Set<String>, issued: Int): String? =
     generateSequence(issued + 1) { it + 1 }
         .map { if (it == 1) key else "$key.$it" }
-        .first { id -> document.node(NodeId(id)) == null && id !in taken && (id == key || id !in widgetKeys) }
+        .takeWhile(NodeId::isValid)
+        .firstOrNull { id -> document.node(NodeId(id)) == null && id !in taken && (id == key || id !in widgetKeys) }
 
 /** 위젯 키마다 지금까지 발급한 가장 큰 슬롯 번호. */
 internal class ItemNumbers {

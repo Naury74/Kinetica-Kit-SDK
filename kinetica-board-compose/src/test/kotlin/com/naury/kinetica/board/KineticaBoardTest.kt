@@ -358,6 +358,41 @@ class KineticaBoardTest {
         assertThat(resized.width).isGreaterThan(widget.width + 30f)
         assertThat(resized.right).isWithin(2f).of(widget.right)
     }
+
+    @Test
+    fun `위젯 100개를 편집할 때 드래그하는 동안 움직이지 않는 위젯 틀은 다시 그리지 않는다`() {
+        val many = (0 until 100).map { BoardWidget("w$it", "W$it", widthDp = 40f, heightDp = 40f) }
+        val state = KineticaBoardState.create(many)
+        val composed = mutableMapOf<String, Int>()
+        compose.setContent {
+            CompositionLocalProvider(LocalEditFrameComposed provides { key -> composed[key] = (composed[key] ?: 0) + 1 }) {
+                Box(Modifier.size(400.dp, 800.dp)) {
+                    KineticaBoard(state, Modifier.fillMaxSize(), editing = true) { Box(Modifier.fillMaxSize()) }
+                }
+            }
+        }
+        val target = compose.onNodeWithTag(BOARD_WIDGET_TAG + "w50")
+        val before = state.rectOf("w50")
+        target.performTouchInput {
+            // 왼쪽 위 삭제 버튼과 오른쪽 아래 크기 손잡이를 피해 틀 위쪽을 잡고 옮긴다.
+            down(Offset(30f, 5f))
+            moveBy(Offset(30f, 0f))
+        }
+        compose.waitForIdle()
+        val settled = composed.toMap()
+
+        repeat(5) {
+            target.performTouchInput { moveBy(Offset(4f, 2f)) }
+            compose.waitForIdle()
+        }
+        val redrawn = composed.filter { (key, count) -> key != "w50" && count != settled[key] }.keys
+        target.performTouchInput { up() }
+        compose.waitForIdle()
+
+        assertThat(settled).hasSize(100)
+        assertThat(redrawn).isEmpty()
+        assertThat(state.rectOf("w50")).isNotEqualTo(before)
+    }
 }
 
 @androidx.compose.runtime.Composable

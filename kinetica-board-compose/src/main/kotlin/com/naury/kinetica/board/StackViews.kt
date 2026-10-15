@@ -95,7 +95,7 @@ internal fun stackLabel(state: KineticaBoardState, members: List<String>): Strin
 internal fun unstackActions(state: KineticaBoardState, key: String, members: List<String>): List<CustomAccessibilityAction> {
     if (members.isEmpty()) return emptyList()
     val label = stringResource(R.string.kinetica_board_unstack)
-    return listOf(CustomAccessibilityAction(label) { state.unstack(key) })
+    return remember(state, key, label) { listOf(CustomAccessibilityAction(label) { state.unstack(key) }) }
 }
 
 private val DOT = 6.dp
