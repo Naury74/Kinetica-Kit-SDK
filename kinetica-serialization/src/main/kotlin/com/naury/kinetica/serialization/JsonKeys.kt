@@ -143,6 +143,7 @@ internal object JsonKeys {
     const val X2 = "x2"
     const val Y2 = "y2"
     const val COUNT = "count"
+    const val JUMP = "jump"
     const val DAMPING_RATIO = "dampingRatio"
     const val STIFFNESS = "stiffness"
 

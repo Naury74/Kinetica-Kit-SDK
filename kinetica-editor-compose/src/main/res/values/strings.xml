@@ -253,6 +253,7 @@
     <string name="kinetica_easing_damping">Damping</string>
     <string name="kinetica_easing_stiffness">Stiffness</string>
     <string name="kinetica_easing_step_count">Step count</string>
+    <string name="kinetica_easing_step_jump">Jump</string>
     <string name="kinetica_easing_curve">Easing curve</string>
     <string name="kinetica_easing_preview">Easing preview</string>
     <string name="kinetica_zoom_in">Zoom in</string>

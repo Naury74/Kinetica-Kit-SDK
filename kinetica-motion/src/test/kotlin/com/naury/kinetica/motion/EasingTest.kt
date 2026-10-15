@@ -2,6 +2,7 @@ package com.naury.kinetica.motion
 
 import com.google.common.truth.Truth.assertThat
 import com.naury.kinetica.core.animation.EasingSpec
+import com.naury.kinetica.core.animation.StepJump
 import org.junit.Test
 
 class EasingTest {
@@ -12,6 +13,9 @@ class EasingTest {
         EasingSpec.EaseInOut,
         EasingSpec.CubicBezier(0.68, -0.6, 0.32, 1.6),
         EasingSpec.Steps(4),
+        EasingSpec.Steps(4, StepJump.Start),
+        EasingSpec.Steps(4, StepJump.None),
+        EasingSpec.Steps(4, StepJump.Both),
         EasingSpec.Spring(dampingRatio = 0.3, stiffness = 200.0),
         EasingSpec.Spring(dampingRatio = 1.0, stiffness = 200.0),
         EasingSpec.Spring(dampingRatio = 2.5, stiffness = 200.0),
@@ -85,6 +89,48 @@ class EasingTest {
         assertThat(Easing.evaluate(steps, 0.25, 0.0)).isEqualTo(0.25)
         assertThat(Easing.evaluate(steps, 0.99, 0.0)).isEqualTo(0.75)
         assertThat(Easing.evaluate(EasingSpec.Steps(1), 0.99, 0.0)).isEqualTo(0.0)
+    }
+
+    @Test
+    fun `jump-start는 각 칸이 시작할 때 값을 바꾼다`() {
+        val steps = EasingSpec.Steps(4, StepJump.Start)
+
+        assertThat(Easing.evaluate(steps, 0.01, 0.0)).isEqualTo(0.25)
+        assertThat(Easing.evaluate(steps, 0.24, 0.0)).isEqualTo(0.25)
+        assertThat(Easing.evaluate(steps, 0.25, 0.0)).isEqualTo(0.5)
+        assertThat(Easing.evaluate(steps, 0.75, 0.0)).isEqualTo(1.0)
+        assertThat(Easing.evaluate(steps, 0.99, 0.0)).isEqualTo(1.0)
+        assertThat(Easing.evaluate(EasingSpec.Steps(1, StepJump.Start), 0.01, 0.0)).isEqualTo(1.0)
+    }
+
+    @Test
+    fun `jump-none은 n-1번 올라 첫 칸은 0, 마지막 칸은 1이다`() {
+        val steps = EasingSpec.Steps(4, StepJump.None)
+
+        assertThat(Easing.evaluate(steps, 0.24, 0.0)).isEqualTo(0.0)
+        assertThat(Easing.evaluate(steps, 0.25, 0.0)).isWithin(1e-12).of(1.0 / 3)
+        assertThat(Easing.evaluate(steps, 0.5, 0.0)).isWithin(1e-12).of(2.0 / 3)
+        assertThat(Easing.evaluate(steps, 0.74, 0.0)).isWithin(1e-12).of(2.0 / 3)
+        assertThat(Easing.evaluate(steps, 0.75, 0.0)).isEqualTo(1.0)
+        assertThat(Easing.evaluate(EasingSpec.Steps(2, StepJump.None), 0.49, 0.0)).isEqualTo(0.0)
+        assertThat(Easing.evaluate(EasingSpec.Steps(2, StepJump.None), 0.5, 0.0)).isEqualTo(1.0)
+    }
+
+    @Test
+    fun `jump-both는 n+1번 올라 첫 칸부터 0보다 크고 마지막 칸도 1보다 작다`() {
+        val steps = EasingSpec.Steps(4, StepJump.Both)
+
+        assertThat(Easing.evaluate(steps, 0.01, 0.0)).isEqualTo(0.2)
+        assertThat(Easing.evaluate(steps, 0.24, 0.0)).isEqualTo(0.2)
+        assertThat(Easing.evaluate(steps, 0.25, 0.0)).isEqualTo(0.4)
+        assertThat(Easing.evaluate(steps, 0.99, 0.0)).isEqualTo(0.8)
+        assertThat(Easing.evaluate(EasingSpec.Steps(1, StepJump.Both), 0.5, 0.0)).isEqualTo(0.5)
+    }
+
+    @Test
+    fun `검증되지 않은 칸 수에서도 NaN을 내지 않는다`() {
+        assertThat(Easing.evaluate(EasingSpec.Steps(1, StepJump.None), 0.3, 0.0)).isEqualTo(0.3)
+        assertThat(Easing.evaluate(EasingSpec.Steps(0), 0.3, 0.0)).isEqualTo(0.3)
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.KeyValueType
 import com.naury.kinetica.core.animation.PropertyTrack
+import com.naury.kinetica.core.animation.StepJump
 import com.naury.kinetica.core.animation.Timeline
 import kotlin.math.abs
 
@@ -96,9 +97,12 @@ private fun isValueAllowed(property: AnimatableProperty, value: KeyValue, limits
 internal fun isEasingValid(easing: EasingSpec): Boolean = when (easing) {
     EasingSpec.Linear -> true
     is EasingSpec.CubicBezier -> isBezierValid(easing)
-    is EasingSpec.Steps -> easing.count in 1..MAX_STEPS
+    is EasingSpec.Steps -> easing.count in minSteps(easing.jump)..MAX_STEPS
     is EasingSpec.Spring -> isSpringValid(easing)
 }
+
+/** jump-none은 첫 칸과 마지막 칸이 0과 1이므로 칸이 하나면 정의되지 않는다. */
+private fun minSteps(jump: StepJump): Int = if (jump == StepJump.None) 2 else 1
 
 private fun isBezierValid(bezier: EasingSpec.CubicBezier): Boolean {
     val xInRange = bezier.x1 in 0.0..1.0 && bezier.x2 in 0.0..1.0

@@ -6,6 +6,7 @@ import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.PropertyTrack
+import com.naury.kinetica.core.animation.StepJump
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.animation.TimelineMarker
 import com.naury.kinetica.core.testing.TestScenes
@@ -73,6 +74,8 @@ class TimelineValidationTest {
             EasingSpec.CubicBezier(-0.1, 0.0, 1.0, 1.0),
             EasingSpec.CubicBezier(0.5, Double.NaN, 0.5, 1.0),
             EasingSpec.Steps(0),
+            EasingSpec.Steps(0, StepJump.Start),
+            EasingSpec.Steps(1, StepJump.None),
             EasingSpec.Spring(dampingRatio = 0.0, stiffness = 100.0),
             EasingSpec.Spring(dampingRatio = 0.5, stiffness = Double.POSITIVE_INFINITY),
         )
@@ -80,6 +83,19 @@ class TimelineValidationTest {
             assertThat(
                 codes(track(AnimatableProperty.TranslationX, scalar(0, 0.0, easing), scalar(10, 1.0))),
             ).containsExactly(ViolationCode.InvalidEasing)
+        }
+    }
+
+    @Test
+    fun `jump-none은 칸 2개부터, 나머지 점프 방식은 칸 1개부터 받는다`() {
+        val valid = listOf(
+            EasingSpec.Steps(1, StepJump.Start),
+            EasingSpec.Steps(1, StepJump.End),
+            EasingSpec.Steps(1, StepJump.Both),
+            EasingSpec.Steps(2, StepJump.None),
+        )
+        valid.forEach { easing ->
+            assertThat(codes(track(AnimatableProperty.TranslationX, scalar(0, 0.0, easing), scalar(10, 1.0)))).isEmpty()
         }
     }
 

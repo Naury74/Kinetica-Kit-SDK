@@ -252,6 +252,7 @@
     <string name="kinetica_easing_damping">감쇠</string>
     <string name="kinetica_easing_stiffness">강성</string>
     <string name="kinetica_easing_step_count">칸 수</string>
+    <string name="kinetica_easing_step_jump">점프 방식</string>
     <string name="kinetica_easing_curve">easing 곡선</string>
     <string name="kinetica_easing_preview">easing 미리보기</string>
     <string name="kinetica_zoom_in">확대</string>

@@ -6,6 +6,7 @@ import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.PropertyTrack
+import com.naury.kinetica.core.animation.StepJump
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.animation.TimelineMarker
 import com.naury.kinetica.core.geometry.Size
@@ -262,6 +263,34 @@ class SceneCodecTest {
         assertThat(codec.decode(text)).isInstanceOf(DecodeResult.Success::class.java)
     }
 
+    @Test
+    fun `계단 점프 방식이 왕복하고 jump-end는 쓰지 않으며 모르는 값은 거부한다`() {
+        fun scene(easing: String): String {
+            val keys = "{\"timeMs\":0,\"value\":0,\"easing\":$easing},{\"timeMs\":100,\"value\":1}"
+            val track = "{\"nodeId\":\"shape-a\",\"property\":\"opacity\",\"keyframes\":[$keys]}"
+            return fixture("scene-demo.json").replace(
+                "\"animations\":[]",
+                "\"animations\":[{\"id\":\"t\",\"durationMs\":100,\"tracks\":[$track]}]",
+            )
+        }
+        fun easingOf(document: SceneDocument) = document.timelines.single().tracks.single().keyframes.first().easing
+
+        StepJump.entries.forEach { jump ->
+            val document = decoded(scene("{\"type\":\"steps\",\"count\":3,\"jump\":\"${jump.wireName}\"}"))
+            assertThat(easingOf(document)).isEqualTo(EasingSpec.Steps(3, jump))
+            val encoded = codec.encode(document)
+            assertThat(encoded.contains("\"jump\"")).isEqualTo(jump != StepJump.End)
+            assertThat(decoded(encoded)).isEqualTo(document)
+        }
+        assertThat(easingOf(decoded(scene("{\"type\":\"steps\",\"count\":3}")))).isEqualTo(EasingSpec.Steps(3, StepJump.End))
+
+        val unknown = failure(scene("{\"type\":\"steps\",\"count\":3,\"jump\":\"jump-start\"}"))
+        assertThat(unknown).isInstanceOf(SceneLoadError.Malformed::class.java)
+        assertThat((unknown as SceneLoadError.Malformed).path).endsWith("easing.jump")
+        assertThat(failure(scene("{\"type\":\"steps\",\"count\":3,\"jump\":1}"))).isInstanceOf(SceneLoadError.Malformed::class.java)
+        assertThat(codec.decode(scene("{\"type\":\"steps\",\"count\":1,\"jump\":\"none\"}"))).isInstanceOf(DecodeResult.Failure::class.java)
+    }
+
     private fun richDocument(): SceneDocument {
         val base = TestScenes.sample()
         val extra = listOf(
@@ -420,6 +449,7 @@ class SceneCodecTest {
                     Keyframe(0, KeyValue.Scalar(0.0), EasingSpec.EaseInOut),
                     Keyframe(300, KeyValue.Scalar(120.5), EasingSpec.Spring(0.6, 300.0)),
                     Keyframe(600, KeyValue.Scalar(80.0), EasingSpec.Steps(4)),
+                    Keyframe(800, KeyValue.Scalar(40.0), EasingSpec.Steps(3, StepJump.Both)),
                     Keyframe(1_000, KeyValue.Scalar(0.0)),
                 ),
             ),

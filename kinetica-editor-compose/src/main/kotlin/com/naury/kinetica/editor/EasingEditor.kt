@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.core.animation.EasingSpec
+import com.naury.kinetica.core.animation.StepJump
 import com.naury.kinetica.motion.Easing
 import java.util.Locale
 
@@ -45,7 +46,7 @@ import java.util.Locale
  * 고른 키 구간의 easing을 고르고 값을 편집한다.
  *
  * 선형과 베지어는 그래프의 두 조절점을 끌어 베지어로 만든다. x는 0..1, y는 [MIN_Y]..[MAX_Y]로 자른다.
- * 스프링은 감쇠비와 강성, 계단은 칸 수를 [EasingParams]의 슬라이더로 바꾼다. 어느 쪽이든 손을 뗄 때 [onChange]를 한 번 부른다.
+ * 스프링은 감쇠비와 강성, 계단은 칸 수와 점프 방식을 [EasingParams]에서 바꾼다. 어느 쪽이든 손을 뗄 때 [onChange]를 한 번 부른다.
  * 그래프는 고른 easing의 실제 곡선(스프링은 넘침 포함, 계단은 계단 모양)을 그리고,
  * 그래프 위의 점과 아래 막대의 점은 [segmentMs] 동안 그 곡선을 따라 움직이며 결과를 미리 보여 준다.
  */
@@ -172,7 +173,7 @@ private fun DrawScope.drawGrid(mapping: GraphMapping, theme: StudioTheme) {
 
 private fun DrawScope.drawCurve(mapping: GraphMapping, easing: EasingSpec, segmentMs: Double, theme: StudioTheme) {
     val path = Path()
-    val points = if (easing is EasingSpec.Steps) stepPoints(easing.count) else curvePoints(easing, segmentMs)
+    val points = if (easing is EasingSpec.Steps) stepPoints(easing) else curvePoints(easing, segmentMs)
     points.forEachIndexed { i, (x, y) ->
         val point = mapping.toPx(x, y.coerceIn(MIN_Y.toFloat(), MAX_Y.toFloat()))
         if (i == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
@@ -189,14 +190,15 @@ private fun curvePoints(easing: EasingSpec, segmentMs: Double): List<Pair<Float,
     }
 }
 
-/** `steps(n, jump-end)`의 꺾인 점. 각 칸이 끝날 때 값이 한 칸 오른다. */
-private fun stepPoints(count: Int): List<Pair<Float, Float>> {
-    val n = count.coerceAtLeast(1)
-    return listOf(0f to 0f) + (0 until n).flatMap { i ->
-        val level = i.toFloat() / n
-        val end = (i + 1).toFloat() / n
-        listOf(end to level, end to end)
-    }
+/**
+ * 계단의 꺾인 점. 각 칸의 높이는 칸 가운데에서 잰 값이라 점프 방식이 그대로 반영되고, 양 끝은 0과 1에 잇는다.
+ * 칸 수가 잘못된 계단은 선형으로 계산되므로 칸을 하나로 본다.
+ */
+private fun stepPoints(easing: EasingSpec.Steps): List<Pair<Float, Float>> {
+    val n = easing.count.coerceAtLeast(1)
+    val levels = (0 until n).map { i -> Easing.evaluate(easing, (i + HALF) / n, 0.0).toFloat() }
+    val inner = levels.flatMapIndexed { i, level -> listOf(i.toFloat() / n to level, (i + 1).toFloat() / n to level) }
+    return listOf(0f to 0f) + inner + (1f to 1f)
 }
 
 private fun DrawScope.drawHandles(mapping: GraphMapping, bezier: EasingSpec.CubicBezier, theme: StudioTheme) {
@@ -247,7 +249,13 @@ internal fun describe(easing: EasingSpec): String = when (easing) {
         easing.y2,
     )
 
-    is EasingSpec.Steps -> "steps(${easing.count})"
+    is EasingSpec.Steps -> if (easing.jump ==
+        StepJump.End
+    ) {
+        "steps(${easing.count})"
+    } else {
+        "steps(${easing.count}, jump-${easing.jump.wireName})"
+    }
 
     is EasingSpec.Spring -> String.format(Locale.ROOT, "spring(%.2f, %.0f)", easing.dampingRatio, easing.stiffness)
 }
@@ -277,6 +285,7 @@ private const val GRID_ALPHA = 0.3f
 private const val CURVE_SAMPLES = 64
 private const val SPRING_SAMPLES = 160
 private const val THIRD = 1.0 / 3.0
+private const val HALF = 0.5
 private const val ROUNDING = 100.0
 private const val MIN_PREVIEW_MS = 400
 private const val MAX_PREVIEW_MS = 2_000

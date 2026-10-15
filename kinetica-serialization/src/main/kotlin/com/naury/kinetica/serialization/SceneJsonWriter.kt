@@ -4,6 +4,7 @@ import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.KeyValue
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.RotationDirection
+import com.naury.kinetica.core.animation.StepJump
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
@@ -232,6 +233,7 @@ internal object SceneJsonWriter {
             is EasingSpec.Steps -> {
                 put(K.TYPE, K.EASING_STEPS)
                 put(K.COUNT, easing.count)
+                if (easing.jump != StepJump.End) put(K.JUMP, easing.jump.wireName)
             }
 
             is EasingSpec.Spring -> {

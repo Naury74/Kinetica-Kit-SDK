@@ -1,6 +1,7 @@
 package com.naury.kinetica.motion
 
 import com.naury.kinetica.core.animation.EasingSpec
+import com.naury.kinetica.core.animation.StepJump
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.exp
@@ -34,9 +35,25 @@ public object Easing {
         return when (spec) {
             EasingSpec.Linear -> u
             is EasingSpec.CubicBezier -> cubicBezier(spec, u)
-            is EasingSpec.Steps -> floor(u * spec.count) / spec.count
+            is EasingSpec.Steps -> steps(spec, u)
             is EasingSpec.Spring -> spring(spec, u * segmentDurationMs / MILLIS_PER_SECOND)
         }
+    }
+
+    /**
+     * CSS `steps()` 계산과 같다. jump-start와 jump-both는 칸 번호를 하나 올리고, 오르는 횟수는 jump-none이 `n-1`, jump-both가 `n+1`이다.
+     * 검증을 거치지 않아 오르는 횟수가 1보다 작으면 선형으로 계산한다.
+     */
+    private fun steps(spec: EasingSpec.Steps, u: Double): Double {
+        val jumps = when (spec.jump) {
+            StepJump.Start, StepJump.End -> spec.count
+            StepJump.None -> spec.count - 1
+            StepJump.Both -> spec.count + 1
+        }
+        if (jumps < 1) return u
+        val raised = spec.jump == StepJump.Start || spec.jump == StepJump.Both
+        val step = floor(u * spec.count).toInt() + if (raised) 1 else 0
+        return step.coerceAtMost(jumps).toDouble() / jumps
     }
 
     private fun cubicBezier(spec: EasingSpec.CubicBezier, x: Double): Double {

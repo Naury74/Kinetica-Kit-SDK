@@ -33,6 +33,7 @@ import com.naury.kinetica.core.animation.AnimatableProperty
 import com.naury.kinetica.core.animation.EasingSpec
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.RotationDirection
+import com.naury.kinetica.core.animation.StepJump
 import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.history.KineticaSession
@@ -311,6 +312,46 @@ class TimelineGesturesTest {
         assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(20))
         session.history.undo()
         assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(10))
+    }
+
+    @Test
+    fun `계단 점프 방식 칩을 누를 때마다 실행 취소 한 단계로 바꾸고 그래프 설명에 반영한다`() {
+        openCurve()
+        timelineButton("Steps").performClick()
+        compose.waitForIdle()
+
+        timelineButton("jump-start").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(4, StepJump.Start))
+        val graph = compose.onNodeWithTag(EASING_GRAPH_TAG).fetchSemanticsNode()
+        assertThat(graph.config[SemanticsProperties.StateDescription]).isEqualTo("steps(4, jump-start)")
+
+        timelineButton("jump-both").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(4, StepJump.Both))
+
+        session.history.undo()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(4, StepJump.Start))
+        session.history.undo()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(4))
+    }
+
+    @Test
+    fun `칸이 1개일 때 jump-none을 고르면 칸 수를 2로 올리고 슬라이더도 2 아래로 내려가지 않는다`() {
+        openCurve()
+        timelineButton("Steps").performClick()
+        compose.waitForIdle()
+        setSlider("Step count", 1f)
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(1))
+
+        timelineButton("jump-none").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(2, StepJump.None))
+
+        setSlider("Step count", 1f)
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(2, StepJump.None))
+        setSlider("Step count", 6f)
+        assertThat(firstEasing()).isEqualTo(EasingSpec.Steps(6, StepJump.None))
     }
 
     @Test

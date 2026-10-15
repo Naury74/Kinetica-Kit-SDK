@@ -90,12 +90,15 @@ public final class com/naury/kinetica/core/animation/EasingSpec$Spring : com/nau
 }
 
 public final class com/naury/kinetica/core/animation/EasingSpec$Steps : com/naury/kinetica/core/animation/EasingSpec {
-	public fun <init> (I)V
+	public fun <init> (ILcom/naury/kinetica/core/animation/StepJump;)V
+	public synthetic fun <init> (ILcom/naury/kinetica/core/animation/StepJump;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
-	public final fun copy (I)Lcom/naury/kinetica/core/animation/EasingSpec$Steps;
-	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/EasingSpec$Steps;IILjava/lang/Object;)Lcom/naury/kinetica/core/animation/EasingSpec$Steps;
+	public final fun component2 ()Lcom/naury/kinetica/core/animation/StepJump;
+	public final fun copy (ILcom/naury/kinetica/core/animation/StepJump;)Lcom/naury/kinetica/core/animation/EasingSpec$Steps;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/animation/EasingSpec$Steps;ILcom/naury/kinetica/core/animation/StepJump;ILjava/lang/Object;)Lcom/naury/kinetica/core/animation/EasingSpec$Steps;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCount ()I
+	public final fun getJump ()Lcom/naury/kinetica/core/animation/StepJump;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -181,6 +184,22 @@ public final class com/naury/kinetica/core/animation/RotationDirection : java/la
 
 public final class com/naury/kinetica/core/animation/RotationDirection$Companion {
 	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/animation/RotationDirection;
+}
+
+public final class com/naury/kinetica/core/animation/StepJump : java/lang/Enum {
+	public static final field Both Lcom/naury/kinetica/core/animation/StepJump;
+	public static final field Companion Lcom/naury/kinetica/core/animation/StepJump$Companion;
+	public static final field End Lcom/naury/kinetica/core/animation/StepJump;
+	public static final field None Lcom/naury/kinetica/core/animation/StepJump;
+	public static final field Start Lcom/naury/kinetica/core/animation/StepJump;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/animation/StepJump;
+	public static fun values ()[Lcom/naury/kinetica/core/animation/StepJump;
+}
+
+public final class com/naury/kinetica/core/animation/StepJump$Companion {
+	public final fun fromWireName (Ljava/lang/String;)Lcom/naury/kinetica/core/animation/StepJump;
 }
 
 public final class com/naury/kinetica/core/animation/Timeline {

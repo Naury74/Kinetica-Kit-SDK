@@ -7,6 +7,7 @@ import com.naury.kinetica.core.animation.KeyValueType
 import com.naury.kinetica.core.animation.Keyframe
 import com.naury.kinetica.core.animation.PropertyTrack
 import com.naury.kinetica.core.animation.RotationDirection
+import com.naury.kinetica.core.animation.StepJump
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.animation.TimelineMarker
 import com.naury.kinetica.core.geometry.Transform2D
@@ -298,7 +299,13 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             json.finite(K.Y2, path),
         )
 
-        K.EASING_STEPS -> EasingSpec.Steps(json.required(K.COUNT, path).asInt("$path.${K.COUNT}"))
+        K.EASING_STEPS -> EasingSpec.Steps(
+            json.required(K.COUNT, path).asInt("$path.${K.COUNT}"),
+            json.optional(K.JUMP)?.let {
+                val at = "$path.${K.JUMP}"
+                StepJump.fromWireName(it.asString(at)) ?: fail(at, "지원하지 않는 계단 점프 방식입니다.")
+            } ?: StepJump.End,
+        )
 
         K.EASING_SPRING -> EasingSpec.Spring(json.finite(K.DAMPING_RATIO, path), json.finite(K.STIFFNESS, path))
 
