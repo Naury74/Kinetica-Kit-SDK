@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -207,29 +208,33 @@ private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, st
     val cache = sampler.cache
     val offset = sampler.offset
     val blurPx = style.blur.toPx() * level
+    // 블러가 크면 배경을 낮은 해상도로 기록해 흐린 뒤 늘려 그린다. 흐린 결과는 줄였다 늘려도 차이가 거의 없고,
+    // GPU가 칠할 픽셀과 레이어 텍스처 메모리가 크게 줄어 목록에 글래스가 많을 때 스크롤이 덜 끊긴다.
+    val scale = sampleScale(blurPx)
     // 블러와 굴절은 가장자리 바깥의 픽셀을 끌어오므로 그만큼 넓게 기록한다.
     val pad = ceil(blurPx * 2f + style.refraction * REFRACTION_DP * density).toInt()
-    val recordSize = IntSize(ceil(size.width).toInt() + pad * 2, ceil(size.height).toInt() + pad * 2)
-    if (recordSize.width <= 0 || recordSize.height <= 0) return
+    val fullSize = IntSize(ceil(size.width).toInt() + pad * 2, ceil(size.height).toInt() + pad * 2)
+    if (fullSize.width <= 0 || fullSize.height <= 0) return
+    val recordSize = IntSize(ceil(fullSize.width * scale).toInt().coerceAtLeast(1), ceil(fullSize.height * scale).toInt().coerceAtLeast(1))
     val relative = offset - backdrop.origin
-    val key =
-        listOf(
-            blurPx,
-            style.saturation * level + (1 - level),
-            style.brightness * level,
-            style.refraction * level,
-            recordSize,
-            cornerOf(outline),
-        )
+    val corner = cornerOf(outline)
+    val key = listOf(blurPx, style.saturation * level + (1 - level), style.brightness * level, style.refraction * level, recordSize, corner)
     if (cache.key != key && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         cache.key = key
-        cache.effect = glassEffect(blurPx, style, level, Region(recordSize, pad.toFloat(), cornerOf(outline)))
+        cache.effect = glassEffect(blurPx * scale, style, level, Region(recordSize, pad * scale, corner * scale))
     }
     layer.renderEffect = cache.effect
     layer.record(recordSize) {
-        translate(-relative.x + pad, -relative.y + pad) { drawLayer(backdrop.layer) }
+        scale(scale, pivot = Offset.Zero) { translate(-relative.x + pad, -relative.y + pad) { drawLayer(backdrop.layer) } }
     }
-    translate(-pad.toFloat(), -pad.toFloat()) { drawLayer(layer) }
+    translate(-pad.toFloat(), -pad.toFloat()) { scale(1f / scale, pivot = Offset.Zero) { drawLayer(layer) } }
+}
+
+/** 블러 반경(px)에 맞춘 기록 배율. 블러가 작으면 원래 해상도, 클수록 낮춘다. */
+private fun sampleScale(blurPx: Float): Float = when {
+    blurPx < FULL_RES_BLUR_PX -> 1f
+    blurPx < THIRD_RES_BLUR_PX -> HALF
+    else -> THIRD
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -375,6 +380,10 @@ private object GrainBrush {
 }
 
 private const val REFRACTION_DP = 14f
+private const val FULL_RES_BLUR_PX = 12f
+private const val THIRD_RES_BLUR_PX = 48f
+private const val HALF = 0.5f
+private const val THIRD = 1f / 3f
 private const val MIN_PX = 0.5f
 private const val EDGE_FADE_AT = 0.45f
 private const val EDGE_FADE = 0.25f
