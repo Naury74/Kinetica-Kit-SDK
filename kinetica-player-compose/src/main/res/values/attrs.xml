@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- KineticaPlayerView XML 속성. 코드의 같은 이름 속성과 같다. -->
+    <!-- KineticaPlayerView XML 속성. 코드에서 이름이 같은 속성과 같은 역할을 한다. -->
     <declare-styleable name="KineticaPlayerView">
-        <!-- 영역에 맞추는 방식. -->
+        <!-- 장면을 영역에 맞추는 방식. -->
         <attr name="kinetica_fit" format="enum">
             <enum name="contain" value="0" />
             <enum name="responsive" value="1" />
         </attr>
-        <!-- 문서의 첫 timeline을 바로 재생한다. 기본 true. -->
+        <!-- 문서의 첫 timeline을 바로 재생할지. 기본값은 true. -->
         <attr name="kinetica_autoplay" format="boolean" />
     </declare-styleable>
 </resources>

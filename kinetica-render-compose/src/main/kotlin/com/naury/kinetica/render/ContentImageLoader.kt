@@ -23,12 +23,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * 이미지 노드의 URI를 읽는 기본 구현. `content://`·`android.resource://`만 열고 다른 scheme(웹·파일)은 열지 않는다(docs 14).
+ * 이미지 노드의 URI를 읽는 기본 구현. `content://`와 `android.resource://`만 열고, 웹이나 파일 같은 다른 scheme은 열지 않는다(docs 14).
  *
- * 디코딩 전에 크기를 읽어 [maxPixels] 안으로 줄여 디코딩한다. API 28 이상은 EXIF 회전을 반영하고, 26·27에서는 반영하지 않는다.
- * 권한이 없거나 열 수 없거나 그림이 아니면 `null`이다. 입출력은 [ioDispatcher]에서 한다.
+ * 디코딩 전에 크기를 먼저 읽고 [maxPixels] 안으로 줄여서 디코딩한다. API 28 이상에서는 EXIF 회전을 반영하고, 26과 27에서는 반영하지 않는다.
+ * 권한이 없거나, 열 수 없거나, 이미지가 아니면 `null`을 돌려준다. 입출력은 [ioDispatcher]에서 실행한다.
  *
- * @param maxPixels 디코딩한 그림의 최대 픽셀 수(기본 4 MP)
+ * @param maxPixels 디코딩한 이미지의 최대 픽셀 수(기본 4MP)
  */
 public class ContentImageLoader(
     context: Context,
@@ -94,8 +94,8 @@ public class ContentImageLoader(
 }
 
 /**
- * [document]의 이미지 노드 URI를 [loader]로 읽어 그리기에 쓸 [SceneImageProvider]를 돌려준다. 읽기는 뒤에서 하며,
- * 다 읽힌 그림부터 다시 그려진다. 읽지 못한 그림은 빈 틀로 남는다. 한 번 읽은 그림은 이 구성 동안 다시 읽지 않는다.
+ * [document]의 이미지 노드 URI를 [loader]로 읽어 그리기에 쓸 [SceneImageProvider]를 돌려준다. 백그라운드에서 읽고,
+ * 읽기가 끝난 이미지부터 다시 그린다. 읽지 못한 이미지는 플레이스홀더로 남는다. 한 번 읽은 이미지는 이 컴포지션에 있는 동안 다시 읽지 않는다.
  */
 @Composable
 public fun rememberSceneImages(document: SceneDocument, loader: ContentImageLoader? = null): SceneImageProvider {

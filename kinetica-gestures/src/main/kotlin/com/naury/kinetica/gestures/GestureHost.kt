@@ -6,8 +6,8 @@ import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
 
 /**
- * 제스처가 읽고 바꾸는 편집 상태. 편집기가 세션과 보기 상태를 이어 구현한다.
- * 제스처는 이 인터페이스로만 문서를 바꾸므로 저장소나 실행 취소 구현을 모른다.
+ * 제스처가 읽고 바꾸는 편집 상태. 편집기가 세션과 화면 상태를 연결해 구현한다.
+ * 제스처는 이 인터페이스로만 문서를 바꾸므로 저장소나 실행 취소 구현에 의존하지 않는다.
  */
 public interface GestureHost {
     public val document: SceneDocument
@@ -30,11 +30,11 @@ public interface GestureHost {
 /**
  * 제스처 판정 기준. 모두 viewport 픽셀 단위이므로 dp 값에 density를 곱해 넘긴다.
  *
- * @property touchSlopPx 이만큼 움직여야 끌기로 본다.
- * @property handleTouchRadiusPx 손잡이를 잡는 반경. 48dp 터치 영역이면 24dp다.
- * @property hitSlopPx 노드를 맞힐 때 더하는 여유 거리
- * @property rotateHandleOffsetPx 회전 손잡이가 위 변에서 떨어진 거리
- * @property rotationSnapDegrees 0보다 크면 회전 각도를 이 배수로 맞춘다.
+ * @property touchSlopPx 이 거리 이상 움직여야 드래그로 본다.
+ * @property handleTouchRadiusPx 핸들을 잡을 수 있는 반경. 터치 영역이 48dp면 24dp다.
+ * @property hitSlopPx 노드 터치 판정에 더하는 여유 거리
+ * @property rotateHandleOffsetPx 회전 핸들이 위쪽 변에서 떨어진 거리
+ * @property rotationSnapDegrees 0보다 크면 회전 각도를 이 값의 배수로 맞춘다.
  */
 public data class GestureConfig(
     val touchSlopPx: Double,
@@ -44,7 +44,7 @@ public data class GestureConfig(
     val rotationSnapDegrees: Double = 0.0,
 ) {
     public companion object {
-        /** docs 24의 기본 크기(끌기 8dp, 손잡이 48dp 영역, 회전 손잡이 20dp)를 [density]로 바꾼다. */
+        /** docs 24의 기본값(드래그 8dp, 핸들 터치 영역 48dp, 회전 핸들 20dp)을 [density]로 픽셀로 바꾼다. */
         public fun forDensity(density: Float): GestureConfig = GestureConfig(
             touchSlopPx = TOUCH_SLOP_DP * density,
             handleTouchRadiusPx = HANDLE_RADIUS_DP * density,
@@ -59,7 +59,7 @@ public data class GestureConfig(
     }
 }
 
-/** 지금 처리 중인 상호작용. */
+/** 현재 처리 중인 상호작용. */
 public enum class InteractionMode {
     Idle,
     PressPending,

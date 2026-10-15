@@ -4,19 +4,19 @@ import com.naury.kinetica.core.scene.NodeEffects
 import com.naury.kinetica.core.scene.isValidDataKey
 
 /**
- * 보드에 놓을 수 있는 호스트 위젯 하나. 보드는 [key]와 배치만 저장하고, 내용은 호스트가 [key]로 그린다.
+ * 보드에 놓을 수 있는 호스트 위젯 하나. 보드는 [key]와 배치만 저장하고, 위젯 내용은 호스트가 [key]를 보고 그린다.
  *
  * @property key 위젯 키. 영문자·숫자와 `.` `_` `-`로 된 1..128자. [multiple]이 아니면 보드 안에서 하나만 놓인다.
- * @property label 위젯 추가 목록에 보이는 이름
+ * @property label 위젯 추가 메뉴에 보이는 이름
  * @property widthDp 처음 놓을 때 너비(dp, 0보다 큼). 격자 배치에서는 [columnSpan]을 쓴다.
  * @property heightDp 처음 놓을 때 높이(dp, 0보다 큼). 격자 배치에서는 [rowSpan]을 쓴다.
  * @property columnSpan 격자 배치에서 차지하는 열 수(1 이상)
  * @property rowSpan 격자 배치에서 차지하는 행 수(1 이상)
  * @property placedByDefault 저장된 배치가 없거나 앱 업데이트로 새로 생긴 위젯일 때 보드에 바로 놓을지
- * @property removable `false`면 사용자가 보드에서 뺄 수 없다(필수 위젯)
- * @property effects 사용 모드에서 위젯에 붙는 움직임 효과(누를 때 리플·눌림, 나타날 때, 계속 반복). 편집 중에는 움직이지 않는다.
- *   거리 값은 보드 문서 단위(약 2.75단위 = 1dp)다. 저장하지 않으므로 앱 업데이트로 바꾸면 바로 반영된다.
- * @property multiple `true`면 같은 위젯을 여러 개 놓을 수 있다(메모 등). 놓인 자리마다 id가 다르다([KineticaBoardState.placedKeys]).
+ * @property removable `false`면 사용자가 보드에서 삭제할 수 없는 필수 위젯이다
+ * @property effects 사용 모드에서 위젯에 적용할 모션 효과. 누를 때의 리플과 pressed 효과, 등장 애니메이션, 반복 애니메이션을 정한다.
+ *   편집 중에는 재생하지 않는다. 거리 값은 보드 문서 단위(약 2.75단위 = 1dp)다. 저장하지 않으므로 앱을 업데이트해 바꾸면 바로 반영된다.
+ * @property multiple `true`면 메모처럼 같은 위젯을 여러 개 놓을 수 있다. 슬롯마다 id가 다르다([KineticaBoardState.placedKeys]).
  * @throws IllegalArgumentException 키 형식이나 크기가 범위를 벗어날 때
  */
 public data class BoardWidget @JvmOverloads constructor(
@@ -41,8 +41,8 @@ public data class BoardWidget @JvmOverloads constructor(
 /** 보드에서 위젯을 놓는 방식. */
 public sealed interface BoardArrangement {
     /**
-     * 자유 배치. 위치·크기를 마음대로 정하고, 다른 위젯·보드 가장자리에 붙으며, 화면 가장자리·모서리로 끌어 놓으면
-     * 반·4분의 1·전체 화면으로 분할 배치된다(데스크톱 창 분할처럼). 화면 폭이 바뀌면 가로 비율을 유지한다.
+     * 자유 배치. 위치와 크기를 마음대로 정하고, 다른 위젯이나 보드 가장자리에 스냅된다. 데스크톱의 창 분할처럼 화면 가장자리나
+     * 모서리로 끌어 놓으면 화면의 절반, 4분의 1, 전체를 차지한다. 화면 폭이 바뀌면 가로 비율을 유지한다.
      */
     public data class Free @JvmOverloads constructor(val gapDp: Float = 12f) : BoardArrangement {
         init {
@@ -51,7 +51,7 @@ public sealed interface BoardArrangement {
     }
 
     /**
-     * 격자 배치(대시보드 타일). 위젯은 칸 단위로 놓이고 겹치면 아래로 밀린다. 칸 높이는 칸 너비 × [rowHeightRatio]다.
+     * 대시보드 타일 같은 격자 배치. 위젯은 칸 단위로 놓이고, 겹치면 아래로 밀린다. 칸 높이는 칸 너비 × [rowHeightRatio]다.
      *
      * @throws IllegalArgumentException 열 수가 1..24 밖이거나 간격·비율이 범위를 벗어날 때
      */
@@ -69,7 +69,7 @@ public sealed interface BoardArrangement {
     }
 }
 
-/** 편집 모드에서 사용자에게 허용할 일. 호스트가 화면마다 정한다. */
+/** 편집 모드에서 사용자에게 허용할 작업. 호스트가 화면마다 정한다. */
 public data class BoardPermissions @JvmOverloads constructor(
     val move: Boolean = true,
     val resize: Boolean = true,

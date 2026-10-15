@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
-/** 보드 편집 표시 색. [zone]은 분할·칸 자리 미리보기를 칠하는 색이다. */
+/** 보드 편집 화면의 색. [zone]은 분할 영역과 격자 칸 미리보기를 칠하는 색이다. */
 @Immutable
 public data class BoardColors(
     val accent: Color = Color(ACCENT),
@@ -14,7 +14,7 @@ public data class BoardColors(
     val onAccent: Color = Color.White,
 ) {
     public companion object {
-        /** 지금 MaterialTheme 색(primary·onPrimary)을 따르는 색. 밝은·어두운 테마를 함께 따른다. */
+        /** 현재 MaterialTheme의 primary, onPrimary 색을 따른다. 라이트 테마와 다크 테마 모두 따라간다. */
         @Composable
         public fun fromMaterialTheme(): BoardColors {
             val scheme = MaterialTheme.colorScheme
@@ -26,7 +26,7 @@ public data class BoardColors(
             )
         }
 
-        /** XML 화면에서 강조색 하나로 만든다. */
+        /** XML 화면에서 쓸 색을 강조색 하나로 만든다. */
         @JvmStatic
         public fun fromAccent(accent: Int): BoardColors = Color(accent).let { BoardColors(it, it, it.copy(alpha = ZONE_ALPHA)) }
     }

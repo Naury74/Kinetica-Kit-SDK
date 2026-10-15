@@ -37,7 +37,7 @@ private fun stackMetadata(members: List<StackMember>): Map<String, String> = map
         JsonArray(members.map { JsonObject(mapOf(MEMBER_ID to JsonPrimitive(it.id), MEMBER_KEY to JsonPrimitive(it.key))) }).toString(),
 )
 
-/** 저장본을 열 때 목록에 없는 위젯을 묶음에서 뺀다. 하나만 남으면 보통 위젯 노드, 하나도 없으면 `null`. */
+/** 저장본을 열 때 목록에 없는 위젯을 스택에서 제거한다. 하나만 남으면 일반 위젯 노드를, 하나도 없으면 `null`을 돌려준다. */
 internal fun reconcileStack(node: SceneNode, keys: Set<String>): SceneNode? {
     val members = node.stackMembers().filter { it.key in keys }
     return when (members.size) {
@@ -54,16 +54,16 @@ internal fun reconcileStack(node: SceneNode, keys: Set<String>): SceneNode? {
 private fun slot(node: SceneNode, key: String): NodeContent.HostSlot = (node.content as NodeContent.HostSlot).copy(key = key)
 
 /**
- * 놓인 자리 [id]가 묶음이면 그 안의 자리 id들(보이는 순서), 아니면 빈 목록.
+ * 슬롯 [id]가 스택이면 그 안의 슬롯 id를 보이는 순서대로 돌려준다. 스택이 아니면 빈 목록이다.
  */
 public fun KineticaBoardState.stackMembers(id: String): List<String> =
     NodeId.parseOrNull(id)?.let(document.value::node)?.stackMembers()?.map { it.id }.orEmpty()
 
 /**
- * [itemId] 위젯을 [targetId] 자리에 겹쳐 묶음으로 만든다(휴대폰 홈 화면의 위젯 묶음처럼 한 자리에서 넘겨 본다).
- * [targetId]가 이미 묶음이면 맨 뒤에 더한다. 묶음은 [targetId]의 자리·크기를 쓰고 `stack.N` id를 받는다. 실행 취소 한 단계다.
+ * [itemId] 위젯을 [targetId] 위젯 위에 겹쳐 스택으로 만든다. 휴대폰 홈 화면의 위젯 스택처럼 한 위치에서 넘겨 본다.
+ * [targetId]가 이미 스택이면 맨 뒤에 추가한다. 스택은 [targetId]의 위치와 크기를 그대로 쓰고 `stack.N` id를 받는다. 실행 취소 한 단계다.
  *
- * @return 묶음 id. 둘 중 하나가 놓여 있지 않거나 같은 자리면 `null`
+ * @return 스택 id. 둘 중 하나가 놓여 있지 않거나 같은 슬롯이면 `null`
  */
 public fun KineticaBoardState.stack(targetId: String, itemId: String): String? {
     val document = document.value
@@ -76,7 +76,7 @@ public fun KineticaBoardState.stack(targetId: String, itemId: String): String? {
     val stackId = target.id.value.takeIf { target.stackMembers().isNotEmpty() }
         ?: generateSequence(1) { it + 1 }.map { "stack.$it" }.first { document.node(NodeId(it)) == null }
     val stackNode = target.copy(id = NodeId(stackId), content = slot(target, stackId), metadata = stackMetadata(members), name = "")
-    // 둘을 뺀 뒤 원래 대상 자리(그리기 순서)에 넣는다.
+    // 둘을 지운 뒤 원래 대상이 있던 그리기 순서에 넣는다.
     val index = document.rootOrder.takeWhile { it != target.id }.count { it != item.id }
     if (!commands.beginTransaction("stack")) return null
     val ok =
@@ -97,7 +97,7 @@ public fun KineticaBoardState.stack(targetId: String, itemId: String): String? {
 }
 
 /**
- * 묶음 [stackId]를 풀어 위젯들을 따로 놓는다. 첫 위젯은 묶음 자리에, 나머지는 빈자리에 놓는다. 실행 취소 한 단계다.
+ * 스택 [stackId]를 풀어 위젯을 하나씩 따로 놓는다. 첫 위젯은 스택이 있던 위치에, 나머지는 빈 위치에 놓는다. 실행 취소 한 단계다.
  */
 public fun KineticaBoardState.unstack(stackId: String): Boolean {
     val start = document.value

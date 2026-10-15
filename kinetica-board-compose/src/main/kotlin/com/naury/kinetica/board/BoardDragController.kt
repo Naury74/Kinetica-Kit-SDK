@@ -9,8 +9,8 @@ import com.naury.kinetica.core.geometry.Rect
 import com.naury.kinetica.core.geometry.Vec2
 
 /**
- * 끌고 있는 위젯. [rect]는 손가락을 따라가는 자리, [target]은 놓으면 들어갈 자리(분할·칸·붙임). 모두 화면 폭 문서 단위.
- * [stackOnto]가 있으면 놓을 때 그 위젯과 묶음이 된다. [picker]가 있으면 배치 틀 고르기판이 떠 있다.
+ * 드래그 중인 위젯. [rect]는 손가락을 따라가는 위치, [target]은 놓았을 때 들어갈 위치로 분할 영역, 격자 칸, 스냅 결과 중 하나다.
+ * 모두 화면 폭 기준 문서 단위다. [stackOnto]가 있으면 놓을 때 그 위젯과 스택이 된다. [picker]가 있으면 레이아웃 선택 패널이 떠 있다.
  */
 internal data class BoardDrag(
     val key: String,
@@ -21,7 +21,7 @@ internal data class BoardDrag(
     val picker: PickerHover? = null,
 )
 
-/** 편집 모드의 옮기기·크기 바꾸기. 끄는 동안은 문서를 바꾸지 않고, 놓을 때 한 번 [KineticaBoardState.place]한다. */
+/** 편집 모드의 이동과 크기 조절. 드래그하는 동안에는 문서를 바꾸지 않고, 손을 뗄 때 한 번만 [KineticaBoardState.place]를 호출한다. */
 internal class BoardDragController(private val state: KineticaBoardState) {
     var drag by mutableStateOf<BoardDrag?>(null)
         private set
@@ -34,15 +34,15 @@ internal class BoardDragController(private val state: KineticaBoardState) {
     private var lastLocal: Offset = Offset.Zero
     private var pointerY: Double? = null
 
-    /** 위쪽 가장자리에 닿아 배치 틀 고르기판이 열렸는지. 손가락이 판 아래로 내려가면 닫힌다. */
+    /** 위쪽 가장자리에 닿아 레이아웃 선택 패널이 열려 있는지. 손가락이 패널 아래로 내려가면 닫힌다. */
     private var pickerOpen = false
 
-    /** 지금 화면의 배치 틀 고르기판 모양. */
+    /** 현재 화면에 맞춘 레이아웃 선택 패널 모양. */
     fun picker(): SnapLayouts.Picker? = frame?.let { SnapLayouts.picker(it.visible, it.mapping.gap, it.unit) }
 
     /**
-     * 끌기 시작. [local]은 위젯 편집 틀(끄는 동안 제자리에 있다) 안의 손가락 위치(픽셀)다.
-     * 이후 [move]·[resize]도 같은 틀 기준 위치를 받으므로, 끌기 감지 여유(touch slop)와 상관없이 손가락을 정확히 따라간다.
+     * 드래그를 시작한다. [local]은 위젯 편집 테두리 안에서의 손가락 위치(픽셀)이며, 테두리는 드래그하는 동안 움직이지 않는다.
+     * 이후 [move]와 [resize]도 같은 테두리 기준 위치를 받으므로 touch slop과 상관없이 손가락을 정확히 따라간다.
      */
     fun start(key: String, local: Offset) {
         val rect = frame?.rects?.get(key) ?: return
@@ -59,7 +59,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         val start = origin ?: return
         val dx = (local.x - startLocal.x) / frame.zoom
         val dy = (local.y - startLocal.y) / frame.zoom
-        // 위젯은 보드 왼쪽·오른쪽·위 밖으로 나가지 않는다. 손가락은 계속 따라가므로 가장자리 분할은 그대로 감지된다.
+        // 위젯은 보드의 왼쪽, 오른쪽, 위쪽 밖으로 나가지 않는다. 손가락 위치는 계속 따라가므로 가장자리 분할은 그대로 감지된다.
         val left = (start.left + dx).coerceIn(0.0, (frame.mapping.displayWidth - start.width).coerceAtLeast(0.0))
         val top = (start.top + dy).coerceAtLeast(0.0)
         val raw = Rect(left, top, left + start.width, top + start.height)
@@ -70,7 +70,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         val zone = if (state.arrangement is BoardArrangement.Free) BoardGeometry.zoneAt(pointer, frame.visible, frame.edge) else null
         if (pickFromLayouts(key, raw, pointer, zone)) return
         val snapped = BoardGeometry.snapMove(raw, others, frame.mapping.displayWidth, frame.mapping.gap, frame.snap)
-        // 손가락이 다른 위젯의 가운데에 있으면 그 위젯과 묶는다(가장자리 근처는 평소처럼 붙이거나 밀어낸다).
+        // 손가락이 다른 위젯의 가운데에 있으면 그 위젯과 스택으로 묶는다. 가장자리 근처에서는 평소처럼 스냅하거나 밀어낸다.
         val onto = if (zone ==
             null
         ) {
@@ -89,14 +89,14 @@ internal class BoardDragController(private val state: KineticaBoardState) {
     }
 
     /**
-     * 크기 바꾸기. [local]은 손잡이 안의 손가락 위치다. 위와 시작쪽(왼쪽, 화면이 뒤집혀 있으면 오른쪽)은 그대로이고
+     * 크기를 조절한다. [local]은 핸들 안에서의 손가락 위치다. 위쪽 변과 시작쪽 변(RTL이면 오른쪽)은 그대로 두며,
      * [frame]의 최소 크기보다 작아지지 않는다.
      */
     fun resize(key: String, local: Offset) {
         val frame = frame ?: return
         val start = origin ?: return
         val width = frame.mapping.displayWidth
-        // 뒤집힌 화면은 좌우를 뒤집어 같은 계산(오른쪽 아래 손잡이)으로 바꾼 뒤 다시 뒤집는다.
+        // RTL 화면은 좌우를 뒤집어 오른쪽 아래 핸들과 같은 계산을 하고 결과를 다시 뒤집는다.
         val flip = { rect: Rect ->
             if (frame.mapping.mirrored) Rect(width - rect.right, rect.top, width - rect.left, rect.bottom) else rect
         }
@@ -114,8 +114,8 @@ internal class BoardDragController(private val state: KineticaBoardState) {
     }
 
     /**
-     * 위쪽 가장자리(화면 가득 자리)에 닿으면 배치 틀 고르기판을 연다. 열려 있는 동안 손가락이 올라간 칸이 놓을 자리다.
-     * 판 아래로 [BoardFrame.edge]만큼 내려가면 닫고 평소 끌기로 돌아간다. 고르기판을 다룬 동안 `true`.
+     * 전체 화면 분할 영역인 위쪽 가장자리에 닿으면 레이아웃 선택 패널을 연다. 열려 있는 동안에는 손가락이 올라간 칸에 위젯을 놓는다.
+     * 손가락이 패널 아래로 [BoardFrame.edge]만큼 내려가면 패널을 닫고 일반 드래그로 돌아간다. 패널이 입력을 처리했으면 `true`.
      */
     private fun pickFromLayouts(key: String, raw: Rect, pointer: Vec2, zone: SnapZone?): Boolean {
         if (zone == SnapZone.Maximize) pickerOpen = true
@@ -133,8 +133,8 @@ internal class BoardDragController(private val state: KineticaBoardState) {
     }
 
     /**
-     * 끄는 중 손가락이 보이는 영역 위·아래 자동 스크롤 띠에 있으면 -1(위)·1(아래), 아니면 0. 옮길 때마다 갱신한다.
-     * 띠는 가장자리 분할 자리 바로 안쪽이라, 맨 끝에 놓으면 분할이고 그 조금 안쪽에 머물면 스크롤된다.
+     * 드래그 중 손가락이 보이는 영역의 위쪽 자동 스크롤 영역에 있으면 -1, 아래쪽이면 1, 그 밖이면 0이다. 이동할 때마다 갱신한다.
+     * 자동 스크롤 영역은 가장자리 분할 영역 바로 안쪽에 있어서, 맨 끝에 놓으면 분할 배치되고 조금 안쪽에 머물면 스크롤된다.
      */
     var scrollDirection by mutableIntStateOf(0)
         private set
@@ -143,7 +143,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         val frame = frame ?: return 0
         val y = pointerY ?: return 0
         if (drag?.zone != null || drag?.picker != null) return 0
-        // 위쪽 가장자리는 화면 가득 분할 자리라 그 안에서는 이미 위에서 0을 돌려준다. 아래 가운데는 분할 자리가 없다.
+        // 위쪽 가장자리는 전체 화면 분할 영역이라 위에서 이미 0을 돌려준다. 아래쪽 가운데에는 분할 영역이 없다.
         return when {
             y - frame.visible.top <= frame.edge + frame.scrollBand -> -1
             frame.visible.bottom - y <= frame.edge + frame.scrollBand -> 1
@@ -151,7 +151,7 @@ internal class BoardDragController(private val state: KineticaBoardState) {
         }
     }
 
-    /** 보드가 [dy]픽셀 스크롤되었다. 틀이 함께 움직였으므로 손가락의 틀 기준 위치를 그만큼 옮겨 다시 계산한다. */
+    /** 보드가 [dy]픽셀 스크롤되었을 때 부른다. 테두리도 함께 움직였으므로 테두리 기준 손가락 위치를 그만큼 옮겨 다시 계산한다. */
     fun scrolled(key: String, dy: Float) {
         if (drag?.key != key) return
         move(key, lastLocal + Offset(0f, dy))
@@ -183,10 +183,10 @@ internal class BoardDragController(private val state: KineticaBoardState) {
 }
 
 /**
- * 한 번 그릴 때의 화면 정보(문서 단위). [visible]은 스크롤된 보이는 영역, [edge]는 분할 자리로 보는 가장자리 폭,
- * [snap]은 붙는 거리, [minSize]는 가장 작은 위젯 크기, [scrollBand]는 가장자리 안쪽 자동 스크롤 띠 폭이다.
+ * 한 번 그릴 때의 화면 정보이며 값은 문서 단위다. [visible]은 스크롤된 보이는 영역, [edge]는 분할 영역으로 보는 가장자리 폭,
+ * [snap]은 스냅 거리, [minSize]는 위젯 최소 크기, [scrollBand]는 가장자리 안쪽 자동 스크롤 영역의 폭이다.
  *
- * 스크롤 위치는 끄는 동안 읽을 때마다 [scrollTop]에서 가져온다. 구성 단계에서 읽으면 스크롤 한 칸마다 보드 전체를 다시 구성한다.
+ * 스크롤 위치는 드래그 중 필요할 때마다 [scrollTop]에서 읽는다. 컴포지션 단계에서 읽으면 스크롤할 때마다 보드 전체가 재구성된다.
  */
 internal data class BoardFrame(
     val mapping: BoardMapping,
@@ -199,7 +199,7 @@ internal data class BoardFrame(
     val viewportHeight: Double = 0.0,
     val bottomInset: Double = 0.0,
     val scrollTop: () -> Double = { 0.0 },
-    /** 1dp의 문서 단위. */
+    /** 1dp에 해당하는 문서 단위. */
     val unit: Double = KineticaBoardState.UNITS,
 ) {
     val visible: Rect
@@ -216,5 +216,5 @@ private fun Rect.center(fraction: Double): Rect {
     return Rect(left + insetX, top + insetY, right - insetX, bottom - insetY)
 }
 
-/** 묶음으로 보는 가운데 영역의 비율. */
+/** 스택으로 묶는 가운데 영역의 비율. */
 private const val STACK_AREA = 0.4

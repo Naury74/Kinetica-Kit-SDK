@@ -73,9 +73,9 @@ import com.naury.kinetica.core.scene.Shadow
 import com.naury.kinetica.core.scene.TextAlignment
 
 /**
- * 호스트가 [com.naury.kinetica.core.scene.NodeContent.HostSlot]의 키마다 주는 Composable. 키가 없으면 빈 틀을 그린다.
- * 내용은 노드 상자 크기로 배치되며, 호스트 데이터가 바뀌면 그대로 다시 그려진다.
- * 안에서 dp·sp는 기기 화면 밀도가 아니라 [HOST_VIEW_UNITS_PER_DP]로 문서 단위에 맞춰지므로, 어느 기기·확대 배율에서나 상자 대비 같은 모습이다.
+ * 호스트가 [com.naury.kinetica.core.scene.NodeContent.HostSlot]의 키마다 제공하는 Composable. 키가 없으면 플레이스홀더를 그린다.
+ * 내용은 노드 상자 크기에 맞춰 배치되고, 호스트 데이터가 바뀌면 바로 다시 그려진다. 안쪽의 dp와 sp는 기기 화면 밀도가 아니라
+ * [HOST_VIEW_UNITS_PER_DP]로 문서 단위에 맞춰지므로, 기기나 확대 배율이 달라도 상자에 대한 비율은 같다.
  */
 public typealias SceneSlots = Map<String, @Composable () -> Unit>
 
@@ -83,17 +83,17 @@ public typealias SceneSlots = Map<String, @Composable () -> Unit>
 public const val HOST_VIEW_UNITS_PER_DP: Float = 2.75f
 
 /**
- * 문서를 노드마다 실제 Compose 요소로 그린다(docs 30). 호스트 뷰가 실제로 동작하고 그룹 불투명도·Frame 자르기가 레이어로 합성된다.
+ * 문서의 노드마다 실제 Compose 요소를 만들어 그린다(docs 30). 호스트 뷰가 실제로 동작하고, 그룹 불투명도와 Frame 클리핑은 레이어로 합성된다.
  *
  * - 노드 배치는 문서 변환과 같다: `graphicsLayer(translation, rotation, scale, transformOrigin = pivot)`.
- * - 문서 단위 1 = 픽셀 1(배율 1). [viewport]가 전체를 옮기고 확대한다.
- * - [clipToArtboard]가 `true`면 artboard 밖은 그리지 않는다(재생기). 편집기는 밖에 둔 컴포넌트 원본도 보이도록 `false`다.
- * - [interactive]가 `true`면 동작([SceneNode.action])이 있는 노드를 누를 때 [onAction]을 부르고, 노드의 움직임 효과([SceneNode.effects])를 보여 준다.
- *   `false`면(편집 모드) 누르기를 처리하지 않고 효과도 움직이지 않는다.
- * - [onPressChange]는 동작이 있는 컴포넌트 인스턴스를 누르기 시작할 때(`true`)와 뗄 때·취소될 때(`false`) 그 노드 id로 불린다.
- *   재생기는 이것으로 누르는 동안 눌림 변형을 보여 준다.
+ * - 문서 단위 1은 픽셀 1(배율 1)이다. [viewport]가 전체를 이동하고 확대한다.
+ * - [clipToArtboard]가 `true`면 artboard 밖은 그리지 않는다. 재생기에서 쓴다. 편집기는 artboard 밖에 둔 컴포넌트 원본도 보여야 하므로 `false`를 쓴다.
+ * - [interactive]가 `true`면 동작([SceneNode.action])이 있는 노드를 눌렀을 때 [onAction]을 호출하고, 노드의 모션 효과([SceneNode.effects])를
+ *   재생한다. 편집 모드처럼 `false`면 누르기를 처리하지 않고 효과도 재생하지 않는다.
+ * - [onPressChange]는 동작이 있는 컴포넌트 인스턴스를 누르기 시작할 때 `true`로, 손을 떼거나 취소될 때 `false`로 그 노드 id와 함께 호출된다.
+ *   재생기는 이 콜백으로 누르는 동안 pressed 변형을 보여 준다.
  *
- * 바인딩이나 애니메이션은 이 함수 밖에서 적용한 문서를 넘긴다.
+ * 바인딩과 애니메이션은 이 함수 밖에서 적용한 뒤 그 문서를 넘긴다.
  */
 @Composable
 public fun SceneLayout(
@@ -107,7 +107,7 @@ public fun SceneLayout(
     clipToArtboard: Boolean = false,
     onPressChange: (NodeId, Boolean) -> Unit = { _, _ -> },
 ) {
-    // 스코프는 같은 객체로 두고 문서·동작은 상태로 읽는다. 바뀌지 않은 노드는 같은 인자라 다시 구성하지 않는다(끌기·애니메이션 중 성능).
+    // 드래그와 애니메이션 중 성능을 위해 스코프는 같은 객체로 두고 문서와 동작은 상태로 읽는다. 바뀌지 않은 노드는 인자가 같아서 재구성되지 않는다.
     val documentState = rememberUpdatedState(document)
     val actionState = rememberUpdatedState(if (interactive) onAction else null)
     val pressState = rememberUpdatedState(onPressChange)
@@ -115,7 +115,7 @@ public fun SceneLayout(
         remember(images, slots, interactive) { NodeScope(documentState, images, slots, actionState, pressState, effects = interactive) }
     Box(modifier.clipToBounds()) {
         Box(
-            // artboard가 영역보다 크면 Compose가 가운데로 맞춰 밀어내므로, 제약 없이 재고 왼쪽 위에 둔다(위치는 viewport가 정한다).
+            // artboard가 영역보다 크면 Compose가 가운데 정렬로 밀어내므로 제약 없이 측정해 왼쪽 위에 둔다. 실제 위치는 viewport가 정한다.
             Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).graphicsLayer {
                 transformOrigin = TransformOrigin(0f, 0f)
                 translationX = viewport.panX.toFloat()
@@ -147,7 +147,7 @@ private class NodeScope(
 ) {
     fun pressChanged(id: NodeId, pressed: Boolean) = pressState.value(id, pressed)
 
-    /** 사용 모드(누르면 동작·효과). */
+    /** 사용 모드. 누르면 동작을 실행하고 효과를 재생한다. */
     val interactive: Boolean get() = effects
 
     val document: SceneDocument get() = documentState.value
@@ -160,10 +160,10 @@ private fun Artboard(document: SceneDocument) {
     Box(Modifier.requiredSizePx(Size(document.artboard.width, document.artboard.height)).background(background.toColor()))
 }
 
-/** 자식을 각자의 크기로 재고 원점에 놓는다. 위치는 자식의 graphicsLayer가 정한다. 컨테이너 크기는 [size](없으면 0)다. */
+/** 자식을 각자의 크기로 측정해 원점에 놓는다. 위치는 자식의 graphicsLayer가 정한다. 컨테이너 크기는 [size]이고, 없으면 0이다. */
 @Composable
 private fun Children(ids: List<NodeId>, scope: NodeScope, size: Size? = null) {
-    // 노드 id로 식별해야 순서가 바뀌어도 호스트 뷰의 상태(입력 중인 글, 스크롤 위치 등)가 다른 노드로 넘어가거나 사라지지 않는다.
+    // 노드 id로 식별해야 순서가 바뀌어도 호스트 뷰의 상태(입력 중인 텍스트, 스크롤 위치 등)가 다른 노드로 넘어가거나 사라지지 않는다.
     Layout(content = { ids.forEach { id -> key(id) { scope.document.nodes[id]?.let { NodeView(it, scope) } } } }) { measurables, _ ->
         val placeables = measurables.map { it.measure(Constraints()) }
         layout(size?.width?.toInt() ?: 0, size?.height?.toInt() ?: 0) { placeables.forEach { it.place(0, 0) } }
@@ -186,7 +186,7 @@ private fun NodeView(node: SceneNode, scope: NodeScope) {
     }
 }
 
-/** 노드 모양을 따라 리플·빛 번짐을 그리고, 장면 안이므로 거리 1단위 = 1 px(문서 단위)다. */
+/** 노드 모양을 따라 리플과 글로우를 그린다. 장면 안이므로 거리 1단위는 1px(문서 단위)이다. */
 @Composable
 private fun Modifier.effects(node: SceneNode, enabled: Boolean): Modifier {
     if (!enabled || node.effects.isEmpty) return this
@@ -194,7 +194,7 @@ private fun Modifier.effects(node: SceneNode, enabled: Boolean): Modifier {
     return nodeEffects(node.effects, shape, enabled = true, unitPx = 1f)
 }
 
-/** 문서 변환과 같은 배치: translation 뒤 pivot 기준 회전·배율. 불투명도는 레이어로 합성한다. */
+/** 문서 변환과 같은 배치. translation을 적용한 뒤 pivot 기준으로 회전하고 배율을 적용한다. 불투명도는 레이어로 합성한다. */
 private fun Modifier.placement(node: SceneNode): Modifier {
     val bounds = node.localBounds
     val transform = node.transform
@@ -213,12 +213,12 @@ private fun Modifier.placement(node: SceneNode): Modifier {
 
 private fun Modifier.actionable(node: SceneNode, scope: NodeScope): Modifier {
     val action = node.action ?: return this
-    // 동작 함수는 누를 때 읽는다. 구성 중에 읽으면 호스트가 넘긴 람다가 바뀔 때마다 동작 노드를 모두 다시 구성한다.
+    // 동작 콜백은 누를 때 읽는다. 컴포지션 중에 읽으면 호스트가 넘긴 람다가 바뀔 때마다 동작이 있는 노드가 모두 재구성된다.
     if (!scope.interactive) return this
     val role = if (node.accessibility.role == null || node.accessibility.role == NodeRole.Button) Role.Button else null
     val clickable = clickable(role = role) { scope.onAction?.invoke(action) }
     if (node.instanceOf == null) return clickable
-    // 누르는 동안을 알린다. 손가락은 관찰만 하므로 누르기·스크롤은 그대로다.
+    // 누르는 상태만 알린다. 포인터 이벤트는 관찰만 하고 소비하지 않으므로 누르기와 스크롤은 평소대로 동작한다.
     return clickable.pointerInput(node.id) {
         awaitEachGesture {
             awaitFirstDown(requireUnconsumed = false)
@@ -232,7 +232,7 @@ private fun Modifier.actionable(node: SceneNode, scope: NodeScope): Modifier {
     }
 }
 
-/** 화면 읽기 정보([SceneNode.accessibility]). 장식이면 이 노드와 자손을 읽지 않는다. */
+/** 스크린 리더용 접근성 정보([SceneNode.accessibility]). 장식 노드면 이 노드와 자손을 읽지 않는다. */
 private fun Modifier.accessibility(node: SceneNode): Modifier {
     val info = node.accessibility
     if (info.hidden) return clearAndSetSemantics {}
@@ -251,7 +251,7 @@ private fun Modifier.accessibility(node: SceneNode): Modifier {
 @Composable
 private fun FrameView(node: SceneNode, content: NodeContent.Frame, modifier: Modifier, scope: NodeScope) {
     val outline = remember(content) { requireNotNull(content.outline()) }
-    // 그림자·채우기는 자르기 전에 그려 그림자가 잘리지 않게 하고, 선은 자식 위에 그린다.
+    // 그림자가 잘리지 않도록 그림자와 채우기는 클리핑 전에 그리고, 선은 자식 위에 그린다.
     val clipped = if (content.clip) Modifier.clip(GenericShape { _, _ -> addPath(outline) }) else Modifier
     Box(
         modifier
@@ -267,7 +267,7 @@ private fun FrameView(node: SceneNode, content: NodeContent.Frame, modifier: Mod
     }
 }
 
-/** 사각형·타원·다각형·경로. 경로는 좌표가 노드 원점 기준이라 원점에서 범위의 오른쪽 아래 끝까지를 크기로 잡는다. */
+/** 사각형, 타원, 다각형, 경로. 경로 좌표는 노드 원점 기준이므로 원점부터 경계의 오른쪽 아래 끝까지를 크기로 잡는다. */
 @Composable
 private fun ShapeView(node: SceneNode, content: NodeContent, modifier: Modifier) {
     val bounds = content.localBounds() ?: return
@@ -322,7 +322,7 @@ private fun HostView(node: SceneNode, content: NodeContent.HostSlot, modifier: M
                 drawOutlineStroke(outline, node.style, blur = node.style.fallbackBlur)
             },
     ) {
-        // 바깥 Box는 기기 픽셀(= 문서 단위)로 재고, 안쪽만 문서 단위 밀도로 바꿔 호스트의 dp 배치가 기기마다 달라지지 않게 한다.
+        // 바깥 Box는 기기 픽셀(= 문서 단위)로 측정하고 안쪽만 문서 단위 밀도로 바꿔서, 호스트의 dp 배치가 기기마다 달라지지 않게 한다.
         val fontScale = LocalDensity.current.fontScale
         CompositionLocalProvider(LocalDensity provides Density(HOST_VIEW_UNITS_PER_DP, fontScale)) { slot() }
     }
@@ -337,11 +337,11 @@ private fun Placeholder(size: Size, modifier: Modifier) {
     }
 }
 
-/** API 31 미만에서는 노드 전체 흐림([layerBlur])이 듣지 않으므로, 적어도 채우기·선은 직접 흐려 그린다. */
+/** API 31 미만에서는 노드 전체 블러([layerBlur])가 적용되지 않으므로, 채우기와 선만이라도 직접 블러를 걸어 그린다. */
 private val NodeStyle.fallbackBlur: Double
     get() = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) blur else 0.0
 
-/** 노드 전체 흐림. 문서 단위 = 픽셀이므로 픽셀을 dp로 바꿔 쓴다. API 31 미만에서는 Compose가 흐림 없이 그린다. */
+/** 노드 전체 블러. 문서 단위가 픽셀과 같으므로 픽셀 값을 dp로 바꿔 쓴다. API 31 미만에서는 Compose가 블러 없이 그린다. */
 @Composable
 private fun Modifier.layerBlur(radius: Double): Modifier {
     if (radius <= 0.0) return this

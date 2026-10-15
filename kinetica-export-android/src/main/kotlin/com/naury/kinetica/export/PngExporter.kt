@@ -40,11 +40,11 @@ import kotlinx.coroutines.withContext
 /**
  * 장면을 PNG로 내보낸다(docs 13). 화면과 같은 [drawScene]으로 그리므로 미리보기와 결과가 같다.
  *
- * 크기 상한과 남은 메모리를 먼저 확인하고, 그림은 [renderDispatcher]에서, 쓰기는 [ioDispatcher]에서 한다.
- * 색 공간은 sRGB, 알파는 premultiplied가 아닌 PNG 표준을 따른다. 출력 위치는 호스트가 정하며 공유는 하지 않는다.
+ * 크기 상한과 남은 메모리를 먼저 확인한 뒤, 그리기는 [renderDispatcher]에서, 파일 쓰기는 [ioDispatcher]에서 실행한다.
+ * 색 공간은 sRGB이고, 알파는 premultiplied가 아닌 PNG 표준을 따른다. 출력 위치는 호스트가 정하며, 공유 기능은 제공하지 않는다.
  *
  * @param images 이미지 노드에 쓸 이미지. `null`이면 내보내기 전에 문서의 `content://` 이미지를 [ContentImageLoader]로 읽는다.
- * @param fonts 글자 노드의 글꼴 이름을 실제 글꼴로 바꾼다. 화면에 준 [com.naury.kinetica.render.LocalSceneFonts]와 같은 것을 준다.
+ * @param fonts 텍스트 노드의 글꼴 이름을 실제 글꼴로 바꾼다. 화면에 제공한 [com.naury.kinetica.render.LocalSceneFonts]와 같은 값을 넘긴다.
  */
 public class PngExporter(
     context: Context,
@@ -75,8 +75,8 @@ public class PngExporter(
     }
 
     /**
-     * [target] 파일로 내보낸다. 같은 폴더의 숨김 임시 파일에 쓴 뒤 이름을 바꾸므로, 실패하거나 취소되면 임시 파일만 지워지고
-     * 이전 [target]은 그대로다.
+     * [target] 파일로 내보낸다. 같은 폴더의 숨김 임시 파일에 먼저 쓴 뒤 이름을 바꾸므로, 실패하거나 취소되면 임시 파일만 지워지고
+     * 기존 [target]은 그대로 남는다.
      */
     public suspend fun exportToFile(document: SceneDocument, request: ExportRequest, target: File): ExportResult {
         val temp = File(target.parentFile, ".${target.name}.partial")
@@ -95,7 +95,7 @@ public class PngExporter(
         }
     }
 
-    /** 호스트가 받은 [uri](예: SAF 문서)에 쓴다. 실패하면 일부만 쓰였을 수 있으므로 호스트가 정리한다. */
+    /** 호스트가 받은 [uri](예: SAF 문서)에 쓴다. 실패하면 일부만 쓰였을 수 있으므로 정리는 호스트가 한다. */
     public suspend fun exportToUri(document: SceneDocument, request: ExportRequest, resolver: ContentResolver, uri: Uri): ExportResult =
         try {
             withContext(ioDispatcher) {
@@ -108,7 +108,7 @@ public class PngExporter(
             ExportResult.Failure(ExportError.WriteFailed)
         }
 
-    /** 호스트가 이미지를 주지 않았으면 문서의 이미지를 미리 읽어 둔다. 그리기 중에는 입출력을 하지 않는다. */
+    // 그리는 도중에는 입출력을 하지 않도록, 호스트가 이미지를 주지 않았으면 문서의 이미지를 미리 읽어 둔다.
     private suspend fun imagesFor(document: SceneDocument): SceneImageProvider {
         images?.let { return it }
         val uris = document.nodes.values.mapNotNull { (it.content as? NodeContent.Image)?.uri }.toSet()
@@ -152,7 +152,7 @@ public class PngExporter(
             Rendered.Image(image.asAndroidBitmap())
         }
 
-    /** 기기 틀을 그리고 화면 자리 안으로 잘라 장면을 그린다. */
+    /** 기기 프레임을 그리고, 화면 영역으로 클리핑해 장면을 그린다. */
     private fun DrawScope.drawMockup(mockup: MockupLayout, scene: SceneDocument, measurer: TextMeasurer, images: SceneImageProvider) {
         with(mockup) { drawBehindScreen() }
         val screen = mockup.screen

@@ -1,4 +1,4 @@
-// 조각 수·크기·고리 불투명도 등은 디자인 값이라 이름 붙인 상수로 빼지 않는다.
+// 조각 수, 크기, 고리 불투명도 같은 값은 디자인 값이라 이름 붙인 상수로 빼지 않는다.
 @file:Suppress("MagicNumber")
 
 package com.naury.kinetica.render
@@ -14,7 +14,7 @@ import com.naury.kinetica.core.scene.PressEffect
 import kotlin.math.PI
 import kotlin.math.sin
 
-/** 한 주기 앞부분에서 두 번 뛰는 크기(0..1). Compose 효과와 같은 모양이다. */
+/** 한 주기 앞부분에서 두 번 뛰는 크기 변화(0..1). Compose 효과와 같은 곡선이다. */
 internal fun heartbeatAt(t: Float): Float {
     fun beat(start: Float): Float {
         val x = (t - start) / 0.15f
@@ -23,7 +23,7 @@ internal fun heartbeatAt(t: Float): Float {
     return maxOf(beat(0f), beat(0.22f) * 0.8f)
 }
 
-/** 부모 overlay에서 [view] 가운데를 기준으로 사방으로 터지는 조각. */
+/** 부모 overlay에 그리며, [view] 가운데에서 사방으로 터져 나가는 조각. */
 internal class BurstDrawable(private val effect: PressEffect, private val view: View) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -64,7 +64,7 @@ internal class BurstDrawable(private val effect: PressEffect, private val view: 
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
 
-/** 부모 overlay에서 [view] 둘레 밖으로 퍼지는 고리 두 개. View 안쪽은 가리지 않는다. */
+/** 부모 overlay에 그리며, [view] 테두리 바깥으로 퍼지는 고리 두 개. View 안쪽은 가리지 않는다. */
 internal class PingDrawable(private val loop: LoopEffect, private val view: View, private val corner: Float) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val inner = android.graphics.Path()
@@ -105,7 +105,7 @@ internal class PingDrawable(private val loop: LoopEffect, private val view: View
 
 private const val ACCENT_ARGB = 0xFF5B6CFF.toInt()
 
-/** [color]를 흰색 쪽으로 [amount](0..1)만큼 옮긴다. 불투명도는 그대로다. */
+/** [color]를 흰색 쪽으로 [amount](0..1)만큼 섞는다. 불투명도는 그대로 둔다. */
 private fun towardWhite(color: Int, amount: Float): Int {
     fun mix(channel: Int) = (channel + (255 - channel) * amount).toInt()
     return android.graphics.Color.argb(

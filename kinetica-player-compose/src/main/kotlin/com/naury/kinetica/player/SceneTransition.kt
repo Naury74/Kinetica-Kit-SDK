@@ -27,7 +27,7 @@ import com.naury.kinetica.render.SceneLayout
 import com.naury.kinetica.render.SceneSlots
 
 /**
- * 두 장면 사이 전환([SceneMorph])을 [progress](0..1)에서 그린다. 대상 장면의 artboard를 영역에 맞춘다.
+ * 두 장면 사이의 전환([SceneMorph])을 진행도 [progress](0..1) 시점으로 그린다. 영역에는 대상 장면의 artboard를 맞춘다.
  */
 @Composable
 public fun SceneTransition(
@@ -49,8 +49,8 @@ public fun SceneTransition(
 }
 
 /**
- * 화면 프레임마다 움직이는 [TransitionDriver]. [onEnd]는 1에 닿거나(navigation 확정) 0으로 돌아왔을 때 불리며,
- * 끝([TransitionEnd.Completed])은 한 번만 불린다.
+ * 프레임마다 진행되는 [TransitionDriver]. [onEnd]는 진행도가 1에 닿아 navigation이 확정되거나 0으로 돌아왔을 때 호출되며,
+ * [TransitionEnd.Completed]는 한 번만 전달된다.
  */
 @Composable
 public fun rememberTransitionDriver(onEnd: (TransitionEnd) -> Unit = {}): TransitionDriver {
@@ -65,15 +65,15 @@ public fun rememberTransitionDriver(onEnd: (TransitionEnd) -> Unit = {}): Transi
     return driver
 }
 
-/** 끌어서 닫는 방향. */
+/** 드래그해서 닫는 방향. */
 public enum class DismissAxis(internal val x: Double, internal val y: Double) {
     Down(0.0, 1.0),
     Right(1.0, 0.0),
 }
 
 /**
- * 이 요소를 [axis] 방향으로 [travelPx]만큼 끌면 [driver] 진행률이 0에서 1이 된다. 반대 방향은 0에서 멈춘다.
- * 놓으면 속도를 반영해 끝까지 가거나 되돌아간다. 화면 이동은 driver의 끝 알림을 받고 호스트가 한다(여기서 하지 않는다).
+ * 이 요소를 [axis] 방향으로 [travelPx]만큼 드래그하면 [driver] 진행도가 0에서 1이 된다. 반대 방향으로는 0에서 멈춘다.
+ * 손을 떼면 속도를 반영해 끝까지 가거나 되돌아간다. 실제 화면 이동은 이 함수가 하지 않고, driver의 종료 알림을 받은 호스트가 한다.
  */
 public fun Modifier.dragToDismiss(driver: TransitionDriver, travelPx: Float, axis: DismissAxis = DismissAxis.Down): Modifier =
     pointerInput(driver, travelPx, axis) {

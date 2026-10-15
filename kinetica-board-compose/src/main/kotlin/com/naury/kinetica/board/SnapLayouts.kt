@@ -14,17 +14,17 @@ import com.naury.kinetica.core.geometry.Rect
 import kotlin.math.ceil
 
 /**
- * Windows 11 스냅 레이아웃처럼, 위젯을 보드 위쪽 가장자리로 끌면 뜨는 배치 틀 고르기판.
- * 틀마다 보이는 영역을 나누는 칸이 있고, 손가락을 칸에 올려 놓으면 그 칸 자리로 들어간다. 모든 값은 화면 폭 문서 단위다.
+ * Windows 11 스냅 레이아웃처럼 위젯을 보드 위쪽 가장자리로 끌면 나타나는 레이아웃 선택 패널.
+ * 레이아웃마다 보이는 영역을 나눈 칸이 있고, 손가락을 칸 위에서 떼면 위젯이 그 칸에 들어간다. 모든 값은 화면 폭 기준 문서 단위다.
  */
 internal object SnapLayouts {
     /** 보이는 영역 안쪽을 0..1 비율로 나눈 칸. */
     data class Fraction(val left: Double, val top: Double, val right: Double, val bottom: Double)
 
-    /** 고르기판의 칸 하나: [layout]번째 틀의 [zone]번째 칸. [hit]은 고르기판 위 손가락이 닿는 자리다. */
+    /** 패널의 칸 하나. [layout]번째 레이아웃의 [zone]번째 칸이며, [hit]은 패널 위에서 손가락이 닿으면 이 칸으로 보는 영역이다. */
     data class Slot(val layout: Int, val zone: Int, val hit: Rect)
 
-    /** 고르기판 모양. [panel]은 판 전체, [thumbs]는 틀 그림 자리, [slots]는 칸이 닿는 자리다. */
+    /** 패널 모양. [panel]은 패널 전체, [thumbs]는 레이아웃 미리보기 위치, [slots]는 칸마다 손가락이 닿는 영역이다. */
     class Picker(val panel: Rect, val thumbs: List<Rect>, val slots: List<Slot>) {
         fun slotAt(x: Double, y: Double): Slot? = slots.firstOrNull { x in it.hit.left..it.hit.right && y in it.hit.top..it.hit.bottom }
     }
@@ -43,7 +43,7 @@ internal object SnapLayouts {
         listOf(Fraction(0.0, 0.0, 0.5, 0.5), Fraction(0.5, 0.0, 1.0, 0.5), Fraction(0.0, 0.5, 0.5, 1.0), Fraction(0.5, 0.5, 1.0, 1.0)),
     )
 
-    /** 칸 [fraction]이 보이는 영역 [visible]에서 차지하는 자리. 가장자리와 칸 사이에 [gap]을 둔다. */
+    /** 칸 [fraction]이 보이는 영역 [visible]에서 차지하는 사각형. 가장자리와 칸 사이에 [gap]을 둔다. */
     fun zoneRect(fraction: Fraction, visible: Rect, gap: Double): Rect {
         val inner = Rect(visible.left + gap, visible.top + gap, visible.right - gap, visible.bottom - gap)
         val half = gap / 2.0
@@ -57,7 +57,7 @@ internal object SnapLayouts {
         )
     }
 
-    /** 보이는 영역 [visible] 위쪽에 놓을 고르기판. [unit]은 1dp의 문서 단위다. */
+    /** 보이는 영역 [visible] 위쪽에 띄울 패널. [unit]은 1dp에 해당하는 문서 단위다. */
     fun picker(visible: Rect, gap: Double, unit: Double): Picker {
         val pad = PAD_DP * unit
         val inner = THUMB_INSET_DP * unit
@@ -87,10 +87,10 @@ internal object SnapLayouts {
     private const val THUMB_RATIO = 0.72
 }
 
-/** 끄는 동안 손가락이 올라간 고르기판 칸. 둘 다 `null`이면 고르기판만 떠 있다. */
+/** 드래그 중에 손가락이 올라가 있는 패널 칸. 둘 다 `null`이면 패널만 떠 있는 상태다. */
 internal data class PickerHover(val layout: Int?, val zone: Int?)
 
-/** 고르기판을 그린다. 손가락이 올라간 칸은 강조색, 같은 틀의 다른 칸은 옅게 보인다. */
+/** 패널을 그린다. 손가락이 올라간 칸은 강조색으로, 같은 레이아웃의 다른 칸은 옅게 칠한다. */
 @Composable
 internal fun SnapPickerView(picker: SnapLayouts.Picker, hover: PickerHover, zoom: Float, colors: BoardColors) {
     val panel = picker.panel

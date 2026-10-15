@@ -14,8 +14,8 @@ import com.naury.kinetica.core.scene.TextMeasurer
 import kotlin.math.ceil
 
 /**
- * 화면과 같은 글꼴·규칙으로 글자 노드 크기를 재는 [TextMeasurer]. 문서 단위 1 = 1 px, 글꼴 배율 1로 잰다.
- * 세션([com.naury.kinetica.history.KineticaSession])이나 [com.naury.kinetica.core.scene.Bindings]에 넘긴다.
+ * 화면과 같은 글꼴과 규칙으로 텍스트 노드 크기를 측정하는 [TextMeasurer]. 문서 단위 1을 1px로, 글꼴 배율은 1로 보고 측정한다.
+ * 세션([com.naury.kinetica.history.KineticaSession])이나 [com.naury.kinetica.core.scene.Bindings]에 넘겨 쓴다.
  *
  * @param fonts 호스트 글꼴. 화면에 준 [LocalSceneFonts]와 같아야 크기가 맞는다.
  */

@@ -14,12 +14,12 @@ import com.naury.kinetica.serialization.RemoteSceneLoader
 import com.naury.kinetica.serialization.RemoteSceneState
 
 /**
- * 서버가 내려준 장면을 재생한다. 처음 보일 때와 [refreshKey]가 바뀔 때마다 [RemoteSceneLoader.refresh]를 부른다.
- * 받는 중이거나 실패해도 보여 줄 문서(캐시·기본 문서)가 있으면 그것을 그리고, 없으면 [placeholder]를 그린다.
+ * 서버가 내려준 장면을 재생한다. 처음 화면에 보일 때와 [refreshKey]가 바뀔 때마다 [RemoteSceneLoader.refresh]를 호출한다.
+ * 받아 오는 중이거나 실패했을 때 캐시나 기본 문서가 있으면 그 문서를 그리고, 없으면 [placeholder]를 그린다.
  *
- * 데이터·호스트 뷰·동작은 [KineticaPlayer]와 같다. 서버 문서가 모르는 동작 이름을 보내도 [onAction]이 무시하면 아무 일도 없다.
+ * 데이터, 호스트 뷰, 동작은 [KineticaPlayer]와 같다. 서버 문서에 앱이 모르는 동작 이름이 있어도 [onAction]에서 무시하면 아무 일도 일어나지 않는다.
  *
- * @param autoplay 문서의 첫 timeline을 바로 재생한다. 문서가 바뀌면 새 timeline을 처음부터 재생한다.
+ * @param autoplay 문서의 첫 timeline을 바로 재생할지. 문서가 바뀌면 새 timeline을 처음부터 재생한다.
  */
 @Composable
 public fun RemoteKineticaPlayer(
@@ -40,8 +40,8 @@ public fun RemoteKineticaPlayer(
 }
 
 /**
- * 서버가 여러 화면을 한 번에 내려줄 때 그중 [sceneId] 화면을 재생한다. 처음 보일 때와 [refreshKey]가 바뀔 때 묶음을 새로 고치며,
- * 같은 묶음을 쓰는 화면 여러 개가 함께 열려도 받기는 한 번이다. 나머지는 [RemoteKineticaPlayer]와 같다.
+ * 서버가 여러 화면을 번들로 한 번에 내려줄 때 그중 [sceneId] 화면을 재생한다. 처음 보일 때와 [refreshKey]가 바뀔 때 번들을 새로 받으며,
+ * 같은 번들을 쓰는 화면이 여러 개 열려 있어도 요청은 한 번만 보낸다. 나머지는 [RemoteKineticaPlayer]와 같다.
  */
 @Composable
 public fun RemoteKineticaPlayer(
@@ -63,7 +63,7 @@ public fun RemoteKineticaPlayer(
     RemoteContent(state, modifier, RemoteOptions(data, slots, onAction, fit, background, autoplay), placeholder)
 }
 
-/** 재생기에 그대로 넘기는 값 묶음. */
+/** 재생기에 그대로 넘기는 값을 모은 객체. */
 private class RemoteOptions(
     val data: SceneData,
     val slots: SceneSlots,

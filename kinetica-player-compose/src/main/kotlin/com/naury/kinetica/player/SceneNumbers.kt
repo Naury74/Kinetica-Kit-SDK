@@ -17,9 +17,9 @@ import kotlin.math.roundToLong
 
 /**
  * 숫자 값([DataValue.Number])이 바뀌면 지금 보이는 값에서 새 값까지 [durationMs] 동안 올라가거나 내려가는 데이터를 돌려준다.
- * 대시보드 매출·카운터처럼 숫자 글자에 묶인 값이 자연스럽게 바뀐다. 숫자가 아닌 값과 새로 생긴 키는 바로 바뀐다.
+ * 대시보드 매출이나 카운터처럼 텍스트에 바인딩된 숫자가 자연스럽게 바뀐다. 숫자가 아닌 값과 새로 생긴 키는 바로 바뀐다.
  *
- * 움직이는 동안의 값은 두 값 중 소수 자릿수가 많은 쪽(최대 6자리)에 맞춰 반올림하므로, 정수끼리면 중간값도 정수다.
+ * 애니메이션 중의 값은 두 값 중 소수 자릿수가 많은 쪽(최대 6자리)에 맞춰 반올림하므로, 정수끼리 바뀔 때는 중간값도 정수다.
  * [durationMs]가 0 이하면 [data]를 그대로 돌려준다.
  */
 @Composable
@@ -30,7 +30,7 @@ public fun animateSceneNumbers(data: SceneData, durationMs: Int = DEFAULT_NUMBER
     val progress = remember { Animatable(1f) }
     LaunchedEffect(data) {
         if (data == to) return@LaunchedEffect
-        // 움직이는 도중에 값이 또 바뀌면 지금 보이는 값에서 이어 간다.
+        // 애니메이션 도중에 값이 또 바뀌면 지금 보이는 값에서 이어서 움직인다.
         from = blendNumbers(from, to, progress.value)
         to = data
         if (!changesNumbers(from, to)) {

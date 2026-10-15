@@ -16,8 +16,8 @@ import com.naury.kinetica.core.scene.TextDecoration
 import com.naury.kinetica.core.scene.TextSpans
 
 /**
- * 글꼴 이름을 Compose 글꼴로 바꾼다. 문서에는 이름만 저장하므로, 호스트가 앱의 글꼴(번들·다운로드)을 이름으로 알려 준다.
- * `null`을 돌려주면 `sans`·`serif`·`monospace`·`cursive`는 시스템 글꼴로, 그 밖에는 기본 글꼴로 그린다.
+ * 글꼴 이름을 Compose 글꼴로 바꾼다. 문서에는 글꼴 이름만 저장되므로, 앱에 번들하거나 다운로드한 글꼴은 호스트가 이름으로 찾아 준다.
+ * `null`을 돌려주면 `sans`, `serif`, `monospace`, `cursive`는 시스템 글꼴로, 그 밖의 이름은 기본 글꼴로 그린다.
  */
 public fun interface SceneFonts {
     public fun family(name: String): FontFamily?
@@ -25,16 +25,16 @@ public fun interface SceneFonts {
     public companion object {
         public val Default: SceneFonts = SceneFonts { null }
 
-        /** 이름 → 글꼴 표로 만든다. */
+        /** 이름과 글꼴을 짝지은 맵으로 만든다. */
         public fun of(families: Map<String, FontFamily>): SceneFonts = SceneFonts { families[it] }
     }
 }
 
-/** 화면의 모든 Kinetica 렌더러가 쓰는 글꼴. 앱 맨 위에서 `CompositionLocalProvider`로 한 번 준다. */
+/** 화면 안의 모든 Kinetica 렌더러가 쓰는 글꼴. 앱 최상위에서 `CompositionLocalProvider`로 한 번만 제공한다. */
 public val LocalSceneFonts: androidx.compose.runtime.ProvidableCompositionLocal<SceneFonts> =
     staticCompositionLocalOf { SceneFonts.Default }
 
-/** 시스템 글꼴 이름. 편집기 글꼴 목록에 쓴다. */
+/** 시스템 글꼴 이름. 편집기의 글꼴 목록에 쓴다. */
 public val GENERIC_FONT_NAMES: List<String> = listOf("sans", "serif", "monospace", "cursive")
 
 internal fun SceneFonts.resolve(name: String?): FontFamily? = name?.let { family(it) ?: generic(it) }
@@ -53,7 +53,7 @@ internal fun TextDecoration.toCompose(): androidx.compose.ui.text.style.TextDeco
     TextDecoration.Strikethrough -> androidx.compose.ui.text.style.TextDecoration.LineThrough
 }
 
-/** 글자와 구간 모양. 글자 길이를 넘는 구간은 잘라 쓴다(데이터로 글자가 바뀐 경우). [sp]는 문서 단위를 글자 단위로 바꾼다. */
+/** 텍스트와 구간 스타일. 데이터 바인딩으로 텍스트가 짧아지면 텍스트 길이를 넘는 구간은 잘라서 쓴다. [sp]는 문서 단위를 sp로 바꾼다. */
 internal fun NodeContent.Text.annotated(fonts: SceneFonts, sp: (Double) -> TextUnit): AnnotatedString = buildAnnotatedString {
     append(text)
     TextSpans.clamp(spans, text.length).forEach { span ->
@@ -72,7 +72,7 @@ internal fun NodeContent.Text.annotated(fonts: SceneFonts, sp: (Double) -> TextU
     }
 }
 
-/** 글자 노드 전체 모양. 화면·내보내기·측정이 같은 값을 써야 크기와 그림이 맞는다. [sp]는 문서 단위를 글자 단위로 바꾼다. */
+/** 텍스트 노드 전체 스타일. 화면, 내보내기, 측정이 같은 값을 써야 크기와 결과 이미지가 맞는다. [sp]는 문서 단위를 sp로 바꾼다. */
 internal fun NodeContent.Text.baseStyle(color: androidx.compose.ui.graphics.Color, fonts: SceneFonts, sp: (Double) -> TextUnit): TextStyle =
     TextStyle(
         color = color,

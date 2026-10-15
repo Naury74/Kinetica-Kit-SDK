@@ -18,16 +18,17 @@ import kotlin.math.atan2
 import kotlin.math.exp
 
 /**
- * 캔버스 포인터 입력을 편집 동작으로 바꾸는 상태 기계(docs 06).
+ * 캔버스 포인터 입력을 편집 동작으로 바꾸는 상태 머신(docs 06).
  *
- * - 한 손가락: 손잡이 → 크기 조절·회전, 노드 → 옮기기(안 고른 노드면 먼저 고름), 빈 곳 → 사각 선택. 끌지 않고 떼면 고르기만 한다.
- * - 두 손가락: 캔버스 이동·확대. 한 손가락 동작 중 두 번째 손가락이 닿으면 그때까지의 변경을 확정하고 캔버스 조작으로 바꾼다.
- * - 끌기 하나는 트랜잭션 하나라 실행 취소 한 단계다. 취소되면 시작 전 문서로 되돌린다.
- * - 움직임은 시작 시점 문서에서 절대값으로 계산하고, 노드는 최상위 단위로 고른다. 잠긴·숨긴 노드는 잡지 않는다.
+ * - 한 손가락: 핸들을 잡으면 크기 조절이나 회전, 노드를 잡으면 이동(선택되지 않은 노드면 먼저 선택), 빈 곳에서 시작하면 사각 영역 선택이다.
+ *   드래그하지 않고 떼면 선택만 한다.
+ * - 두 손가락: 캔버스 이동과 확대. 한 손가락 동작 중에 두 번째 손가락이 닿으면 그때까지의 변경을 확정하고 캔버스 조작으로 전환한다.
+ * - 드래그 하나가 트랜잭션 하나이므로 실행 취소 한 단계다. 취소되면 시작 전 문서로 되돌린다.
+ * - 변화량은 시작 시점 문서를 기준으로 한 절대값으로 계산하고, 노드는 최상위 단위로 선택한다. 잠기거나 숨겨진 노드는 잡지 않는다.
  *
- * 좌표는 모두 viewport 픽셀이다. main 스레드에서만 부른다.
+ * 좌표는 모두 viewport 픽셀이다. 메인 스레드에서만 호출한다.
  *
- * @param snapping 옮기기에서 이동량을 고칠 때 쓴다(안내선 스냅). `null`이면 손가락을 그대로 따라간다.
+ * @param snapping 이동할 때 안내선 스냅 등으로 이동량을 보정한다. `null`이면 손가락을 그대로 따라간다.
  */
 public class CanvasGestureController(
     private val host: GestureHost,
@@ -47,12 +48,12 @@ public class CanvasGestureController(
     public var marquee: Rect? = null
         private set
 
-    /** 상태가 바뀔 때 불린다. 화면은 이때 [mode]·[marquee]를 다시 읽는다. */
+    /** 상태가 바뀔 때 호출된다. 화면은 이때 [mode]와 [marquee]를 다시 읽는다. */
     public var onChange: (() -> Unit)? = null
 
     /**
-     * 같은 노드를 짧은 간격([DOUBLE_TAP_MILLIS])으로 두 번 눌렀을 때 불린다. 그룹 안이어도 실제로 누른 노드(맨 아래 노드)를 넘긴다.
-     * 글자 편집 등에 쓴다.
+     * 같은 노드를 [DOUBLE_TAP_MILLIS] 안에 두 번 눌렀을 때 호출된다. 그룹 안에 있어도 실제로 누른 가장 안쪽 노드를 넘긴다.
+     * 텍스트 편집 등에 쓴다.
      */
     public var onDoubleTap: ((NodeId) -> Unit)? = null
 
@@ -80,8 +81,8 @@ public class CanvasGestureController(
     }
 
     /**
-     * 손가락을 뗐다. [eventUptimeMillis]는 입력 이벤트가 생긴 시각(밀리초, 단조 증가)이며, 주면 두 번 누르기 간격을 이 값으로 잰다.
-     * 화면이 바빠 이벤트 처리가 늦어져도 실제 누른 간격으로 판단하기 위해서다. 없으면 지금 시각을 쓴다.
+     * 손가락을 뗐을 때 호출한다. [eventUptimeMillis]는 입력 이벤트가 발생한 시각(ms, 단조 증가)이다. 이 값을 넘기면 화면이 바빠
+     * 이벤트 처리가 늦어져도 실제로 누른 간격으로 더블 탭을 판단한다. 넘기지 않으면 현재 시각을 쓴다.
      */
     public fun onUp(pointerId: Long, eventUptimeMillis: Long? = null) {
         pointers.remove(pointerId) ?: return
@@ -96,7 +97,7 @@ public class CanvasGestureController(
         onChange?.invoke()
     }
 
-    /** 시스템이 제스처를 가져가거나 화면이 멈출 때 부른다. 확정하지 않은 변경을 되돌린다. */
+    /** 시스템이 제스처를 가져가거나 화면이 멈출 때 호출한다. 확정하지 않은 변경을 되돌린다. */
     public fun onCancel() {
         if (active?.transactional == true) host.rollbackTransaction()
         active?.snap?.finish()
@@ -105,7 +106,7 @@ public class CanvasGestureController(
         onChange?.invoke()
     }
 
-    /** 마우스 휠. [scrollDelta]가 양수면 축소, 음수면 확대한다. 포인터 아래 문서 점은 제자리에 있다. */
+    /** 마우스 휠 입력. [scrollDelta]가 양수면 축소, 음수면 확대한다. 포인터 아래의 문서 위치는 그대로 유지된다. */
     public fun onScroll(viewportPoint: Vec2, scrollDelta: Double) {
         if (mode != InteractionMode.Idle || !scrollDelta.isFinite()) return
         val viewport = host.viewport
@@ -160,7 +161,7 @@ public class CanvasGestureController(
         when (mode) {
             InteractionMode.DragNode -> {
                 val raw = documentPoint - press.viewport.toDocument(press.start)
-                // 자동 배치 안의 노드는 위치를 배치가 정하므로, 끌면 놓일 순서 자리로 옮긴다.
+                // 오토 레이아웃 안의 노드는 레이아웃이 위치를 정하므로, 드래그하면 놓일 순서로 옮긴다.
                 val target = gesture.targets.singleOrNull()
                 val index = target?.let { Layouts.dropIndex(graph, it, raw) }
                 if (target != null && index != null) {
@@ -190,9 +191,9 @@ public class CanvasGestureController(
         val center = SelectionFrame.of(gesture.press.graph, listOf(id))?.center ?: return
         fun angleTo(point: Vec2) = Math.toDegrees(atan2(point.y - center.y, point.x - center.x))
         val angle = angleTo(documentPoint)
-        // 끌기 기준 거리를 넘기 전 움직임도 회전에 넣도록 처음 누른 점에서 잰다.
+        // touch slop을 넘기 전의 움직임도 회전에 반영하도록 처음 누른 지점을 기준으로 잰다.
         val previous = gesture.lastAngle ?: angleTo(gesture.press.viewport.toDocument(gesture.press.start))
-        // ±180°를 넘을 때 끊기지 않도록 프레임 사이 변화량을 이어 붙인다.
+        // ±180°를 넘을 때 각도가 튀지 않도록 프레임 사이의 변화량을 누적한다.
         gesture.totalRotation += shortestDeltaDegrees(previous, angle)
         gesture.lastAngle = angle
         TransformOps.rotate(gesture.press.graph, id, gesture.totalRotation, config.rotationSnapDegrees)
@@ -254,7 +255,7 @@ public class CanvasGestureController(
         mode = InteractionMode.Idle
     }
 
-    // 누른 순간의 상태를 한 번에 담는 값 묶음이라 나누면 오히려 읽기 어렵다.
+    // 누른 순간의 상태를 한 번에 담는 값 객체라 나누면 오히려 읽기 어렵다.
     @Suppress("LongParameterList")
     private class Press(
         val pointerId: Long,
@@ -266,7 +267,7 @@ public class CanvasGestureController(
         selected: List<NodeId>,
     ) {
         /**
-         * 고르기·옮기기 단위. 보통은 최상위 노드이고, 이미 고른 노드(레이어 패널 등으로 고른 Frame 안 노드)를 누르면 그 노드다.
+         * 선택과 이동의 단위. 보통은 최상위 노드지만, 레이어 패널 등으로 이미 선택한 Frame 안 노드를 누르면 그 노드다.
          */
         val hit: NodeId? = leaf?.let { leaf ->
             generateSequence(leaf) { graph.document.node(it)?.parentId }.firstOrNull { it in selected } ?: graph.topLevelAncestor(leaf)
@@ -284,7 +285,7 @@ public class CanvasGestureController(
     private class CanvasStart(val viewport: Viewport, val centroid: Vec2, val distance: Double)
 
     public companion object {
-        /** 두 번 누르기로 보는 최대 간격(ms). */
+        /** 더블 탭으로 보는 최대 간격(ms). */
         public const val DOUBLE_TAP_MILLIS: Long = 300L
         private const val HALF = 0.5
         private const val NANOS_PER_MILLI = 1_000_000L
@@ -296,8 +297,8 @@ private const val INSIDE_HANDLE_FACTOR = 0.5
 private const val INSIDE_SIDE_FACTOR = 0.25
 
 /**
- * 테두리 안에서는 손잡이 가까이(터치 반경의 절반, 그리고 짧은 변의 1/4 이하)를 누를 때만 손잡이로 본다.
- * 작은 도형에서 손잡이 영역이 몸통을 덮어 옮기려 해도 크기가 바뀌는 일을 막는다. 테두리 밖에서는 터치 반경 전체를 쓴다.
+ * 테두리 안쪽에서는 핸들 가까이, 즉 터치 반경의 절반 이내이면서 짧은 변의 1/4 이하 거리를 누를 때만 핸들로 본다.
+ * 작은 도형에서 핸들 영역이 도형 전체를 덮어, 옮기려 했는데 크기가 바뀌는 일을 막기 위해서다. 테두리 밖에서는 터치 반경 전체를 쓴다.
  */
 private fun pickHandle(frame: SelectionFrame, viewport: Viewport, viewportPoint: Vec2, config: GestureConfig): SelectionHandle? {
     val handles = frame.handles(viewport, config.rotateHandleOffsetPx)
@@ -311,7 +312,7 @@ private fun pickHandle(frame: SelectionFrame, viewport: Viewport, viewportPoint:
     return SelectionHandle.at(handles, viewportPoint, radius)
 }
 
-/** [id]가 이미 [index] 자리면 `null`. */
+/** [id]가 이미 [index] 위치에 있으면 `null`. */
 private fun reorderCommand(document: SceneDocument, id: NodeId, index: Int): SceneCommand? {
     val siblings = document.node(id)?.parentId?.let { (document.node(it)?.content as? NodeContent.Container)?.childIds }
     return if (siblings == null || siblings.indexOf(id) == index) null else SceneCommand.ReorderNode(id, index)

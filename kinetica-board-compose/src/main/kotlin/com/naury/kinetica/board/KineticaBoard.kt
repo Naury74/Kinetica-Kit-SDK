@@ -75,20 +75,20 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * 호스트 위젯을 사용자가 배치하는 보드. 호스트 화면 아무 곳에나 넣는다.
+ * 사용자가 호스트 위젯을 직접 배치하는 보드. 호스트 화면 어디에나 넣을 수 있다.
  *
- * - [editing]이 `false`면 위젯이 저장된 자리에서 평소처럼 동작한다. 화면보다 길면 세로로 스크롤된다.
- * - [editing]이 `true`면 위젯을 끌어 옮기고(다른 위젯·가장자리에 붙음), 오른쪽 아래 손잡이로 크기를 바꾸고, 빼거나 추가한다.
- *   자유 배치에서는 화면 왼쪽·오른쪽 가장자리로 끌면 반, 모서리로 끌면 4분의 1, 위쪽 가장자리로 끌면 화면 가득 분할 배치된다.
- *   편집 중에는 위젯 안이 눌리지 않는다. 변경은 [KineticaBoardState]에 실행 취소 한 단계씩 남는다.
+ * - [editing]이 `false`면 위젯이 저장된 위치에서 평소처럼 동작한다. 내용이 화면보다 길면 세로로 스크롤된다.
+ * - [editing]이 `true`면 위젯을 드래그해 옮기고, 오른쪽 아래 핸들로 크기를 바꾸고, 삭제하거나 추가할 수 있다. 옮길 때는 다른 위젯과
+ *   가장자리에 스냅된다. 자유 배치에서는 화면 왼쪽이나 오른쪽 가장자리로 끌면 절반, 모서리로 끌면 4분의 1, 위쪽 가장자리로 끌면
+ *   전체 화면을 차지한다. 편집 중에는 위젯 내부를 누를 수 없다. 변경할 때마다 [KineticaBoardState]에 실행 취소 한 단계가 쌓인다.
  *
- * @param permissions 편집 모드에서 허용할 일
- * @param colors 편집 표시 색. 기본은 지금 MaterialTheme의 primary를 따른다.
- * @param stackAutoAdvanceMs 0보다 크면 사용 모드에서 위젯 묶음이 이 간격(ms)마다 다음 위젯으로 넘어간다. 사용자가 넘기면 그때부터 다시 잰다.
- *   편집 중이거나 시스템 애니메이션이 꺼져 있으면 넘어가지 않는다.
- * @param onLongPress 사용 모드에서 위젯을 길게 누르면 불린다(보통 편집 모드로 바꾼다). 그 누름은 위젯에 전달하지 않는다.
- * @param content 놓인 자리마다 호스트가 그릴 내용. 인자는 자리 id로, 한 번만 놓는 위젯은 위젯 키와 같고
- *   여러 개 놓는 위젯([BoardWidget.multiple])은 자리마다 다르다(위젯 키는 [KineticaBoardState.widgetKeyOf]). 보드가 정한 크기를 꽉 채우도록 그린다.
+ * @param permissions 편집 모드에서 허용할 작업
+ * @param colors 편집 화면의 색. 기본값은 현재 MaterialTheme의 primary를 따른다.
+ * @param stackAutoAdvanceMs 0보다 크면 사용 모드에서 위젯 스택이 이 간격(ms)마다 다음 위젯으로 넘어간다. 사용자가 직접 넘기면 그때부터
+ *   다시 잰다. 편집 중이거나 시스템 애니메이션이 꺼져 있으면 넘어가지 않는다.
+ * @param onLongPress 사용 모드에서 위젯을 길게 누르면 호출된다. 보통 여기서 편집 모드로 바꾼다. 이 누름 이벤트는 위젯에 전달하지 않는다.
+ * @param content 슬롯마다 호스트가 그릴 내용. 인자는 슬롯 id다. 한 번만 놓는 위젯은 위젯 키와 같고, 여러 개 놓는 위젯([BoardWidget.multiple])은
+ *   슬롯마다 다르다. 위젯 키는 [KineticaBoardState.widgetKeyOf]로 얻는다. 보드가 정한 크기를 꽉 채우도록 그린다.
  */
 @Composable
 public fun KineticaBoard(
@@ -106,7 +106,7 @@ public fun KineticaBoard(
     val zoom = (density / KineticaBoardState.UNITS).toFloat()
     val scroll = rememberScrollState()
     val controller = remember(state) { BoardDragController(state) }
-    // 오른쪽에서 왼쪽으로 쓰는 언어면 화면 좌표를 뒤집는다. 보드 안은 왼쪽 기준 좌표로 그리고, 위젯 내용에는 호스트 방향을 돌려준다.
+    // RTL 언어면 화면 좌표를 뒤집는다. 보드 내부는 왼쪽 기준 좌표로 그리고, 위젯 내용에는 호스트의 레이아웃 방향을 다시 넘긴다.
     val hostDirection = LocalLayoutDirection.current
     val mirrored = hostDirection == LayoutDirection.Rtl
     val slots = rememberBoardSlots(stored, content, colors, StackAdvance(stackAutoAdvanceMs, editing), hostDirection)
@@ -141,7 +141,7 @@ private fun BoardBody(
         }
         val drag = controller.drag
         val rects = drag?.let { stable + (it.key to it.rect) } ?: stable
-        // 편집 중에는 아래 위젯이 위젯 추가 버튼에 가리지 않도록 스크롤할 여유를 둔다.
+        // 편집 중에는 맨 아래 위젯이 위젯 추가 버튼에 가리지 않도록 스크롤 여유를 둔다.
         val editRoom = if (editing && permissions.add) EDIT_BOTTOM_ROOM_DP * KineticaBoardState.UNITS else 0.0
         val stableBottom = stable.values.maxOfOrNull { it.bottom } ?: 0.0
         val viewportHeight = if (constraints.hasBoundedHeight) {
@@ -149,7 +149,7 @@ private fun BoardBody(
         } else {
             ((stableBottom + gap + editRoom) * zoom).toFloat()
         }
-        // 끄는 위젯을 따라 보드를 늘리되 지금 내용 아래 한 화면까지만 늘려, 자동 스크롤이 끝없이 이어지지 않게 한다.
+        // 드래그 중인 위젯을 따라 보드를 늘리되 현재 내용 아래로 한 화면까지만 늘려서 자동 스크롤이 끝없이 이어지지 않게 한다.
         val dragBottom = drag?.rect?.bottom?.coerceAtMost(stableBottom + viewportHeight / zoom) ?: 0.0
         val contentBottom = maxOf(stableBottom, dragBottom) + gap + editRoom
         val heightPx = maxOf((contentBottom * zoom).toFloat(), viewportHeight)
@@ -157,7 +157,7 @@ private fun BoardBody(
             mapping = mapping,
             zoom = zoom,
             rects = stable,
-            // 분할 자리는 위젯 추가 버튼 위까지만 써서, 놓은 위젯의 크기 손잡이가 버튼에 가리지 않게 한다.
+            // 분할 영역은 위젯 추가 버튼 위까지만 써서, 놓은 위젯의 크기 조절 핸들이 버튼에 가리지 않게 한다.
             viewportHeight = viewportHeight / zoom.toDouble(),
             bottomInset = editRoom,
             scrollTop = { scroll.value / zoom.toDouble() },
@@ -167,7 +167,7 @@ private fun BoardBody(
             scrollBand = SCROLL_BAND_DP * KineticaBoardState.UNITS,
         )
         AutoScroll(controller, scroll, drag?.key)
-        // 끄는 동안 다른 위젯 노드는 같은 객체로 두어, 렌더러가 그 위젯들을 다시 구성하지 않게 한다(120Hz에서 프레임을 지키기 위해).
+        // 120Hz에서 프레임을 놓치지 않도록, 드래그하는 동안 다른 위젯 노드는 같은 객체로 유지해 렌더러가 재구성하지 않게 한다.
         val base = remember(state, stored, stable, mapping.displayWidth) { displayDocument(state, stored, stable, mapping.displayWidth) }
         val shown = withDrag(base, drag, contentBottom)
         val longPress = if (!editing && onLongPress != null) Modifier.longPressToEdit(onLongPress) else Modifier
@@ -208,7 +208,7 @@ private fun EditLayer(
         WidgetEditFrame(
             key = key,
             label = label,
-            // 끄는 동안 틀은 제자리에 두어 손가락 위치의 기준이 흔들리지 않게 한다. 움직이는 모습은 DragOutline이 그린다.
+            // 손가락 위치의 기준이 흔들리지 않도록 드래그하는 동안 테두리는 제자리에 둔다. 움직이는 모습은 DragOutline이 그린다.
             rect = stable.getValue(key),
             dragging = drag?.key == key,
             zoom = zoom,
@@ -227,18 +227,18 @@ private fun EditLayer(
         )
         if (members.isNotEmpty()) StackBadge(stable.getValue(key), zoom, members.size, colors) { state.unstack(key) }
     }
-    // 위쪽 가장자리로 끌면 배치 틀 고르기판이 위젯 틀 위에 뜬다.
+    // 위쪽 가장자리로 끌면 레이아웃 선택 패널이 위젯 테두리 위에 뜬다.
     picker?.let { (geometry, hover) -> SnapPickerView(geometry, hover, zoom, colors) }
 }
 
-/** 끄는 동안 손가락이 위·아래 자동 스크롤 띠에 있으면 매 프레임 보드를 스크롤하고 끄는 위치를 맞춘다. */
+/** 드래그 중 손가락이 위나 아래 자동 스크롤 영역에 있으면 매 프레임 보드를 스크롤하고 드래그 위치를 보정한다. */
 @Composable
 private fun AutoScroll(controller: BoardDragController, scroll: androidx.compose.foundation.ScrollState, dragging: String?) {
     val speed = with(LocalDensity.current) { AUTO_SCROLL_DP_PER_FRAME.dp.toPx() }
     androidx.compose.runtime.LaunchedEffect(dragging) {
         val key = dragging ?: return@LaunchedEffect
-        // 띠 안에 있을 때만 프레임마다 스크롤한다. 끝에 닿으면 프레임을 요청하지 않고 보드가 늘어날 때까지 기다린다.
-        // 손가락이 띠에 들어온 순간에는 보드가 아직 늘기 전이라 끝에 닿아 있을 수 있다(그때 멈추면 다시 시작하지 않는다).
+        // 자동 스크롤 영역 안에 있을 때만 프레임마다 스크롤한다. 끝에 닿으면 프레임을 요청하지 않고 보드가 늘어날 때까지 기다린다.
+        // 손가락이 영역에 막 들어온 순간에는 보드가 아직 늘어나기 전이라 끝에 닿아 있을 수 있다. 이때 멈추면 다시 시작하지 않는다.
         androidx.compose.runtime.snapshotFlow { controller.scrollDirection }.collectLatest { direction ->
             while (direction != 0) {
                 androidx.compose.runtime.withFrameNanos { }
@@ -256,7 +256,7 @@ private fun AutoScroll(controller: BoardDragController, scroll: androidx.compose
 }
 
 /**
- * 길게 누르면 [onLongPress]를 부르고 그 누름의 나머지는 가로챈다. 짧게 누르거나 움직이면 아무것도 하지 않아 위젯·스크롤이 평소대로 받는다.
+ * 길게 누르면 [onLongPress]를 호출하고 그 뒤의 터치 이벤트는 가로챈다. 짧게 누르거나 움직이면 아무것도 하지 않으므로 위젯과 스크롤이 평소대로 받는다.
  */
 private fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointerInput(onLongPress) {
     awaitEachGesture {
@@ -271,7 +271,7 @@ private fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointe
         }
         if (released == null) {
             onLongPress()
-            // 손을 뗄 때까지 위젯이 누름·뗌을 받지 않게 가로챈다.
+            // 손을 뗄 때까지 위젯이 누르기와 떼기 이벤트를 받지 않도록 가로챈다.
             do {
                 val event = awaitPointerEvent(PointerEventPass.Initial)
                 event.changes.forEach { it.consume() }
@@ -285,18 +285,18 @@ private fun gapDp(arrangement: BoardArrangement): Float = when (arrangement) {
     is BoardArrangement.Grid -> arrangement.gapDp
 }
 
-/** 저장 문서를 지금 화면 폭 좌표로 바꾼 그리기용 문서. */
+/** 저장된 문서를 현재 화면 폭 좌표로 바꾼 그리기용 문서. */
 private fun displayDocument(state: KineticaBoardState, stored: SceneDocument, rects: Map<String, Rect>, width: Double): SceneDocument {
     val effects = state.catalog.associate { it.key to it.effects }
     val nodes = stored.nodes.mapValues { (id, node) ->
         val placed = rects[id.value]?.let { KineticaBoardState.withRect(node, it) } ?: node
-        // 효과는 저장하지 않고 위젯 목록에서 가져온다.
+        // 효과는 저장하지 않으므로 위젯 목록에서 가져온다.
         state.widgetKeyOf(id.value)?.let(effects::get)?.let { placed.copy(effects = it) } ?: placed
     }
     return stored.copy(artboard = Artboard(width, stored.artboard.height), nodes = nodes)
 }
 
-/** 끄는 위젯 하나만 바꾸고 artboard 높이를 맞춘다. 나머지 노드는 [base]의 같은 객체다. */
+/** 드래그 중인 위젯 하나만 바꾸고 artboard 높이를 맞춘다. 나머지 노드는 [base]의 객체를 그대로 쓴다. */
 private fun withDrag(base: SceneDocument, drag: BoardDrag?, height: Double): SceneDocument {
     val artboard = base.artboard.copy(height = height.coerceAtLeast(1.0))
     val moved = drag?.let { current -> base.node(NodeId(current.key))?.let { KineticaBoardState.withRect(it, current.rect) } }
@@ -336,7 +336,7 @@ private fun WidgetEditFrame(
 ) {
     val outline = if (dragging) Color.Transparent else colors.outline
     var focused by remember { mutableStateOf(false) }
-    // 빼기 표시는 시작쪽 위, 크기 손잡이는 끝쪽 아래. 보드 안은 왼쪽 기준이므로 뒤집힌 화면이면 직접 바꾼다.
+    // 삭제 버튼은 시작쪽 위, 크기 조절 핸들은 끝쪽 아래에 둔다. 보드 내부는 왼쪽 기준이므로 RTL 화면이면 직접 바꾼다.
     val mirrored = LocalBoardMirrored.current
     Box(
         Modifier
@@ -396,7 +396,7 @@ internal fun Modifier.rectPlacement(rect: Rect, zoom: Float): Modifier {
         .size(with(density) { (rect.width * zoom).toFloat().toDp() }, with(density) { (rect.height * zoom).toFloat().toDp() })
 }
 
-/** 테스트에서 위젯 편집 틀을 찾을 때 쓰는 tag 앞부분. 뒤에 위젯 키가 붙는다. */
+/** 테스트에서 위젯 편집 테두리를 찾을 때 쓰는 tag 접두사. 뒤에 위젯 키가 붙는다. */
 public const val BOARD_WIDGET_TAG: String = "kinetica-board-widget:"
 
 private const val EDGE_DP = 40.0
@@ -422,13 +422,13 @@ private fun Modifier.dragToMove(key: String, enabled: Boolean, controller: Board
     )
 }
 
-// 키보드로 고른 위젯이 어느 것인지 보이도록 초점이 있으면 테두리를 굵고 진하게 그린다.
+// 키보드로 선택한 위젯이 어느 것인지 알 수 있도록 포커스가 있으면 테두리를 굵고 진하게 그린다.
 private fun Modifier.editOutline(focused: Boolean, outline: Color, accent: Color): Modifier =
     border(if (focused) FOCUS_BORDER else 2.dp, if (focused) accent else outline, RoundedCornerShape(8.dp))
 private val BADGE_SIZE: Dp = 28.dp
 private val BADGE_OUTSET: Dp = 9.dp
 
-/** 놓인 자리마다 그릴 호스트 내용. 묶음이면 넘겨 보는 묶음 화면이다. */
+/** 슬롯마다 그릴 호스트 내용. 스택이면 넘겨 보는 페이저를 그린다. */
 @Composable
 private fun rememberBoardSlots(
     stored: SceneDocument,
@@ -437,7 +437,7 @@ private fun rememberBoardSlots(
     advance: StackAdvance,
     direction: LayoutDirection,
 ): SceneSlots {
-    // 편집 중에는 묶음이 저절로 넘어가지 않는다.
+    // 편집 중에는 스택이 자동으로 넘어가지 않는다.
     val autoAdvanceMs = if (advance.editing) 0L else advance.intervalMs
     return remember(stored.rootOrder, stored, content, autoAdvanceMs, direction) {
         stored.rootOrder.associate { id ->
@@ -453,5 +453,5 @@ private fun rememberBoardSlots(
 
 private class StackAdvance(val intervalMs: Long, val editing: Boolean)
 
-/** 보드 화면 좌표가 좌우로 뒤집혀 있는지(오른쪽에서 왼쪽으로 쓰는 언어). */
+/** RTL 언어 때문에 보드 화면 좌표가 좌우로 뒤집혀 있는지. */
 internal val LocalBoardMirrored = staticCompositionLocalOf { false }

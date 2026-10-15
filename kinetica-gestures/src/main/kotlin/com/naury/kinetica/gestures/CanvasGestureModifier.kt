@@ -10,8 +10,8 @@ import com.naury.kinetica.core.geometry.Vec2
 import kotlinx.coroutines.CancellationException
 
 /**
- * 이 요소에 들어온 포인터 입력을 [controller]에 넘긴다. 요소의 좌표가 곧 viewport 픽셀이다.
- * 입력을 소비하므로 바깥 스크롤과 겹치지 않는다. 요소가 사라지거나 입력이 취소되면 [CanvasGestureController.onCancel]을 부른다.
+ * 이 요소에 들어온 포인터 입력을 [controller]에 넘긴다. 요소의 좌표가 곧 viewport 픽셀 좌표다.
+ * 입력을 소비하므로 바깥 스크롤과 충돌하지 않는다. 요소가 사라지거나 입력이 취소되면 [CanvasGestureController.onCancel]을 호출한다.
  */
 public fun Modifier.canvasGestures(controller: CanvasGestureController): Modifier = pointerInput(controller) {
     try {

@@ -29,13 +29,13 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * 보드 하나의 배치 상태. 위젯 추가·빼기·옮기기·크기 바꾸기는 실행 취소 한 단계씩이며, [toJson]으로 저장해 [create]로 되살린다.
+ * 보드 하나의 배치 상태. 위젯을 추가, 삭제, 이동하거나 크기를 바꿀 때마다 실행 취소 한 단계가 쌓인다. [toJson]으로 저장하고 [create]로 복원한다.
  *
- * 배치는 기준 폭([REFERENCE_WIDTH] 문서 단위, 약 393dp)으로 저장하고, 화면 폭이 다르면 가로 위치·너비를 비율대로 펼쳐 보여 준다.
- * 그래서 폴더블을 접고 펴도 배치가 그대로다. 격자 배치는 칸 위치로 저장한다. 화면을 돌려도 실행 취소 기록까지 지키려면 상태를
- * 화면보다 오래 사는 곳(ViewModel)에 둔다. [rememberKineticaBoardState]가 그렇게 하고 저장까지 맡는다.
+ * 배치는 기준 폭([REFERENCE_WIDTH] 문서 단위, 약 393dp)으로 저장한다. 화면 폭이 다르면 가로 위치와 너비를 비율대로 늘려 보여 주므로
+ * 폴더블을 접고 펴도 배치가 유지된다. 격자 배치는 칸 위치로 저장한다. 화면을 회전해도 실행 취소 기록을 유지하려면 상태를
+ * ViewModel처럼 화면보다 오래 사는 곳에 둔다. [rememberKineticaBoardState]가 이 일과 저장을 함께 맡는다.
  *
- * 스레드: 메인 스레드에서 쓴다. 다 쓰면 [close]한다.
+ * 메인 스레드에서만 사용한다. 다 쓰면 [close]를 호출한다.
  */
 public class KineticaBoardState private constructor(
     public val catalog: List<BoardWidget>,
@@ -44,16 +44,16 @@ public class KineticaBoardState private constructor(
 ) {
     private val widgets = catalog.associateBy { it.key }
 
-    /** 위젯 키마다 지금까지 준 가장 큰 자리 번호. 뺀 자리 id를 다시 주지 않아, 호스트가 자리 id로 둔 데이터가 새 자리에 섞이지 않는다. */
+    // 위젯 키마다 지금까지 발급한 가장 큰 슬롯 번호. 삭제한 슬롯 id를 재사용하지 않아야 호스트가 슬롯 id로 저장한 데이터가 새 슬롯에 섞이지 않는다.
     private val issued = ItemNumbers()
 
-    /** 기준 폭 기준 배치 문서. 놓인 자리마다 그 id를 노드 id·호스트 뷰 키로 쓰는 호스트 뷰 노드 하나다. */
+    /** 기준 폭으로 저장된 배치 문서. 놓인 슬롯마다 호스트 뷰 노드가 하나 있고, 슬롯 id를 노드 id와 호스트 뷰 키로 쓴다. */
     public val document: StateFlow<SceneDocument> get() = session.document
 
     public val history: HistoryController get() = session.history
 
     /**
-     * [create]에 준 저장본을 읽지 못해 기본 배치로 시작했는지. `true`면 그 저장본을 바로 덮어쓰지 말고 따로 보관하거나 알린다.
+     * [create]에 넘긴 저장본을 읽지 못해 기본 배치로 시작했으면 `true`. 이때는 저장본을 바로 덮어쓰지 말고 따로 보관하거나 사용자에게 알린다.
      * 저장본이 없었으면 `false`다.
      */
     public var restoreFailed: Boolean = false
@@ -61,7 +61,7 @@ public class KineticaBoardState private constructor(
 
     internal val commands get() = session.commands
 
-    /** 놓인 위젯 키(묶음 안의 것 포함). */
+    /** 놓인 위젯 키. 스택 안에 있는 위젯도 포함한다. */
     private val placedWidgetKeys: Set<String>
         get() = session.document.value.let { document ->
             document.rootOrder.flatMap { id ->
@@ -71,15 +71,15 @@ public class KineticaBoardState private constructor(
         }
 
     /**
-     * 보드에 놓인 자리 id(그리기 순서). 한 번만 놓는 위젯은 위젯 키와 같고, [BoardWidget.multiple] 위젯은 `memo`, `memo.2`처럼 자리마다 다르다.
-     * 자리 id는 옮기거나 저장해도 바뀌지 않으므로 호스트가 자리마다 데이터를 둘 때 키로 쓴다. 위젯 키는 [widgetKeyOf].
-     * 묶음 안의 자리는 [itemIds]에 있다.
+     * 보드에 놓인 슬롯 id 목록이며 그리기 순서를 따른다. 한 번만 놓는 위젯은 위젯 키와 같고, [BoardWidget.multiple] 위젯은 `memo`, `memo.2`처럼
+     * 슬롯마다 다르다. 슬롯 id는 이동하거나 저장해도 바뀌지 않으므로 호스트가 슬롯별 데이터를 저장할 때 키로 쓴다. 위젯 키는 [widgetKeyOf]로 얻는다.
+     * 스택 안의 슬롯은 [itemIds]에 있다.
      */
     public val placedKeys: List<String> get() = session.document.value.rootOrder.map { it.value }
 
     /**
-     * 지금 보드에 있는 모든 자리 id(묶음 안의 것 포함). 뺀 자리 id는 다시 주지 않으므로, 호스트가 자리마다 둔 데이터는
-     * 편집을 마칠 때 여기에 없는 것을 지우면 된다. 빼자마자 지우면 실행 취소로 되살린 자리의 데이터가 사라진다.
+     * 지금 보드에 있는 모든 슬롯 id. 스택 안의 슬롯도 포함한다. 삭제한 슬롯 id는 재사용하지 않으므로, 호스트가 슬롯별로 저장한 데이터는
+     * 편집을 마칠 때 여기에 없는 것만 지우면 된다. 삭제하자마자 지우면 실행 취소로 복원한 슬롯의 데이터가 사라진다.
      */
     public val itemIds: Set<String>
         get() = session.document.value.let { document ->
@@ -89,11 +89,11 @@ public class KineticaBoardState private constructor(
             }.toSet()
         }
 
-    /** 더 놓을 수 있는 위젯(아직 놓이지 않았거나 여러 개 놓을 수 있는 것). 위젯 추가 목록에 쓴다. */
+    /** 아직 놓이지 않았거나 여러 개 놓을 수 있어서 더 추가할 수 있는 위젯. 위젯 추가 메뉴에 쓴다. */
     public val availableWidgets: List<BoardWidget>
         get() = placedWidgetKeys.let { placed -> catalog.filter { it.multiple || it.key !in placed } }
 
-    /** 놓인 자리 [id]의 위젯 키. 묶음 안의 자리도 찾는다. 놓여 있지 않거나 묶음 자체의 id면 `null`. */
+    /** 슬롯 [id]에 놓인 위젯의 키. 스택 안의 슬롯도 찾는다. 놓여 있지 않거나 스택 자체의 id면 `null`. */
     public fun widgetKeyOf(id: String): String? {
         val document = session.document.value
         val node = NodeId.parseOrNull(id)?.let(document::node)
@@ -103,23 +103,23 @@ public class KineticaBoardState private constructor(
         }
     }
 
-    /** [key] 위젯을 비어 있는 첫 자리(위에서부터, 같은 줄이면 왼쪽부터)에 놓는다. 목록에 없거나 이미 놓인 한 개짜리 위젯이면 `false`. */
+    /** [key] 위젯을 위에서부터, 같은 줄이면 왼쪽부터 찾은 첫 빈 위치에 놓는다. 목록에 없거나 이미 놓인 한 개짜리 위젯이면 `false`. */
     public fun add(key: String): Boolean = addItem(key) != null
 
-    /** [add]와 같고, 놓은 자리 id를 돌려준다. 놓지 못하면 `null`. */
+    /** [add]와 같지만 놓은 슬롯 id를 돌려준다. 놓지 못하면 `null`. */
     public fun addItem(key: String): String? {
         val widget = widgets[key] ?: return null
         if (widget !in availableWidgets) return null
         val document = session.document.value
         val taken = document.nodes.values.flatMap { node -> node.stackMembers().map { it.id } }.toSet()
-        // 한 번만 놓는 위젯은 자리 id가 늘 위젯 키다. 여러 개 놓는 위젯만 번호를 이어서 준다.
+        // 한 번만 놓는 위젯은 슬롯 id가 늘 위젯 키다. 여러 개 놓는 위젯만 번호를 이어서 붙인다.
         val id = newItemId(key, document, widgets.keys, taken, if (widget.multiple) issued[key] else 0)
         issued.record(key, id)
         val node = placementFor(widget, document, id)
         return id.takeIf { session.commands.execute(SceneCommand.AddNode(node)) is CommandResult.Applied }
     }
 
-    /** 놓인 자리 [id]를 보드에서 뺀다. 놓여 있지 않거나 [BoardWidget.removable]이 `false`면 `false`. */
+    /** 슬롯 [id]를 보드에서 삭제한다. 놓여 있지 않거나 [BoardWidget.removable]이 `false`면 `false`. */
     public fun remove(id: String): Boolean {
         val node = NodeId.parseOrNull(id)?.let(session.document.value::node) ?: return false
         val keys = node.stackMembers().map { it.key }.ifEmpty { listOf(widgetKeyOf(node)) }
@@ -128,9 +128,8 @@ public class KineticaBoardState private constructor(
     }
 
     /**
-     * 놓인 자리 [id]의 위젯을 기준 폭 좌표 [rect]로 옮기거나 크기를 바꾼다. 겹치는 다른 위젯은 아래로 밀린다(분할 배치 뒤 가려지지 않게).
-     * 격자 배치면 가장 가까운 칸으로 맞춘다.
-     * 모든 변경이 실행 취소 한 단계다.
+     * 슬롯 [id]의 위젯을 기준 폭 좌표 [rect]로 옮기거나 크기를 바꾼다. 분할 배치 뒤에 가려지는 위젯이 없도록 겹치는 다른 위젯은 아래로 밀린다.
+     * 격자 배치면 가장 가까운 칸에 맞춘다. 변경 전체가 실행 취소 한 단계다.
      */
     public fun place(id: String, rect: Rect): Boolean {
         val document = session.document.value
@@ -159,7 +158,7 @@ public class KineticaBoardState private constructor(
     }
 
     /**
-     * 놓인 자리 [id]의 위젯을 [dxDp]·[dyDp]만큼 옮긴다(접근성 동작·키보드용). 보드 밖으로는 나가지 않고, 격자 배치면 가장 가까운 칸으로 맞춘다.
+     * 슬롯 [id]의 위젯을 [dxDp], [dyDp]만큼 옮긴다. 접근성 동작과 키보드 편집에 쓴다. 보드 밖으로는 나가지 않고, 격자 배치면 가장 가까운 칸에 맞춘다.
      */
     public fun moveBy(id: String, dxDp: Float, dyDp: Float): Boolean {
         val rect = rectOf(id) ?: return false
@@ -169,7 +168,7 @@ public class KineticaBoardState private constructor(
         return place(id, Rect(rect.left + dx, rect.top + dy, rect.right + dx, rect.bottom + dy))
     }
 
-    /** 놓인 자리 [id]의 위젯 크기를 [dwDp]·[dhDp]만큼 바꾼다. 왼쪽 위는 그대로이고 48dp보다 작아지지 않는다. */
+    /** 슬롯 [id]의 위젯 크기를 [dwDp], [dhDp]만큼 바꾼다. 왼쪽 위 모서리는 그대로 두고, 48dp보다 작아지지 않는다. */
     public fun resizeBy(id: String, dwDp: Float, dhDp: Float): Boolean {
         val rect = rectOf(id) ?: return false
         val min = MIN_SIZE_DP * UNITS
@@ -179,7 +178,7 @@ public class KineticaBoardState private constructor(
         return place(id, Rect(rect.left, rect.top, right, bottom))
     }
 
-    /** dp 이동량을 기준 폭 단위로 바꾼다. 격자 배치는 방향만 보고 한 칸씩 움직인다. */
+    // 격자 배치는 이동량의 크기는 무시하고 방향만 보고 한 칸씩 움직인다.
     private fun step(dxDp: Float, dyDp: Float): Pair<Double, Double> {
         val grid = arrangement as? BoardArrangement.Grid ?: return dxDp * UNITS to dyDp * UNITS
         val width = BoardGeometry.cellWidth(REFERENCE_WIDTH, grid.columns, arrangement.gapUnits())
@@ -187,17 +186,17 @@ public class KineticaBoardState private constructor(
             Math.signum(dyDp) * (width * grid.rowHeightRatio + arrangement.gapUnits())
     }
 
-    /** 놓인 자리 [id]의 위젯을 맨 위로 올린다(겹칠 때 위에 그려진다). */
+    /** 슬롯 [id]의 위젯을 맨 앞으로 가져온다. 다른 위젯과 겹치면 위에 그려진다. */
     public fun bringToFront(id: String): Boolean {
         val last = placedKeys.lastIndex
         if (id !in placedKeys || placedKeys.last() == id) return false
         return session.commands.execute(SceneCommand.ReorderNode(NodeId(id), last)) is CommandResult.Applied
     }
 
-    /** 놓인 자리 [id]의 기준 폭 좌표 사각형. 없으면 `null`. */
+    /** 슬롯 [id]의 기준 폭 좌표 사각형. 없으면 `null`. */
     public fun rectOf(id: String): Rect? = NodeId.parseOrNull(id)?.let { rectOf(session.document.value.node(it)) }
 
-    /** 저장용 JSON. 지금 목록의 키를 함께 남겨, 다음에 열 때 새로 생긴 위젯과 사용자가 뺀 위젯을 구분한다. */
+    /** 저장용 JSON. 지금 목록의 키를 함께 남겨 두어, 다음에 열 때 새로 생긴 위젯과 사용자가 삭제한 위젯을 구분한다. */
     public fun toJson(): String {
         val known = JsonArray(catalog.map { JsonPrimitive(it.key) })
         val document = session.document.value
@@ -260,8 +259,8 @@ public class KineticaBoardState private constructor(
         private val codec = SceneCodec()
 
         /**
-         * 보드 상태를 만든다. [saved]가 있으면 그 배치를 열고 목록과 맞춘다: 목록에 없는 위젯은 빼고, 지난번 저장 뒤 목록에 새로 생긴
-         * [BoardWidget.placedByDefault] 위젯은 빈자리에 놓는다. 사용자가 뺀 위젯은 다시 넣지 않는다.
+         * 보드 상태를 만든다. [saved]가 있으면 그 배치를 열고 목록과 맞춘다. 목록에 없는 위젯은 지우고, 지난번 저장 뒤 목록에 새로 생긴
+         * [BoardWidget.placedByDefault] 위젯은 빈 위치에 놓는다. 사용자가 삭제한 위젯은 다시 넣지 않는다.
          * 저장본을 읽을 수 없으면 기본 배치로 시작한다.
          *
          * @throws IllegalArgumentException 목록에 같은 키가 두 번 있을 때
@@ -278,7 +277,7 @@ public class KineticaBoardState private constructor(
             val keys = catalog.map { it.key }.toSet()
             val known = restored?.let(::knownKeys)
             val base = restored?.let { document ->
-                // 묶음은 목록에 남은 위젯만 남기고, 하나만 남으면 보통 위젯으로 되돌린다.
+                // 스택에는 목록에 남은 위젯만 두고, 하나만 남으면 일반 위젯으로 되돌린다.
                 val kept = document.rootOrder.mapNotNull { id ->
                     val node = document.node(id)?.takeIf { it.content is NodeContent.HostSlot } ?: return@mapNotNull null
                     if (node.stackMembers().isEmpty()) node.takeIf { widgetKeyOf(it) in keys } else reconcileStack(node, keys)
@@ -291,7 +290,7 @@ public class KineticaBoardState private constructor(
             } ?: emptyBoard()
             val opened = KineticaSession.create(base) as? SessionOpenResult.Opened
                 ?: (KineticaSession.create(emptyBoard()) as SessionOpenResult.Opened)
-            // 처음 배치·목록 맞춤은 사용자가 되돌릴 일이 아니므로, 임시 세션에서 놓은 결과로 기록 없는 세션을 연다.
+            // 기본 배치와 목록 맞춤은 사용자가 실행 취소할 대상이 아니다. 임시 세션에서 배치한 결과로 기록이 빈 세션을 연다.
             val draft = KineticaBoardState(catalog, arrangement, opened.session)
             val placed = base.rootOrder.flatMap { id ->
                 val node = base.nodes.getValue(id)
@@ -328,7 +327,7 @@ public class KineticaBoardState private constructor(
 
         internal fun widgetKeyOf(node: SceneNode): String = node.metadata[WIDGET_KEY] ?: node.id.value
 
-        /** 놓인 자리 id·위젯 키로 만든 보통 위젯 노드의 메타데이터. */
+        /** 슬롯 id와 위젯 키로 만든 일반 위젯 노드의 메타데이터. */
         internal fun widgetMetadata(id: String, key: String): Map<String, String> = if (id == key) emptyMap() else mapOf(WIDGET_KEY to key)
 
         internal fun rectOf(node: SceneNode?): Rect? {
@@ -351,13 +350,13 @@ public class KineticaBoardState private constructor(
     }
 }
 
-// 첫 자리는 위젯 키 그대로(예전 저장본과 같은 id), 그다음은 `.2`, `.3`… 다른 위젯 키와 겹치지 않는 첫 번호를 쓴다.
+// 첫 슬롯은 예전 저장본과 id가 같도록 위젯 키를 그대로 쓰고, 그다음부터는 `.2`, `.3`처럼 다른 위젯 키와 겹치지 않는 첫 번호를 붙인다.
 private fun newItemId(key: String, document: SceneDocument, widgetKeys: Set<String>, taken: Set<String>, issued: Int): String =
     generateSequence(issued + 1) { it + 1 }
         .map { if (it == 1) key else "$key.$it" }
         .first { id -> document.node(NodeId(id)) == null && id !in taken && (id == key || id !in widgetKeys) }
 
-/** 위젯 키마다 지금까지 준 가장 큰 자리 번호. */
+/** 위젯 키마다 지금까지 발급한 가장 큰 슬롯 번호. */
 internal class ItemNumbers {
     private val numbers = HashMap<String, Int>()
 
@@ -369,7 +368,7 @@ internal class ItemNumbers {
         numbers[key] = maxOf(this[key], itemNumber(key, id))
     }
 
-    /** 저장된 번호들과 [document]에 놓인 자리(번호가 없던 이전 형식 저장본 포함)로 맞춘다. */
+    /** 저장된 번호와 [document]에 놓인 슬롯을 함께 보고 맞춘다. 번호를 저장하지 않던 이전 형식 저장본도 처리한다. */
     fun restore(saved: Map<String, Int>, more: Map<String, Int>, document: SceneDocument) {
         (saved.entries + more.entries).forEach { (key, number) -> numbers[key] = maxOf(this[key], number) }
         document.rootOrder.mapNotNull(document::node).flatMap { node ->
@@ -378,7 +377,7 @@ internal class ItemNumbers {
     }
 }
 
-/** 자리 id의 번호. 위젯 키와 같으면 1, `memo.3`이면 3, 알 수 없으면 0. */
+/** 슬롯 id의 번호. 위젯 키와 같으면 1, `memo.3`이면 3, 알 수 없으면 0. */
 private fun itemNumber(key: String, id: String): Int = when {
     id == key -> 1
     id.startsWith("$key.") -> id.removePrefix("$key.").toIntOrNull() ?: 0
@@ -390,5 +389,5 @@ internal fun BoardArrangement.gapUnits(): Double = when (this) {
     is BoardArrangement.Grid -> gapDp * KineticaBoardState.UNITS
 }
 
-/** 묶음 안의 위젯 하나. [id]는 놓인 자리 id, [key]는 위젯 키다. */
+/** 스택 안의 위젯 하나. [id]는 슬롯 id, [key]는 위젯 키다. */
 internal data class StackMember(val id: String, val key: String)

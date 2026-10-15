@@ -2,7 +2,7 @@
     <string name="kinetica_board_add">Add widget</string>
     <string name="kinetica_board_remove">Remove %1$s</string>
     <string name="kinetica_board_resize">Resize %1$s</string>
-    <string name="kinetica_board_nothing_to_add">All widgets are on the board</string>
+    <string name="kinetica_board_nothing_to_add">All widgets are already on the board</string>
     <string name="kinetica_board_move_up">Move up</string>
     <string name="kinetica_board_move_down">Move down</string>
     <string name="kinetica_board_move_left">Move left</string>

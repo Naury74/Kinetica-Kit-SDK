@@ -15,13 +15,13 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import kotlinx.coroutines.flow.first
 
 /**
- * 키보드로 고른(초점이 있는) 위젯을 다룬다: 방향키로 옮기기, Shift+방향키로 크기, Delete·Backspace로 빼기.
+ * 포커스를 받은 위젯을 키보드로 편집한다. 방향키로 이동하고, Shift+방향키로 크기를 바꾸고, Delete나 Backspace로 삭제한다.
  * 격자 배치에서는 한 칸씩 움직인다.
  */
 internal fun Modifier.keyboardEditing(state: KineticaBoardState, key: String, permissions: BoardPermissions, mirrored: Boolean): Modifier =
     onPreviewKeyEvent { event ->
         if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-        // 화면이 뒤집혀 있으면 화면 왼쪽이 저장 좌표의 오른쪽이다.
+        // RTL로 뒤집힌 화면에서는 화면 왼쪽이 저장 좌표의 오른쪽이다.
         val delta = arrowDelta(event.key)?.let { (dx, dy) -> (if (mirrored) -dx else dx) to dy }
         when {
             event.key == Key.Delete || event.key == Key.Backspace -> permissions.remove && state.remove(key)
@@ -39,7 +39,7 @@ private fun arrowDelta(key: Key): Pair<Float, Float>? = when (key) {
     else -> null
 }
 
-/** TalkBack 등에서 끌기 없이 옮기고 크기를 바꾸고 빼는 동작. 허용된 것만 준다. */
+/** TalkBack 같은 접근성 서비스에서 드래그 없이 이동, 크기 조절, 삭제를 할 수 있는 동작. 허용된 동작만 돌려준다. */
 @Composable
 internal fun accessibilityActions(state: KineticaBoardState, key: String, permissions: BoardPermissions): List<CustomAccessibilityAction> {
     val side = if (LocalBoardMirrored.current) -1f else 1f

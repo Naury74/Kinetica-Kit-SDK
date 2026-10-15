@@ -35,19 +35,19 @@ import com.naury.kinetica.render.SceneTextMeasurer
 import com.naury.kinetica.render.rememberSceneImages
 
 /**
- * 읽기 전용 장면 재생기(docs 00 Player). 편집 도구·실행 취소·저장소에 의존하지 않는다.
+ * 읽기 전용 장면 재생기(docs 00 Player). 편집 도구, 실행 취소, 저장소에 의존하지 않는다.
  *
- * [fit]에 따라 artboard를 영역에 맞춰 그린다. [playback]이 있으면 그 재생 상태의 시각으로 평가해 그리고,
- * 재생 중에는 화면 프레임마다 [PlaybackController.onFrame]을 부른다. 없으면 정지 장면(timeline 0ms)을 그린다.
+ * [fit]에 따라 artboard를 영역에 맞춰 그린다. [playback]이 있으면 그 재생 시각으로 평가한 장면을 그리고,
+ * 재생 중에는 프레임마다 [PlaybackController.onFrame]을 호출한다. 없으면 timeline 0ms 시점의 정지 장면을 그린다.
  *
- * @param playback 같은 문서의 timeline으로 만든 재생기. [rememberPlaybackController]로 만든다.
- * @param images 이미지 노드를 그릴 이미지. `null`이면 `content://` 이미지를 직접 읽는다.
+ * @param playback 같은 문서의 timeline으로 만든 재생 컨트롤러. [rememberPlaybackController]로 만든다.
+ * @param images 이미지 노드에 그릴 이미지. `null`이면 `content://` 이미지를 직접 읽는다.
  * @param data 바인딩에 쓸 호스트 데이터. 바뀌면 바로 다시 그린다.
- * @param slots 호스트 뷰 노드에 그릴 Composable(키 → 내용). 실제로 동작한다.
- * @param onAction 동작이 있는 노드를 누르면 동작 이름으로 불린다.
- * @param fit 영역에 맞추는 방식. 기본은 비율을 지키는 [SceneFit.Contain]이다.
- * @param numberAnimationMs 데이터의 숫자 값이 바뀌면 이 시간(ms) 동안 올라가거나 내려가며 바뀐다([animateSceneNumbers]).
- *   0이면 바로 바뀐다. 시스템 "애니메이션 삭제"가 켜져 있으면 바로 바뀐다.
+ * @param slots 호스트 뷰 노드에 그릴 Composable을 키별로 담은 맵. 그려진 Composable은 실제로 동작한다.
+ * @param onAction 동작이 있는 노드를 누르면 그 동작 이름과 함께 호출된다.
+ * @param fit 영역에 맞추는 방식. 기본값은 비율을 유지하는 [SceneFit.Contain]이다.
+ * @param numberAnimationMs 데이터의 숫자 값이 바뀌면 이 시간(ms) 동안 숫자가 올라가거나 내려가며 바뀐다([animateSceneNumbers]).
+ *   0이거나 시스템의 '애니메이션 삭제' 설정이 켜져 있으면 바로 바뀐다.
  */
 @Composable
 public fun KineticaPlayer(
@@ -85,12 +85,12 @@ public fun KineticaPlayer(
     val context = LocalContext.current
     val fonts = LocalSceneFonts.current
     val measurer = remember(context, fonts) { SceneTextMeasurer(context, fonts) }
-    // 변형은 타임라인 평가 전에 한 번만 바꿔, 프레임마다 인스턴스를 다시 만들거나 키 값을 덮지 않게 한다.
+    // 프레임마다 인스턴스를 다시 만들거나 키 값을 덮어쓰지 않도록, 변형은 타임라인 평가 전에 한 번만 적용한다.
     var pressed by remember { mutableStateOf<NodeId?>(null) }
     val resolved = remember(fitted, data, pressed) { withVariants(fitted, data, pressed) }
     val shown = remember(resolved, timeline, timeMs, data, measurer) {
         val evaluated = if (timeline == null) resolved else TimelineEvaluator.evaluate(resolved, timeline, timeMs)
-        // 데이터로 글자가 바뀌면 이 기기 글꼴로 다시 재 글자에 맞춘 상자와 자동 배치가 따라간다.
+        // 데이터 때문에 텍스트가 바뀌면 이 기기의 글꼴로 다시 측정해야 텍스트에 맞춘 상자 크기와 오토 레이아웃이 따라온다.
         Bindings.apply(evaluated, data, measurer = measurer)
     }
     Box(modifier.onSizeChanged { size = it.width to it.height }) {
@@ -109,16 +109,16 @@ public fun KineticaPlayer(
 }
 
 /**
- * [timeline]을 재생하는 [PlaybackController]. 다시 구성돼도 같은 timeline이면 유지된다. 화면 회전 같은 구성 변경에서는 새로 만들므로
- * 재생 위치까지 지키려면 [PlaybackController]를 ViewModel에 둔다.
+ * [timeline]을 재생하는 [PlaybackController]. 재구성되어도 timeline이 같으면 유지된다. 화면 회전 같은 구성 변경 때는 새로 만들어지므로
+ * 재생 위치까지 유지하려면 [PlaybackController]를 ViewModel에 둔다.
  *
- * @param reducedMotion 움직임 줄이기. 기본은 시스템 "애니메이션 삭제"(애니메이터 배율 0) 설정을 따른다.
+ * @param reducedMotion 애니메이션을 줄일지. 기본값은 시스템의 '애니메이션 삭제' 설정(애니메이터 배율 0)을 따른다.
  */
 @Composable
 public fun rememberPlaybackController(timeline: Timeline, reducedMotion: Boolean = rememberSystemReducedMotion()): PlaybackController =
     remember(timeline, reducedMotion) { PlaybackController(timeline, reducedMotion = reducedMotion) }
 
-/** 시스템 "애니메이션 삭제"가 켜져 있는지(애니메이터 배율 0). */
+/** 시스템의 '애니메이션 삭제' 설정이 켜져 있는지(애니메이터 배율 0). */
 @Composable
 public fun rememberSystemReducedMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
@@ -127,13 +127,13 @@ public fun rememberSystemReducedMotion(): Boolean {
     }
 }
 
-/** 데이터가 고른 변형으로 바꾸고, 누르고 있는 인스턴스는 눌림 변형으로 바꾼다. 바인딩보다 먼저 바꿔야 묶인 글자가 그대로다. */
+/** 데이터가 선택한 변형을 적용하고, 누르고 있는 인스턴스는 pressed 변형으로 바꾼다. 바인딩보다 먼저 적용해야 바인딩된 텍스트가 유지된다. */
 private fun withVariants(document: SceneDocument, data: SceneData, pressed: NodeId?): SceneDocument {
     val chosen = Bindings.resolveVariants(document, data)
     return pressed?.let { ComponentVariants.pressed(chosen, it) } ?: chosen
 }
 
-/** [SceneFit.Responsive]면 artboard를 영역 크기(문서 단위)로 바꾼 문서. 그 밖에는 [document] 그대로다. */
+/** [SceneFit.Responsive]면 artboard를 영역 크기(문서 단위)로 바꾼 문서를, 그 밖에는 [document]를 그대로 돌려준다. */
 private fun fitted(document: SceneDocument, size: Pair<Int, Int>, fit: SceneFit, density: Float): SceneDocument {
     val width = size.first / density * HOST_VIEW_UNITS_PER_DP
     val height = size.second / density * HOST_VIEW_UNITS_PER_DP

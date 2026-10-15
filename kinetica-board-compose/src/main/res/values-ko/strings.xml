@@ -1,16 +1,16 @@
 <resources>
     <string name="kinetica_board_add">위젯 추가</string>
-    <string name="kinetica_board_remove">%1$s 빼기</string>
-    <string name="kinetica_board_resize">%1$s 크기 바꾸기</string>
-    <string name="kinetica_board_nothing_to_add">모든 위젯이 보드에 있습니다</string>
-    <string name="kinetica_board_move_up">위로 옮기기</string>
-    <string name="kinetica_board_move_down">아래로 옮기기</string>
-    <string name="kinetica_board_move_left">왼쪽으로 옮기기</string>
-    <string name="kinetica_board_move_right">오른쪽으로 옮기기</string>
-    <string name="kinetica_board_larger">크게</string>
-    <string name="kinetica_board_smaller">작게</string>
-    <string name="kinetica_board_remove_action">보드에서 빼기</string>
-    <string name="kinetica_board_unstack">묶음 풀기</string>
+    <string name="kinetica_board_remove">%1$s 삭제</string>
+    <string name="kinetica_board_resize">%1$s 크기 조절</string>
+    <string name="kinetica_board_nothing_to_add">모든 위젯이 이미 보드에 있습니다</string>
+    <string name="kinetica_board_move_up">위로 이동</string>
+    <string name="kinetica_board_move_down">아래로 이동</string>
+    <string name="kinetica_board_move_left">왼쪽으로 이동</string>
+    <string name="kinetica_board_move_right">오른쪽으로 이동</string>
+    <string name="kinetica_board_larger">크기 키우기</string>
+    <string name="kinetica_board_smaller">크기 줄이기</string>
+    <string name="kinetica_board_remove_action">보드에서 삭제</string>
+    <string name="kinetica_board_unstack">스택 풀기</string>
     <plurals name="kinetica_board_stack_label">
         <item quantity="other">%1$s 외 %2$d개</item>
     </plurals>

@@ -13,16 +13,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 /**
- * 숫자가 [target]으로 바뀔 때 지금 보이는 값에서 [target]까지 올라가거나 내려가며 바뀌는 값(대시보드 매출·카운터).
- * 처음 값은 움직이지 않고 그대로 보인다. Double로 계산하므로 2^53(약 9천조)까지의 정수는 정확하다.
- * 유한하지 않은 값(NaN·무한대)은 무시하고 지금 값을 둔다.
+ * [target]이 바뀌면 지금 보이는 값에서 [target]까지 숫자가 올라가거나 내려가는 애니메이션 값. 대시보드 매출이나 카운터에 쓴다.
+ * 첫 값은 애니메이션 없이 그대로 보여 준다. Double로 계산하므로 2^53(약 9천조)까지의 정수는 정확하다.
+ * NaN이나 무한대처럼 유한하지 않은 값은 무시하고 지금 값을 유지한다.
  *
  * ```kotlin
  * val sales by animateNumberAsState(data.sales)
  * Text("%,d원".format(sales.roundToLong()))
  * ```
  *
- * @param durationMs 바뀌는 데 걸리는 시간(ms, 0 이상). 0이면 바로 바뀐다.
+ * @param durationMs 애니메이션 시간(ms, 0 이상). 0이면 바로 바뀐다.
  */
 @Composable
 public fun animateNumberAsState(target: Double, durationMs: Int = DEFAULT_COUNT_MS): State<Double> {
@@ -32,7 +32,7 @@ public fun animateNumberAsState(target: Double, durationMs: Int = DEFAULT_COUNT_
     val progress = remember { Animatable(1f) }
     LaunchedEffect(target) {
         if (target == to || !target.isFinite()) return@LaunchedEffect
-        // 움직이는 도중 값이 또 바뀌면 지금 보이는 값에서 이어 간다.
+        // 애니메이션 도중에 값이 또 바뀌면 지금 보이는 값에서 이어서 움직인다.
         from += (to - from) * progress.value
         to = target
         progress.snapTo(0f)

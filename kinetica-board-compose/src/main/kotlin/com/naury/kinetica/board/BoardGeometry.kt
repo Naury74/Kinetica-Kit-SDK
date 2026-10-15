@@ -5,18 +5,18 @@ import com.naury.kinetica.core.geometry.Vec2
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** 화면 가장자리로 끌어 놓을 때의 분할 자리. */
+/** 화면 가장자리로 끌어 놓을 때 차지하는 분할 영역. */
 public enum class SnapZone { LeftHalf, RightHalf, TopLeft, TopRight, BottomLeft, BottomRight, Maximize }
 
-/** 격자 위치(칸). 열·행은 0부터, 칸 수는 1 이상. */
+/** 격자 위치. 열과 행은 0부터 세고, 차지하는 칸 수는 1 이상이다. */
 public data class GridCell(val column: Int, val row: Int, val columnSpan: Int, val rowSpan: Int) {
     internal fun overlaps(other: GridCell): Boolean = column < other.column + other.columnSpan && other.column < column + columnSpan &&
         row < other.row + other.rowSpan && other.row < row + rowSpan
 }
 
-/** 보드 배치 계산. 모든 값은 같은 단위(문서 단위)이며 상태가 없다. */
+/** 보드 배치 계산. 모든 값은 문서 단위이고, 상태를 갖지 않는다. */
 internal object BoardGeometry {
-    /** [pointer]가 보이는 영역 [visible]의 가장자리 [edge] 안에 있으면 그 분할 자리. 모서리가 변보다 먼저다. */
+    /** [pointer]가 보이는 영역 [visible]의 가장자리에서 [edge] 안쪽에 있으면 해당 분할 영역을 돌려준다. 모서리를 변보다 먼저 본다. */
     fun zoneAt(pointer: Vec2, visible: Rect, edge: Double): SnapZone? {
         val left = pointer.x - visible.left < edge
         val right = visible.right - pointer.x < edge
@@ -34,7 +34,7 @@ internal object BoardGeometry {
         }
     }
 
-    /** 분할 자리가 차지하는 사각형. 가장자리와 나뉜 칸 사이에 [gap]을 둔다. */
+    /** 분할 영역이 차지하는 사각형. 가장자리와 나뉜 칸 사이에 [gap]을 둔다. */
     fun zoneRect(zone: SnapZone, visible: Rect, gap: Double): Rect {
         val inner = Rect(visible.left + gap, visible.top + gap, visible.right - gap, visible.bottom - gap)
         val midX = (inner.left + inner.right) / 2.0
@@ -52,8 +52,8 @@ internal object BoardGeometry {
     }
 
     /**
-     * 옮기는 사각형 [moving]을 보드 가장자리(간격 [gap] 안쪽)와 다른 위젯 [others]의 변·간격 자리에 [threshold] 안이면 붙인다.
-     * 가로·세로를 따로 붙이며, 가장 가까운 후보 하나씩만 쓴다.
+     * 이동 중인 사각형 [moving]이 보드 가장자리(간격 [gap] 안쪽)나 다른 위젯 [others]의 변, 간격 위치에서 [threshold] 안에 있으면 스냅한다.
+     * 가로와 세로를 따로 스냅하며, 방향마다 가장 가까운 후보 하나만 쓴다.
      */
     fun snapMove(moving: Rect, others: List<Rect>, boardWidth: Double, gap: Double, threshold: Double): Rect {
         val xs = listOf(gap, boardWidth - gap) + others.flatMap { listOf(it.left, it.right, it.right + gap, it.left - gap) }
@@ -63,7 +63,7 @@ internal object BoardGeometry {
         return Rect(moving.left + dx, moving.top + dy, moving.right + dx, moving.bottom + dy)
     }
 
-    /** 크기 조절 중인 오른쪽·아래 변을 같은 방식으로 붙인다. 왼쪽 위는 그대로다. */
+    /** 크기 조절 중인 오른쪽 변과 아래 변을 같은 방식으로 스냅한다. 왼쪽 위 모서리는 그대로 둔다. */
     fun snapResize(resizing: Rect, others: List<Rect>, boardWidth: Double, gap: Double, threshold: Double): Rect {
         val xs = listOf(boardWidth - gap) + others.flatMap { listOf(it.right, it.left - gap) }
         val ys = others.flatMap { listOf(it.bottom, it.top - gap) }
@@ -80,7 +80,7 @@ internal object BoardGeometry {
         .filter { abs(it) <= threshold }
         .minByOrNull(::abs) ?: 0.0
 
-    /** 격자 한 칸의 너비. 가장자리와 칸 사이에 간격이 있다. */
+    /** 격자 한 칸의 너비. 가장자리와 칸 사이의 간격을 뺀 값이다. */
     fun cellWidth(boardWidth: Double, columns: Int, gap: Double): Double = ((boardWidth - gap * (columns + 1)) / columns).coerceAtLeast(1.0)
 
     fun cellRect(cell: GridCell, boardWidth: Double, grid: BoardArrangement.Grid, gap: Double): Rect {
@@ -96,7 +96,7 @@ internal object BoardGeometry {
         )
     }
 
-    /** 자유 좌표 사각형에 가장 가까운 칸. 열은 격자 안으로 맞춘다. */
+    /** 자유 좌표 사각형에 가장 가까운 칸. 열은 격자 범위 안으로 맞춘다. */
     fun nearestCell(rect: Rect, boardWidth: Double, grid: BoardArrangement.Grid, gap: Double): GridCell {
         val width = cellWidth(boardWidth, grid.columns, gap)
         val height = width * grid.rowHeightRatio
@@ -108,8 +108,8 @@ internal object BoardGeometry {
     }
 
     /**
-     * [fixed] 키의 칸은 그대로 두고, 겹치는 다른 위젯을 겹치지 않는 가장 가까운 아래 행으로 민다. 민 위젯이 또 겹치면 이어서 민다.
-     * 위에서부터 차례로 정하므로 결과는 입력 순서와 상관없이 같다.
+     * [fixed] 키의 칸은 그대로 두고, 겹치는 다른 위젯을 겹치지 않는 가장 가까운 아래 행으로 민다. 밀린 위젯이 또 겹치면 계속 민다.
+     * 위에서부터 차례로 정하므로 입력 순서와 상관없이 결과가 같다.
      */
     fun resolveOverlaps(cells: Map<String, GridCell>, fixed: String): Map<String, GridCell> {
         val placed = linkedMapOf(fixed to cells.getValue(fixed))
@@ -124,8 +124,8 @@ internal object BoardGeometry {
     }
 
     /**
-     * 자유 배치에서 [fixed]를 놓은 뒤 겹치는 다른 위젯을 겹치지 않을 때까지 아래로 민다(간격 [gap]). 민 위젯이 또 겹치면 이어서 민다.
-     * 위에 있는 위젯부터 정하므로 결과는 입력 순서와 상관없다.
+     * 자유 배치에서 [fixed]를 놓은 뒤, 겹치는 다른 위젯을 간격 [gap]을 두고 겹치지 않을 때까지 아래로 민다. 밀린 위젯이 또 겹치면 계속 민다.
+     * 위에 있는 위젯부터 정하므로 입력 순서와 상관없이 결과가 같다.
      */
     fun pushOverlaps(rects: Map<String, Rect>, fixed: String, gap: Double): Map<String, Rect> {
         val placed = linkedMapOf(fixed to rects.getValue(fixed))
@@ -145,8 +145,8 @@ internal object BoardGeometry {
     }
 
     /**
-     * 자유 배치에서 [width]×[height] 위젯이 처음 놓일 자리: 보드 왼쪽 위와 이미 놓인 위젯의 오른쪽·아래 자리 중
-     * 겹치지 않고 보드 폭 안에 드는 가장 위(같으면 가장 왼쪽) 자리. 넓은 화면에서는 옆으로 채운다.
+     * 자유 배치에서 [width]×[height] 위젯이 처음 놓일 위치. 보드 왼쪽 위와 이미 놓인 위젯의 오른쪽, 아래 위치 가운데
+     * 겹치지 않고 보드 폭 안에 들어가는 가장 위쪽 위치를 고르고, 높이가 같으면 가장 왼쪽을 고른다. 넓은 화면에서는 옆으로 채운다.
      */
     fun firstFreeSpot(width: Double, height: Double, placed: List<Rect>, boardWidth: Double, gap: Double): Rect {
         val candidates =
@@ -168,7 +168,7 @@ internal object BoardGeometry {
     private fun Rect.intersectsStrictly(other: Rect): Boolean =
         left < other.right && other.left < right && top < other.bottom && other.top < bottom
 
-    /** 위젯이 처음 놓일 칸: 위에서부터 왼쪽부터 비어 있는 첫 자리. */
+    /** 위젯이 처음 놓일 칸. 위쪽 행부터, 같은 행에서는 왼쪽부터 찾은 첫 빈칸이다. */
     fun firstFreeCell(occupied: Collection<GridCell>, columnSpan: Int, rowSpan: Int, columns: Int): GridCell {
         val span = columnSpan.coerceAtMost(columns)
         var row = 0

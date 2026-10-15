@@ -38,11 +38,11 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /*
- * 화면(SceneLayout)과 내보내기(SceneCanvas)가 함께 쓰는 모양 그리기. 같은 함수를 써야 두 결과가 같다.
- * 좌표는 노드 좌표(문서 단위)이고, 호출하는 쪽이 노드 변환을 이미 적용해 둔다.
+ * 화면(SceneLayout)과 내보내기(SceneCanvas)가 함께 쓰는 도형 그리기 함수. 같은 함수를 써야 두 결과가 같다.
+ * 좌표는 문서 단위의 노드 좌표이며, 노드 변환은 호출하는 쪽에서 미리 적용한다.
  */
 
-/** 채우기·그림자·선을 그릴 노드 윤곽. 글자·이미지·그룹처럼 윤곽이 없는 노드는 `null`. */
+/** 채우기, 그림자, 선을 그릴 노드 윤곽. 텍스트, 이미지, 그룹처럼 윤곽이 없는 노드는 `null`. */
 internal fun NodeContent.outline(): Path? = when (this) {
     is NodeContent.Rectangle -> roundRect(size.width, size.height, cornerRadius, corners)
 
@@ -84,10 +84,10 @@ private fun roundRect(width: Double, height: Double, radius: Double, corners: Co
     }
 }
 
-/** 채우기 붓. 그라디언트가 있으면 그것, 없으면 단색. 둘 다 없으면 `null`. */
+/** 채우기 브러시. 그라디언트가 있으면 그라디언트를, 없으면 단색을 쓴다. 둘 다 없으면 `null`. */
 internal fun NodeStyle.fillBrush(size: Size): Brush? = gradient?.toBrush(size) ?: fill?.let { SolidColor(it.toColor()) }
 
-// 색 수가 16개 이하라 배열 복사 비용은 무시할 만하다. 위치가 있는 색 목록을 받는 Brush 함수는 가변 인자만 있다.
+// 색은 16개 이하라 배열 복사 비용은 무시해도 된다. 위치를 함께 받는 Brush 함수는 가변 인자 형태만 있다.
 @Suppress("SpreadOperator")
 internal fun Gradient.toBrush(size: Size): Brush {
     val stops = stops.map { it.position.toFloat() to it.color.toColor() }.toTypedArray()
@@ -99,7 +99,7 @@ internal fun Gradient.toBrush(size: Size): Brush {
             val radians = Math.toRadians(angleDegrees)
             val dx = cos(radians).toFloat()
             val dy = sin(radians).toFloat()
-            // 방향으로 상자를 덮는 길이의 반. 끝 색이 모서리에 닿는다.
+            // 그라디언트 방향으로 상자를 덮는 길이의 절반이다. 그래야 끝 색이 모서리에 닿는다.
             val half = (abs(size.width * dx) + abs(size.height * dy)) / 2f
             Brush.linearGradient(*stops, start = center - Offset(dx, dy) * half, end = center + Offset(dx, dy) * half)
         }
@@ -107,8 +107,8 @@ internal fun Gradient.toBrush(size: Size): Brush {
 }
 
 /**
- * 바깥 그림자 → 채우기 → 안쪽 그림자. 선은 [drawOutlineStroke]로 따로 그린다(자식 위에 그리기 위해).
- * [blur]가 0보다 크면 채우기를 그 반지름(노드 단위)으로 흐린다. 화면은 노드 전체에 흐림을 걸므로 0을 넘긴다.
+ * 바깥 그림자, 채우기, 안쪽 그림자 순서로 그린다. 선은 자식 위에 그려야 하므로 [drawOutlineStroke]로 따로 그린다.
+ * [blur]가 0보다 크면 채우기에 그 반지름(노드 단위)으로 블러를 건다. 화면에서는 노드 전체에 블러를 걸기 때문에 0을 넘긴다.
  */
 internal fun DrawScope.drawFilledOutline(path: Path, style: NodeStyle, size: Size, alpha: Float = 1f, blur: Double = 0.0) {
     style.shadows.filterNot { it.inner }.forEach { drawShadow(path, it, size, alpha) }
@@ -119,7 +119,7 @@ internal fun DrawScope.drawFilledOutline(path: Path, style: NodeStyle, size: Siz
     if (inner.isNotEmpty()) clipPath(path) { inner.forEach { drawInnerShadow(path, it, size, alpha) } }
 }
 
-/** 선(점선 포함)과 열린 경로의 끝 모양. */
+/** 선(점선 포함)과 열린 경로의 끝 모양을 그린다. */
 internal fun DrawScope.drawOutlineStroke(
     path: Path,
     style: NodeStyle,
@@ -144,8 +144,8 @@ internal fun DrawScope.drawOutlineStroke(
     if (open != null) drawCaps(open, style, color, width, alpha)
 }
 
-/** Compose의 drawPath에는 흐림 필터를 걸 수 없어 플랫폼 Paint에 BlurMaskFilter를 달아 그린다. 그림자와 같은 방식이다. */
-// 붓·크기·투명도·흐림·선 모양이 모두 그리기에 필요한 값이라 묶을 곳이 없다.
+/** Compose의 drawPath에는 블러 필터를 걸 수 없어서, 그림자와 같은 방식으로 플랫폼 Paint에 BlurMaskFilter를 달아 그린다. */
+// 브러시, 크기, 투명도, 블러, 선 모양이 모두 그리기에 필요한 값이라 따로 묶을 곳이 없다.
 @Suppress("LongParameterList")
 private fun DrawScope.drawBlurredPath(path: Path, brush: Brush, size: Size, alpha: Float, blur: Double, stroke: Stroke?) {
     val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
@@ -176,7 +176,7 @@ private fun DrawScope.drawShadow(path: Path, shadow: Shadow, size: Size, alpha: 
     }
 }
 
-/** 모양 바깥을 덮는 큰 사각형에서 (옮기고 줄인) 모양을 뺀 영역을 흐리게 칠한 뒤, 모양 안으로 잘라 가장자리만 남긴다. */
+/** 모양 바깥을 덮는 큰 사각형에서 옮기고 줄인 모양을 뺀 영역을 블러로 칠한 뒤, 모양 안쪽으로 잘라 가장자리만 남긴다. */
 private fun DrawScope.drawInnerShadow(path: Path, shadow: Shadow, size: Size, alpha: Float) {
     val margin = (shadow.blur + abs(shadow.offsetX) + abs(shadow.offsetY) + abs(shadow.spread)).toFloat() + size.maxDimension
     val hole = spreadPath(path, size, -shadow.spread.toFloat()).apply {
@@ -195,7 +195,7 @@ private fun blurPaint(shadow: Shadow, alpha: Float) = android.graphics.Paint(and
     if (shadow.blur > 0.0) maskFilter = BlurMaskFilter(shadow.blur.toFloat(), BlurMaskFilter.Blur.NORMAL)
 }
 
-/** 모양을 가운데 기준으로 [spread]만큼 넓힌(음수면 좁힌) 경로. 비율로 늘려 근사한다. */
+/** 모양을 가운데 기준으로 [spread]만큼 넓힌 경로. 음수면 좁힌다. 비율로 늘려 근사한다. */
 private fun spreadPath(path: Path, size: Size, spread: Float): Path {
     val copy = Path().apply { addPath(path) }
     if (spread == 0f || size.width <= 0f || size.height <= 0f) return copy
@@ -220,7 +220,7 @@ private fun DrawScope.drawCaps(commands: List<PathCommand>, style: NodeStyle, co
     drawCap(style.endCap, points[points.lastIndex], points[points.lastIndex - 1], look)
 }
 
-/** [tip]에 끝 모양을 그린다. 화살표는 [from]→[tip] 방향을 가리킨다. */
+/** [tip]에 끝 모양을 그린다. 화살표는 [from]에서 [tip] 쪽을 가리킨다. */
 private fun DrawScope.drawCap(cap: LineCap, tip: Vec2, from: Vec2, look: CapLook) {
     val (color, width, alpha) = look
     when (cap) {

@@ -16,20 +16,20 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.viewinterop.AndroidView
 
 /**
- * XML View 화면에서 놓인 자리마다 호스트 [View]를 만든다. [id]는 자리 id이며(한 번만 놓는 위젯은 위젯 키와 같음)
- * 위젯 키는 [KineticaBoardState.widgetKeyOf]로 얻는다. 같은 자리로는 보드가 살아 있는 동안 한 번만 부른다.
+ * XML View 화면에서 슬롯마다 호스트 [View]를 만든다. [id]는 슬롯 id이고, 한 번만 놓는 위젯은 위젯 키와 같다.
+ * 위젯 키는 [KineticaBoardState.widgetKeyOf]로 얻는다. 보드가 살아 있는 동안 슬롯 하나에 한 번만 호출된다.
  */
 public fun interface BoardViewFactory {
     public fun create(id: String, context: Context): View
 }
 
-/** 사용 모드에서 위젯을 길게 눌렀을 때. 보통 편집 모드로 바꾼다. */
+/** 사용 모드에서 위젯을 길게 눌렀을 때 호출된다. 보통 여기서 편집 모드로 바꾼다. */
 public fun interface OnBoardLongPressListener {
     public fun onLongPress()
 }
 
 /**
- * [KineticaBoard]를 XML·View 화면에 넣는 [FrameLayout]. Compose를 쓰지 않는 앱도 기존 View를 그대로 위젯으로 쓴다.
+ * [KineticaBoard]를 XML 레이아웃에 넣을 수 있게 감싼 [FrameLayout]. Compose를 쓰지 않는 앱도 기존 View를 그대로 위젯으로 쓸 수 있다.
  *
  * ```kotlin
  * val board = findViewById<KineticaBoardView>(R.id.board)
@@ -40,8 +40,8 @@ public fun interface OnBoardLongPressListener {
  * ```
  *
  * XML 속성: `app:kinetica_editing`, `app:kinetica_stackAutoAdvanceMs`, `app:kinetica_accentColor`.
- * View에 id가 있으면 화면을 돌려도 편집 모드가 유지된다. 배치는 화면이 가려질 때(`onStop`) [KineticaBoardState.toJson]으로 저장하고,
- * 화면이 끝나면 [KineticaBoardState.close]한다. 보드를 그리려면 Activity·Fragment처럼 lifecycle이 있는 창에 붙어 있어야 한다(Compose 요구 사항).
+ * View에 id가 있으면 화면을 회전해도 편집 모드가 유지된다. 배치는 화면이 가려질 때(`onStop`) [KineticaBoardState.toJson]으로 저장하고,
+ * 화면이 끝나면 [KineticaBoardState.close]를 호출한다. Compose를 쓰므로 Activity나 Fragment처럼 lifecycle이 있는 창에 붙어 있어야 그려진다.
  */
 public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     FrameLayout(context, attrs, defStyleAttr) {
@@ -52,28 +52,28 @@ public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs
     private var colorsState by mutableStateOf<BoardColors?>(null)
     private var longPressState by mutableStateOf<OnBoardLongPressListener?>(null)
 
-    /** 편집 모드. 켜면 위젯을 옮기고 크기를 바꾸고 빼고 추가할 수 있다. */
+    /** 편집 모드. 켜면 위젯을 옮기고, 크기를 바꾸고, 삭제하거나 추가할 수 있다. */
     public var isEditing: Boolean
         get() = editingState
         set(value) {
             editingState = value
         }
 
-    /** 0보다 크면 사용 모드에서 위젯 묶음이 이 간격(ms)마다 다음 위젯으로 넘어간다. */
+    /** 0보다 크면 사용 모드에서 위젯 스택이 이 간격(ms)마다 다음 위젯으로 넘어간다. */
     public var stackAutoAdvanceMs: Long
         get() = stackAdvanceState
         set(value) {
             stackAdvanceState = value
         }
 
-    /** 편집 모드에서 허용할 일. */
+    /** 편집 모드에서 허용할 작업. */
     public var permissions: BoardPermissions
         get() = permissionsState
         set(value) {
             permissionsState = value
         }
 
-    /** 편집 표시 색. `null`이면 창의 MaterialTheme 기본 색을 쓴다. */
+    /** 편집 화면의 색. `null`이면 MaterialTheme 기본 색을 쓴다. */
     public var colors: BoardColors?
         get() = colorsState
         set(value) {
@@ -115,12 +115,12 @@ public class KineticaBoardView @JvmOverloads constructor(context: Context, attrs
         )
     }
 
-    /** 보여 줄 보드와 위젯 View를 만드는 방법을 정한다. 다시 부르면 바꾼다. */
+    /** 보여 줄 보드와 위젯 View를 만드는 방법을 정한다. 다시 호출하면 새 값으로 바꾼다. */
     public fun setBoard(state: KineticaBoardState, factory: BoardViewFactory) {
         board = state to factory
     }
 
-    /** 사용 모드에서 위젯을 길게 누르면 불린다. `null`이면 길게 눌러도 아무 일도 없다. */
+    /** 사용 모드에서 위젯을 길게 누르면 호출된다. `null`이면 길게 눌러도 아무 일도 일어나지 않는다. */
     public fun setOnLongPressListener(listener: OnBoardLongPressListener?) {
         longPressState = listener
     }

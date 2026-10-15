@@ -20,18 +20,18 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.render.SceneSlots
 import com.naury.kinetica.serialization.RemoteSceneLoader
 
-/** XML 화면에서 호스트 뷰 노드(키)마다 넣을 [View]를 만든다. 같은 키로는 재생기가 살아 있는 동안 한 번만 부른다. */
+/** XML 화면에서 호스트 뷰 노드의 키마다 넣을 [View]를 만든다. 재생기가 살아 있는 동안 키 하나에 한 번만 호출된다. */
 public fun interface SceneViewFactory {
     public fun create(key: String, context: Context): View
 }
 
-/** 동작이 있는 노드를 눌렀을 때. [action]은 노드의 동작 글자이며 [com.naury.kinetica.core.scene.SceneAction.parse]로 나눌 수 있다. */
+/** 동작이 있는 노드를 눌렀을 때 호출된다. [action]은 노드의 동작 문자열이며 [com.naury.kinetica.core.scene.SceneAction.parse]로 파싱할 수 있다. */
 public fun interface OnSceneActionListener {
     public fun onAction(action: String)
 }
 
 /**
- * [KineticaPlayer]·[RemoteKineticaPlayer]를 XML·View 화면에 넣는 [FrameLayout]. Compose를 쓰지 않는 화면도 장면·서버 화면을 재생한다.
+ * [KineticaPlayer]와 [RemoteKineticaPlayer]를 XML 레이아웃에 넣을 수 있게 감싼 [FrameLayout]. Compose를 쓰지 않는 화면에서도 장면과 서버 화면을 재생할 수 있다.
  *
  * ```kotlin
  * val player = findViewById<KineticaPlayerView>(R.id.promo)
@@ -41,8 +41,8 @@ public fun interface OnSceneActionListener {
  * player.data = SceneData.of("sales.today" to DataValue.Number(1_284_000.0))
  * ```
  *
- * 문서·로더·데이터는 메인 스레드에서 바꾼다. [setLoader]로 로더를 정하면 그때 서버에서 받고, 다시 받으려면 [refresh]를 부른다.
- * XML 속성: `app:kinetica_fit`(`contain`·`responsive`), `app:kinetica_autoplay`(boolean).
+ * 문서, 로더, 데이터는 메인 스레드에서 바꾼다. [setLoader]로 로더를 지정하면 바로 서버에서 받아 오고, 다시 받으려면 [refresh]를 호출한다.
+ * XML 속성: `app:kinetica_fit`(`contain`, `responsive`), `app:kinetica_autoplay`(boolean).
  */
 public class KineticaPlayerView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     FrameLayout(context, attrs, defStyleAttr) {
@@ -54,21 +54,21 @@ public class KineticaPlayerView @JvmOverloads constructor(context: Context, attr
     private var autoplayState by mutableStateOf(true)
     private var refreshKey by mutableIntStateOf(0)
 
-    /** 바인딩에 쓸 호스트 데이터. 바꾸면 바로 다시 그린다(숫자는 올라가며 바뀐다). */
+    /** 바인딩에 쓸 호스트 데이터. 바꾸면 바로 다시 그리며, 숫자 값은 애니메이션으로 올라가거나 내려간다. */
     public var data: SceneData
         get() = dataState
         set(value) {
             dataState = value
         }
 
-    /** 영역에 맞추는 방식. 기본은 [SceneFit.Contain]. */
+    /** 장면을 영역에 맞추는 방식. 기본값은 [SceneFit.Contain]이다. */
     public var fit: SceneFit
         get() = fitState
         set(value) {
             fitState = value
         }
 
-    /** 문서의 첫 timeline을 바로 재생한다. 기본 `true`. */
+    /** 문서의 첫 timeline을 바로 재생할지. 기본값은 `true`다. */
     public var autoplay: Boolean
         get() = autoplayState
         set(value) {
@@ -90,22 +90,22 @@ public class KineticaPlayerView @JvmOverloads constructor(context: Context, attr
         )
     }
 
-    /** 앱에 든 문서를 재생한다. */
+    /** 앱에 포함된 문서를 재생한다. */
     public fun setDocument(document: SceneDocument) {
         source = Source.Local(document)
     }
 
-    /** 서버 화면을 재생한다. 받기 전에는 비어 있고, 받지 못하면 로더의 캐시·기본 문서를 보여 준다. */
+    /** 서버 화면을 재생한다. 받아 오기 전에는 비어 있고, 받지 못하면 로더의 캐시나 기본 문서를 보여 준다. */
     public fun setLoader(loader: RemoteSceneLoader) {
         source = Source.Remote(loader)
     }
 
-    /** 서버 화면을 다시 받는다(당겨서 새로 고침 등). 문서를 재생 중이면 아무 일도 없다. */
+    /** 당겨서 새로 고침처럼 서버 화면을 다시 받아 온다. [setDocument]로 넣은 문서를 재생 중이면 아무 일도 하지 않는다. */
     public fun refresh() {
         refreshKey++
     }
 
-    /** 호스트 뷰 노드에 넣을 View. `null`이면 호스트 뷰 노드는 비어 보인다. */
+    /** 호스트 뷰 노드에 넣을 View를 만든다. `null`이면 호스트 뷰 노드는 비어 보인다. */
     public fun setHostViews(factory: SceneViewFactory?) {
         this.factory = factory
     }
@@ -161,7 +161,7 @@ public class KineticaPlayerView @JvmOverloads constructor(context: Context, attr
     }
 }
 
-/** 키를 물으면 그 키의 View를 만드는 슬롯. 문서에 어떤 키가 있는지 미리 몰라도 된다. */
+/** 요청받은 키의 View를 그때 만드는 슬롯 맵. 문서에 어떤 키가 있는지 미리 알 필요가 없다. */
 private class ViewSlots(private val factory: SceneViewFactory) : AbstractMap<String, @Composable () -> Unit>() {
     override val entries: Set<Map.Entry<String, @Composable () -> Unit>> get() = emptySet()
 

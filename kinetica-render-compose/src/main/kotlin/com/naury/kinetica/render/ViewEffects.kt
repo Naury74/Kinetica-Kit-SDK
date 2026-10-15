@@ -27,21 +27,21 @@ import kotlin.math.abs
 import kotlin.math.sin
 
 /**
- * Compose가 아닌 XML View에 미리 만든 움직임 효과([NodeEffects])를 붙인다. Compose의 `Modifier.kineticaEffects`와 같은 효과이며 거리 값은 dp다.
+ * Compose를 쓰지 않는 XML View에 미리 만든 모션 효과([NodeEffects])를 적용한다. Compose의 `Modifier.kineticaEffects`와 같은 효과이며 거리 값은 dp다.
  *
- * - 누름 효과는 View의 눌림 상태(foreground drawable 상태)를 따라가므로 터치·클릭 리스너를 건드리지 않는다.
- *   눌림 상태는 클릭할 수 있는 View(`isClickable`, 클릭 리스너를 단 View)에서만 바뀐다.
- * - 리플·어둡게·반짝임은 View의 foreground로 [cornerRadiusDp] 둥근 사각형 안에 그린다. 빛 번짐·떠오르기는 그림자 높이로 표현하며 View 윤곽을 따른다.
- * - 터지기·퍼지는 고리는 View 밖까지 그리므로 부모 ViewGroup의 overlay에 그린다(부모가 없으면 그리지 않는다).
- * - View가 화면에서 떨어지면 반복을 멈추고 다시 붙으면 이어 간다. 시스템 애니메이션이 꺼져 있으면 나타나기·반복은 하지 않는다.
+ * - 누름 효과는 View의 pressed 상태(foreground drawable 상태)를 따라가므로 터치 리스너나 클릭 리스너를 건드리지 않는다.
+ *   pressed 상태는 `isClickable`이거나 클릭 리스너를 단 View에서만 바뀐다.
+ * - 리플, 어둡게 덮기, Shimmer는 View의 foreground에 [cornerRadiusDp] 둥근 사각형으로 그린다. Glow와 Lift는 elevation 그림자로 표현하며 View 윤곽을 따른다.
+ * - Burst와 Ping은 View 밖까지 그려야 하므로 부모 ViewGroup의 overlay에 그린다. 부모가 없으면 그리지 않는다.
+ * - View가 창에서 분리되면 반복 애니메이션을 멈추고, 다시 붙으면 이어서 재생한다. 시스템 애니메이션이 꺼져 있으면 등장 애니메이션과 반복 애니메이션은 재생하지 않는다.
  *
- * 메인 스레드에서 부른다.
+ * 메인 스레드에서 호출한다.
  */
 public object ViewEffects {
     /**
-     * [view]에 [effects]를 붙인다. 이미 붙인 효과가 있으면 먼저 떼고 붙인다.
+     * [view]에 [effects]를 적용한다. 이미 적용한 효과가 있으면 먼저 제거하고 다시 적용한다.
      *
-     * @param cornerRadiusDp 리플·어둡게·반짝임을 그릴 모서리 반지름(dp, 0 이상). View 배경과 같게 준다.
+     * @param cornerRadiusDp 리플, 어둡게 덮기, shimmer를 그릴 모서리 반지름(dp, 0 이상). View 배경의 모서리와 같게 준다.
      */
     @JvmStatic
     @JvmOverloads
@@ -53,7 +53,7 @@ public object ViewEffects {
         attached.start()
     }
 
-    /** 붙인 효과를 떼고 View를 원래 모습으로 돌린다. */
+    /** 적용한 효과를 제거하고 View를 원래 상태로 되돌린다. */
     @JvmStatic
     public fun clear(view: View) {
         (view.getTag(R.id.kinetica_view_effects) as? AttachedEffects)?.stop()
@@ -80,7 +80,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         rounded(effect.color?.argb ?: android.graphics.Color.BLACK).apply { alpha = 0 }
     }
     private val watcher = if (kinds.keys.any { it != PressKind.Ripple }) {
-        // 부모가 스크롤로 가로채기 전 아이 View는 터치 허용 거리 가까이까지 움직임을 받으므로 그 절반을 넘으면 스크롤로 본다.
+        // 부모가 스크롤로 가로채기 전까지 자식 View는 touch slop 가까이까지 움직임을 받으므로, 그 절반을 넘으면 스크롤로 본다.
         PressWatcher(android.view.ViewConfiguration.get(view.context).scaledTouchSlop / 2f, ::pressed)
     } else {
         null
@@ -104,7 +104,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         view.animate().cancel()
         view.foreground = originalForeground
         view.elevation = originalElevation
-        // 효과가 바꾼 값만 되돌린다. 호스트가 직접 정한 높이·렌더 효과는 건드리지 않는다.
+        // 효과가 바꾼 값만 되돌린다. 호스트가 직접 설정한 elevation과 RenderEffect는 건드리지 않는다.
         if (PressKind.Lift in kinds) view.translationZ = 0f
         blur?.cancel()
         blur = null
@@ -133,7 +133,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
     }
 
     private fun pressed(down: Boolean, x: Float, y: Float, moved: Boolean) {
-        // 리플은 View 상태를 직접 따르므로 여기서는 나머지 효과만 움직인다.
+        // 리플은 View 상태를 직접 따르므로 여기서는 나머지 효과만 갱신한다.
         dim?.alpha = if (down) ((kinds[PressKind.Dim]?.resolvedAmount ?: 0.0) * FULL_ALPHA).toInt() else 0
         val animator = view.animate().setDuration(PRESS_MS).setInterpolator(if (down) STANDARD else OvershootInterpolator())
         kinds[PressKind.Scale]?.let {
@@ -196,8 +196,8 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
     }
 
     /**
-     * 탭이면 View 가운데에서 조각이 터진다. 부모 overlay에 잠깐 그렸다가 뗀다.
-     * 스크롤로 풀린 눌림이나 View 밖에서 뗀 것은 탭이 아니므로 터지지 않는다.
+     * 탭이면 View 가운데에서 조각이 터져 나간다. 부모 overlay에 잠깐 그렸다가 제거한다.
+     * 스크롤 때문에 pressed가 풀렸거나 View 밖에서 손을 뗀 경우는 탭이 아니므로 재생하지 않는다.
      */
     private fun burstIfTap(x: Float, y: Float, moved: Boolean) {
         val effect = kinds[PressKind.Burst] ?: return
@@ -236,7 +236,7 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
         }
     }
 
-    // 종류마다 한 갈래인 분기다.
+    // 효과 종류마다 분기가 하나씩이다.
     @Suppress("CyclomaticComplexMethod")
     private fun applyLoop(effect: LoopEffect, t: Float) {
         val amount = effect.resolvedAmount.toFloat()
@@ -305,8 +305,8 @@ private class AttachedEffects(private val view: View, private val effects: NodeE
 }
 
 /**
- * View의 눌림 상태를 알려 주는 보이지 않는 foreground 층. 클릭할 수 있는 View는 누르는 동안 drawable 상태에 pressed가 들어오고,
- * 누른 자리는 hotspot으로 들어온다.
+ * View의 pressed 상태를 알아내기 위한 보이지 않는 foreground 레이어. 클릭할 수 있는 View는 누르는 동안 drawable 상태에 pressed가 들어오고,
+ * 누른 위치는 hotspot으로 전달된다.
  */
 private class PressWatcher(private val slop: Float, private val onPress: (Boolean, Float, Float, Boolean) -> Unit) : Drawable() {
     private var down = false
@@ -348,7 +348,7 @@ private class PressWatcher(private val slop: Float, private val onPress: (Boolea
     override fun getOpacity(): Int = PixelFormat.TRANSPARENT
 }
 
-/** View foreground로 지나가는 빛 띠. */
+/** View foreground 위로 지나가는 Shimmer 빛줄기. */
 private class ShimmerDrawable(private val loop: LoopEffect, private val corner: Float) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 

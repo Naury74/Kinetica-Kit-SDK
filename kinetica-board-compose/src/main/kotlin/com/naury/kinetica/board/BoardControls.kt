@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.core.scene.SceneDocument
 
-/** 위젯 추가 버튼을 끝쪽 아래(오른쪽에서 왼쪽으로 쓰면 왼쪽 아래)에 두고, 버튼·메뉴 글자는 호스트 방향으로 그린다. */
+/** 위젯 추가 버튼을 끝쪽 아래 모서리(RTL이면 왼쪽 아래)에 두고, 버튼과 메뉴의 글자는 호스트의 레이아웃 방향으로 그린다. */
 @Composable
 internal fun BoxScope.AddWidgetCorner(hostDirection: LayoutDirection, mirrored: Boolean, content: @Composable (Modifier) -> Unit) {
     val corner = Modifier.align(if (mirrored) Alignment.BottomStart else Alignment.BottomEnd).padding(16.dp)
@@ -64,7 +64,7 @@ internal fun AddWidgetButton(state: KineticaBoardState, document: SceneDocument,
     }
 }
 
-/** "+ 글자". 기호와 글자를 따로 두어 오른쪽에서 왼쪽으로 쓰는 언어에서도 기호가 시작쪽에 온다. */
+// 기호와 글자를 따로 두어야 RTL 언어에서도 + 기호가 시작쪽에 온다.
 @Composable
 private fun AddLabel(text: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -74,7 +74,7 @@ private fun AddLabel(text: String, color: Color) {
     }
 }
 
-/** 더하기 기호. 글꼴에 따라 굵기가 달라지지 않게 직접 그린다. */
+// 글꼴에 따라 굵기가 달라지지 않도록 직접 그린다.
 @Composable
 private fun PlusMark(color: Color) {
     Canvas(Modifier.size(MARK_SIZE)) {
@@ -84,7 +84,7 @@ private fun PlusMark(color: Color) {
     }
 }
 
-/** 빼기 기호. */
+/** 삭제 버튼의 − 기호. */
 @Composable
 internal fun RemoveMark(color: Color) {
     Canvas(Modifier.size(MARK_SIZE)) {

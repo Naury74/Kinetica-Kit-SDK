@@ -41,7 +41,7 @@ import com.naury.kinetica.core.scene.TextAlignment
 import kotlin.math.roundToInt
 
 /**
- * 문서를 [viewport]로 그린다. 편집 기록이나 도구 상태를 모르며, 손잡이·안내선 같은 편집 표시는 그리지 않는다.
+ * 문서를 [viewport]에 맞춰 그린다. 편집 기록이나 도구 상태는 다루지 않으며, 핸들이나 안내선 같은 편집 표시도 그리지 않는다.
  * 애니메이션을 보여 주려면 [com.naury.kinetica.motion] 등으로 평가한 문서를 넘긴다.
  *
  * @param artboardOutside artboard 밖을 칠할 색
@@ -64,8 +64,8 @@ public fun SceneCanvas(
 }
 
 /**
- * [graph]의 문서를 이 DrawScope에 [viewport]로 그린다(artboard 배경과 노드). 화면 밖 노드는 그리지 않는다.
- * 화면([SceneCanvas])과 내보내기가 같은 함수를 써서 결과가 같다.
+ * [graph]의 artboard 배경과 노드를 이 DrawScope에 [viewport]에 맞춰 그린다. 화면 밖 노드는 그리지 않는다.
+ * 화면([SceneCanvas])과 내보내기가 같은 함수를 쓰므로 결과가 같다.
  */
 public fun DrawScope.drawScene(
     graph: SceneGraph,
@@ -76,7 +76,7 @@ public fun DrawScope.drawScene(
 ): Unit = drawScene(graph, viewport.documentToViewport(), textMeasurer, images, fonts)
 
 /**
- * 문서 좌표를 이 DrawScope 좌표로 옮기는 [documentToCanvas]로 그린다. 확대 범위 제한이 없어 내보내기 등에 쓴다.
+ * 문서 좌표를 이 DrawScope 좌표로 바꾸는 [documentToCanvas] 행렬로 그린다. 확대 범위 제한이 없어 내보내기 같은 곳에 쓴다.
  * 역행렬이 없으면 아무것도 그리지 않는다.
  */
 public fun DrawScope.drawScene(
@@ -114,7 +114,7 @@ private fun DrawScope.drawItem(item: DrawItem, textMeasurer: TextMeasurer, image
 
         is NodeContent.Image -> drawImageNode(content, item.alpha, images)
 
-        // 호스트 뷰는 Compose 요소라 Canvas에는 그릴 수 없다. 내보내기·미리보기에서는 빈 틀로 자리만 보인다.
+        // 호스트 뷰는 Compose 요소라 Canvas에 그릴 수 없다. 내보내기와 미리보기에서는 플레이스홀더로 위치만 표시한다.
         is NodeContent.HostSlot -> drawPlaceholder(content.size.toCompose(), item.alpha)
 
         else -> {
@@ -136,7 +136,7 @@ private fun DrawScope.drawTextNode(
 ) {
     val width = content.size.width.toFloat().roundToInt().coerceAtLeast(1)
     val height = content.size.height.toFloat().roundToInt().coerceAtLeast(1)
-    // 캔버스가 이미 문서 단위로 확대되어 있으므로 글자 크기는 density·글꼴 배율과 무관한 문서 단위여야 한다.
+    // 캔버스가 이미 문서 단위로 확대되어 있으므로 글자 크기는 density나 글꼴 배율과 상관없는 문서 단위여야 한다.
     val layout = textMeasurer.measure(
         text = content.annotated(fonts) { unitsToSp(it) },
         style = content.baseStyle(style.fill?.toColor() ?: Color.Black, fonts) { unitsToSp(it) },

@@ -53,19 +53,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 호스트의 아무 Composable에 미리 만든 움직임 효과([NodeEffects])를 붙인다. 리플·눌림·기울기, 나타나기, 둥실·반짝임·빛 번짐 등.
+ * 호스트의 Composable 어디에나 미리 만든 모션 효과([NodeEffects])를 적용한다. 리플, 누르면 작아지기, 기울기 같은 누름 효과와
+ * 등장 애니메이션, Float, Shimmer, Glow 같은 반복 애니메이션이 있다.
  *
- * 누름 효과는 손가락을 관찰만 하고 가로채지 않으므로 그 Composable의 클릭·스크롤은 그대로 동작한다. 거리 값(둥실·통통·빛 번짐)은 dp다.
- * 시스템 "애니메이션 줄이기"(애니메이터 배율 0)가 켜져 있으면 나타나기·반복은 하지 않는다.
+ * 누름 효과는 포인터 이벤트를 관찰만 하고 가로채지 않으므로 그 Composable의 클릭과 스크롤은 평소대로 동작한다.
+ * Float, Bounce, Glow 같은 효과의 거리 값은 dp다. 시스템의 '애니메이션 삭제' 설정(애니메이터 배율 0)이 켜져 있으면 등장 애니메이션과
+ * 반복 애니메이션은 재생하지 않는다.
  *
- * @param shape 리플·어둡게 덮기·빛 번짐의 모양. 둥근 버튼이면 그 모양을 준다.
- * @param enabled `false`면 효과 없이 그대로 그린다(편집 화면 등).
+ * @param shape 리플, 어둡게 덮기, Glow에 쓸 모양. 둥근 버튼이면 버튼과 같은 모양을 넘긴다.
+ * @param enabled `false`면 효과 없이 그대로 그린다. 편집 화면 등에서 쓴다.
  */
 @Composable
 public fun Modifier.kineticaEffects(effects: NodeEffects, shape: Shape = RectangleShape, enabled: Boolean = true): Modifier =
     nodeEffects(effects, shape, enabled, LocalDensity.current.density)
 
-/** 장면 렌더러용. [unitPx]는 효과 거리 1단위의 픽셀 수다(장면 안에서는 문서 단위 = 1 px). */
+/** 장면 렌더러용. [unitPx]는 효과 거리 1단위에 해당하는 픽셀 수다. 장면 안에서는 문서 단위 1이 1px이다. */
 @Composable
 internal fun Modifier.nodeEffects(effects: NodeEffects, shape: Shape, enabled: Boolean, unitPx: Float): Modifier {
     if (!enabled || effects.isEmpty) return this
@@ -83,7 +85,7 @@ internal fun Modifier.nodeEffects(effects: NodeEffects, shape: Shape, enabled: B
     return watched.graphicsLayer { running.applyTo(this, shape) }.drawWithContent { running.draw(this, shape) }
 }
 
-/** 손가락을 관찰만 하고(소비하지 않음) 누름 상태를 바꾼다. */
+/** 포인터 이벤트를 소비하지 않고 관찰만 해서 누름 상태를 바꾼다. */
 private fun Modifier.watchPress(press: PressState, scope: kotlinx.coroutines.CoroutineScope): Modifier = pointerInput(press) {
     awaitPointerEventScope {
         while (true) {
@@ -98,7 +100,7 @@ private fun Modifier.watchPress(press: PressState, scope: kotlinx.coroutines.Cor
     }
 }
 
-/** 지금 움직이는 효과들. 그리기 단계에서 값을 읽어 다시 구성하지 않고 프레임마다 반영한다. */
+/** 재생 중인 효과. 값은 그리기 단계에서 읽으므로 재구성 없이 프레임마다 반영된다. */
 private class RunningEffects(
     val effects: NodeEffects,
     val appear: State<Float>,
@@ -129,7 +131,7 @@ private class RunningEffects(
             rotationY = transform.rotationY
             rotationZ = transform.rotationZ
             cameraDistance = CAMERA_DISTANCE * density
-            // 떠오르기는 플랫폼 그림자(높이)로 그린다. 모든 API에서 흐린 그림자가 나오고 프레임마다 새로 만들 것이 없다.
+            // Lift는 플랫폼 그림자(elevation)로 그린다. 모든 API에서 부드러운 그림자가 나오고 프레임마다 새로 만들 객체도 없다.
             kinds[PressKind.Lift]?.let { lift ->
                 this.shape = shape
                 shadowElevation = lift.resolvedAmount.toFloat() * unitPx * LIFT_ELEVATION * press.amount.value
@@ -142,7 +144,7 @@ private class RunningEffects(
                 val radius = (1f - appear.value) * BLUR_FROM * density
                 renderEffect = if (radius > MIN_BLUR) androidx.compose.ui.graphics.BlurEffect(radius, radius) else null
             }
-            // 반짝임은 그린 픽셀 위에만 겹쳐야 해서 따로 합성한다.
+            // Shimmer는 이미 그린 픽셀 위에만 겹쳐야 하므로 따로 합성한다.
             if (effects.loop?.kind == LoopKind.Shimmer) compositingStrategy = CompositingStrategy.Offscreen
         }
     }
@@ -162,7 +164,7 @@ private class RunningEffects(
     }
 }
 
-/** 시스템 애니메이터 배율이 0이면 움직임을 줄인다. */
+/** 시스템 애니메이터 배율이 0이면 애니메이션을 줄인다. */
 @Composable
 private fun rememberReducedMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
@@ -197,7 +199,7 @@ private fun loopProgress(loop: LoopEffect?): State<Float>? {
     )
 }
 
-/** 효과들이 함께 만드는 변환. 여러 효과가 같은 값을 쓰면 곱하거나 더한다. */
+/** 여러 효과를 합친 변환. 같은 값을 쓰는 효과가 여럿이면 곱하거나 더한다. */
 private class EffectTransform {
     var scale = 1f
     var alpha = 1f
@@ -207,7 +209,7 @@ private class EffectTransform {
     var rotationY = 0f
     var rotationZ = 0f
 
-    // 종류마다 한 갈래인 분기다. 나누면 어느 효과가 어떤 값을 바꾸는지 흐려진다.
+    // 효과 종류마다 분기가 하나씩이다. 함수를 나누면 어느 효과가 어떤 값을 바꾸는지 알아보기 어려워진다.
     @Suppress("CyclomaticComplexMethod")
     fun applyAppear(kind: AppearKind?, p: Float, slide: Float) {
         kind ?: return
@@ -271,7 +273,7 @@ private class EffectTransform {
     }
 }
 
-/** 누른 상태와 리플 진행. 손을 떼도 리플은 끝까지 퍼지며 사라진다. */
+/** 누름 상태와 리플 진행도. 손을 떼도 리플은 끝까지 퍼진 뒤 사라진다. */
 private class PressState {
     var down by mutableStateOf(false)
         private set
@@ -281,33 +283,33 @@ private class PressState {
     var origin by mutableStateOf(Offset.Zero)
         private set
 
-    /** 손을 뗄 때 조각 터지기를 움직일지. */
+    /** 손을 뗄 때 Burst 효과를 재생할지. */
     var bursts = false
 
-    /** 지금 돌고 있는 누르기 움직임. */
+    /** 실행 중인 누르기 애니메이션. */
     var pressing: kotlinx.coroutines.Job? = null
 
-    /** 누른 자리의 가로·세로 치우침(-1..1). 기울기 방향에 쓴다. */
+    /** 누른 위치가 가운데에서 가로, 세로로 치우친 정도(-1..1). 기울기 방향에 쓴다. */
     var tiltX = 0f
         private set
     var tiltY = 0f
         private set
 
-    /** 누른 뒤 터치 허용 거리 넘게 움직였는지(스크롤). */
+    /** 누른 뒤 touch slop보다 멀리 움직여 스크롤로 판단했는지. */
     var moved = false
 
-    /** 누르기 시작. 상태는 바로 바꾸고 움직임만 코루틴으로 돌린다(빠른 탭에서 떼기를 놓치지 않게). */
+    /** 누르기를 시작한다. 빠른 탭에서 떼기를 놓치지 않도록 상태는 바로 바꾸고 애니메이션만 코루틴으로 돌린다. */
     fun start(scope: kotlinx.coroutines.CoroutineScope, position: Offset, bounds: androidx.compose.ui.geometry.Size) {
         down(position, bounds.width, bounds.height)
         pressing = scope.launch { animatePress() }
     }
 
-    /** 터치 허용 거리 넘게 움직였으면 스크롤로 보고 떼어도 터지지 않는다. */
+    /** touch slop보다 멀리 움직였으면 스크롤로 보고, 손을 떼도 Burst를 재생하지 않는다. */
     fun track(position: Offset, slop: Float) {
         if ((position - origin).getDistance() > slop) moved = true
     }
 
-    /** 떼기. 누르기 움직임이 아직 시작 전이면 떼기 움직임을 덮어쓰므로 먼저 멈춘다. 탭일 때만 터진다. */
+    /** 손을 뗀다. 누르기 애니메이션이 아직 시작 전이면 떼기 애니메이션을 덮어쓰므로 먼저 취소한다. Burst는 탭일 때만 재생한다. */
     fun finish(scope: kotlinx.coroutines.CoroutineScope, position: Offset, bounds: androidx.compose.ui.geometry.Size) {
         up()
         pressing?.cancel()
@@ -354,7 +356,7 @@ private fun ContentDrawScope.drawShape(shape: Shape, color: Color) {
 
 private fun ContentDrawScope.drawRipple(shape: Shape, press: PressState, color: Color?, opacity: Float) {
     val p = press.ripple.value
-    // 누르는 동안은 퍼진 채로 있고, 손을 떼면 퍼짐이 끝난 뒤 흐려진다.
+    // 누르는 동안은 퍼진 상태를 유지하고, 손을 떼면 다 퍼진 뒤 페이드 아웃된다.
     val fade = if (press.down) 1f else press.amount.value
     if (p <= 0f || fade <= 0f) return
     val radius = hypot(size.width, size.height) * p
@@ -390,7 +392,7 @@ private fun ContentDrawScope.drawGlow(shape: Shape, loop: LoopEffect, t: Float, 
     )
 }
 
-/** 한 주기 앞부분에서 두 번 뛰는 크기(0..1). */
+/** 한 주기 앞부분에서 두 번 뛰는 크기 변화(0..1). */
 private fun heartbeat(t: Float): Float {
     fun beat(start: Float): Float {
         val x = (t - start) / BEAT_LENGTH
@@ -418,10 +420,10 @@ private fun ContentDrawScope.drawBurst(burst: com.naury.kinetica.core.scene.Pres
     val short = minOf(size.width, size.height)
     val dot = maxOf(MIN_DOT * unitPx, short * DOT_RATIO) * (1f - p * HALF)
     val base = burst.color?.toColor() ?: ACCENT
-    // 조각마다 진한 색과 옅은 색을 번갈아 써 반짝이게 한다.
+    // 조각마다 진한 색과 옅은 색을 번갈아 써서 반짝이는 느낌을 낸다.
     val light = androidx.compose.ui.graphics.lerp(base, Color.White, LIGHT_MIX)
     val fade = 1f - p * p
-    // 가로로 긴 버튼도 가장자리 밖으로 터지도록 크기에 맞춘 타원을 따라 퍼진다.
+    // 가로로 긴 버튼에서도 조각이 가장자리 밖으로 나가도록 버튼 크기에 맞춘 타원을 따라 퍼뜨린다.
     val spread = 1f + BURST_REACH * p
     val rx = size.width * HALF * spread
     val ry = size.height * HALF * spread

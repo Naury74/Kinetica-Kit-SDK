@@ -34,13 +34,13 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
-/** 묶음: 한 자리에서 옆으로 넘겨 보고, 아래 점으로 몇 번째인지 보인다. 각 위젯 내용은 호스트의 `content(자리 id)`다. */
+/** 스택. 한 위치에서 옆으로 넘겨 보고, 아래 점 인디케이터로 몇 번째인지 보여 준다. 각 위젯은 호스트의 `content(슬롯 id)`로 그린다. */
 @Composable
 internal fun StackPager(members: List<String>, content: @Composable (String) -> Unit, colors: BoardColors, autoAdvanceMs: Long = 0L) {
     val pager = rememberPagerState { members.size }
     val animations = remember { ValueAnimator.areAnimatorsEnabled() }
     if (autoAdvanceMs > 0 && animations && members.size > 1) {
-        // 쪽이 바뀔 때마다(사용자가 넘겨도) 시간을 다시 재고, 넘기는 중이면 기다린다.
+        // 사용자가 직접 넘긴 경우를 포함해 페이지가 바뀔 때마다 시간을 다시 재고, 스크롤 중이면 넘기지 않는다.
         LaunchedEffect(pager, autoAdvanceMs, members.size) {
             snapshotFlow { pager.currentPage }.collectLatest { page ->
                 delay(autoAdvanceMs)
@@ -64,7 +64,7 @@ internal fun StackPager(members: List<String>, content: @Composable (String) -> 
     }
 }
 
-/** 편집 중 묶음 오른쪽 위에 위젯 수를 보여 주고, 누르면 묶음을 푼다. */
+/** 편집 중에 스택 오른쪽 위에 위젯 수를 표시하는 배지. 누르면 스택을 푼다. */
 @Composable
 internal fun StackBadge(rect: Rect, zoom: Float, count: Int, colors: BoardColors, onUnstack: () -> Unit) {
     val density = LocalDensity.current
@@ -83,14 +83,14 @@ internal fun StackBadge(rect: Rect, zoom: Float, count: Int, colors: BoardColors
     )
 }
 
-/** 묶음 편집 틀에 붙이는 이름: "첫 위젯 외 n개". */
+/** 편집 중인 스택 테두리에 붙는 접근성 이름. "첫 위젯 외 n개" 형식이다. */
 @Composable
 internal fun stackLabel(state: KineticaBoardState, members: List<String>): String {
     val first = state.widgetKeyOf(members.first())?.let { key -> state.catalog.firstOrNull { it.key == key }?.label } ?: members.first()
     return pluralStringResource(R.plurals.kinetica_board_stack_label, members.size - 1, first, members.size - 1)
 }
 
-/** 묶음이면 TalkBack 동작에 "묶음 풀기"를 더한다. */
+/** 스택이면 TalkBack 동작에 "스택 풀기"를 추가한다. */
 @Composable
 internal fun unstackActions(state: KineticaBoardState, key: String, members: List<String>): List<CustomAccessibilityAction> {
     if (members.isEmpty()) return emptyList()

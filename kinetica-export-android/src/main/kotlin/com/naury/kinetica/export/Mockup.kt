@@ -12,26 +12,26 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import com.naury.kinetica.core.scene.ArgbColor
 
-/** 목업 기기 틀. 코드로 그리는 일반 모양이며 특정 제조사 기기를 흉내 내지 않는다. */
+/** 목업 기기 프레임. 코드로 그리는 일반적인 모양이며 특정 제조사의 기기를 본뜨지 않는다. */
 public enum class DeviceFrame {
-    /** 둥근 몸체와 위쪽 카메라 구멍이 있는 휴대폰 */
+    /** 모서리가 둥글고 위쪽에 펀치홀 카메라가 있는 휴대폰 */
     Phone,
 
-    /** 가운데 접히는 선이 있는 펼친 폴더블 */
+    /** 가운데에 접히는 선이 있는, 펼친 폴더블 */
     Foldable,
 
-    /** 테두리가 고른 태블릿 */
+    /** 베젤 두께가 일정한 태블릿 */
     Tablet,
 
-    /** 위쪽 제목 막대가 있는 브라우저 창 */
+    /** 위쪽에 타이틀 바가 있는 브라우저 창 */
     Browser,
 }
 
 /**
- * 장면을 기기 틀에 넣어 내보내는 설정. [ExportRequest.widthPx]는 배경까지 포함한 그림 전체 너비가 된다.
+ * 장면을 기기 프레임에 넣어 내보내는 설정. 이때 [ExportRequest.widthPx]는 배경까지 포함한 이미지 전체 너비가 된다.
  *
- * @property paddingRatio 배경 여백(그림 너비에 대한 비율, 0..0.4)
- * @property shadow 기기 아래 그림자를 그릴지
+ * @property paddingRatio 이미지 너비에 대한 배경 여백 비율(0..0.4)
+ * @property shadow 기기 아래에 그림자를 그릴지
  */
 public data class MockupFrame(
     val device: DeviceFrame = DeviceFrame.Phone,
@@ -49,7 +49,7 @@ public data class MockupFrame(
     }
 }
 
-/** 기기 틀의 치수(픽셀). [screen]은 장면을 그릴 자리다. */
+/** 기기 프레임의 치수(픽셀). [screen]은 장면을 그릴 영역이다. */
 internal class MockupLayout(val frame: MockupFrame, width: Int, artboardAspect: Double) {
     private val spec = DeviceSpec.of(frame.device)
     private val padding = (width * frame.paddingRatio).toFloat()
@@ -69,7 +69,7 @@ internal class MockupLayout(val frame: MockupFrame, width: Int, artboardAspect: 
     )
     val height: Int = (body.bottom + padding).toInt()
 
-    /** 배경·그림자·몸체. 장면은 이 다음에 [screen] 안에 그린다. */
+    /** 배경, 그림자, 기기 몸체를 그린다. 장면은 그다음에 [screen] 안에 그린다. */
     fun DrawScope.drawBehindScreen() {
         drawRect(Color(frame.background.argb))
         if (frame.shadow) {
@@ -94,7 +94,7 @@ internal class MockupLayout(val frame: MockupFrame, width: Int, artboardAspect: 
         drawPath(Path().apply { addRoundRect(screen) }, Color.Black)
     }
 
-    /** 카메라 구멍·접히는 선·창 막대처럼 화면 위에 올리는 것. */
+    /** 펀치홀 카메라, 접히는 선, 타이틀 바처럼 화면 위에 덧그리는 요소. */
     fun DrawScope.drawOverScreen() {
         when (frame.device) {
             DeviceFrame.Phone -> drawCircle(
@@ -134,7 +134,7 @@ internal class MockupLayout(val frame: MockupFrame, width: Int, artboardAspect: 
 
     private class DeviceSpec(val bezel: Float, val radius: Float, val screenRadius: Float, val bar: Float, val bodyColor: Int) {
         companion object {
-            // 기기 모양의 비율 표다. 값마다 이름을 붙이면 표가 오히려 읽기 어렵다.
+            // 기기 모양별 비율 표다. 값마다 이름을 붙이면 오히려 표를 읽기 어려워진다.
             @Suppress("MagicNumber")
             fun of(device: DeviceFrame): DeviceSpec = when (device) {
                 DeviceFrame.Phone -> DeviceSpec(0.035f, 0.13f, 0.1f, 0f, PHONE_BODY)
