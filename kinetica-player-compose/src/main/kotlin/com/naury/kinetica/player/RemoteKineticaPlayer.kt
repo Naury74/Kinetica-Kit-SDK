@@ -5,9 +5,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.naury.kinetica.core.scene.SceneData
+import com.naury.kinetica.motion.PlaybackController
 import com.naury.kinetica.render.SceneSlots
 import com.naury.kinetica.serialization.RemoteSceneBundleLoader
 import com.naury.kinetica.serialization.RemoteSceneLoader
@@ -19,7 +23,8 @@ import com.naury.kinetica.serialization.RemoteSceneState
  *
  * 데이터, 호스트 뷰, 동작은 [KineticaPlayer]와 같다. 서버 문서에 앱이 모르는 동작 이름이 있어도 [onAction]에서 무시하면 아무 일도 일어나지 않는다.
  *
- * @param autoplay 문서의 첫 timeline을 바로 재생할지. 문서가 바뀌면 새 timeline을 처음부터 재생한다.
+ * @param autoplay 문서의 첫 timeline을 바로 재생할지. 문서가 바뀌면 새 timeline을 처음부터 재생한다. 화면을 회전해도 재생 위치를 이어 가고,
+ *   이미 끝난 애니메이션은 다시 재생하지 않는다.
  */
 @Composable
 public fun RemoteKineticaPlayer(
@@ -87,7 +92,7 @@ private fun RemoteContent(
     }
     val timeline = ready.document.timelines.firstOrNull()
     val playback = if (options.autoplay && timeline != null) rememberPlaybackController(timeline) else null
-    if (playback != null) LaunchedEffect(playback) { playback.play() }
+    if (playback != null) AutoPlay(playback)
     KineticaPlayer(
         ready.document,
         modifier,
@@ -99,3 +104,35 @@ private fun RemoteContent(
         fit = options.fit,
     )
 }
+
+/**
+ * [playback]을 처음부터 재생한다. 화면 회전이나 프로세스 종료로 다시 만들어졌으면 저장해 둔 위치부터 이어서 재생하고,
+ * 이미 끝난 애니메이션이었으면 다시 재생하지 않고 끝 장면에 둔다. 호스트가 컨트롤러를 갖지 않으므로 위치는 여기서 저장한다.
+ */
+@Composable
+private fun AutoPlay(playback: PlaybackController) {
+    val current by rememberUpdatedState(playback)
+    val saved = rememberSaveable(
+        saver = Saver<SavedPosition, DoubleArray>(
+            save = { current.state.value.let { doubleArrayOf(it.timeMs, if (it.isFinished) 1.0 else 0.0) } },
+            restore = { SavedPosition(it[0], it[1] == 1.0) },
+        ),
+    ) { SavedPosition(null, false) }
+    LaunchedEffect(playback) {
+        val restored = saved.timeMs
+        // 저장한 위치는 다시 만든 첫 컨트롤러에만 쓴다. 문서가 바뀌어 새로 만든 컨트롤러는 처음부터 재생한다.
+        saved.timeMs = null
+        when {
+            restored == null -> playback.play()
+
+            saved.finished -> playback.seek(playback.timeline.durationMs.toDouble())
+
+            else -> {
+                playback.seek(restored)
+                playback.play()
+            }
+        }
+    }
+}
+
+private class SavedPosition(var timeMs: Double?, val finished: Boolean)

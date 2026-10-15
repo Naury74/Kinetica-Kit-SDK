@@ -1,8 +1,14 @@
 package com.naury.kinetica.player
 
+import android.content.ContentResolver
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,6 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.naury.kinetica.core.animation.Timeline
 import com.naury.kinetica.core.geometry.Rect
 import com.naury.kinetica.core.geometry.Viewport
@@ -40,7 +49,8 @@ import com.naury.kinetica.render.rememberSceneImages
  * [fit]에 따라 artboard를 영역에 맞춰 그린다. [playback]이 있으면 그 재생 시각으로 평가한 장면을 그리고,
  * 재생 중에는 프레임마다 [PlaybackController.onFrame]을 호출한다. 없으면 timeline 0ms 시점의 정지 장면을 그린다.
  *
- * @param playback 같은 문서의 timeline으로 만든 재생 컨트롤러. [rememberPlaybackController]로 만든다.
+ * @param playback 같은 문서의 timeline으로 만든 재생 컨트롤러. [rememberPlaybackController]로 만든다. 화면이 가려지면(ON_STOP) 재생을 멈추고
+ *   다시 보이면 멈춘 위치부터 이어서 재생한다.
  * @param images 이미지 노드에 그릴 이미지. `null`이면 `content://` 이미지를 직접 읽는다.
  * @param data 바인딩에 쓸 호스트 데이터. 바뀌면 바로 다시 그린다.
  * @param slots 호스트 뷰 노드에 그릴 Composable을 키별로 담은 맵. 그려진 Composable은 실제로 동작한다.
@@ -67,6 +77,7 @@ public fun KineticaPlayer(
     val timeline = playback?.timeline ?: document.timelines.firstOrNull()
     val state = playback?.state?.collectAsState()
     val timeMs = state?.value?.timeMs ?: 0.0
+    if (playback != null) PauseWhileStopped(playback)
     if (playback != null && state?.value?.isPlaying == true) {
         LaunchedEffect(playback) {
             while (true) {
@@ -115,17 +126,80 @@ public fun KineticaPlayer(
  * @param reducedMotion 애니메이션을 줄일지. 기본값은 시스템의 '애니메이션 삭제' 설정(애니메이터 배율 0)을 따른다.
  */
 @Composable
-public fun rememberPlaybackController(timeline: Timeline, reducedMotion: Boolean = rememberSystemReducedMotion()): PlaybackController =
-    remember(timeline, reducedMotion) { PlaybackController(timeline, reducedMotion = reducedMotion) }
+public fun rememberPlaybackController(timeline: Timeline, reducedMotion: Boolean = rememberSystemReducedMotion()): PlaybackController {
+    // '애니메이션 삭제' 설정이 실행 중에 바뀌면 컨트롤러를 새로 만들되, 같은 timeline이면 재생 위치·속도·반복·재생 중 여부를 이어받는다.
+    // 호스트가 처음 한 번만 play()를 부르는 구조여도 설정을 바꾼 뒤 멈춰 버리지 않게 하려는 것이다.
+    val previous = remember { arrayOfNulls<PlaybackController>(1) }
+    val controller = remember(timeline, reducedMotion) {
+        PlaybackController(timeline, reducedMotion = reducedMotion).also { next ->
+            previous[0]?.takeIf { it.timeline == timeline }?.state?.value?.let { old ->
+                next.setRate(old.rate)
+                next.setRepeat(old.repeat)
+                next.setReversed(old.reversed)
+                next.seek(old.timeMs)
+                if (old.isPlaying) next.play()
+            }
+        }
+    }
+    previous[0] = controller
+    return controller
+}
 
-/** 시스템의 '애니메이션 삭제' 설정이 켜져 있는지(애니메이터 배율 0). */
+/**
+ * 화면이 가려지면(ON_STOP) 재생을 멈추고 다시 보이면(ON_START) 이어서 재생한다. 재생 시각은 시계 기준으로 계산하므로,
+ * 멈추지 않으면 백그라운드에 있던 시간만큼 건너뛰고 한 번만 재생하는 애니메이션은 끝난 상태로 돌아온다.
+ */
+@Composable
+private fun PauseWhileStopped(playback: PlaybackController) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(playback, lifecycle) {
+        var pausedHere = false
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP && playback.state.value.isPlaying) {
+                playback.pause()
+                pausedHere = true
+            } else if (event == Lifecycle.Event.ON_START && pausedHere) {
+                pausedHere = false
+                playback.play()
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            // 화면 회전처럼 멈춘 채로 화면이 사라지면, ViewModel에 둔 컨트롤러가 새 화면에서 멈춘 채로 남지 않게 되돌린다.
+            if (pausedHere) playback.play()
+        }
+    }
+}
+
+/**
+ * 시스템의 '애니메이션 삭제' 설정이 켜져 있는지(애니메이터 배율 0). 앱을 쓰는 중에 설정을 바꾸면 바로 따라가고,
+ * 알림을 놓쳤을 때를 위해 화면이 다시 보일 때(ON_RESUME)도 다시 읽는다.
+ */
 @Composable
 public fun rememberSystemReducedMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
-    return remember(resolver) {
-        android.provider.Settings.Global.getFloat(resolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    var reduced by remember(resolver) { mutableStateOf(readReducedMotion(resolver)) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(resolver, lifecycle) {
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                reduced = readReducedMotion(resolver)
+            }
+        }
+        val resumed = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) reduced = readReducedMotion(resolver) }
+        resolver.registerContentObserver(Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE), false, observer)
+        lifecycle.addObserver(resumed)
+        onDispose {
+            resolver.unregisterContentObserver(observer)
+            lifecycle.removeObserver(resumed)
+        }
     }
+    return reduced
 }
+
+private fun readReducedMotion(resolver: ContentResolver): Boolean =
+    Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
 /** 데이터가 선택한 변형을 적용하고, 누르고 있는 인스턴스는 pressed 변형으로 바꾼다. 바인딩보다 먼저 적용해야 바인딩된 텍스트가 유지된다. */
 private fun withVariants(document: SceneDocument, data: SceneData, pressed: NodeId?): SceneDocument {

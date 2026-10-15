@@ -16,6 +16,8 @@ dependencies {
     // 서버 주도 재생(RemoteKineticaPlayer)이 받은 JSON을 같은 검증으로 읽는다.
     api(project(":kinetica-serialization"))
     implementation(libs.androidx.compose.foundation)
+    // 화면이 가려지면 재생을 멈추고 다시 보이면 이어서 재생한다.
+    implementation(libs.androidx.lifecycle.runtime.compose)
     api(libs.androidx.compose.animation)
 
     testImplementation(testFixtures(project(":kinetica-core")))
