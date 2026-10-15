@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +55,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -64,6 +66,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -334,6 +337,10 @@ internal fun LayoutCoordinates.boundsOnScreen(): Rect = Rect(positionOnScreen(),
 /** 다이얼로그 뒤에 까는 스크림. 서서히 흐려지고 어두워지며, 누르면 닫는다. TalkBack에서는 "닫기" 버튼으로 읽힌다. */
 @Composable
 internal fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
+    // 별도 창이면 창 뒤를 시스템 블러로 흐린다(열리는 정도만큼).
+    val windowBlur = LocalWindowBlur.current
+    val blurPx = with(LocalDensity.current) { WINDOW_BLUR.roundToPx() }
+    SideEffect { windowBlur?.set((blurPx * level).roundToInt()) }
     val closeLabel = stringResource(R.string.kinetica_ui_close)
     Box(
         Modifier
@@ -356,6 +363,7 @@ internal fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
 /** 이 요소의 중심(화면 좌표, px)을 [onOrigin]으로 알린다. 이 값을 [GlassDialog]의 `origin`에 넘기면 누른 버튼에서 다이얼로그가 커져 나온다. */
 public fun Modifier.glassOrigin(onOrigin: (Offset) -> Unit): Modifier = onGloballyPositioned { onOrigin(it.boundsOnScreen().center) }
 
+private val WINDOW_BLUR = 28.dp
 private const val DIALOG_DAMPING = 0.72f
 private const val DIALOG_STIFFNESS = 420f
 private const val DIALOG_START_SCALE = 0.6f

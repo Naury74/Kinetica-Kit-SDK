@@ -98,4 +98,11 @@ class GlassTest {
 
         assertThat(picked).isEqualTo("공유")
     }
+
+    @Test
+    fun `팝업용 모양은 블러를 못 쓸 때도 판 뒤가 비치지 않을 만큼 불투명하다`() {
+        val popup = GlassStyles.Liquid.copy(fallback = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.5f)).forPopup()
+
+        assertThat(popup.fallback.alpha).isAtLeast(0.95f)
+    }
 }

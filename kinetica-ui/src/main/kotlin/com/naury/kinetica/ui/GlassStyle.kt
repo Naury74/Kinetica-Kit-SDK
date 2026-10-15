@@ -48,6 +48,8 @@ public data class GlassStyle(
         blur = maxOf(blur, POPUP_MIN_BLUR),
         tint = tint.copy(alpha = (tint.alpha + POPUP_TINT_EXTRA).coerceAtMost(POPUP_MAX_TINT)),
         refraction = refraction * POPUP_REFRACTION,
+        // 블러를 못 쓰는 경우(API 30 이하, 창 블러가 꺼진 기기에서 별도 창으로 뜬 팝업) 판 뒤 아이콘이 비쳐 글자를 방해하지 않게 더 불투명하게 칠한다.
+        fallback = fallback.copy(alpha = maxOf(fallback.alpha, POPUP_MIN_FALLBACK)),
     )
 
     init {
@@ -247,4 +249,5 @@ private val POPUP_MIN_BLUR = 28.dp
 private const val POPUP_TINT_EXTRA = 0.32f
 private const val POPUP_MAX_TINT = 0.85f
 private const val POPUP_REFRACTION = 0.5f
+private const val POPUP_MIN_FALLBACK = 0.96f
 private const val INK = 0xFF15161A

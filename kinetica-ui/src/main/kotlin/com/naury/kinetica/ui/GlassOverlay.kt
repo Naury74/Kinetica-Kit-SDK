@@ -179,15 +179,17 @@ internal fun ModalFocusEffect(open: Boolean, background: FocusRequester, panel: 
 private fun ModalWindow(content: @Composable () -> Unit) {
     Dialog(onDismissRequest = {}, properties = ModalWindowProperties) {
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
+        val blur = remember(window) { window?.let(::WindowBlur) }
         DisposableEffect(window) {
             window?.apply {
                 clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
                 setDimAmount(0f)
                 setWindowAnimations(0)
             }
+            blur?.prepare()
             onDispose { }
         }
-        Box(Modifier.fillMaxSize()) { content() }
+        CompositionLocalProvider(LocalWindowBlur provides blur) { Box(Modifier.fillMaxSize()) { content() } }
     }
 }
 
@@ -278,3 +280,32 @@ private val EdgeWindowProperties = PopupProperties(
     dismissOnClickOutside = false,
     clippingEnabled = false,
 )
+
+/**
+ * 별도 창으로 뜬 모달 뒤를 시스템 창 블러(API 31 이상)로 흐리게 한다. 같은 창이 아니라 호스트 화면을 기록할 수 없어서 쓰는 방법이다.
+ * 기기나 절전 모드에서 창 블러가 꺼져 있으면 [enabled]가 false이고, 그때 글래스는 fallback 색으로 그린다.
+ */
+internal class WindowBlur(private val window: android.view.Window) {
+    val enabled: Boolean =
+        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+            window.context.getSystemService(WindowManager::class.java)?.isCrossWindowBlurEnabled == true
+    private var radius = -1
+
+    fun prepare() {
+        if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+    }
+
+    /** 뒤 블러 반경(px). 창 속성 갱신은 비싸므로 [BLUR_STEP_PX] 단위로만 바꾼다. */
+    fun set(px: Int) {
+        if (!enabled || android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) return
+        val stepped = px / BLUR_STEP_PX * BLUR_STEP_PX
+        if (stepped == radius) return
+        radius = stepped
+        window.attributes = window.attributes.apply { blurBehindRadius = stepped }
+    }
+}
+
+/** 지금 그리는 모달이 별도 창이면 그 창의 블러. 아니면 null. */
+internal val LocalWindowBlur = androidx.compose.runtime.staticCompositionLocalOf<WindowBlur?> { null }
+
+private const val BLUR_STEP_PX = 4

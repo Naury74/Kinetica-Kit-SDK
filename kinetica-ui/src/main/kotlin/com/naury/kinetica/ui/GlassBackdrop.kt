@@ -87,6 +87,7 @@ public val LocalGlassBackdrop: androidx.compose.runtime.ProvidableCompositionLoc
 internal val LocalGlassLayered = staticCompositionLocalOf { false }
 
 private const val LAYERED_ALPHA = 0.06f
+private const val WINDOW_TINT_EXTRA = 0.25f
 
 /**
  * 이 요소의 그리기 내용을 [backdrop]에 기록한다. 화면에는 평소처럼 그린다.
@@ -144,6 +145,8 @@ public fun Modifier.glass(
     // 팝업 판 안에 놓인 글래스가 주변 배경을 그대로 비추면 판을 뚫고 뒤 화면이 또렷하게 보인다.
     // 그래서 따로 배경을 넘기지 않았다면 판 위에 한 겹 얹힌 유리처럼 옅은 색만 덮는다.
     val layered = LocalGlassLayered.current && backdrop === LocalGlassBackdrop.current
+    // 별도 창의 모달이면 창 뒤가 이미 시스템 블러로 흐려져 있으므로, 배경이 없어도 불투명 fallback 대신 옅은 색만 덮는다.
+    val windowBlurred = LocalWindowBlur.current?.enabled == true
     val position = remember { PositionHolder() }
     val effects = remember { EffectCache() }
     return this
@@ -165,6 +168,8 @@ public fun Modifier.glass(
                     val at = if (backdrop.rootRelative) position.root else position.offset
                     drawBackdrop(backdrop, Sampler(blurLayer, effects, at), style, outline, level)
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))
+                } else if (windowBlurred) {
+                    drawRect(style.tint.copy(alpha = (style.tint.alpha + WINDOW_TINT_EXTRA).coerceAtMost(1f) * level))
                 } else {
                     drawRect(style.fallback.copy(alpha = style.fallback.alpha * level))
                 }
