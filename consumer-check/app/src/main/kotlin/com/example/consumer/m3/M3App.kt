@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -88,6 +89,17 @@ object Routes {
     const val MEDIA = "media"
     const val PUSH = "push"
     const val LIST = "list"
+    const val AUTH = "auth"
+    const val WELCOME = "welcome"
+    const val PHOTOS = "photos"
+    const val COMPARE = "compare"
+    const val MAIL = "mail"
+    const val ADAPTIVE_TABS = "adaptiveTabs"
+    const val FLOATING = "floating"
+    const val EFFECTS2 = "effects2"
+
+    /** 홈 아래 버튼으로 여는, 3차 컴포넌트를 쓰는 화면들. */
+    val extra = listOf(AUTH to "가입", PHOTOS to "사진", COMPARE to "비교", MAIL to "메일", ADAPTIVE_TABS to "적응형 탭", FLOATING to "떠 있는 탭", EFFECTS2 to "효과 2")
 }
 
 /**
@@ -126,6 +138,14 @@ fun M3App() {
                 composable(Routes.MEDIA) { MediaScreen() }
                 composable(Routes.PUSH) { PushScreen() }
                 composable(Routes.LIST) { EffectList500() }
+                composable(Routes.AUTH) { SignUpScreen(onVerified = { nav.navigate("${Routes.WELCOME}/${it.ifEmpty { "-" }}") { popUpTo(Routes.AUTH) { inclusive = true } } }) }
+                composable("${Routes.WELCOME}/{email}") { WelcomeScreen(it.arguments?.getString("email").orEmpty()) }
+                composable(Routes.PHOTOS) { PhotosScreen() }
+                composable(Routes.COMPARE) { CompareScreen() }
+                composable(Routes.MAIL) { MailScreen() }
+                composable(Routes.ADAPTIVE_TABS) { AdaptiveTabsScreen() }
+                composable(Routes.FLOATING) { FloatingTabsScreen() }
+                composable(Routes.EFFECTS2) { Effects2Screen(leave = { nav.popBackStack() }) }
             }
         }
     }
@@ -183,6 +203,9 @@ private fun HomeScreen(nav: NavHostController) {
             Card(
                 Modifier.fillMaxWidth().height(120.dp).testTag("expandCard").expandSource(expand, "card1").clickable { expand.expand("card1") },
             ) { Box(Modifier.fillMaxSize().padding(16.dp)) { Text("카드를 누르면 커진다") } }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Routes.extra.forEach { (r, label) -> TextButton({ nav.navigate(r) }, Modifier.testTag("go_$r")) { Text(label) } }
+            }
         }
 
         GlassSheet(glassSheet, { glassSheet = false }, title = "글래스 시트") {

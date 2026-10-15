@@ -14,6 +14,7 @@
         <activity android:name=".m3.M3NoEdgeActivity" android:exported="false" />
         <activity android:name=".xml.XmlHostActivity" android:exported="true" />
         <activity android:name=".JavaHostActivity" android:exported="false" />
+        <activity android:name=".xml.XmlComposeActivity" android:exported="true" />
         <!-- 키보드 처리 방식별 확인용. 기기에서 adb로 바로 열 수 있게 노출한다(시험 앱 전용). -->
         <activity android:name=".m3.M3PanActivity" android:exported="true" android:windowSoftInputMode="adjustPan" />
         <activity android:name=".xml.XmlPanActivity" android:exported="true" android:windowSoftInputMode="adjustPan" />

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 기존 XML 화면 중간에 ComposeView로 글래스 색상 선택기와 서명란을 끼운 화면. 바깥은 NestedScrollView다. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/colorValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="색: 없음" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:background="#DDE3EA" />
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/colorPicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/signatureState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="서명: 없음" />
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/signature"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/signatureUndo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="서명 되돌리기" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1200dp"
+            android:background="#EEF1F4" />
+
+        <TextView
+            android:id="@+id/end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="끝" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
