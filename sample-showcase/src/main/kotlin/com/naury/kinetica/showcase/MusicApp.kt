@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,12 +28,14 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -39,58 +43,80 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.AvatarStack
 import com.naury.kinetica.ui.GlassAvatar
-import com.naury.kinetica.ui.GlassMiniPlayer
+import com.naury.kinetica.ui.GlassFloatingTabBar
+import com.naury.kinetica.ui.GlassMiniPlayerBar
+import com.naury.kinetica.ui.GlassMiniPlayerFullScreen
 import com.naury.kinetica.ui.GlassRating
 import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassSkeletonText
 import com.naury.kinetica.ui.GlassSlider
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.GlassSurface
+import com.naury.kinetica.ui.GlassTab
 import com.naury.kinetica.ui.LikeButton
 import com.naury.kinetica.ui.PlayPauseIcon
+import com.naury.kinetica.ui.rememberGlassFloatingTabBarState
 import com.naury.kinetica.ui.rememberGlassMiniPlayerState
 import com.naury.kinetica.ui.skeleton
 import kotlinx.coroutines.delay
 
-/** 음악 앱: 처음 1.5초는 스켈레톤으로 불러오는 척하고, 아래 미니 플레이어를 펼치면 전체 화면 플레이어가 된다. */
+/**
+ * 음악 앱: 처음 1.5초는 스켈레톤으로 불러오는 척한다. 아래 떠 있는 탭 바는 목록을 내리면 작은 캡슐로 줄고,
+ * 탭 바 위에 붙은 미니 플레이어 막대를 누르거나 위로 끌면 앨범 아트가 이어지며 커지는 전체 화면 플레이어가 열린다.
+ */
 @Composable
 internal fun MusicApp(onBack: () -> Unit) {
     var loading by remember { mutableStateOf(true) }
     var playing by remember { mutableStateOf(false) }
     var track by remember { mutableIntStateOf(0) }
+    var tab by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         delay(1500)
         loading = false
     }
+    val bar = rememberGlassFloatingTabBarState()
     val player = rememberGlassMiniPlayerState()
+    val song = TRACKS[track]
     GlassScaffold(
         Modifier.fillMaxSize(),
         style = GlassStyles.LiquidDark,
         background = { Aurora(Modifier.fillMaxSize(), dark = true) },
-        topBar = { DemoTopBar("음악", "미니 플레이어를 누르거나 위로 끌어 보세요", onBack) },
+        topBar = { DemoTopBar("음악", "목록을 내리면 탭 바가 줄어듭니다", onBack) },
+        bottomBar = {
+            GlassFloatingTabBar(MUSIC_TABS, tab, { tab = it }, state = bar, accessory = {
+                GlassMiniPlayerBar(player, artwork = { Artwork(song) }) { MiniBar(song, playing) { playing = !playing } }
+            })
+        },
     ) { padding ->
         LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 120.dp),
+            Modifier.fillMaxSize().nestedScroll(bar.nestedScrollConnection),
+            contentPadding = PaddingValues(
+                start = 20.dp,
+                end = 20.dp,
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom = padding.calculateBottomPadding() + 16.dp,
+            ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { Label("지금 많이 듣는 곡", 20, FontWeight.Bold, color = Color.White) }
-            TRACKS.forEachIndexed { index, song ->
-                item(song.title) {
-                    TrackRow(song, loading, index == track && playing) {
+            item { Label(MUSIC_HEADERS[tab], 20, FontWeight.Bold, color = Color.White) }
+            tabTracks(tab).forEach { index ->
+                item(TRACKS[index].title) {
+                    TrackRow(TRACKS[index], loading, index == track && playing) {
                         track = index
                         playing = true
                     }
                 }
             }
         }
-        GlassMiniPlayer(
-            player,
-            artwork = { Artwork(TRACKS[track]) },
-            collapsed = { MiniBar(TRACKS[track], playing) { playing = !playing } },
-            expanded = { FullPlayer(TRACKS[track], playing) { playing = !playing } },
-        )
+        GlassMiniPlayerFullScreen(player, artwork = { Artwork(song) }) { FullPlayer(song, playing) { playing = !playing } }
     }
+}
+
+/** 탭마다 보여 줄 곡 번호. 둘러보기는 순서를 뒤집고, 보관함은 좋아요한 곡만 보여 준다. */
+private fun tabTracks(tab: Int): List<Int> = when (tab) {
+    1 -> TRACKS.indices.reversed().toList()
+    2 -> listOf(0, 2, 4)
+    else -> TRACKS.indices.toList()
 }
 
 @Composable
@@ -113,17 +139,17 @@ private fun TrackRow(song: Song, loading: Boolean, current: Boolean, onClick: ()
 
 @Composable
 private fun Artwork(song: Song) {
-    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(Brush.linearGradient(song.colors)))
+    Box(Modifier.fillMaxSize().background(Brush.linearGradient(song.colors)))
 }
 
 @Composable
 private fun MiniBar(song: Song, playing: Boolean, toggle: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Label(song.title, 15, FontWeight.SemiBold)
-            Label(song.artist, 12, color = Color.White.copy(alpha = 0.7f))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f).padding(end = 10.dp)) {
+            Label(song.title, 14, FontWeight.SemiBold)
+            Label(song.artist, 11, color = Color.White.copy(alpha = 0.7f))
         }
-        PlayButton(playing, 40, toggle)
+        PlayButton(playing, 36, toggle)
     }
 }
 
@@ -133,7 +159,10 @@ private fun FullPlayer(song: Song, playing: Boolean, toggle: () -> Unit) {
     var likes by remember { mutableIntStateOf(1284) }
     var rating by remember { mutableFloatStateOf(4f) }
     var position by remember { mutableFloatStateOf(0.32f) }
-    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Label(song.title, 24, FontWeight.Bold)
@@ -178,6 +207,10 @@ private fun PlayButton(playing: Boolean, size: Int, toggle: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) { PlayPauseIcon(playing, Modifier.size((size / 2).dp), Color.White) }
 }
+
+private val MUSIC_TABS =
+    listOf(GlassTab("홈", ShowcaseIcons.Home), GlassTab("둘러보기", ShowcaseIcons.Sparkle), GlassTab("보관함", ShowcaseIcons.Grid))
+private val MUSIC_HEADERS = listOf("지금 많이 듣는 곡", "새로 나온 곡", "좋아요한 곡")
 
 private class Song(val title: String, val artist: String, val colors: List<Color>)
 

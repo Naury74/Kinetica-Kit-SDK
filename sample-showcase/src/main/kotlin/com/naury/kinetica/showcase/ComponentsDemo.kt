@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -27,12 +29,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -48,6 +52,7 @@ import com.naury.kinetica.ui.GlassChipSelection
 import com.naury.kinetica.ui.GlassDatePicker
 import com.naury.kinetica.ui.GlassIslandContent
 import com.naury.kinetica.ui.GlassIslandHost
+import com.naury.kinetica.ui.GlassIslandState
 import com.naury.kinetica.ui.GlassLargeTitleBar
 import com.naury.kinetica.ui.GlassMenuItem
 import com.naury.kinetica.ui.GlassPageIndicator
@@ -57,12 +62,15 @@ import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassSearchBar
 import com.naury.kinetica.ui.GlassSnackbarHost
 import com.naury.kinetica.ui.GlassSnackbarResult
+import com.naury.kinetica.ui.GlassSnackbarState
 import com.naury.kinetica.ui.GlassSpeedDial
 import com.naury.kinetica.ui.GlassStepper
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.GlassSurface
+import com.naury.kinetica.ui.GlassTab
 import com.naury.kinetica.ui.GlassTextField
 import com.naury.kinetica.ui.GlassTimePicker
+import com.naury.kinetica.ui.GlassTopTabs
 import com.naury.kinetica.ui.GradientText
 import com.naury.kinetica.ui.MeshGradientBackground
 import com.naury.kinetica.ui.MeshGradients
@@ -81,65 +89,100 @@ import com.naury.kinetica.ui.spotlight
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
-/** 컴포넌트 모음: kinetica-ui의 버튼, 입력, 피커, 캐러셀, 카드 더미, 알림, 글자 효과를 한 화면에서 눌러 본다. */
+/**
+ * 컴포넌트 모음: kinetica-ui 컴포넌트를 기본, 입력, 미디어, 효과 탭으로 나눠 눌러 본다.
+ * 탭 바는 큰 제목 아래에 붙어 있고, 탭마다 목록이 따로 스크롤된다.
+ */
 @Composable
 internal fun ComponentsDemo(onBack: () -> Unit) {
     val title = rememberGlassLargeTitleState()
     val island = rememberGlassIslandState()
     val snackbar = rememberGlassSnackbarState()
+    val pager = rememberPagerState { COMPONENT_TABS.size }
     var dial by remember { mutableStateOf(false) }
+    var onboarding by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    GlassScaffold(
-        Modifier.fillMaxSize(),
-        style = GlassStyles.Liquid,
-        background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Candy) },
-        topBar = { GlassLargeTitleBar(title, "컴포넌트", onBack = onBack) },
-    ) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize().nestedScroll(title.connection),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 120.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item { ButtonsCard() }
-            item { StepperCard() }
-            item { ProgressCard() }
-            item { InputCard() }
-            item { PickerCard() }
-            item { CarouselCard() }
-            item { CardStackCard { scope.launch { snackbar.show(it) } } }
-            item { TextEffectsCard() }
-            item {
-                NotifyCard(
-                    onIsland = {
-                        scope.launch {
-                            island.show(GlassIslandContent("새 메시지", "민지: 오늘 저녁 어때?", icon = ShowcaseIcons.Bell, accent = Color(0xFF34C759)))
-                        }
-                    },
-                    onTimer = {
-                        scope.launch {
-                            island.show(
-                                GlassIslandContent(
-                                    "타이머",
-                                    "남은 시간 00:42",
-                                    icon = ShowcaseIcons.Sparkle,
-                                    accent = Color(0xFFFF9F0A),
-                                    compactText = "00:42",
-                                ),
-                            )
-                        }
-                    },
-                    onSnackbar = {
-                        scope.launch {
-                            val result = snackbar.show("사진을 지웠어요", "되돌리기")
-                            if (result == GlassSnackbarResult.Action) snackbar.show("사진을 되돌렸어요")
-                        }
-                    },
-                )
+    val notify: (String) -> Unit = { scope.launch { snackbar.show(it) } }
+    Box(Modifier.fillMaxSize()) {
+        GlassScaffold(
+            Modifier.fillMaxSize(),
+            style = GlassStyles.Liquid,
+            background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Candy) },
+            topBar = {
+                Column {
+                    GlassLargeTitleBar(title, "컴포넌트", onBack = onBack)
+                    GlassTopTabs(COMPONENT_TABS.map { GlassTab(it) }, pager, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+                }
+            },
+        ) { padding ->
+            val list = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 8.dp, bottom = 120.dp)
+            HorizontalPager(pager, Modifier.fillMaxSize()) { page ->
+                when (page) {
+                    0 -> BasicTab(list, title.connection, island, snackbar)
+                    1 -> InputTab(list, title.connection)
+                    2 -> MediaTab(list, title.connection) { onboarding = true }
+                    else -> EffectsTab(list, title.connection, notify)
+                }
             }
+            if (pager.currentPage == 0) DemoDial(dial, { dial = it }, notify)
+            GlassSnackbarHost(snackbar, Modifier.padding(bottom = 96.dp))
+            GlassIslandHost(island)
         }
-        DemoDial(dial, { dial = it }) { scope.launch { snackbar.show(it) } }
-        GlassSnackbarHost(snackbar, Modifier.padding(bottom = 96.dp))
-        GlassIslandHost(island)
+        if (onboarding) OnboardingAgain { onboarding = false }
+    }
+}
+
+/** 탭 한 장의 목록. 스크롤하면 큰 제목이 접힌다. */
+@Composable
+internal fun ComponentTabList(padding: PaddingValues, connection: NestedScrollConnection, content: LazyListScope.() -> Unit) {
+    LazyColumn(
+        Modifier.fillMaxSize().nestedScroll(connection),
+        contentPadding = padding,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        content = content,
+    )
+}
+
+@Composable
+private fun BasicTab(padding: PaddingValues, connection: NestedScrollConnection, island: GlassIslandState, snackbar: GlassSnackbarState) {
+    val scope = rememberCoroutineScope()
+    ComponentTabList(padding, connection) {
+        item { ButtonsCard() }
+        item { StepperCard() }
+        item { ProgressCard() }
+        item { InputCard() }
+        item { PickerCard() }
+        item { CarouselCard() }
+        item { CardStackCard { scope.launch { snackbar.show(it) } } }
+        item { TextEffectsCard() }
+        item {
+            NotifyCard(
+                onIsland = {
+                    scope.launch {
+                        island.show(GlassIslandContent("새 메시지", "민지: 오늘 저녁 어때?", icon = ShowcaseIcons.Bell, accent = Color(0xFF34C759)))
+                    }
+                },
+                onTimer = {
+                    scope.launch {
+                        island.show(
+                            GlassIslandContent(
+                                "타이머",
+                                "남은 시간 00:42",
+                                icon = ShowcaseIcons.Sparkle,
+                                accent = Color(0xFFFF9F0A),
+                                compactText = "00:42",
+                            ),
+                        )
+                    }
+                },
+                onSnackbar = {
+                    scope.launch {
+                        val result = snackbar.show("사진을 지웠어요", "되돌리기")
+                        if (result == GlassSnackbarResult.Action) snackbar.show("사진을 되돌렸어요")
+                    }
+                },
+            )
+        }
     }
 }
 
@@ -303,9 +346,10 @@ private fun NotifyCard(onIsland: () -> Unit, onTimer: () -> Unit, onSnackbar: ()
     }
 }
 
+private val COMPONENT_TABS = listOf("기본", "입력", "미디어", "효과")
 private val PEOPLE = listOf("하늘", "바다", "숲", "노을", "별")
 private val SCRAMBLE = listOf("ACCESS GRANTED", "SYNC COMPLETE", "HELLO, KINETICA")
-private val PHOTO_COLORS = listOf(
+internal val PHOTO_COLORS = listOf(
     listOf(Color(0xFF00C6FF), Color(0xFF0072FF)),
     listOf(Color(0xFFFF7E5F), Color(0xFFFEB47B)),
     listOf(Color(0xFF11998E), Color(0xFF38EF7D)),
