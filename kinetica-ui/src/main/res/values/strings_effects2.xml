@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_flip_action">Flip</string>
+    <string name="kinetica_ui_flip_front">Front side</string>
+    <string name="kinetica_ui_flip_back">Back side</string>
+</resources>

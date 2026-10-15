@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">Tab bar collapsed</string>
+    <string name="kinetica_ui_tabbar_expand">Show all tabs</string>
+    <string name="kinetica_ui_tabbar_go_to">Go to %1$s</string>
+</resources>

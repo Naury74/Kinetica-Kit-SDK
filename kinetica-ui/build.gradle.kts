@@ -14,6 +14,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     // 팝업·시트를 뒤로 가기로 닫는다.
     implementation(libs.androidx.activity.compose)
+    // 폴더블 힌지 위치를 읽어 목록-상세 두 칸 경계를 맞춘다.
+    implementation(libs.androidx.window)
 
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
@@ -25,4 +27,6 @@ dependencies {
     testImplementation(libs.androidx.recyclerview)
     testImplementation(libs.androidx.viewpager2)
     testImplementation(libs.androidx.fragment.ktx)
+    // 폴더블 힌지를 테스트에서 주입한다.
+    testImplementation(libs.androidx.window.testing)
 }

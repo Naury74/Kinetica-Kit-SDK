@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">탭 바 접힘</string>
+    <string name="kinetica_ui_tabbar_expand">모든 탭 보기</string>
+    <string name="kinetica_ui_tabbar_go_to">%1$s 탭으로 이동</string>
+</resources>
