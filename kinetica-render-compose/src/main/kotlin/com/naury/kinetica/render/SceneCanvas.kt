@@ -10,6 +10,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -91,8 +92,16 @@ public fun DrawScope.drawScene(
     val visibleDocument = canvasToDocument.mapBounds(visible)
     withTransform({ transform(documentToCanvas.toComposeMatrix()) }) {
         drawArtboard(graph.document)
+        val layerBounds = androidx.compose.ui.geometry.Rect(
+            visibleDocument.left.toFloat(),
+            visibleDocument.top.toFloat(),
+            visibleDocument.right.toFloat(),
+            visibleDocument.bottom.toFloat(),
+        )
         planDraw(graph, visibleDocument).forEach { item ->
+            item.openLayers.forEach { alpha -> drawContext.canvas.saveLayer(layerBounds, Paint().apply { this.alpha = alpha }) }
             withTransform({ transform(item.world.toComposeMatrix()) }) { drawItem(item, textMeasurer, images, fonts) }
+            repeat(item.closeLayers) { drawContext.canvas.restore() }
         }
     }
 }

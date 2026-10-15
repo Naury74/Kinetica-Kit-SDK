@@ -43,16 +43,42 @@ class RenderPlanTest {
     }
 
     @Test
-    fun `그룹 opacity를 자식에게 곱한다`() {
+    fun `반투명 그룹은 자식을 한 레이어에 그려 그룹 opacity로 합성한다`() {
+        val doc = document(
+            listOf(
+                group("g", listOf("c", "d")).copy(style = NodeStyle(opacity = 0.5)),
+                rect("c", parent = "g").copy(style = NodeStyle(opacity = 0.5)),
+                rect("d", parent = "g"),
+                rect("after"),
+            ),
+            rootOrder = listOf("g", "after"),
+        )
+
+        val items = planDraw(SceneGraph(doc), everything)
+
+        assertThat(items.map { it.node.id.value }).containsExactly("c", "d", "after").inOrder()
+        assertThat(items[0].openLayers).containsExactly(0.5f)
+        assertThat(items[0].alpha).isWithin(1e-6f).of(0.5f)
+        assertThat(items[1].closeLayers).isEqualTo(1)
+        assertThat(items[2].openLayers).isEmpty()
+        assertThat(items[2].closeLayers).isEqualTo(0)
+    }
+
+    @Test
+    fun `자식이 모두 화면 밖인 반투명 그룹은 레이어를 열지 않는다`() {
         val doc = document(
             listOf(
                 group("g", listOf("c")).copy(style = NodeStyle(opacity = 0.5)),
-                rect("c", parent = "g").copy(style = NodeStyle(opacity = 0.5)),
+                rect("c", parent = "g", transform = Transform2D(translationX = 5000.0)),
+                rect("shown"),
             ),
-            rootOrder = listOf("g"),
+            rootOrder = listOf("g", "shown"),
         )
 
-        assertThat(planDraw(SceneGraph(doc), everything).single().alpha).isWithin(1e-6f).of(0.25f)
+        val items = planDraw(SceneGraph(doc), Rect(0.0, 0.0, 300.0, 300.0))
+
+        assertThat(items.single().openLayers).isEmpty()
+        assertThat(items.single().closeLayers).isEqualTo(0)
     }
 
     @Test
