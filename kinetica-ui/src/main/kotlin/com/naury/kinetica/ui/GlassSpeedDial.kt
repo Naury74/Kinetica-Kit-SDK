@@ -37,10 +37,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -109,7 +108,7 @@ public fun GlassSpeedDial(
         label,
         { turn },
         modifier
-            .onGloballyPositioned { bounds = it.boundsInRoot() }
+            .onGloballyPositioned { bounds = it.boundsOnScreen() }
             .graphicsLayer { alpha = if (overlayShown) 0f else 1f },
         hidden = overlayShown,
     ) { latestChange(!expanded) }
@@ -120,10 +119,10 @@ private class DialSpec(val bounds: Rect, val items: List<GlassMenuItem>, val sty
 @Composable
 private fun DialLayer(spec: DialSpec, progress: () -> Float, close: () -> Unit) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    // 오버레이가 루트 (0,0)에 있지 않을 수 있으므로 루트 좌표를 이 상자 좌표로 옮긴다.
+    // 오버레이는 다른 창(대화 상자)일 수 있으므로 화면 좌표를 이 상자 좌표로 옮긴다.
     var origin by remember { mutableStateOf(Offset.Zero) }
     val bounds = spec.bounds.translate(-origin)
-    Box(Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionInRoot() }) {
+    Box(Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionOnScreen() }) {
         Scrim(progress().coerceIn(0f, 1f), close)
         Column(
             Modifier.layout { measurable, constraints ->

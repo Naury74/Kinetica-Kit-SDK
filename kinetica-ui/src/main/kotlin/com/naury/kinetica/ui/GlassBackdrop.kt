@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.ceil
 import kotlin.random.Random
@@ -58,8 +59,15 @@ import kotlin.random.Random
  */
 @Stable
 public class GlassBackdrop internal constructor(internal val layer: GraphicsLayer) {
+    // 기록한 내용의 왼쪽 위(화면 좌표, px). 글래스가 Dialog나 Popup 같은 다른 창에 있어도 같은 기준으로 위치를 맞추려고 화면 좌표를 쓴다.
     internal var origin by mutableStateOf(Offset.Zero)
     internal var size by mutableStateOf(IntSize.Zero)
+
+    /**
+     * true면 [origin] 대신 글래스가 속한 Compose 루트의 왼쪽 위를 기록 원점으로 본다. XML 화면용 View 기록이 쓴다.
+     * 그 기록은 글래스를 담은 ComposeView 기준으로 매 프레임 다시 하므로, 루트 좌표로 맞춰야 스크롤 중에도 한 프레임 어긋나지 않는다.
+     */
+    internal var rootRelative: Boolean = false
 
     /** 배경을 기록하는 중인지 나타낸다. 실수로 배경 안에 둔 글래스가 자기 자신을 기록해 그리기가 순환하지 않도록, 이때는 글래스를 그리지 않는다. */
     internal var recording: Boolean = false
@@ -81,10 +89,15 @@ public val LocalGlassBackdrop: androidx.compose.runtime.ProvidableCompositionLoc
  * 이 [backdrop]을 비추는 글래스는 반드시 이 요소 바깥에 둔다. 안쪽에 두면 기록에 자기 자신이 들어가므로 그리지 않는다.
  * 카드 안 사진 위에 글래스를 올리는 경우처럼 안쪽에 글래스가 필요하면, 그 사진에 따로 [glassBackdrop]을 붙이고
  * 글래스에 그 [GlassBackdrop]을 넘긴다.
+ *
+ * 안에 `AndroidView`로 넣은 호스트 View도 함께 기록되고, View가 다시 그려지면 글래스도 다음 프레임에 따라 바뀐다.
+ * 단 SurfaceView(지도, 영상, 카메라 미리보기)는 창과 다른 표면에 그려져 기록에 들어가지 않으므로, 그 위의 글래스는 블러 없이
+ * 투명하게 비친다. 이런 화면에서는 TextureView를 쓰거나 그 위 글래스에 `backdrop = null`을 넘겨 fallback 색을 칠한다.
+ * 하드웨어 가속이 꺼진 창이나 소프트웨어 캔버스로 그릴 때(View.draw로 Bitmap 만들기)는 블러가 빠지고 tint만 덮인다.
  */
 public fun Modifier.glassBackdrop(backdrop: GlassBackdrop): Modifier = this
     .onGloballyPositioned {
-        backdrop.origin = it.positionInRoot()
+        backdrop.origin = it.positionOnScreen()
         backdrop.size = it.size
     }
     .drawWithContent {
@@ -116,7 +129,10 @@ public fun Modifier.glass(
     val position = remember { PositionHolder() }
     val effects = remember { EffectCache() }
     return this
-        .onGloballyPositioned { position.offset = it.positionInRoot() }
+        .onGloballyPositioned {
+            position.offset = it.positionOnScreen()
+            position.root = it.positionInRoot()
+        }
         .drawBehind {
             if (backdrop?.recording == true) return@drawBehind
             val outline = shape.createOutline(size, layoutDirection, this)
@@ -125,7 +141,8 @@ public fun Modifier.glass(
             val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             clipOutline(outline) {
                 if (canBlur && backdrop != null) {
-                    drawBackdrop(backdrop, Sampler(blurLayer, effects, position.offset), style, outline, level)
+                    val at = if (backdrop.rootRelative) position.root else position.offset
+                    drawBackdrop(backdrop, Sampler(blurLayer, effects, at), style, outline, level)
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))
                 } else {
                     drawRect(style.fallback.copy(alpha = style.fallback.alpha * level))
@@ -138,6 +155,7 @@ public fun Modifier.glass(
 
 private class PositionHolder {
     var offset: Offset = Offset.Zero
+    var root: Offset = Offset.Zero
 }
 
 /** 프레임마다 RenderEffect를 새로 만들지 않도록 마지막 값을 보관한다. */

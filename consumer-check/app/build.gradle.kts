@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -26,9 +28,13 @@ android {
     buildFeatures { compose = true }
 }
 
+// 루트에서 배포한 버전과 어긋나지 않도록 루트 gradle.properties의 버전을 읽는다. -PKINETICA_VERSION으로 덮어쓸 수 있다.
+val kineticaVersion: String = providers.gradleProperty("KINETICA_VERSION").orNull
+    ?: Properties().apply { rootDir.resolve("../gradle.properties").inputStream().use { load(it) } }.getProperty("KINETICA_VERSION")
+
 dependencies {
-    implementation("com.naurylab:kinetica-player-compose:${providers.gradleProperty("KINETICA_VERSION").get()}")
-    implementation("com.naurylab:kinetica-board-compose:${providers.gradleProperty("KINETICA_VERSION").get()}")
-    implementation("com.naurylab:kinetica-ui:${providers.gradleProperty("KINETICA_VERSION").get()}")
+    implementation("com.naurylab:kinetica-player-compose:$kineticaVersion")
+    implementation("com.naurylab:kinetica-board-compose:$kineticaVersion")
+    implementation("com.naurylab:kinetica-ui:$kineticaVersion")
     implementation(libs.androidx.activity.compose)
 }

@@ -154,7 +154,7 @@ public fun GlassMiniPlayer(
     expanded: @Composable (progress: () -> Float) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    GlassOverlay(visible = true) { _ ->
+    GlassOverlay(visible = true, kind = OverlayKind.InPlace) { _ ->
         BackHandler(enabled = state.isExpanded) { scope.launch { state.collapse() } }
         // 진행도는 매 프레임 바뀌므로 읽는 곳을 작은 컴포저블로 나눠 그 범위만 다시 구성되게 한다.
         PlayerPushBack(state)

@@ -26,6 +26,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.toRect
@@ -40,6 +41,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 
 /**
@@ -81,7 +83,7 @@ public fun GlassScaffold(
     val density = LocalDensity.current
     CompositionLocalProvider(LocalGlassBackdrop provides backdrop, LocalGlassHost provides host, LocalGlassStyle provides style) {
         Box(modifier) {
-            Box(Modifier.fillMaxSize().glassBackdrop(backdrop)) {
+            Box(Modifier.fillMaxSize().glassBackdrop(backdrop).modalBackground(host.background, host.modalOpen)) {
                 Box(Modifier.fillMaxSize().glassBackdrop(contentBackdrop).background(backdropColor)) {
                     // graphicsLayer를 만들지 않고 그리기 단계에서만 축소해야 안쪽 글래스가 배경 기록에서 빠진다.
                     Box(
@@ -119,7 +121,13 @@ public fun GlassScaffold(
                     Box(Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomHeight = it.height }, content = bottomBar)
                 }
             }
-            host.entries.forEach { entry -> key(entry.id) { entry.content() } }
+            val topModal = host.entries.indexOfLast { it.modal }
+            host.entries.forEachIndexed { index, entry ->
+                key(entry.id) {
+                    // 위에 다른 모달이 열려 있으면 아래 오버레이는 TalkBack에서 숨긴다.
+                    Box(if (index < topModal) Modifier.clearAndSetSemantics { } else Modifier) { entry.content() }
+                }
+            }
         }
     }
 }
@@ -146,6 +154,21 @@ private fun EdgeFade(backdrop: GlassBackdrop, modifier: Modifier) {
 public val LocalGlassStyle: androidx.compose.runtime.ProvidableCompositionLocal<GlassStyle> =
     staticCompositionLocalOf { GlassStyles.Liquid }
 
+/** 오버레이가 화면에서 하는 역할. [GlassScaffold] 밖에서 어떤 창으로 띄울지가 여기에 따라 갈린다. */
+internal enum class OverlayKind {
+    /** 화면 전체를 덮고 입력과 접근성 초점을 가져간다. 밖에서는 전체 화면 대화 상자 창에 그린다. */
+    Modal,
+
+    /** 위쪽 가장자리에 붙는 알림. 뒤 화면의 입력을 막지 않는다. 밖에서는 내용 크기의 팝업 창에 그린다. */
+    Top,
+
+    /** 아래쪽 가장자리에 붙는 알림. 뒤 화면의 입력을 막지 않는다. 밖에서는 내용 크기의 팝업 창에 그린다. */
+    Bottom,
+
+    /** 밖에서는 호출한 자리에 그린다. 자기 창을 직접 띄우거나 호출한 자리를 화면으로 보는 요소가 쓴다. */
+    InPlace,
+}
+
 internal val LocalGlassHost = staticCompositionLocalOf<GlassOverlayHost?> { null }
 
 /** [GlassScaffold]의 오버레이 레이어에 그릴 항목들. 어디서 열든 배경 기록 바깥에 그린다. */
@@ -153,12 +176,32 @@ internal val LocalGlassHost = staticCompositionLocalOf<GlassOverlayHost?> { null
 internal class GlassOverlayHost {
     val entries = mutableStateListOf<OverlayEntry>()
 
+    /** 뒤 화면 전체를 묶는 초점 그룹. 모달이 닫히면 열기 전에 초점이 있던 요소로 돌아가는 데 쓴다. */
+    val background = FocusRequester()
+    private var restorePending = false
+
+    val modalOpen: Boolean get() = entries.any { it.modal }
+
+    /** 뒤 화면에 초점이 있었으면 기억하고 true를 돌려준다. 여러 모달이 겹쳐 열리면 처음 것만 기억한다. */
+    fun saveBackgroundFocus(): Boolean {
+        if (restorePending) return false
+        restorePending = background.saveFocusedChild()
+        return restorePending
+    }
+
+    /** 마지막 모달이 닫히면 기억해 둔 요소로 초점을 돌려준다. */
+    fun restoreBackgroundFocus() {
+        if (!restorePending || entries.any { it.modal }) return
+        restorePending = false
+        background.restoreFocusedChild()
+    }
+
     /** 열린 시트들이 콘텐츠를 밀어내는 정도 중 가장 큰 값(0..1). */
     val pushBack: Float get() = entries.maxOfOrNull { it.pushBack } ?: 0f
 }
 
 @Stable
-internal class OverlayEntry(val id: Any) {
+internal class OverlayEntry(val id: Any, val modal: Boolean) {
     var content: @Composable () -> Unit by mutableStateOf({})
     var pushBack by mutableFloatStateOf(0f)
 }

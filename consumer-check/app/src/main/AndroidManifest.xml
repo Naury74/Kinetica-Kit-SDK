@@ -8,5 +8,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".BoardActivity" android:exported="false" />
+        <activity android:name=".GlassActivity" android:exported="false" />
+        <activity android:name=".XmlGlassActivity" android:exported="false" />
     </application>
 </manifest>

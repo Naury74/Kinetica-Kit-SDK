@@ -9,6 +9,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,14 +17,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.runtime.Composable
@@ -38,6 +43,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -115,7 +123,11 @@ public fun rememberGlassDrawerState(initiallyOpen: Boolean = false): GlassDrawer
  * }
  * ```
  *
- * @param drawerContent 서랍 안 내용. 상태 표시줄과 내비게이션 바 여백은 서랍이 넣는다.
+ * 열린 동안 [content]는 TalkBack과 키보드 초점에서 빠지고, 키보드 초점은 서랍 안으로 들어갔다가 닫히면 원래 요소로 돌아온다.
+ * [GlassScaffold] 밖에서도 그 자리에 그대로 그린다(창을 따로 띄우지 않는다).
+ *
+ * @param drawerContent 서랍 안 내용. 서랍 높이로 제한되므로 길면 `LazyColumn`이나 `verticalScroll`을 쓴다.
+ *   상태 표시줄, 내비게이션 바, 화면 컷아웃, 키보드 여백은 서랍이 넣는다.
  * @param gesturesEnabled false면 끌어서 열고 닫지 않는다. 열린 서랍은 바깥을 누르거나 뒤로 가기로 닫을 수 있다.
  * @param content 서랍 뒤 화면
  */
@@ -142,14 +154,20 @@ public fun GlassDrawer(
         }
     }
     val behind = if (style.onGlass.luminance() > HALF) DarkBehind else LightBehind
+    val contentFocus = remember { FocusRequester() }
+    val panelFocus = remember { FocusRequester() }
+    ModalFocusEffect(state.isOpen, contentFocus, panelFocus)
     Box(modifier.fillMaxSize().then(if (gesturesEnabled) Modifier.drawerDrag(state, direction, scope) else Modifier)) {
         Box(Modifier.fillMaxSize().glassBackdrop(backdrop).background(behind)) {
             Box(Modifier.fillMaxSize().pushedBack(state, direction)) {
-                content()
+                // 열린 동안 뒤 화면은 TalkBack과 키보드 초점에서 빠진다. 닫기 영역은 그 바깥에 두어 TalkBack에 남긴다.
+                Box(Modifier.fillMaxSize().modalBackground(contentFocus, state.isOpen)) { content() }
                 if (shown) CloseCatcher { scope.launch { state.close() } }
             }
         }
-        DrawerPanel(DrawerLook(state, direction, style, backdrop), { scope.launch { state.close() } }, drawerContent)
+        DrawerPanel(DrawerLook(state, direction, style, backdrop), {
+            scope.launch { state.close() }
+        }, Modifier.focusRequester(panelFocus), drawerContent)
         if (gesturesEnabled) EdgeGestureGuard()
     }
 }
@@ -176,6 +194,7 @@ private fun CloseCatcher(onClose: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
+            .focusProperties { canFocus = false }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -191,7 +210,12 @@ private fun CloseCatcher(onClose: () -> Unit) {
 private class DrawerLook(val state: GlassDrawerState, val direction: Float, val style: GlassStyle, val backdrop: GlassBackdrop)
 
 @Composable
-private fun BoxScope.DrawerPanel(look: DrawerLook, onClose: () -> Unit, drawerContent: @Composable ColumnScope.() -> Unit) {
+private fun BoxScope.DrawerPanel(
+    look: DrawerLook,
+    onClose: () -> Unit,
+    modifier: Modifier,
+    drawerContent: @Composable ColumnScope.() -> Unit,
+) {
     val state = look.state
     val title = stringResource(R.string.kinetica_ui_drawer_title)
     val closed by remember(state) { derivedStateOf { state.progress == 0f } }
@@ -221,7 +245,11 @@ private fun BoxScope.DrawerPanel(look: DrawerLook, onClose: () -> Unit, drawerCo
                     }
                 },
             )
-            .systemBarsPadding()
+            .then(modifier)
+            // 닫힌 서랍 안으로 Tab 초점이 들어가지 않게 한다.
+            .focusProperties { onEnter = { if (!state.isOpen) cancelFocusChange() } }
+            .focusGroup()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start))
             .padding(vertical = 12.dp),
     ) {
         CompositionLocalProvider(LocalGlassContentColor provides look.style.onGlass, LocalGlassBackdrop provides look.backdrop) {

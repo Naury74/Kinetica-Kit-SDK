@@ -15,13 +15,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -169,34 +172,36 @@ public class GlassToastState {
 @Composable
 public fun rememberGlassToastState(): GlassToastState = remember { GlassToastState() }
 
-/** 화면 위쪽에서 미끄러져 내려오는 글래스 토스트. 컴포지션 어디에 두어도 되고, [GlassToastState.show]로 띄운다. TalkBack이 내용을 읽어 준다. */
+/**
+ * 화면 위쪽에서 미끄러져 내려오는 글래스 토스트. 컴포지션 어디에 두어도 되고, [GlassToastState.show]로 띄운다. TalkBack이 내용을 읽어 준다.
+ * 상태 표시줄과 화면 컷아웃 아래에 뜬다. [GlassScaffold] 밖에서는 내용 크기의 팝업 창에 띄우므로 뒤 화면의 터치를 막지 않는다.
+ */
 @Composable
 public fun GlassToastHost(state: GlassToastState, style: GlassStyle = LocalGlassStyle.current) {
     var last by remember { mutableStateOf("") }
     state.message?.let { last = it }
-    GlassOverlay(state.message != null) { transition ->
+    val insets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+    GlassOverlay(state.message != null, OverlayKind.Top, insets) { transition ->
         val progress by transition.animateFloat(
             transitionSpec = {
                 if (targetState) spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow) else tween(TOAST_OUT_MS)
             },
             label = "glass-toast",
         ) { if (it) 1f else 0f }
-        Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
-            Box(
-                Modifier
-                    .padding(top = 8.dp)
-                    .graphicsLayer {
-                        translationY = -(size.height + TOAST_TRAVEL.toPx()) * (1f - progress)
-                        // 내려오는 동안 가로로 살짝 좁았다가 원래 너비로 돌아온다.
-                        scaleX = TOAST_START_SCALE + (1f - TOAST_START_SCALE) * progress
-                        alpha = progress.coerceIn(0f, 1f)
-                    }
-                    .glass(style, CircleShape)
-                    .semantics { liveRegion = LiveRegionMode.Polite }
-                    .padding(horizontal = 22.dp, vertical = 12.dp),
-            ) {
-                BasicText(last, style = TextStyle(color = style.onGlass, fontSize = 14.sp, fontWeight = FontWeight.Medium))
-            }
+        Box(
+            Modifier
+                .padding(top = 8.dp)
+                .graphicsLayer {
+                    translationY = -(size.height + TOAST_TRAVEL.toPx()) * (1f - progress)
+                    // 내려오는 동안 가로로 살짝 좁았다가 원래 너비로 돌아온다.
+                    scaleX = TOAST_START_SCALE + (1f - TOAST_START_SCALE) * progress
+                    alpha = progress.coerceIn(0f, 1f)
+                }
+                .glass(style, CircleShape)
+                .semantics { liveRegion = LiveRegionMode.Polite }
+                .padding(horizontal = 22.dp, vertical = 12.dp),
+        ) {
+            BasicText(last, style = TextStyle(color = style.onGlass, fontSize = 14.sp, fontWeight = FontWeight.Medium))
         }
     }
 }

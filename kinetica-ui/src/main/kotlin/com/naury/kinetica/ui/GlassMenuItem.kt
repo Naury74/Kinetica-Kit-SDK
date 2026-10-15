@@ -48,10 +48,9 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -93,7 +92,7 @@ public fun Modifier.glassContextMenu(items: List<GlassMenuItem>, style: GlassSty
         ContextMenuLayer(bounds, progress, transition.targetState, style, latestItems, { open = false }) { drawLayer(layer) }
     }
     return this
-        .onGloballyPositioned { bounds = it.boundsInRoot() }
+        .onGloballyPositioned { bounds = it.boundsOnScreen() }
         .drawWithContent {
             // 메뉴가 열렸을 때 오버레이 레이어에 이 요소를 똑같이 다시 그리려고 그리기 내용을 기록해 둔다.
             layer.record { this@drawWithContent.drawContent() }
@@ -147,11 +146,11 @@ private fun ContextMenuLayer(
     val level = progress.coerceIn(0f, 1f)
     val density = LocalDensity.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    // 오버레이가 루트 (0,0)에 있지 않을 수 있으므로(GlassScaffold 위에 다른 바가 있는 경우) 루트 좌표를 이 상자 좌표로 옮긴다.
+    // 오버레이는 다른 창(대화 상자)이거나 화면 (0,0)에 있지 않을 수 있으므로 화면 좌표를 이 상자 좌표로 옮긴다.
     var origin by remember { mutableStateOf(Offset.Zero) }
     var menuHeight by remember { mutableIntStateOf(0) }
     val bounds = rootBounds.translate(-origin)
-    BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionInRoot() }) {
+    BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionOnScreen() }) {
         Scrim(level, close)
         // 떠오른 요소는 원래 위치에서 살짝 커진다. RTL에서도 물리 좌표 그대로 놓는다.
         Canvas(

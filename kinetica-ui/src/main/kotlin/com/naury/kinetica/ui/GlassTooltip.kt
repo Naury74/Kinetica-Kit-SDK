@@ -195,7 +195,7 @@ private class TooltipSpec(
 @Composable
 private fun TooltipLayer(spec: TooltipSpec, visible: Boolean) {
     val hosted = LocalGlassHost.current != null
-    GlassOverlay(visible) { transition ->
+    GlassOverlay(visible, OverlayKind.InPlace) { transition ->
         if (hosted) {
             BubbleLayer(spec, transition)
         } else {

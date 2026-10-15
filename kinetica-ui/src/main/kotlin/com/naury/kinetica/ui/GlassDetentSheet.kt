@@ -19,8 +19,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -120,6 +121,7 @@ public class DetentSheetState internal constructor(
     internal var containerHeight by mutableFloatStateOf(0f)
         private set
     private var fullTop = 0f
+    private var bottomInset = 0f
     private var density: Density = Density(1f)
     private var animation: Job? = null
 
@@ -147,11 +149,14 @@ public class DetentSheetState internal constructor(
         if (containerHeight > 0f) offset = positionOf(detent)
     }
 
-    internal fun updateLayout(height: Float, top: Float, density: Density) {
+    /** [bottom]은 내비게이션 바나 키보드가 가리는 아래쪽 높이(px)다. [Detent.Peek]과 [Detent.Fraction]은 그 위에서 잰다. */
+    internal fun updateLayout(height: Float, top: Float, density: Density, bottom: Float = 0f) {
         this.density = density
-        if (height == containerHeight && top == fullTop && !offset.isNaN()) return
+        val same = height == containerHeight && top == fullTop && bottom == bottomInset
+        if (same && !offset.isNaN()) return
         containerHeight = height
         fullTop = top.coerceAtMost(height)
+        bottomInset = bottom.coerceIn(0f, height)
         animation?.cancel()
         offset = positionOf(currentDetent)
     }
@@ -159,8 +164,8 @@ public class DetentSheetState internal constructor(
     internal fun positionOf(detent: Detent): Float {
         val h = containerHeight
         val y = when (detent) {
-            is Detent.Peek -> h - with(density) { detent.height.toPx() }
-            is Detent.Fraction -> h * (1f - detent.fraction)
+            is Detent.Peek -> h - bottomInset - with(density) { detent.height.toPx() }
+            is Detent.Fraction -> (h - bottomInset) * (1f - detent.fraction)
             Detent.Full -> fullTop
             Detent.Hidden -> h
         }
@@ -266,6 +271,11 @@ public fun rememberDetentSheetState(
  * 스크림을 누르거나 뒤로 가기를 하면 한 단계 접힌다.
  *
  * 부모 영역을 꽉 채우고 그 아래쪽에 시트를 그리므로 지도나 목록 위에 겹쳐 둔다. TalkBack에서는 펼치기와 접기 사용자 지정 동작을 쓸 수 있다.
+ * [GlassScaffold] 밖에서도 그 자리에 그대로 그린다(창을 따로 띄우지 않는다).
+ *
+ * 시트 높이는 부모 높이에서 위쪽 안전 영역과 8dp를 뺀 값으로 고정이고, [content]는 머리 영역 아래 남은 높이를 받는다.
+ * [contentWindowInsets]의 아래쪽(내비게이션 바, 키보드)은 시트가 피한다. [Detent.Peek]과 [Detent.Fraction]은 그 위에서 재므로
+ * 키보드가 올라오면 시트도 그만큼 올라가고, 펼친 시트의 내용은 그만큼 안쪽으로 들어간다.
  *
  * ```kotlin
  * val sheet = rememberDetentSheetState()
@@ -280,6 +290,7 @@ public fun rememberDetentSheetState(
  * @param title 시트 이름. TalkBack이 창 제목으로 읽는다.
  * @param header 핸들 아래에 고정되어 스크롤되지 않는 영역
  * @param content 남은 높이를 채우는 본문. 스크롤 목록은 `fillMaxSize`로 둔다.
+ * @param contentWindowInsets 시트가 피할 시스템 영역. 기본값은 [GlassSheetDefaults.windowInsets]다.
  */
 @Composable
 public fun GlassDetentSheet(
@@ -288,10 +299,13 @@ public fun GlassDetentSheet(
     style: GlassStyle = LocalGlassStyle.current,
     title: String? = null,
     header: @Composable ColumnScope.() -> Unit = {},
+    contentWindowInsets: @Composable () -> WindowInsets = { GlassSheetDefaults.windowInsets },
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val density = LocalDensity.current
-    val topGap = with(density) { (WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + FULL_GAP).toPx() }
+    val topGap = with(density) { (WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + FULL_GAP).toPx() }
+    val insets = contentWindowInsets()
+    val bottomGap = insets.getBottom(density).toFloat()
     val scope = rememberCoroutineScope()
     val scrimShown by remember(state) { derivedStateOf { state.scrimLevel() > 0f } }
     // 뒤로 가기는 펼친 시트를 가장 낮은 높이로 접고, 이미 가장 낮으면 숨길 수 있을 때만 숨긴다.
@@ -301,8 +315,14 @@ public fun GlassDetentSheet(
         else -> state.lowestVisible
     }
     BackHandler(enabled = backTarget != null) { backTarget?.let { scope.launch { state.animateTo(it) } } }
-    Box(modifier.fillMaxSize().onSizeChanged { state.updateLayout(it.height.toFloat(), topGap, density) }) {
-        LaunchedEffect(topGap) { if (state.containerHeight > 0f) state.updateLayout(state.containerHeight, topGap, density) }
+    Box(modifier.fillMaxSize().onSizeChanged { state.updateLayout(it.height.toFloat(), topGap, density, bottomGap) }) {
+        LaunchedEffect(topGap, bottomGap) {
+            if (state.containerHeight >
+                0f
+            ) {
+                state.updateLayout(state.containerHeight, topGap, density, bottomGap)
+            }
+        }
         if (scrimShown) SheetScrim(state) { state.lower(includeHidden = false)?.let { scope.launch { state.animateTo(it) } } }
         Column(
             Modifier
@@ -328,7 +348,7 @@ public fun GlassDetentSheet(
             }
             CompositionLocalProvider(LocalGlassContentColor provides style.onGlass) {
                 header()
-                Column(Modifier.weight(1f), content = content)
+                Column(Modifier.weight(1f).windowInsetsPadding(insets), content = content)
             }
         }
     }

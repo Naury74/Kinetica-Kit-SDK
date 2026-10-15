@@ -34,10 +34,9 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
@@ -132,7 +131,7 @@ private class ExpandSourceNode(var state: GlassExpandState, var key: Any) :
     Modifier.Node(),
     GlobalPositionAwareModifierNode {
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-        val bounds = coordinates.boundsInRoot()
+        val bounds = coordinates.boundsOnScreen()
         if (state.sources[key] != bounds) state.sources[key] = bounds
     }
 
@@ -183,7 +182,7 @@ public fun GlassExpandHost(
     val connection = remember(active) { dismissConnection(drag, ::release) }
     GlassOverlay(visible = true) { _ ->
         // 크기는 제약에서 바로 얻어 처음 여는 프레임부터 그린다(측정 뒤에 알게 되면 첫 프레임에 카드만 사라져 깜빡인다).
-        BoxWithConstraints(modifier.fillMaxSize().onGloballyPositioned { state.hostOrigin = it.positionInRoot() }) {
+        BoxWithConstraints(modifier.fillMaxSize().onGloballyPositioned { state.hostOrigin = it.positionOnScreen() }) {
             val bounds = Rect(Offset.Zero, Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat()))
             val origin = state.hostOrigin
             val level = progress.value.coerceIn(0f, 1f)

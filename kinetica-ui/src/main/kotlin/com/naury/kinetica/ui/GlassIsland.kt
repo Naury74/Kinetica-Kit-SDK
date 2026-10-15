@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
@@ -230,6 +232,7 @@ public object GlassIslandDefaults {
  * 화면 맨 위 가운데에 뜨는 다이내믹 아일랜드식 알림. 작은 캡슐에서 시작해 내용이 오면 용수철처럼 넓고 높게 부풀고,
  * 시간이 지나면 다시 캡슐로 줄어든다. 위로 쓸어 올리면 닫히고, 펼쳐진 알림을 누르면 [GlassIslandResult.Clicked]로 끝난다.
  * 상태 표시줄 바로 아래에 놓인다(상태 표시줄 영역은 시스템이 터치를 가져가 누를 수 없다). [GlassScaffold] 안에서는 오버레이 레이어에 그린다.
+ * 밖에서는 내용 크기의 팝업 창에 띄우므로 호출한 자리의 배치에 끼어들지 않고 뒤 화면의 터치도 막지 않는다.
  * TalkBack은 새 알림을 바로 읽어 준다.
  *
  * @param alwaysVisible true면 알림이 없을 때도 빈 캡슐을 보여 준다.
@@ -243,16 +246,15 @@ public fun GlassIslandHost(
 ) {
     val adjust = rememberAccessibleTimeout(withControls = true)
     SideEffect { state.timeoutAdjust = adjust }
-    GlassOverlay(state.visible || alwaysVisible) { transition ->
+    // 상태 표시줄 영역의 터치는 시스템이 먼저 가져가므로, 눌러서 펼칠 수 있게 상태 표시줄 바로 아래에 놓는다.
+    val insets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+    val gap = if (WindowInsets.statusBars.getTop(LocalDensity.current) > 0) ISLAND_GAP else MIN_TOP
+    GlassOverlay(state.visible || alwaysVisible, OverlayKind.Top, insets) { transition ->
         val appear = transition.animateFloat(
             transitionSpec = { if (targetState) spring(ISLAND_DAMPING, Spring.StiffnessMedium) else tween(HIDE_MS.toInt()) },
             label = "glass-island",
         ) { if (it) 1f else 0f }
-        val density = LocalDensity.current
-        val statusTop = WindowInsets.statusBars.getTop(density)
-        // 상태 표시줄 영역의 터치는 시스템이 먼저 가져가므로, 눌러서 펼칠 수 있게 상태 표시줄 바로 아래에 놓는다.
-        val top = with(density) { (statusTop + ISLAND_GAP.roundToPx()).coerceAtLeast(MIN_TOP.roundToPx()).toDp() }
-        Box(Modifier.fillMaxSize().padding(top = top, start = SIDE_MARGIN, end = SIDE_MARGIN), contentAlignment = Alignment.TopCenter) {
+        Box(Modifier.padding(top = gap, start = SIDE_MARGIN, end = SIDE_MARGIN)) {
             Island(
                 state,
                 style,

@@ -14,10 +14,11 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
@@ -124,7 +125,8 @@ internal class SnackbarData(val message: String, val actionLabel: String?, val d
 
 /**
  * 화면 아래에서 떠오르는 글래스 스낵바. 오른쪽에 동작 버튼과, 남은 시간만큼 줄어드는 원형 카운트다운 링이 있다. 링을 누르면 닫힌다.
- * 옆으로 쓸어 넘기면 닫히고, 키보드가 올라와 있으면 그 위에 뜬다. [GlassScaffold] 안에서는 오버레이 레이어에 그린다.
+ * 옆으로 쓸어 넘기면 닫히고, 내비게이션 바와 키보드가 올라와 있으면 그 위에 뜬다. [GlassScaffold] 안에서는 오버레이 레이어에 그린다.
+ * 밖에서는 내용 크기의 팝업 창에 띄우므로 호출한 자리의 배치에 끼어들지 않고 뒤 화면의 터치도 막지 않는다.
  * TalkBack은 새 스낵바를 바로 읽어 준다.
  *
  * 하단 탭 바가 있는 화면에서는 [modifier]에 `Modifier.padding(bottom = 탭 바 높이)`를 주어 탭 바 위에 띄운다.
@@ -135,14 +137,13 @@ public fun GlassSnackbarHost(state: GlassSnackbarState, modifier: Modifier = Mod
     SideEffect { state.timeoutAdjust = adjust }
     var last by remember { mutableStateOf<SnackbarData?>(null) }
     state.current?.let { last = it }
-    GlassOverlay(state.current != null) { transition ->
+    val insets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+    GlassOverlay(state.current != null, OverlayKind.Bottom, insets) { transition ->
         val appear = transition.animateFloat(
             transitionSpec = { if (targetState) spring(SNACKBAR_DAMPING, Spring.StiffnessMediumLow) else tween(SNACKBAR_OUT_MS) },
             label = "glass-snackbar",
         ) { if (it) 1f else 0f }
-        Box(Modifier.fillMaxSize().navigationBarsPadding().imePadding(), contentAlignment = Alignment.BottomCenter) {
-            last?.let { data -> key(data) { SnackbarPill(data, style, appear, modifier) } }
-        }
+        last?.let { data -> key(data) { SnackbarPill(data, style, appear, modifier) } }
     }
 }
 
