@@ -10,9 +10,14 @@
         <activity android:name=".BoardActivity" android:exported="false" />
         <activity android:name=".GlassActivity" android:exported="false" />
         <activity android:name=".XmlGlassActivity" android:exported="false" />
-        <activity android:name=".m3.M3EdgeActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".m3.M3EdgeActivity" android:exported="true" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".m3.M3NoEdgeActivity" android:exported="false" />
-        <activity android:name=".xml.XmlHostActivity" android:exported="false" />
+        <activity android:name=".xml.XmlHostActivity" android:exported="true" />
         <activity android:name=".JavaHostActivity" android:exported="false" />
+        <!-- 키보드 처리 방식별 확인용. 기기에서 adb로 바로 열 수 있게 노출한다(시험 앱 전용). -->
+        <activity android:name=".m3.M3PanActivity" android:exported="true" android:windowSoftInputMode="adjustPan" />
+        <activity android:name=".xml.XmlPanActivity" android:exported="true" android:windowSoftInputMode="adjustPan" />
+        <activity android:name=".xml.XmlEdgeActivity" android:exported="true" />
+        <activity android:name=".xml.XmlNothingActivity" android:exported="true" android:windowSoftInputMode="adjustNothing" />
     </application>
 </manifest>

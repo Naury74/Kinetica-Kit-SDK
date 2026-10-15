@@ -1,5 +1,7 @@
 package com.example.consumer.xml
 
+import androidx.activity.enableEdgeToEdge
+
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -31,7 +33,7 @@ import com.naury.kinetica.ui.view.GlassSheets
 import com.naury.kinetica.ui.view.GlassToasts
 
 /** AppCompat + CoordinatorLayout + Fragment 두 개로 만든 XML 호스트 화면. Navigation component 없이 FragmentManager 뒤로 가기 스택을 쓴다. */
-class XmlHostActivity : AppCompatActivity() {
+open class XmlHostActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_xml_host)
@@ -146,4 +148,18 @@ private class PageAdapter(private val board: KineticaBoardState, private val onE
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) = Unit
+}
+
+/** XmlHostActivity와 같고 키보드를 adjustPan으로 처리하는 화면. */
+class XmlPanActivity : XmlHostActivity()
+
+/** XmlHostActivity와 같고 키보드를 adjustNothing으로 처리하는 화면. */
+class XmlNothingActivity : XmlHostActivity()
+
+/** edge-to-edge를 켜고 루트가 fitsSystemWindows인 XML 화면. 옛 인셋 전달 방식(API 26~29)에서 시트가 키보드·내비게이션 바를 피하는지 본다. */
+class XmlEdgeActivity : XmlHostActivity() {
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+    }
 }

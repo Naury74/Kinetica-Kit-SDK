@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 
 /** edge-to-edge를 켠 Material3 호스트 화면. */
-class M3EdgeActivity : ComponentActivity() {
+open class M3EdgeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -24,3 +24,6 @@ class M3NoEdgeActivity : ComponentActivity() {
         setContent { M3App() }
     }
 }
+
+/** M3EdgeActivity와 같고 키보드를 adjustPan으로 처리하는 화면(manifest의 windowSoftInputMode). 시트가 키보드를 피하는지 본다. */
+class M3PanActivity : M3EdgeActivity()
