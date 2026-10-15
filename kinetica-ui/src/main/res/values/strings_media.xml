@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">Rating</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="one">%1$s of %2$d star</item>
+        <item quantity="other">%1$s of %2$d stars</item>
+    </plurals>
+    <string name="kinetica_ui_like">Like</string>
+    <string name="kinetica_ui_liked">Liked</string>
+    <string name="kinetica_ui_not_liked">Not liked</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="one">%1$s and %2$d other</item>
+        <item quantity="other">%1$s and %2$d others</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">Now playing</string>
+    <string name="kinetica_ui_player_expand">Open player</string>
+    <string name="kinetica_ui_player_collapse">Minimize player</string>
+</resources>

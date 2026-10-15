@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">별점</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="other">별 %2$d개 중 %1$s개</item>
+    </plurals>
+    <string name="kinetica_ui_like">좋아요</string>
+    <string name="kinetica_ui_liked">좋아요 누름</string>
+    <string name="kinetica_ui_not_liked">좋아요 안 누름</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="other">%1$s 외 %2$d명</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">지금 재생 중</string>
+    <string name="kinetica_ui_player_expand">플레이어 열기</string>
+    <string name="kinetica_ui_player_collapse">플레이어 접기</string>
+</resources>

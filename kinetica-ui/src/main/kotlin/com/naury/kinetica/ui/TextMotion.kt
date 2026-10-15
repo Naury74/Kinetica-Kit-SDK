@@ -12,6 +12,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -22,9 +23,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.LayoutDirection
 import kotlinx.coroutines.delay
 
 /**
@@ -40,32 +43,35 @@ public fun RollingText(text: String, modifier: Modifier = Modifier, style: TextS
     var previous by remember { mutableStateOf(text) }
     val up = compareNumbers(text, previous) >= 0
     LaunchedEffect(text) { previous = text }
-    Row(
-        modifier.clipToBounds().semantics(mergeDescendants = true) {
-            contentDescription = text
-        },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // 자릿수가 늘어도 끝자리끼리 맞춰 비교하도록 오른쪽부터 센다.
-        text.forEachIndexed { index, char ->
-            val fromEnd = text.length - index
-            key(fromEnd) {
-                AnimatedContent(
-                    targetState = char,
-                    transitionSpec = {
-                        val spring =
-                            spring<androidx.compose.ui.unit.IntOffset>(
-                                dampingRatio = Spring.DampingRatioLowBouncy,
-                                stiffness = Spring.StiffnessMediumLow,
-                            )
-                        if (up) {
-                            (slideInVertically(spring) { it } + fadeIn()) togetherWith (slideOutVertically(spring) { -it } + fadeOut())
-                        } else {
-                            (slideInVertically(spring) { -it } + fadeIn()) togetherWith (slideOutVertically(spring) { it } + fadeOut())
-                        } using SizeTransform(clip = false)
-                    },
-                    label = "rolling-$fromEnd",
-                ) { shown -> BasicText(shown.toString(), style = style) }
+    // 글자를 한 칸씩 Row에 늘어놓으므로 RTL에서는 순서가 뒤집힌다("1,235"가 "532,1"). 숫자는 어느 언어에서나 왼쪽부터 쓰므로 LTR로 고정한다.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier.clipToBounds().semantics(mergeDescendants = true) {
+                contentDescription = text
+            },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // 자릿수가 늘어도 끝자리끼리 맞춰 비교하도록 오른쪽부터 센다.
+            text.forEachIndexed { index, char ->
+                val fromEnd = text.length - index
+                key(fromEnd) {
+                    AnimatedContent(
+                        targetState = char,
+                        transitionSpec = {
+                            val spring =
+                                spring<androidx.compose.ui.unit.IntOffset>(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessMediumLow,
+                                )
+                            if (up) {
+                                (slideInVertically(spring) { it } + fadeIn()) togetherWith (slideOutVertically(spring) { -it } + fadeOut())
+                            } else {
+                                (slideInVertically(spring) { -it } + fadeIn()) togetherWith (slideOutVertically(spring) { it } + fadeOut())
+                            } using SizeTransform(clip = false)
+                        },
+                        label = "rolling-$fromEnd",
+                    ) { shown -> BasicText(shown.toString(), style = style) }
+                }
             }
         }
     }

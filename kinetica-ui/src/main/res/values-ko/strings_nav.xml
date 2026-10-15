@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">펼치기</string>
+    <string name="kinetica_ui_sheet_collapse">접기</string>
+    <string name="kinetica_ui_sheet_expanded">펼쳐짐</string>
+    <string name="kinetica_ui_sheet_partial">반쯤 펼쳐짐</string>
+    <string name="kinetica_ui_sheet_collapsed">접힘</string>
+    <string name="kinetica_ui_tooltip_show">도움말 보기</string>
+    <string name="kinetica_ui_coach_next">다음</string>
+    <string name="kinetica_ui_coach_done">완료</string>
+    <string name="kinetica_ui_coach_skip">건너뛰기</string>
+    <string name="kinetica_ui_coach_step">%2$d단계 중 %1$d단계</string>
+    <string name="kinetica_ui_drawer_title">메뉴</string>
+    <string name="kinetica_ui_drawer_close">메뉴 닫기</string>
+</resources>

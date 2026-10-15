@@ -1,0 +1,13 @@
+<resources>
+    <string name="kinetica_ui_calendar_previous_month">이전 달</string>
+    <string name="kinetica_ui_calendar_next_month">다음 달</string>
+    <string name="kinetica_ui_calendar_today">오늘</string>
+    <string name="kinetica_ui_calendar_range_start">시작일</string>
+    <string name="kinetica_ui_calendar_range_end">종료일</string>
+    <string name="kinetica_ui_calendar_in_range">기간에 포함</string>
+    <plurals name="kinetica_ui_calendar_events">
+        <item quantity="other">일정 %d개</item>
+    </plurals>
+    <string name="kinetica_ui_range_slider_start">최솟값</string>
+    <string name="kinetica_ui_range_slider_end">최댓값</string>
+</resources>

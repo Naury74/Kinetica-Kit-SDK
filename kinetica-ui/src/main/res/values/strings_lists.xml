@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_move_up">Move up</string>
+    <string name="kinetica_ui_move_down">Move down</string>
+    <string name="kinetica_ui_expanded">Expanded</string>
+    <string name="kinetica_ui_collapsed">Collapsed</string>
+    <string name="kinetica_ui_confirmed">Confirmed</string>
+</resources>

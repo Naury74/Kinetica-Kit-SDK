@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="kinetica_ui_chart_line">
+        <item quantity="other">선 그래프, 값 %1$d개</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_bar">
+        <item quantity="other">막대 그래프, 막대 %1$d개</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_donut">
+        <item quantity="other">도넛 차트, 항목 %1$d개, 합계 %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_chart_stats">최저 %1$s, 최고 %2$s, 마지막 %3$s</string>
+    <string name="kinetica_ui_chart_range">최저 %1$s, 최고 %2$s</string>
+    <string name="kinetica_ui_chart_entry">%1$s: %2$s</string>
+    <string name="kinetica_ui_chart_point">%1$d번째 값</string>
+    <string name="kinetica_ui_chart_slice">%1$s: %2$s, %3$d%%</string>
+    <string name="kinetica_ui_chart_total">합계</string>
+    <string name="kinetica_ui_chart_trend">%1$s에서 %2$s로 변화, 최저 %3$s, 최고 %4$s</string>
+    <string name="kinetica_ui_chart_rings">활동 링</string>
+    <string name="kinetica_ui_chart_ring">%1$s %2$d%%</string>
+    <string name="kinetica_ui_chart_ring_unnamed">%1$d번째 링</string>
+</resources>

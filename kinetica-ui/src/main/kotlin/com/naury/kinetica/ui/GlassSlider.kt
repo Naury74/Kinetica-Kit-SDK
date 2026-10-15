@@ -100,8 +100,9 @@ public fun GlassSlider(
                     true
                 }
             }
-            .focusable(enabled)
+            // onFocusChanged는 focusable보다 앞에 있어야 그 포커스 변화를 받는다.
             .onFocusChanged { focused -> scope.launch { grab.animateTo(if (focused.isFocused) 1f else 0f) } }
+            .focusable(enabled)
             .onKeyEvent { event ->
                 val delta = if (enabled && event.type == KeyEventType.KeyDown) keyStep(event.key, rtl) else null
                 if (delta != null) {

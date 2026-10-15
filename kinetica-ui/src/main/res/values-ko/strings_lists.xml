@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_move_up">위로 이동</string>
+    <string name="kinetica_ui_move_down">아래로 이동</string>
+    <string name="kinetica_ui_expanded">펼쳐짐</string>
+    <string name="kinetica_ui_collapsed">접힘</string>
+    <string name="kinetica_ui_confirmed">확인됨</string>
+</resources>
