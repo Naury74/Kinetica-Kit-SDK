@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -163,6 +165,7 @@ private fun DialLayer(spec: DialSpec, progress: () -> Float, close: () -> Unit) 
 private fun DialItem(item: GlassMenuItem, style: GlassStyle, fromButton: Int, count: Int, progress: () -> Float, onClick: () -> Unit) {
     val color = if (item.destructive) GlassTheme.colors.destructive else style.onGlass
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier
             .graphicsLayer {
@@ -178,23 +181,27 @@ private fun DialItem(item: GlassMenuItem, style: GlassStyle, fromButton: Int, co
                 scaleY = scale
                 transformOrigin = TransformOrigin(if (rtl) 1f - ITEM_ORIGIN_X else ITEM_ORIGIN_X, 1f)
             }
-            .clickable(
-                interactionSource = remember {
-                    MutableInteractionSource()
-                },
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            ),
+            // 줄 전체를 누르게 하되, 눌림 표시는 글자 캡슐과 아이콘 원에 각각 그린다.
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.glass(style, CircleShape).padding(horizontal = 16.dp, vertical = 9.dp)) {
+        Box(
+            Modifier
+                .glass(style, CircleShape)
+                .indication(interaction, DialIndication)
+                .heightIn(min = LABEL_HEIGHT)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
             ThemedText(item.label, style = TextStyle(color = color, fontSize = 15.sp, fontWeight = FontWeight.Medium))
         }
         item.icon?.let { icon ->
-            Box(Modifier.size(ICON_SIZE).glass(style, CircleShape), contentAlignment = Alignment.Center) {
-                Image(rememberVectorPainter(icon), null, Modifier.size(20.dp), colorFilter = ColorFilter.tint(color))
+            Box(
+                Modifier.size(ICON_SIZE).glass(style, CircleShape).indication(interaction, DialIndication),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(rememberVectorPainter(icon), null, Modifier.size(GlassMetrics.ButtonIcon), colorFilter = ColorFilter.tint(color))
             }
         }
     }
@@ -229,7 +236,7 @@ private fun DialButton(
 }
 
 private fun Modifier.dialAction(expanded: Boolean, name: String, stateText: String, onClick: () -> Unit): Modifier =
-    clickable(interactionSource = null, indication = null, role = Role.Button, onClick = onClick)
+    clickable(interactionSource = null, indication = DialIndication, role = Role.Button, onClick = onClick)
         .semantics {
             contentDescription = name
             stateDescription = stateText
@@ -247,7 +254,9 @@ private fun Modifier.dialAction(expanded: Boolean, name: String, stateText: Stri
         }
 
 private val BUTTON_SIZE = 56.dp
-private val ICON_SIZE = 44.dp
+private val ICON_SIZE = GlassMetrics.IconButton
+private val LABEL_HEIGHT = 36.dp
+private val DialIndication = GlassIndication(CircleShape)
 private val PLUS_SIZE = 20.dp
 private val PLUS_STROKE = 2.4.dp
 private const val PLUS_TURN = 135f

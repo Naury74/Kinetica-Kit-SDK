@@ -115,44 +115,47 @@ public fun GlassCodeInput(
     val progress = pluralStringResource(R.plurals.kinetica_ui_code_progress, length, length, code.length)
     val errorText = stringResource(R.string.kinetica_ui_code_error)
     val clock = rememberLoopClock(running = focused && code.length < length && !still)
-    BasicTextField(
-        value = shown,
-        onValueChange = { next ->
-            val accepted = acceptCode(code, next.text, length)
-            field = TextFieldValue(accepted, TextRange(accepted.length))
-            if (accepted != code) {
-                latestChange(accepted)
-                if (accepted.length == length) latestComplete?.invoke(accepted)
-            }
-        },
-        modifier = modifier
-            .shake(shakeTrigger)
-            .loopVisibility(clock)
-            .onFocusChanged { focused = it.isFocused }
-            .semantics {
-                this.contentDescription = contentDescription
-                stateDescription = progress
-                contentType = ContentType.SmsOtpCode
-                if (error) error(errorText)
+    ProvideFieldSelection(GlassTheme.colors.accent) {
+        BasicTextField(
+            value = shown,
+            onValueChange = { next ->
+                val accepted = acceptCode(code, next.text, length)
+                field = TextFieldValue(accepted, TextRange(accepted.length))
+                if (accepted != code) {
+                    latestChange(accepted)
+                    if (accepted.length == length) latestComplete?.invoke(accepted)
+                }
             },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = if (mask) KeyboardType.NumberPassword else KeyboardType.Number,
-            imeAction = imeAction,
-        ),
-        keyboardActions = keyboardActions,
-        visualTransformation = if (mask) PasswordVisualTransformation() else VisualTransformation.None,
-        singleLine = true,
-        textStyle = TextStyle(color = Color.Transparent),
-        cursorBrush = SolidColor(Color.Transparent),
-        decorationBox = { inner ->
-            Box {
-                // 실제 입력란은 보이지 않게 두고 칸은 아래 Row가 그린다. 길게 눌러 붙여 넣기는 그대로 동작한다.
-                Box(Modifier.size(1.dp).graphicsLayer { alpha = 0f }) { inner() }
-                val look = CodeLook(style, GlassTheme.colors.accent, GlassTheme.colors.destructive, mask, still)
-                CodeCells(code, length, focused, error, look, clock)
-            }
-        },
-    )
+            modifier = modifier
+                .keepVisibleWhileFocused(focused)
+                .shake(shakeTrigger)
+                .loopVisibility(clock)
+                .onFocusChanged { focused = it.isFocused }
+                .semantics {
+                    this.contentDescription = contentDescription
+                    stateDescription = progress
+                    contentType = ContentType.SmsOtpCode
+                    if (error) error(errorText)
+                },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = if (mask) KeyboardType.NumberPassword else KeyboardType.Number,
+                imeAction = imeAction,
+            ),
+            keyboardActions = keyboardActions,
+            visualTransformation = if (mask) PasswordVisualTransformation() else VisualTransformation.None,
+            singleLine = true,
+            textStyle = TextStyle(color = Color.Transparent),
+            cursorBrush = SolidColor(Color.Transparent),
+            decorationBox = { inner ->
+                Box {
+                    // 실제 입력란은 보이지 않게 두고 칸은 아래 Row가 그린다. 길게 눌러 붙여 넣기는 그대로 동작한다.
+                    Box(Modifier.size(1.dp).graphicsLayer { alpha = 0f }) { inner() }
+                    val look = CodeLook(style.forField(), GlassTheme.colors.accent, GlassTheme.colors.destructive, mask, still)
+                    CodeCells(code, length, focused, error, look, clock)
+                }
+            },
+        )
+    }
 }
 
 /**

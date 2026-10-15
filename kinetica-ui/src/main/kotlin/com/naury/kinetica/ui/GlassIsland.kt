@@ -329,23 +329,24 @@ private fun Island(state: GlassIslandState, style: GlassStyle, modifier: Modifie
 @Composable
 private fun Modifier.islandGestures(state: GlassIslandState): Modifier {
     val scope = rememberCoroutineScope()
-    val drag = remember { Animatable(0f) }
+    val drag = remember { SettleOffset() }
     val threshold = with(LocalDensity.current) { SWIPE_DISMISS.toPx() }
+    val release: suspend (Float) -> Unit = { velocity ->
+        if (drag.value < -threshold || velocity < -SWIPE_FLING) state.dismiss()
+        drag.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy), velocity)
+    }
     return this
         .graphicsLayer { translationY = drag.value }
         .draggable(
             rememberDraggableState { delta ->
-                // 아래로는 조금만 따라오게 해서 붙잡힌 느낌을 준다.
-                val next = drag.value + if (drag.value + delta > 0f) delta * PULL_DOWN_RESIST else delta
-                scope.launch { drag.snapTo(next) }
+                // 아래로는 조금만 따라오게 해서 붙잡힌 느낌을 준다. 끌기는 상태에 바로 써야 손을 뗀 뒤 복귀가 취소되지 않는다.
+                drag.drag(if (drag.value + delta > 0f) delta * PULL_DOWN_RESIST else delta)
             },
             Orientation.Vertical,
             enabled = state.content != null,
-            onDragStopped = { velocity ->
-                if (drag.value < -threshold || velocity < -SWIPE_FLING) state.dismiss()
-                drag.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-            },
+            onDragStopped = { velocity -> release(velocity) },
         )
+        .settleAfterRelease({ drag.value != 0f && !drag.isSettling }) { scope.launch { release(0f) } }
         .pointerInput(state) { detectTapGestures { if (state.content != null) state.tap() } }
 }
 

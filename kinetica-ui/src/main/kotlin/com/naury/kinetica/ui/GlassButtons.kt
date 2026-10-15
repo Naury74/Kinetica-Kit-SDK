@@ -10,7 +10,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -69,10 +68,16 @@ public enum class GlassButtonKind {
  * [GlassButton]의 크기. 높이와 좌우 여백, 글자 크기가 함께 바뀐다.
  * Small은 32dp, Medium은 44dp, Large는 54dp 높이다. Small도 터치 영역은 레이아웃에 맡기므로, 촘촘하게 놓을 때는 주변 여백을 둔다.
  */
-public enum class GlassButtonSize(internal val height: Dp, internal val padding: Dp, internal val font: TextUnit, internal val icon: Dp) {
-    Small(32.dp, 14.dp, 14.sp, 16.dp),
-    Medium(44.dp, 20.dp, 16.sp, 20.dp),
-    Large(54.dp, 28.dp, 18.sp, 22.dp),
+public enum class GlassButtonSize(
+    internal val height: Dp,
+    internal val padding: Dp,
+    internal val font: TextUnit,
+    internal val icon: Dp,
+    internal val gap: Dp,
+) {
+    Small(32.dp, 14.dp, 14.sp, 16.dp, 6.dp),
+    Medium(44.dp, 20.dp, 16.sp, GlassMetrics.ButtonIcon, GlassMetrics.IconTextGap),
+    Large(54.dp, 28.dp, 18.sp, 22.dp, GlassMetrics.IconTextGap),
 }
 
 /**
@@ -104,7 +109,6 @@ public fun GlassButton(
     style: GlassStyle = LocalGlassStyle.current,
 ) {
     val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
     val haptic = LocalHapticFeedback.current
     val active = enabled && !loading
     val loadingLabel = stringResource(R.string.kinetica_ui_loading)
@@ -118,22 +122,24 @@ public fun GlassButton(
             .height(size.height)
             .buttonBackground(kind, accent, style)
             .clip(CircleShape)
-            .drawBehind {
-                // Plain은 배경이 없으므로 누르는 동안만 옅은 배경을 깔아 눌린 걸 알린다.
-                val pressAlpha = if (kind == GlassButtonKind.Plain) PLAIN_PRESS_ALPHA else PRESS_ALPHA
-                if (pressed) drawRect(content.copy(alpha = pressAlpha))
-            }
-            .clickable(interactionSource = interaction, indication = null, enabled = active, role = Role.Button) {
+            .clickable(
+                interactionSource = interaction,
+                // Plain은 배경이 없으므로 누르는 동안 깔리는 옅은 배경이 눌린 걸 알리는 유일한 표시다.
+                indication = GlassIndication(CircleShape, content, if (kind == GlassButtonKind.Plain) PLAIN_PRESS_ALPHA else PRESS_ALPHA),
+                enabled = active,
+                role = Role.Button,
+            ) {
                 haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                 onClick()
             }
             .semantics { if (loading) stateDescription = loadingLabel }
-            .padding(horizontal = size.padding),
+            // 앞 아이콘은 글자보다 시각적 무게가 가벼워, 시작 쪽 여백을 조금 줄여야 내용이 가운데로 보인다.
+            .padding(start = if (icon != null) size.padding - ICON_SIDE_TRIM else size.padding, end = size.padding),
         contentAlignment = Alignment.Center,
     ) {
         Row(
             Modifier.graphicsLayer { alpha = 1f - loadingLevel },
-            horizontalArrangement = Arrangement.spacedBy(ICON_GAP),
+            horizontalArrangement = Arrangement.spacedBy(size.gap),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             icon?.let { Image(rememberVectorPainter(it), null, Modifier.size(size.icon), colorFilter = ColorFilter.tint(content)) }
@@ -197,7 +203,7 @@ private fun Modifier.buttonBackground(kind: GlassButtonKind, accent: Color, styl
     GlassButtonKind.Plain -> this
 }
 
-private val ICON_GAP = 6.dp
+private val ICON_SIDE_TRIM = 4.dp
 private const val JELLY_AMOUNT = 0.07f
 private const val DISABLED_ALPHA = 0.4f
 private const val PRESS_ALPHA = 0.12f

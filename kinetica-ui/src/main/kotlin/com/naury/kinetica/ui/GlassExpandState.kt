@@ -163,7 +163,7 @@ public fun GlassExpandHost(
     val active = state.activeKey ?: return
     val open = state.expandedKey != null
     val progress = remember(active) { Animatable(if (state.restoredOpen) 1f else 0f).also { state.restoredOpen = false } }
-    val drag = remember(active) { DragOffset() }
+    val drag = remember(active) { SettleOffset() }
     val scope = rememberCoroutineScope()
     LaunchedEffect(active, open) {
         val damping = if (open) EXPAND_DAMPING else COLLAPSE_DAMPING
@@ -175,7 +175,7 @@ public fun GlassExpandHost(
         if (drag.value > dismissDistance * DISMISS_FRACTION) {
             state.collapse()
         } else {
-            drag.settle(scope, 0f, Spring.DampingRatioMediumBouncy)
+            drag.settle(scope, 0f, spring(Spring.DampingRatioMediumBouncy))
         }
     }
     val connection = remember(active) { dismissConnection(drag, ::release) }
@@ -213,13 +213,19 @@ public fun GlassExpandHost(
                         Orientation.Vertical,
                         onDragStopped = { release() },
                     )
-                    .nestedScroll(connection),
+                    .nestedScroll(connection)
+                    .returnAfterRelease(drag, open, ::release),
             ) {
                 ScaledToFrame(frame.width / bounds.width.coerceAtLeast(1f), fullWidth, fullHeight) { content(active) }
             }
         }
     }
 }
+
+/** 끌어 내린 채 플링 없이 손을 뗐으면 [release]로 닫을지 되돌릴지 정한다. */
+@Composable
+private fun Modifier.returnAfterRelease(drag: SettleOffset, open: Boolean, release: () -> Unit): Modifier =
+    settleAfterRelease({ open && drag.value > 0f && !drag.isSettling }, release)
 
 /** 화면 크기([fullWidth]×[fullHeight]) 안의 [frame] 위치에 [frame] 크기로 배치한다. */
 private fun Modifier.placeAt(frame: Rect, fullWidth: Int, fullHeight: Int): Modifier = layout { measurable, _ ->
@@ -247,7 +253,7 @@ private fun ScaledToFrame(scale: Float, fullWidth: Int, fullHeight: Int, content
 }
 
 /** 상세 화면의 스크롤이 맨 위에서 더 내려가려는 만큼을 드래그해 닫기로 받는다. 다시 위로 밀면 끌어 내린 거리부터 되돌린다. */
-private fun dismissConnection(drag: DragOffset, release: () -> Unit): NestedScrollConnection = object : NestedScrollConnection {
+private fun dismissConnection(drag: SettleOffset, release: () -> Unit): NestedScrollConnection = object : NestedScrollConnection {
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
         if (available.y >= 0f || drag.value <= 0f) return Offset.Zero
         val used = maxOf(available.y, -drag.value)

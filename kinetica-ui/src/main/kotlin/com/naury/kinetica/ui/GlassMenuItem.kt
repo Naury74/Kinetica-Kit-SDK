@@ -234,11 +234,18 @@ private fun androidx.compose.ui.unit.Density.menuPlacement(
 private fun MenuRow(item: GlassMenuItem, style: GlassStyle, onClick: () -> Unit) {
     val color = if (item.destructive) GlassTheme.colors.destructive else style.onGlass
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(horizontal = 18.dp, vertical = 12.dp),
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = MENU_PADDING)
+            .heightIn(min = GlassMetrics.MinTouch)
+            .glassClickable(ITEM_SHAPE, onClick = onClick)
+            .padding(horizontal = ITEM_PADDING, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ThemedText(item.label, Modifier.weight(1f), style = TextStyle(color = color, fontSize = 16.sp))
-        item.icon?.let { Image(rememberVectorPainter(it), null, Modifier.size(20.dp), colorFilter = ColorFilter.tint(color)) }
+        item.icon?.let {
+            Image(rememberVectorPainter(it), null, Modifier.size(GlassMetrics.ButtonIcon), colorFilter = ColorFilter.tint(color))
+        }
     }
 }
 
@@ -253,6 +260,10 @@ private val MENU_GAP = 12.dp
 private val MENU_PADDING = 6.dp
 private val MENU_CORNER = 22.dp
 private val ITEM_HEIGHT = 46.dp
+private val ITEM_PADDING = 12.dp
+
+// 항목 눌림 표시는 메뉴 모서리와 같은 중심을 쓰도록 메뉴 안쪽 여백만큼 작은 반지름을 쓴다.
+private val ITEM_SHAPE = RoundedCornerShape(GlassMetrics.concentric(MENU_CORNER, MENU_PADDING))
 private val EDGE = 16.dp
 private const val MENU_START_SCALE = 0.7f
 private const val MENU_ORIGIN_X = 0.1f

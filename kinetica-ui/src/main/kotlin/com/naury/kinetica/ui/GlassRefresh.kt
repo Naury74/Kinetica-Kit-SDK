@@ -79,21 +79,21 @@ public fun GlassRefreshBox(
     val scope = rememberCoroutineScope()
     val trigger = with(LocalDensity.current) { threshold.toPx() }
     // 드래그 중에는 한 프레임에 스크롤이 여러 번 들어오므로 상태에 바로 더하고, 손을 뗀 뒤의 복귀만 애니메이션으로 처리한다.
-    val pull = remember { DragOffset() }
+    val pull = remember { SettleOffset() }
     LaunchedEffect(refreshing, trigger) {
-        pull.settle(scope, if (refreshing) trigger * REST_FRACTION else 0f, Spring.DampingRatioLowBouncy)
+        pull.settle(scope, if (refreshing) trigger * REST_FRACTION else 0f, spring(Spring.DampingRatioLowBouncy))
     }
     fun release() {
         if (pull.value >= trigger) {
             latestRefresh()
-            pull.settle(scope, trigger * REST_FRACTION, Spring.DampingRatioLowBouncy)
+            pull.settle(scope, trigger * REST_FRACTION, spring(Spring.DampingRatioLowBouncy))
             // 호스트가 refreshing을 켜지 않았거나 같은 프레임에 바로 껐으면 LaunchedEffect가 돌지 않으므로 여기서 되돌린다.
             scope.launch {
                 withFrameNanos { }
-                if (!latestRefreshing) pull.settle(scope, 0f, Spring.DampingRatioNoBouncy)
+                if (!latestRefreshing) pull.settle(scope, 0f, spring(Spring.DampingRatioNoBouncy))
             }
         } else {
-            pull.settle(scope, 0f, Spring.DampingRatioNoBouncy)
+            pull.settle(scope, 0f, spring(Spring.DampingRatioNoBouncy))
         }
     }
     val connection = remember(trigger) {
@@ -102,8 +102,7 @@ public fun GlassRefreshBox(
                 // 당긴 상태에서 다시 위로 밀면 목록을 스크롤하기 전에 당긴 거리부터 되돌린다.
                 if (available.y >= 0f || pull.value <= 0f || latestRefreshing) return Offset.Zero
                 val used = maxOf(available.y, -pull.value)
-                pull.drag(used)
-                return Offset(0f, used)
+                return Offset(0f, pull.drag(used))
             }
 
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
@@ -129,6 +128,10 @@ public fun GlassRefreshBox(
     Box(
         modifier
             .nestedScroll(connection)
+            // 목록이 플링을 보내지 않고 끝나도 당긴 채 멈추지 않게 한다. 새로 고치는 중이면 물방울 자리로 보낸다.
+            .settleAfterRelease({ !pull.isSettling && pull.value != if (latestRefreshing) trigger * REST_FRACTION else 0f }) {
+                if (latestRefreshing) pull.settle(scope, trigger * REST_FRACTION, spring(Spring.DampingRatioLowBouncy)) else release()
+            }
             .pointerInput(trigger) {
                 // 마우스 휠·터치패드 스크롤은 플링이 없어 onPreFling이 오지 않는다. 휠이 잠시 멈추면 손을 뗀 것으로 본다.
                 awaitPointerEventScope {

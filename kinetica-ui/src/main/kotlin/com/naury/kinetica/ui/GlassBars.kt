@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -44,11 +47,13 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -90,14 +95,15 @@ public fun GlassTabBar(
     val indicator = remember { LiquidIndicator() }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     LaunchedEffect(selectedIndex, width, tabs.size, rtl) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl) }
+    val compact = compactHeight()
     Box(
         modifier
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = if (compact) COMPACT_BAR_MARGIN else 12.dp)
             // 태블릿처럼 넓은 화면에서 탭 사이가 너무 벌어지지 않게 폭을 제한한다.
             .widthIn(max = TAB_BAR_MAX_WIDTH)
             .fillMaxWidth()
-            .height(TAB_BAR_HEIGHT)
+            .height(if (compact) COMPACT_BAR_HEIGHT else TAB_BAR_HEIGHT)
             .glass(style, CircleShape)
             .padding(TAB_INSET),
     ) {
@@ -134,24 +140,46 @@ private fun TabItem(tab: GlassTab, selected: Boolean, style: GlassStyle, modifie
         label = "tab",
     )
     val color = style.onGlass.copy(alpha = if (selected) 1f else UNSELECTED_ALPHA)
-    Column(
+    Box(
         modifier
             .fillMaxSize()
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
-            .selectable(selected, interactionSource = interaction, indication = null, role = Role.Tab, onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        tab.icon?.let {
-            Image(rememberVectorPainter(it), contentDescription = null, Modifier.size(22.dp), colorFilter = ColorFilter.tint(color))
+            .selectable(selected, interaction, GlassIndication(CircleShape), role = Role.Tab, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { TabContent(tab, color, selected, compactHeight()) }
+}
+
+/** 가로 화면처럼 세로가 낮은 창인지. 이때 탭 바는 낮아지고 아이콘과 이름을 옆으로 놓는다. */
+@Composable
+internal fun compactHeight(): Boolean = LocalConfiguration.current.screenHeightDp < COMPACT_HEIGHT_DP
+
+/** 탭 하나의 아이콘과 이름. 보통은 위아래로, [compact]면 iOS 가로 화면처럼 옆으로 놓는다. */
+@Composable
+internal fun TabContent(tab: GlassTab, color: Color, selected: Boolean, compact: Boolean) {
+    val icon = tab.icon
+    val weight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+    if (compact && icon != null) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                rememberVectorPainter(icon),
+                contentDescription = null,
+                Modifier.size(COMPACT_TAB_ICON),
+                colorFilter = ColorFilter.tint(color),
+            )
+            Spacer(Modifier.width(COMPACT_TAB_GAP))
+            ThemedText(tab.label, style = TextStyle(color = color, fontSize = 13.sp, fontWeight = weight), maxLines = 1)
         }
-        ThemedText(
-            tab.label,
-            style = TextStyle(color = color, fontSize = 11.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium),
-        )
+        return
+    }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        icon?.let {
+            Image(rememberVectorPainter(it), contentDescription = null, Modifier.size(TAB_ICON), colorFilter = ColorFilter.tint(color))
+            Spacer(Modifier.height(GlassMetrics.TabIconGap))
+        }
+        ThemedText(tab.label, style = TextStyle(color = color, fontSize = 11.sp, fontWeight = weight), maxLines = 1)
     }
 }
 
@@ -185,7 +213,13 @@ public fun rememberGlassToastState(): GlassToastState = remember { GlassToastSta
 public fun GlassToastHost(state: GlassToastState, modifier: Modifier = Modifier, style: GlassStyle = LocalGlassStyle.current) {
     var last by remember { mutableStateOf("") }
     state.message?.let { last = it }
-    val insets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+    // GlassScaffold에 상단 바가 있으면 바 제목을 가리지 않게 바 아래에 띄운다. 바 높이에 상태 표시줄이 이미 들어 있다.
+    val topBar = LocalGlassHost.current?.topBarPx ?: 0
+    val insets = if (topBar > 0) {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).add(WindowInsets(top = topBar))
+    } else {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+    }
     GlassOverlay(state.message != null, OverlayKind.Top, insets) { transition ->
         val progress by transition.animateFloat(
             transitionSpec = {
@@ -215,6 +249,12 @@ public fun GlassToastHost(state: GlassToastState, modifier: Modifier = Modifier,
 private val TAB_BAR_HEIGHT = 64.dp
 private val TAB_BAR_MAX_WIDTH = 560.dp
 private val TAB_INSET = 6.dp
+private val TAB_ICON = 22.dp
+private val COMPACT_TAB_ICON = 20.dp
+private val COMPACT_TAB_GAP = 6.dp
+internal val COMPACT_BAR_HEIGHT = 48.dp
+internal val COMPACT_BAR_MARGIN = 6.dp
+private const val COMPACT_HEIGHT_DP = 480
 private const val INDICATOR_ALPHA = 0.12f
 private const val UNSELECTED_ALPHA = 0.55f
 private const val PRESSED_SCALE = 0.9f

@@ -27,11 +27,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -322,26 +324,38 @@ private fun Spotlight(hole: State<Rect>, ring: State<Float>, onHoleTap: () -> Un
     )
 }
 
+/**
+ * 설명 카드는 어두운 스크림 위에 뜨므로 일반 팝업 글래스로는 뒤 목록 글자가 비쳐 읽기 어렵다. 스타일의 불투명 대체 색으로
+ * 진하게 칠해 글자 대비를 확보한다.
+ */
+private fun GlassStyle.forCoachCard(): GlassStyle = forPopup().let {
+    it.copy(tint = it.fallback.copy(alpha = maxOf(it.fallback.alpha, CARD_TINT_ALPHA)))
+}
+
 @Composable
 private fun CoachCard(frame: CoachFrame, hole: State<Rect>) {
     val style = frame.style
+    val safe = WindowInsets.safeDrawing
     Column(
         Modifier
             .layout { measurable, constraints ->
                 val margin = CARD_MARGIN.toPx()
-                val maxWidth = (constraints.maxWidth - margin * 2).toInt().coerceIn(0, CARD_MAX_WIDTH.roundToPx())
+                val insets = safe.toIntRect(this)
+                val room = constraints.maxWidth - insets.left - insets.right - margin * 2
+                val maxWidth = room.toInt().coerceIn(0, CARD_MAX_WIDTH.roundToPx())
                 val card = measurable.measure(Constraints(minWidth = maxWidth, maxWidth = maxWidth))
                 layout(constraints.maxWidth, constraints.maxHeight) {
                     val container = IntSize(constraints.maxWidth, constraints.maxHeight)
                     val r = hole.value
                     val anchor = if (r.isEmpty) Rect(Offset(container.width / 2f, container.height / 2f), 0f) else r
-                    val spacing = TooltipSpacing(margin, CARD_GAP.toPx(), 0f)
+                    val spacing = TooltipSpacing(margin, CARD_GAP.toPx(), 0f, insets)
                     val placed = placeTooltip(anchor, container, IntSize(card.width, card.height), GlassTooltipPlacement.Below, spacing)
-                    val y = if (r.isEmpty) (container.height - card.height) / 2 else placed.y
+                    val middle = insets.top + (container.height - insets.top - insets.bottom - card.height) / 2
+                    val y = if (r.isEmpty) middle else placed.y
                     card.place(placed.x, y)
                 }
             }
-            .glass(style.forPopup(), RoundedCornerShape(CARD_CORNER))
+            .glass(style.forCoachCard(), RoundedCornerShape(CARD_CORNER))
             .semantics { paneTitle = frame.step.title }
             .padding(20.dp),
     ) {
@@ -437,7 +451,7 @@ private fun CoachButton(text: String, filled: Boolean, style: GlassStyle, onClic
         Modifier
             .heightIn(min = BUTTON_HEIGHT)
             .then(if (filled) Modifier.background(ink, CircleShape) else Modifier)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(null, GlassIndication(CircleShape), role = Role.Button, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -472,6 +486,7 @@ private val RING_WIDTH = 2.dp
 private val CARD_MARGIN = 16.dp
 private val CARD_GAP = 14.dp
 private val CARD_MAX_WIDTH = 360.dp
+private const val CARD_TINT_ALPHA = 0.88f
 private val CARD_CORNER = 24.dp
 private val DOT_SIZE = 6.dp
 private val DOT_ACTIVE = 16.dp

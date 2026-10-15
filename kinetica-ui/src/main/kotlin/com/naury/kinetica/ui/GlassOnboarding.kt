@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -31,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -95,7 +99,8 @@ public fun GlassOnboarding(
         }
         val scope = rememberCoroutineScope()
         val last = state.currentPage == pages.size - 1
-        Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+        // 태블릿이나 펼친 폴드에서도 버튼이 화면 양 끝으로 벌어지거나 화면 너비만큼 늘어나지 않게 가운데 폭으로 묶는다.
+        Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).centeredMaxWidth()) {
             SkipButton(contentColor, enabled = !last, alpha = { 1f - finishing() }, onClick = onFinish)
             GlassPageIndicator(
                 state,
@@ -129,6 +134,8 @@ private fun Modifier.onboardingBackground(color: () -> Color, position: () -> Fl
     }
 }
 
+private fun Modifier.centeredMaxWidth(): Modifier = wrapContentWidth().widthIn(max = WIDE_MAX).fillMaxWidth()
+
 /** [offset]은 이 페이지가 가운데에서 다음 페이지 쪽(화면 오른쪽)으로 떨어진 정도로, 그리기 단계에서만 읽는다. */
 @Composable
 private fun PageContent(page: OnboardingPage, contentColor: Color, offset: () -> Float) {
@@ -136,6 +143,7 @@ private fun PageContent(page: OnboardingPage, contentColor: Color, offset: () ->
         Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing)
+            .centeredMaxWidth()
             .padding(start = PAGE_PADDING, end = PAGE_PADDING, top = ART_TOP, bottom = BOTTOM_ROOM),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -188,8 +196,10 @@ private fun BoxScope.SkipButton(color: Color, enabled: Boolean, alpha: () -> Flo
             .padding(SKIP_MARGIN)
             .graphicsLayer { this.alpha = alpha() }
             .clip(CircleShape)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .clickable(null, GlassIndication(CircleShape, color), enabled, role = Role.Button, onClick = onClick)
+            .heightIn(min = GlassMetrics.MinTouch)
+            .padding(horizontal = 14.dp),
+        contentAlignment = Alignment.Center,
     ) {
         ThemedText(
             stringResource(R.string.kinetica_ui_onboarding_skip),
@@ -203,6 +213,7 @@ private fun BoxScope.SkipButton(color: Color, enabled: Boolean, alpha: () -> Flo
 private fun BoxScope.NextButton(last: Boolean, color: Color, textColor: () -> Color, finishing: () -> Float, onClick: () -> Unit) {
     val next = stringResource(R.string.kinetica_ui_onboarding_next)
     val start = stringResource(R.string.kinetica_ui_onboarding_start)
+    val pressInk = if (color.luminance() > HALF) Color.Black else Color.White
     Box(
         Modifier
             .align(Alignment.BottomEnd)
@@ -215,7 +226,7 @@ private fun BoxScope.NextButton(last: Boolean, color: Color, textColor: () -> Co
             }
             .clip(CircleShape)
             .background(color)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(null, GlassIndication(CircleShape, pressInk), role = Role.Button, onClick = onClick)
             .semantics { contentDescription = if (last) start else next },
         contentAlignment = Alignment.Center,
     ) {
@@ -261,6 +272,7 @@ private const val GLOW_SWING = 0.18f
 private const val GLOW_SPEED = 1.4f
 
 private val PAGE_PADDING = 32.dp
+private val WIDE_MAX = 600.dp
 private val ART_TOP = 72.dp
 private val BOTTOM_ROOM = 128.dp
 private val TEXT_GAP = 32.dp
@@ -277,3 +289,4 @@ private val INDICATOR_LIFT = 16.dp
 private val SKIP_MARGIN = 12.dp
 private val BUTTON_MIN_WIDTH = 120.dp
 private val BUTTON_HEIGHT = 56.dp
+private const val HALF = 0.5f

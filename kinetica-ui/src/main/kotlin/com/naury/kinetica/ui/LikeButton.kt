@@ -83,6 +83,7 @@ public fun LikeButton(
             .toggleable(
                 value = liked,
                 interactionSource = remember { MutableInteractionSource() },
+                // 하트가 튀어 오르는 애니메이션이 눌림 표시를 대신한다.
                 indication = null,
                 role = Role.Button,
             ) { next ->

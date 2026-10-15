@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -187,6 +188,9 @@ public class GlassDetentSheetState internal constructor(
 
     internal val isSettled: Boolean get() = offset.isNaN() || abs(offset - positionOf(currentDetent)) < SETTLED_PX
 
+    /** 높이를 옮기는 애니메이션이 도는 중이면 true다. */
+    internal val isAnimating: Boolean get() = animation?.isActive == true
+
     /** 손을 뗀 속도(px/s, 아래가 양수)를 보고 다음 높이를 골라 그리로 간다. */
     internal suspend fun settle(velocity: Float) {
         if (offset.isNaN()) return
@@ -326,6 +330,9 @@ public fun GlassDetentSheet(
         if (scrimShown) SheetScrim(state) { state.lower(includeHidden = false)?.let { scope.launch { state.animateTo(it) } } }
         Column(
             Modifier
+                // 태블릿이나 펼친 폴더블에서는 가운데에 읽기 좋은 폭으로 둔다.
+                .align(Alignment.TopCenter)
+                .widthIn(max = GlassSheetDefaults.MaxWidth)
                 .fillMaxWidth()
                 .layout { measurable, constraints ->
                     val height = (constraints.maxHeight - topGap.toInt()).coerceAtLeast(0)
@@ -340,7 +347,8 @@ public fun GlassDetentSheet(
                     rememberDraggableState { state.dragBy(it) },
                     Orientation.Vertical,
                     onDragStopped = { velocity -> state.settle(velocity) },
-                ),
+                )
+                .settleAfterRelease({ !state.isSettled && !state.isAnimating }) { scope.launch { state.settle(0f) } },
         ) {
             SheetHandle(style) {
                 val next = state.higher() ?: state.lowestVisible

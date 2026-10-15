@@ -8,8 +8,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -47,6 +49,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -224,6 +227,7 @@ private fun BubbleLayer(spec: TooltipSpec, transition: Transition<Boolean>) {
     BackHandler(enabled = transition.targetState, onBack = spec.onDismiss)
     val geometry = remember { BubbleGeometry() }
     var origin by remember { mutableStateOf(Offset.Zero) }
+    val safe = WindowInsets.safeDrawing
     Layout(
         content = { Bubble(spec, geometry) { progress } },
         modifier = Modifier
@@ -237,9 +241,10 @@ private fun BubbleLayer(spec: TooltipSpec, transition: Transition<Boolean>) {
             },
     ) { measurables, constraints ->
         val margin = EDGE_MARGIN.roundToPx()
-        val maxWidth = (constraints.maxWidth - margin * 2).coerceIn(0, MAX_WIDTH.roundToPx())
+        val insets = safe.toIntRect(this)
+        val maxWidth = (constraints.maxWidth - insets.left - insets.right - margin * 2).coerceIn(0, MAX_WIDTH.roundToPx())
         val bubble = measurables.first().measure(Constraints(maxWidth = maxWidth))
-        val spacing = TooltipSpacing(margin.toFloat(), GAP.toPx(), (CORNER + ARROW_HALF).toPx())
+        val spacing = TooltipSpacing(margin.toFloat(), GAP.toPx(), (CORNER + ARROW_HALF).toPx(), insets)
         val placed = placeTooltip(
             spec.anchor.bounds.translate(-origin),
             IntSize(constraints.maxWidth, constraints.maxHeight),
@@ -331,8 +336,11 @@ private class BubbleShape(private val geometry: BubbleGeometry) : Shape {
     }
 }
 
-/** 화면 가장자리 여백, 요소와 화살표 끝 사이 거리, 화살표가 모서리에 닿지 않게 둘 최소 거리(px). */
-internal class TooltipSpacing(val margin: Float, val gap: Float, val arrowInset: Float)
+/**
+ * 화면 가장자리 여백, 요소와 화살표 끝 사이 거리, 화살표가 모서리에 닿지 않게 둘 최소 거리(px).
+ * [safe]는 상태 표시줄, 내비게이션 바, 컷아웃처럼 피해야 할 네 변의 인셋(px)이다.
+ */
+internal class TooltipSpacing(val margin: Float, val gap: Float, val arrowInset: Float, val safe: IntRect = IntRect.Zero)
 
 /** 말풍선 왼쪽 위 위치(px), 요소 위에 놓였는지, 말풍선 왼쪽에서 화살표 끝까지 거리(px). */
 internal class TooltipPosition(val x: Int, val y: Int, val above: Boolean, val arrowX: Float)
@@ -350,19 +358,31 @@ internal fun placeTooltip(
 ): TooltipPosition {
     val w = bubble.width.toFloat()
     val h = bubble.height.toFloat()
-    val fitsAbove = anchor.top - spacing.gap - h >= spacing.margin
-    val fitsBelow = anchor.bottom + spacing.gap + h <= container.height - spacing.margin
+    val top = spacing.safe.top + spacing.margin
+    val bottom = container.height - spacing.safe.bottom - spacing.margin
+    val left = spacing.safe.left + spacing.margin
+    val right = container.width - spacing.safe.right - spacing.margin
+    val fitsAbove = anchor.top - spacing.gap - h >= top
+    val fitsBelow = anchor.bottom + spacing.gap + h <= bottom
     val above = when (placement) {
         GlassTooltipPlacement.Above -> fitsAbove || !fitsBelow
         GlassTooltipPlacement.Below -> !fitsBelow && fitsAbove
         GlassTooltipPlacement.Auto -> fitsAbove || (!fitsBelow && anchor.top > container.height - anchor.bottom)
     }
     val rawY = if (above) anchor.top - spacing.gap - h else anchor.bottom + spacing.gap
-    val y = rawY.coerceIn(spacing.margin, (container.height - spacing.margin - h).coerceAtLeast(spacing.margin))
-    val x = (anchor.center.x - w / 2f).coerceIn(spacing.margin, (container.width - spacing.margin - w).coerceAtLeast(spacing.margin))
+    val y = rawY.coerceIn(top, (bottom - h).coerceAtLeast(top))
+    val x = (anchor.center.x - w / 2f).coerceIn(left, (right - w).coerceAtLeast(left))
     val arrowX = if (w <= spacing.arrowInset * 2) w / 2f else (anchor.center.x - x).coerceIn(spacing.arrowInset, w - spacing.arrowInset)
     return TooltipPosition(x.roundToInt(), y.roundToInt(), above, arrowX)
 }
+
+/** 네 변의 인셋(px)을 [IntRect]의 left, top, right, bottom에 담는다. */
+internal fun WindowInsets.toIntRect(density: androidx.compose.ui.unit.Density): IntRect = IntRect(
+    getLeft(density, LayoutDirection.Ltr),
+    getTop(density),
+    getRight(density, LayoutDirection.Ltr),
+    getBottom(density),
+)
 
 private const val AUTO_HIDE_MS = 2_500L
 private const val POP_DAMPING = 0.55f

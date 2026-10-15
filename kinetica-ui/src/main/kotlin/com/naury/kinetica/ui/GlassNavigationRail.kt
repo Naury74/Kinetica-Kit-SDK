@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -155,13 +156,18 @@ private fun RailItem(item: GlassTab, selected: Boolean, style: GlassStyle, modif
                 scaleX = scale
                 scaleY = scale
             }
-            .selectable(selected, interactionSource = interaction, indication = null, role = Role.Tab, onClick = onClick)
+            .selectable(selected, interaction, GlassIndication(CircleShape), role = Role.Tab, onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         item.icon?.let {
-            Image(rememberVectorPainter(it), contentDescription = null, Modifier.size(24.dp), colorFilter = ColorFilter.tint(color))
+            Image(
+                rememberVectorPainter(it),
+                contentDescription = null,
+                Modifier.size(GlassMetrics.TabIcon),
+                colorFilter = ColorFilter.tint(color),
+            )
         }
         ThemedText(
             item.label,

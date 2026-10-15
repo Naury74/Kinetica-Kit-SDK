@@ -77,6 +77,9 @@ public class SwipeCardStackState internal constructor(history: List<SwipeDirecti
     internal var onSwiped: (index: Int, direction: SwipeDirection) -> Unit = { _, _ -> }
     private var busy by mutableStateOf(false)
 
+    /** 손을 뗀 뒤 카드가 제자리에도, 날아가는 중에도 있지 않으면 true다. */
+    internal val needsSettle: Boolean get() = !busy && !offset.isRunning && offset.value != Offset.Zero
+
     /** [undo]할 카드가 있는지. 애니메이션 중에는 `false`다. */
     public val canUndo: Boolean get() = history.isNotEmpty() && !busy
 
@@ -315,6 +318,7 @@ private fun Modifier.topCard(state: SwipeCardStackState, directions: Set<SwipeDi
         .pointerInput(state, directions) {
             dragCard(state, directions, scope) { haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) }
         }
+        .settleAfterRelease({ state.needsSettle }) { scope.launch { state.settle(Offset.Zero, emptySet()) } }
 }
 
 private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.dragCard(

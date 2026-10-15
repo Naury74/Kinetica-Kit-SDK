@@ -119,10 +119,10 @@ private fun GlassChip(label: String, look: ChipLook, onTap: () -> Unit) {
     val ink = look.style.onGlass
     val pick = when (look.selection) {
         GlassChipSelection.Single ->
-            Modifier.selectable(look.selected, interaction, null, look.enabled, Role.RadioButton, onTap)
+            Modifier.selectable(look.selected, interaction, GlassIndication(CircleShape), look.enabled, Role.RadioButton, onTap)
 
         GlassChipSelection.Multiple ->
-            Modifier.toggleable(look.selected, interaction, null, look.enabled, Role.Checkbox) { onTap() }
+            Modifier.toggleable(look.selected, interaction, GlassIndication(CircleShape), look.enabled, Role.Checkbox) { onTap() }
     }
     Row(
         Modifier

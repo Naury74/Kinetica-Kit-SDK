@@ -90,10 +90,8 @@ public fun GlassSegmentedControl(
                             selected,
                             enabled = enabled,
                             role = Role.Tab,
-                            interactionSource = remember {
-                                MutableInteractionSource()
-                            },
-                            indication = null,
+                            interactionSource = null,
+                            indication = GlassIndication(CircleShape),
                         ) {
                             onSelect(index)
                         },
@@ -143,6 +141,7 @@ public fun GlassSwitch(
             .toggleable(
                 checked,
                 interactionSource = interaction,
+                // 손잡이가 늘어나는 것이 눌림 표시다.
                 indication = null,
                 enabled = enabled,
                 role = Role.Switch,

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -216,7 +217,7 @@ public fun GlassMiniPlayerBar(
         modifier
             .fillMaxSize()
             .onGloballyPositioned { state.barBounds = it.windowRect() }
-            .clickable(onClickLabel = stringResource(R.string.kinetica_ui_player_expand), role = Role.Button) {
+            .glassClickable(CircleShape, onClickLabel = stringResource(R.string.kinetica_ui_player_expand)) {
                 scope.launch { state.expand() }
             }
             .playerDrag(state) { state.barBounds.top - fullTop }
@@ -240,7 +241,10 @@ public fun GlassMiniPlayerBar(
                 .padding(horizontal = DETACHED_CONTENT_GAP)
                 .graphicsLayer { alpha = (1f - state.progress / COLLAPSED_GONE).coerceIn(0f, 1f) },
             contentAlignment = Alignment.CenterStart,
-        ) { content(progress) }
+        ) {
+            // 탭 바 액세서리 밖에 둘 때도 글자가 글래스 위에서 보이도록 스타일의 글자색을 준다.
+            CompositionLocalProvider(LocalGlassContentColor provides LocalGlassStyle.current.onGlass) { content(progress) }
+        }
     }
 }
 
@@ -397,7 +401,9 @@ private fun playerGeometry(constraints: Constraints, barHeight: Dp, barBottomPad
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
         val barBottom = h - navBottom - barBottomPadding.toPx() - BAR_GAP.toPx()
-        val bar = Rect(BAR_MARGIN.toPx(), barBottom - barHeight.toPx(), w - BAR_MARGIN.toPx(), barBottom)
+        // 넓은 화면에서는 탭 바처럼 최대 폭으로 묶어 가운데에 둔다.
+        val side = maxOf(BAR_MARGIN.toPx(), (w - BAR_MAX_WIDTH.toPx()) / 2f)
+        val bar = Rect(side, barBottom - barHeight.toPx(), w - side, barBottom)
         val full = Rect(0f, statusTop + FULL_TOP_GAP.toPx(), w, h)
         val inset = ART_INSET.toPx()
         val small = (barHeight.toPx() - inset * 2).coerceAtLeast(0f)
@@ -452,7 +458,8 @@ private fun CollapsedBar(state: GlassMiniPlayerState, geometry: PlayerGeometry, 
             .fillMaxWidth()
             .height(with(density) { bar.height.toDp() })
             .graphicsLayer { alpha = (1f - state.progress / COLLAPSED_GONE).coerceIn(0f, 1f) }
-            .clickable(onClickLabel = stringResource(R.string.kinetica_ui_player_expand), role = Role.Button) {
+            // 바깥 틀이 막대 모양으로 잘라 주므로 눌림 표시는 사각형으로 둔다.
+            .glassClickable(onClickLabel = stringResource(R.string.kinetica_ui_player_expand)) {
                 scope.launch { state.expand() }
             }
             .padding(start = start, end = BAR_PADDING),
@@ -492,7 +499,7 @@ private fun ExpandedPanel(state: GlassMiniPlayerState, geometry: PlayerGeometry,
         Box(
             Modifier
                 .align(Alignment.TopCenter)
-                .clickable(onClickLabel = collapseLabel, role = Role.Button) { collapse() }
+                .glassClickable(CircleShape, onClickLabel = collapseLabel) { collapse() }
                 .padding(horizontal = HANDLE_TOUCH, vertical = HANDLE_PAD)
                 .size(HANDLE_WIDTH, HANDLE_HEIGHT)
                 .background(LocalGlassContentColor.current.copy(alpha = HANDLE_ALPHA), RoundedCornerShape(HANDLE_HEIGHT)),
@@ -556,6 +563,7 @@ private const val COLLAPSED_GONE = 0.5f
 private const val PANEL_FADE_START = 0.25f
 private const val HANDLE_ALPHA = 0.3f
 private val BAR_MARGIN = 12.dp
+private val BAR_MAX_WIDTH = 560.dp
 private val DEFAULT_BAR = 64.dp
 private val DETACHED_ART_INSET = 8.dp
 private val DETACHED_CONTENT_GAP = 12.dp

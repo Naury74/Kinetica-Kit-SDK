@@ -229,6 +229,7 @@ public fun GlassBlobButton(
         modifier
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
             .liquidMorph(color, enabled = enabled)
+            // 눌린 자리가 오목하게 들어가는 모양 변화가 눌림 표시를 대신한다.
             .clickable(interactionSource = interaction, indication = null, enabled = enabled, role = Role.Button) {
                 haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                 onClick()

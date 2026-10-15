@@ -1,5 +1,7 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.foundation.Indication
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -62,6 +64,8 @@ import androidx.compose.ui.unit.dp
  * @param background 콘텐츠 뒤에 깔리는 배경. 사진이나 그라디언트처럼 비칠 색이 있어야 글래스 효과가 살아난다.
  * @param backdropColor 바텀 시트가 열려 콘텐츠가 물러날 때 드러나는 배경색
  * @param edgeFade true면 스크롤된 콘텐츠가 상태 표시줄 아래에서 iOS처럼 흐려지며 사라진다.
+ * @param indication 이 안에서 쓴 일반 `clickable`의 눌림 표시(`LocalIndication`). 기본값은 사각 리플 대신 [GlassIndication]이고,
+ * null이면 바깥(호스트) 값을 그대로 둔다.
  */
 @Composable
 public fun GlassScaffold(
@@ -72,6 +76,7 @@ public fun GlassScaffold(
     bottomBar: @Composable BoxScope.() -> Unit = {},
     backdropColor: Color = Color.Black,
     edgeFade: Boolean = true,
+    indication: Indication? = GlassIndication(),
     content: @Composable (PaddingValues) -> Unit,
 ) {
     // 배경 기록은 세 겹이다(배경 ⊂ 배경과 콘텐츠 ⊂ 바까지 포함한 화면 전체). 글래스는 자기를 포함하지 않는 겹을 비춰야
@@ -83,7 +88,12 @@ public fun GlassScaffold(
     var topHeight by remember { mutableIntStateOf(0) }
     var bottomHeight by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
-    CompositionLocalProvider(LocalGlassBackdrop provides backdrop, LocalGlassHost provides host, LocalGlassStyle provides style) {
+    CompositionLocalProvider(
+        LocalGlassBackdrop provides backdrop,
+        LocalGlassHost provides host,
+        LocalGlassStyle provides style,
+        LocalIndication provides (indication ?: LocalIndication.current),
+    ) {
         Box(modifier) {
             Box(Modifier.fillMaxSize().glassBackdrop(backdrop).modalBackground(host.background, host.modalOpen)) {
                 Box(Modifier.fillMaxSize().glassBackdrop(contentBackdrop).background(backdropColor)) {
@@ -97,7 +107,13 @@ public fun GlassScaffold(
                 }
                 if (edgeFade) EdgeFade(contentBackdrop, Modifier.align(Alignment.TopCenter))
                 CompositionLocalProvider(LocalGlassBackdrop provides contentBackdrop) {
-                    Box(Modifier.align(Alignment.TopCenter).onSizeChanged { topHeight = it.height }, content = topBar)
+                    Box(
+                        Modifier.align(Alignment.TopCenter).onSizeChanged {
+                            topHeight = it.height
+                            host.topBarPx = it.height
+                        },
+                        content = topBar,
+                    )
                     Box(
                         Modifier.align(Alignment.BottomCenter).onSizeChanged {
                             bottomHeight = it.height
@@ -182,6 +198,9 @@ internal class GlassOverlayHost {
 
     // bottomBar 높이(px). 스낵바가 탭 바를 덮지 않고 그 위에 뜨는 데 쓴다.
     var bottomBarPx by mutableIntStateOf(0)
+
+    // 위쪽 알림(토스트)이 상단 바를 가리지 않도록 그 아래에 띄울 때 쓴다.
+    var topBarPx by mutableIntStateOf(0)
 
     /** 뒤 화면 전체를 묶는 초점 그룹. 모달이 닫히면 열기 전에 초점이 있던 요소로 돌아가는 데 쓴다. */
     val background = FocusRequester()

@@ -306,7 +306,7 @@ private fun PadButton(label: String, style: GlassStyle, onClick: () -> Unit) {
         Modifier
             .heightIn(min = CONTROL_HEIGHT)
             .glass(style, CircleShape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .glassClickable(CircleShape, onClick = onClick)
             .padding(horizontal = CONTROL_PADDING),
         contentAlignment = Alignment.Center,
     ) {
@@ -461,7 +461,9 @@ private val HINT_INDENT = 22.dp
 private val HINT_BOTTOM = 46.dp
 private val HINT_FONT_SIZE = 15.sp
 private const val HINT_ALPHA = 0.45f
-private val CONTROLS_PADDING = 10.dp
+
+// 버튼 캡슐 반지름(높이의 절반)이 서명란 모서리 반지름에서 이 여백을 뺀 값과 같아야 모서리가 나란히 굽는다.
+private val CONTROLS_PADDING = 6.dp
 private val CONTROL_GAP = 6.dp
 private val CONTROL_HEIGHT = 32.dp
 private val CONTROL_PADDING = 12.dp

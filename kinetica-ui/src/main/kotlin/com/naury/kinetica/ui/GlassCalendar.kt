@@ -17,6 +17,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -448,7 +451,7 @@ private fun ArrowButton(previous: Boolean, enabled: Boolean, look: CalendarLook,
         Modifier
             .size(ARROW_SIZE)
             .clip(CircleShape)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clickable(null, GlassIndication(CenteredCircleShape(ARROW_INSET)), enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = if (previous) look.env.strings.previousMonth else look.env.strings.nextMonth }
             .drawWithCache {
                 val arm = CHEVRON_ARM.toPx()
@@ -682,6 +685,7 @@ private fun DayCell(date: LocalDate, look: CalendarLook, onTap: (LocalDate) -> U
         onAccent = onAccent,
     )
     val scale = LocalDensity.current.fontScale.coerceIn(1f, MAX_CELL_SCALE)
+    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .clearAndSetSemantics {
@@ -698,7 +702,8 @@ private fun DayCell(date: LocalDate, look: CalendarLook, onTap: (LocalDate) -> U
                     disabled()
                 }
             }
-            .then(if (enabled) Modifier.pointerInput(date) { detectTapGestures { onTap(date) } } else Modifier)
+            .then(if (enabled) Modifier.dayTap(date, interaction, onTap) else Modifier)
+            .indication(interaction, DayIndication)
             .dayMarks(marker, scale, coverage),
         contentAlignment = Alignment.Center,
     ) {
@@ -715,6 +720,20 @@ private fun DayCell(date: LocalDate, look: CalendarLook, onTap: (LocalDate) -> U
         )
     }
 }
+
+/**
+ * 날짜 칸 탭. 접근성 정보는 칸이 직접 정하므로 clickable 대신 탭 감지에 눌림 상태만 [interaction]으로 알린다.
+ */
+private fun Modifier.dayTap(date: LocalDate, interaction: MutableInteractionSource, onTap: (LocalDate) -> Unit): Modifier =
+    pointerInput(date) {
+        detectTapGestures(
+            onPress = { offset ->
+                val press = PressInteraction.Press(offset)
+                interaction.emit(press)
+                interaction.emit(if (tryAwaitRelease()) PressInteraction.Release(press) else PressInteraction.Cancel(press))
+            },
+        ) { onTap(date) }
+    }
 
 private class CellMarker(
     val today: Boolean,
@@ -733,7 +752,11 @@ private fun Modifier.dayMarks(marker: CellMarker, scale: Float, coverage: () -> 
     val gap = DOT_GAP.toPx()
     onDrawBehind {
         val covered = coverage()
-        if (marker.today && covered < 1f) drawCircle(marker.accent, radius - ring.width / 2, alpha = 1f - covered, style = ring)
+        if (marker.today && covered < 1f) {
+            // 강조색과 비슷한 색의 배경 위에서도 오늘이 보이도록 글자색으로 옅은 원을 먼저 깐다.
+            drawCircle(marker.focus, radius, alpha = TODAY_FILL * (1f - covered))
+            drawCircle(marker.accent, radius - ring.width / 2, alpha = 1f - covered, style = ring)
+        }
         if (marker.focused) drawCircle(marker.focus, radius + FOCUS_GAP.toPx(), style = ring)
         val firstX = center.x - (marker.dots.size - 1) * gap / 2
         marker.dots.forEachIndexed { i, color ->
@@ -778,6 +801,7 @@ private val WEEKDAY_SIZE = 12.sp
 private const val WEEKDAY_ALPHA = 0.55f
 private val DAY_SIZE = 16.sp
 private val PILL_INSET = 3.dp
+private val DayIndication = GlassIndication(CenteredCircleShape(PILL_INSET))
 private val PILL_EDGE = 1.dp
 private val PILL_DROP = 2.dp
 private const val PILL_SHADOW_ALPHA = 0.28f
@@ -793,7 +817,8 @@ private const val STRETCH_MAX = 0.35f
 private const val BAND_ALPHA = 0.18f
 private const val BAND_MS = 420
 private const val END_REVEAL = 0.8f
-private val RING_WIDTH = 1.5.dp
+private val RING_WIDTH = 2.dp
+private const val TODAY_FILL = 0.6f
 private val FOCUS_GAP = 2.dp
 private const val FOCUS_ALPHA = 0.6f
 private val DOT_OFFSET = 13.dp

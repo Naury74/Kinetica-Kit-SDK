@@ -1,7 +1,6 @@
 package com.naury.kinetica.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
@@ -67,7 +66,6 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import kotlin.math.roundToInt
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /** 글래스 위 텍스트와 아이콘 색. 글래스 요소 안에서는 [GlassStyle.onGlass] 값이 들어간다. */
@@ -173,6 +171,9 @@ public object GlassSheetDefaults {
 
     /** 시트 위 끝과 상태 표시줄(또는 위쪽 안전 영역) 사이에 늘 남기는 간격. 시트는 이보다 높아지지 않는다. */
     public val TopGap: Dp = 48.dp
+
+    /** 넓은 화면에서 바텀 시트가 넘지 않는 폭. 화면이 더 넓으면 가운데에 놓인다. */
+    public val MaxWidth: Dp = 640.dp
 }
 
 /**
@@ -208,7 +209,7 @@ public fun GlassSheet(
             label = "glass-sheet",
         ) { if (it) 1f else 0f }
         BackHandler(enabled = visible, onBack = onDismissRequest)
-        val drag = remember { Animatable(0f) }
+        val drag = remember { SettleOffset() }
         var height by remember { mutableFloatStateOf(1f) }
         val level = progress.coerceIn(0f, 1f)
         val dragged = (drag.value / height).coerceIn(0f, 1f)
@@ -241,16 +242,18 @@ private class SheetFrame(val style: GlassStyle, val title: String?, val insets: 
 @Composable
 private fun SheetPanel(
     frame: SheetFrame,
-    drag: Animatable<Float, *>,
+    drag: SettleOffset,
     height: () -> Float,
     modifier: Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val style = frame.style
     val scope = rememberCoroutineScope()
-    val connection = remember(drag) { SheetDismissConnection(drag, scope, height, { frame.onDismiss() }) }
+    val connection = remember(drag) { SheetDismissConnection(drag, height, { frame.onDismiss() }) }
     Column(
         modifier
+            // 태블릿이나 펼친 폴더블에서는 화면 끝까지 늘이지 않고 가운데에 읽기 좋은 폭으로 둔다.
+            .widthIn(max = GlassSheetDefaults.MaxWidth)
             .fillMaxWidth()
             .glass(style.forPopup(), RoundedCornerShape(topStart = SHEET_CORNER, topEnd = SHEET_CORNER))
             .semantics {
@@ -262,6 +265,9 @@ private fun SheetPanel(
             }
             .nestedScroll(connection)
             .dragToDismiss(drag, height, frame.onDismiss)
+            .settleAfterRelease({ drag.value > 0f && !drag.isSettling }) {
+                scope.launch { settleSheet(drag, height(), 0f, frame.onDismiss) }
+            }
             .blockTouches()
             .windowInsetsPadding(frame.insets)
             .padding(horizontal = 24.dp),
@@ -278,23 +284,24 @@ private fun SheetPanel(
     }
 }
 
-/** 아래로 끌어 닫는 동작. 높이의 30% 넘게 끌거나 빠르게 플링하면 닫고, 그렇지 않으면 제자리로 돌아온다. */
+/**
+ * 아래로 끌어 닫는 동작. 높이의 30% 넘게 끌거나 빠르게 플링하면 닫고, 그렇지 않으면 던진 속도를 이어받아 제자리로 돌아온다.
+ * 끌기는 상태에 바로 써서, 마지막 움직임과 손 떼기가 같은 프레임에 와도 정착 애니메이션이 취소되지 않게 한다.
+ */
 @Composable
-private fun Modifier.dragToDismiss(drag: Animatable<Float, *>, height: () -> Float, onDismiss: () -> Unit): Modifier {
-    val scope = rememberCoroutineScope()
-    return draggable(
-        rememberDraggableState { delta -> scope.launch { drag.snapTo((drag.value + delta).coerceAtLeast(0f)) } },
-        Orientation.Vertical,
-        onDragStopped = { velocity -> settleSheet(drag, height(), velocity, onDismiss) },
-    )
-}
+private fun Modifier.dragToDismiss(drag: SettleOffset, height: () -> Float, onDismiss: () -> Unit): Modifier = draggable(
+    rememberDraggableState { delta -> drag.drag(delta, min = 0f) },
+    Orientation.Vertical,
+    onDragStopped = { velocity -> settleSheet(drag, height(), velocity, onDismiss) },
+)
 
-private suspend fun settleSheet(drag: Animatable<Float, *>, height: Float, velocity: Float, onDismiss: () -> Unit) {
+private suspend fun settleSheet(drag: SettleOffset, height: Float, velocity: Float, onDismiss: () -> Unit) {
     if (drag.value > height * SHEET_DISMISS_FRACTION || velocity > SHEET_FLING) {
         onDismiss()
         drag.animateTo(0f, tween(CLOSE_MS))
     } else {
-        drag.animateTo(0f, spring(dampingRatio = SHEET_DAMPING))
+        // 아래로 던졌던 속도는 위로 돌아오는 데 방해가 되므로 위로 던진 속도만 이어받는다.
+        drag.animateTo(0f, spring(dampingRatio = SHEET_DAMPING, stiffness = Spring.StiffnessMediumLow), velocity.coerceAtMost(0f))
     }
 }
 
@@ -302,23 +309,16 @@ private suspend fun settleSheet(drag: Animatable<Float, *>, height: Float, veloc
  * 시트 안 스크롤 목록과 끌어 닫기를 잇는다. 목록이 맨 위에 닿은 뒤 남은 아래쪽 스크롤로 시트를 끌어 내리고,
  * 다시 위로 밀면 끌어 내린 거리부터 되돌린다. 손을 떼면 [settleSheet]로 닫을지 정한다.
  */
-private class SheetDismissConnection(
-    private val drag: Animatable<Float, *>,
-    private val scope: CoroutineScope,
-    private val height: () -> Float,
-    private val onDismiss: () -> Unit,
-) : NestedScrollConnection {
+private class SheetDismissConnection(private val drag: SettleOffset, private val height: () -> Float, private val onDismiss: () -> Unit) :
+    NestedScrollConnection {
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-        if (available.y >= 0f || drag.value <= 0f) return Offset.Zero
-        val used = maxOf(available.y, -drag.value)
-        scope.launch { drag.snapTo(drag.value + used) }
-        return Offset(0f, used)
+        if (available.y >= 0f || drag.value <= 0f || source != NestedScrollSource.UserInput) return Offset.Zero
+        return Offset(0f, drag.drag(available.y, min = 0f))
     }
 
     override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
         if (available.y <= 0f || source != NestedScrollSource.UserInput) return Offset.Zero
-        scope.launch { drag.snapTo(drag.value + available.y) }
-        return Offset(0f, available.y)
+        return Offset(0f, drag.drag(available.y, min = 0f))
     }
 
     override suspend fun onPreFling(available: Velocity): Velocity {

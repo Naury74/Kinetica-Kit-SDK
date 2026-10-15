@@ -16,6 +16,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -136,7 +137,7 @@ private fun RowScope.TopTab(tab: GlassTab, look: TopTabLook, activeness: () -> F
         modifier
             .then(if (look.scrollable) Modifier.widthIn(min = SCROLL_MIN_WIDTH) else Modifier.weight(1f))
             .heightIn(min = TAB_HEIGHT)
-            .selectable(look.selected, interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Tab) {
+            .selectable(look.selected, null, GlassIndication(InsetShape(CircleShape, vertical = INDICATOR_INSET)), role = Role.Tab) {
                 onClick()
             }
             .padding(horizontal = TAB_PADDING, vertical = 8.dp),

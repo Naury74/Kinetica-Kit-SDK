@@ -483,7 +483,7 @@ private fun BoxScope.TopBar(parts: ViewerParts, style: GlassStyle, backdrop: Gla
                 .glass(style, CircleShape, backdrop)
                 .then(
                     if (shown) {
-                        Modifier.clickable(role = Role.Button, onClickLabel = closeLabel) { parts.state.close() }
+                        Modifier.glassClickable(CircleShape, onClickLabel = closeLabel) { parts.state.close() }
                             .semantics { contentDescription = closeLabel }
                     } else {
                         Modifier.clearAndSetSemantics { }
@@ -549,7 +549,7 @@ private const val ZOOM_STEP = 1.6f
 private val PAGE_SPACING = 16.dp
 private val BAR_PADDING = 12.dp
 private val BAR_SLIDE = 16.dp
-private val BUTTON_SIZE = 44.dp
+private val BUTTON_SIZE = GlassMetrics.IconButton
 private const val CLOSE_ARM = 0.17f
 private val CLOSE_STROKE = 2.dp
 private val CAPTION_CORNER = 20.dp

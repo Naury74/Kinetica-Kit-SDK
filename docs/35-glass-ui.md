@@ -72,12 +72,49 @@ MaterialTheme(colorScheme = scheme, typography = typography) {
 - kinetica-ui는 Material 3에 의존하지 않으므로 Material 테마 값은 위처럼 호스트가 넘긴다.
 - 직접 만든 컴포넌트를 같은 색으로 맞추려면 `GlassTheme.colors.accent`, `GlassTheme.style`, `GlassTheme.textStyle`을 읽는다.
 
+## 눌림 표시 `GlassIndication`
+
+kinetica-ui의 누를 수 있는 요소는 사각 리플 대신 `GlassIndication`을 쓴다. 요소 모양으로 잘린 옅은 오버레이가 덮였다가 사라지고,
+빠르게 탭해도 110ms는 보인다. 키보드 포커스와 마우스 호버도 옅게 표시한다. '애니메이션 삭제' 설정이 켜져 있으면 페이드 없이 바로 켜고 끈다.
+오버레이 색을 주지 않으면 `LocalGlassContentColor`를 보고 고른다. 글자가 어두우면(밝은 글래스) 어두운 오버레이를, 글자가 밝으면(어두운 글래스나 강조색 버튼) 흰 오버레이를 쓴다.
+
+`GlassTheme`과 `GlassScaffold`는 `LocalIndication`에 `GlassIndication()`을 넣는다. 그래서 그 안에서 호스트가 쓴 일반 `Modifier.clickable`도
+회색 사각 리플이 나오지 않는다. 호스트 리플을 그대로 쓰려면 `indication = null`을 넘긴다.
+
+```kotlin
+// 모양을 알려 주면 모서리 밖은 칠하지 않는다
+Row(Modifier.clip(shape).glassClickable(shape, onClickLabel = "열기") { open() })
+Box(Modifier.clickable(interactionSource = null, indication = GlassIndication(CircleShape)) { ... })
+
+// 길게 누르기, 선택, 토글
+Modifier.glassCombinedClickable(shape, onLongClick = ::showMenu) { open() }
+Modifier.glassSelectable(selected, CircleShape, role = Role.Tab) { select() }
+Modifier.glassToggleable(checked, shape, role = Role.Checkbox) { checked = it }
+
+GlassTheme(indication = null) { App() } // 호스트 LocalIndication을 그대로 둔다
+```
+
+- `GlassIndication(shape, color, pressedAlpha, pressedScale)`: `pressedAlpha` 기본값은 0.1이다. `pressedScale`은 수정자 체인에서
+  표시보다 뒤에 그려지는 내용만 줄이므로, 배경까지 함께 줄이려면 `Modifier.indication`을 배경보다 앞에 둔다.
+- 버튼처럼 통째로 눌리는 카드는 `GlassSurface(onClick = { ... }, shape = ...)`를 쓰면 모양에 맞는 눌림 표시가 붙는다.
+  아이콘만 있는 버튼은 `GlassIconButton(icon, "공유", onClick = ...)`을 쓴다. 지름 44dp 원 안에 22dp 아이콘을 그린다.
+
+컴포넌트 치수는 다음 기준을 따른다.
+
+| 항목 | 기준 |
+| --- | --- |
+| 터치 영역 | 44dp 이상, 목록 행과 탭은 48dp |
+| 아이콘 버튼 | 지름 44dp, 아이콘 22dp |
+| 글자 버튼 안 아이콘 | 20dp(Small 16dp), 글자와 간격 8dp(Small 6dp), 아이콘 쪽 여백은 4dp 줄여 시각적으로 가운데 |
+| 탭 바와 레일 아이콘 | 22~24dp, 이름과 간격 2~4dp |
+| 안쪽 모서리 | 바깥 반지름에서 안쪽 여백을 뺀 값(최소 4dp). 예: 22dp 메뉴 안 6dp 여백의 항목은 16dp |
+
 ## 다이얼로그, 바텀 시트, 토스트, 탭 바
 
 | 컴포넌트 | 동작 |
 | --- | --- |
 | `GlassDialog(visible, onDismissRequest, origin = …)` | 누른 버튼(`Modifier.glassOrigin { origin = it }`)에서 패널이 튀어나오듯 커지고, 배경은 서서히 흐려지며 어두워진다. 바깥을 누르거나 뒤로 가기로 닫는다 |
-| `GlassSheet(visible, onDismissRequest)` | iOS 시트처럼 아래에서 올라오고, 뒤쪽 콘텐츠는 조금 물러나며 모서리가 둥글어진다. 아래로 끌어서 닫는다. `title`은 TalkBack이 읽는 창 이름이고 화면에는 보이지 않는다 |
+| `GlassSheet(visible, onDismissRequest)` | iOS 시트처럼 아래에서 올라오고, 뒤쪽 콘텐츠는 조금 물러나며 모서리가 둥글어진다. 아래로 끌어서 닫고, 덜 끌고 놓으면 던진 속도를 이어받아 제자리로 돌아온다. 넓은 화면에서는 `GlassSheetDefaults.MaxWidth`(640dp)를 넘지 않고 가운데에 놓인다. `title`은 TalkBack이 읽는 창 이름이고 화면에는 보이지 않는다 |
 | `GlassToastHost(state)` + `state.show("저장했어요")` | 위에서 미끄러져 내려오는 토스트. TalkBack이 내용을 읽어 준다 |
 | `GlassTabBar(tabs, selectedIndex, onSelect)` | 화면 위에 떠 있는 탭 바. 선택한 탭의 인디케이터가 늘어났다 줄어들며 액체처럼 이동한다 |
 | `GlassSurface(shape, style)` | 글래스 표면 하나. 안쪽 글자 색은 `LocalGlassContentColor`로 받는다 |
@@ -117,14 +154,14 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 | `Modifier.glassBadge(count, dot)` | 오른쪽 위(RTL이면 왼쪽 위) 빨간 배지. 숫자가 바뀌면 톡 튄다. 99를 넘으면 `99+` |
 | `GlassWheelPicker(items, selectedIndex, onSelect, cyclic)` | iOS 휠 피커. 원통에 붙은 것처럼 위아래 항목이 기울고, 항목을 지날 때마다 가볍게 진동하며 가운데에 맞춰 멈춘다 |
 | `GlassDatePicker(date, onDateChange, range)` / `GlassTimePicker(hour, minute, onTimeChange)` | 휠로 만든 날짜·시간 선택기. 년·월·일 순서와 오전/오후 위치는 언어를 따른다 |
-| `GlassSearchBar(query, onQueryChange, onSearch)` | 누르면 끝쪽에서 "취소" 버튼이 밀려 들어오고, 글자가 있으면 지우기 버튼이 나온다 |
-| `GlassTextField(value, onValueChange, label, error)` | 포커스되면 라벨이 위로 떠오르고, 오류가 생기면 테두리가 빨개지며 한 번 흔들린다 |
+| `GlassSearchBar(query, onQueryChange, onSearch)` | 누르면 끝쪽에서 "취소" 버튼이 밀려 들어오고(`showCancel = false`로 끈다), 글자가 있으면 지우기 버튼이 나온다. 포커스를 받으면 강조색 테두리와 옅은 링이 나타난다 |
+| `GlassTextField(value, onValueChange, label, error)` | 포커스되면 라벨이 위로 떠오르고 강조색 테두리가 부드럽게 나타난다. 글자가 있으면 지우기 버튼이 나오고, `placeholder`, `supportingText`, `leadingIcon`, `trailingIcon`을 더할 수 있다. 오류가 생기면 테두리가 빨개지며 한 번 흔들린다. 키보드가 올라오면 아래 문구까지 보이도록 스크롤한다 |
 
 ## 화면 구성과 알림
 
 | 구성 요소 | 하는 일 |
 | --- | --- |
-| `GlassLargeTitleBar(rememberGlassLargeTitleState(), "제목")` | One UI·iOS식 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀐다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다 |
+| `GlassLargeTitleBar(rememberGlassLargeTitleState(), "제목")` | One UI·iOS식 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀐다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다. `bottom`에 탭이나 검색창을 주면 큰 제목과 함께 올라가 작은 바 밑에 붙는다 |
 | `GlassCarousel(pageCount) { page -> }` + `GlassPageIndicator(pagerState)` | 옆 카드가 살짝 보이고 멀어질수록 작아지며 기우는 캐러셀. 점 인디케이터는 넘기는 동안 액체처럼 늘어난다 |
 | `SwipeCardStack(items, onSwipe, overlay) { item -> }` | 틴더식 카드 더미. 끌면 기울며 따라오고 던지면 날아간다. `state.undo()`로 되돌린다 |
 | `GlassSpeedDial(expanded, onExpandedChange, items)` | 떠 있는 둥근 버튼. 누르면 +가 ×로 돌고 항목이 차례로 튀어 오르며 뒤가 흐려진다 |
@@ -135,7 +172,7 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 
 | 구성 요소 | 하는 일 |
 | --- | --- |
-| `SwipeActionsRow(endActions, startActions = …) { 행 }` + `SwipeAction(label, color, removesRow)` | iOS 메일처럼 행을 밀면 뒤에서 동작 버튼이 드러나고, 끝까지 밀면 첫 동작이 바로 실행된다. `removesRow`면 행이 줄어들며 사라진다. `rememberSwipeActionsGroup()`으로 한 번에 한 행만 열리게 한다 |
+| `SwipeActionsRow(endActions, startActions = …) { 행 }` + `SwipeAction(label, color, removesRow)` | iOS 메일처럼 행을 밀면 뒤에서 동작 버튼이 드러나고, 끝까지 밀면 첫 동작이 바로 실행된다. `removesRow`면 행이 줄어들며 사라진다. `rememberSwipeActionsGroup()`으로 한 번에 한 행만 열리게 한다. 둥근 카드 행이면 `shape`에 같은 모양을 넘겨 버튼도 그 모서리로 자른다 |
 | `ReorderableItem(rememberReorderableListState(listState, onMove), key) { … }` | LazyColumn에서 길게 누르면 항목이 떠오르고 끌어서 순서를 바꾼다. 다른 항목은 비켜 주고, 가장자리에서는 자동으로 스크롤된다 |
 | `GlassExpandable(expanded, onExpandedChange, header) { … }` / `GlassExpandableGroup` | 아코디언. 화살표가 돌고 내용 높이가 용수철로 펼쳐진다 |
 | `GlassSlideToConfirm(text, onConfirm)` | 손잡이를 끝까지 밀어야 확정되는 버튼(결제, 잠금 해제) |
@@ -155,7 +192,7 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 | `PlayPauseIcon` / `MenuCloseIcon` / `PlusCloseIcon` | 모양이 매끄럽게 바뀌는 아이콘 |
 | `GlassRating(rating, onRatingChange, allowHalf)` / `LikeButton(liked, onLikedChange, count)` | 별점과 하트 좋아요. 좋아요를 누르면 하트가 튀며 입자가 터지고 숫자가 굴러간다 |
 | `AvatarStack(avatars, max)` / `Modifier.skeleton(visible)` / `GlassSkeletonText(lines)` | 겹친 아바타와 "+N", 불러오는 동안 빛이 흐르는 자리 표시 |
-| `GlassDetentSheet(rememberGlassDetentSheetState(detents), header) { … }` | Apple 지도처럼 여러 높이(`Detent.Peek`·`Fraction`·`Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 자연스럽게 이어진다 |
+| `GlassDetentSheet(rememberGlassDetentSheetState(detents), header) { … }` | Apple 지도처럼 여러 높이(`Detent.Peek`·`Fraction`·`Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 자연스럽게 이어지고, 손을 떼면 던진 속도를 보고 가까운 높이로 정착한다. 폴더블을 접고 펴도 같은 높이 단계를 유지한다 |
 | `GlassTopTabs(tabs, pagerState)` | 페이저를 넘기는 동안 인디케이터가 액체처럼 따라가는 상단 탭 |
 | `Modifier.glassTooltip(text, visible, onDismiss)` / `Modifier.tooltipOnLongPress(text)` | 화살표가 달린 유리 말풍선 |
 | `CoachMarkHost(state, steps)` + `Modifier.coachMarkTarget(state, id)` | 처음 쓰는 사람을 위한 기능 안내. 화면이 어두워지고 대상 둘레만 밝게 뚫린다 |

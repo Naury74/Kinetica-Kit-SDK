@@ -28,9 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -163,6 +166,8 @@ public fun rememberSwipeActionsState(group: SwipeActionsGroup? = null): SwipeAct
  * [content]가 버튼 위를 덮어야 하므로 배경이 투명하지 않아야 한다. `LazyColumn`에서는 항목에 `key`를 주어야
  * 삭제한 행의 상태가 다음 행으로 넘어가지 않는다.
  *
+ * 행이 둥근 카드라면 [shape]에 같은 모양을 넘겨야 밀었을 때 드러나는 버튼도 그 모서리를 따른다.
+ *
  * ```kotlin
  * SwipeActionsRow(
  *     endActions = listOf(SwipeAction("삭제", Color.Red, removesRow = true) { mails.remove(mail) }),
@@ -177,6 +182,7 @@ public fun SwipeActionsRow(
     startActions: List<SwipeAction> = emptyList(),
     fullSwipe: Boolean = true,
     state: SwipeActionsState = rememberSwipeActionsState(),
+    shape: Shape = RectangleShape,
     content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -196,7 +202,8 @@ public fun SwipeActionsRow(
                 val height = (placeable.height * state.height.value.coerceIn(0f, 1f)).roundToInt()
                 layout(placeable.width, height) { placeable.place(0, 0) }
             }
-            .clipToBounds()
+            // 뒤 버튼이 행 모서리 밖으로 비치지 않게 행 모양으로 자른다.
+            .clip(shape)
             .onSizeChanged { width = it.width }
             .semantics(mergeDescendants = true) {
                 customActions = (startActions.map { it to 1 } + endActions.map { it to -1 }).map { (action, side) ->
@@ -220,7 +227,8 @@ public fun SwipeActionsRow(
                     val action = if (side > 0) startActions.firstOrNull() else endActions.firstOrNull()
                     if (side != 0 && action != null) perform(action, side, true) else state.release(velocity, swipe)
                 },
-            ),
+            )
+            .settleAfterRelease({ state.needsSettle(swipe) }) { scope.launch { state.release(0f, swipe) } },
     ) {
         ActionStrip(startActions, 1, state, perform, Modifier.matchParentSize())
         ActionStrip(endActions, -1, state, perform, Modifier.matchParentSize())
@@ -273,6 +281,13 @@ private fun SwipeActionsState.dragBy(delta: Float, setup: SwipeSetup, scope: Cor
     armedSide = armNow
     scope.launch { fill.animateTo(if (armNow != 0) 1f else 0f, FILL_SPEC) }
     return armNow != 0
+}
+
+/** 손을 뗀 뒤 행이 닫힌 자리에도, 버튼이 다 드러난 자리에도 있지 않고 움직이는 중도 아니면 true다. */
+private fun SwipeActionsState.needsSettle(setup: SwipeSetup): Boolean {
+    if (busy || offset.isRunning || armedSide != 0) return false
+    val value = offset.value
+    return value != 0f && abs(abs(value) - setup.reveal(sign(value).toInt())) > HALF_PX
 }
 
 /** 손을 놓았을 때 버튼이 보이게 열어 두거나 닫는다. [velocity]는 읽는 방향 기준(px/s)이다. */
@@ -383,7 +398,13 @@ private fun ActionButton(action: SwipeAction, pinSide: Int, state: SwipeActionsS
         Modifier
             .background(action.background)
             .clipToBounds()
-            .clickable(role = Role.Button, onClickLabel = action.label, onClick = onClick),
+            .clickable(
+                null,
+                GlassIndication(color = Color.White, pressedAlpha = ACTION_PRESS),
+                role = Role.Button,
+                onClickLabel = action.label,
+                onClick = onClick,
+            ),
     ) {
         Column(
             Modifier.layout { measurable, constraints ->
@@ -429,3 +450,5 @@ private const val FLING_PER_ACTION = 10f
 private const val FULL_SWIPE_MS = 180
 private const val REMOVE_MS = 240
 private const val RESTORE_DELAY_MS = 1_000L
+private const val HALF_PX = 0.5f
+private const val ACTION_PRESS = 0.22f

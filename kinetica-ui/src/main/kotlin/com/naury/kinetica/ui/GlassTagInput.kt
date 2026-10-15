@@ -136,13 +136,13 @@ public fun GlassTagInput(
     val matches = remember(suggestions, tags, model.text) { matchSuggestions(suggestions, tags, model.text, MAX_SUGGESTIONS) }
     val accent = GlassTheme.colors.accent
     val anchor = remember { SuggestionAnchor() }
-    Box(modifier) {
+    Box(modifier.keepVisibleWhileFocused(model.focused)) {
         FlowRow(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = BOX_MIN_HEIGHT)
                 .onGloballyPositioned { anchor.bounds = it.boundsOnScreen() }
-                .glass(style, BOX_SHAPE)
+                .glass(style.forField(), BOX_SHAPE)
                 .focusRing(accent) { focus.value }
                 .pointerInput(Unit) { detectTapGestures { requester.requestFocus() } }
                 .padding(BOX_PADDING),
@@ -229,6 +229,13 @@ private fun TagField(model: TagInputModel, look: TagFieldLook, modifier: Modifie
             look.actions.callbackFor(look.imeAction)?.invoke(this) ?: defaultKeyboardAction(look.imeAction)
         }
     }
+    ProvideFieldSelection(GlassTheme.colors.accent) { TagTextField(model, look, modifier, onAction) }
+}
+
+@Composable
+private fun TagTextField(model: TagInputModel, look: TagFieldLook, modifier: Modifier, onAction: KeyboardActionScope.() -> Unit) {
+    val placeholder = look.placeholder
+    val style = look.style
     BasicTextField(
         model.text,
         model::type,
@@ -369,7 +376,7 @@ private fun RemoveButton(label: String, color: () -> Color, onRemove: () -> Unit
     Box(
         Modifier
             .size(REMOVE_TOUCH)
-            .clickable(role = Role.Button, onClick = onRemove)
+            .clickable(null, GlassIndication(CircleShape), role = Role.Button, onClick = onRemove)
             .semantics { contentDescription = label }
             .drawWithCache {
                 val radius = REMOVE_SIZE.toPx() / 2
@@ -478,7 +485,8 @@ private fun SuggestionPanel(content: SuggestionContent, modifier: Modifier, prog
                 highlight(item, content.query, accent),
                 Modifier
                     .fillMaxWidth()
-                    .clickable(role = Role.Button) { onPick(item) }
+                    .padding(horizontal = LIST_PADDING)
+                    .clickable(null, SuggestionPress, role = Role.Button) { onPick(item) }
                     .heightIn(min = ROW_HEIGHT)
                     .padding(horizontal = ROW_PADDING, vertical = ROW_VERTICAL_PADDING),
                 style = themed(TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE)),
@@ -533,6 +541,9 @@ private val REMOVE_TOUCH = 32.dp
 private val REMOVE_SIZE = 18.dp
 private val CROSS_WIDTH = 1.6.dp
 private val LIST_SHAPE = RoundedCornerShape(16.dp)
+
+// 목록 모서리와 같은 중심을 갖도록 바깥 반지름에서 안쪽 여백을 뺀다.
+private val SuggestionPress = GlassIndication(RoundedCornerShape(10.dp))
 private val LIST_GAP = 6.dp
 private val LIST_PADDING = 6.dp
 private val LIST_SLIDE = 6.dp

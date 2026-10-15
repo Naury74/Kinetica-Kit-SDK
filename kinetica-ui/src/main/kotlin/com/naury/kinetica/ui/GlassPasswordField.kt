@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -106,48 +107,41 @@ public fun GlassPasswordField(
     var focused by remember { mutableStateOf(false) }
     val colors = GlassTheme.colors
     val float = remember { Animatable(if (value.isEmpty()) 0f else 1f) }
-    val focus = remember { Animatable(0f) }
-    val errorLevel = remember { Animatable(if (error != null) 1f else 0f) }
+    val levels = remember { FieldLevels(focused = false, error = error != null) }
     LaunchedEffect(focused, value.isEmpty()) {
         float.animateTo(if (focused || value.isNotEmpty()) 1f else 0f, spring(stiffness = Spring.StiffnessMediumLow))
     }
-    LaunchedEffect(focused) { focus.animateTo(if (focused) 1f else 0f) }
-    LaunchedEffect(error != null) { errorLevel.animateTo(if (error != null) 1f else 0f) }
-    val motion = PasswordMotion(float, focus, errorLevel, colors.accent, colors.destructive)
-    Column(modifier) {
-        BasicTextField(
-            value,
-            onValueChange,
-            Modifier
-                .fillMaxWidth()
-                .shake(rememberErrorTrigger(error != null))
-                .glass(style, FIELD_SHAPE)
-                .passwordBorder(motion)
-                .onFocusChanged { focused = it.isFocused }
-                .semantics {
-                    contentType = if (newPassword) ContentType.NewPassword else ContentType.Password
-                    if (error != null) error(error)
-                }
-                .then(fieldModifier),
-            singleLine = true,
-            textStyle = themed(TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE)),
-            cursorBrush = SolidColor(colors.accent),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = imeAction, autoCorrectEnabled = false),
-            keyboardActions = keyboardActions,
-            visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
-            decorationBox = { field ->
-                PasswordDecoration(label, style, motion, field) { EyeToggle(visible, style.onGlass) { visible = !visible } }
-            },
-        )
-        if (error != null) {
-            ThemedText(
-                error,
+    LaunchedEffect(focused) { levels.focusTo(focused) }
+    LaunchedEffect(error != null) { levels.errorTo(error != null) }
+    val motion = PasswordMotion(float, levels.focus, levels.error, colors.accent, colors.destructive)
+    Column(modifier.keepVisibleWhileFocused(focused)) {
+        ProvideFieldSelection(colors.accent) {
+            BasicTextField(
+                value,
+                onValueChange,
                 Modifier
-                    .padding(start = FIELD_PADDING, top = ERROR_GAP, end = FIELD_PADDING)
-                    .semantics { liveRegion = LiveRegionMode.Polite },
-                style = TextStyle(color = colors.destructive, fontSize = SMALL_FONT_SIZE),
+                    .fillMaxWidth()
+                    .shake(rememberErrorTrigger(error != null))
+                    .glass(style.forField(), FIELD_SHAPE)
+                    .fieldFocusFrame(FIELD_CORNER, levels, colors.accent, colors.destructive)
+                    .onFocusChanged { focused = it.isFocused }
+                    .semantics {
+                        contentType = if (newPassword) ContentType.NewPassword else ContentType.Password
+                        if (error != null) error(error)
+                    }
+                    .then(fieldModifier),
+                singleLine = true,
+                textStyle = themed(TextStyle(color = style.onGlass, fontSize = FIELD_FONT_SIZE)),
+                cursorBrush = SolidColor(colors.accent),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = imeAction, autoCorrectEnabled = false),
+                keyboardActions = keyboardActions,
+                visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+                decorationBox = { field ->
+                    PasswordDecoration(label, style, motion, field) { EyeToggle(visible, style.onGlass) { visible = !visible } }
+                },
             )
         }
+        FieldSupportText(error, null, style)
         if (showStrength) StrengthMeter(value, style)
         if (showChecklist) Checklist(value, style)
     }
@@ -187,7 +181,7 @@ private fun PasswordDecoration(
                 },
                 style = TextStyle(fontSize = FIELD_FONT_SIZE),
                 color = {
-                    val idle = style.onGlass.copy(alpha = LABEL_ALPHA)
+                    val idle = style.onGlass.copy(alpha = FIELD_HINT_ALPHA)
                     lerp(lerp(idle, motion.accent, motion.focus.value * motion.float.value), motion.errorColor, motion.error.value)
                 },
                 maxLines = 1,
@@ -195,19 +189,6 @@ private fun PasswordDecoration(
             Box(Modifier.fillMaxWidth().padding(top = INPUT_TOP * grow, bottom = INPUT_BOTTOM)) { field() }
         }
         trailing()
-    }
-}
-
-private fun Modifier.passwordBorder(motion: PasswordMotion): Modifier = drawWithCache {
-    val width = BORDER_WIDTH.toPx()
-    val stroke = Stroke(width)
-    val corner = CornerRadius(FIELD_CORNER.toPx() - width / 2)
-    val inset = Offset(width / 2, width / 2)
-    val box = Size(size.width - width, size.height - width)
-    onDrawWithContent {
-        drawContent()
-        val color = lerp(motion.accent.copy(alpha = motion.focus.value), motion.errorColor, motion.error.value)
-        if (color.alpha > 0f) drawRoundRect(color, inset, box, corner, style = stroke)
     }
 }
 
@@ -224,7 +205,7 @@ private fun EyeToggle(visible: Boolean, color: Color, onToggle: () -> Unit) {
     Box(
         Modifier
             .size(EYE_TOUCH)
-            .clickable(role = Role.Button, onClick = onToggle)
+            .clickable(null, GlassIndication(CircleShape), role = Role.Button, onClick = onToggle)
             .semantics { contentDescription = label }
             .drawWithCache {
                 val stroke = EYE_STROKE.toPx()
@@ -382,19 +363,16 @@ private fun RuleItem(label: String, met: Boolean, style: GlassStyle) {
 
 private val FIELD_SHAPE = RoundedCornerShape(14.dp)
 private val FIELD_CORNER = 14.dp
-private val FIELD_HEIGHT = 56.dp
+private val FIELD_HEIGHT = 52.dp
 private val FIELD_PADDING = 16.dp
 private val TRAILING_PADDING = 4.dp
-private val INPUT_TOP = 24.dp
-private val INPUT_BOTTOM = 8.dp
-private val BORDER_WIDTH = 1.5.dp
-private val ERROR_GAP = 6.dp
+private val INPUT_TOP = 22.dp
+private val INPUT_BOTTOM = 6.dp
 private val FIELD_FONT_SIZE = 16.sp
 private val SMALL_FONT_SIZE = 13.sp
-private const val LABEL_REST = 17f
-private const val LABEL_FLOAT = 7f
+private const val LABEL_REST = 15f
+private const val LABEL_FLOAT = 6f
 private const val LABEL_SCALE = 0.75f
-private const val LABEL_ALPHA = 0.55f
 
 private val EYE_TOUCH = 44.dp
 private val EYE_WIDTH = 22.dp

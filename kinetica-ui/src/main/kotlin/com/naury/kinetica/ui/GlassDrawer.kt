@@ -95,6 +95,14 @@ public class GlassDrawerState internal constructor(initiallyOpen: Boolean) {
 
     internal suspend fun snapTo(value: Float) = anim.snapTo(value.coerceIn(0f, 1f))
 
+    /** 열고 닫는 애니메이션이 도는 중이면 true다. */
+    internal val isAnimating: Boolean get() = anim.isRunning
+
+    /** 손을 뗀 위치와 속도(px/s, 여는 방향이 양수)를 보고 열거나 닫는다. */
+    internal suspend fun settle(velocity: Float, fling: Float) {
+        if (velocity > fling || (velocity > -fling && progress > HALF)) open() else close()
+    }
+
     internal var drawerWidth: Float = 1f
 
     internal companion object {
@@ -157,7 +165,17 @@ public fun GlassDrawer(
     val contentFocus = remember { FocusRequester() }
     val panelFocus = remember { FocusRequester() }
     ModalFocusEffect(state.isOpen, contentFocus, panelFocus)
-    Box(modifier.fillMaxSize().then(if (gesturesEnabled) Modifier.drawerDrag(state, direction, scope) else Modifier)) {
+    val drag = if (gesturesEnabled) {
+        Modifier
+            .drawerDrag(state, direction, scope)
+            // 끄는 도중 제스처가 취소되면 손 떼기 처리가 오지 않아 반쯤 열린 채 남는다. 그때도 가까운 쪽으로 보낸다.
+            .settleAfterRelease({ state.progress.let { it > 0f && it < 1f } && !state.isAnimating }) {
+                scope.launch { state.settle(0f, 0f) }
+            }
+    } else {
+        Modifier
+    }
+    Box(modifier.fillMaxSize().then(drag)) {
         Box(Modifier.fillMaxSize().glassBackdrop(backdrop).background(behind)) {
             Box(Modifier.fillMaxSize().pushedBack(state, direction)) {
                 // 열린 동안 뒤 화면은 TalkBack과 키보드 초점에서 빠진다. 닫기 영역은 그 바깥에 두어 TalkBack에 남긴다.
@@ -309,7 +327,7 @@ private fun Modifier.drawerDrag(state: GlassDrawerState, direction: Float, scope
         change.consume()
         val velocity = direction * tracker.calculateVelocity().x
         val fling = FLING_VELOCITY.toPx()
-        scope.launch { if (velocity > fling || (velocity > -fling && value > HALF)) state.open() else state.close() }
+        scope.launch { state.settle(velocity, fling) }
     }
 }
 

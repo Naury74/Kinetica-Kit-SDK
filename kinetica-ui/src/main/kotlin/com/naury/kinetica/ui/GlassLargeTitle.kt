@@ -27,6 +27,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -163,6 +164,8 @@ public fun rememberGlassLargeTitleState(scrollState: ScrollState): GlassLargeTit
  * ```
  *
  * @param onBack `null`이 아니면 시작 쪽에 뒤로 버튼을 두고, 누르면 호출한다. RTL에서는 화살표 방향이 바뀐다.
+ * @param bottom 큰 제목 아래에 붙일 줄(탭이나 검색창). 큰 제목과 함께 올라가다가 다 접히면 작은 바 바로 아래에 붙어 남고,
+ *   그때는 글래스 바 배경이 이 줄까지 이어진다. 바 전체 높이는 이 줄을 포함해 고정이다.
  * @param actions 끝 쪽에 놓을 버튼들
  */
 @Composable
@@ -172,6 +175,7 @@ public fun GlassLargeTitleBar(
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     style: GlassStyle = LocalGlassStyle.current,
+    bottom: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val density = LocalDensity.current
@@ -183,11 +187,39 @@ public fun GlassLargeTitleBar(
             (level * BAR_STEPS).roundToInt() / BAR_STEPS
         }
     }
-    Column(modifier.fillMaxWidth()) {
-        SmallBar(state, title, onBack, style, barLevel, actions)
-        LargeTitle(state, title, style)
+    if (bottom == null) {
+        Column(modifier.fillMaxWidth()) {
+            SmallBar(state, title, onBack, style, Modifier.barGlass(style, barLevel), actions)
+            LargeTitle(state, title, style)
+        }
+        return
+    }
+    var smallHeight by remember { mutableIntStateOf(0) }
+    var bottomHeight by remember { mutableIntStateOf(0) }
+    Box(modifier.fillMaxWidth()) {
+        // 다 접히면 아래 줄이 작은 바 바로 밑에 오므로, 글래스 배경을 두 줄 높이만큼 깐다.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(with(density) { (smallHeight + bottomHeight).toDp() })
+                .barGlass(style, barLevel),
+        )
+        Column(Modifier.fillMaxWidth()) {
+            SmallBar(state, title, onBack, style, Modifier.onSizeChanged { smallHeight = it.height }, actions)
+            LargeTitle(state, title, style)
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged { bottomHeight = it.height }
+                    .graphicsLayer { translationY = -state.offset.coerceAtMost(state.range) },
+            ) { bottom() }
+        }
     }
 }
+
+@Composable
+private fun Modifier.barGlass(style: GlassStyle, level: Float): Modifier =
+    glass(style.copy(shadow = 0.dp), RectangleShape, intensity = level)
 
 @Composable
 private fun SmallBar(
@@ -195,13 +227,13 @@ private fun SmallBar(
     title: String,
     onBack: (() -> Unit)?,
     style: GlassStyle,
-    barLevel: Float,
+    background: Modifier,
     actions: @Composable RowScope.() -> Unit,
 ) {
     Box(
         Modifier
             .fillMaxWidth()
-            .glass(style.copy(shadow = 0.dp), RectangleShape, intensity = barLevel)
+            .then(background)
             .statusBarsPadding()
             .height(BAR_HEIGHT),
     ) {
@@ -272,7 +304,7 @@ private fun BackButton(style: GlassStyle, onBack: () -> Unit) {
         Modifier
             .size(BACK_SIZE)
             .glass(style.copy(shadow = 0.dp), CircleShape)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onBack)
+            .glassClickable(CircleShape, onClick = onBack)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
@@ -290,7 +322,7 @@ private fun BackButton(style: GlassStyle, onBack: () -> Unit) {
 
 private const val CENTER = 0.5f
 private val BAR_HEIGHT = 52.dp
-private val BACK_SIZE = 40.dp
+private val BACK_SIZE = GlassMetrics.IconButton
 private val CHEVRON_SIZE = 18.dp
 private val CHEVRON_STROKE = 2.2.dp
 private const val CHEVRON_NEAR = 0.3f

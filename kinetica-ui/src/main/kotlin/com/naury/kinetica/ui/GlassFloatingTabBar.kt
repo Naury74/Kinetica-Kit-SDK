@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +27,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -169,6 +172,7 @@ public fun GlassFloatingTabBar(
         if (still) state.progress.snapTo(target) else state.progress.animateTo(target, spring(COLLAPSE_DAMPING, Spring.StiffnessMediumLow))
     }
     val grow = density.fontScale.coerceIn(1f, MAX_GROW)
+    val compact = compactHeight()
     val geometry = remember { FloatingGeometry() }
     Layout(
         content = {
@@ -178,19 +182,19 @@ public fun GlassFloatingTabBar(
             }
             if (accessory != null) {
                 Box(Modifier.layoutId(ACCESSORY_ID).glass(style, CircleShape).clip(CircleShape), contentAlignment = Alignment.CenterStart) {
-                    accessory()
+                    CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, content = accessory)
                 }
             }
         },
         modifier = modifier
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = if (compact) COMPACT_BAR_MARGIN else 12.dp)
             .widthIn(max = FLOATING_MAX_WIDTH)
             .fillMaxWidth(),
     ) { measurables, constraints ->
         val p = state.progress.value
         val w = constraints.maxWidth
-        val bar = (BAR_HEIGHT * grow).roundToPx()
+        val bar = ((if (compact) COMPACT_BAR_HEIGHT else BAR_HEIGHT) * grow).roundToPx()
         val small = (COLLAPSED_SIZE * grow).roundToPx()
         val gap = ITEM_GAP.roundToPx()
         val accessoryMeasurable = measurables.firstOrNull { it.layoutId == ACCESSORY_ID }
@@ -287,7 +291,7 @@ private fun FloatingTabItem(
         label = "floating-tab",
     )
     val color = style.onGlass.copy(alpha = if (selected) 1f else FLOATING_UNSELECTED_ALPHA)
-    Column(
+    Box(
         modifier
             .fillMaxSize()
             .graphicsLayer {
@@ -297,23 +301,13 @@ private fun FloatingTabItem(
             .selectable(
                 selected,
                 interactionSource = interaction,
-                indication = null,
+                indication = GlassIndication(CircleShape),
                 enabled = enabled,
                 role = Role.Tab,
                 onClick = onClick,
             ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        tab.icon?.let {
-            Image(rememberVectorPainter(it), contentDescription = null, Modifier.size(22.dp), colorFilter = ColorFilter.tint(color))
-        }
-        ThemedText(
-            tab.label,
-            style = TextStyle(color = color, fontSize = 11.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium),
-            maxLines = 1,
-        )
-    }
+        contentAlignment = Alignment.Center,
+    ) { TabContent(tab, color, selected, compactHeight()) }
 }
 
 /** 접힌 캡슐. 선택한 탭의 아이콘(없으면 이름 첫 글자)을 보여 주고, 누르면 펼친다. TalkBack에는 탭마다 이동 동작을 준다. */
@@ -347,7 +341,7 @@ private fun CollapsedCapsule(
             .then(
                 if (collapsed) {
                     Modifier
-                        .clickable(onClickLabel = expandLabel, role = Role.Button) { state.expand() }
+                        .glassClickable(CircleShape, onClickLabel = expandLabel) { state.expand() }
                         .clearAndSetSemantics {
                             role = Role.Button
                             contentDescription = tab.label

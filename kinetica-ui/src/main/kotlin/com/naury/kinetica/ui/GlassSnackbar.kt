@@ -204,7 +204,7 @@ private fun SnackbarPill(data: SnackbarData, style: GlassStyle, appear: State<Fl
                 label,
                 Modifier
                     .background(style.onGlass.copy(alpha = ACTION_BACK_ALPHA), CircleShape)
-                    .clickable(role = Role.Button) { data.result.complete(GlassSnackbarResult.Action) }
+                    .clickable(null, GlassIndication(CircleShape), role = Role.Button) { data.result.complete(GlassSnackbarResult.Action) }
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 style = TextStyle(color = style.onGlass, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
                 maxLines = 1,
@@ -219,8 +219,19 @@ private fun SnackbarPill(data: SnackbarData, style: GlassStyle, appear: State<Fl
 @Composable
 private fun Modifier.swipeToDismiss(data: SnackbarData): Modifier {
     val scope = rememberCoroutineScope()
-    val offset = remember { Animatable(0f) }
+    val offset = remember { SettleOffset() }
     var width by remember { mutableIntStateOf(1) }
+    // 끌기는 상태에 바로 쓴다. snapTo를 launch하면 손 떼기와 같은 프레임의 마지막 움직임이 복귀 애니메이션을 취소해 중간에 멈춘다.
+    val release: suspend (Float) -> Unit = { velocity ->
+        val flung = abs(velocity) > SWIPE_FLING_VELOCITY
+        if (abs(offset.value) > width * SWIPE_FRACTION || flung) {
+            val direction = if (flung) sign(velocity) else sign(offset.value)
+            data.result.complete(GlassSnackbarResult.Dismissed)
+            offset.animateTo(direction * width * SWIPE_OUT, tween(SNACKBAR_OUT_MS), velocity)
+        } else {
+            offset.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy), velocity)
+        }
+    }
     return this
         .onSizeChanged { width = it.width.coerceAtLeast(1) }
         .graphicsLayer {
@@ -228,19 +239,11 @@ private fun Modifier.swipeToDismiss(data: SnackbarData): Modifier {
             alpha = 1f - (abs(offset.value) / width).coerceIn(0f, 1f) * SWIPE_FADE
         }
         .draggable(
-            rememberDraggableState { delta -> scope.launch { offset.snapTo(offset.value + delta) } },
+            rememberDraggableState { delta -> offset.drag(delta) },
             Orientation.Horizontal,
-            onDragStopped = { velocity ->
-                val flung = abs(velocity) > SWIPE_FLING_VELOCITY
-                if (abs(offset.value) > width * SWIPE_FRACTION || flung) {
-                    val direction = if (flung) sign(velocity) else sign(offset.value)
-                    data.result.complete(GlassSnackbarResult.Dismissed)
-                    offset.animateTo(direction * width * SWIPE_OUT, tween(SNACKBAR_OUT_MS))
-                } else {
-                    offset.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                }
-            },
+            onDragStopped = { velocity -> release(velocity) },
         )
+        .settleAfterRelease({ offset.value != 0f && !offset.isSettling && !data.result.isCompleted }) { scope.launch { release(0f) } }
 }
 
 @Composable
@@ -250,7 +253,7 @@ private fun CountdownRing(remaining: Animatable<Float, *>, style: GlassStyle, la
     Box(
         Modifier
             .size(RING_TOUCH)
-            .clickable(role = Role.Button, onClickLabel = label, onClick = onDismiss)
+            .clickable(null, GlassIndication(CircleShape), role = Role.Button, onClickLabel = label, onClick = onDismiss)
             .semantics { contentDescription = label }
             .drawBehind {
                 val inset = RING_INSET.toPx()

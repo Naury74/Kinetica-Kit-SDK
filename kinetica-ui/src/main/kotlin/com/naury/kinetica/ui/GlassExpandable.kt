@@ -110,15 +110,15 @@ private fun ExpandableHeader(
     color: Color,
     header: @Composable RowScope.() -> Unit,
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
     val state = stringResource(if (expanded) R.string.kinetica_ui_expanded else R.string.kinetica_ui_collapsed)
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = HEADER_MIN_HEIGHT)
-            .drawBehind { if (pressed) drawRect(color.copy(alpha = PRESSED_ALPHA)) }
-            .clickable(interaction, indication = null, role = Role.Button) { onExpandedChange(!expanded) }
+            // 눌림 표시는 카드 모서리를 따라 둥글게 잘린다. 펼친 동안에는 아래가 본문과 이어지므로 위쪽만 둥글다.
+            .clickable(null, if (expanded) ExpandedHeaderPress else CollapsedHeaderPress, role = Role.Button) {
+                onExpandedChange(!expanded)
+            }
             .semantics {
                 stateDescription = state
                 if (expanded) {
@@ -258,7 +258,8 @@ private val HEADER_MIN_HEIGHT = 56.dp
 private val CONTENT_RISE = 10.dp
 private const val FADE_START = 0.25f
 private const val HALF_TURN = 180f
-private const val PRESSED_ALPHA = 0.06f
+private val CollapsedHeaderPress = GlassIndication(RoundedCornerShape(CORNER))
+private val ExpandedHeaderPress = GlassIndication(RoundedCornerShape(topStart = CORNER, topEnd = CORNER))
 private val CHEVRON_SIZE = 18.dp
 private val CHEVRON_STROKE = 2.dp
 private const val CHEVRON_SIDE = 0.2f

@@ -353,7 +353,7 @@ internal fun ColorSwatch(swatch: Color, selected: Boolean, onPick: () -> Unit) {
         Modifier
             .size(SWATCH_TOUCH)
             .clip(CircleShape)
-            .clickable(onClick = onPick)
+            .clickable(null, GlassIndication(CenteredCircleShape((SWATCH_TOUCH - SWATCH_SIZE) / 2)), onClick = onPick)
             .semantics {
                 contentDescription = description
                 this.selected = selected

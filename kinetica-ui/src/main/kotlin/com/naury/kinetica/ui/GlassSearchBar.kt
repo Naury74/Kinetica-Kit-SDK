@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.sp
  * @param onQueryChange 바뀐 검색어를 받는다.
  * @param onSearch 키보드의 검색 키를 눌렀을 때 그때의 검색어를 받는다.
  * @param placeholder 검색어가 비어 있을 때 보이는 안내 글. 기본값은 '검색'이다.
+ * @param showCancel `false`면 포커스를 받아도 '취소' 버튼을 띄우지 않는다. 지우기 버튼만으로 충분한 좁은 자리에 쓴다.
  */
 @Composable
 public fun GlassSearchBar(
@@ -73,8 +75,11 @@ public fun GlassSearchBar(
     modifier: Modifier = Modifier,
     placeholder: String = stringResource(R.string.kinetica_ui_search),
     style: GlassStyle = LocalGlassStyle.current,
+    showCancel: Boolean = true,
 ) {
     var focused by remember { mutableStateOf(false) }
+    val levels = remember { FieldLevels(focused = false, error = false) }
+    LaunchedEffect(focused) { levels.focusTo(focused) }
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     val stretch = remember { Animatable(0f) }
@@ -87,32 +92,36 @@ public fun GlassSearchBar(
     }
     val textStyle = themed(TextStyle(color = style.onGlass, fontSize = SEARCH_FONT_SIZE))
     val accent = GlassTheme.colors.accent
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        BasicTextField(
-            query,
-            onQueryChange,
-            Modifier
-                .weight(1f)
-                .graphicsLayer {
-                    scaleX = 1f + STRETCH_X * stretch.value
-                    scaleY = 1f - STRETCH_Y * stretch.value
-                }
-                .glass(style, CircleShape)
-                .onFocusChanged { focused = it.isFocused },
-            singleLine = true,
-            textStyle = textStyle,
-            cursorBrush = SolidColor(accent),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = {
-                onSearch(query)
-                keyboard?.hide()
-            }),
-            decorationBox = { field ->
-                SearchDecoration(query, placeholder, style, { onQueryChange("") }, field)
-            },
-        )
-        CancelButton(focused) {
+    Row(modifier.keepVisibleWhileFocused(focused), verticalAlignment = Alignment.CenterVertically) {
+        ProvideFieldSelection(accent) {
+            BasicTextField(
+                query,
+                onQueryChange,
+                Modifier
+                    .weight(1f)
+                    .graphicsLayer {
+                        scaleX = 1f + STRETCH_X * stretch.value
+                        scaleY = 1f - STRETCH_Y * stretch.value
+                    }
+                    .glass(style.forField(), CircleShape)
+                    .fieldFocusFrame(SEARCH_HEIGHT / 2, levels, accent, accent)
+                    .onFocusChanged { focused = it.isFocused },
+                singleLine = true,
+                textStyle = textStyle,
+                cursorBrush = SolidColor(accent),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = {
+                    onSearch(query)
+                    keyboard?.hide()
+                }),
+                decorationBox = { field ->
+                    SearchDecoration(query, placeholder, style, { onQueryChange("") }, field)
+                },
+            )
+        }
+        CancelButton(showCancel && focused) {
             onQueryChange("")
+            keyboard?.hide()
             focusManager.clearFocus()
         }
     }
@@ -132,13 +141,12 @@ private fun SearchDecoration(query: String, placeholder: String, style: GlassSty
                     placeholder,
                     style = TextStyle(color = style.onGlass.copy(alpha = HINT_ALPHA), fontSize = SEARCH_FONT_SIZE),
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             field()
         }
-        AnimatedVisibility(query.isNotEmpty(), enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
-            ClearButton(style.onGlass, onClear)
-        }
+        FieldClearButton(query.isNotEmpty(), style.onGlass, onClear)
     }
 }
 
@@ -155,35 +163,13 @@ private fun CancelButton(visible: Boolean, onCancel: () -> Unit) {
         ThemedText(
             stringResource(R.string.kinetica_ui_search_cancel),
             Modifier
-                .clickable(role = Role.Button, onClick = onCancel)
+                .padding(start = CANCEL_GAP)
+                .clickable(null, GlassIndication(CircleShape), role = Role.Button, onClick = onCancel)
                 .padding(horizontal = CANCEL_PADDING, vertical = CANCEL_VERTICAL),
             style = TextStyle(color = GlassTheme.colors.accent, fontSize = SEARCH_FONT_SIZE),
             maxLines = 1,
         )
     }
-}
-
-@Composable
-private fun ClearButton(color: Color, onClear: () -> Unit) {
-    val label = stringResource(R.string.kinetica_ui_clear_text)
-    Box(
-        Modifier
-            .size(CLEAR_TOUCH)
-            .clickable(role = Role.Button, onClick = onClear)
-            .semantics { contentDescription = label }
-            .drawWithCache {
-                val radius = CLEAR_SIZE.toPx() / 2
-                val arm = radius * CROSS_ARM
-                val width = CROSS_WIDTH.toPx()
-                val center = Offset(size.width / 2, size.height / 2)
-                onDrawBehind {
-                    drawCircle(color.copy(alpha = CLEAR_FILL), radius, center)
-                    val ink = color.copy(alpha = CROSS_ALPHA)
-                    drawLine(ink, center + Offset(-arm, -arm), center + Offset(arm, arm), width, StrokeCap.Round)
-                    drawLine(ink, center + Offset(-arm, arm), center + Offset(arm, -arm), width, StrokeCap.Round)
-                }
-            },
-    )
 }
 
 /** 돋보기 아이콘. 아이콘 라이브러리에 기대지 않고 원과 손잡이를 직접 그린다. */
@@ -217,16 +203,11 @@ private val CLEAR_PADDING = 4.dp
 private val SEARCH_FONT_SIZE = 17.sp
 private val ICON_SIZE = 18.dp
 private val ICON_GAP = 8.dp
-private val CANCEL_PADDING = 12.dp
+private val CANCEL_PADDING = 10.dp
+private val CANCEL_GAP = 4.dp
 private val CANCEL_VERTICAL = 10.dp
-private val CLEAR_TOUCH = 36.dp
-private val CLEAR_SIZE = 18.dp
-private val CROSS_WIDTH = 1.6.dp
 private val MAGNIFIER_STROKE = 2.dp
-private const val CROSS_ARM = 0.38f
-private const val CLEAR_FILL = 0.22f
-private const val CROSS_ALPHA = 0.85f
-private const val HINT_ALPHA = 0.5f
+private const val HINT_ALPHA = FIELD_HINT_ALPHA
 private const val LENS_RATIO = 0.36f
 private const val DIAGONAL = 0.7071f
 private const val STRETCH_IN_MS = 110

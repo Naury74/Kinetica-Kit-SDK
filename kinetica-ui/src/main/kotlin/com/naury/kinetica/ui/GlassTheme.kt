@@ -1,5 +1,7 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.foundation.Indication
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -62,6 +64,8 @@ public val LocalGlassTextStyle: ProvidableCompositionLocal<TextStyle> = staticCo
  * @param style 기본 글래스 스타일. 기본값은 [darkTheme]에 따라 [GlassStyles.Liquid] 또는 [GlassStyles.LiquidDark]다.
  * @param colors 강조색 등 컴포넌트 기본 색
  * @param textStyle 컴포넌트 글자가 따를 글꼴. 글꼴 관련 값만 쓰인다([LocalGlassTextStyle] 참고).
+ * @param indication 이 안에서 쓴 일반 `clickable`의 눌림 표시(`LocalIndication`). 기본값은 사각 리플 대신 [GlassIndication]이고,
+ * null이면 바깥(호스트) 값을 그대로 둔다.
  */
 @Composable
 public fun GlassTheme(
@@ -69,6 +73,7 @@ public fun GlassTheme(
     style: GlassStyle = if (darkTheme) GlassStyles.LiquidDark else GlassStyles.Liquid,
     colors: GlassColors = LocalGlassColors.current,
     textStyle: TextStyle = LocalGlassTextStyle.current,
+    indication: Indication? = GlassIndication(),
     content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
@@ -76,6 +81,7 @@ public fun GlassTheme(
         LocalGlassContentColor provides style.onGlass,
         LocalGlassColors provides colors,
         LocalGlassTextStyle provides textStyle,
+        LocalIndication provides (indication ?: LocalIndication.current),
         content = content,
     )
 }

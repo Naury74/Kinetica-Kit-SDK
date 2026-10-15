@@ -23,7 +23,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -179,10 +181,12 @@ private fun StepButton(plus: Boolean, enabled: Boolean, color: Color, onStep: (I
                 }
             }
             .drawBehind {
-                val inset = size.height * PRESS_INSET
                 val pressAlpha = press.value * PRESS_ALPHA
                 if (pressAlpha > 0f) {
-                    drawCircle(color.copy(alpha = pressAlpha), radius = size.height / 2 - inset)
+                    // 스테퍼 캡슐과 같은 중심으로 굽도록, 안쪽 여백만큼 작은 캡슐을 칸 가운데에 깐다.
+                    val inset = PRESS_INSET.toPx()
+                    val pill = Size(size.width - inset * 2, size.height - inset * 2)
+                    drawRoundRect(color.copy(alpha = pressAlpha), Offset(inset, inset), pill, CornerRadius(pill.height / 2))
                 }
                 val half = size.height * GLYPH_HALF
                 val stroke = GLYPH_STROKE.toPx()
@@ -276,7 +280,7 @@ private fun stepperKey(key: Key, rtl: Boolean): Int? = when (key) {
     else -> null
 }
 
-private val STEPPER_HEIGHT = 40.dp
+private val STEPPER_HEIGHT = GlassMetrics.MinTouch
 private val BUTTON_WIDTH = 48.dp
 private val VALUE_MIN_WIDTH = 32.dp
 private val VALUE_PADDING = 4.dp
@@ -284,7 +288,7 @@ private val DIVIDER_INSET = 10.dp
 private val DIVIDER_WIDTH = 1.dp
 private val GLYPH_STROKE = 2.dp
 private const val GLYPH_HALF = 0.17f
-private const val PRESS_INSET = 0.1f
+private val PRESS_INSET = 4.dp
 private const val PRESS_ALPHA = 0.14f
 private const val DIVIDER_ALPHA = 0.18f
 private const val EDGE_ALPHA = 0.3f

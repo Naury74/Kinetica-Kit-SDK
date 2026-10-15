@@ -95,7 +95,11 @@ public fun <T : Any> PushNavigation(
         modifier
             .fillMaxSize()
             .onSizeChanged { nav.width = it.width.toFloat().coerceAtLeast(1f) }
-            .then(if (swipeBack && canGoBack) Modifier.edgeSwipe(nav, direction, scope) else Modifier),
+            .then(if (swipeBack && canGoBack) Modifier.edgeSwipe(nav, direction, scope) else Modifier)
+            // 가장자리 끌기 도중 스택이 바뀌어 제스처가 끊기면 반쯤 밀린 채 남으므로 제자리로 돌린다.
+            .settleAfterRelease({ nav.progress.value.let { it > 0f && it < 1f } && !nav.progress.isRunning }) {
+                scope.launch { nav.progress.animateTo(1f, spring(dampingRatio = PUSH_DAMPING)) }
+            },
     ) {
         val top = nav.shown.last()
         val below = nav.shown.getOrNull(nav.shown.size - 2)
