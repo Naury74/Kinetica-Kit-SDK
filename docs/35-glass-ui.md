@@ -52,6 +52,9 @@ GlassScaffold(
 | `GlassToastHost(state)` + `state.show("저장했어요")` | 위에서 미끄러져 내려오는 알림. 화면 읽기가 읽는다 |
 | `GlassTabBar(tabs, selectedIndex, onSelect)` | 떠 있는 탭 막대. 고른 탭 알약이 늘어났다 줄며 옮겨 간다(액체처럼) |
 | `GlassSurface(shape, style)` | 유리 표면 하나. 안의 글자 색은 `LocalGlassContentColor` |
+| `Modifier.glassContextMenu(items)` | 길게 누르면(진동) 요소가 떠오르고 뒤가 흐려지며 그 아래·위에 유리 메뉴(`GlassMenuItem`, `destructive`면 빨간 글자). 화면 읽기에서는 사용자 정의 동작 |
+| `GlassSegmentedControl(options, selectedIndex, onSelect)` | 고른 칸 알약이 늘어났다 줄며 옮겨 가는 세그먼트 버튼 |
+| `GlassSwitch(checked, onCheckedChange)` | 누르는 동안 손잡이가 늘어나고 출렁이며 넘어가는 스위치(iOS 26 느낌) |
 
 ## 고급 효과
 

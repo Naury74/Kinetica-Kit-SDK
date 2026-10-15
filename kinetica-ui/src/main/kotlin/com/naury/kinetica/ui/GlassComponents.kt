@@ -207,7 +207,7 @@ private fun Modifier.dragToDismiss(drag: Animatable<Float, *>, height: () -> Flo
 
 /** 팝업 뒤 배경: 서서히 흐려지고 어두워진다. 누르면 닫는다. */
 @Composable
-private fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
+internal fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
     Box(
         Modifier
             .matchParentSize()

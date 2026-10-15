@@ -41,16 +41,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.ui.GlassDialog
+import com.naury.kinetica.ui.GlassMenuItem
 import com.naury.kinetica.ui.GlassScaffold
+import com.naury.kinetica.ui.GlassSegmentedControl
 import com.naury.kinetica.ui.GlassSheet
 import com.naury.kinetica.ui.GlassStyle
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.GlassSurface
+import com.naury.kinetica.ui.GlassSwitch
 import com.naury.kinetica.ui.GlassTab
 import com.naury.kinetica.ui.GlassTabBar
 import com.naury.kinetica.ui.GlassToastHost
 import com.naury.kinetica.ui.LocalGlassContentColor
 import com.naury.kinetica.ui.glassBackdrop
+import com.naury.kinetica.ui.glassContextMenu
 import com.naury.kinetica.ui.glassOrigin
 import com.naury.kinetica.ui.rememberGlassBackdrop
 import com.naury.kinetica.ui.rememberGlassToastState
@@ -105,7 +109,8 @@ internal fun GlassDemo(onBack: () -> Unit) {
                 Chips(listOf("밝게", "어둡게"), if (dark) 1 else 0) { dark = it == 1 }
             }
             item { PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } } }
-            items(PHOTOS.size) { index -> Photo(PHOTOS[index], index) }
+            item { ControlsCard() }
+            items(PHOTOS.size) { index -> Photo(PHOTOS[index], index) { scope.launch { toast.show(it) } } }
         }
         DemoPopups(dialog, sheet, origin, { dialog = false }, { sheet = false }) { scope.launch { toast.show(it) } }
         GlassToastHost(toast)
@@ -158,6 +163,29 @@ private fun DemoPopups(
     }
 }
 
+@Composable
+private fun ControlsCard() {
+    var view by remember { mutableIntStateOf(0) }
+    var notify by remember { mutableStateOf(true) }
+    var dark by remember { mutableStateOf(false) }
+    GlassSurface(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Label("컨트롤", 18, FontWeight.Bold)
+            GlassSegmentedControl(listOf("일", "주", "월", "년"), view, { view = it }, Modifier.fillMaxWidth())
+            SwitchRow("알림 받기", notify) { notify = it }
+            SwitchRow("방해 금지", dark) { dark = it }
+        }
+    }
+}
+
+@Composable
+private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Label(label, 16, modifier = Modifier.weight(1f))
+        GlassSwitch(checked, onChange)
+    }
+}
+
 private class StyleOption(val name: String, val light: GlassStyle, val dark: GlassStyle)
 
 private val STYLES = listOf(
@@ -191,15 +219,25 @@ private fun Chips(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) 
 
 /** 사진 대신 색 카드. 유리 막대 뒤로 지나가며 비친다. */
 @Composable
-private fun Photo(colors: List<Color>, index: Int) {
+private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
     // 사진 위 유리는 그 사진을 비춰야 하므로 사진에 따로 뒤 화면을 둔다.
     val photo = rememberGlassBackdrop()
-    Box(Modifier.fillMaxWidth().aspectRatio(1.6f).clip(RoundedCornerShape(28.dp)), contentAlignment = Alignment.BottomStart) {
+    val title = TITLES[index % TITLES.size]
+    val menu = listOf(
+        GlassMenuItem("공유", ShowcaseIcons.Cloud) { notify("$title 공유") },
+        GlassMenuItem("즐겨찾기", ShowcaseIcons.Sparkle) { notify("$title 즐겨찾기에 넣었어요") },
+        GlassMenuItem("삭제", destructive = true) { notify("$title 삭제") },
+    )
+    // 길게 누르면 사진이 떠오르고 뒤가 흐려지며 메뉴가 뜬다.
+    Box(
+        Modifier.fillMaxWidth().aspectRatio(1.6f).glassContextMenu(menu).clip(RoundedCornerShape(28.dp)),
+        contentAlignment = Alignment.BottomStart,
+    ) {
         Box(Modifier.matchParentSize().glassBackdrop(photo).background(Brush.linearGradient(colors)))
         GlassSurface(Modifier.padding(14.dp), shape = RoundedCornerShape(18.dp), backdrop = photo) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                 Label(TITLES[index % TITLES.size], 16, FontWeight.SemiBold)
-                Label("사진 위 유리", 13)
+                Label("사진 위 유리 · 길게 눌러 메뉴", 13)
             }
         }
     }
