@@ -230,7 +230,7 @@ public object GlassIslandDefaults {
 /**
  * 화면 맨 위 가운데에 뜨는 다이내믹 아일랜드식 알림. 작은 캡슐에서 시작해 내용이 오면 용수철처럼 넓고 높게 부풀고,
  * 시간이 지나면 다시 캡슐로 줄어든다. 위로 쓸어 올리면 닫히고, 펼쳐진 알림을 누르면 [GlassIslandResult.Clicked]로 끝난다.
- * 상태 표시줄 높이에 맞춰 세로 가운데에 놓인다. [GlassScaffold] 안에서는 오버레이 레이어에 그린다.
+ * 상태 표시줄 바로 아래에 놓인다(상태 표시줄 영역은 시스템이 터치를 가져가 누를 수 없다). [GlassScaffold] 안에서는 오버레이 레이어에 그린다.
  * TalkBack은 새 알림을 바로 읽어 준다.
  *
  * @param alwaysVisible true면 알림이 없을 때도 빈 캡슐을 보여 준다.
@@ -251,7 +251,8 @@ public fun GlassIslandHost(
         ) { if (it) 1f else 0f }
         val density = LocalDensity.current
         val statusTop = WindowInsets.statusBars.getTop(density)
-        val top = with(density) { ((statusTop - PILL_HEIGHT.roundToPx()) / 2).coerceAtLeast(MIN_TOP.roundToPx()).toDp() }
+        // 상태 표시줄 영역의 터치는 시스템이 먼저 가져가므로, 눌러서 펼칠 수 있게 상태 표시줄 바로 아래에 놓는다.
+        val top = with(density) { (statusTop + ISLAND_GAP.roundToPx()).coerceAtLeast(MIN_TOP.roundToPx()).toDp() }
         Box(Modifier.fillMaxSize().padding(top = top, start = SIDE_MARGIN, end = SIDE_MARGIN), contentAlignment = Alignment.TopCenter) {
             Island(
                 state,
@@ -486,6 +487,7 @@ private const val SUBTITLE_ALPHA = 0.7f
 private const val TABULAR = "tnum"
 private val TOP_CENTER = TransformOrigin(0.5f, 0f)
 private val PILL_WIDTH = 120.dp
+private val ISLAND_GAP = 6.dp
 private val PILL_HEIGHT = 36.dp
 private val MIN_TOP = 8.dp
 private val SIDE_MARGIN = 12.dp

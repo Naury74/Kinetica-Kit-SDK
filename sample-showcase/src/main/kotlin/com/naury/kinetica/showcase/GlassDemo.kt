@@ -222,6 +222,10 @@ private val STYLES = listOf(
     StyleOption("One UI", GlassStyles.OneUi, GlassStyles.OneUiDark),
     StyleOption("Vision", GlassStyles.Vision, GlassStyles.Vision),
     StyleOption("Material", GlassStyles.Material, GlassStyles.MaterialDark),
+    StyleOption("Mica", GlassStyles.Mica, GlassStyles.MicaDark),
+    StyleOption("HarmonyOS", GlassStyles.HarmonyOs, GlassStyles.HarmonyOs),
+    StyleOption("Obsidian", GlassStyles.Obsidian, GlassStyles.Obsidian),
+    StyleOption("Pastel", GlassStyles.Pastel, GlassStyles.Pastel),
     StyleOption("Frosted", GlassStyles.Frosted, GlassStyles.Frosted.copy(tint = Color.Black.copy(alpha = 0.35f), onGlass = Color.White)),
 )
 

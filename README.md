@@ -10,9 +10,11 @@
 - **Glass UI**: 배경을 블러 처리해 비치는 글래스 화면 구성 요소입니다([docs/35](docs/35-glass-ui.md)).
   - 기본 표면 `GlassScaffold`, `GlassSurface`
   - 다이얼로그, 바텀 시트, 토스트, 탭 바, 길게 눌러 여는 메뉴, 세그먼트 버튼, 스위치, 슬라이더, 당겨서 새로 고침
+  - 버튼, 스테퍼, 칩, 물결 진행 표시, 배지, iOS식 휠 피커와 날짜·시간 선택기, 검색창, 떠오르는 라벨 입력란
+  - 접히는 큰 제목 바, 캐러셀과 페이지 점, 틴더식 카드 더미, 펼쳐지는 버튼 메뉴, 다이내믹 아일랜드식 알림, 되돌리기 스낵바
   - 카드가 커지며 열리는 상세 화면(`GlassExpandHost`), iOS처럼 밀어 넣는 화면 이동(`PushNavigation`)
-  - 스타일: Liquid, Acrylic, One UI, Vision, Material, Frosted
-  - 효과: 글로우 테두리, 젤리처럼 눌리는 버튼, 끌면 손가락을 따라왔다 돌아오는 자석 효과, 기기를 기울이면 따라 기우는 3D 효과, 숫자 롤링, 타자기 텍스트, 컨페티
+  - 스타일: Liquid, Acrylic, One UI, Vision, Material, Frosted, Mica, HarmonyOS, Obsidian, Pastel
+  - 효과: 움직이는 메시 그라디언트 배경, 빛·색이 흐르는 글자, 흔들기, 반짝이, 스크롤 시차, 손가락 스포트라이트, 글로우 테두리, 젤리처럼 눌리는 버튼, 끌면 손가락을 따라왔다 돌아오는 자석 효과, 기기를 기울이면 따라 기우는 3D 효과, 숫자 롤링, 타자기 텍스트, 컨페티
 - **Board**: 호스트 화면에 넣는 위젯 보드 `KineticaBoard`와 XML용 `KineticaBoardView`입니다([docs/31](docs/31-board.md)).
   - 사용자가 앱 안에서 위젯을 옮기고, 크기를 바꾸고, 빼거나 추가할 수 있습니다.
   - 위젯을 화면 위쪽으로 끌면 Windows 스냅 레이아웃처럼 반반, 2:1, 3등분, 4분할 같은 배치를 고를 수 있고, 가장자리로 끌면 화면의 절반이나 4분의 1에 붙습니다. 격자 배치도 됩니다.
@@ -34,13 +36,14 @@
     <td align="center" width="25%"><img src="docs/images/showcase-navigation.png" width="200" alt="카드 상세 화면"><br><b>화면 이동</b><br>카드가 커지는 상세, 끌어서 닫기, iOS식 밀어 넣기</td>
   </tr>
   <tr>
+    <td align="center" width="25%"><img src="docs/images/showcase-components.png" width="200" alt="컴포넌트"><br><b>컴포넌트</b><br>버튼, 휠 피커, 카드 더미, 아일랜드 알림 등 20여 가지</td>
     <td align="center" width="25%"><img src="docs/images/showcase-board.png" width="200" alt="스냅 레이아웃 선택"><br><b>대시보드 보드</b><br>위로 끌면 Windows식 스냅 레이아웃</td>
     <td align="center" width="25%"><img src="docs/images/showcase-server.png" width="200" alt="서버 화면"><br><b>서버 화면</b><br>JSON만 바꿔 화면 교체, 숫자는 실시간 갱신</td>
     <td align="center" width="25%"><img src="docs/images/showcase-studio.png" width="200" alt="편집기"><br><b>화면 만들기</b><br>앱 안에서 쓰는 Figma 같은 편집기. 여러 개를 함께 변형</td>
   </tr>
 </table>
 
-위 이미지는 `sample-showcase`를 Android 에뮬레이터에서 실행해 찍은 실제 화면입니다. 샘플 앱 하나에 데모 일곱 가지와 XML 화면 예가 들어 있습니다.
+위 이미지는 `sample-showcase`를 Android 에뮬레이터에서 실행해 찍은 실제 화면입니다. 샘플 앱 하나에 데모 여덟 가지와 XML 화면 예가 들어 있습니다.
 
 ## 샘플 앱 내려받기
 
@@ -110,7 +113,7 @@
   - 스키마 버전이 있는 JSON. 크기와 중첩 깊이에 상한이 있고 migration 구조를 갖추고 있습니다.
   - 원자적으로 파일을 바꿔 쓰는 파일 저장소
   - 화면과 같은 그리기 코드로 만드는 PNG 내보내기
-- **샘플**: 샘플 앱은 `sample-showcase` 하나입니다. 첫 화면에서 글래스 UI, 모션 효과, 대시보드 보드, 화면 이동, 장면 전환, 서버 화면, 화면 만들기(편집기)를 고를 수 있고, 맨 아래에서 Compose를 쓰지 않는 XML 화면 예를 열 수 있습니다.
+- **샘플**: 샘플 앱은 `sample-showcase` 하나입니다. 첫 화면에서 글래스 UI, 모션 효과, 대시보드 보드, 컴포넌트, 화면 이동, 장면 전환, 서버 화면, 화면 만들기(편집기)를 고를 수 있고, 맨 아래에서 Compose를 쓰지 않는 XML 화면 예를 열 수 있습니다.
 
 아직 없는 기능과 제한 사항은 [알려진 제한](#알려진-제한)을 보세요.
 

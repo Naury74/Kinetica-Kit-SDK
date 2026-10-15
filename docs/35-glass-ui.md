@@ -37,6 +37,10 @@ GlassScaffold(
 | `GlassStyles.Material` / `MaterialDark` | Material 3 Expressive. 은은한 색조 표면에 테두리 없이 큰 그림자 |
 | `GlassStyles.Frosted` | 예전 iOS의 반투명 유리. 블러가 아주 강하고 하얗게 덮인다 |
 | `GlassStyles.Clear` | 블러만 적용. 다이얼로그 뒤 배경에 쓴다 |
+| `GlassStyles.Mica` / `MicaDark` | Windows 11 Mica. 블러가 매우 크고 바탕색을 넉넉히 덮으며 테두리가 없다 |
+| `GlassStyles.HarmonyOs` | HarmonyOS. 맑고 밝은 블러에 부드러운 빛 |
+| `GlassStyles.Obsidian` | 아주 어둡고 진한 유리에 은은한 보라 테두리 |
+| `GlassStyles.Pastel` | 옅은 분홍 틴트의 밝은 유리 |
 
 `GlassStyle`의 값은 `blur`(블러), `saturation`(채도 배율), `brightness`(밝기), `tint`(덮는 색), `edgeLight`와 `edgeWidth`(글로우 테두리), `shadow`(바깥쪽에만 지는 그림자),
 `grain`(노이즈), `refraction`(가장자리 굴절, 0..1), `fallback`(블러를 쓸 수 없을 때의 색), `onGlass`(글자와 아이콘 색)다. 바꾸려면 `copy`를 쓴다.
@@ -77,6 +81,31 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 
 예측 뒤로 가기에서 손가락을 따라 움직이는 미리보기는 Android 14부터 동작한다. targetSdk 36 이상인 앱은 기본으로 켜져 있고, 그보다 낮으면 manifest에 `android:enableOnBackInvokedCallback="true"`를 넣어야 한다. 꺼져 있으면 뒤로 가기를 눌렀을 때 바로 닫히는 애니메이션만 나온다.
 
+## 컨트롤과 입력
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `GlassButton(text, onClick, kind, size, icon, loading)` | 채움(`Filled`), 옅은 색(`Tinted`), 유리(`Glass`), 글자만(`Plain`) 네 종류와 세 크기. 누르면 젤리처럼 눌리고, `loading`이면 폭을 유지한 채 링이 돈다 |
+| `GlassStepper(value, onValueChange, range, step)` | −/+ 캡슐. 숫자가 굴러가며 바뀌고, 길게 누르면 점점 빨라진다. 끝에 닿으면 그쪽 버튼이 흐려진다 |
+| `GlassChipGroup(chips, selected, onSelectedChange, selection)` | 하나 또는 여러 개를 고르는 칩. 고르면 체크 표시가 그려지며 폭이 부드럽게 늘어난다 |
+| `GlassProgressBar(progress, wave)` / `GlassProgressRing(progress, wave) { … }` | 용수철로 따라가는 진행 표시. `wave`를 켜면 액체가 차오르듯 출렁이고, `progress = null`이면 진행 정도를 모르는 상태를 보여 준다 |
+| `Modifier.glassBadge(count, dot)` | 오른쪽 위(RTL이면 왼쪽 위) 빨간 배지. 숫자가 바뀌면 톡 튄다. 99를 넘으면 `99+` |
+| `GlassWheelPicker(items, selectedIndex, onSelect, cyclic)` | iOS 휠 피커. 원통에 붙은 것처럼 위아래 항목이 기울고, 항목을 지날 때마다 가볍게 진동하며 가운데에 맞춰 멈춘다 |
+| `GlassDatePicker(date, onDateChange, range)` / `GlassTimePicker(hour, minute, onTimeChange)` | 휠로 만든 날짜·시간 선택기. 년·월·일 순서와 오전/오후 위치는 언어를 따른다 |
+| `GlassSearchBar(query, onQueryChange, onSearch)` | 누르면 끝쪽에서 "취소" 버튼이 밀려 들어오고, 글자가 있으면 지우기 버튼이 나온다 |
+| `GlassTextField(value, onValueChange, label, error)` | 포커스되면 라벨이 위로 떠오르고, 오류가 생기면 테두리가 빨개지며 한 번 흔들린다 |
+
+## 화면 구성과 알림
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `GlassLargeTitleBar(rememberLargeTitleState(), "제목")` | One UI·iOS식 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀐다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다 |
+| `GlassCarousel(pageCount) { page -> }` + `GlassPageIndicator(pagerState)` | 옆 카드가 살짝 보이고 멀어질수록 작아지며 기우는 캐러셀. 점 인디케이터는 넘기는 동안 액체처럼 늘어난다 |
+| `SwipeCardStack(items, onSwipe, overlay) { item -> }` | 틴더식 카드 더미. 끌면 기울며 따라오고 던지면 날아간다. `state.undo()`로 되돌린다 |
+| `GlassSpeedDial(expanded, onExpandedChange, items)` | 떠 있는 둥근 버튼. 누르면 +가 ×로 돌고 항목이 차례로 튀어 오르며 뒤가 흐려진다 |
+| `GlassIslandHost(state)` + `state.show(GlassIslandContent(…))` | 다이내믹 아일랜드식 알림. 작은 캡슐이 부풀어 알림이 되고, `compactText`가 있으면 좁은 캡슐(예: 타이머)로 시작해 누르면 펼쳐진다. 위로 쓸어 닫는다 |
+| `GlassSnackbarHost(state)` + `state.show(message, actionLabel)` | 아래에서 떠오르는 스낵바. "되돌리기" 같은 동작 버튼과 남은 시간을 보여 주는 링이 있고, 옆으로 쓸어 닫는다. 결과를 `Action`/`Dismissed`로 돌려준다 |
+
 ## 고급 효과
 
 | 효과 | 사용법 |
@@ -88,6 +117,12 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 | 숫자 굴리기 | `RollingText("1,284,000원")`. 바뀐 자릿수만 위아래로 굴러간다 |
 | 타자기 | `TypewriterText("…")`. 깜박이는 커서와 함께 한 글자씩 나타난다 |
 | 색종이 | `ConfettiHost(state)` + `state.burst(origin)` |
+| 움직이는 배경 | `MeshGradientBackground(palette = MeshGradients.Sunset)`. 색 덩어리가 천천히 떠다니며 섞인다(API 33+는 AGSL 셰이더). 프리셋 Sunset, Ocean, Aurora, Candy, Midnight |
+| 글자 효과 | `ShimmerText`(빛이 흐르는 글자), `GradientText`(색이 흐르는 글자), `ScrambleText`(뒤섞였다 맞춰지는 글자) |
+| 흔들기 | `Modifier.shake(trigger)`. `trigger`가 바뀔 때마다 좌우로 흔든다(오류 표시) |
+| 반짝이 | `Modifier.sparkle()`. 요소 주위에 작은 별이 반짝였다 사라진다 |
+| 스크롤 시차 | `Modifier.parallaxScroll(scrollState, rate, pullState)`. 헤더가 느리게 움직이고, 맨 위에서 당기면 커진다 |
+| 스포트라이트 | `Modifier.spotlight(shape = …)`. 손가락을 대고 움직이면 그 자리에 빛이 따라다니고 테두리가 빛난다 |
 
 시스템의 '애니메이션 삭제' 설정이 켜져 있으면 반복, 기울기, 색종이 효과는 모두 멈춘다. 리플, 터지기, 두근거림 같은 누름·등장·반복 효과는 [docs/33](33-effects.md)에서 다룬다.
 
