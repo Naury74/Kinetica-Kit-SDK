@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.ceil
 import kotlin.random.Random
@@ -143,6 +144,8 @@ public fun Modifier.glass(
     intensity: Float = 1f,
 ): Modifier {
     val blurLayer = rememberGraphicsLayer()
+    val sampleLayer = rememberGraphicsLayer()
+    val view = LocalView.current
     // 팝업 판 안에 놓인 글래스가 주변 배경을 그대로 비추면 판을 뚫고 뒤 화면이 또렷하게 보인다.
     // 그래서 따로 배경을 넘기지 않았다면 판 위에 한 겹 얹힌 유리처럼 옅은 색만 덮는다.
     val layered = LocalGlassLayered.current && backdrop === LocalGlassBackdrop.current
@@ -154,8 +157,12 @@ public fun Modifier.glass(
         .onGloballyPositioned {
             position.offset = it.positionOnScreen()
             position.root = it.positionInRoot()
+            // 페이저, 지연 목록, 이동 애니메이션은 부모 레이어만 옮기고 이 요소를 다시 그리지 않는다.
+            // 그대로 두면 마지막으로 그린 위치의 배경을 계속 비추므로, 다시 그리지 않고 배경을 옮겨 놓는 레이어만 고친다.
+            if (backdrop != null && position.follow(backdrop, sampleLayer)) view.invalidate()
         }
         .drawBehind {
+            position.sampling = false
             if (backdrop?.recording == true) return@drawBehind
             val outline = shape.createOutline(size, layoutDirection, this)
             val level = intensity.coerceIn(0f, 1f)
@@ -166,8 +173,7 @@ public fun Modifier.glass(
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))
                     drawRect(style.onGlass.copy(alpha = LAYERED_ALPHA * level))
                 } else if (canBlur && backdrop != null) {
-                    val at = if (backdrop.rootRelative) position.root else position.offset
-                    drawBackdrop(backdrop, Sampler(blurLayer, effects, at), style, outline, level)
+                    drawBackdrop(backdrop, Sampler(blurLayer, sampleLayer, effects, position), style, outline, level)
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))
                 } else if (windowBlurred) {
                     drawRect(style.tint.copy(alpha = (style.tint.alpha + WINDOW_TINT_EXTRA).coerceAtMost(1f) * level))
@@ -183,6 +189,32 @@ public fun Modifier.glass(
 private class PositionHolder {
     var offset: Offset = Offset.Zero
     var root: Offset = Offset.Zero
+
+    // 마지막으로 그릴 때 쓴 기록 여백과 배율. 그리기 없이 위치만 바뀌었을 때 같은 값으로 옮긴다.
+    var sampling = false
+    var pad = 0f
+    var scale = 1f
+
+    fun at(backdrop: GlassBackdrop): Offset = if (backdrop.rootRelative) root else offset
+
+    /** 배경을 옮겨 놓는 [layer]를 지금 위치에 맞춘다. 바뀌었으면 true. */
+    fun follow(backdrop: GlassBackdrop, layer: GraphicsLayer): Boolean {
+        if (!sampling) return false
+        val move = sampleTranslation(at(backdrop), backdrop.origin, pad, scale)
+        if (layer.translationX == move.x && layer.translationY == move.y) return false
+        layer.translationX = move.x
+        layer.translationY = move.y
+        return true
+    }
+}
+
+/**
+ * 글래스가 배경 기록을 읽을 때 배경 기록에 줄 이동량(px, 줄인 기록 좌표). 글래스 왼쪽 위에서 [pad]만큼 바깥이 기록의 원점이 되고,
+ * 그 뒤에 [scale]배로 줄인다. [glass]와 [backdropOrigin]은 같은 기준(화면 또는 루트) 좌표다.
+ */
+internal fun sampleTranslation(glass: Offset, backdropOrigin: Offset, pad: Float, scale: Float): Offset {
+    val relative = glass - backdropOrigin
+    return Offset((pad - relative.x) * scale, (pad - relative.y) * scale)
 }
 
 /** 프레임마다 RenderEffect를 새로 만들지 않도록 마지막 값을 보관한다. */
@@ -200,13 +232,12 @@ private class EffectCache {
 /** 기록한 영역의 크기, 가장자리 여백, 모서리 반경(px). */
 private class Region(val size: IntSize, val pad: Float, val corner: Float)
 
-/** 글래스 하나가 배경을 옮겨 그릴 때 쓰는 레이어, 효과 캐시, 루트 기준 위치. */
-private class Sampler(val layer: GraphicsLayer, val cache: EffectCache, val offset: Offset)
+/** 글래스 하나가 배경을 옮겨 그릴 때 쓰는 레이어(블러를 거는 쪽, 배경을 옮겨 놓는 쪽), 효과 캐시, 위치. */
+private class Sampler(val layer: GraphicsLayer, val sample: GraphicsLayer, val cache: EffectCache, val position: PositionHolder)
 
 private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, style: GlassStyle, outline: Outline, level: Float) {
     val layer = sampler.layer
     val cache = sampler.cache
-    val offset = sampler.offset
     val blurPx = style.blur.toPx() * level
     // 블러가 크면 배경을 낮은 해상도로 기록해 흐린 뒤 늘려 그린다. 흐린 결과는 줄였다 늘려도 차이가 거의 없고,
     // GPU가 칠할 픽셀과 레이어 텍스처 메모리가 크게 줄어 목록에 글래스가 많을 때 스크롤이 덜 끊긴다.
@@ -216,7 +247,6 @@ private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, st
     val fullSize = IntSize(ceil(size.width).toInt() + pad * 2, ceil(size.height).toInt() + pad * 2)
     if (fullSize.width <= 0 || fullSize.height <= 0) return
     val recordSize = IntSize(ceil(fullSize.width * scale).toInt().coerceAtLeast(1), ceil(fullSize.height * scale).toInt().coerceAtLeast(1))
-    val relative = offset - backdrop.origin
     val corner = cornerOf(outline)
     val key = listOf(blurPx, style.saturation * level + (1 - level), style.brightness * level, style.refraction * level, recordSize, corner)
     if (cache.key != key && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -224,9 +254,17 @@ private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, st
         cache.effect = glassEffect(blurPx * scale, style, level, Region(recordSize, pad * scale, corner * scale))
     }
     layer.renderEffect = cache.effect
-    layer.record(recordSize) {
-        scale(scale, pivot = Offset.Zero) { translate(-relative.x + pad, -relative.y + pad) { drawLayer(backdrop.layer) } }
-    }
+    val sample = sampler.sample
+    sample.record(backdrop.layer.size) { drawLayer(backdrop.layer) }
+    sample.pivotOffset = Offset.Zero
+    sample.scaleX = scale
+    sample.scaleY = scale
+    val position = sampler.position
+    position.pad = pad.toFloat()
+    position.scale = scale
+    position.sampling = true
+    position.follow(backdrop, sample)
+    layer.record(recordSize) { drawLayer(sample) }
     translate(-pad.toFloat(), -pad.toFloat()) { scale(1f / scale, pivot = Offset.Zero) { drawLayer(layer) } }
 }
 
