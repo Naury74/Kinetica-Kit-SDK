@@ -103,6 +103,26 @@ class KineticaBoardTest {
     }
 
     @Test
+    fun `위로 크게 끌었다가 누른 자리로 되돌려 놓으면 위젯이 제자리에 남는다`() {
+        val state = KineticaBoardState.create(catalog)
+        show(state, editing = true)
+        val before = state.rectOf("b")
+
+        // 첫 이동이 터치 슬롭보다 훨씬 크면 슬롭을 넘은 위치가 누른 위치와 크게 다르다. 기준은 누른 위치여야 한다.
+        compose.onNodeWithTag(BOARD_WIDGET_TAG + "b").performTouchInput {
+            down(center)
+            moveTo(Offset(center.x, center.y - 40f))
+            moveTo(Offset(center.x, center.y - 120f))
+            moveTo(center)
+            up()
+        }
+        compose.waitForIdle()
+
+        assertThat(state.rectOf("b")).isEqualTo(before)
+        assertThat(state.history.state.value.canUndo).isFalse()
+    }
+
+    @Test
     fun `위쪽 가장자리로 끌면 배치 틀 고르기판이 뜨고 고른 칸 자리에 놓인다`() {
         val state = KineticaBoardState.create(catalog)
         show(state, editing = true)

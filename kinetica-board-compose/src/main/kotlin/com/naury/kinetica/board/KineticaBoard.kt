@@ -462,12 +462,15 @@ private val FOCUS_BORDER = 4.dp
 private fun Modifier.dragToMove(key: String, enabled: Boolean, controller: BoardDragController): Modifier = pointerInput(key, enabled) {
     if (!enabled) return@pointerInput
     detectDragGestures(
-        onDragStart = { local -> controller.start(key, local) },
+        orientationLock = null,
+        // 기준점은 누른 위치여야 한다. 터치 슬롭을 넘은 위치를 기준으로 삼으면 그만큼(빠르게 끌면 수십 dp) 위젯이 손가락보다 뒤처져,
+        // 원래 자리로 되돌려 놓아도 끈 반대쪽으로 밀려 놓인다.
+        onDragStart = { down, _, _ -> controller.start(key, down.position) },
         onDrag = { change, _ ->
             change.consume()
             controller.move(key, change.position)
         },
-        onDragEnd = controller::end,
+        onDragEnd = { controller.end() },
         onDragCancel = controller::cancel,
     )
 }
@@ -521,12 +524,14 @@ private fun BoxScope.ResizeHandle(key: String, label: String, colors: BoardColor
             .holdParentTouches(LocalView.current)
             .pointerInput(key) {
                 detectDragGestures(
-                    onDragStart = { local -> controller.start(key, local) },
+                    orientationLock = null,
+                    // 이동과 같은 이유로 누른 위치를 기준으로 삼는다.
+                    onDragStart = { down, _, _ -> controller.start(key, down.position) },
                     onDrag = { change, _ ->
                         change.consume()
                         controller.resize(key, change.position)
                     },
-                    onDragEnd = controller::end,
+                    onDragEnd = { controller.end() },
                     onDragCancel = controller::cancel,
                 )
             },

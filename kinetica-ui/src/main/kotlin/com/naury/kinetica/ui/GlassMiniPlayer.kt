@@ -458,6 +458,7 @@ private fun playerGeometry(
             contentMax = CONTENT_MAX.toPx(),
             wideMin = GlassWindowDefaults.MediumMinWidth.toPx(),
             minPane = MIN_FOLD_PANE.toPx(),
+            pairGap = PAIR_GAP.toPx(),
         )
         val placed = fullPlayerLayout(w, full, hasArtwork, fold, metrics)
         val art = if (hasArtwork) barArt else Rect.Zero
@@ -639,6 +640,7 @@ private val HANDLE_HEIGHT = 5.dp
 private val HANDLE_PAD = 12.dp
 private val HANDLE_TOUCH = 20.dp
 private val CONTENT_GAP = 28.dp
+private val PAIR_GAP = 48.dp
 private val CONTENT_MAX = 560.dp
 private val MIN_FOLD_PANE = 200.dp
 private val PANEL_RISE = 40.dp

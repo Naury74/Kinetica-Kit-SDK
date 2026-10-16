@@ -177,6 +177,7 @@ class GlassWindowInfoTest {
                 contentMax = 560f,
                 wideMin = 600f,
                 minPane = 200f,
+                pairGap = 48f,
             ),
         )
 
@@ -189,10 +190,18 @@ class GlassWindowInfoTest {
         assertThat(tabletPortrait.content.width).isEqualTo(560f)
         assertThat(tabletPortrait.content.left).isEqualTo(120f)
 
+        // 접힌 선이 없으면 아트와 내용을 48 간격으로 붙인 묶음이 가운데에 온다.
         val landscape = layout(1280f, 800f)
-        assertThat(landscape.art.right).isAtMost(640f)
-        assertThat(landscape.content.left).isAtLeast(640f)
-        assertThat(landscape.content.width).isAtMost(560f)
+        assertThat(landscape.content.left - landscape.art.right).isEqualTo(48f)
+        assertThat(landscape.content.width).isEqualTo(560f)
+        assertThat(landscape.art.left).isEqualTo(1280f - landscape.content.right)
+        assertThat(landscape.content.top).isEqualTo(landscape.art.top)
+
+        // 폴더블 안쪽 화면처럼 폭이 빠듯하면 아트와 내용이 남은 폭을 나눠 바깥 여백이 side로 같다.
+        val unfolded = layout(840f, 860f)
+        assertThat(unfolded.art.left).isEqualTo(32f)
+        assertThat(unfolded.content.right).isEqualTo(808f)
+        assertThat(unfolded.content.left - unfolded.art.right).isEqualTo(48f)
 
         val tabletop = layout(900f, 880f, PlayerFold(Rect(0f, 440f, 900f, 460f), GlassPosture.Tabletop))
         assertThat(tabletop.art.bottom).isAtMost(440f)
@@ -201,6 +210,7 @@ class GlassWindowInfoTest {
         val book = layout(900f, 880f, PlayerFold(Rect(500f, 0f, 520f, 880f), GlassPosture.Book))
         assertThat(book.art.right).isAtMost(500f)
         assertThat(book.content.left).isAtLeast(520f)
+        assertThat(book.art.center.x).isEqualTo(250f)
     }
 
     @Test
