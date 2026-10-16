@@ -94,6 +94,7 @@ public fun GlassSurface(
  * 패널은 [contentWindowInsets]로 시스템 바, 화면 컷아웃, 키보드를 피하고, 그 안쪽 영역보다 커지지 않는다.
  * 내용이 그보다 길 수 있으면 [content]에 `verticalScroll`이나 `LazyColumn`을 넣는다. 짧으면 내용 높이에 맞춘다.
  * 너비는 280~420dp이고, 화면이 더 좁으면 화면 너비(여백 28dp 제외)에 맞춘다.
+ * 반쯤 접은 폴더블처럼 접힌 선이 화면을 가르면 [origin]이 있는 쪽 칸(없으면 위 칸이나 시작 쪽 칸) 가운데에 띄워 접힌 선에 걸치지 않게 한다.
  * 열리면 키보드 초점과 TalkBack 초점이 패널 안으로 들어가고, 뒤 화면은 TalkBack에서 숨는다. 닫히면 열기 전에 초점이 있던 요소로 돌아간다.
  *
  * @param origin 패널이 커지기 시작하는 위치(화면 좌표, px). [Modifier.glassOrigin]으로 누른 버튼의 중심을 얻을 수 있다.
@@ -124,37 +125,40 @@ public fun GlassDialog(
         var panelCenter by remember { mutableStateOf(Offset.Zero) }
         Box(Modifier.fillMaxSize()) {
             Scrim(level, onDismissRequest)
-            Column(
-                Modifier
-                    .align(Alignment.Center)
-                    .windowInsetsPadding(contentWindowInsets())
-                    .padding(28.dp)
-                    .then(modifier)
-                    .widthIn(min = DIALOG_MIN_WIDTH, max = DIALOG_MAX_WIDTH)
-                    .onGloballyPositioned { panelCenter = it.boundsOnScreen().center }
-                    .graphicsLayer {
-                        val scale = DIALOG_START_SCALE + (1f - DIALOG_START_SCALE) * progress
-                        scaleX = scale
-                        scaleY = scale
-                        alpha = level
-                        // 누른 위치에서 가운데로 이동하면서 커진다.
-                        val from = origin ?: panelCenter
-                        translationX = (from.x - panelCenter.x) * (1f - level)
-                        translationY = (from.y - panelCenter.y) * (1f - level)
-                        transformOrigin = TransformOrigin.Center
-                    }
-                    .glass(style.forPopup(), shape)
-                    .semantics {
-                        title?.let { paneTitle = it }
-                        dismiss {
-                            onDismissRequest()
-                            true
+            // 반쯤 접은 폴더블에서는 접힌 선에 걸치지 않도록 누른 버튼이 있는 쪽 칸 가운데에 띄운다.
+            Box(Modifier.fillMaxSize().avoidHinge(origin)) {
+                Column(
+                    Modifier
+                        .align(Alignment.Center)
+                        .windowInsetsPadding(contentWindowInsets())
+                        .padding(28.dp)
+                        .then(modifier)
+                        .widthIn(min = DIALOG_MIN_WIDTH, max = DIALOG_MAX_WIDTH)
+                        .onGloballyPositioned { panelCenter = it.boundsOnScreen().center }
+                        .graphicsLayer {
+                            val scale = DIALOG_START_SCALE + (1f - DIALOG_START_SCALE) * progress
+                            scaleX = scale
+                            scaleY = scale
+                            alpha = level
+                            // 누른 위치에서 가운데로 이동하면서 커진다.
+                            val from = origin ?: panelCenter
+                            translationX = (from.x - panelCenter.x) * (1f - level)
+                            translationY = (from.y - panelCenter.y) * (1f - level)
+                            transformOrigin = TransformOrigin.Center
                         }
-                    }
-                    .blockTouches()
-                    .padding(24.dp),
-            ) {
-                CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) { content() }
+                        .glass(style.forPopup(), shape)
+                        .semantics {
+                            title?.let { paneTitle = it }
+                            dismiss {
+                                onDismissRequest()
+                                true
+                            }
+                        }
+                        .blockTouches()
+                        .padding(24.dp),
+                ) {
+                    CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) { content() }
+                }
             }
         }
     }
@@ -185,6 +189,7 @@ public object GlassSheetDefaults {
  * 높이는 내용에 맞추되 위쪽 안전 영역 아래 [GlassSheetDefaults.TopGap]까지만 커진다. 그보다 길 수 있는 내용은 `LazyColumn`이나
  * `verticalScroll`로 넣는다. `fillMaxSize`나 `Modifier.weight`를 쓴 요소는 이 최대 높이를 채운다.
  * 내용은 [contentWindowInsets]만큼 안쪽으로 들어가므로, 시트 안 입력란에 초점이 가면 키보드 위로 올라온다.
+ * 넓은 화면에서는 [GlassSheetDefaults.MaxWidth] 폭으로 가운데에 놓고, 세로로 반쯤 접은 폴더블에서는 접힌 선 시작 쪽 칸에 놓는다.
  * 열리면 키보드 초점과 TalkBack 초점이 시트 안으로 들어가고, 뒤 화면은 TalkBack에서 숨는다.
  *
  * @param title 시트 이름. TalkBack이 창 제목으로 읽는다.
@@ -217,7 +222,8 @@ public fun GlassSheet(
         Box(Modifier.fillMaxSize()) {
             Scrim(level * (1f - dragged), onDismissRequest)
             Box(
-                Modifier.fillMaxSize().windowInsetsPadding(
+                // 책 모드(세로로 반쯤 접음)에서는 접힌 선에 걸치지 않도록 한쪽 칸에 띄운다.
+                Modifier.fillMaxSize().avoidHinge(horizontal = false).windowInsetsPadding(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
                 ).padding(top = GlassSheetDefaults.TopGap),
                 contentAlignment = Alignment.BottomCenter,

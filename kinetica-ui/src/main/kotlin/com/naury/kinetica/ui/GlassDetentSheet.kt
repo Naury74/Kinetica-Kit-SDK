@@ -328,35 +328,38 @@ public fun GlassDetentSheet(
             }
         }
         if (scrimShown) SheetScrim(state) { state.lower(includeHidden = false)?.let { scope.launch { state.animateTo(it) } } }
-        Column(
-            Modifier
-                // 태블릿이나 펼친 폴더블에서는 가운데에 읽기 좋은 폭으로 둔다.
-                .align(Alignment.TopCenter)
-                .widthIn(max = GlassSheetDefaults.MaxWidth)
-                .fillMaxWidth()
-                .layout { measurable, constraints ->
-                    val height = (constraints.maxHeight - topGap.toInt()).coerceAtLeast(0)
-                    val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
-                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        // 세로로 반쯤 접은 폴더블에서는 접힌 선에 걸치지 않도록 시작 쪽 칸에 둔다.
+        Box(Modifier.fillMaxSize().avoidHinge(horizontal = false)) {
+            Column(
+                Modifier
+                    // 태블릿이나 펼친 폴더블에서는 가운데에 읽기 좋은 폭으로 둔다.
+                    .align(Alignment.TopCenter)
+                    .widthIn(max = GlassSheetDefaults.MaxWidth)
+                    .fillMaxWidth()
+                    .layout { measurable, constraints ->
+                        val height = (constraints.maxHeight - topGap.toInt()).coerceAtLeast(0)
+                        val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
+                        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                    }
+                    .graphicsLayer { translationY = state.offset.takeUnless { it.isNaN() } ?: state.containerHeight }
+                    .glass(style.forPopup(), SheetShape)
+                    .sheetSemantics(state, title, scope)
+                    .nestedScroll(remember(state) { SheetScrollConnection(state) })
+                    .draggable(
+                        rememberDraggableState { state.dragBy(it) },
+                        Orientation.Vertical,
+                        onDragStopped = { velocity -> state.settle(velocity) },
+                    )
+                    .settleAfterRelease({ !state.isSettled && !state.isAnimating }) { scope.launch { state.settle(0f) } },
+            ) {
+                SheetHandle(style) {
+                    val next = state.higher() ?: state.lowestVisible
+                    scope.launch { state.animateTo(next) }
                 }
-                .graphicsLayer { translationY = state.offset.takeUnless { it.isNaN() } ?: state.containerHeight }
-                .glass(style.forPopup(), SheetShape)
-                .sheetSemantics(state, title, scope)
-                .nestedScroll(remember(state) { SheetScrollConnection(state) })
-                .draggable(
-                    rememberDraggableState { state.dragBy(it) },
-                    Orientation.Vertical,
-                    onDragStopped = { velocity -> state.settle(velocity) },
-                )
-                .settleAfterRelease({ !state.isSettled && !state.isAnimating }) { scope.launch { state.settle(0f) } },
-        ) {
-            SheetHandle(style) {
-                val next = state.higher() ?: state.lowestVisible
-                scope.launch { state.animateTo(next) }
-            }
-            CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) {
-                header()
-                Column(Modifier.weight(1f).windowInsetsPadding(insets), content = content)
+                CompositionLocalProvider(LocalGlassContentColor provides style.onGlass, LocalGlassLayered provides true) {
+                    header()
+                    Column(Modifier.weight(1f).windowInsetsPadding(insets), content = content)
+                }
             }
         }
     }

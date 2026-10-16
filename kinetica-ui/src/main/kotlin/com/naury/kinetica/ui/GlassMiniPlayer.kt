@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -52,6 +53,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -62,6 +64,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.toSize
@@ -137,6 +140,9 @@ private val MiniPlayerSaver = Saver<GlassMiniPlayerState, Boolean>(save = { it.i
  * 놓이고 그 사이를 공유 요소처럼 커지며 이동한다. 이때 [collapsed]는 아트 옆 남은 공간에, [expanded]는 아트 아래 공간에 그린다.
  * 아트를 직접 그리려면 [artwork]를 비우고 두 람다가 받는 진행도(0..1)로 위치를 맞춘다. 진행도는 매 프레임 바뀌므로 함수로 넘기며,
  * 슬롯이 매 프레임 다시 구성되지 않도록 `Modifier.graphicsLayer { }`나 `Modifier.offset { }`처럼 그리기, 배치 단계의 람다 안에서 읽는다.
+ *
+ * 폭이 600dp 이상이고 가로로 넓은 화면(펼친 폴더블, 태블릿 가로)에서는 펼친 화면의 아트를 시작 쪽 절반 가운데에, [expanded]를 끝 쪽 절반에 둔다.
+ * 세로 접힌 선이 있으면 그 선으로 나눈다. 탁자 모드에서는 아트를 접힌 선 위 칸에, [expanded]를 아래 칸에 둔다. 그 밖의 배치에서 [expanded] 폭은 560dp를 넘지 않는다.
  *
  * [GlassScaffold] 안에서 부르면 오버레이 레이어에 그린다. 밖에서 부르면 호출한 자리를 화면 전체로 보고 그린다.
  * 막대를 [GlassFloatingTabBar]의 `accessory`처럼 다른 컴포넌트 안에 두려면 이 함수 대신 [GlassMiniPlayerBar]와
@@ -256,6 +262,9 @@ public fun GlassMiniPlayerBar(
  * 막대가 화면에 없을 때 펼치면 [GlassMiniPlayer]의 기본 막대 자리(화면 아래)에서 커진다. [GlassScaffold] 안에서는 오버레이 레이어에 그리고,
  * 밖에서는 호출한 자리를 화면 전체로 보고 그린다. 막대와 같은 창 안에서 불러야 위치가 맞는다.
  *
+ * 펼친 화면의 배치는 [GlassMiniPlayer]와 같다. 폭이 600dp 이상이고 가로로 넓은 화면에서는 아트를 시작 쪽, 내용을 끝 쪽에 나란히 두고,
+ * 탁자 모드(가로로 반쯤 접은 폴더블)에서는 아트를 접힌 선 위, 내용을 아래에 둔다. 그 밖에는 아트 아래에 내용을 두며 내용 폭은 560dp를 넘지 않는다.
+ *
  * @param artwork 큰 앨범 아트. [GlassMiniPlayerBar]에 준 아트와 같은 내용을 주면 막대의 작은 아트에서 이어지며 커진다.
  * @param content 전체 화면 내용. 펼침 진행도를 읽는 함수를 받으며, 펼치기 시작하면 그리기 시작해 서서히 나타난다.
  */
@@ -289,14 +298,18 @@ private fun MiniPlayerHost(
         // 진행도는 매 프레임 바뀌므로 읽는 곳을 작은 컴포저블로 나눠 그 범위만 다시 구성되게 한다.
         PlayerPushBack(state)
         val origin = remember { mutableStateOf(Offset.Zero) }
+        val window = rememberGlassWindowLayout()
+        val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
         BoxWithConstraints(
             modifier
                 .fillMaxSize()
-                .then(if (layout.detached) Modifier.onGloballyPositioned { origin.value = it.positionInWindow() } else Modifier),
+                .onGloballyPositioned { origin.value = it.positionInWindow() },
         ) {
             val bar = layout.barHeight * LocalDensity.current.fontScale.coerceIn(1f, MAX_BAR_GROW)
-            val own = playerGeometry(constraints, bar, layout.barBottomPadding, artwork != null)
-            val geometry = if (layout.detached) remember(own, state) { own.attachedTo(state) { origin.value } } else own
+            // 접힌 선은 창 좌표라 이 오버레이 기준으로 옮긴다. 위치가 바뀔 때만 다시 구성된다.
+            val fold = window.hinge?.let { PlayerFold(it.translate(-origin.value), window.posture) }
+            val own = playerGeometry(constraints, bar, layout.barBottomPadding, artwork != null, fold)
+            val geometry = if (layout.detached) remember(own, state, rtl) { own.attachedTo(state, rtl) { origin.value } } else own
             PlayerScrim(state, scope)
             val progress = remember(state) { { state.progress } }
             val slots = remember(scope, collapsed, expanded, artwork != null, progress) {
@@ -357,6 +370,7 @@ private class PlayerGeometry(
     val screen: IntSize,
     val full: Rect,
     val fullArt: Rect,
+    val content: Rect,
     val artRelative: Boolean,
     private val barOf: () -> Rect,
     private val barArtOf: () -> Rect,
@@ -365,22 +379,27 @@ private class PlayerGeometry(
     val barArt: Rect get() = barArtOf()
     val travel: Float get() = (bar.top - full.top).coerceAtLeast(1f)
 
-    /** 막대 자리를 [state]에 기록된 바깥 막대로 바꾼 사본. 바깥 막대가 놓인 적이 없으면 이 기본 자리를 쓴다. */
-    fun attachedTo(state: GlassMiniPlayerState, origin: () -> Offset): PlayerGeometry {
+    /**
+     * 막대 자리를 [state]에 기록된 바깥 막대로 바꾼 사본. 바깥 막대가 놓인 적이 없으면 이 기본 자리를 쓴다.
+     * 바깥 막대는 창 좌표라 뒤집지 않고 배치하므로, LTR 기준인 펼친 아트 자리는 [rtl]이면 여기서 미리 뒤집는다.
+     */
+    fun attachedTo(state: GlassMiniPlayerState, rtl: Boolean, origin: () -> Offset): PlayerGeometry {
         val ownBar = bar
         val ownArt = barArt
+        val art = if (rtl && !fullArt.isEmpty) Rect(screen.width - fullArt.right, fullArt.top, screen.width - fullArt.left, fullArt.bottom) else fullArt
         return PlayerGeometry(
             screen,
             full,
-            fullArt,
+            art,
+            content,
             artRelative = false,
             barOf = { state.barBounds.takeUnless { it.isEmpty }?.translate(-origin()) ?: ownBar },
             barArtOf = {
-                val art = state.barArtBounds
+                val barArt = state.barArtBounds
                 when {
-                    fullArt.isEmpty -> Rect.Zero
+                    art.isEmpty -> Rect.Zero
 
-                    !art.isEmpty -> art.translate(-origin())
+                    !barArt.isEmpty -> barArt.translate(-origin())
 
                     state.barBounds.isEmpty -> ownArt
 
@@ -392,8 +411,74 @@ private class PlayerGeometry(
     }
 }
 
+/** 오버레이 기준 좌표(px)로 옮긴 접힌 선과 자세 */
+internal class PlayerFold(val bounds: Rect, val posture: GlassPosture)
+
+/** 펼친 화면의 아트 자리와 내용 자리. 내용 자리는 펼친 화면([PlayerGeometry.full]) 기준 LTR 좌표(px)다. */
+internal class FullPlayerLayout(val art: Rect, val content: Rect)
+
+/**
+ * 펼친 플레이어의 아트와 내용 자리를 정한다(px, LTR). 세 가지 배치가 있다.
+ * - 탁자 모드: 아트는 가로 접힌 선 위 칸 가운데, 내용은 접힌 선 아래 칸.
+ * - 넓고 낮은 화면(폭 [wideMin] 이상이고 폭이 높이의 0.9배 이상): 아트는 시작 쪽 절반, 내용은 끝 쪽 절반. 세로 접힌 선이 있으면 그 선으로 나눈다.
+ * - 그 밖: 아트를 위 가운데, 내용을 그 아래에 두고 내용 폭은 [contentMax]로 묶는다.
+ * 아트가 없으면([hasArtwork]가 false) 아트 자리는 비우고 내용이 그 자리까지 쓴다.
+ */
+internal fun fullPlayerLayout(
+    width: Float,
+    full: Rect,
+    hasArtwork: Boolean,
+    fold: PlayerFold?,
+    small: Float,
+    handle: Float,
+    gap: Float,
+    side: Float,
+    artMax: Float,
+    contentMax: Float,
+    wideMin: Float,
+    minPane: Float,
+): FullPlayerLayout {
+    val height = full.height
+    val tabletop = fold?.takeIf {
+        it.posture == GlassPosture.Tabletop && it.bounds.width > it.bounds.height &&
+            it.bounds.top - full.top >= minPane && full.bottom - it.bounds.bottom >= minPane
+    }
+    if (tabletop != null) {
+        val hingeTop = tabletop.bounds.top - full.top
+        val hingeBottom = tabletop.bounds.bottom - full.top
+        val contentLeft = maxOf(0f, (width - contentMax) / 2f)
+        val content = Rect(contentLeft, hingeBottom + gap / 2f, width - contentLeft, height)
+        if (!hasArtwork) return FullPlayerLayout(Rect.Zero, Rect(contentLeft, handle, width - contentLeft, height))
+        val room = hingeTop - handle - gap / 2f
+        val big = minOf(width - side * 2, room, artMax).coerceAtLeast(small)
+        val top = full.top + handle + (room - big) / 2f
+        return FullPlayerLayout(Rect((width - big) / 2f, top, (width + big) / 2f, top + big), content)
+    }
+    if (width >= wideMin && width >= height * WIDE_RATIO) {
+        val vertical = fold?.bounds?.takeIf { it.height > it.width && it.left >= minPane && width - it.right >= minPane }
+        val splitStart = vertical?.left ?: (width / 2f)
+        val splitEnd = vertical?.right ?: (width / 2f)
+        val contentWidth = minOf(width - splitEnd - side * 2, contentMax)
+        val contentLeft = splitEnd + (width - splitEnd - contentWidth) / 2f
+        if (hasArtwork) {
+            val big = minOf(splitStart - side * 2, height - handle - side, artMax).coerceAtLeast(small)
+            val top = full.top + handle + (height - handle - big) / 2f
+            val left = (splitStart - big) / 2f
+            // 내용은 아트 윗선에서 시작해 두 칸의 첫 줄이 맞게 한다.
+            val content = Rect(contentLeft, top - full.top, contentLeft + contentWidth, height)
+            return FullPlayerLayout(Rect(left, top, left + big, top + big), content)
+        }
+    }
+    val contentLeft = maxOf(0f, (width - contentMax) / 2f)
+    if (!hasArtwork) return FullPlayerLayout(Rect.Zero, Rect(contentLeft, handle, width - contentLeft, height))
+    val big = minOf(width - side * 2, height * ART_MAX_HEIGHT, artMax).coerceAtLeast(small)
+    val artTop = full.top + handle
+    val art = Rect((width - big) / 2f, artTop, (width + big) / 2f, artTop + big)
+    return FullPlayerLayout(art, Rect(contentLeft, handle + big + gap, width - contentLeft, height))
+}
+
 @Composable
-private fun playerGeometry(constraints: Constraints, barHeight: Dp, barBottomPadding: Dp, hasArtwork: Boolean): PlayerGeometry {
+private fun playerGeometry(constraints: Constraints, barHeight: Dp, barBottomPadding: Dp, hasArtwork: Boolean, fold: PlayerFold?): PlayerGeometry {
     val density = LocalDensity.current
     val statusTop = WindowInsets.statusBars.getTop(density)
     val navBottom = WindowInsets.navigationBars.getBottom(density)
@@ -408,14 +493,22 @@ private fun playerGeometry(constraints: Constraints, barHeight: Dp, barBottomPad
         val inset = ART_INSET.toPx()
         val small = (barHeight.toPx() - inset * 2).coerceAtLeast(0f)
         val barArt = Rect(bar.left + inset, bar.top + inset, bar.left + inset + small, bar.top + inset + small)
-        val big = minOf(w - ART_SIDE.toPx() * 2, full.height * ART_MAX_HEIGHT, ART_MAX.toPx()).coerceAtLeast(small)
-        val artTop = full.top + HANDLE_AREA.toPx()
-        val fullArt = Rect((w - big) / 2f, artTop, (w + big) / 2f, artTop + big)
+        val placed = fullPlayerLayout(
+            w, full, hasArtwork, fold, small,
+            handle = HANDLE_AREA.toPx(),
+            gap = CONTENT_GAP.toPx(),
+            side = ART_SIDE.toPx(),
+            artMax = ART_MAX.toPx(),
+            contentMax = CONTENT_MAX.toPx(),
+            wideMin = GlassWindowDefaults.MediumMinWidth.toPx(),
+            minPane = MIN_FOLD_PANE.toPx(),
+        )
         val art = if (hasArtwork) barArt else Rect.Zero
         PlayerGeometry(
             IntSize(constraints.maxWidth, constraints.maxHeight),
             full,
-            if (hasArtwork) fullArt else Rect.Zero,
+            placed.art,
+            placed.content,
             artRelative = true,
             barOf = { bar },
             barArtOf = { art },
@@ -479,8 +572,14 @@ private fun ExpandedPanel(state: GlassMiniPlayerState, geometry: PlayerGeometry,
         scope.launch { state.collapse() }
         true
     }
-    val top = with(density) {
-        if (slots.hasArtwork) (geometry.fullArt.bottom - geometry.full.top).toDp() + CONTENT_GAP else HANDLE_AREA
+    val content = with(density) {
+        val area = geometry.content
+        PaddingValues(
+            start = area.left.toDp(),
+            top = area.top.toDp(),
+            end = (geometry.full.width - area.right).coerceAtLeast(0f).toDp(),
+            bottom = (geometry.full.height - area.bottom).coerceAtLeast(0f).toDp(),
+        )
     }
     Box(
         Modifier
@@ -504,7 +603,7 @@ private fun ExpandedPanel(state: GlassMiniPlayerState, geometry: PlayerGeometry,
                 .size(HANDLE_WIDTH, HANDLE_HEIGHT)
                 .background(LocalGlassContentColor.current.copy(alpha = HANDLE_ALPHA), RoundedCornerShape(HANDLE_HEIGHT)),
         )
-        Box(Modifier.fillMaxSize().padding(top = top)) { slots.expanded(slots.progress) }
+        Box(Modifier.fillMaxSize().padding(content)) { slots.expanded(slots.progress) }
     }
 }
 
@@ -585,4 +684,7 @@ private val HANDLE_HEIGHT = 5.dp
 private val HANDLE_PAD = 12.dp
 private val HANDLE_TOUCH = 20.dp
 private val CONTENT_GAP = 28.dp
+private val CONTENT_MAX = 560.dp
+private val MIN_FOLD_PANE = 200.dp
+private const val WIDE_RATIO = 0.9f
 private val PANEL_RISE = 40.dp

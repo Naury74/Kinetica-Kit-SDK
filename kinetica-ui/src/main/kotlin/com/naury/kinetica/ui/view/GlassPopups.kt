@@ -36,7 +36,7 @@ public fun interface OnGlassDismissListener {
  *
  * 닫히는 경우는 셋이다. 사용자가 바깥을 누르거나 끌어내리거나 뒤로 가기를 한 경우와 [dismiss]를 부른 경우에는
  * 닫힘 애니메이션을 보여 주고 [OnGlassDismissListener]를 한 번 호출한다. 액티비티나 [GlassPopupOptions.lifecycleOwner]가 끝난 경우에는
- * 애니메이션과 리스너 없이 바로 정리한다. 화면 회전으로 액티비티가 다시 만들어질 때도 이렇게 닫히므로, 회전 뒤에도 열어 두려면
+ * 애니메이션과 리스너 없이 바로 정리한다. 화면 회전이나 폴더블을 접고 펼 때 액티비티가 다시 만들어지면 이렇게 닫히므로, 그 뒤에도 열어 두려면
  * `onSaveInstanceState`에 열림 여부를 저장해 두었다가 새 액티비티의 `onCreate`에서 다시 띄운다.
  */
 public class GlassPopupHandle internal constructor(contentView: View) {
