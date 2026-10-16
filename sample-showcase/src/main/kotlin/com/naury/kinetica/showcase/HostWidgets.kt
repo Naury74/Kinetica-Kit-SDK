@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,7 @@ import com.naury.kinetica.ui.GlassButtonSize
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.delay
 
 /**
@@ -50,10 +52,10 @@ object HostWidgets {
     const val WEATHER = "widget.weather"
 
     val options = listOf(
-        HostViewOption(CLOCK, "시계", 470.0, 200.0),
-        HostViewOption(COUNTER, "카운터", 470.0, 260.0),
+        HostViewOption(CLOCK, "시계", 465.0, 300.0),
+        HostViewOption(COUNTER, "카운터", 465.0, 220.0),
         HostViewOption(SALES_CHART, "매출 그래프", 960.0, 380.0),
-        HostViewOption(WEATHER, "날씨", 470.0, 290.0),
+        HostViewOption(WEATHER, "날씨", 465.0, 300.0),
     )
 
     /** [sales]는 최근 매출(막대 높이 비율 0..1). 바뀌면 막대가 움직인다. */
@@ -66,7 +68,14 @@ object HostWidgets {
 }
 
 private val cardText = Color(0xFF1A1D24)
+private val cardLabel = Color(0xFF5B6270)
 private val accent = Color(0xFF7C8CFF)
+
+/** 장면 카드의 제목과 같은 모양의 작은 제목. */
+@Composable
+private fun WidgetLabel(text: String, color: Color = cardLabel) {
+    Text(text, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+}
 
 @Composable
 private fun Clock() {
@@ -77,9 +86,22 @@ private fun Clock() {
             now = System.currentTimeMillis()
         }
     }
-    val time = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
-    Box(Modifier.fillMaxSize().background(Color(0xFF101216)), contentAlignment = Alignment.Center) {
-        Text(time, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+    val time = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault())
+    Column(Modifier.fillMaxSize().background(Color(0xFF262A33)).padding(12.dp), verticalArrangement = Arrangement.SpaceBetween) {
+        WidgetLabel("지금", Color.White.copy(alpha = 0.6f))
+        Text(
+            time.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+            color = Color.White,
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+        Text(
+            time.format(DateTimeFormatter.ofPattern("M월 d일 EEEE", Locale.KOREA)),
+            color = Color.White.copy(alpha = 0.7f),
+            fontSize = 11.sp,
+            maxLines = 1,
+        )
     }
 }
 
@@ -87,31 +109,34 @@ private fun Clock() {
 private fun Counter() {
     var count by rememberSaveable { mutableIntStateOf(0) }
     Row(
-        Modifier.fillMaxSize().background(Color(0xFFF2F4F8)).padding(14.dp),
+        Modifier.fillMaxSize().background(Color.White).padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text("방문자", color = cardText.copy(alpha = 0.6f), fontSize = 13.sp)
-            Text("$count", color = cardText, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+            WidgetLabel("방문자")
+            Text("${count}명", color = cardText, fontSize = 24.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
         GlassButton("+1", { count++ }, size = GlassButtonSize.Small)
     }
 }
 
+/** [sales]는 최근 7일 매출. 가장 큰 날을 꽉 채우는 높이로 맞추고 오늘 막대만 진하게 칠한다. */
 @Composable
 private fun SalesChart(sales: List<Float>) {
-    Column(Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
-        Text("최근 7일 매출", color = cardText, fontWeight = FontWeight.SemiBold)
+    val max = sales.maxOrNull()?.takeIf { it > 0f } ?: 1f
+    Column(Modifier.fillMaxSize().background(Color.White).padding(12.dp)) {
+        WidgetLabel("최근 7일 매출")
         Row(
-            Modifier.weight(1f).fillMaxWidth().padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            Modifier.weight(1f).fillMaxWidth().padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            sales.forEach { value ->
-                val height by animateFloatAsState(value.coerceIn(0.05f, 1f), label = "bar")
+            sales.forEachIndexed { index, value ->
+                val height by animateFloatAsState((value / max).coerceIn(0.05f, 1f), label = "bar")
+                val color = if (index == sales.lastIndex) accent else accent.copy(alpha = 0.35f)
                 Canvas(Modifier.weight(1f).fillMaxSize()) {
                     val barHeight = size.height * height
-                    drawRoundRect(accent, Offset(0f, size.height - barHeight), Size(size.width, barHeight), CornerRadius(6.dp.toPx()))
+                    drawRoundRect(color, Offset(0f, size.height - barHeight), Size(size.width, barHeight), CornerRadius(4.dp.toPx()))
                 }
             }
         }
@@ -121,11 +146,14 @@ private fun SalesChart(sales: List<Float>) {
 @Composable
 private fun Weather() {
     Column(
-        Modifier.fillMaxSize().background(Color(0xFF3EC1D3)).padding(14.dp),
+        Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFF4FB8E8), Color(0xFF2F7FD0))))
+            .padding(12.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("서울", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-        Text("21°", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Light)
-        Text("맑음 · 최고 24° 최저 15°", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
+        WidgetLabel("서울", Color.White.copy(alpha = 0.8f))
+        Text("21°", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Light, maxLines = 1)
+        Text("맑음, 최고 24° 최저 15°", color = Color.White.copy(alpha = 0.85f), fontSize = 11.sp, maxLines = 1)
     }
 }

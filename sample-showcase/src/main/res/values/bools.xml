@@ -2,4 +2,6 @@
 <resources>
     <!-- 밝은 바탕이면 상태 표시줄 아이콘을 어둡게 둔다. -->
     <bool name="xml_light_bars">true</bool>
+    <!-- 넓은 화면 배치(layout-w600dp)인지. 넓으면 오른쪽 재생기에 홍보 장면 전체를 보여 준다. -->
+    <bool name="xml_wide">false</bool>
 </resources>

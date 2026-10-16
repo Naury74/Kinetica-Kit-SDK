@@ -6,4 +6,6 @@
     <color name="xml_body">#6B7280</color>
     <!-- 캡슐 버튼 바탕과 글자에 쓰는 잉크 색 -->
     <color name="xml_ink">#15161A</color>
+    <!-- 보드 위젯 카드 바탕 -->
+    <color name="xml_card">#FFFFFF</color>
 </resources>

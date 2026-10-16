@@ -133,7 +133,8 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
                     GlassTopTabs(
                         COMPONENT_TABS.map { GlassTab(it) },
                         pager,
-                        Modifier.padding(horizontal = readingPadding(16.dp)).fillMaxWidth().padding(bottom = 6.dp),
+                        // bottom 줄은 이미 contentMaxWidth 안에 놓이므로, 큰 제목의 안쪽 여백(20dp)만 맞춘다.
+                        Modifier.padding(horizontal = 20.dp).fillMaxWidth().padding(bottom = 6.dp),
                         // 큰 글자에서는 네 칸을 똑같이 나누면 "미디어"가 잘리므로 가로로 스크롤하는 탭으로 바꾼다.
                         scrollable = LocalDensity.current.fontScale > 1.3f,
                     )
@@ -267,7 +268,14 @@ private fun StepperCard() {
     DemoCard("스테퍼, 칩, 배지", "숫자는 굴러가며 바뀌고, 길게 누르면 점점 빨라집니다. 배지는 숫자가 바뀔 때 톡 튑니다.") {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             GlassStepper(count, { count = it }, range = 0..120)
-            Box(Modifier.size(44.dp).background(Color(0xFF5B6CFF), RoundedCornerShape(12.dp)).glassBadge(count.takeIf { it > 0 }))
+            // 앱 아이콘처럼 그린 알림 아이콘에 배지를 붙인다.
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .background(Brush.linearGradient(listOf(Color(0xFF7C8CFF), Color(0xFF4A5AE8))), RoundedCornerShape(12.dp))
+                    .glassBadge(count.takeIf { it > 0 }),
+                contentAlignment = Alignment.Center,
+            ) { ShowcaseIcon(ShowcaseIcons.Bell, 22.dp, Color.White) }
         }
         GlassChipGroup(listOf("전체", "사진", "동영상", "스크린샷", "즐겨찾기"), chips, { chips = it }, selection = GlassChipSelection.Multiple)
     }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -73,11 +75,7 @@ internal fun MotionDemo(onBack: () -> Unit) {
             item { JellyCard() }
             item {
                 DemoCard("기울이는 3D 카드", "Modifier.motionTilt입니다. 휴대폰을 기울이면 카드가 함께 기울고 빛이 흐릅니다. 실기기에서 확인해 보세요.") {
-                    Box(
-                        Modifier.fillMaxWidth().aspectRatio(1.7f).motionTilt(12f, 0.35f).clip(INNER_SHAPE)
-                            .background(Brush.linearGradient(listOf(Color(0xFF8E54E9), Color(0xFF4776E6), Color(0xFF00C6FF)))),
-                        contentAlignment = Alignment.BottomStart,
-                    ) { Label("Kinetica Card", 22, FontWeight.Bold, Modifier.padding(20.dp), Color.White) }
+                    TiltCard()
                 }
             }
             item { RollingCard() }
@@ -190,3 +188,39 @@ private val PRESETS = listOf(
     Triple("floating", "둥실", Color(0xFF34C3A0)),
     Triple("skeleton", "스켈레톤", Color(0xFFE5E7EB)),
 )
+
+/** 신용카드 비율의 카드. 넓은 화면에서 지나치게 커지지 않도록 폭을 360dp로 묶고 가운데 둔다. */
+@Composable
+private fun TiltCard() {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier
+                .widthIn(max = 360.dp)
+                .fillMaxWidth()
+                .aspectRatio(1.586f)
+                .motionTilt(12f, 0.35f)
+                .clip(INNER_SHAPE)
+                .background(Brush.linearGradient(listOf(Color(0xFF8E54E9), Color(0xFF4776E6), Color(0xFF00C6FF))))
+                .padding(20.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Label("Kinetica", 18, FontWeight.Bold, color = Color.White, modifier = Modifier.weight(1f))
+                ShowcaseIcon(ShowcaseIcons.Wave, 22.dp, Color.White.copy(alpha = 0.85f))
+            }
+            // IC 칩 자리
+            Box(
+                Modifier
+                    .padding(top = 18.dp)
+                    .size(40.dp, 30.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFFF6E7B0), Color(0xFFD9B969)))),
+            )
+            Spacer(Modifier.weight(1f))
+            Label("1234  5678  9012  2048", 17, FontWeight.Medium, color = Color.White)
+            Row(Modifier.padding(top = 6.dp)) {
+                Label("KIM KINETICA", 12, color = Color.White.copy(alpha = 0.8f), modifier = Modifier.weight(1f))
+                Label("12/30", 12, color = Color.White.copy(alpha = 0.8f))
+            }
+        }
+    }
+}

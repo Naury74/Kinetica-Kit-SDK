@@ -7,6 +7,9 @@ import com.naury.kinetica.core.geometry.Size
 import com.naury.kinetica.core.geometry.Transform2D
 import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
+import com.naury.kinetica.core.scene.Gradient
+import com.naury.kinetica.core.scene.GradientStop
+import com.naury.kinetica.core.scene.GradientType
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeStyle
@@ -18,8 +21,9 @@ import com.naury.kinetica.motion.SceneMorph
 /**
  * 목록 카드 장면과 상세 장면 한 쌍. 같은 morphKey의 노드가 전환 때 이어진다.
  * 상세 장면은 화면 비율에 맞춰 만들기 위해 [detail]에 높이(문서 단위, 폭 1080 기준)를 넘긴다.
+ * 그림은 [top]에서 [bottom] 색으로 내려가는 그라디언트이고, [caption]은 카드 제목 아래 한 줄 설명이다.
  */
-data class GalleryItem(val id: String, val title: String, val color: Long) {
+data class GalleryItem(val id: String, val title: String, val caption: String, val top: Long, val bottom: Long) {
     /** 목록 칸에 그리는 1080×1920 카드 장면 */
     val card: SceneDocument by lazy { GalleryScenes.card(this, GalleryScenes.CARD_HEIGHT) }
 
@@ -41,28 +45,28 @@ object GalleryScenes {
     private val muted = ArgbColor(0xFF9AA3B2.toInt())
 
     val items: List<GalleryItem> = listOf(
-        GalleryItem("aurora", "오로라", 0xFF7C8CFF),
-        GalleryItem("lagoon", "바다", 0xFF3EC1D3),
-        GalleryItem("ember", "노을", 0xFFF0B35A),
-        GalleryItem("moss", "숲", 0xFF5ED6A0),
+        GalleryItem("aurora", "오로라", "북쪽 하늘의 빛", 0xFF8C9BFF, 0xFF6A3FD8),
+        GalleryItem("lagoon", "바다", "맑은 물빛", 0xFF5FD6E4, 0xFF2368C4),
+        GalleryItem("ember", "노을", "해 질 녘 하늘", 0xFFFFC56B, 0xFFE0573F),
+        GalleryItem("moss", "숲", "이끼 낀 오솔길", 0xFF7DE3B0, 0xFF16835F),
     )
 
     /** 카드 장면. [height]가 카드 높이보다 크면 artboard만 늘리고 노드는 세로 가운데로 옮긴다. */
     internal fun card(item: GalleryItem, height: Double): SceneDocument {
-        val fill = ArgbColor(item.color.toInt())
+        val fill = item.gradient()
         val top = ((height - CARD_HEIGHT) / 2).coerceAtLeast(0.0)
         return scene(
             "${item.id}-card",
             maxOf(height, CARD_HEIGHT),
             // 카드 칸이 세로로 길어 그림을 위쪽에 크게 두고, 제목과 설명을 아래에 둬 빈 곳이 없게 한다.
-            shape("hero", NodeContent.Rectangle(Size(900.0, 1180.0), cornerRadius = 56.0), 90.0, top + 90.0, fill),
-            shape("title", NodeContent.Text(Size(900.0, 140.0), item.title, fontSize = 96.0), 90.0, top + 1340.0, white),
-            shape("body", NodeContent.Text(Size(900.0, 200.0), "눌러서 열기", fontSize = 56.0), 90.0, top + 1500.0, muted),
+            shape("hero", NodeContent.Rectangle(Size(900.0, 1320.0), cornerRadius = 56.0), 90.0, top + 90.0, fill),
+            shape("title", NodeContent.Text(Size(900.0, 140.0), item.title, fontSize = 96.0), 90.0, top + 1470.0, white),
+            shape("body", NodeContent.Text(Size(900.0, 200.0), item.caption, fontSize = 56.0), 90.0, top + 1620.0, muted),
         )
     }
 
     internal fun detail(item: GalleryItem, height: Double): SceneDocument {
-        val fill = ArgbColor(item.color.toInt())
+        val fill = item.gradient()
         val h = maxOf(height, CARD_HEIGHT)
         val hero = (h * HERO_RATIO).coerceAtLeast(900.0)
         return scene(
@@ -80,11 +84,22 @@ object GalleryScenes {
         )
     }
 
-    private fun shape(key: String, content: NodeContent, x: Double, y: Double, fill: ArgbColor) = SceneNode(
+    private fun GalleryItem.gradient() = NodeStyle(
+        fill = ArgbColor(top.toInt()),
+        gradient = Gradient(
+            GradientType.Linear,
+            listOf(GradientStop(0.0, ArgbColor(top.toInt())), GradientStop(1.0, ArgbColor(bottom.toInt()))),
+        ),
+    )
+
+    private fun shape(key: String, content: NodeContent, x: Double, y: Double, fill: ArgbColor) =
+        shape(key, content, x, y, NodeStyle(fill = fill))
+
+    private fun shape(key: String, content: NodeContent, x: Double, y: Double, style: NodeStyle) = SceneNode(
         id = NodeId(key),
         content = content,
         transform = Transform2D(translationX = x, translationY = y),
-        style = NodeStyle(fill = fill),
+        style = style,
         metadata = mapOf(SceneMorph.MORPH_KEY to key),
     )
 

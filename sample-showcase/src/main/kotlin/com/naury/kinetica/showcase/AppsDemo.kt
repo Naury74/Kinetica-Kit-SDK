@@ -89,7 +89,7 @@ private class AppInfo(val id: String, val title: String, val summary: String)
 private const val APPS_HOME = "apps"
 private val DARK_SCREENS = setOf(APPS_HOME, "music", "health")
 private val APPS = listOf(
-    AppInfo("music", "음악", "목록을 내리면 아래 탭 바가 작은 캡슐로 줄어듭니다. 탭 바 위 미니 플레이어를 누르면 플레이어 시트가 열리고, 불러오는 동안에는 스켈레톤이 보입니다."),
+    AppInfo("music", "음악", "목록을 내리면 아래 탭 바가 작은 캡슐로 줄어듭니다. 탭 바 위 미니 플레이어를 누르거나 위로 끌면 앨범 아트가 커지며 전체 화면 플레이어로 펼쳐지고, 불러오는 동안에는 스켈레톤이 보입니다."),
     AppInfo("map", "지도", "Apple 지도처럼 여러 높이에 멈추는 바텀 시트와 검색, 상단 탭, 툴팁."),
     AppInfo("mail", "메일", "메일을 누르면 본문이 열리고, 펼친 폴더블이나 태블릿에서는 목록과 본문이 두 칸으로 나란히 보입니다. 밀어서 보관·삭제, 길게 눌러 순서 바꾸기, 서랍 메뉴도 있습니다."),
     AppInfo("health", "건강", "활동 링, 그려지며 나타나는 선 그래프, 막대·도넛 차트, 달력, 플립 카운트다운, 범위 슬라이더."),

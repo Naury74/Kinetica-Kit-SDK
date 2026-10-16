@@ -229,12 +229,12 @@ private val PROMOS = listOf(
 /**
  * 서버가 내려주는 홍보 화면 JSON. 버전마다 문구와 색이 다르다. 맨 바깥 Frame은 가로로 늘어나는 제약(`both`)과 자동 레이아웃을 써서
  * 재생기를 [com.naury.kinetica.player.SceneFit.Responsive]로 두면 화면 폭에 맞게 펼쳐지고, 높이는 내용에 맞춰진다.
- * [heroOnly]면 매출 카드만 담는다(XML 화면의 작은 재생기용).
+ * [heroOnly]면 매출 카드만 담는다. XML 화면의 좁은 배치에서 쓴다.
+ * [transparent]면 바탕을 칠하지 않고 카드만 그린다. XML 화면은 다크 모드에서 바탕이 어두워지기 때문이다.
  */
-internal fun promoJson(version: Int, heroOnly: Boolean = false): String {
+internal fun promoJson(version: Int, heroOnly: Boolean = false, transparent: Boolean = heroOnly): String {
     val promo = PROMOS[version % PROMOS.size]
-    // XML 화면은 다크 모드에서 바탕이 어두워지므로 카드만 그리고 바탕은 비워 둔다.
-    val canvas = if (heroOnly) "#00000000" else "#F3F4F8"
+    val canvas = if (transparent) "#00000000" else "#F3F4F8"
     val pageChildren = if (heroOnly) "\"card\"" else "\"card\", \"stats\", \"menu\""
     val nodes = buildList {
         addHero(promo, pageChildren)

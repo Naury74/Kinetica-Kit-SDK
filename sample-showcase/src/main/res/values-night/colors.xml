@@ -4,4 +4,6 @@
     <color name="xml_title">#F2F4F8</color>
     <color name="xml_body">#9AA3B2</color>
     <color name="xml_ink">#F2F4F8</color>
+    <!-- 보드 위젯 카드 바탕 -->
+    <color name="xml_card">#1F232B</color>
 </resources>

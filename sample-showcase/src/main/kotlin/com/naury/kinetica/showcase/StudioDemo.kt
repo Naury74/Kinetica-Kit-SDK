@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,6 +53,8 @@ import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.editor.KineticaEditor
 import com.naury.kinetica.editor.StudioTheme
+import com.naury.kinetica.editor.StudioToolbarButton
+import com.naury.kinetica.editor.StudioToolbarGroup
 import com.naury.kinetica.export.DeviceFrame
 import com.naury.kinetica.export.ExportRequest
 import com.naury.kinetica.export.ExportResult
@@ -65,6 +68,8 @@ import com.naury.kinetica.render.ContentImageLoader
 import com.naury.kinetica.serialization.FileSceneRepository
 import com.naury.kinetica.serialization.LoadResult
 import com.naury.kinetica.serialization.SaveResult
+import com.naury.kinetica.ui.GlassSheet
+import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.GlassToastHost
 import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.rememberGlassToastState
@@ -85,13 +90,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()) {
     var previewing by rememberSaveable { mutableStateOf(false) }
-    var sales by remember { mutableStateOf(List(7) { Random.nextFloat() }) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(2_000)
-            sales = sales.drop(1) + Random.nextFloat()
-        }
-    }
+    val sales = rememberLiveSales()
     val session by model.session.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
     val toast = rememberGlassToastState()
@@ -103,6 +102,7 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
     }
     val photo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let(model::addPhoto) }
     var mockup by remember { mutableStateOf(false) }
+    var more by rememberSaveable { mutableStateOf(false) }
     val export =
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
             uri?.let { model.export(it, mockup) }
@@ -112,9 +112,7 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
     Column(Modifier.fillMaxSize().background(theme.canvasBackground).statusBarsPadding().navigationBarsPadding()) {
         if (previewing) {
             val document by session.document.collectAsStateWithLifecycle()
-            StudioAction("편집으로 돌아가기", theme.accent, ShowcaseIcons.Back, Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
-                previewing = false
-            }
+            PreviewBack(theme.accent) { previewing = false }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 KineticaPlayer(document, Modifier.fillMaxSize(), data = DATA, slots = slots, fit = SceneFit.Responsive)
             }
@@ -126,53 +124,104 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
                 slots = slots,
                 hostViews = HostWidgets.options,
                 data = DATA,
+                onExit = onBack,
                 toolbarEnd = {
-                    studioActions(model, onBack, {
-                        previewing = true
-                    }, { photo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) { asMockup ->
-                        mockup = asMockup
-                        export.launch(if (asMockup) "kinetica-mockup.png" else "kinetica-scene.png")
-                    }.forEach { (label, action) -> StudioAction(label, theme.accent, onClick = action) }
+                    StudioToolbarGroup {
+                        StudioToolbarButton("미리보기", { previewing = true }, icon = ShowcaseIcons.Expand)
+                        StudioToolbarButton("사진", {
+                            photo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }, icon = ShowcaseIcons.Plus)
+                        StudioToolbarButton("저장", model::save, icon = ShowcaseIcons.Download)
+                    }
+                    StudioToolbarButton("더 보기", { more = true }, icon = ShowcaseIcons.Grid)
                 },
             )
         }
     }
+    val moreActions = studioMoreActions(model) { asMockup ->
+        mockup = asMockup
+        export.launch(if (asMockup) "kinetica-mockup.png" else "kinetica-scene.png")
+    }
+    StudioMoreSheet(more, theme.isDark, { more = false }, moreActions)
     GlassToastHost(toast)
 }
 
-/** 편집기 도구 모음의 글자 버튼. 캡슐 모양으로 눌림을 보이고, [icon]이 있으면 글자 앞에 18dp로 놓는다. */
+/** 2초마다 하루씩 밀려나는 최근 7일 매출(0..1). 매출 그래프 위젯에 넘긴다. */
 @Composable
-private fun StudioAction(label: String, color: Color, icon: ImageVector? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun rememberLiveSales(): List<Float> {
+    var sales by remember { mutableStateOf(List(7) { Random.nextFloat() }) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(2_000)
+            sales = sales.drop(1) + Random.nextFloat()
+        }
+    }
+    return sales
+}
+
+/** 자주 쓰지 않는 예제 열기와 내보내기를 모은 바텀 시트. 줄을 누르면 시트를 닫고 동작을 실행한다. */
+@Composable
+private fun StudioMoreSheet(
+    visible: Boolean,
+    dark: Boolean,
+    onDismiss: () -> Unit,
+    actions: List<Triple<String, ImageVector, () -> Unit>>,
+) {
+    GlassSheet(visible, onDismiss, style = if (dark) GlassStyles.LiquidDark else GlassStyles.Liquid, title = "더 보기") {
+        Column(Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+            actions.forEach { (label, icon, action) ->
+                MoreRow(label, icon) {
+                    onDismiss()
+                    action()
+                }
+            }
+        }
+    }
+}
+
+/** 미리보기에서 편집기로 돌아가는 버튼. 편집기 도구 모음 버튼처럼 높이 44dp 캡슐에 18dp 아이콘을 둔다. */
+@Composable
+private fun PreviewBack(color: Color, onClick: () -> Unit) {
     Row(
-        modifier
+        Modifier
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .heightIn(min = 44.dp)
             .clip(CircleShape)
             .glassClickable(CircleShape, onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) ShowcaseIcon(icon, 18.dp, color, Modifier.padding(end = 6.dp))
-        Text(label, color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        ShowcaseIcon(ShowcaseIcons.Back, 18.dp, color, Modifier.padding(end = 6.dp))
+        Text("편집으로 돌아가기", color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
 
-/** 편집기 도구 모음 끝에 놓을 버튼. */
-private fun studioActions(
-    model: StudioDemoModel,
-    onBack: () -> Unit,
-    preview: () -> Unit,
-    pickPhoto: () -> Unit,
-    export: (mockup: Boolean) -> Unit,
-): List<Pair<String, () -> Unit>> = listOf(
-    "나가기" to onBack,
-    "미리보기" to preview,
-    "예제" to { model.open(DemoScene.create(), "예제 장면을 열었어요") },
-    "대시보드" to { model.open(DashboardScene.create(), "대시보드 예제를 열었어요") },
-    "사진" to pickPhoto,
-    "저장" to model::save,
-    "PNG" to { export(false) },
-    "목업" to { export(true) },
-)
+/** 더 보기 시트의 한 줄. 높이 52dp, 앞 아이콘 22dp, 모서리 14dp의 눌림 표시를 쓴다. */
+@Composable
+private fun MoreRow(label: String, icon: ImageVector, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .clip(shape)
+            .glassClickable(shape, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ShowcaseIcon(icon, 22.dp, modifier = Modifier.padding(end = 14.dp))
+        Label(label, 16, FontWeight.Medium)
+    }
+}
+
+/** 더 보기 시트에 넣을 동작. 예제를 열거나 PNG와 목업으로 내보낸다. */
+private fun studioMoreActions(model: StudioDemoModel, export: (mockup: Boolean) -> Unit): List<Triple<String, ImageVector, () -> Unit>> =
+    listOf(
+        Triple("예제 장면 열기", ShowcaseIcons.Sparkle) { model.open(DemoScene.create(), "예제 장면을 열었어요") },
+        Triple("대시보드 예제 열기", ShowcaseIcons.Grid) { model.open(DashboardScene.create(), "대시보드 예제를 열었어요") },
+        Triple("PNG로 내보내기", ShowcaseIcons.Download) { export(false) },
+        Triple("휴대폰 목업으로 내보내기", ShowcaseIcons.Phone) { export(true) },
+    )
 
 private val DATA = SceneData.of(
     DashboardScene.SALES_TODAY to DataValue.Number(1_284_000.0),

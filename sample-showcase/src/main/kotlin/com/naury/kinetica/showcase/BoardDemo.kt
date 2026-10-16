@@ -62,7 +62,8 @@ internal fun BoardDemo(onBack: () -> Unit, viewModel: StoreViewModel = viewModel
     val key = if (grid) "grid" else "free"
     val state = rememberKineticaBoardState(
         storeCatalog,
-        BoardStorage.sharedPreferences(context, "showcase-board", key),
+        // 위젯 처음 크기를 바꾸면 저장 키 뒤 버전을 올려, 예전 배치 대신 새 기본 배치로 연다.
+        BoardStorage.sharedPreferences(context, "showcase-board", "$key-v2"),
         if (grid) {
             // 넓은 화면에서는 칸 폭 160dp 이상을 유지하며 열을 늘린다(최대 6열). 열 수마다 배치를 따로 기억한다.
             BoardArrangement.Grid(columns = 2, gapDp = BOARD_GAP.value, columnsByWidth = GridColumns.Adaptive(160f, maxColumns = 6))

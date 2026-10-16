@@ -78,7 +78,8 @@ private fun SceneGrid(
         topBar = { DemoTopBar("장면 전환", "카드가 상세 화면으로 이어지고, 아래로 끌면 닫힙니다", onBack) },
     ) { padding ->
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(160.dp),
+            // 폰에서도 넓은 화면에서도 두 열로 둔다. 넓은 화면에서 네 장이 한 줄에 작게 놓이고 아래가 비지 않게 한다.
+            columns = GridCells.Fixed(2),
             // 카드 칸마다 6dp 여백이 있어 그만큼 빼면 카드 가장자리가 상단 바 캡슐과 맞는다. 넓은 화면에서는 같은 읽기 폭으로 가운데 둔다.
             contentPadding = PaddingValues(
                 start = readingPadding(16.dp) - 6.dp,

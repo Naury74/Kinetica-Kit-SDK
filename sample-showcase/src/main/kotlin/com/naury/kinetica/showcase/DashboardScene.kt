@@ -52,16 +52,20 @@ object DashboardScene {
         text("date", "오늘의 매장 현황", 60.0, 150.0, 960.0, 60.0, 34.0, 400, 0xFF9AA3B2).stretchX(),
     )
 
-    /** 카드 두 장은 가로 자동 레이아웃 안에서 남는 공간을 반씩 채우므로, 화면이 넓어지면 함께 넓어진다. */
+    /**
+     * 카드 두 장은 높이 300의 가로 자동 레이아웃 안에서 남는 폭을 반씩 채우고 높이는 줄 높이로 늘어나므로,
+     * 화면이 넓어지면 함께 넓어지고 두 카드의 높이는 늘 같다.
+     */
     private fun stats() = listOf(
-        row("stats", 60.0, 240.0, listOf("sales-card", "orders-card")),
-        card("sales-card", "stats", listOf("sales-label", "sales-value")),
-        text("sales-label", "오늘 매출", 0.0, 0.0, 400.0, 50.0, 30.0, 500, 0xFF5B6270, parent = "sales-card"),
-        text("sales-value", "-", 0.0, 0.0, 400.0, 100.0, 60.0, 800, 0xFF1A1D24, parent = "sales-card", bind = SALES_TODAY)
+        row("stats", 60.0, 240.0, 300.0, listOf("sales-card", "orders-card")),
+        card("sales-card", "stats", listOf("sales-label", "sales-value", "sales-trend")),
+        text("sales-label", "오늘 매출", 0.0, 0.0, 400.0, 50.0, 30.0, 500, LABEL, parent = "sales-card"),
+        text("sales-value", "-", 0.0, 0.0, 400.0, 100.0, 60.0, 800, INK, parent = "sales-card", bind = SALES_TODAY)
             .withNumberFormat(),
+        text("sales-trend", "어제보다 8% 많아요", 0.0, 0.0, 400.0, 52.0, 28.0, 600, 0xFF0E9F6E, parent = "sales-card"),
         card("orders-card", "stats", listOf("orders-label", "orders-value", "badges")),
-        text("orders-label", "주문", 0.0, 0.0, 200.0, 50.0, 30.0, 500, 0xFF5B6270, parent = "orders-card"),
-        text("orders-value", "-", 0.0, 0.0, 300.0, 100.0, 72.0, 800, 0xFF1A1D24, parent = "orders-card", bind = ORDER_COUNT),
+        text("orders-label", "주문", 0.0, 0.0, 200.0, 50.0, 30.0, 500, LABEL, parent = "orders-card"),
+        text("orders-value", "-", 0.0, 0.0, 300.0, 100.0, 60.0, 800, INK, parent = "orders-card", bind = ORDER_COUNT),
     )
 
     /** 가로 자동 레이아웃. 데이터에 따라 "영업 중"이 숨으면 "배달 가능"이 그 위치로 당겨진다. */
@@ -77,40 +81,50 @@ object DashboardScene {
             parentId = NodeId("orders-card"),
             name = "상태 표시",
         ),
-        badge("open-badge", "영업 중", 0xFF5ED6A0).copy(bindings = mapOf(BoundProperty.Visible to STORE_OPEN)),
-        badgeText("open-badge", "영업 중", 0xFF0B3D2C),
-        badge("delivery-badge", "배달 가능", 0xFFFFE3A3),
-        badgeText("delivery-badge", "배달 가능", 0xFF5A3B00),
-    )
+    ) + badge("open-badge", "영업 중", 0xFF5ED6A0, 0xFF0B3D2C, visibleWhen = STORE_OPEN) +
+        badge("delivery-badge", "배달 가능", 0xFFFFE3A3, 0xFF5A3B00)
 
-    private fun widgets() = listOf(
-        host("chart", HostWidgets.SALES_CHART, 60.0, 570.0, 960.0, 380.0).stretchX(),
-        row("widgets", 60.0, 980.0, listOf("left-column", "counter")),
+    /**
+     * 호스트 위젯은 모두 같은 모서리(36)로 잘리는 카드 Frame 안에 넣는다. 위젯은 카드 크기를 그대로 채운다.
+     * 시계와 날씨는 높이 300의 한 줄에서 폭을 반씩 나누고, 방문자 카운터는 한 줄 전체를 쓴다.
+     */
+    private fun widgets() = slotCard("chart", HostWidgets.SALES_CHART, 960.0, 380.0, x = 60.0, y = 570.0) +
+        row("widgets", 60.0, 980.0, 300.0, listOf("clock-card", "weather-card")) +
+        slotCard("clock", HostWidgets.CLOCK, 465.0, 300.0, parent = "widgets") +
+        slotCard("weather", HostWidgets.WEATHER, 465.0, 300.0, parent = "widgets") +
+        slotCard("counter", HostWidgets.COUNTER, 960.0, 220.0, x = 60.0, y = 1310.0)
+
+    /**
+     * 호스트 위젯 [key]를 담은 카드. [parent]가 있으면 그 줄에서 남는 폭을 나눠 채우고, 없으면 [x], [y]에 놓여 좌우로 늘어난다.
+     * 카드는 세로 자동 레이아웃이라 안의 위젯이 카드 크기를 그대로 채운다.
+     */
+    private fun slotCard(id: String, key: String, w: Double, h: Double, parent: String? = null, x: Double = 0.0, y: Double = 0.0) = listOf(
         SceneNode(
-            NodeId("left-column"),
-            NodeContent.Frame(
-                Size(470.0, 520.0),
-                listOf(NodeId("clock"), NodeId("weather")),
-                clip = false,
-                layout = AutoLayout(LayoutDirection.Vertical, gap = 30.0, crossAlign = CrossAlign.Stretch, hugHeight = true),
+            id = NodeId("$id-card"),
+            content = NodeContent.Frame(
+                Size(w, h),
+                listOf(NodeId(id)),
+                cornerRadius = RADIUS,
+                layout = AutoLayout(LayoutDirection.Vertical, crossAlign = CrossAlign.Stretch),
             ),
-            parentId = NodeId("widgets"),
-            name = "왼쪽 열",
-            layoutFill = true,
+            parentId = parent?.let(::NodeId),
+            name = HostWidgets.options.first { it.key == key }.label + " 카드",
+            transform = Transform2D(translationX = x, translationY = y),
+            style = NodeStyle(shadows = listOf(CARD_SHADOW)),
+            constraints = if (parent == null) LayoutConstraints(Pin.Both) else LayoutConstraints(),
+            layoutFill = parent != null,
         ),
-        host("clock", HostWidgets.CLOCK, 0.0, 0.0, 470.0, 200.0).copy(parentId = NodeId("left-column")),
-        host("weather", HostWidgets.WEATHER, 0.0, 0.0, 470.0, 290.0).copy(parentId = NodeId("left-column")),
-        host("counter", HostWidgets.COUNTER, 0.0, 0.0, 470.0, 260.0).copy(parentId = NodeId("widgets"), layoutFill = true),
+        host(id, key, 0.0, 0.0, w, h).copy(parentId = NodeId("$id-card"), layoutFill = true),
     )
 
-    /** 좌우로 늘어나는 가로 자동 레이아웃. 높이는 가장 큰 자식에 맞춘다. */
-    private fun row(id: String, x: Double, y: Double, children: List<String>) = SceneNode(
+    /** 좌우로 늘어나는 높이 [h]의 가로 자동 레이아웃. 자식은 줄 높이까지 늘어나 같은 줄의 카드 높이가 같아진다. */
+    private fun row(id: String, x: Double, y: Double, h: Double, children: List<String>) = SceneNode(
         id = NodeId(id),
         content = NodeContent.Frame(
-            Size(960.0, 100.0),
+            Size(960.0, h),
             children.map(::NodeId),
             clip = false,
-            layout = AutoLayout(LayoutDirection.Horizontal, gap = 20.0, hugHeight = true),
+            layout = AutoLayout(LayoutDirection.Horizontal, gap = GAP, crossAlign = CrossAlign.Stretch),
         ),
         name = id,
         transform = Transform2D(translationX = x, translationY = y),
@@ -139,46 +153,48 @@ object DashboardScene {
         text("refresh-text", "새로 고침", 0.0, 0.0, 300.0, 56.0, 40.0, 700, 0xFFFFFFFF, parent = "refresh", align = TextAlignment.Center),
     )
 
-    private fun badgeText(badge: String, label: String, color: Long) =
-        text("$badge-text", label, 0.0, 0.0, 120.0, 36.0, 24.0, 700, color, parent = badge, align = TextAlignment.Center)
+    private const val GAP = 30.0
+    private const val RADIUS = 36.0
+    private const val INK = 0xFF1A1D24
+    private const val LABEL = 0xFF5B6270
+    private val CARD_SHADOW = Shadow(ArgbColor(0x33000000), offsetY = 10.0, blur = 28.0)
 
     private fun SceneNode.stretchX() = copy(constraints = LayoutConstraints(Pin.Both))
 
-    /** 숫자 카드. 안쪽은 세로 자동 레이아웃이라 데이터 때문에 텍스트가 바뀌거나 요소가 숨어도 간격이 다시 맞춰진다. */
+    /** 숫자 카드. 높이는 줄([row])이 정한다. 안쪽은 세로 자동 레이아웃이라 데이터 때문에 텍스트가 바뀌거나 요소가 숨어도 간격이 다시 맞춰진다. */
     private fun card(id: String, parent: String, children: List<String>) = SceneNode(
         id = NodeId(id),
         content = NodeContent.Frame(
-            Size(470.0, 300.0),
+            Size(465.0, 300.0),
             children.map(::NodeId),
-            cornerRadius = 36.0,
-            layout = AutoLayout(
-                LayoutDirection.Vertical,
-                gap = 16.0,
-                padding = Insets.all(32.0),
-                crossAlign = CrossAlign.Stretch,
-                hugHeight = true,
-            ),
+            cornerRadius = RADIUS,
+            layout = AutoLayout(LayoutDirection.Vertical, gap = 16.0, padding = Insets.all(32.0), crossAlign = CrossAlign.Stretch),
         ),
         parentId = NodeId(parent),
         name = id,
         style = NodeStyle(
             fill = ArgbColor(0xFFFFFFFF.toInt()),
-            shadows = listOf(Shadow(ArgbColor(0x33000000), offsetY = 10.0, blur = 28.0)),
+            shadows = listOf(CARD_SHADOW),
         ),
         layoutFill = true,
     )
 
-    private fun badge(id: String, label: String, fill: Long) = SceneNode(
-        id = NodeId(id),
-        content = NodeContent.Frame(
-            Size(150.0, 52.0),
-            listOf(NodeId("$id-text")),
-            cornerRadius = 26.0,
-            layout = AutoLayout(LayoutDirection.Horizontal, padding = Insets(16.0, 8.0, 16.0, 8.0), hugWidth = true, hugHeight = true),
+    /** 캡슐 배지와 그 안의 글자. [visibleWhen]을 주면 그 데이터가 참일 때만 보인다. */
+    private fun badge(id: String, label: String, fill: Long, ink: Long, visibleWhen: String? = null) = listOf(
+        SceneNode(
+            id = NodeId(id),
+            content = NodeContent.Frame(
+                Size(150.0, 52.0),
+                listOf(NodeId("$id-text")),
+                cornerRadius = 26.0,
+                layout = AutoLayout(LayoutDirection.Horizontal, padding = Insets(16.0, 8.0, 16.0, 8.0), hugWidth = true, hugHeight = true),
+            ),
+            parentId = NodeId("badges"),
+            name = label,
+            style = NodeStyle(fill = ArgbColor(fill.toInt())),
+            bindings = visibleWhen?.let { mapOf(BoundProperty.Visible to it) }.orEmpty(),
         ),
-        parentId = NodeId("badges"),
-        name = label,
-        style = NodeStyle(fill = ArgbColor(fill.toInt())),
+        text("$id-text", label, 0.0, 0.0, 120.0, 36.0, 24.0, 700, ink, parent = id, align = TextAlignment.Center),
     )
 
     private fun host(id: String, key: String, x: Double, y: Double, w: Double, h: Double) = SceneNode(
