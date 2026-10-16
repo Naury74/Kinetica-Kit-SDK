@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,11 +39,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.naury.kinetica.ui.AvatarStack
 import com.naury.kinetica.ui.GlassAvatar
 import com.naury.kinetica.ui.GlassFloatingTabBar
@@ -66,31 +73,32 @@ import kotlinx.coroutines.delay
  * 탭 바 위에 붙은 미니 플레이어 막대를 누르거나 위로 끌면 앨범 아트가 이어지며 커지는 전체 화면 플레이어가 열린다.
  */
 @Composable
-internal fun MusicApp(onBack: () -> Unit) {
+internal fun MusicApp(onBack: () -> Unit, model: MusicViewModel = viewModel()) {
     var loading by remember { mutableStateOf(true) }
-    var playing by rememberSaveable { mutableStateOf(false) }
-    var track by rememberSaveable { mutableIntStateOf(0) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    val track = model.track
     LaunchedEffect(Unit) {
         delay(1500)
         loading = false
     }
     val bar = rememberGlassFloatingTabBarState()
+    val list = rememberLazyListState()
     val player = rememberGlassMiniPlayerState()
     val song = TRACKS[track]
     GlassScaffold(
         Modifier.fillMaxSize(),
         style = GlassStyles.LiquidDark,
         background = { Aurora(Modifier.fillMaxSize(), dark = true) },
-        topBar = { DemoTopBar("음악", "목록을 내리면 탭 바가 줄어듭니다", onBack) },
+        topBar = { DemoTopBar("음악", "목록을 내리면 탭 바가 줄어듭니다", onBack, scrolled = { list.canScrollBackward }) },
         bottomBar = {
             GlassFloatingTabBar(MUSIC_TABS, tab, { tab = it }, state = bar, accessory = {
-                GlassMiniPlayerBar(player, artwork = { Artwork(song) }) { MiniBar(song, playing) { playing = !playing } }
+                GlassMiniPlayerBar(player, artwork = { Artwork(song) }) { MiniBar(song, model.playing, model::togglePlaying) }
             })
         },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().nestedScroll(bar.nestedScrollConnection),
+            state = list,
             contentPadding = PaddingValues(
                 start = readingPadding(),
                 end = readingPadding(),
@@ -102,14 +110,11 @@ internal fun MusicApp(onBack: () -> Unit) {
             item { Label(MUSIC_HEADERS[tab], 20, FontWeight.Bold, color = Color.White) }
             tabTracks(tab).forEach { index ->
                 item(TRACKS[index].title) {
-                    TrackRow(TRACKS[index], loading, index == track && playing) {
-                        track = index
-                        playing = true
-                    }
+                    TrackRow(TRACKS[index], loading, index == track && model.playing) { model.play(index) }
                 }
             }
         }
-        GlassMiniPlayerFullScreen(player, artwork = { Artwork(song) }) { FullPlayer(song, playing) { playing = !playing } }
+        GlassMiniPlayerFullScreen(player, artwork = { Artwork(song) }) { FullPlayer(song, model) }
     }
 }
 
@@ -155,15 +160,23 @@ private fun MiniBar(song: Song, playing: Boolean, toggle: () -> Unit) {
 }
 
 @Composable
-private fun FullPlayer(song: Song, playing: Boolean, toggle: () -> Unit) {
-    var liked by rememberSaveable { mutableStateOf(false) }
-    var likes by rememberSaveable { mutableIntStateOf(1284) }
-    var rating by rememberSaveable { mutableFloatStateOf(4f) }
-    var position by rememberSaveable { mutableFloatStateOf(0.32f) }
+private fun FullPlayer(song: Song, model: MusicViewModel) {
+    val track = model.track
+    // 폰처럼 내용 자리가 화면 폭 전체이면 큰 아트와 같은 가장자리 여백을 둔다. 넓은 화면에서는 플레이어가 이미 바깥 여백과
+    // 아트와의 간격을 두고 자리를 주므로, 여기서 또 여백을 두면 아트와 내용 사이만 벌어진다.
+    val windowWidth = LocalWindowInfo.current.containerSize.width
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val side = if (constraints.maxWidth >= windowWidth - 1) ART_SIDE else 0.dp
+        FullPlayerBody(song, model, track, side)
+    }
+}
+
+@Composable
+private fun FullPlayerBody(song: Song, model: MusicViewModel, track: Int, side: Dp) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(
-            start = 28.dp,
-            end = 28.dp,
+            start = side,
+            end = side,
             bottom =
                 navigationBarBottom() + 32.dp,
         ),
@@ -174,28 +187,25 @@ private fun FullPlayer(song: Song, playing: Boolean, toggle: () -> Unit) {
                 Label(song.title, 24, FontWeight.Bold)
                 Label(song.artist, 15, color = Color.White.copy(alpha = 0.7f))
             }
-            LikeButton(liked, {
-                liked = it
-                likes += if (it) 1 else -1
-            }, count = likes)
+            LikeButton(model.isLiked(track), { model.setLiked(track, it) }, count = model.likes(track))
         }
-        GlassSlider(position, { position = it })
+        GlassSlider(model.position, { model.position = it })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            PlayButton(playing, 72, toggle)
+            PlayButton(model.playing, 72, model::togglePlaying)
         }
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Label("이 곡 평가", 13, color = Color.White.copy(alpha = 0.7f))
-            GlassRating(rating, { rating = it }, allowHalf = true, starSize = 24.dp)
+            GlassRating(model.rating(track), { model.setRating(track, it) }, allowHalf = true, starSize = 24.dp)
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AvatarStack(FRIENDS, max = 4, size = 32.dp)
             Label("친구 6명이 이 곡을 좋아해요", 13, color = Color.White.copy(alpha = 0.8f))
         }
-        LaunchedEffect(playing) {
-            while (playing) {
+        LaunchedEffect(model.playing) {
+            while (model.playing) {
                 delay(1000)
-                position = (position + 0.01f) % 1f
+                model.position = (model.position + 0.01f) % 1f
             }
         }
     }
@@ -218,6 +228,9 @@ private val MUSIC_TABS =
     listOf(GlassTab("홈", ShowcaseIcons.Home), GlassTab("둘러보기", ShowcaseIcons.Sparkle), GlassTab("보관함", ShowcaseIcons.Grid))
 private val MUSIC_HEADERS = listOf("지금 많이 듣는 곡", "새로 나온 곡", "좋아요한 곡")
 
+/** 펼친 플레이어가 큰 아트 양옆에 두는 여백. 글자 시작선을 아트에 맞춘다. */
+private val ART_SIDE = 32.dp
+
 private class Song(val title: String, val artist: String, val colors: List<Color>)
 
 private val TRACKS = listOf(
@@ -229,3 +242,50 @@ private val TRACKS = listOf(
     Song("첫눈", "윈터", listOf(Color(0xFFB993D6), Color(0xFF8CA6DB))),
 )
 private val FRIENDS = listOf("민지", "서준", "하은", "도윤", "지우", "Ana").map { GlassAvatar(it) }
+
+/**
+ * 음악 데모 상태. 화면보다 오래 살아 있어 음악 화면을 나갔다 들어오거나 회전해도 고른 곡, 재생 여부,
+ * 곡마다 누른 좋아요와 평점이 남는다. 실제 앱이라면 저장소에 둘 값이다.
+ */
+internal class MusicViewModel : ViewModel() {
+    var track by mutableIntStateOf(0)
+        private set
+    var playing by mutableStateOf(false)
+        private set
+
+    /** 재생 위치. 0 이상 1 미만이다. */
+    var position by mutableFloatStateOf(START_POSITION)
+    private val liked = mutableStateMapOf<Int, Boolean>()
+    private val ratings = mutableStateMapOf<Int, Float>()
+
+    fun play(index: Int) {
+        track = index
+        playing = true
+    }
+
+    fun togglePlaying() {
+        playing = !playing
+    }
+
+    fun isLiked(index: Int): Boolean = liked[index] == true
+
+    fun setLiked(index: Int, value: Boolean) {
+        liked[index] = value
+    }
+
+    /** 다른 사람이 누른 좋아요 수에 내 좋아요를 더한다. */
+    fun likes(index: Int): Int = BASE_LIKES + index * LIKES_STEP + if (isLiked(index)) 1 else 0
+
+    fun rating(index: Int): Float = ratings[index] ?: DEFAULT_RATING
+
+    fun setRating(index: Int, value: Float) {
+        ratings[index] = value
+    }
+
+    private companion object {
+        const val START_POSITION = 0.32f
+        const val BASE_LIKES = 1284
+        const val LIKES_STEP = 317
+        const val DEFAULT_RATING = 4f
+    }
+}

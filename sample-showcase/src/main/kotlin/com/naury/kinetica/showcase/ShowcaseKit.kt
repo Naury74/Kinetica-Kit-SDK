@@ -4,6 +4,8 @@
 package com.naury.kinetica.showcase
 
 import android.app.Activity
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -26,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -35,11 +37,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -73,9 +77,15 @@ import com.naury.kinetica.ui.jellyPress
  * [onBack]이 `null`이면 뒤로 버튼을 두지 않는다(두 칸 배치의 상세 칸처럼 돌아갈 곳이 없을 때).
  */
 @Composable
-internal fun DemoTopBar(title: String, subtitle: String, onBack: (() -> Unit)?, maxWidth: Dp = READING_WIDTH) {
+internal fun DemoTopBar(
+    title: String,
+    subtitle: String,
+    onBack: (() -> Unit)?,
+    maxWidth: Dp = READING_WIDTH,
+    scrolled: (() -> Boolean)? = null,
+) {
     Box(Modifier.fillMaxWidth()) {
-        StatusBarScrim()
+        StatusBarScrim(scrolled = scrolled)
         Box(
             Modifier
                 .fillMaxWidth()
@@ -108,18 +118,47 @@ internal fun DemoTopBar(title: String, subtitle: String, onBack: (() -> Unit)?, 
 }
 
 /**
- * 스크롤한 내용이 상태 표시줄 아래로 지나갈 때 시계와 아이콘이 내용과 겹쳐 읽기 어렵지 않도록 상태 표시줄 뒤를 옅게 덮는다.
- * 글래스 글자 색이 밝으면(어두운 화면) 검정, 아니면 흰색으로 덮는다.
+ * 스크롤한 내용이 상태 표시줄 아래로 지나갈 때 시계, 아이콘과 겹쳐 읽기 어렵지 않도록 위에서 아래로 옅어지는 그라디언트를 깐다.
+ * 띠처럼 보이지 않게 상태 표시줄보다 조금 더 내려와 끝이 0으로 사라진다. GlassScaffold의 가장자리 블러와 함께 쓴다.
+ * 글래스 글자 색이 밝으면(어두운 화면) 검정, 아니면 흰색이다.
+ * [scrolled]를 주면 맨 위에 있을 때는 거의 보이지 않다가 내용이 상태 표시줄 아래로 들어가면 짙어진다.
+ * 없으면 스크롤 위치를 모르므로 중간 세기로 늘 깐다.
  */
 @Composable
-internal fun StatusBarScrim(color: Color = if (LocalGlassStyle.current.onGlass.isLight()) Color.Black else Color.White) {
+internal fun StatusBarScrim(
+    color: Color = if (LocalGlassStyle.current.onGlass.isLight()) Color.Black else Color.White,
+    scrolled: (() -> Boolean)? = null,
+) {
+    val target = when {
+        scrolled == null -> SCRIM_RESTING
+        scrolled() -> 1f
+        else -> SCRIM_TOP
+    }
+    val level by animateFloatAsState(target, tween(SCRIM_FADE_MS), label = "statusScrim")
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(
         Modifier
             .fillMaxWidth()
-            .windowInsetsTopHeight(WindowInsets.statusBars)
-            .background(Brush.verticalGradient(listOf(color.copy(alpha = 0.8f), color.copy(alpha = 0.45f)))),
+            .height(statusTop + SCRIM_EXTRA)
+            .drawWithCache {
+                // 상태 표시줄이 끝나는 지점까지는 거의 그대로 두고, 그 아래에서 부드럽게 0으로 떨어진다.
+                val edge = (statusTop.toPx() / size.height).coerceIn(0f, 1f)
+                val brush = Brush.verticalGradient(
+                    0f to color.copy(alpha = SCRIM_ALPHA),
+                    edge * 0.6f to color.copy(alpha = SCRIM_ALPHA * 0.8f),
+                    edge to color.copy(alpha = SCRIM_ALPHA * 0.45f),
+                    1f to color.copy(alpha = 0f),
+                )
+                onDrawBehind { drawRect(brush, alpha = level) }
+            },
     )
 }
+
+private const val SCRIM_ALPHA = 0.55f
+private const val SCRIM_RESTING = 0.55f
+private const val SCRIM_TOP = 0.12f
+private const val SCRIM_FADE_MS = 220
+private val SCRIM_EXTRA = 28.dp
 
 /** 넓은 화면에서 본문이 지나치게 늘어나지 않도록 쓰는 최대 폭 */
 internal val READING_WIDTH = 640.dp

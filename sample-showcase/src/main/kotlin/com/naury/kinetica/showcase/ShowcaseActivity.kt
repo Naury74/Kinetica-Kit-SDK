@@ -196,8 +196,8 @@ private fun Home(list: LazyListState, open: (Demo) -> Unit) {
                 }
                 homeFooter()
             }
-            // 카드가 상태 표시줄 아래로 지나갈 때 시계와 아이콘이 카드 글자와 겹쳐 보이지 않게 위쪽을 어둡게 덮는다.
-            StatusBarScrim(Color.Black)
+            // 카드가 상태 표시줄 아래로 지나갈 때만 위쪽을 어둡게 해 시계와 아이콘이 카드 글자와 겹쳐 보이지 않게 한다.
+            StatusBarScrim(Color.Black, scrolled = { list.canScrollBackward })
         }
     }
 }

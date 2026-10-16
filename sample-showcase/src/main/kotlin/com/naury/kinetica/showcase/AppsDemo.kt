@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,14 +50,16 @@ internal fun AppsDemo(onBack: () -> Unit) {
 
 @Composable
 private fun AppsHome(onBack: () -> Unit, open: (String) -> Unit) {
+    val list = rememberLazyListState()
     GlassScaffold(
         Modifier.fillMaxSize(),
         style = GlassStyles.LiquidDark,
         background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Midnight) },
-        topBar = { DemoTopBar("앱 화면 예", "컴포넌트를 조합해 만든 실제 앱 같은 화면", onBack) },
+        topBar = { DemoTopBar("앱 화면 예", "컴포넌트를 조합해 만든 실제 앱 같은 화면", onBack, scrolled = { list.canScrollBackward }) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
+            state = list,
             contentPadding = PaddingValues(
                 start = readingPadding(),
                 end = readingPadding(),
