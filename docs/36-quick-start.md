@@ -146,6 +146,7 @@ Box(
 | 움직임 효과를 붙였는데 배경은 그대로다 | 효과를 `background`나 `glass` 뒤에 붙였습니다. 앞으로 옮깁니다. |
 | 테스트에서 애니메이션이 멈추지 않아 기다리다 시간이 초과된다 | 반복 효과는 무한 애니메이션입니다. `compose.mainClock.autoAdvance = false`로 두고 `advanceTimeBy`로 시간을 진행합니다. |
 | `Can't represent a width … and height of 2147483639` 오류가 난다 | `GlassDetentSheet`처럼 화면 높이를 쓰는 컴포넌트를 `verticalScroll` 안에 넣었습니다. 스크롤 목록 밖으로 옮깁니다. |
+| 화면 아래 내비게이션 바 자리에 흰 띠가 보인다 | 기본 `enableEdgeToEdge()`는 기기에 따라(삼성 등) 제스처 내비게이션에서도 반투명 막을 깝니다. `enableEdgeToEdge(navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT))`로 부르고 API 29 이상에서 `window.isNavigationBarContrastEnforced = false`로 둡니다. |
 | 애니메이션이 하나도 안 움직인다 | 기기의 '애니메이션 삭제' 접근성 설정이 켜져 있으면 반복 효과는 일부러 멈춥니다. |
 
 ## 6. 화면 배치 팁

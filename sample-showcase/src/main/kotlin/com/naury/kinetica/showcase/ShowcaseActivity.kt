@@ -5,8 +5,10 @@ package com.naury.kinetica.showcase
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -75,9 +77,19 @@ class ShowcaseActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        showcaseEdgeToEdge()
         setContent { Showcase() }
     }
+}
+
+/**
+ * 시스템 바를 투명하게 두고 내용을 화면 끝까지 그린다. 기본 [enableEdgeToEdge]는 제스처 내비게이션에서도
+ * 내비게이션 바 뒤에 반투명 흰 막을 깔아(삼성 기기 등) 글래스 배경 아래쪽에 띠가 생긴다. 아이콘 색은 화면마다 정한다.
+ */
+internal fun ComponentActivity.showcaseEdgeToEdge() {
+    val transparent = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+    enableEdgeToEdge(statusBarStyle = transparent, navigationBarStyle = transparent)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
 }
 
 /** 쇼케이스 데모 목록. 선언한 순서대로 첫 화면에 나온다. */

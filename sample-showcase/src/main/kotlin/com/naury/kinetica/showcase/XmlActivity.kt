@@ -17,7 +17,6 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
@@ -53,7 +52,7 @@ class XmlActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        showcaseEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_xml)
         // 배경은 화면 끝까지 칠하고, 내용만 상태 표시줄, 내비게이션 바, 가로 화면 컷아웃, 키보드를 피한다.
