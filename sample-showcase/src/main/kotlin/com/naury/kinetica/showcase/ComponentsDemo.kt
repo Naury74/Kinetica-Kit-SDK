@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -367,7 +368,8 @@ private fun CardStackCard(notify: (String) -> Unit) {
         SwipeCardStack(
             PEOPLE,
             { name, direction -> notify(if (direction == SwipeDirection.Right) "$name 좋아요" else "$name 넘김") },
-            Modifier.fillMaxWidth().aspectRatio(1.3f),
+            // 넓은 화면에서 카드가 카드 폭만큼 커지면 한 장이 화면을 다 덮으므로 폰 크기로 묶어 가운데에 둔다.
+            Modifier.widthIn(max = STACK_MAX_WIDTH).fillMaxWidth().aspectRatio(1.3f).align(Alignment.CenterHorizontally),
             state = stack,
             overlay = { direction ->
                 Label(if (direction == SwipeDirection.Right) "LIKE" else "NOPE", 28, FontWeight.Black, Modifier.padding(20.dp), Color.White)
@@ -385,7 +387,7 @@ private fun CardStackCard(notify: (String) -> Unit) {
                 contentAlignment = Alignment.BottomStart,
             ) { Label(name, 26, FontWeight.Bold, Modifier.padding(20.dp), Color.White) }
         }
-        Pill("되돌리기") { scope.launch { stack.undo() } }
+        Pill("되돌리기", Modifier.align(Alignment.CenterHorizontally)) { scope.launch { stack.undo() } }
     }
 }
 
@@ -426,4 +428,5 @@ internal val PHOTO_COLORS = listOf(
     listOf(Color(0xFFFF5C8A), Color(0xFFFFC15E)),
 )
 
+private val STACK_MAX_WIDTH = 420.dp
 private val COMPONENTS_DEMO_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = false)

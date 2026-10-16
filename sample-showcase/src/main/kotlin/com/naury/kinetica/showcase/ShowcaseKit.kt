@@ -208,7 +208,8 @@ internal fun navigationBarBottom(): Dp = WindowInsets.navigationBars.asPaddingVa
 @Composable
 internal fun DemoCard(title: String, description: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     KSurface(modifier.fillMaxWidth(), shape = CARD_SHAPE) {
-        Column(Modifier.padding(CARD_PADDING), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // 폭을 채워야 넓은 화면에서 폭을 묶은 내용을 align(CenterHorizontally)로 카드 가운데에 놓을 수 있다.
+        Column(Modifier.fillMaxWidth().padding(CARD_PADDING), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Label(title, 18, FontWeight.Bold)
             Label(description, 13, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))
             content()

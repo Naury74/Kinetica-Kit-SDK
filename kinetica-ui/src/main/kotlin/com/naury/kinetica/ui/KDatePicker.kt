@@ -2,8 +2,10 @@ package com.naury.kinetica.ui
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -11,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import java.text.DateFormatSymbols
 import java.time.LocalDate
 import java.time.YearMonth
@@ -22,6 +25,8 @@ import java.util.Locale
  * 한국어는 '2026년 10월 15일' 순서로, 영어는 'October 15 2026' 순서로 놓인다.
  *
  * 월을 바꿨는데 그 달에 원래 일이 없으면(예: 3월 31일에서 2월로) 그 달의 마지막 날로 맞춘다. 결과는 언제나 [range] 안에 있다.
+ *
+ * 넓은 화면에서는 휠 묶음이 400dp를 넘지 않고 가운데에 모인다.
  *
  * @param date 선택한 날짜. [range] 밖이면 가까운 끝 날짜를 선택한 것으로 그린다.
  * @param onDateChange 사용자가 고른 날짜를 받는다. [range] 밖의 날짜는 넘기지 않는다.
@@ -51,7 +56,7 @@ public fun KDatePicker(
         val clamped = next.clampTo(range)
         if (clamped != current) onDateChange(clamped)
     }
-    Box(modifier) {
+    WheelCluster(modifier) {
         WheelBand(surface, Modifier.align(Alignment.Center))
         Row(Modifier.fillMaxWidth()) {
             for (field in labels.order) {
@@ -92,6 +97,8 @@ public fun KDatePicker(
  * 시와 분 휠로 시각을 고르는 시간 피커. [is24Hour]가 `false`면 오전/오후 휠이 더해지고, 그 위치는 기기 언어를 따른다.
  * 한국어는 오전/오후가 앞에, 영어는 뒤에 온다. 시와 분 휠은 끝없이 굴릴 수 있다.
  *
+ * 넓은 화면에서는 휠 묶음이 400dp를 넘지 않고 가운데에 모인다.
+ *
  * @param hour 시(0..23). 범위를 벗어나면 [IllegalArgumentException]을 던진다.
  * @param minute 분(0..59). 범위를 벗어나면 [IllegalArgumentException]을 던진다.
  * @param onTimeChange 사용자가 고른 시(0..23)와 분(0..59)을 받는다.
@@ -114,7 +121,7 @@ public fun KTimePicker(
     val minuteName = stringResource(R.string.kinetica_ui_picker_minute)
     val amPmName = stringResource(R.string.kinetica_ui_picker_am_pm)
     val pm = hour >= HALF_DAY
-    Box(modifier) {
+    WheelCluster(modifier) {
         WheelBand(surface, Modifier.align(Alignment.Center))
         Row(Modifier.fillMaxWidth()) {
             if (!is24Hour && labels.amPmFirst) {
@@ -242,6 +249,18 @@ private fun LocalDate.clampTo(range: ClosedRange<LocalDate>): LocalDate = when {
 private fun formatter(locale: Locale, skeleton: String): DateTimeFormatter =
     DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
 
+/**
+ * 휠 묶음을 [WHEELS_MAX_WIDTH] 안에 가운데로 모은다. 펼친 폴더블이나 태블릿에서 휠이 화면 폭만큼 벌어지면
+ * 연, 월, 일이 서로 멀어져 한 날짜로 읽히지 않는다.
+ */
+@Composable
+private fun WheelCluster(modifier: Modifier, content: @Composable BoxScope.() -> Unit) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Box(Modifier.widthIn(max = WHEELS_MAX_WIDTH).fillMaxWidth(), content = content)
+    }
+}
+
+private val WHEELS_MAX_WIDTH = 400.dp
 private val DefaultDateRange: ClosedRange<LocalDate> = LocalDate.of(1900, 1, 1)..LocalDate.of(2100, 12, 31)
 private const val HOURS_PER_DAY = 24
 private const val HALF_DAY = 12

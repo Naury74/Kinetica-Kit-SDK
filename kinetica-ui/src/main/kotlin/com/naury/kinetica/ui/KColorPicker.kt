@@ -165,11 +165,19 @@ public fun KColorPicker(
     }
 }
 
-/** 최근 색과 프리셋 칩을 가로로 스크롤하는 한 줄에 놓는다. 둘 다 있으면 사이에 구분선을 둔다. 프리셋은 지금 알파를 유지한다. */
+/**
+ * 최근 색과 프리셋 칩을 가로로 스크롤하는 한 줄에 놓는다. 둘 다 있으면 사이에 구분선을 둔다. 프리셋은 지금 알파를 유지한다.
+ * 폭이 남으면 위의 색 바퀴와 같은 축에 오도록 가운데에 모은다.
+ */
 @Composable
 private fun SwatchRow(color: Color, recents: IntArray, presets: List<Color>, surface: SurfaceStyle, onPick: (Color) -> Unit) {
     if (recents.isEmpty() && presets.isEmpty()) return
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { SwatchItems(color, recents, presets, surface, onPick) }
+}
+
+@Composable
+private fun SwatchItems(color: Color, recents: IntArray, presets: List<Color>, surface: SurfaceStyle, onPick: (Color) -> Unit) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
         recents.forEach { argb -> ColorSwatch(Color(argb), color.toArgb() == argb) { onPick(Color(argb)) } }
         if (recents.isNotEmpty() && presets.isNotEmpty()) {
             Box(Modifier.padding(horizontal = DIVIDER_PADDING).width(1.dp).height(DIVIDER_HEIGHT).divider(surface.contentColor))

@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -24,7 +25,8 @@ import androidx.compose.ui.unit.dp
  *
  * @param contentDescription TalkBack이 읽을 이름. null이면 장식으로 보고 읽지 않는다. 옆 글자에 상태가 이미 드러나면 null로 둔다.
  * @param size 아이콘 지름. 글자 옆이면 18~22dp가 알맞다.
- * @param color 채울 색. [Color.Unspecified]면 상태 색을 쓴다.
+ * @param color 채울 색. [Color.Unspecified]면 상태 색을 쓰되, 표면 위에서 3:1(어두운 표면은 4.5:1) 이상 보이도록 밝기를 고친다.
+ *   톤 어두운 표면처럼 바탕에 강조색이 섞여 있어도 정보 아이콘이 묻히지 않게 하려는 것이다.
  */
 @Composable
 public fun KStatusIcon(
@@ -35,8 +37,38 @@ public fun KStatusIcon(
     color: Color = Color.Unspecified,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
-    val fill = if (color.isSpecified()) color else status.feedbackColor(surface)
-    val ink = if (status == KStatus.Warning && !color.isSpecified()) Color(WARNING_INK) else onStatus(status, surface, fill)
+    val colors = if (color.isSpecified()) {
+        StatusIconColors(color, onStatus(status, surface, color))
+    } else {
+        statusIconColors(status, KineticaTheme.colors, surface, surface.inkBackground())
+    }
+    StatusIconImage(status, colors, modifier, contentDescription, size)
+}
+
+/** 상태 아이콘의 채우는 색과 기호 색 */
+internal class StatusIconColors(val fill: Color, val glyph: Color)
+
+/**
+ * [back] 위에 놓일 상태 아이콘 색. 채우는 색은 바탕과 3:1, 어두운 바탕에서는 4.5:1 이상이 되도록 고친다. 어두운 바탕에서 같은 색 계열
+ * 강조색이 3:1을 겨우 넘기면 작은 원이 바탕에 묻혀 보이기 때문이다. 밝혀서 흰 기호가 안 보이게 되면 기호를 바탕색으로 그린다.
+ */
+internal fun statusIconColors(status: KStatus, colors: KineticaColors, surface: SurfaceStyle, back: Color): StatusIconColors {
+    val target = if (back.luminance() < DARK_BACK_LUMINANCE) DARK_ICON_CONTRAST else MIN_GLYPH_CONTRAST
+    val fill = readableOn(status.feedbackColor(colors, surface), back, target)
+    val nominal = nominalOnStatus(status, colors, surface)
+    val glyph = when {
+        contrast(nominal, fill) >= MIN_GLYPH_CONTRAST -> nominal
+        contrast(back, fill) >= MIN_GLYPH_CONTRAST -> back
+        else -> readableOn(nominal, fill)
+    }
+    return StatusIconColors(fill, glyph)
+}
+
+/** [colors]로 상태 아이콘을 그린다. */
+@Composable
+internal fun StatusIconImage(status: KStatus, colors: StatusIconColors, modifier: Modifier, contentDescription: String?, size: Dp) {
+    val fill = colors.fill
+    val ink = colors.glyph
     val label = Modifier.clearAndSetSemantics { contentDescription?.let { this.contentDescription = it } }
     Spacer(
         modifier
@@ -70,29 +102,34 @@ internal fun statusLabel(status: KStatus): String? = when (status) {
 /** [surface] 위에서 이 상태가 쓸 색. 정보는 강조색, 성공과 오류는 테마 색, 경고는 주황이다. */
 @Composable
 @ReadOnlyComposable
-internal fun KStatus.feedbackColor(surface: SurfaceStyle): Color {
-    val colors = KineticaTheme.colors
-    return when (this) {
-        KStatus.Neutral -> surface.contentColor
-        KStatus.Info -> colors.accent
-        KStatus.Success -> colors.positive
-        KStatus.Warning -> Color(WARNING_COLOR)
-        KStatus.Error -> colors.destructive
-    }
+internal fun KStatus.feedbackColor(surface: SurfaceStyle): Color = feedbackColor(KineticaTheme.colors, surface)
+
+/** [colors] 테마에서 [surface] 위 상태 색. 컴포지션 밖(대비 테스트)에서도 쓰려고 테마 값을 받는다. */
+internal fun KStatus.feedbackColor(colors: KineticaColors, surface: SurfaceStyle): Color = when (this) {
+    KStatus.Neutral -> surface.contentColor
+    KStatus.Info -> colors.accent
+    KStatus.Success -> colors.positive
+    KStatus.Warning -> Color(WARNING_COLOR)
+    KStatus.Error -> colors.destructive
 }
 
 /** 상태 색으로 채운 면 위 글자 색 */
 @Composable
 @ReadOnlyComposable
-internal fun onStatus(status: KStatus, surface: SurfaceStyle, fill: Color): Color {
-    val colors = KineticaTheme.colors
-    return when (status) {
-        KStatus.Neutral -> surface.inkBackground()
-        KStatus.Info -> colors.onAccent
-        KStatus.Success -> colors.onPositive
-        KStatus.Warning -> Color(WARNING_INK)
-        KStatus.Error -> colors.onDestructive
-    }.let { if (contrast(it, fill) < MIN_GLYPH_CONTRAST) readableOn(it, fill) else it }
+internal fun onStatus(status: KStatus, surface: SurfaceStyle, fill: Color): Color = onStatus(status, KineticaTheme.colors, surface, fill)
+
+/** [onStatus]의 테마 값을 받는 판. [fill] 위에서 대비가 3:1에 못 미치면 고쳐 쓴다. */
+internal fun onStatus(status: KStatus, colors: KineticaColors, surface: SurfaceStyle, fill: Color): Color =
+    nominalOnStatus(status, colors, surface)
+        .let { if (contrast(it, fill) < MIN_GLYPH_CONTRAST) readableOn(it, fill) else it }
+
+/** 상태 색으로 채운 면 위에 쓰도록 테마가 정한 글자 색. 대비 보정 전 값이다. */
+internal fun nominalOnStatus(status: KStatus, colors: KineticaColors, surface: SurfaceStyle): Color = when (status) {
+    KStatus.Neutral -> surface.inkBackground()
+    KStatus.Info -> colors.onAccent
+    KStatus.Success -> colors.onPositive
+    KStatus.Warning -> Color(WARNING_INK)
+    KStatus.Error -> colors.onDestructive
 }
 
 /** 색 역할을 가장 가까운 상태로 옮긴다. 옛 토스트의 `tone`을 아이콘으로 그릴 때 쓴다. */
@@ -153,6 +190,8 @@ private fun Offset.unit(): Offset = this / getDistance()
 private const val WARNING_COLOR = 0xFFFF9F0A
 private const val WARNING_INK = 0xFF1F1300
 private const val MIN_GLYPH_CONTRAST = 3f
+private const val DARK_ICON_CONTRAST = 4.5f
+private const val DARK_BACK_LUMINANCE = 0.18f
 private const val GLYPH_STROKE = 0.11f
 private const val DOT_RADIUS = 0.065f
 private const val CHECK_X0 = 0.29f

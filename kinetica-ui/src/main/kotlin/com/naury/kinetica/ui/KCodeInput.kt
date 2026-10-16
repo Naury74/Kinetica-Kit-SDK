@@ -221,8 +221,10 @@ private fun RowScope.CodeCell(char: Char?, state: CodeCellState, error: Boolean,
     val ink = look.surface.contentColor
     Box(
         Modifier
-            .weight(1f)
+            // fill = true면 weight가 폭을 몫만큼 고정해 아래 최대 폭이 먹지 않는다. 넓은 화면에서 칸이 가로로 길쭉해진다.
+            .weight(1f, fill = false)
             .widthIn(max = CELL_MAX_WIDTH * grow)
+            .fillMaxWidth()
             .heightIn(min = CELL_HEIGHT)
             .kSurface(look.surface, CELL_SHAPE)
             .cellChrome(state, look, CellAnim(active, errorLevel, clock)),

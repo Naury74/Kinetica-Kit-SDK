@@ -98,6 +98,7 @@ public fun KBanner(
     ) {
         val shape = RoundedCornerShape(BANNER_CORNER)
         val tint = status.feedbackColor(surface)
+        val ink = feedbackInk(FeedbackBox.Banner, status, KineticaTheme.colors, surface)
         Column(
             Modifier
                 .fillMaxWidth()
@@ -118,9 +119,9 @@ public fun KBanner(
                 ),
         ) {
             Row(verticalAlignment = Alignment.Top) {
-                FeedbackLeading(status, icon, tint, surface, Modifier.padding(top = 1.dp, end = 12.dp))
-                FeedbackTexts(title, message, surface.contentColor, Modifier.weight(1f).padding(top = 1.dp))
-                onDismiss?.let { CloseButton(it, surface) }
+                FeedbackLeading(status, icon, ink.icon, Modifier.padding(top = 1.dp, end = 12.dp))
+                FeedbackTexts(title, message, ink, Modifier.weight(1f).padding(top = 1.dp))
+                onDismiss?.let { CloseButton(it, surface, ink.title) }
             }
             if (actions.isNotEmpty()) {
                 Row(
@@ -162,93 +163,120 @@ public fun KAlert(
 ) {
     val shape = RoundedCornerShape(ALERT_CORNER)
     val tint = status.feedbackColor(surface)
-    val look = alertLook(variant, tint, status, surface)
+    val look = feedbackInk(FeedbackBox.alert(variant), status, KineticaTheme.colors, surface)
     Row(
         modifier
             .fillMaxWidth()
-            .alertBackground(variant, look, tint, surface, shape)
+            .alertBackground(variant, look.back, tint, surface, shape)
             .padding(start = 14.dp, end = if (onDismiss != null) 4.dp else 14.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        val iconTint = if (variant == KVariant.Filled) look.ink else readableOn(tint, look.back, ICON_CONTRAST)
         FeedbackLeading(
             status,
             icon,
-            iconTint,
-            surface,
+            look.icon,
             Modifier.padding(top = 1.dp, end = 12.dp),
-            filledOnTint =
-                variant == KVariant.Filled,
         )
         Column(Modifier.weight(1f).padding(top = 1.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            FeedbackTexts(title, message, look.ink, Modifier)
+            FeedbackTexts(title, message, look, Modifier)
             action?.invoke()
         }
-        onDismiss?.let { CloseButton(it, surface, look.ink) }
+        onDismiss?.let { CloseButton(it, surface, look.title) }
     }
 }
 
-/** 상자 바탕과 그 위 글자 색 */
-private class AlertLook(val back: Color, val ink: Color)
+/** 배너와 알림 상자가 어떤 바탕 위에 글자를 쓰는지 */
+internal enum class FeedbackBox {
+    /** 표면 위에 상태 색을 [BANNER_TINT]만큼 깐 배너 */
+    Banner,
 
-@Composable
-private fun alertLook(variant: KVariant, tint: Color, status: KStatus, surface: SurfaceStyle): AlertLook {
+    /** 상태 색을 [ALERT_TINT]만큼 깐 알림 상자([KVariant.Tonal]과 받지 않는 변형) */
+    Tonal,
+
+    /** 표면 색 그대로인 알림 상자([KVariant.Outlined], [KVariant.Glass], [KVariant.Elevated]) */
+    Plain,
+
+    /** 상태 색으로 채운 알림 상자([KVariant.Filled]) */
+    Filled,
+    ;
+
+    companion object {
+        fun alert(variant: KVariant): FeedbackBox = when (variant) {
+            KVariant.Filled -> Filled
+            KVariant.Outlined, KVariant.Glass, KVariant.Elevated -> Plain
+            else -> Tonal
+        }
+    }
+}
+
+/** 상자 바탕과 그 위 아이콘, 제목, 본문 색 */
+internal class FeedbackInk(val back: Color, val icon: StatusIconColors, val title: Color, val body: Color)
+
+/**
+ * 배너와 알림 상자의 색을 정한다. 톤 어두운 표면처럼 바탕에 강조색이 섞여 있으면 상태 색이 바탕에 묻히므로
+ * 글자는 4.5:1, 아이콘은 3:1(어두운 바탕은 4.5:1) 이상이 되도록 밝히거나 어둡게 고친다. 채운 상자는 글자 대신 채우는 색을
+ * 어둡게 해서 흰 글자를 그대로 쓴다. 글래스 표면은 블러를 못 쓸 때의 색을 바탕으로 보고 계산한다.
+ */
+internal fun feedbackInk(box: FeedbackBox, status: KStatus, colors: KineticaColors, surface: SurfaceStyle): FeedbackInk {
+    val tint = status.feedbackColor(colors, surface)
+    if (box == FeedbackBox.Filled) {
+        val fill = readableOn(tint, nominalOnStatus(status, colors, surface), TEXT_CONTRAST)
+        val ink = readableOn(nominalOnStatus(status, colors, surface), fill, TEXT_CONTRAST)
+        // 아이콘 원은 글자 색으로 칠하고 기호는 상자 색으로 뚫어 보이게 한다.
+        return FeedbackInk(fill, StatusIconColors(ink, fill), ink, ink)
+    }
     val base = surface.inkBackground()
-    return when (variant) {
-        KVariant.Filled -> AlertLook(tint, onStatus(status, surface, tint))
-        KVariant.Outlined, KVariant.Glass, KVariant.Elevated -> AlertLook(base, surface.contentColor)
-        else -> AlertLook(tint.copy(alpha = ALERT_TINT).compositeOver(base), surface.contentColor)
+    val back = when (box) {
+        FeedbackBox.Banner -> tint.copy(alpha = BANNER_TINT).compositeOver(base)
+        FeedbackBox.Tonal -> tint.copy(alpha = ALERT_TINT).compositeOver(base)
+        else -> base
     }
+    val title = readableOn(surface.contentColor, back, TEXT_CONTRAST)
+    val soft = title.copy(alpha = BODY_ALPHA)
+    val body = if (contrast(soft.compositeOver(back), back) >= TEXT_CONTRAST) soft else title
+    return FeedbackInk(back, statusIconColors(status, colors, surface, back), title, body)
 }
 
 @Composable
-private fun Modifier.alertBackground(variant: KVariant, look: AlertLook, tint: Color, surface: SurfaceStyle, shape: Shape): Modifier =
+private fun Modifier.alertBackground(variant: KVariant, back: Color, tint: Color, surface: SurfaceStyle, shape: Shape): Modifier =
     when (variant) {
-        KVariant.Filled -> background(look.back, shape)
+        KVariant.Filled -> background(back, shape)
         KVariant.Outlined -> border(OUTLINE, tint.copy(alpha = OUTLINE_ALPHA), shape)
         KVariant.Glass -> kSurface(surface, shape)
         KVariant.Elevated -> kSurface(surface.elevated(), shape)
         else -> background(tint.copy(alpha = ALERT_TINT), shape).border(OUTLINE, tint.copy(alpha = TONAL_BORDER_ALPHA), shape)
     }
 
-/** 앞쪽 아이콘. [icon]이 있으면 그 아이콘을 [tint]로, 없으면 상태 아이콘을 그린다. 상태 이름을 TalkBack에 알린다. */
+/** 앞쪽 아이콘. [icon]이 있으면 그 아이콘을 [colors]의 채우는 색으로, 없으면 상태 아이콘을 그린다. 상태 이름을 TalkBack에 알린다. */
 @Composable
-private fun FeedbackLeading(
-    status: KStatus,
-    icon: ImageVector?,
-    tint: Color,
-    surface: SurfaceStyle,
-    modifier: Modifier,
-    filledOnTint: Boolean = false,
-) {
+private fun FeedbackLeading(status: KStatus, icon: ImageVector?, colors: StatusIconColors, modifier: Modifier) {
     val label = statusLabel(status)
     if (icon != null) {
         Image(
             rememberVectorPainter(icon),
             contentDescription = label,
             modifier.size(LEADING_ICON),
-            colorFilter = ColorFilter.tint(tint),
+            colorFilter = ColorFilter.tint(colors.fill),
         )
     } else {
-        // 채운 상자 위에서는 아이콘 원을 글자 색으로 칠해야 상자 색과 구분된다.
-        KStatusIcon(status, modifier, label, LEADING_ICON, color = if (filledOnTint) tint else Color.Unspecified, surface = surface)
+        StatusIconImage(status, colors, modifier, label, LEADING_ICON)
     }
 }
 
 @Composable
-private fun FeedbackTexts(title: String?, message: String, ink: Color, modifier: Modifier) {
+private fun FeedbackTexts(title: String?, message: String, ink: FeedbackInk, modifier: Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         title?.let {
             ThemedText(
                 it,
                 Modifier.semantics { heading() },
-                style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp),
+                style = TextStyle(color = ink.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp),
             )
         }
         ThemedText(
             message,
             style = TextStyle(
-                color = ink.copy(alpha = if (title != null) BODY_ALPHA else 1f),
+                color = if (title != null) ink.body else ink.title,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
                 fontWeight = if (title == null) FontWeight.Medium else FontWeight.Normal,
@@ -289,7 +317,7 @@ private const val OUTLINE_ALPHA = 0.6f
 private const val TONAL_BORDER_ALPHA = 0.22f
 private const val BODY_ALPHA = 0.82f
 private const val CLOSE_ALPHA = 0.7f
-private const val ICON_CONTRAST = 3f
+private const val TEXT_CONTRAST = 4.5f
 private const val BANNER_DAMPING = 0.85f
 private const val BANNER_OUT_MS = 220
 private const val FADE_MS = 180

@@ -51,6 +51,15 @@ internal object KMetrics {
     /** 탭 아이콘과 이름 사이 */
     val TabIconGap: Dp = 2.dp
 
+    /** 모서리가 곧은 입력란(높이 52dp, 모서리 14dp)에서 테두리와 글자 사이 */
+    val FieldPadding: Dp = 16.dp
+
+    /**
+     * 양 끝이 반원인 캡슐 입력란(높이 44dp)에서 테두리와 글자 사이. 곧은 입력란과 같은 16dp를 주면 커서 위아래 끝이
+     * 반원 곡선에 3dp쯤 더 다가가 테두리에 붙어 보이므로 그만큼 더 띄운다.
+     */
+    val CapsuleFieldPadding: Dp = 20.dp
+
     /** 안쪽 모서리 반지름의 최솟값 */
     val MinInnerRadius: Dp = 4.dp
 

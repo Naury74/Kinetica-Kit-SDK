@@ -252,7 +252,10 @@ private fun ChatField(source: FieldSource, options: ChatOptions, surface: Surfac
             .fieldName(name),
         basics,
     ) { inner ->
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp), verticalAlignment = Alignment.Bottom) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = KMetrics.CapsuleFieldPadding),
+            verticalAlignment = Alignment.Bottom,
+        ) {
             Box(Modifier.weight(1f).padding(vertical = 11.dp), contentAlignment = Alignment.CenterStart) {
                 if (source.text.isEmpty()) {
                     ThemedText(

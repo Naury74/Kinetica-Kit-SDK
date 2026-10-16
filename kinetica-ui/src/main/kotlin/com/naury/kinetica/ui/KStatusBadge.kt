@@ -69,7 +69,7 @@ public fun KBadge(
 
 /**
  * 상태 배지. 주문, 결제, 서버 상태처럼 목록 행이나 카드에 상태를 짧게 보여 준다. 기본 모양은 옅은 색 캡슐 앞에 같은 색 점을 둔 형태다.
- * 글자 색은 표면과 대비가 3:1 이상이 되도록 고쳐 쓴다. TalkBack은 [text]를 그대로 읽으므로 '배송 완료'처럼 상태를 글자로 다 쓴다.
+ * 글자 색은 표면과 대비가 4.5:1 이상이 되도록 고쳐 쓴다. TalkBack은 [text]를 그대로 읽으므로 '배송 완료'처럼 상태를 글자로 다 쓴다.
  *
  * ```kotlin
  * KStatusBadge("배송 중", KStatus.Info)
@@ -123,16 +123,7 @@ private enum class PillSize(val font: TextUnit, val height: Dp, val padding: Dp)
 @Composable
 private fun Pill(text: String, look: PillLook, modifier: Modifier, dot: Boolean) {
     val back = look.surface.inkBackground()
-    val (fill, ink) = when (look.variant) {
-        KVariant.Filled -> look.color to look.onColor
-
-        KVariant.Outlined -> Color.Transparent to readableOn(look.color, back)
-
-        else -> {
-            val tint = look.color.copy(alpha = TINT).compositeOver(back)
-            look.color.copy(alpha = TINT) to readableOn(look.color, tint)
-        }
-    }
+    val (fill, ink) = pillColors(look.variant, look.color, look.onColor, back)
     Row(
         modifier
             .heightIn(min = look.size.height)
@@ -160,11 +151,30 @@ private fun Pill(text: String, look: PillLook, modifier: Modifier, dot: Boolean)
     }
 }
 
+/**
+ * 배지 바탕과 글자 색. 작은 글자라 4.5:1을 맞춘다. 채운 배지는 글자 대신 채우는 색을 어둡게(어두운 글자면 밝게) 고쳐
+ * 흰 글자를 지킨다. [back]은 배지가 놓인 표면 색이다.
+ */
+internal fun pillColors(variant: KVariant, color: Color, onColor: Color, back: Color): Pair<Color, Color> = when (variant) {
+    KVariant.Filled -> {
+        val fixed = readableOn(color, onColor, TEXT_CONTRAST)
+        fixed to readableOn(onColor, fixed, TEXT_CONTRAST)
+    }
+
+    KVariant.Outlined -> Color.Transparent to readableOn(color, back, TEXT_CONTRAST)
+
+    else -> {
+        val tint = color.copy(alpha = TINT).compositeOver(back)
+        color.copy(alpha = TINT) to readableOn(color, tint, TEXT_CONTRAST)
+    }
+}
+
 private val DOT = 6.dp
 private val DOT_GAP = 6.dp
 private val DOT_TRIM = 2.dp
 private val OUTLINE = 1.dp
 private const val TINT = 0.14f
+private const val TEXT_CONTRAST = 4.5f
 private const val OUTLINE_ALPHA = 0.5f
 private const val WARNING = 0xFFFF9F0A
 private const val WARNING_INK = 0xFF1F1300
