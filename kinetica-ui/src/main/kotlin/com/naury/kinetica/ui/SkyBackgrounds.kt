@@ -40,7 +40,7 @@ public object KSkyDefaults {
 /**
  * 밤하늘에 커튼처럼 드리운 오로라 띠가 천천히 일렁이는 배경. 띠마다 세로 빛줄기가 아래쪽 가장자리에서 가장 밝고 위로 옅어진다.
  * 화면 밖으로 스크롤되거나 앱이 백그라운드로 가면 멈추고, '애니메이션 삭제' 설정이나 [speed]가 0이면 멈춘 그림으로 그린다.
- * 글래스 [KineticaScaffold]의 `background`에 두면 다이얼로그나 시트가 열려 있는 동안도 멈춘다. 그림은 초당 30번 바뀐다.
+ * 글래스 [KineticaScaffold]의 `background`에 두면 다이얼로그나 시트가 열려 있는 동안도 멈춘다.
  * 장식이라 TalkBack에 나타나지 않는다. 부모를 가득 채운다.
  *
  * ```kotlin
@@ -59,7 +59,7 @@ public fun AuroraBackground(
 ) {
     require(colors.isNotEmpty()) { "colors가 비어 있으면 안 됩니다." }
     require(speed >= 0f) { "speed는 0 이상이어야 합니다." }
-    val clock = rememberLiveClock(speed > 0f, BACKGROUND_FRAME_RATE)
+    val clock = rememberLiveClock(speed > 0f)
     Spacer(
         modifier
             .fillMaxSize()
@@ -202,12 +202,12 @@ private fun DrawScope.drawShootingStar(t: Float, tail: Brush) {
 
 /**
  * 보이는 동안, 그리고 앱이 시작 상태(STARTED) 이상인 동안만 도는 시계. '애니메이션 삭제' 설정이면 돌지 않는다.
- * 글래스 스캐폴드 배경에서 모달이 열려 있는 동안도 멈춘다([shouldPauseBackground]). [frameRate]는 [rememberLoopClock]과 같다.
+ * 글래스 스캐폴드 배경에서 모달이 열려 있는 동안도 멈춘다([shouldPauseBackground]).
  */
 @Composable
-internal fun rememberLiveClock(running: Boolean, frameRate: Int = 0): LoopClock {
+internal fun rememberLiveClock(running: Boolean): LoopClock {
     val state by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
-    return rememberLoopClock(running && !reducedMotion() && !shouldPauseBackground() && state.isAtLeast(Lifecycle.State.STARTED), frameRate)
+    return rememberLoopClock(running && !reducedMotion() && !shouldPauseBackground() && state.isAtLeast(Lifecycle.State.STARTED))
 }
 
 private fun lerpColor(a: Color, b: Color, t: Float): Color = androidx.compose.ui.graphics.lerp(a, b, t)

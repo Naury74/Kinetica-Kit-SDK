@@ -234,8 +234,8 @@ class GlassModalCostTest {
     }
 
     @Test
-    fun `배경 시계는 정한 초당 횟수만큼만 값을 바꾼다`() {
-        // 120Hz 화면에서 1초(120프레임) 동안 값이 바뀐 횟수를 센다. 값이 바뀔 때만 배경과 그 블러를 다시 그린다.
+    fun `배경 시계는 프레임마다 값을 바꾼다`() {
+        // 120Hz 화면에서 1초(120프레임) 동안 값이 바뀐 횟수를 센다. 몇 프레임에 한 번만 바꾸면 그 프레임에 블러가 몰려 마감을 넘긴다.
         val clock = LoopClock()
         var frames = 0
         var changes = 0
@@ -251,9 +251,9 @@ class GlassModalCostTest {
                 return result
             }
         }
-        runBlocking(frameClock) { runCatching { clock.run(BACKGROUND_FRAME_RATE) } }
-        assertThat(changes).isAtMost(BACKGROUND_FRAME_RATE)
-        assertThat(changes).isAtLeast(BACKGROUND_FRAME_RATE - 1)
+        runBlocking(frameClock) { runCatching { clock.run() } }
+        // 첫 프레임은 시작 시각을 잡을 뿐이라 값이 그대로다.
+        assertThat(changes).isEqualTo(FRAMES_PER_SECOND - 1)
     }
 
     private companion object {

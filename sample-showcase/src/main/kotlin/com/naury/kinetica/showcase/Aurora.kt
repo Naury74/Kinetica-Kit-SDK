@@ -15,13 +15,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.naury.kinetica.ui.shouldPauseBackground
 import kotlin.math.cos
-import kotlin.math.floor
 import kotlin.math.sin
 
 /** 색 덩어리가 천천히 떠다니는 배경. 글래스 뒤로 비칠 색을 깔아 준다. */
 @Composable
 internal fun Aurora(modifier: Modifier, dark: Boolean) {
-    // 글래스가 이 배경을 비추므로 바뀔 때마다 블러를 모두 다시 한다. 그래서 초당 30번만 바꾸고, 시트나 다이얼로그가 열린 동안은 멈춘다.
+    // 글래스가 이 배경을 비추므로 바뀔 때마다 블러를 모두 다시 한다. 시트나 다이얼로그가 열린 동안은 뒤가 가려지므로 멈춘다.
     val clock = remember { mutableFloatStateOf(0f) }
     val paused = shouldPauseBackground()
     LaunchedEffect(paused) {
@@ -31,8 +30,7 @@ internal fun Aurora(modifier: Modifier, dark: Boolean) {
         while (true) {
             withInfiniteAnimationFrameNanos { now ->
                 if (start < 0) start = now
-                val next = base + floor((now - start) / 1e9f * FRAME_RATE) / FRAME_RATE
-                if (next != clock.floatValue) clock.floatValue = next
+                clock.floatValue = base + (now - start) / 1e9f
             }
         }
     }
@@ -53,6 +51,5 @@ internal fun Aurora(modifier: Modifier, dark: Boolean) {
 }
 
 private const val CYCLE_S = 24f
-private const val FRAME_RATE = 30
 private val LIGHT = listOf(Color(0xFFFF7EB3), Color(0xFF7AA2FF), Color(0xFF5EF0C8), Color(0xFFFFC56E), Color(0xFFB98CFF))
 private val DARK = listOf(Color(0xFFB0247A), Color(0xFF2A4BD8), Color(0xFF0E9F87), Color(0xFFD87A12), Color(0xFF6A2BD8))
