@@ -106,7 +106,7 @@ import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 /**
- * 컴포넌트 모음: kinetica-ui 컴포넌트를 기본, 입력, 미디어, 효과 탭으로 나눠 눌러 본다.
+ * 컴포넌트 모음: kinetica-ui 컴포넌트를 종류별 탭(기본, 입력, 미디어, 효과, 버튼·칩·카드 등)으로 나눠 눌러 본다.
  * 탭 바는 큰 제목 아래에 붙어 있고, 탭마다 목록이 따로 스크롤된다.
  */
 @Composable
@@ -129,14 +129,18 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
             background = { DemoBackdrop { MeshBackdrop(light = MeshGradients.Candy, dark = MeshGradients.Midnight) } },
             topBar = {
                 // 탭 줄은 큰 제목과 함께 올라가 작은 바 밑에 붙고, 접히면 글래스 배경이 탭 줄까지 이어진다.
-                KLargeTitleBar(title, "컴포넌트", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH, bottom = {
+                KLargeTitleBar(title, "컴포넌트", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH, actions = {
+                    SurfacePickerButton()
+                }, bottom = {
+                    // 큰 글자에서는 네 칸을 똑같이 나누면 "미디어"가 잘리므로 가로로 스크롤하는 탭으로 바꾼다.
+                    val scrollable = LocalDensity.current.fontScale > 1.3f || COMPONENT_TABS.size > 4
                     KTopTabs(
                         COMPONENT_TABS.map { KTab(it) },
                         pager,
-                        // bottom 줄은 이미 contentMaxWidth 안에 놓이므로, 큰 제목의 안쪽 여백(20dp)만 맞춘다.
-                        Modifier.padding(horizontal = 20.dp).fillMaxWidth().padding(bottom = 6.dp),
-                        // 큰 글자에서는 네 칸을 똑같이 나누면 "미디어"가 잘리므로 가로로 스크롤하는 탭으로 바꾼다.
-                        scrollable = LocalDensity.current.fontScale > 1.3f || COMPONENT_TABS.size > 4,
+                        // bottom 줄은 이미 contentMaxWidth 안에 놓이므로, 첫 탭을 큰 제목의 안쪽 여백(20dp)에 맞춘다.
+                        // 스크롤 탭은 안쪽에 12dp를 따로 두므로 바깥 여백을 그만큼 줄여, 넘친 탭이 20dp 선에서 뚝 잘려 보이지 않게 한다.
+                        Modifier.padding(horizontal = if (scrollable) 8.dp else 20.dp).fillMaxWidth().padding(bottom = 6.dp),
+                        scrollable = scrollable,
                     )
                 })
             },

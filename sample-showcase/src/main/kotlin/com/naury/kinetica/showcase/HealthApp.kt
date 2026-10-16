@@ -65,7 +65,7 @@ internal fun HealthApp(onBack: () -> Unit) {
         Modifier.fillMaxSize(),
         surface = demoSurface(HEALTH_APP_LOOK),
         background = { DemoBackdrop { MeshBackdrop(light = MeshGradients.Candy, dark = MeshGradients.Ocean) } },
-        topBar = { KLargeTitleBar(title, "건강", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH) },
+        topBar = { KLargeTitleBar(title, "건강", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH, actions = { SurfacePickerButton() }) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().nestedScroll(title.connection),

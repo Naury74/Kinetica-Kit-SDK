@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -165,7 +166,8 @@ private fun GaugePieScene() {
                 ChartSlice(25f, "쇼핑", colors[2]),
                 ChartSlice(9f, "기타", colors[3]),
             ),
-            Modifier.fillMaxWidth(),
+            // 폭을 다 쓰면 휴대폰에서도 지름이 카드 폭만큼 커져 한 화면을 다 차지하므로 적당한 크기에서 멈춘다.
+            Modifier.widthIn(max = 260.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
             valueFormatter = { "${it.toInt()}만" },
         )
     }
@@ -334,7 +336,17 @@ private fun PinScene() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Label(if (wrong) "다시 입력해 주세요" else "PIN을 입력하세요", 15, FontWeight.Medium)
+            // 맞게 넣었을 때도 문구가 그대로면 점만 꽉 찬 채 멈춘 것처럼 보이므로 통과했다고 알린다.
+            val passed = pin == "123456"
+            Label(
+                when {
+                    wrong -> "다시 입력해 주세요"
+                    passed -> "확인했어요"
+                    else -> "PIN을 입력하세요"
+                },
+                15,
+                FontWeight.Medium,
+            )
             KPinDots(6, pin.length, error = wrong)
             KKeypad(
                 onDigit = { d ->

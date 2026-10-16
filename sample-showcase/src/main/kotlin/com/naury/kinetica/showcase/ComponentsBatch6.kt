@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -159,8 +162,21 @@ private fun ChatScene() {
                 }
             },
             onVoice = {},
+            modifier = Modifier.keepVisibleWhileFocused(messages.size, typing, uploading != null),
         )
     }
+}
+
+/**
+ * 키보드가 떠 있는 동안 말풍선이 늘면 카드가 길어져 입력란이 키보드 뒤로 밀려난다.
+ * 입력란에 초점이 있을 때만 [keys]가 바뀔 때마다 입력란을 다시 보이게 끌어올린다.
+ */
+@Composable
+private fun Modifier.keepVisibleWhileFocused(vararg keys: Any): Modifier {
+    val area = remember { BringIntoViewRequester() }
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(*keys) { if (focused) area.bringIntoView() }
+    return bringIntoViewRequester(area).onFocusChanged { focused = it.hasFocus }
 }
 
 /** 같은 사람이 이어 보낸 메시지는 묶고, 사람이 바뀌는 곳에만 간격과 시간, 읽음 표시를 둔다. */

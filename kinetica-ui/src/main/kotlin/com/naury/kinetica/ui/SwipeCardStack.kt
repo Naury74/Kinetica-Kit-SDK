@@ -4,7 +4,10 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +28,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -329,25 +333,36 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.dragCard
 ) {
     val tracker = VelocityTracker()
     var past = false
-    detectDragGestures(
-        onDragStart = { start ->
-            state.grabbedTop = start.y < size.height / 2
-            tracker.resetTracking()
-            past = false
-        },
-        onDragEnd = {
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false)
+        // 위로 넘기기를 쓰지 않으면 세로로 시작한 끌기는 카드가 잡지 않고 바깥 목록이 스크롤하게 둔다.
+        // 카드가 화면 대부분을 덮는 목록 안에서 스크롤이 막히지 않게 하려는 것이다.
+        val start = awaitTouchSlopOrCancellation(down.id) { change, over ->
+            val vertical = abs(over.y) > abs(over.x)
+            if (!vertical || (SwipeDirection.Up in directions && over.y < 0f)) change.consume()
+        } ?: return@awaitEachGesture
+        state.grabbedTop = down.position.y < size.height / 2
+        tracker.resetTracking()
+        tracker.addPosition(start.uptimeMillis, start.position)
+        past = false
+        val first = start.position - down.position
+        scope.launch { state.offset.snapTo(state.offset.value + first) }
+        val ended = drag(start.id) { change ->
+            val amount = change.positionChange()
+            change.consume()
+            tracker.addPosition(change.uptimeMillis, change.position)
+            val next = state.offset.value + amount
+            scope.launch { state.offset.snapTo(next) }
+            val nowPast = directions.any { state.progress(it) >= 1f }
+            if (nowPast && !past) onThreshold()
+            past = nowPast
+        }
+        if (ended) {
             val velocity = tracker.calculateVelocity()
             scope.launch { state.settle(Offset(velocity.x, velocity.y), directions) }
-        },
-        onDragCancel = { scope.launch { state.settle(Offset.Zero, emptySet()) } },
-    ) { change, amount ->
-        change.consume()
-        tracker.addPosition(change.uptimeMillis, change.position)
-        val next = state.offset.value + amount
-        scope.launch { state.offset.snapTo(next) }
-        val nowPast = directions.any { state.progress(it) >= 1f }
-        if (nowPast && !past) onThreshold()
-        past = nowPast
+        } else {
+            scope.launch { state.settle(Offset.Zero, emptySet()) }
+        }
     }
 }
 

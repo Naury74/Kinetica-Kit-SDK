@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -124,8 +125,9 @@ private fun SharedPhotos() {
                     PHOTO_GRADIENTS.forEachIndexed { i, colors ->
                         Box(
                             Modifier
+                                // 상세 화면이 들어갈 높이를 비워 두면 격자 아래가 휑하므로 사진을 세로로 길게 채운다.
                                 .weight(1f)
-                                .height(120.dp)
+                                .fillMaxHeight()
                                 .kSharedElement("photo-$i")
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Brush.linearGradient(colors))

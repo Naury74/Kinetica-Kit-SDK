@@ -86,7 +86,9 @@ private fun AppBarsCard() {
     DemoCard("앱 바", "맨 위에서는 배경 없이 화면과 이어지다가, 목록이 바 아래로 지나가면 배경이 나타납니다. 안쪽 목록을 스크롤해 보세요.") {
         KSegmentedControl(listOf("작게", "가운데", "중간"), variant, { variant = it }, Modifier.fillMaxWidth())
         Box(Modifier.fillMaxWidth().height(320.dp).clip(INNER_SHAPE)) {
-            Column(Modifier.fillMaxSize().nestedScroll(toolbar.connection).verticalScroll(scroll).padding(top = 120.dp, bottom = 96.dp)) {
+            // 첫 줄이 바 바로 아래에서 시작하도록 바 높이(한 줄 바 56dp, 두 줄 바는 제목 줄까지 약 110dp)만큼 띄운다.
+            val top = if (KTopAppBarVariant.entries[variant] == KTopAppBarVariant.Medium) 128.dp else 64.dp
+            Column(Modifier.fillMaxSize().nestedScroll(toolbar.connection).verticalScroll(scroll).padding(top = top, bottom = 96.dp)) {
                 repeat(16) { Label("메모 ${it + 1}", 15, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) }
             }
             KTopAppBar(
@@ -199,8 +201,8 @@ private fun DialogsCard() {
                     { sheet = false },
                     listOf(
                         KDialogAction("링크 복사", icon = ShowcaseIcons.Link) {},
-                        KDialogAction("앨범에 추가", KDialogActionStyle.Preferred) {},
-                        KDialogAction("삭제", KDialogActionStyle.Destructive) {},
+                        KDialogAction("앨범에 추가", KDialogActionStyle.Preferred, icon = ShowcaseIcons.Plus) {},
+                        KDialogAction("삭제", KDialogActionStyle.Destructive, icon = ShowcaseIcons.Trash) {},
                     ),
                     title = "사진 3장",
                     message = "선택한 사진으로 할 일을 고르세요.",

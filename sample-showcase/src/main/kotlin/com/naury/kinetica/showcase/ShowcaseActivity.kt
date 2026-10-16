@@ -115,7 +115,7 @@ internal enum class Demo(val title: String, val summary: String, val icon: Image
     ),
     Components(
         "컴포넌트",
-        "기본, 입력, 미디어, 효과 탭으로 나눴습니다. 인증번호 입력, 색 선택, 서명, 사진 뷰어, 전후 비교, 물결 왜곡, 파티클, 홀로그램 카드까지 눌러 보세요.",
+        "버튼, 입력, 오버레이, 피드백, 차트, 채팅까지 아홉 개 탭에 나눠 담았습니다. 드롭다운, 다이얼로그, 토스트, 스토리, 키패드를 직접 눌러 보세요.",
         ShowcaseIcons.Layers,
         Color(0xFFFFA8E0),
     ),

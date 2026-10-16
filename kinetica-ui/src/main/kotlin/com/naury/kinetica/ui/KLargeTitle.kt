@@ -9,6 +9,9 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +27,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -33,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -80,7 +85,12 @@ import kotlin.math.roundToInt
  * 오버로드를 쓴다. 이때 접힘은 목록의 실제 위치로 정하고, [connection]은 당겨서 키우는 효과에만 쓰인다.
  */
 @Stable
-public class KLargeTitleState internal constructor(initialScrolled: Float, private val position: (() -> Float)? = null) {
+public class KLargeTitleState internal constructor(
+    initialScrolled: Float,
+    private val position: (() -> Float)? = null,
+    // 스크롤이 멈췄을 때 반쯤 접힌 큰 제목을 정착시키려고 목록을 조금 더 굴린다. 목록 상태를 받은 오버로드에서만 있다.
+    internal val scrollable: ScrollableState? = null,
+) {
     // 목록이 맨 위에서 내려간 거리(px). 목록이 맨 위에 닿을 때마다 0으로 맞춰 오차가 쌓이지 않게 한다.
     internal var scrolled by mutableFloatStateOf(initialScrolled)
     internal var range by mutableFloatStateOf(0f)
@@ -146,15 +156,15 @@ public fun rememberKLargeTitleState(): KLargeTitleState = rememberSaveable(saver
  */
 @Composable
 public fun rememberKLargeTitleState(listState: LazyListState): KLargeTitleState = remember(listState) {
-    KLargeTitleState(0f) {
+    KLargeTitleState(0f, {
         if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset.toFloat() else Float.POSITIVE_INFINITY
-    }
+    }, listState)
 }
 
 /** [scrollState]의 스크롤 위치(px)로 접힘을 정하는 상태를 만든다. `scrollTo` 같은 코드 스크롤도 바로 반영된다. */
 @Composable
 public fun rememberKLargeTitleState(scrollState: ScrollState): KLargeTitleState = remember(scrollState) {
-    KLargeTitleState(0f) { scrollState.value.toFloat() }
+    KLargeTitleState(0f, { scrollState.value.toFloat() }, scrollState)
 }
 
 /**
@@ -202,6 +212,7 @@ public fun KLargeTitleBar(
     }
     var smallHeight by remember { mutableIntStateOf(0) }
     var bottomHeight by remember { mutableIntStateOf(0) }
+    state.scrollable?.let { SettleHalfCollapsed(state, it) }
     Box(modifier.fillMaxWidth()) {
         // 다 접히면 아래 줄이 작은 바 바로 밑에 오므로, 글래스 배경을 두 줄 높이만큼 깐다.
         BarBackground(surface, barLevel) { smallHeight + if (bottom != null) bottomHeight else 0 }
@@ -220,6 +231,26 @@ public fun KLargeTitleBar(
                     Box(Modifier.widthIn(max = contentMaxWidth).fillMaxWidth()) { bottom() }
                 }
             }
+        }
+    }
+}
+
+/**
+ * 스크롤이 큰 제목을 반쯤 접은 채 멈추면, 절반 넘게 접혔으면 다 접고 아니면 다 펼치도록 목록을 마저 굴린다.
+ * 손을 떼거나 키보드가 올라와 목록이 밀린 뒤에 제목이 잘린 채 남지 않게 하려는 것이다. 사용자가 다시 스크롤하면 그쪽이 이긴다.
+ */
+@Composable
+private fun SettleHalfCollapsed(state: KLargeTitleState, scrollable: ScrollableState) {
+    val still = reducedMotion()
+    LaunchedEffect(state, scrollable, still) {
+        // 코드로 한 번에 옮긴 스크롤은 진행 중 표시가 한 프레임도 켜지지 않을 수 있어 위치가 바뀔 때도 다시 본다.
+        snapshotFlow { scrollable.isScrollInProgress to state.offset }.collect { (moving, _) ->
+            if (moving) return@collect
+            val range = state.range
+            val offset = state.offset
+            if (range <= 0f || offset <= 0f || offset >= range) return@collect
+            val by = if (offset / range >= HALF) range - offset else -offset
+            if (still) scrollable.scrollBy(by) else scrollable.animateScrollBy(by, spring(stiffness = Spring.StiffnessMediumLow))
         }
     }
 }
@@ -384,3 +415,4 @@ private const val BAR_STEPS = 20f
 private val STRETCH_LIMIT = 120.dp
 private const val STRETCH_RESISTANCE = 0.5f
 private const val RELEASE_STIFFNESS = 400f
+private const val HALF = 0.5f

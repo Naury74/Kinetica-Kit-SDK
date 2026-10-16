@@ -8,6 +8,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -74,9 +75,16 @@ internal fun KTone.colors(surface: SurfaceStyle): ToneColors {
 /** [variant] 모양에서 글자와 아이콘에 쓸 색. */
 internal fun variantContent(variant: KVariant, tone: KTone, colors: ToneColors, surface: SurfaceStyle): Color = when (variant) {
     KVariant.Filled -> colors.onColor
-    KVariant.Tonal, KVariant.Outlined, KVariant.Text -> colors.color
+    KVariant.Tonal, KVariant.Outlined, KVariant.Text -> readableOnDark(colors.color, tone, surface)
     KVariant.Glass, KVariant.Elevated -> if (tone == KTone.Destructive || tone == KTone.Positive) colors.color else surface.contentColor
 }
+
+/**
+ * 어두운 표면에서 강조색 글자를 조금 밝힌다. 진한 강조색(예: #0A84FF)을 옅은 강조색 배경이나 어두운 표면 위에 그대로 쓰면
+ * 명암비가 3:1대로 떨어져 읽기 어렵다. 흰색을 섞어 4.5:1 안팎으로 올린다. 표면 글자 색을 쓰는 [KTone.Neutral]은 그대로다.
+ */
+private fun readableOnDark(color: Color, tone: KTone, surface: SurfaceStyle): Color =
+    if (tone == KTone.Neutral || !surface.isDark) color else lerp(color, Color.White, DARK_TEXT_LIFT)
 
 /** [variant] 모양의 배경을 [shape]으로 그린다. 눌림 표시는 호출한 쪽이 붙인다. */
 @Composable
@@ -101,6 +109,7 @@ internal fun SurfaceStyle.elevated(): SurfaceStyle = when (this) {
 internal val KVariant.bare: Boolean get() = this == KVariant.Text || this == KVariant.Outlined
 
 private const val TONAL_ALPHA = 0.16f
+private const val DARK_TEXT_LIFT = 0.3f
 private const val OUTLINE_ALPHA = 0.55f
 private val OUTLINE_WIDTH: Dp = 1.dp
 private val ELEVATED_SHADOW: Dp = 14.dp

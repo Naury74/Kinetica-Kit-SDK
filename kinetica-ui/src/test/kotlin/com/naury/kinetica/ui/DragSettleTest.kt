@@ -240,6 +240,28 @@ class DragSettleTest {
     }
 
     @Test
+    fun `목록 안 카드 더미를 세로로 끌면 카드 대신 목록이 스크롤된다`() {
+        lateinit var state: SwipeCardStackState
+        val scroll = androidx.compose.foundation.ScrollState(0)
+        compose.setContent {
+            state = rememberSwipeCardStackState()
+            Column(Modifier.size(300.dp, 500.dp).verticalScroll(scroll)) {
+                SwipeCardStack(listOf("가", "나"), { _, _ -> }, Modifier.size(300.dp, 400.dp).testTag("stack"), state) {
+                    BasicText(it, Modifier.fillMaxSize())
+                }
+                Box(Modifier.fillMaxWidth().height(800.dp))
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("stack").performTouchInput { swipeUp() }
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+        assertThat(scroll.value).isGreaterThan(0)
+        assertThat(state.offset.value).isEqualTo(Offset.Zero)
+        assertThat(state.swipedCount).isEqualTo(0)
+    }
+
+    @Test
     fun `당겨서 새로 고침을 조금 당기다 천천히 놓으면 제자리로 돌아온다`() {
         compose.setContent {
             KRefreshBox(false, {}, Modifier.fillMaxSize()) {

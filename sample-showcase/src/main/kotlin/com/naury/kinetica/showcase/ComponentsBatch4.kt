@@ -251,11 +251,13 @@ private fun EmptyCard() {
     var kind by rememberSaveable { mutableIntStateOf(4) }
     val kinds = KEmptyIconKind.entries
     val titles = listOf("결과가 없어요", "오프라인이에요", "받은 편지가 없어요", "불러오지 못했어요", "볼 수 없는 내용이에요", "검색해 보세요", "모두 끝냈어요", "점검 중이에요")
+    // 버튼에는 그림 종류를 짧게 적는다. 제목을 글자 수로 자르면 "오프라인이에"처럼 말이 끊긴다.
+    val labels = listOf("결과 없음", "오프라인", "빈 편지함", "오류", "권한 없음", "검색 전", "완료", "점검 중")
     DemoCard("빈 화면 그림", "그림 8가지 중 새로 넣은 권한 없음, 검색 전, 완료, 점검 중을 고를 수 있습니다.") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             kinds.forEachIndexed { i, k ->
                 KButton(
-                    titles[i].take(6),
+                    labels[i],
                     { kind = i },
                     variant = if (i == kind) KVariant.Filled else KVariant.Tonal,
                     size = KButtonSize.Small,

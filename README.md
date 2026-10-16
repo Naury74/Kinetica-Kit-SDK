@@ -19,8 +19,13 @@
 
 <table>
   <tr>
+    <td align="center" width="33%"><img src="docs/images/showcase-surface-glass.png" width="220" alt="글래스 표면의 쇼핑 화면"><br><b>글래스</b><br>배경이 블러로 비치는 표면</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-solid.png" width="220" alt="단색 표면의 쇼핑 화면"><br><b>단색</b><br>같은 화면을 깔끔한 단색으로</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-tonal.png" width="220" alt="톤 표면의 쇼핑 화면"><br><b>톤</b><br>브랜드 색을 옅게 섞은 표면</td>
+  </tr>
+  <tr>
     <td align="center" width="33%"><img src="docs/images/showcase-glass.png" width="220" alt="글래스 다이얼로그"><br><b>UI 키트</b><br>글래스 다이얼로그, 단색과 톤으로도 바뀜</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-components.png" width="220" alt="컴포넌트"><br><b>컴포넌트</b><br>휠 피커, 카드 더미, 아일랜드 알림 등</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-components.png" width="220" alt="컴포넌트"><br><b>컴포넌트</b><br>버튼부터 차트, 채팅까지 아홉 개 탭</td>
     <td align="center" width="33%"><img src="docs/images/showcase-motion.png" width="220" alt="모션 효과"><br><b>모션 효과</b><br>글로우 테두리, 젤리, 자석, 숫자 롤링</td>
   </tr>
   <tr>
@@ -30,7 +35,7 @@
   </tr>
 </table>
 
-모두 `sample-showcase`를 Android 에뮬레이터에서 실행해 찍은 화면입니다. 폴더블과 태블릿 화면, 편집기, 서버 화면은 [쇼케이스 화면 더 보기](#쇼케이스-화면-더-보기)에 있습니다.
+모두 `sample-showcase`를 Android 에뮬레이터에서 실행해 찍은 화면입니다. 첫 줄은 같은 컴포넌트 화면을 표면 스타일만 바꿔 찍었습니다. 폴더블과 태블릿 화면, 편집기, 서버 화면은 [쇼케이스 화면 더 보기](#쇼케이스-화면-더-보기)에 있습니다.
 
 ## 빠른 시작
 

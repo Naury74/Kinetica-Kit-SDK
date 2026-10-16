@@ -1,5 +1,6 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -186,6 +187,33 @@ class KLayoutTest {
         compose.runOnIdle { kotlinx.coroutines.runBlocking { list.scrollToItem(0) } }
         compose.waitForIdle()
         assertThat(state.collapsedFraction).isEqualTo(0f)
+    }
+
+    @Test
+    fun `스크롤이 큰 제목을 반쯤 접은 채 멈추면 가까운 쪽으로 정착한다`() {
+        lateinit var state: KLargeTitleState
+        val list = androidx.compose.foundation.lazy.LazyListState()
+        compose.setContent {
+            state = rememberKLargeTitleState(list)
+            KineticaScaffold(Modifier.fillMaxSize(), topBar = { KLargeTitleBar(state, "설정") }) { padding ->
+                LazyColumn(Modifier.fillMaxSize().nestedScroll(state.connection), state = list, contentPadding = padding) {
+                    items(60) { BasicText("항목 $it", Modifier.fillMaxWidth().height(48.dp)) }
+                }
+            }
+        }
+        compose.waitForIdle()
+        val range = state.range
+        assertThat(range).isGreaterThan(0f)
+
+        compose.runOnIdle { kotlinx.coroutines.runBlocking { list.scrollBy(range * 0.3f) } }
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+        assertThat(state.collapsedFraction).isEqualTo(0f)
+
+        compose.runOnIdle { kotlinx.coroutines.runBlocking { list.scrollBy(range * 0.7f) } }
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+        assertThat(state.collapsedFraction).isEqualTo(1f)
     }
 
     @Test
