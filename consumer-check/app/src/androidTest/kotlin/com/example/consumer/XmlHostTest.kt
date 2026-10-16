@@ -164,7 +164,11 @@ class XmlHostTest {
         onView(withId(R.id.openSheet)).perform(click())
         settle()
         try {
-            scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+            // 기기마다 처음 방향이 다르므로(태블릿은 가로) 지금과 반대 방향으로 돌려야 실제로 다시 만들어진다.
+            scenario.onActivity {
+                val landscape = it.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                it.requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
             Thread.sleep(1_500)
             settle()
             onView(withId(R.id.detailTitle)).check(matches(withText("상세 3")))

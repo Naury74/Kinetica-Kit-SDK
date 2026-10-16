@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -51,32 +52,55 @@ class AdaptiveAppTest {
 
     private fun screenWidthDp(): Int = rule.activity.resources.configuration.screenWidthDp
 
-    /** 세로(좁음)에서 고른 메일이 가로(넓음)로 돌린 뒤 두 칸 배치의 상세로 남고, 다시 세로로 돌려도 상세가 보인다. */
+    private fun narrow(): Boolean = screenWidthDp() < 600
+
+    /** 지금 폭에 맞는 배치인지 본다. 좁으면 상세만, 넓으면 목록과 상세가 함께 보인다. */
+    private fun assertPanesFor(body: String) {
+        rule.waitTag("mailBody", 8_000)
+        rule.onNodeWithTag("mailBody").assertTextContains(body)
+        if (narrow()) {
+            assertTrue("좁은 화면(${screenWidthDp()}dp)에서 상세를 연 뒤에도 목록이 보인다", rule.becomes { rule.onAllNodesWithTag("mailList").fetchSemanticsNodes().isEmpty() })
+        } else {
+            rule.waitTag("mailList", 8_000)
+            rule.onNodeWithTag("mailList").assertIsDisplayed()
+        }
+    }
+
+    private fun opposite(): Int =
+        if (rule.activity.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+
+    /**
+     * 고른 메일이 회전 뒤에도 상세로 남는다. 폰은 세로가 좁고 가로가 넓어 한 칸과 두 칸 배치를 오가고, 태블릿은 둘 다 넓어 두 칸으로 남는다.
+     * 좁은 화면의 뒤로 가기는 상세를 먼저 닫고, 넓은 화면은 가로채지 않는다.
+     */
     @Test
     fun listDetailFollowsRotation() {
         rule.openExtra(Routes.MAIL)
         rule.waitTag("mail5")
         rule.onNodeWithTag("mail5").performClick()
-        rule.waitTag("mailBody")
-        rule.onNodeWithTag("mailBody").assertTextContains("본문 m5")
-        assertTrue("좁은 화면에서 상세를 연 뒤에도 목록이 보인다", rule.becomes { rule.onAllNodesWithText("메일 5").fetchSemanticsNodes().isEmpty() })
+        assertPanesFor("본문 m5")
 
-        rotate(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
-        assertTrue("가로 폭이 600dp 미만이라 두 칸 시험이 의미 없다: ${screenWidthDp()}", screenWidthDp() >= 600)
-        rule.waitTag("mailList", 8_000)
-        rule.onNodeWithTag("mailBody").assertTextContains("본문 m5")
-        rule.onNodeWithTag("mailList").assertIsDisplayed()
-        rule.onNodeWithTag("mailList").performScrollToIndex(9)
-        rule.onNodeWithTag("mail9").performClick()
-        rule.waitText("본문 m9")
+        rotate(opposite())
+        assertPanesFor("본문 m5")
+        if (!narrow()) {
+            rule.onNodeWithTag("mailList").performScrollToIndex(9)
+            rule.onNodeWithTag("mail9").performClick()
+            rule.waitText("본문 m9")
+        }
+        val body = if (narrow()) "본문 m5" else "본문 m9"
 
-        rotate(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-        rule.waitTag("mailBody", 8_000)
-        rule.onNodeWithTag("mailBody").assertTextContains("본문 m9")
-        // 좁은 화면에서 뒤로 가기는 상세를 닫고 목록으로 돌아간다(NavHost보다 먼저).
-        back(rule)
-        rule.waitGone("mailBody")
-        rule.onNodeWithTag("mail9").assertIsDisplayed()
+        rotate(opposite())
+        assertPanesFor(body)
+        if (narrow()) {
+            // 좁은 화면에서 뒤로 가기는 상세를 닫고 목록으로 돌아간다(NavHost보다 먼저).
+            back(rule)
+            rule.waitGone("mailBody")
+            rule.waitTag("mailList")
+        }
         back(rule)
         rule.waitTag("lastEvent")
     }

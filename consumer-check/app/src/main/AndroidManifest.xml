@@ -20,5 +20,12 @@
         <activity android:name=".xml.XmlPanActivity" android:exported="true" android:windowSoftInputMode="adjustPan" />
         <activity android:name=".xml.XmlEdgeActivity" android:exported="true" />
         <activity android:name=".xml.XmlNothingActivity" android:exported="true" android:windowSoftInputMode="adjustNothing" />
+        <!-- 최근 추가 API 시나리오: 시스템 바 아이콘, 넓은 화면, 열 수가 바뀌는 보드, 편집기 -->
+        <activity android:name=".recent.BarIconsActivity" android:exported="false" />
+        <activity android:name=".recent.BarIconsScaffoldActivity" android:exported="false" />
+        <activity android:name=".recent.WideHostActivity" android:exported="false" />
+        <activity android:name=".recent.AdaptiveBoardActivity" android:exported="false" />
+        <activity android:name=".recent.XmlAdaptiveBoardActivity" android:exported="false" />
+        <activity android:name=".recent.EditorHostActivity" android:exported="false" />
     </application>
 </manifest>

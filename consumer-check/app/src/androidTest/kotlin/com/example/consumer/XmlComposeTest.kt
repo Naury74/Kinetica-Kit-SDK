@@ -26,6 +26,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -141,8 +142,10 @@ class XmlComposeTest {
         // 바깥 고리(색조)도 같은지 본다. 고리 위쪽에서 오른쪽 아래로 크게 돈다.
         val y1 = scrollY()
         val color1 = text(R.id.colorValue)
-        val ring = wheel.size.width * 0.44f
-        injectDrag(listOf(PointF(cx, cy - ring), PointF(cx + ring * 0.7f, cy - ring * 0.7f), PointF(cx + ring, cy), PointF(cx + ring * 0.7f, cy + ring * 0.7f)))
+        // 고리 두께는 dp로 고정이라(28dp) 바퀴 크기 비율로 잡으면 큰 화면에서 고리를 벗어난다. 고리 한가운데(바깥에서 14dp 안쪽)를 따라 돈다.
+        // 태블릿에서는 바퀴가 화면보다 커서 아래쪽 반원은 화면 밖이므로 위쪽 사분원만 쓴다.
+        val ring = wheel.size.width / 2f - 14 * InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        injectDrag(listOf(PointF(cx, cy - ring), PointF(cx + ring * 0.7f, cy - ring * 0.7f), PointF(cx + ring, cy)))
         settle()
         assertEquals("색조 고리를 끄는 동안 바깥 NestedScrollView가 스크롤됐다", y1, scrollY())
         assertNotEquals("색조 고리를 끌었는데 색이 바뀌지 않았다", color1, text(R.id.colorValue))

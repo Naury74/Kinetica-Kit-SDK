@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 넓은 화면에서 열이 늘어나는 XML 보드. 칸이 180dp보다 좁아지지 않는 만큼 최대 8열까지 늘린다. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <com.naury.kinetica.board.KineticaBoardView
+        android:id="@+id/adaptiveBoard"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:kinetica_maxColumns="8"
+        app:kinetica_minCellWidth="180dp" />
+</FrameLayout>

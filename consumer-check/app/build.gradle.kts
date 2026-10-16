@@ -39,6 +39,7 @@ dependencies {
     implementation("com.naurylab:kinetica-board-compose:$kineticaVersion")
     implementation("com.naurylab:kinetica-ui:$kineticaVersion")
     implementation("com.naurylab:kinetica-presets:$kineticaVersion")
+    implementation("com.naurylab:kinetica-editor-compose:$kineticaVersion")
     implementation(libs.androidx.activity.compose)
 
     // 실제 호스트 앱이 흔히 함께 쓰는 라이브러리. 루트 카탈로그에 없는 것은 좌표를 직접 적는다.
@@ -62,4 +63,6 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("androidx.test.espresso:espresso-contrib:3.7.0")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.4.0")
+    // 폴더블 탁자 모드를 시험에서 흉내 낸다.
+    androidTestImplementation(libs.androidx.window.testing)
 }

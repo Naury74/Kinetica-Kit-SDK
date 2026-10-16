@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
@@ -38,6 +39,9 @@ class PhotosTest {
 
     private fun openPhoto(index: Int) {
         rule.openExtra(Routes.PHOTOS)
+        rule.waitTag("photoGrid")
+        // 넓은 화면에서는 칸이 커서 뒤쪽 썸네일이 아직 만들어지지 않았을 수 있다.
+        rule.onNodeWithTag("photoGrid").performScrollToIndex(index)
         rule.waitTag("thumb$index")
         rule.onNodeWithTag("thumb$index").performClick()
         rule.waitText("뷰어 열림 $index")

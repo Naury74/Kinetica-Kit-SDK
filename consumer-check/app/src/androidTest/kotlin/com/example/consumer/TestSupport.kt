@@ -110,8 +110,9 @@ fun injectDrag(points: List<android.graphics.PointF>, substeps: Int = 6, stepMs:
 /** 센서 서비스에 지금 열려 있는 이벤트 연결 가운데 이 앱(uid)의 것이 있는지. dumpsys sensorservice의 연결 목록만 본다. */
 fun appHasActiveSensorConnection(): Boolean {
     val dump = TestSupport.shell("dumpsys sensorservice")
-    val start = dump.indexOf("open event connections")
-    val end = dump.indexOf("open direct connections", start.coerceAtLeast(0))
+    // 기기 이미지마다 머리말이 다르다. "N open event connections ... open direct connections" 또는 "N active connections ... direct connections".
+    val start = Regex("open event connections|\\d+ active connections").find(dump)?.range?.first ?: -1
+    val end = Regex("direct connections").find(dump, start.coerceAtLeast(0))?.range?.first ?: -1
     if (start < 0 || end < 0) return false
     return dump.substring(start, end).contains("uid ${android.os.Process.myUid()} |")
 }
