@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,6 +42,12 @@ class BoardColumnsUiTest {
     private val grid = BoardArrangement.Grid(columns = 2, columnsByWidth = GridColumns.Adaptive(160f, maxColumns = 4))
     private val catalog = listOf("a", "b", "c", "d").map { BoardWidget(it, it.uppercase()) }
     private val width = mutableStateOf(360.dp)
+
+    // 끝나지 않은 애니메이션이 다음 View 기반 테스트의 Compose 프레임을 멈추지 않도록 테스트마다 끝까지 돌린다(KineticaBoardTest 참고).
+    @After
+    fun settleAnimations() {
+        compose.waitForIdle()
+    }
 
     private fun show(state: KineticaBoardState, editing: Boolean = false) {
         compose.setContent {

@@ -182,6 +182,7 @@ private fun BoardBody(
     val connection = remember { object : NestedScrollConnection {} }
     BoxWithConstraints(
         modifier
+            .boundedWidth()
             .clipToBounds()
             .nestedScroll(connection, dispatcher)
             .onGloballyPositioned { visibility.coordinates = it },

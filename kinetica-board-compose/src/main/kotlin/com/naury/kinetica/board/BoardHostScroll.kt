@@ -5,6 +5,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
@@ -13,8 +14,12 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.dp
 
 /**
  * 위젯을 누른 순간부터 손을 뗄 때까지 바깥 View(NestedScrollView, ViewPager2, SwipeRefreshLayout 등)가 터치를 가로채지 않게 한다.
@@ -83,3 +88,24 @@ internal suspend fun scrollBoardOrParent(
 internal suspend fun finishParentScroll(dispatcher: NestedScrollDispatcher) {
     dispatcher.dispatchPostFling(Velocity.Zero, Velocity.Zero)
 }
+
+/**
+ * 가로 스크롤 컨테이너나 가로 LinearLayout의 wrap_content처럼 폭 제한 없이 잴 때 창 폭(모르면 360dp)으로 잰다.
+ * 보드는 폭에 맞춰 배치를 늘리므로 무한한 폭으로는 배치할 수 없다. 폭이 정해져 있으면 그대로 둔다.
+ */
+@Composable
+internal fun Modifier.boundedWidth(): Modifier {
+    val window = LocalWindowInfo.current.containerSize.width
+    val fallback = if (window > 0) window else with(LocalDensity.current) { FALLBACK_WIDTH.roundToPx() }
+    return layout { measurable, constraints ->
+        val bounded = if (constraints.hasBoundedWidth) {
+            constraints
+        } else {
+            constraints.copy(maxWidth = maxOf(fallback, constraints.minWidth), minWidth = maxOf(fallback, constraints.minWidth))
+        }
+        val placeable = measurable.measure(bounded)
+        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+    }
+}
+
+private val FALLBACK_WIDTH = 360.dp

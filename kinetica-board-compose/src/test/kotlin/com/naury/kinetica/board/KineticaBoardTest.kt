@@ -30,6 +30,7 @@ import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,6 +47,13 @@ class KineticaBoardTest {
 
     private val catalog =
         listOf(BoardWidget("a", "A", widthDp = 120f, heightDp = 80f), BoardWidget("b", "B", widthDp = 120f, heightDp = 80f))
+
+    // 눌림 표시가 사라지는 애니메이션처럼 끝나지 않은 프레임 요청을 남긴 채 끝나면, 같은 JVM의 다음 View 기반 테스트에서
+    // Compose 프레임이 오지 않아 재구성과 LaunchedEffect가 멈춘다. 테스트마다 애니메이션이 끝날 때까지 시계를 돌린다.
+    @After
+    fun settleAnimations() {
+        compose.waitForIdle()
+    }
 
     private fun show(state: KineticaBoardState, editing: Boolean, onClick: (String) -> Unit = {}) {
         val edit = mutableStateOf(editing)
