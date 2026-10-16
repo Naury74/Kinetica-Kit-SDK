@@ -246,7 +246,10 @@ private fun RangeThumb(
                 delta != null
             }
             .drawWithCache {
-                val text = measurer.measure(label, TextStyle(color = Color.White, fontSize = BUBBLE_TEXT, fontWeight = FontWeight.SemiBold))
+                val text = measurer.measure(
+                    label,
+                    TextStyle(color = Color.White, fontSize = BUBBLE_TEXT, fontWeight = FontWeight.SemiBold).withContentDirection(),
+                )
                 onDrawBehind {
                     val amount = grab.value
                     drawThumb(amount)

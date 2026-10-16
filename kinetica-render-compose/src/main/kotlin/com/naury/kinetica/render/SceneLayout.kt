@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -128,8 +129,10 @@ public fun SceneLayout(
     }
     // 장면 좌표는 왼쪽 위 기준의 절대 좌표라 RTL 화면에서도 뒤집지 않는다. 뒤집으면 장면이 영역 밖으로 밀려 보이지 않는다.
     // 호스트 슬롯 안은 호스트의 레이아웃 방향을 그대로 쓴다.
+    // 바깥 Box는 호스트 방향으로 배치되므로 정렬도 방향과 무관한 왼쪽 위로 둔다. artboard 배경이 없으면 장면 크기가 0이라
+    // TopStart면 RTL에서 오른쪽 끝(영역 밖)에 놓인다.
     val hostDirection = LocalLayoutDirection.current
-    Box(modifier.clipToBounds()) {
+    Box(modifier.clipToBounds(), contentAlignment = AbsoluteAlignment.TopLeft) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr, LocalHostLayoutDirection provides hostDirection) {
             SceneViewport(document, viewport, scope, clipToArtboard)
         }

@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 
 /**
@@ -120,10 +121,20 @@ internal fun ThemedText(
     BasicText(text, modifier, style = themed(style), overflow = overflow, maxLines = maxLines, color = color)
 }
 
-/** [style]에 [LocalGlassTextStyle]의 글꼴을 입힌다. [style]이 글꼴을 직접 정했으면 그 값이 우선한다. 입력란이나 직접 측정하는 글자에 쓴다. */
+/**
+ * [style]에 [LocalGlassTextStyle]의 글꼴을 입힌다. [style]이 글꼴을 직접 정했으면 그 값이 우선한다. 입력란이나 직접 측정하는 글자에 쓴다.
+ * 문단 방향은 [withContentDirection]으로 내용에 맞춘다.
+ */
 @Composable
 @ReadOnlyComposable
-internal fun themed(style: TextStyle): TextStyle = fontOf(LocalGlassTextStyle.current).merge(style)
+internal fun themed(style: TextStyle): TextStyle = fontOf(LocalGlassTextStyle.current).merge(style).withContentDirection()
+
+/**
+ * 방향을 정하지 않은 글자는 첫 강한 문자로 문단 방향을 정한다. Compose는 Unspecified를 레이아웃 방향 그대로 풀기 때문에
+ * RTL 화면에서 한국어 문장을 그리면 끝의 마침표가 앞으로 간다. 강한 문자가 없으면 레이아웃 방향을 따른다.
+ */
+internal fun TextStyle.withContentDirection(): TextStyle =
+    if (textDirection == TextDirection.Unspecified) copy(textDirection = TextDirection.Content) else this
 
 internal fun fontOf(base: TextStyle): TextStyle = if (base == TextStyle.Default) {
     base
