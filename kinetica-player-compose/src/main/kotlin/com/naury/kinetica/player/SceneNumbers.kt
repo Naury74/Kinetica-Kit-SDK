@@ -29,7 +29,12 @@ public fun animateSceneNumbers(data: SceneData, durationMs: Int = DEFAULT_NUMBER
     var to by remember { mutableStateOf(data) }
     val progress = remember { Animatable(1f) }
     LaunchedEffect(data) {
-        if (data == to) return@LaunchedEffect
+        if (data == to) {
+            // 도중에 바뀐 값의 효과가 시작되기 전에 다시 이 값으로 돌아왔으면 멈춘 진행도에 남지 않게 마저 간다.
+            if (progress.value < 1f) progress.animateTo(1f, tween(durationMs, easing = FastOutSlowInEasing))
+            from = data
+            return@LaunchedEffect
+        }
         // 애니메이션 도중에 값이 또 바뀌면 지금 보이는 값에서 이어서 움직인다.
         from = blendNumbers(from, to, progress.value)
         to = data

@@ -182,7 +182,15 @@ private fun FlipCard(char: Char, look: FlipLook) {
     var faces by remember { mutableStateOf(char to char) }
     val turn = remember { Animatable(1f) }
     LaunchedEffect(char, look.still) {
-        if (faces.second == char) return@LaunchedEffect
+        if (faces.second == char) {
+            // 넘기는 도중 한 프레임 안에 다른 글자를 거쳐 이 글자로 돌아오면 반쯤 접힌 채 멈추지 않게 마저 넘긴다.
+            if (look.still) {
+                turn.snapTo(1f)
+            } else if (turn.value < 1f) {
+                turn.animateTo(1f, tween(FLIP_MS, easing = FastOutSlowInEasing))
+            }
+            return@LaunchedEffect
+        }
         faces = faces.second to char
         if (look.still) {
             turn.snapTo(1f)

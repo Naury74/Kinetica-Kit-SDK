@@ -31,11 +31,15 @@ public fun animateNumberAsState(targetValue: Double, durationMs: Int = DEFAULT_C
     var to by remember { mutableDoubleStateOf(start) }
     val progress = remember { Animatable(1f) }
     LaunchedEffect(targetValue) {
-        if (targetValue == to || !targetValue.isFinite()) return@LaunchedEffect
-        // 애니메이션 도중에 값이 또 바뀌면 지금 보이는 값에서 이어서 움직인다.
-        from += (to - from) * progress.value
-        to = targetValue
-        progress.snapTo(0f)
+        if (!targetValue.isFinite()) return@LaunchedEffect
+        // A에서 B로 가는 도중 한 프레임 안에 C를 거쳐 B로 돌아오면 C의 효과는 시작되지 않고 목표는 이미 B다.
+        // 그때 그냥 돌아가면 멈춘 진행도에서 중간값으로 남으므로 남은 길을 마저 간다.
+        if (targetValue != to) {
+            // 애니메이션 도중에 값이 또 바뀌면 지금 보이는 값에서 이어서 움직인다.
+            from += (to - from) * progress.value
+            to = targetValue
+            progress.snapTo(0f)
+        }
         progress.animateTo(1f, tween(durationMs.coerceAtLeast(0), easing = FastOutSlowInEasing))
     }
     return remember { derivedStateOf { from + (to - from) * progress.value } }

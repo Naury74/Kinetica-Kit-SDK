@@ -136,10 +136,84 @@ class RollingTextTest {
         assertThat(wheel.goalFor(7, up = true)).isEqualTo(7f)
     }
 
+    /** [values]를 [gaps] 간격으로 차례로 넣고 멈춘 뒤 마지막 값이 처음부터 그 값을 그린 것과 같은 픽셀인지 본다. */
+    private fun assertSequence(values: List<String>, gaps: List<Long>) {
+        show()
+        compose.mainClock.autoAdvance = false
+        val last = settledInk(values.last())
+        set(values.first())
+        compose.mainClock.advanceTimeBy(SETTLE_MS)
+        values.drop(1).forEachIndexed { i, v ->
+            set(v)
+            compose.mainClock.advanceTimeBy(gaps[i % gaps.size])
+        }
+        compose.mainClock.advanceTimeBy(SETTLE_MS)
+        compose.onNodeWithContentDescription(values.last()).assertExists()
+        assertThat(inkPixels()).isEqualTo(last)
+    }
+
+    private fun oneToNine() = (1..9).map { it.toString() }
+
+    @Test
+    fun `1부터 9까지 250ms 간격`() = assertSequence(oneToNine(), listOf(250L))
+
+    @Test
+    fun `1부터 9까지 280ms 간격`() = assertSequence(oneToNine(), listOf(280L))
+
+    @Test
+    fun `1부터 9까지 300ms 간격`() = assertSequence(oneToNine(), listOf(300L))
+
+    @Test
+    fun `1부터 9까지 50ms 간격`() = assertSequence(oneToNine(), listOf(50L))
+
+    @Test
+    fun `1부터 9까지 무작위 간격`() {
+        val random = java.util.Random(SEED)
+        assertSequence(oneToNine(), List(8) { 16L + random.nextInt(400) })
+    }
+
+    @Test
+    fun `9에서 1로 내려가기`() = assertSequence(oneToNine().reversed(), listOf(250L))
+
+    @Test
+    fun `8에서 12로 두 자리`() = assertSequence((8..12).map { it.toString() }, listOf(250L))
+
+    @Test
+    fun `멈춘 숫자는 같은 글자를 그냥 그린 것과 같은 픽셀이다`() {
+        var plain by mutableStateOf(false)
+        compose.setContent {
+            Box(Modifier.background(Color.White).padding(8.dp).testTag("box")) {
+                val style = TextStyle(color = Color.Black, fontSize = 32.sp)
+                if (plain) androidx.compose.foundation.text.BasicText(value, style = style) else RollingText(value, style = style)
+            }
+        }
+        compose.mainClock.autoAdvance = false
+        val rolled = settledInk("9")
+        plain = true
+        compose.waitForIdle()
+        assertThat(rolled).isGreaterThan(0)
+        assertThat(inkPixels()).isEqualTo(rolled)
+    }
+
+    @Test
+    fun `다 구른 띠는 0에서 9 사이 정수 칸으로 되돌아가 보이는 숫자 그대로 멈춘다`() = kotlinx.coroutines.runBlocking {
+        val wheel = DigitWheel(1)
+        for (n in 2..9) wheel.goalFor(n, up = true)
+        for (n in 0..5) wheel.goalFor(n, up = true)
+        assertThat(wheel.goalFor(5, up = true)).isEqualTo(15f)
+        wheel.settle()
+        assertThat(wheel.position.value).isEqualTo(5f)
+        assertThat(wheel.goalFor(3, up = false)).isEqualTo(3f)
+        assertThat(wheel.goalFor(9, up = false)).isEqualTo(-1f)
+        wheel.settle()
+        assertThat(wheel.position.value).isEqualTo(9f)
+    }
+
     private companion object {
         const val STEP_MS = 250L
         const val FRAME_MS = 16L
         const val SETTLE_MS = 3_000L
         const val INK = 0.5f
+        const val SEED = 7L
     }
 }

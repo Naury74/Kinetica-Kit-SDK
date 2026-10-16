@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -19,15 +18,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
-import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /**
@@ -70,32 +78,74 @@ private class RollingLast(var text: String)
 
 /**
  * 숫자 한 자리. 위치는 끝없이 이어지는 숫자 띠 위의 실수 좌표이고, 정수 부분이 지금 보이는 숫자, 소수 부분이 다음 숫자까지 굴러간 정도다.
- * 위치는 그리기 단계에서만 읽고, 보이는 숫자가 바뀔 때만 다시 구성한다.
+ *
+ * 보이는 두 숫자와 그 자리는 한 번의 그리기에서 같은 위치 값으로 함께 정한다. 예전에는 보이는 숫자를 구성 단계에서, 이동량과 투명도를
+ * 숫자마다 둔 레이어에서 따로 읽었는데, 값이 빠르게 이어 바뀔 때 둘이 어긋난 채 멈추면 숫자가 투명한 채로 남을 수 있었다.
+ * 이제 위치는 그리기 단계에서만 읽으므로 굴러가는 동안 다시 구성하지 않고, 어떤 위치에서도 두 숫자의 불투명도 합이 1이라 빈칸이 생기지 않는다.
  */
 @Composable
 private fun RollingDigit(digit: Int, up: Boolean, still: Boolean, style: TextStyle) {
     val wheel = remember { DigitWheel(digit) }
     LaunchedEffect(digit, still) {
         val goal = wheel.goalFor(digit, up)
-        if (still) {
-            wheel.position.snapTo(goal)
-        } else {
+        if (!still) {
             // 굴러가던 중이면 Animatable이 지금 위치와 속도에서 이어 받는다.
             wheel.position.animateTo(goal, spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMediumLow))
         }
+        // 다 굴렀거나 '애니메이션 삭제'면 띠를 0..9 칸으로 되돌려, 값이 오래 바뀌어도 위치가 커지지 않고 정확히 칸에 멈추게 한다.
+        wheel.settle()
     }
-    val base by remember { derivedStateOf { floor(wheel.position.value).toInt() } }
-    val moving by remember { derivedStateOf { wheel.position.value != base.toFloat() } }
-    Box {
-        DigitFace(base, wheel, style, offset = 0)
-        if (moving) DigitFace(base + 1, wheel, style, offset = 1)
+    val faces = rememberDigitFaces(themed(style))
+    Box(
+        Modifier
+            .layout { measurable, constraints ->
+                // 자리 너비는 목표 숫자 기준이라 굴러가는 동안 다시 재지 않는다.
+                val face = faces[digit]
+                val placeable = measurable.measure(Constraints.fixed(face.size.width, faces.height))
+                layout(
+                    placeable.width,
+                    placeable.height,
+                    mapOf(FirstBaseline to face.firstBaseline.roundToInt(), LastBaseline to face.lastBaseline.roundToInt()),
+                ) { placeable.place(0, 0) }
+            }
+            .drawBehind { drawDigits(wheel.position.value, faces) },
+    )
+}
+
+/** 숫자 0..9를 [style]로 미리 잰 결과. 높이는 가장 큰 숫자 기준이다. */
+private class DigitFaces(private val layouts: List<TextLayoutResult>) {
+    val height: Int = layouts.maxOf { it.size.height }
+
+    operator fun get(digit: Int): TextLayoutResult = layouts[Math.floorMod(digit, DIGITS)]
+}
+
+@Composable
+private fun rememberDigitFaces(style: TextStyle): DigitFaces {
+    val measurer = rememberTextMeasurer(cacheSize = DIGITS)
+    return remember(measurer, style) { DigitFaces(List(DIGITS) { measurer.measure(it.toString(), style) }) }
+}
+
+/** 띠 위 [position]에 걸친 두 숫자를 그린다. 위 숫자는 위로 빠지며 옅어지고 아래 숫자는 올라오며 짙어진다. */
+private fun DrawScope.drawDigits(position: Float, faces: DigitFaces) {
+    if (!position.isFinite()) return
+    val base = floor(position)
+    val rolled = position - base
+    clipRect {
+        drawFace(faces[base.toInt()], shift = -rolled, alpha = 1f - rolled)
+        if (rolled > 0f) drawFace(faces[base.toInt() + 1], shift = 1f - rolled, alpha = rolled)
     }
+}
+
+private fun DrawScope.drawFace(face: TextLayoutResult, shift: Float, alpha: Float) {
+    val left = (size.width - face.size.width) / 2f
+    val top = (size.height - face.size.height) / 2f + shift * size.height
+    drawText(face, topLeft = Offset(left, top), alpha = alpha.coerceIn(0f, 1f))
 }
 
 /** 숫자 띠 위 위치와 마지막으로 향한 정수 위치 */
 internal class DigitWheel(digit: Int) {
-    val position = Animatable(digit.toFloat())
-    private var goal = digit
+    val position = Animatable(Math.floorMod(digit, DIGITS).toFloat())
+    private var goal = Math.floorMod(digit, DIGITS)
 
     /** [digit]으로 가는 정수 위치. 올라가면 띠를 따라 앞으로, 내려가면 뒤로 가장 가까운 칸이다. */
     fun goalFor(digit: Int, up: Boolean): Float {
@@ -103,22 +153,12 @@ internal class DigitWheel(digit: Int) {
         goal += if (up) Math.floorMod(digit - now, DIGITS) else -Math.floorMod(now - digit, DIGITS)
         return goal.toFloat()
     }
-}
 
-/** 띠의 [slot]번째 칸 숫자. [offset]이 1이면 아래 칸이라 다음 숫자가 올라오는 자리에 놓인다. */
-@Composable
-private fun DigitFace(slot: Int, wheel: DigitWheel, style: TextStyle, offset: Int) {
-    ThemedText(
-        Math.floorMod(slot, DIGITS).toString(),
-        Modifier
-            .then(if (offset == 0) Modifier else Modifier.clearAndSetSemantics {})
-            .graphicsLayer {
-                val shift = offset - (wheel.position.value - floor(wheel.position.value))
-                translationY = shift * size.height
-                alpha = (1f - abs(shift)).coerceIn(0f, 1f)
-            },
-        style = style,
-    )
+    /** 목표 칸에 정확히 멈추고 위치와 목표를 0..9 칸으로 되돌린다. 보이는 숫자는 그대로다. */
+    suspend fun settle() {
+        goal = Math.floorMod(goal, DIGITS)
+        position.snapTo(goal.toFloat())
+    }
 }
 
 /** 두 문자열에 든 숫자를 비교한다. 숫자를 읽을 수 없으면 0을 돌려준다. */
