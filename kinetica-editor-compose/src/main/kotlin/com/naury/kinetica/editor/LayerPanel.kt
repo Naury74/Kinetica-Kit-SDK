@@ -10,19 +10,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,7 +35,7 @@ import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.NodeKind
 
 /**
- * 레이어 목록. 한 줄 높이는 48dp이고 그룹 깊이만큼 들여 쓰며, 줄 끝에 표시·잠금 토글을 둔다.
+ * 레이어 목록. 한 줄 높이는 48dp이고 그룹 깊이만큼 들여 쓰며, 줄 끝에 표시(눈)와 잠금(자물쇠) 아이콘 토글을 둔다.
  * 줄을 누르면 그 노드 하나만 선택하고, 선택한 줄은 접근성 서비스에 선택됨으로 알린다.
  */
 @Composable
@@ -65,7 +69,7 @@ internal fun LayerPanel(
                     .clickable(indication = studioIndication(RowShape), interactionSource = null) { onSelect(node.id) }
                     .padding(start = INDENT * row.depth + 10.dp, end = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
             ) {
                 Text(
                     label,
@@ -74,30 +78,47 @@ internal fun LayerPanel(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                LayerToggle(R.string.kinetica_visible, node.visible, theme) { onToggleVisible(node.id) }
-                LayerToggle(R.string.kinetica_locked, node.locked, theme) { onToggleLocked(node.id) }
+                LayerToggle(VisibleToggle, node.visible, theme) { onToggleVisible(node.id) }
+                LayerToggle(LockedToggle, node.locked, theme) { onToggleLocked(node.id) }
             }
         }
     }
 }
 
+// 표시와 잠금 토글. 아이콘만 보이고 접근성 이름은 라벨 문자열이다. 꺼진 쪽(숨김, 잠금)이 눈에 띄도록 그쪽 아이콘을 진하게 그린다.
 @Composable
-private fun LayerToggle(label: Int, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
+private fun LayerToggle(spec: LayerToggleSpec, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
     val source = remember { MutableInteractionSource() }
+    val label = stringResource(spec.label)
+    val emphasized = checked == spec.emphasizeWhen
+    val tint = when {
+        emphasized && spec.accentWhenEmphasized -> theme.accent
+        emphasized -> theme.onPanel
+        else -> theme.onPanel.copy(alpha = ICON_IDLE_ALPHA)
+    }
     Box(
         Modifier
-            .heightIn(min = ROW_HEIGHT)
-            .toggleable(value = checked, interactionSource = source, indication = null, role = Role.Switch, onValueChange = { onToggle() }),
+            .size(width = TOGGLE_WIDTH, height = ROW_HEIGHT)
+            .toggleable(value = checked, interactionSource = source, indication = null, role = Role.Switch, onValueChange = { onToggle() })
+            .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            stringResource(label),
-            color = if (checked) theme.accent else theme.onPanel.copy(alpha = MUTED_ALPHA),
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.indication(source, studioIndication(CapsuleShape)).padding(horizontal = 10.dp, vertical = 6.dp),
-        )
+        Box(Modifier.size(TOGGLE_FACE).indication(source, studioIndication(CircleShape)), contentAlignment = Alignment.Center) {
+            Icon(if (checked) spec.on else spec.off, contentDescription = null, tint = tint, modifier = Modifier.size(TOGGLE_ICON))
+        }
     }
 }
+
+private class LayerToggleSpec(
+    val label: Int,
+    val on: ImageVector,
+    val off: ImageVector,
+    val emphasizeWhen: Boolean,
+    val accentWhenEmphasized: Boolean,
+)
+
+private val VisibleToggle = LayerToggleSpec(R.string.kinetica_visible, StudioIcons.Eye, StudioIcons.EyeOff, false, false)
+private val LockedToggle = LayerToggleSpec(R.string.kinetica_locked, StudioIcons.Lock, StudioIcons.LockOpen, true, true)
 
 internal fun NodeKind.labelRes(): Int = when (this) {
     NodeKind.Group -> R.string.kinetica_kind_group
@@ -117,3 +138,7 @@ private val RowShape = RoundedCornerShape(10.dp)
 private val INDENT = 16.dp
 private const val MUTED_ALPHA = 0.5f
 private const val SELECTED_ALPHA = 0.18f
+private const val ICON_IDLE_ALPHA = 0.45f
+private val TOGGLE_WIDTH = 40.dp
+private val TOGGLE_FACE = 34.dp
+private val TOGGLE_ICON = 20.dp

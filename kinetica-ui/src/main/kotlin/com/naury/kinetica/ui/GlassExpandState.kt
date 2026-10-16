@@ -147,7 +147,8 @@ private class ExpandSourceNode(var state: GlassExpandState, var key: Any) :
  * 스크롤이 맨 위일 때 상세 화면을 아래로 끌면 작아지며 모서리가 둥글어지고, 충분히 끌거나 뒤로 가기를 하면 카드 위치로 돌아간다.
  *
  * [content]는 화면 크기로 그린 뒤 카드 너비에 맞게 축소해 보여 준다. 상세 화면 위쪽을 카드와 똑같이 구성하면 전환이 자연스럽게 이어진다.
- * [GlassScaffold] 안에 두면 오버레이 레이어에 그린다.
+ * [GlassScaffold] 안에 두면 오버레이 레이어에 그린다. 상세 화면의 배경색은 호스트가 정하므로 시스템 바 아이콘은 바꾸지 않는다.
+ * 어두운 상세 화면이면 [content] 안에 [GlassSystemBarIcons]를 둔다.
  *
  * @param cornerRadius 카드의 모서리 반경. 상세 화면이 커지면서 0이 된다.
  * @param title 열린 상세 화면의 이름. TalkBack이 창 제목으로 읽는다.

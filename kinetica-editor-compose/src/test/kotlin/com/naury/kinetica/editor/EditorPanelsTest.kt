@@ -1,5 +1,6 @@
 package com.naury.kinetica.editor
 
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
@@ -58,8 +59,8 @@ class EditorPanelsTest {
         compose.onNodeWithText("Ellipse").performClick()
         compose.waitForIdle()
 
-        compose.onAllNodes(isToggleable() and hasText("Locked")).onFirst().performClick()
-        compose.onAllNodes(isToggleable() and hasText("Visible")).onFirst().performClick()
+        compose.onAllNodes(isToggleable() and hasContentDescription("Locked")).onFirst().performClick()
+        compose.onAllNodes(isToggleable() and hasContentDescription("Visible")).onFirst().performClick()
         compose.waitForIdle()
 
         assertThat(node().locked).isTrue()

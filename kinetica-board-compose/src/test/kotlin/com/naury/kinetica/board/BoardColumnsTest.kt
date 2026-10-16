@@ -154,4 +154,56 @@ class BoardColumnsTest {
         assertThat(state.cells(2)).containsExactly("big", GridCell(0, 0, 2, 2), "x", cell(0, 2))
         assertThat(state.cells(4)).containsExactly("big", GridCell(0, 0, 2, 2), "x", cell(2, 0))
     }
+
+    @Test
+    fun `처음 넓어질 때 앞쪽 빈칸을 채워 빈칸을 남기지 않는다`() {
+        // 쇼케이스 대시보드와 같은 구성: 2열에서 1x1, 1x2, 1x1, 2x1. 예전에는 3열에서 1x2 옆과 아래가 비었다.
+        val dashboard = listOf(
+            BoardWidget("sales", "Sales"),
+            BoardWidget("orders", "Orders", rowSpan = 2),
+            BoardWidget("chart", "Chart", columnSpan = 2),
+            BoardWidget("clock", "Clock"),
+        )
+        val wide = BoardArrangement.Grid(columns = 2, columnsByWidth = GridColumns.Adaptive(160f, maxColumns = 6))
+        val state = KineticaBoardState.create(dashboard, wide)
+        listOf(3, 4).forEach { columns ->
+            state.activeColumns = columns
+            val cells = state.placedKeys.associateWith { id ->
+                BoardGeometry.nearestCell(
+                    state.rectOf(id)!!,
+                    KineticaBoardState.REFERENCE_WIDTH,
+                    wide.withColumns(columns),
+                    wide.gapUnits(),
+                )
+            }
+            val taken = cells.values.flatMap { c ->
+                (c.row until c.row + c.rowSpan).flatMap { r ->
+                    (c.column until c.column + c.columnSpan).map {
+                        r *
+                            columns +
+                            it
+                    }
+                }
+            }
+            // 두 줄에 모두 들어가고, 마지막 위젯 앞에 빈칸이 없다.
+            assertThat(cells.values.maxOf { it.row + it.rowSpan }).isEqualTo(2)
+            assertThat(taken.toSet()).hasSize(taken.size)
+            assertThat(taken.max() + 1).isEqualTo(taken.size)
+        }
+    }
+
+    @Test
+    fun `빈칸을 채울 때 순서는 바꿔도 크기와 겹치지 않음은 지키고 저장된 칸은 그대로 둔다`() {
+        val order = listOf("a" to GridCell(0, 0, 1, 1), "wide" to GridCell(0, 1, 2, 1), "b" to GridCell(0, 2, 1, 1))
+        // 3열에서 b가 wide보다 먼저 첫 줄 빈칸에 들어간다.
+        assertThat(flowCells(order, emptyMap(), 3))
+            .containsExactly("a", GridCell(0, 0, 1, 1), "wide", GridCell(1, 0, 2, 1), "b", GridCell(0, 1, 1, 1))
+        // 저장된 칸이 있는 위젯은 움직이지 않고 나머지가 그 둘레의 빈칸을 채운다.
+        val stored = mapOf("wide" to GridCell(0, 0, 2, 1))
+        assertThat(flowCells(order, stored, 3))
+            .containsExactly("a", GridCell(2, 0, 1, 1), "wide", GridCell(0, 0, 2, 1), "b", GridCell(0, 1, 1, 1))
+        // 모두 1x1이면 읽는 순서 그대로다.
+        val plain = (0 until 5).map { "w$it" to GridCell(it % 2, it / 2, 1, 1) }
+        assertThat(flowCells(plain, emptyMap(), 4).values.map { it.row * 4 + it.column }).containsExactly(0, 1, 2, 3, 4).inOrder()
+    }
 }

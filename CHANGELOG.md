@@ -67,7 +67,7 @@
 - `GlassMiniPlayer`의 `collapsed`·`expanded` 슬롯이 진행도를 `() -> Float`로 받음
 - 서버 화면·재생기 안정성: 같은 묶음을 기다리던 화면이 먼저 요청한 화면을 떠나면 멈추던 문제, 캐시 일부 손상 시 화면을 다시 받지 못하던 문제, 캐시 저장 실패가 앱을 죽이던 문제, 마이그레이션 예외가 밖으로 새던 문제(`SaveFailure.InvalidDocument` 추가)
 - 재생기: 화면이 가려지면 멈추고 돌아오면 이어서 재생, `RemoteKineticaPlayer` 회전 뒤 처음부터 다시 재생하지 않음, 실행 중 바뀐 '애니메이션 삭제' 설정을 따르며 재생 위치·속도를 이어받음
-- 보드: 넓은 화면 열 수. `BoardArrangement.Grid(columnsByWidth = GridColumns.Adaptive(160f, maxColumns = 6))` 또는 `GridColumns.breakpoints(600f to 4, 840f to 6)`로 펼친 폴더블과 태블릿에서 열을 늘립니다. 열 수마다 배치를 따로 기억해 넓은 화면에서 옮긴 위젯은 넓은 배치에만 남고, 접었다 펴도 두 배치가 그대로입니다. 처음 넓어질 때는 좁은 배치를 읽는 순서대로 흘려 넣습니다. 저장 형식은 예전과 호환되며(넓은 배치는 노드 metadata `kinetica.cells`), 기본값은 예전처럼 열 수를 바꾸지 않습니다. XML은 `app:kinetica_minCellWidth`, `app:kinetica_maxColumns`, 코드에서는 `KineticaBoardView.columnsByWidth`. 지금 열 수는 `KineticaBoardState.activeColumns`
+- 보드: 넓은 화면 열 수. `BoardArrangement.Grid(columnsByWidth = GridColumns.Adaptive(160f, maxColumns = 6))` 또는 `GridColumns.breakpoints(600f to 4, 840f to 6)`로 펼친 폴더블과 태블릿에서 열을 늘립니다. 열 수마다 배치를 따로 기억해 넓은 화면에서 옮긴 위젯은 넓은 배치에만 남고, 접었다 펴도 두 배치가 그대로입니다. 처음 넓어질 때는 좁은 배치를 읽는 순서대로 흘려 넣되, 앞쪽 빈칸에 들어가는 위젯을 먼저 채웁니다. 저장 형식은 예전과 호환되며(넓은 배치는 노드 metadata `kinetica.cells`), 기본값은 예전처럼 열 수를 바꾸지 않습니다. XML은 `app:kinetica_minCellWidth`, `app:kinetica_maxColumns`, 코드에서는 `KineticaBoardView.columnsByWidth`. 지금 열 수는 `KineticaBoardState.activeColumns`
 - 보드: 가로 스크롤 안이나 가로 `wrap_content`처럼 폭 제한 없이 재면 Constraints 오류로 죽던 문제를 고쳤습니다. 이때는 창 폭으로 그립니다.
 - 보드: 저장본으로 열지 못하면 `restoreFailed`로 덮어쓰기 방지, 위젯 100개 편집 끌기에서 다른 위젯 틀을 다시 그리지 않음, 긴 키 `multiple` 위젯 추가 크래시
 - `SceneLayout`: 숨긴 노드(`visible = false`, 불투명도 0, 또는 그런 조상 아래) 안의 호스트 뷰가 컴포지션에서 빠져 스크롤 위치와 입력 중인 글자가 초기화되던 문제를 고쳤습니다. 이제 숨긴 동안에도 상태를 유지하고, 그리지 않으며 터치·포커스·TalkBack에서 빠집니다. 숨긴 동안 비용을 줄이려면 `hiddenSlots = HiddenSlotPolicy.Dispose`를 넘깁니다.
@@ -75,3 +75,7 @@
 - 미니 플레이어: `GlassMiniPlayerBar`와 `GlassMiniPlayerFullScreen`을 추가했습니다. 막대를 `GlassFloatingTabBar`의 `accessory` 같은 다른 컴포넌트 안에 두고, 그 자리에서 앨범 아트가 이어지며 커지는 전체 화면 플레이어를 펼칩니다. 기존 `GlassMiniPlayer`는 그대로 씁니다.
 - `GlassListDetail`: 상세 칸 배경 `detailBackground`를 추가했습니다. 두 칸 배치에서는 상세가 바뀌어도 그대로 있고, 좁은 화면에서는 상세와 함께 밀려 들어옵니다.
 - `GlassImageViewer`: 크기가 없는 Painter(`BrushPainter` 등)를 화면 전체에 채워 그립니다. 전에는 세로 그라디언트처럼 한쪽 크기만 0인 Painter가 보이지 않았습니다. 열린 채 사진 목록이 비면 바로 닫히고 `onDismiss`를 부릅니다.
+- 시스템 바 아이콘: `GlassImageViewer`, 펼친 미니 플레이어, `GlassOnboarding`이 떠 있는 동안 배경에 맞춰 상태 표시줄과 내비게이션 바 아이콘을 밝게 또는 어둡게 바꾸고, 닫으면 되돌립니다. 별도 창으로 뜨면 그 창에 적용합니다. 호스트가 정하는 화면(`GlassExpandHost` 상세 등)에는 `GlassSystemBarIcons(light)`를 둡니다.
+- `GlassLargeTitleBar`: 접힌 바의 글래스 배경이 아래 가장자리에서 끊기지 않고 콘텐츠 쪽으로 옅어집니다. `bottom` 줄도 `contentMaxWidth` 안에 가운데 정렬해 넓은 화면에서 큰 제목, 본문과 폭이 맞습니다.
+- 보드: 넓은 화면에서 열 수가 늘어날 때 앞쪽 빈칸에 들어가는 위젯을 먼저 채우는 dense 방식으로 흘려 넣어, 큰 위젯 옆과 아래에 빈칸이 남지 않습니다. 이미 편집한 열 수의 배치는 바꾸지 않습니다.
+- 편집기: 상단 도구 모음을 아이콘과 이름이 있는 캡슐 묶음(추가, 실행 취소, 보기)으로 바꾸고, 폭이 모자라면 아이콘만 남기거나 가로로 스크롤합니다. `onExit`로 나가기 버튼을 오른쪽 끝에 고정할 수 있고, `StudioToolbarButton`과 `StudioToolbarGroup`을 추가했습니다. 레이어 패널의 표시와 잠금은 눈과 자물쇠 아이콘 토글로 바꿨습니다.

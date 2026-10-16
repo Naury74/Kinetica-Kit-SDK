@@ -161,7 +161,7 @@ PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
 
 | 구성 요소 | 하는 일 |
 | --- | --- |
-| `GlassLargeTitleBar(rememberGlassLargeTitleState(), "제목")` | One UI·iOS식 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀐다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다. `bottom`에 탭이나 검색창을 주면 큰 제목과 함께 올라가 작은 바 밑에 붙는다 |
+| `GlassLargeTitleBar(rememberGlassLargeTitleState(), "제목")` | One UI·iOS식 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀐다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다. `bottom`에 탭이나 검색창을 주면 큰 제목과 함께 올라가 작은 바 밑에 붙고, `contentMaxWidth` 안에 가운데 정렬된다. 접힌 바의 배경은 아래로 옅어진다 |
 | `GlassCarousel(pageCount) { page -> }` + `GlassPageIndicator(pagerState)` | 옆 카드가 살짝 보이고 멀어질수록 작아지며 기우는 캐러셀. 점 인디케이터는 넘기는 동안 액체처럼 늘어난다 |
 | `SwipeCardStack(items, onSwipe, overlay) { item -> }` | 틴더식 카드 더미. 끌면 기울며 따라오고 던지면 날아간다. `state.undo()`로 되돌린다 |
 | `GlassSpeedDial(expanded, onExpandedChange, items)` | 떠 있는 둥근 버튼. 누르면 +가 ×로 돌고 항목이 차례로 튀어 오르며 뒤가 흐려진다 |
@@ -216,7 +216,7 @@ XML 화면의 `NestedScrollView`, `ViewPager2`, `RecyclerView` 안에 `ComposeVi
 
 | 구성 요소 | 하는 일 |
 | --- | --- |
-| `GlassImageViewer(rememberGlassImageViewerState(), images)` + `Modifier.imageViewerSource(state, index)` | 전체 화면 사진 뷰어. 썸네일에서 커지며 열리고, 핀치로 1~5배 확대, 두 번 탭 확대, 위아래로 끌어 닫기를 지원한다. 확대한 사진이 가장자리에 닿은 뒤 바깥쪽으로 더 끌면 확대를 풀지 않고 옆 사진으로 넘어간다. 사진 대신 원하는 내용을 넣는 `pageCount` 버전도 있다. `images`의 Painter는 `intrinsicSize` 비율대로 맞춰 그리고, `BrushPainter`처럼 크기가 없으면 화면 전체를 채운다. 열린 채 목록이 비면 바로 닫히고 상태 없는 버전은 `onDismiss`를 부른다 |
+| `GlassImageViewer(rememberGlassImageViewerState(), images)` + `Modifier.imageViewerSource(state, index)` | 전체 화면 사진 뷰어. 썸네일에서 커지며 열리고, 핀치로 1~5배 확대, 두 번 탭 확대, 위아래로 끌어 닫기를 지원한다. 확대한 사진이 가장자리에 닿은 뒤 바깥쪽으로 더 끌면 확대를 풀지 않고 옆 사진으로 넘어간다. 사진 대신 원하는 내용을 넣는 `pageCount` 버전도 있다. `images`의 Painter는 `intrinsicSize` 비율대로 맞춰 그리고, `BrushPainter`처럼 크기가 없으면 화면 전체를 채운다. 열린 채 목록이 비면 바로 닫히고 상태 없는 버전은 `onDismiss`를 부른다. 열려 있는 동안 시스템 바 아이콘을 밝게 바꾸고 닫으면 되돌린다 |
 | `BeforeAfterSlider(before, after)` / `BeforeAfterSlider(position, onPositionChange, before, after)` | 두 이미지를 겹쳐 놓고 가운데 손잡이를 끌어 비교한다. 가로 드래그만 받아 세로 스크롤을 막지 않는다. 손잡이 위치를 호스트가 저장하거나 바꾸려면 `position`을 받는 버전을 쓴다 |
 | `GlassResultMark(state)` / `GlassResultDialog(visible, state, title, onDismissRequest)` | `GlassResult.Loading`이면 링이 돌고, 결과로 바뀌면 원이 닫힌 뒤 체크, ×, 느낌표가 획 순서대로 그려진다. 성공이면 파티클이 튄다 |
 | `GlassOnboarding(pages, onFinish)` + `OnboardingPage(title, body, background, art)` | 첫 실행 안내. 그림이 시차를 두고 따라오고 배경색이 섞이며, 마지막 페이지에서 버튼이 '시작하기'로 늘어난다 |
@@ -298,6 +298,7 @@ Modifier
   안에 입력란이 있으면 키보드가 올라올 때 함께 올라온다. 호스트가 직접 처리하려면 `contentWindowInsets = { WindowInsets(0) }`을 준다.
 - 토스트·아일랜드는 위쪽, 스낵바는 아래쪽(키보드 포함)과 양옆의 안전 영역을 피한다. 여러 높이 시트의 `Detent.Peek`·`Fraction` 높이는 내비게이션 바와 키보드 위에서 잰다.
 - edge-to-edge를 쓰지 않는 화면에서는 인셋이 0이 되므로 여백이 두 번 들어가지 않는다.
+- 사진 뷰어, 펼친 미니 플레이어, 온보딩은 떠 있는 동안 시스템 바 아이콘을 배경에 맞게 바꾸고 닫으면 되돌린다. 펼친 카드 상세처럼 배경을 호스트가 정하는 화면에는 `GlassSystemBarIcons(light = true)`를 둔다.
 
 **포커스와 TalkBack.**
 - 다이얼로그·시트·메뉴·기능 안내·서랍이 열리면 뒤 화면은 TalkBack에서 빠지고, 키보드 Tab 이동도 모달 밖으로 나가지 않는다. 닫으면 연 버튼으로 포커스가 돌아온다.

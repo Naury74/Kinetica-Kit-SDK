@@ -272,4 +272,5 @@
     <string name="kinetica_rotation_clockwise">시계 방향</string>
     <string name="kinetica_rotation_counter_clockwise">반시계 방향</string>
     <string name="kinetica_rotation_direct">값 그대로</string>
+    <string name="kinetica_exit">나가기</string>
 </resources>

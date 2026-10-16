@@ -273,4 +273,5 @@
     <string name="kinetica_rotation_clockwise">Clockwise</string>
     <string name="kinetica_rotation_counter_clockwise">Counterclockwise</string>
     <string name="kinetica_rotation_direct">As written</string>
+    <string name="kinetica_exit">Exit</string>
 </resources>

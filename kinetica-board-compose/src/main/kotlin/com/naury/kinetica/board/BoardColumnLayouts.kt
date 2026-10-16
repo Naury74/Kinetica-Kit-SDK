@@ -3,6 +3,7 @@ package com.naury.kinetica.board
 import com.naury.kinetica.core.geometry.Rect
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
+import kotlin.math.abs
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -32,7 +33,7 @@ internal fun KineticaBoardState.layoutRects(document: SceneDocument, columns: In
 
 /**
  * [columns]열 배치의 칸. [base]열(가장 좁은 열 수)이면 노드 위치에 가장 가까운 칸이고, 다른 열 수면 그 열 수의 칸을 저장하지 않은 위젯을
- * 좁은 배치를 읽는 순서대로 흘려 넣는다. [gap]은 문서 단위 간격이다.
+ * 좁은 배치를 읽는 순서를 바탕으로 빈칸을 채우며 흘려 넣는다([flowCells]). [gap]은 문서 단위 간격이다.
  */
 internal fun columnLayout(document: SceneDocument, base: BoardArrangement.Grid, columns: Int, gap: Double): Map<String, GridCell> {
     val nodes = document.rootOrder.mapNotNull(document::node)
@@ -108,36 +109,77 @@ internal fun SceneNode.withColumnCell(columns: Int, cell: GridCell): SceneNode {
 internal fun SceneNode.columnCellsMetadata(): Map<String, String> = metadata.filterKeys { it == COLUMN_CELLS_KEY }
 
 /**
- * [columns]열 배치. [stored]에 칸이 있는 위젯은 그 칸에 두고, 나머지는 [order] 순서대로 앞 위젯 다음의 첫 빈칸에 흘려 넣는다.
- * 그래서 아직 편집하지 않은 열 수에서도 좁은 배치를 읽는 순서(위에서 아래, 왼쪽에서 오른쪽)가 유지된다. 차지하는 열 수는 [columns]를 넘지 않는다.
+ * [columns]열 배치. [stored]에 칸이 있는 위젯은 그 칸에 두고, 나머지는 빈칸을 앞에서부터 채우는 dense 방식으로 흘려 넣는다.
+ * 위에서 아래, 왼쪽에서 오른쪽으로 빈칸을 훑으며 그 칸에 들어가는 위젯 중 [order]에서 가장 앞선 것을 놓는다. 이 순서로 놓은 결과와
+ * 큰 위젯을 먼저 놓은 결과 몇 가지를 견주어 높이가 낮고, 마지막 위젯 앞의 빈칸이 적고, [order]에서 덜 벗어난 쪽을 고른다.
+ * 그래서 빈칸이 줄어들 때만 순서가 바뀐다. 차지하는 열 수는 [columns]를 넘지 않는다.
  *
  * @param order 흘려 넣을 순서의 (id, 좁은 배치 칸)
  */
 internal fun flowCells(order: List<Pair<String, GridCell>>, stored: Map<String, GridCell>, columns: Int): Map<String, GridCell> {
-    val occupied = stored.values.toMutableList()
-    var cursorRow = 0
-    var cursorColumn = 0
-    val flowed = order.filter { it.first !in stored }.associate { (id, base) ->
-        val span = base.columnSpan.coerceAtMost(columns)
-        val cell = firstFreeCellFrom(occupied, GridCell(cursorColumn, cursorRow, span, base.rowSpan), columns)
-        occupied += cell
-        cursorRow = cell.row
-        cursorColumn = cell.column + span
-        id to cell
+    val items = order.filter { it.first !in stored }.map { (id, base) ->
+        id to
+            GridCell(0, 0, base.columnSpan.coerceAtMost(columns), base.rowSpan)
     }
+    val fixed = stored.filterKeys { id -> order.any { it.first == id } }.values.toList()
+    val rank = items.withIndex().associate { it.value.first to it.index }
+    val candidates = listOf<Comparator<Pair<String, GridCell>>?>(
+        null,
+        compareByDescending { it.second.columnSpan * it.second.rowSpan },
+        compareByDescending { it.second.rowSpan },
+        compareByDescending { it.second.columnSpan },
+    ).map { comparator -> denseFill(comparator?.let(items::sortedWith) ?: items, fixed, columns) }.distinct()
+    val flowed = candidates.minWithOrNull(
+        compareBy<Map<String, GridCell>>({ layout -> (fixed + layout.values).maxOfOrNull { it.row + it.rowSpan } ?: 0 })
+            .thenBy { layout -> gapsBeforeLast(fixed + layout.values, columns) }
+            .thenBy { layout -> displacement(layout, rank) },
+    ).orEmpty()
     return order.associate { (id, _) -> id to (stored[id] ?: flowed.getValue(id)) }
 }
 
-// [start]의 행과 열부터 찾고, 없으면 다음 행의 처음부터 찾는다. 크기는 [start]와 같다.
-private fun firstFreeCellFrom(occupied: List<GridCell>, start: GridCell, columns: Int): GridCell {
-    var row = start.row
-    var from = start.column
-    while (true) {
-        for (column in from..columns - start.columnSpan) {
-            val candidate = start.copy(column = column, row = row)
-            if (occupied.none { it.overlaps(candidate) }) return candidate
+// 빈칸을 앞에서부터 훑으며 그 칸에 들어가는 첫 위젯을 놓는다. [items]의 칸은 크기만 쓴다.
+private fun denseFill(items: List<Pair<String, GridCell>>, fixed: List<GridCell>, columns: Int): Map<String, GridCell> {
+    val remaining = items.toMutableList()
+    val occupied = fixed.toMutableList()
+    val placed = LinkedHashMap<String, GridCell>()
+    var index = 0
+    while (remaining.isNotEmpty()) {
+        val column = index % columns
+        val row = index / columns
+        val free = occupied.none { it.overlaps(GridCell(column, row, 1, 1)) }
+        val fit = if (free) {
+            remaining.firstOrNull { (_, size) ->
+                val candidate = size.copy(column = column, row = row)
+                column + size.columnSpan <= columns && occupied.none { it.overlaps(candidate) }
+            }
+        } else {
+            null
         }
-        row++
-        from = 0
+        if (fit == null) {
+            index++
+        } else {
+            val cell = fit.second.copy(column = column, row = row)
+            remaining.remove(fit)
+            occupied += cell
+            placed[fit.first] = cell
+        }
     }
+    return placed
 }
+
+// 위에서 아래, 왼쪽에서 오른쪽으로 읽을 때 마지막으로 차지한 칸보다 앞에 있는 빈칸 수.
+private fun gapsBeforeLast(cells: List<GridCell>, columns: Int): Int {
+    val taken = cells.flatMap { cell ->
+        (cell.row until cell.row + cell.rowSpan).flatMap { row ->
+            (cell.column until cell.column + cell.columnSpan).map { row * columns + it }
+        }
+    }.toSet()
+    val last = taken.maxOrNull() ?: return 0
+    return last + 1 - taken.size
+}
+
+// 읽는 순서로 놓인 차례가 [rank]에서 벗어난 정도.
+private fun displacement(layout: Map<String, GridCell>, rank: Map<String, Int>): Int = layout.entries
+    .sortedWith(compareBy({ it.value.row }, { it.value.column }))
+    .withIndex()
+    .sumOf { (position, entry) -> abs(position - rank.getValue(entry.key)) }

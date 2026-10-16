@@ -35,8 +35,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
@@ -44,6 +49,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -56,6 +62,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
@@ -156,7 +163,8 @@ public fun rememberGlassLargeTitleState(scrollState: ScrollState): GlassLargeTit
  * 큰 제목이 고무줄처럼 살짝 커졌다가 손을 떼면 돌아온다.
  *
  * 바의 높이는 큰 제목까지 포함해 고정되어 있으므로 [GlassScaffold]의 `topBar`에 두면 콘텐츠가 받는 위쪽 패딩이
- * 스크롤 중에 바뀌지 않는다. 큰 제목 영역은 터치를 받지 않아, 접힌 뒤 그 아래로 지나가는 목록 항목을 그대로 누를 수 있다.
+ * 스크롤 중에 바뀌지 않는다. 접힌 바의 글래스 배경은 아래 가장자리가 끊기지 않고 콘텐츠 쪽으로 옅어진다.
+ * 큰 제목 영역은 터치를 받지 않아, 접힌 뒤 그 아래로 지나가는 목록 항목을 그대로 누를 수 있다.
  *
  * ```kotlin
  * val titleState = rememberGlassLargeTitleState()
@@ -167,9 +175,9 @@ public fun rememberGlassLargeTitleState(scrollState: ScrollState): GlassLargeTit
  *
  * @param onBack `null`이 아니면 시작 쪽에 뒤로 버튼을 두고, 누르면 호출한다. RTL에서는 화살표 방향이 바뀐다.
  * @param bottom 큰 제목 아래에 붙일 줄(탭이나 검색창). 큰 제목과 함께 올라가다가 다 접히면 작은 바 바로 아래에 붙어 남고,
- *   그때는 글래스 바 배경이 이 줄까지 이어진다. 바 전체 높이는 이 줄을 포함해 고정이다.
+ *   그때는 글래스 바 배경이 이 줄까지 이어진다. 바 전체 높이는 이 줄을 포함해 고정이다. [contentMaxWidth] 안에 가운데 정렬한다.
  * @param actions 끝 쪽에 놓을 버튼들
- * @param contentMaxWidth 뒤로 버튼, 버튼들, 큰 제목을 이 폭 안에 두고 가운데 정렬한다. 넓은 화면에서 본문을 읽기 폭으로 묶었을 때
+ * @param contentMaxWidth 뒤로 버튼, 버튼들, 큰 제목, [bottom]을 이 폭 안에 두고 가운데 정렬한다. 넓은 화면에서 본문을 읽기 폭으로 묶었을 때
  *   제목 줄을 본문과 같은 정렬선에 맞추는 데 쓴다. 글래스 배경은 그대로 화면 폭 전체에 깔린다. 기본값은 제한 없음.
  */
 @Composable
@@ -192,34 +200,58 @@ public fun GlassLargeTitleBar(
             (level * BAR_STEPS).roundToInt() / BAR_STEPS
         }
     }
-    if (bottom == null) {
-        Column(modifier.fillMaxWidth()) {
-            SmallBar(state, title, onBack, style, Modifier.barGlass(style, barLevel), contentMaxWidth, actions)
-            LargeTitle(state, title, style, contentMaxWidth)
-        }
-        return
-    }
     var smallHeight by remember { mutableIntStateOf(0) }
     var bottomHeight by remember { mutableIntStateOf(0) }
     Box(modifier.fillMaxWidth()) {
         // 다 접히면 아래 줄이 작은 바 바로 밑에 오므로, 글래스 배경을 두 줄 높이만큼 깐다.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(with(density) { (smallHeight + bottomHeight).toDp() })
-                .barGlass(style, barLevel),
-        )
+        BarBackground(style, barLevel) { smallHeight + if (bottom != null) bottomHeight else 0 }
         Column(Modifier.fillMaxWidth()) {
             SmallBar(state, title, onBack, style, Modifier.onSizeChanged { smallHeight = it.height }, contentMaxWidth, actions)
             LargeTitle(state, title, style, contentMaxWidth)
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .onSizeChanged { bottomHeight = it.height }
-                    .graphicsLayer { translationY = -state.offset.coerceAtMost(state.range) },
-            ) { bottom() }
+            if (bottom != null) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .onSizeChanged { bottomHeight = it.height }
+                        .graphicsLayer { translationY = -state.offset.coerceAtMost(state.range) },
+                    contentAlignment = Alignment.TopCenter,
+                ) {
+                    // 넓은 화면에서 탭 줄이 큰 제목, 본문과 같은 폭에 놓이게 한다.
+                    Box(Modifier.widthIn(max = contentMaxWidth).fillMaxWidth()) { bottom() }
+                }
+            }
         }
     }
+}
+
+/**
+ * 접힌 바의 글래스 배경. 높이는 [height](px)이고, 그 아래로 [BAR_FADE]만큼 더 그리면서 점점 투명해져 콘텐츠와의 경계가 부드럽게 이어진다.
+ * 늘어난 부분은 배치 크기에 넣지 않아 바 높이와 콘텐츠 패딩은 그대로다.
+ */
+@Composable
+private fun BarBackground(style: GlassStyle, level: Float, height: () -> Int) {
+    // 펼친 동안에는 배경이 보이지 않으니 화면 밖 레이어도 만들지 않는다.
+    if (level <= 0f) return
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .layout { measurable, constraints ->
+                val own = height()
+                val fade = BAR_FADE.roundToPx()
+                val placeable = measurable.measure(Constraints.fixed(constraints.maxWidth, own + fade))
+                layout(constraints.maxWidth, own) { placeable.place(0, 0) }
+            }
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+            .drawWithCache {
+                val solid = ((size.height - BAR_FADE.toPx()) / size.height).coerceIn(0f, 1f)
+                val mask = Brush.verticalGradient(0f to Color.Black, solid to Color.Black, 1f to Color.Transparent)
+                onDrawWithContent {
+                    drawContent()
+                    drawRect(mask, blendMode = BlendMode.DstIn)
+                }
+            }
+            .barGlass(style, level),
+    )
 }
 
 @Composable
@@ -334,6 +366,7 @@ private fun BackButton(style: GlassStyle, onBack: () -> Unit) {
 
 private const val CENTER = 0.5f
 private val BAR_HEIGHT = 52.dp
+private val BAR_FADE = 18.dp
 private val BACK_SIZE = GlassMetrics.IconButton
 private val CHEVRON_SIZE = 18.dp
 private val CHEVRON_STROKE = 2.2.dp

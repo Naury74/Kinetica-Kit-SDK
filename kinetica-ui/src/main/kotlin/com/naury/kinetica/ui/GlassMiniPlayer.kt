@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -297,6 +299,7 @@ private fun MiniPlayerHost(
         BackHandler(enabled = state.isExpanded) { scope.launch { state.collapse() } }
         // 진행도는 매 프레임 바뀌므로 읽는 곳을 작은 컴포저블로 나눠 그 범위만 다시 구성되게 한다.
         PlayerPushBack(state)
+        PlayerBarIcons(state, style)
         val origin = remember { mutableStateOf(Offset.Zero) }
         val window = rememberGlassWindowLayout()
         val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -323,6 +326,13 @@ private fun MiniPlayerHost(
             }
         }
     }
+}
+
+/** 절반 넘게 펼쳐진 동안 시스템 바 아이콘을 펼친 화면의 글자 색에 맞춘다. 진행도는 참/거짓으로 줄여 읽는다. */
+@Composable
+private fun PlayerBarIcons(state: GlassMiniPlayerState, style: GlassStyle) {
+    val expanded by remember(state) { derivedStateOf { state.progress > HALF } }
+    SystemBarIcons(light = if (expanded) style.forPopup().onGlass.luminance() > HALF else null)
 }
 
 /** 접혀 쉬는 동안에는 바깥 막대가 보이므로 아무것도 그리지 않는다. */

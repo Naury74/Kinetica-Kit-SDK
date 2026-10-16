@@ -40,22 +40,17 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.naury.kinetica.core.command.CommandResult
-import com.naury.kinetica.core.command.SceneCommand
-import com.naury.kinetica.core.geometry.Vec2
 import com.naury.kinetica.core.scene.AlignMode
 import com.naury.kinetica.core.scene.Bindings
 import com.naury.kinetica.core.scene.DistributeAxis
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.SceneData
 import com.naury.kinetica.core.scene.SceneGraph
-import com.naury.kinetica.core.scene.SceneNode
 import com.naury.kinetica.core.scene.SelectionFrame
 import com.naury.kinetica.gestures.CanvasGestureController
 import com.naury.kinetica.gestures.GestureConfig
@@ -72,7 +67,8 @@ import com.naury.kinetica.render.rememberSceneImages
 /**
  * 장면 문서를 보고 편집하는 화면. 사용법은 docs/32-studio.md에 있다.
  *
- * - 상단 툴바: 도형과 텍스트 추가, 실행 취소와 다시 실행, 화면에 맞추기, 호스트 슬롯([toolbarEnd]).
+ * - 상단 툴바: 추가(도형, 텍스트, 프레임), 실행 취소와 다시 실행, 보기(화면에 맞추기, 모션) 버튼을 캡슐로 묶어 한 줄에 둔다.
+ *   폭이 모자라면 가로로 스크롤되고, [onExit]이 있으면 나가기 버튼이 스크롤되지 않고 끝에 고정된다.
  * - 선택 툴바: 무언가를 선택하면 나타난다. 삭제, 그룹, 순서, 정렬.
  * - 캔버스: 선택, 이동, 크기 조절, 회전, 두 손가락 이동과 확대, 가이드선 스냅.
  * - 레이어·속성 패널: 너비가 600dp 이상이면 오른쪽에 붙고, 그보다 좁으면 바텀 시트로 연다.
@@ -85,6 +81,8 @@ import com.naury.kinetica.render.rememberSceneImages
  * @param slots 호스트 뷰 노드에 그릴 Composable(키 → 내용). 편집 중에는 터치를 받지 않고 위치와 크기만 바뀐다.
  * @param hostViews "호스트 뷰" 메뉴에 보일 항목. 비어 있으면 메뉴를 숨긴다.
  * @param data 바인딩에 쓸 호스트 데이터. 값이 바뀌면 화면에 바로 반영되고 문서는 바뀌지 않는다.
+ * @param onExit `null`이 아니면 도구 모음 끝에 나가기 버튼을 고정해 두고, 누르면 부른다.
+ * @param toolbarEnd 기본 버튼 뒤에 이어 붙일 호스트 버튼. 스크롤되는 줄 안에 들어간다. [StudioToolbarButton]을 쓰면 모양이 같다.
  */
 @Composable
 public fun KineticaEditor(
@@ -96,12 +94,13 @@ public fun KineticaEditor(
     slots: SceneSlots = emptyMap(),
     hostViews: List<HostViewOption> = emptyList(),
     data: SceneData = SceneData.Empty,
+    onExit: (() -> Unit)? = null,
     toolbarEnd: @Composable RowScope.() -> Unit = {},
 ) {
     // 입력란·칩·시트가 호스트 MaterialTheme이 아니라 편집기 색을 따르게 한다.
     MaterialTheme(colorScheme = remember(theme) { theme.colorScheme() }) {
         CompositionLocalProvider(LocalStudioTheme provides theme) {
-            EditorContent(session, modifier, images, theme, config, slots, hostViews, data, toolbarEnd)
+            EditorContent(session, modifier, images, theme, config, slots, hostViews, data, onExit, toolbarEnd)
         }
     }
 }
@@ -117,6 +116,7 @@ private fun EditorContent(
     slots: SceneSlots,
     hostViews: List<HostViewOption>,
     data: SceneData,
+    onExit: (() -> Unit)?,
     toolbarEnd: @Composable RowScope.() -> Unit,
 ) {
     val context = LocalContext.current
@@ -143,7 +143,7 @@ private fun EditorContent(
         // 폴더블을 펴서 패널이 오른쪽에 붙으면 시트는 닫는다. 다시 접었을 때 예전 시트가 저절로 뜨지 않게 한다.
         LaunchedEffect(docked) { if (docked) sheet = null }
         Column(Modifier.fillMaxSize()) {
-            EditorToolbar(state, theme, paddingPx, !docked, hostViews, onOpenSheet = { sheet = it }, toolbarEnd = toolbarEnd)
+            EditorToolbar(state, theme, paddingPx, ToolbarSlots(!docked, hostViews, { sheet = it }, onExit, toolbarEnd))
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 // 선택 툴바를 캔버스 위에 띄운다. 레이아웃에 넣으면 선택할 때마다 캔버스 크기가 바뀌어 장면이 밀린다.
                 Box(Modifier.weight(1f).fillMaxHeight()) {
@@ -292,43 +292,6 @@ private fun EditorCanvas(
 }
 
 @Composable
-private fun EditorToolbar(
-    state: EditorState,
-    theme: StudioTheme,
-    paddingPx: Double,
-    showPanelButtons: Boolean,
-    hostViews: List<HostViewOption>,
-    onOpenSheet: (PanelSheet) -> Unit,
-    toolbarEnd: @Composable RowScope.() -> Unit,
-) {
-    val history by state.session.history.state.collectAsStateWithLifecycle()
-    val selection by state.session.selection.collectAsStateWithLifecycle()
-    val defaultText = stringResource(R.string.kinetica_default_text)
-    fun add(node: SceneNode) {
-        if (state.session.commands.execute(SceneCommand.AddNode(node)) is CommandResult.Applied) state.select(listOf(node.id))
-    }
-    ToolRow(theme) {
-        ToolButton(R.string.kinetica_add_rectangle) { add(NodeFactory.rectangle(state.visibleCenter(), state.nextSequence())) }
-        ToolButton(R.string.kinetica_add_ellipse) { add(NodeFactory.ellipse(state.visibleCenter(), state.nextSequence())) }
-        ShapeMenu { make -> add(make(state.visibleCenter(), state.nextSequence())) }
-        ToolButton(R.string.kinetica_add_text) { add(NodeFactory.text(state.visibleCenter(), defaultText)) }
-        ToolButton(R.string.kinetica_add_frame) { add(NodeFactory.frame(state.visibleCenter())) }
-        if (hostViews.isNotEmpty()) HostViewMenu(hostViews) { add(NodeFactory.hostView(state.visibleCenter(), it)) }
-        ToolButton(R.string.kinetica_undo, enabled = history.canUndo) { state.session.history.undo() }
-        ToolButton(R.string.kinetica_redo, enabled = history.canRedo) { state.session.history.redo() }
-        ToolButton(R.string.kinetica_fit) { state.fit(paddingPx) }
-        ToolToggle(R.string.kinetica_motion, state.motionEnabled, theme) { state.motionEnabled = !state.motionEnabled }
-        if (showPanelButtons) {
-            ToolButton(R.string.kinetica_layers) { onOpenSheet(PanelSheet.Layers) }
-            ToolButton(R.string.kinetica_properties, enabled = selection.selectedIds.size == 1) {
-                onOpenSheet(PanelSheet.Properties)
-            }
-        }
-        toolbarEnd()
-    }
-}
-
-@Composable
 private fun SelectionBar(state: EditorState, actions: EditorActions, theme: StudioTheme, modifier: Modifier) {
     val selection by state.session.selection.collectAsStateWithLifecycle()
     // 문서가 바뀌면 그룹 해제를 할 수 있는지도 달라지므로 다시 그린다.
@@ -367,51 +330,6 @@ private fun ToolRow(theme: StudioTheme, modifier: Modifier = Modifier, alpha: Fl
 }
 
 @Composable
-private fun HostViewMenu(options: List<HostViewOption>, onPick: (HostViewOption) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        ToolButton(R.string.kinetica_add_host_view) { expanded = true }
-        StudioMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option ->
-                StudioMenuItem(
-                    text = option.label,
-                    onClick = {
-                        expanded = false
-                        onPick(option)
-                    },
-                )
-            }
-        }
-    }
-}
-
-// 다각형, 별, 선, 화살표 메뉴.
-@Composable
-private fun ShapeMenu(onPick: (make: (Vec2, Int) -> SceneNode) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val items = listOf<Pair<Int, (Vec2, Int) -> SceneNode>>(
-        R.string.kinetica_add_polygon to NodeFactory::polygon,
-        R.string.kinetica_add_star to NodeFactory::star,
-        R.string.kinetica_add_line to { center, sequence -> NodeFactory.line(center, sequence, arrow = false) },
-        R.string.kinetica_add_arrow to { center, sequence -> NodeFactory.line(center, sequence, arrow = true) },
-    )
-    Box {
-        ToolButton(R.string.kinetica_more_shapes) { expanded = true }
-        StudioMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            items.forEach { (label, make) ->
-                StudioMenuItem(
-                    text = stringResource(label),
-                    onClick = {
-                        expanded = false
-                        onPick(make)
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun ArrangeMenu(actions: EditorActions) {
     var expanded by remember { mutableStateOf(false) }
     Box {
@@ -444,18 +362,6 @@ private fun ArrangeMenu(actions: EditorActions) {
 private fun ToolButton(label: Int, enabled: Boolean = true, onClick: () -> Unit) {
     StudioTextButton(onClick = onClick, enabled = enabled, modifier = Modifier.heightIn(min = TOUCH_TARGET)) {
         Text(stringResource(label), color = LocalStudioTheme.current.onPanel)
-    }
-}
-
-@Composable
-private fun ToolToggle(label: Int, checked: Boolean, theme: StudioTheme, onToggle: () -> Unit) {
-    StudioTextButton(
-        onClick = onToggle,
-        modifier = Modifier
-            .heightIn(min = TOUCH_TARGET)
-            .semantics { stateDescription = if (checked) "on" else "off" },
-    ) {
-        Text(stringResource(label), color = if (checked) theme.accent else theme.onPanel)
     }
 }
 

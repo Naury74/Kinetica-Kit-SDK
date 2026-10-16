@@ -93,6 +93,8 @@ public fun GlassOnboarding(
     // 마지막 페이지에 다가간 정도(0..1). 페이지가 하나면 처음부터 1이다.
     val finishing = { (position() - (pages.size - 2)).coerceIn(0f, 1f) }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    // 배경색은 바뀌어도 그 위 글자 색은 하나이므로, 시스템 바 아이콘도 글자 색을 따른다.
+    SystemBarIcons(light = contentColor.luminance() > HALF)
     Box(modifier.fillMaxSize().onboardingBackground(background, position)) {
         HorizontalPager(state, Modifier.fillMaxSize()) { page ->
             PageContent(pages[page], contentColor) { state.getOffsetDistanceInPages(page) * if (rtl) -1f else 1f }

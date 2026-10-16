@@ -278,6 +278,16 @@ private fun ViewerCore(
     }
 }
 
+/**
+ * 검은 배경이 절반 넘게 보이는 동안만 시스템 바 아이콘을 밝게 한다. 끌어 내려 배경이 옅어지면 호스트 모양으로 돌아간다.
+ * 매 프레임 바뀌는 값은 참/거짓으로 줄여 읽는다.
+ */
+@Composable
+private fun ViewerBarIcons(frame: ViewerFrame) {
+    val dark by remember(frame) { derivedStateOf { frame.level > DARK_BARS_LEVEL && frame.dragged < DARK_BARS_LEVEL } }
+    SystemBarIcons(light = if (dark) true else null)
+}
+
 /** 뷰어 안쪽에서 함께 쓰는 상태 묶음. */
 private class ViewerParts(
     val state: GlassImageViewerState,
@@ -332,6 +342,7 @@ private class FrameValues {
 
 @Composable
 private fun ViewerBody(parts: ViewerParts, look: ViewerLook, content: @Composable (page: Int) -> Unit) {
+    ViewerBarIcons(parts.frame)
     val scope = rememberCoroutineScope()
     var barsShown by remember { mutableStateOf(true) }
     val bars by animateFloatAsState(if (barsShown) 1f else 0f, label = "viewer-bars")
@@ -540,6 +551,7 @@ private const val FLY_AWAY = 0.3f
 private const val FALLBACK_SCALE = 0.86f
 private const val DRAG_SHRINK = 0.3f
 private const val DRAG_FADE_FRACTION = 0.5f
+private const val DARK_BARS_LEVEL = 0.5f
 private const val DISMISS_FRACTION = 0.3f
 private const val DISMISS_VELOCITY = 1200f
 private const val BAR_DRAG_FADE = 3f

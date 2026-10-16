@@ -4,9 +4,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
@@ -32,7 +33,7 @@ class KineticaEditorTest {
 
     private val session = (KineticaSession.create(SceneDocument.empty(Artboard(1080.0, 1920.0))) as SessionOpenResult.Opened).session
 
-    private fun button(label: String) = compose.onNodeWithText(label)
+    private fun button(label: String) = compose.onNode(hasText(label) or hasContentDescription(label))
 
     @Test
     fun `도구 줄로 만들고 끌어 옮기고 지우고 되돌린다`() {
