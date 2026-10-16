@@ -39,24 +39,27 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.Detent
-import com.naury.kinetica.ui.GlassDetentSheet
-import com.naury.kinetica.ui.GlassIconButton
-import com.naury.kinetica.ui.GlassScaffold
-import com.naury.kinetica.ui.GlassSearchBar
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.GlassSurface
-import com.naury.kinetica.ui.GlassTab
-import com.naury.kinetica.ui.GlassTopTabs
+import com.naury.kinetica.ui.KDetentSheet
+import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KSearchBar
+import com.naury.kinetica.ui.KSurface
+import com.naury.kinetica.ui.KTab
+import com.naury.kinetica.ui.KTopTabs
+import com.naury.kinetica.ui.KineticaScaffold
 import com.naury.kinetica.ui.Sparkline
-import com.naury.kinetica.ui.rememberGlassDetentSheetState
+import com.naury.kinetica.ui.SurfaceStyles
+import com.naury.kinetica.ui.rememberKDetentSheetState
 import com.naury.kinetica.ui.tooltipOnLongPress
 
 /** 지도 앱: 그린 지도 위에 여러 높이에 멈추는 시트. 시트 안 탭을 넘기며 장소 목록을 본다. */
 @Composable
 internal fun MapApp(onBack: () -> Unit) {
-    val sheet = rememberGlassDetentSheetState(detents = listOf(Detent.Peek(150.dp), Detent.Fraction(0.5f), Detent.Full))
+    val sheet = rememberKDetentSheetState(detents = listOf(Detent.Peek(150.dp), Detent.Fraction(0.5f), Detent.Full))
     var query by rememberSaveable { mutableStateOf("") }
-    GlassScaffold(Modifier.fillMaxSize(), style = GlassStyles.OneUi, background = { FakeMap(Modifier.fillMaxSize()) }) { _ ->
+    KineticaScaffold(Modifier.fillMaxSize(), surface = demoSurface(MAP_LOOK), edgeFade = false, background = {
+        FakeMap(Modifier.fillMaxSize())
+    }) { _ ->
         Box(Modifier.fillMaxSize()) {
             Row(
                 Modifier.fillMaxWidth().windowInsetsPadding(
@@ -65,8 +68,8 @@ internal fun MapApp(onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                GlassIconButton(ShowcaseIcons.Back, "뒤로", onBack)
-                GlassSurface(Modifier.heightIn(min = 44.dp).tooltipOnLongPress("길게 눌러 도움말을 보여 줍니다"), shape = CircleShape) {
+                KIconButton(ShowcaseIcons.Back, "뒤로", onBack)
+                KSurface(Modifier.heightIn(min = 44.dp).tooltipOnLongPress("길게 눌러 도움말을 보여 줍니다"), shape = CircleShape) {
                     Row(
                         Modifier.align(Alignment.Center).padding(start = 12.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -76,8 +79,8 @@ internal fun MapApp(onBack: () -> Unit) {
                     }
                 }
             }
-            GlassDetentSheet(sheet, title = "장소", header = {
-                GlassSearchBar(query, { query = it }, {}, Modifier.padding(horizontal = 16.dp), placeholder = "장소 검색")
+            KDetentSheet(sheet, title = "장소", header = {
+                KSearchBar(query, { query = it }, {}, Modifier.padding(horizontal = 16.dp), placeholder = "장소 검색")
             }) {
                 PlaceTabs()
             }
@@ -89,7 +92,7 @@ internal fun MapApp(onBack: () -> Unit) {
 private fun PlaceTabs() {
     val pager = rememberPagerState { PLACE_TABS.size }
     Column(Modifier.fillMaxSize()) {
-        GlassTopTabs(PLACE_TABS.map { GlassTab(it) }, pager, Modifier.fillMaxWidth().padding(horizontal = 12.dp))
+        KTopTabs(PLACE_TABS.map { KTab(it) }, pager, Modifier.fillMaxWidth().padding(horizontal = 12.dp))
         HorizontalPager(pager, Modifier.fillMaxSize()) { page ->
             LazyColumn(
                 Modifier.fillMaxSize(),
@@ -134,3 +137,12 @@ private fun FakeMap(modifier: Modifier) {
 private val PLACE_TABS = listOf("카페", "식당", "공원", "주차장", "약국", "서점")
 private val PIN_COLORS = listOf(Color(0xFFFF9F0A), Color(0xFFFF453A), Color(0xFF34C759), Color(0xFF0A84FF), Color(0xFFBF5AF2))
 private val BUSY = listOf(2f, 3f, 5f, 8f, 6f, 4f, 7f, 9f, 5f, 3f)
+
+private val MAP_LOOK =
+    DemoLook(
+        GlassStyles.OneUi,
+        GlassStyles.OneUiDark,
+        defaultDark = false,
+        solidLight = SurfaceStyles.OneUi,
+        solidDark = SurfaceStyles.OneUiDark,
+    )

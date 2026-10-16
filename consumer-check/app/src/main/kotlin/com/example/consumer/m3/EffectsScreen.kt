@@ -29,7 +29,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.presets.EffectPresets
 import com.naury.kinetica.render.kineticaEffects
-import com.naury.kinetica.ui.glassBadge
+import com.naury.kinetica.ui.kBadge
 import com.naury.kinetica.ui.glowBorder
 import com.naury.kinetica.ui.jellyPress
 import com.naury.kinetica.ui.shake
@@ -48,7 +48,7 @@ fun EffectsScreen(openList: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Button(
             { buttonClicks++ },
-            Modifier.kineticaEffects(EffectPresets.button, RoundedCornerShape(20.dp)).glassBadge(buttonClicks.takeIf { it > 0 }).testTag("effectButton"),
+            Modifier.kineticaEffects(EffectPresets.button, RoundedCornerShape(20.dp)).kBadge(buttonClicks.takeIf { it > 0 }).testTag("effectButton"),
         ) { Text("효과 버튼 $buttonClicks", Modifier.testTag("effectButtonText")) }
 
         Card(
@@ -90,7 +90,7 @@ fun EffectList500() {
                     headlineContent = { Text("항목 $index") },
                     modifier = Modifier.testTag("row$index")
                         .kineticaEffects(if (index % 2 == 0) EffectPresets.listItem(index) else EffectPresets.card, RoundedCornerShape(8.dp))
-                        .let { if (index % 7 == 0) it.glassBadge(index) else it }
+                        .let { if (index % 7 == 0) it.kBadge(index) else it }
                         .clickable { clicked = index },
                 )
             }

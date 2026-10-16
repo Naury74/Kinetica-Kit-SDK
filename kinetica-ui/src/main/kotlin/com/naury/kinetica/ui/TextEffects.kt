@@ -53,7 +53,7 @@ public fun ShimmerText(
     text: String,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
-    color: Color = LocalGlassContentColor.current,
+    color: Color = LocalKineticaContentColor.current,
     highlight: Color = Color.White,
     periodMs: Int = 2_200,
 ) {
@@ -175,7 +175,7 @@ public fun ScrambleText(
     ThemedText(
         shown,
         modifier.clearAndSetSemantics { this.text = AnnotatedString(text) },
-        style = style.copy(color = style.color.takeOrElse { LocalGlassContentColor.current }),
+        style = style.copy(color = style.color.takeOrElse { LocalKineticaContentColor.current }),
     )
 }
 

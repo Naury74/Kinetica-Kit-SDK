@@ -207,7 +207,7 @@ internal class BlobOutline(private val size: Size, corner: Float) {
  * 누르면 액체처럼 출렁이는 캡슐 버튼. [liquidMorph]에 버튼 역할과 글자를 더한 것이다.
  *
  * ```kotlin
- * GlassBlobButton("시작하기", onClick = { start() })
+ * KBlobButton("시작하기", onClick = { start() })
  * ```
  *
  * @param enabled false면 누를 수 없고 흐리게 그린다.
@@ -215,13 +215,13 @@ internal class BlobOutline(private val size: Size, corner: Float) {
  * @param contentColor 글자 색
  */
 @Composable
-public fun GlassBlobButton(
+public fun KBlobButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    color: Color = GlassTheme.colors.accent,
-    contentColor: Color = GlassTheme.colors.onAccent,
+    color: Color = KineticaTheme.colors.accent,
+    contentColor: Color = KineticaTheme.colors.onAccent,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val haptic = LocalHapticFeedback.current

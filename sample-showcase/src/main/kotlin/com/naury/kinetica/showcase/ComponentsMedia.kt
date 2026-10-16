@@ -38,24 +38,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.BeforeAfterSlider
-import com.naury.kinetica.ui.GlassButton
-import com.naury.kinetica.ui.GlassButtonKind
-import com.naury.kinetica.ui.GlassChipGroup
-import com.naury.kinetica.ui.GlassEmptyIcon
-import com.naury.kinetica.ui.GlassEmptyIconKind
-import com.naury.kinetica.ui.GlassEmptyState
-import com.naury.kinetica.ui.GlassImageViewer
-import com.naury.kinetica.ui.GlassImageViewerState
-import com.naury.kinetica.ui.GlassOnboarding
+import com.naury.kinetica.ui.KButton
+import com.naury.kinetica.ui.KChipGroup
+import com.naury.kinetica.ui.KEmptyIcon
+import com.naury.kinetica.ui.KEmptyIconKind
+import com.naury.kinetica.ui.KEmptyState
+import com.naury.kinetica.ui.KImageViewer
+import com.naury.kinetica.ui.KImageViewerState
+import com.naury.kinetica.ui.KOnboarding
+import com.naury.kinetica.ui.KVariant
 import com.naury.kinetica.ui.OnboardingPage
-import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.imageViewerSource
-import com.naury.kinetica.ui.rememberGlassImageViewerState
+import com.naury.kinetica.ui.kClickable
+import com.naury.kinetica.ui.rememberKImageViewerState
 
 /** 미디어 탭: 사진 뷰어, 전후 비교, 온보딩, 빈 화면. [onOnboarding]은 온보딩을 전체 화면으로 다시 띄운다. */
 @Composable
 internal fun MediaTab(padding: PaddingValues, connection: NestedScrollConnection, onOnboarding: () -> Unit) {
-    val viewer = rememberGlassImageViewerState()
+    val viewer = rememberKImageViewerState()
     val photos = remember { PHOTO_COLORS.map { GradientPhoto(it) } }
     ComponentTabList(padding, connection) {
         item { PhotoGridCard(viewer, photos) }
@@ -67,11 +67,11 @@ internal fun MediaTab(padding: PaddingValues, connection: NestedScrollConnection
         }
         item { EmptyStateCard() }
     }
-    GlassImageViewer(viewer, photos, contentDescriptions = PHOTO_COLORS.indices.map { "사진 ${it + 1}" })
+    KImageViewer(viewer, photos, contentDescriptions = PHOTO_COLORS.indices.map { "사진 ${it + 1}" })
 }
 
 @Composable
-private fun PhotoGridCard(viewer: GlassImageViewerState, photos: List<Painter>) {
+private fun PhotoGridCard(viewer: KImageViewerState, photos: List<Painter>) {
     DemoCard("사진 뷰어", "썸네일을 누르면 그 자리에서 커지며 열립니다. 두 손가락으로 확대하고, 위아래로 끌면 닫힙니다.") {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             photos.indices.chunked(3).forEach { row ->
@@ -85,7 +85,7 @@ private fun PhotoGridCard(viewer: GlassImageViewerState, photos: List<Painter>) 
                                 .aspectRatio(1f)
                                 .imageViewerSource(viewer, index)
                                 .clip(INNER_SHAPE)
-                                .glassClickable(INNER_SHAPE, role = Role.Image) { viewer.open(index) },
+                                .kClickable(INNER_SHAPE, role = Role.Image) { viewer.open(index) },
                             contentScale = ContentScale.Crop,
                         )
                     }
@@ -111,13 +111,13 @@ private fun EmptyStateCard() {
     var kind by remember { mutableIntStateOf(0) }
     val empty = EMPTY_STATES[kind]
     DemoCard("빈 화면", "검색 결과가 없거나 오프라인일 때 보여 줄 화면입니다. 그림이 천천히 떠 있습니다.") {
-        GlassChipGroup(EMPTY_STATES.map { it.chip }, setOf(kind), { kind = it.firstOrNull() ?: kind })
-        GlassEmptyState(
+        KChipGroup(EMPTY_STATES.map { it.chip }, setOf(kind), { kind = it.firstOrNull() ?: kind })
+        KEmptyState(
             empty.title,
             Modifier.fillMaxWidth().padding(vertical = 8.dp),
             message = empty.message,
-            art = { GlassEmptyIcon(empty.kind, Modifier.size(72.dp)) },
-            action = { GlassButton(empty.action, {}, kind = GlassButtonKind.Tinted) },
+            art = { KEmptyIcon(empty.kind, Modifier.size(72.dp)) },
+            action = { KButton(empty.action, {}, variant = KVariant.Tonal) },
         )
     }
 }
@@ -127,7 +127,7 @@ private fun EmptyStateCard() {
 internal fun OnboardingAgain(onFinish: () -> Unit) {
     BackHandler(onBack = onFinish)
     StatusBarIcons(darkBackground = true)
-    GlassOnboarding(
+    KOnboarding(
         listOf(
             OnboardingPage("사진을 한곳에", "기기와 클라우드에 흩어진 사진을 모아 봅니다.", Color(0xFF3B4BD8), art = { OnboardingArt(ShowcaseIcons.Grid) }),
             OnboardingPage("함께 보기", "앨범을 가족, 친구와 나누고 같이 꾸밉니다.", Color(0xFFD8456B), art = { OnboardingArt(ShowcaseIcons.Cloud) }),
@@ -187,11 +187,11 @@ private class GradientPhoto(private val colors: List<Color>) : Painter() {
     }
 }
 
-private class EmptyExample(val chip: String, val kind: GlassEmptyIconKind, val title: String, val message: String, val action: String)
+private class EmptyExample(val chip: String, val kind: KEmptyIconKind, val title: String, val message: String, val action: String)
 
 private val EMPTY_STATES = listOf(
-    EmptyExample("검색", GlassEmptyIconKind.NoResults, "검색 결과가 없어요", "다른 검색어로 다시 찾아보세요.", "검색어 지우기"),
-    EmptyExample("오프라인", GlassEmptyIconKind.Offline, "인터넷에 연결되어 있지 않아요", "연결되면 자동으로 다시 불러옵니다.", "다시 시도"),
-    EmptyExample("받은편지함", GlassEmptyIconKind.EmptyInbox, "새 메일이 없어요", "받은 메일을 모두 확인했습니다.", "새로 고침"),
-    EmptyExample("오류", GlassEmptyIconKind.Error, "불러오지 못했어요", "잠시 후 다시 시도해 주세요.", "다시 시도"),
+    EmptyExample("검색", KEmptyIconKind.NoResults, "검색 결과가 없어요", "다른 검색어로 다시 찾아보세요.", "검색어 지우기"),
+    EmptyExample("오프라인", KEmptyIconKind.Offline, "인터넷에 연결되어 있지 않아요", "연결되면 자동으로 다시 불러옵니다.", "다시 시도"),
+    EmptyExample("받은편지함", KEmptyIconKind.EmptyInbox, "새 메일이 없어요", "받은 메일을 모두 확인했습니다.", "새로 고침"),
+    EmptyExample("오류", KEmptyIconKind.Error, "불러오지 못했어요", "잠시 후 다시 시도해 주세요.", "다시 시도"),
 )

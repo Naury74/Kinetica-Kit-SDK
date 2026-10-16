@@ -31,9 +31,9 @@ import org.junit.runner.RunWith
 import kotlin.math.abs
 
 /**
- * 시나리오 10: 넓은 화면 도구(rememberGlassWindowLayout, glassReadableWidth, GlassTabletopLayout)를 쓰는 호스트 화면을
+ * 시나리오 10: 넓은 화면 도구(rememberKWindowLayout, kReadableWidth, KTabletopLayout)를 쓰는 호스트 화면을
  * 좁은 크기와 넓은 크기로 강제해 본다. ForcedSize는 배치 폭만 바꾸고 창 정보(LocalWindowInfo)는 그대로 두므로,
- * 창 크기로 정하는 rememberGlassWindowLayout은 WindowSize로 시험한다.
+ * 창 크기로 정하는 rememberKWindowLayout은 WindowSize로 시험한다.
  */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(AndroidJUnit4::class)

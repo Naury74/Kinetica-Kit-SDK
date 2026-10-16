@@ -56,7 +56,7 @@ import kotlinx.coroutines.launch
  * 터치 이벤트를 소비하지 않으므로 클릭과 스크롤은 그대로 동작한다. '애니메이션 삭제' 접근성 설정이 켜져 있으면 기울이지 않는다.
  *
  * ```kotlin
- * GlassSurface(Modifier.tiltOnPress().clickable { open() }) { ... }
+ * KSurface(Modifier.tiltOnPress().clickable { open() }) { ... }
  * ```
  *
  * @param maxDegrees 가장자리를 눌렀을 때의 최대 기울기(도). 음수면 [IllegalArgumentException]을 던진다.

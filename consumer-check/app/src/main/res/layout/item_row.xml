@@ -4,14 +4,14 @@
     android:layout_height="wrap_content"
     android:padding="6dp">
 
-    <com.naury.kinetica.ui.view.GlassSurfaceView xmlns:app="http://schemas.android.com/apk/res-auto"
+    <com.naury.kinetica.ui.view.KSurfaceView xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/glass"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clickable="true"
         android:focusable="true"
         app:kinetica_cornerRadius="16dp"
-        app:kinetica_glassStyle="acrylic">
+        app:kinetica_surfaceStyle="acrylic">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -32,5 +32,5 @@
                 android:layout_height="wrap_content"
                 android:text="상세" />
         </LinearLayout>
-    </com.naury.kinetica.ui.view.GlassSurfaceView>
+    </com.naury.kinetica.ui.view.KSurfaceView>
 </FrameLayout>

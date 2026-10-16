@@ -58,46 +58,46 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.naury.kinetica.ui.GlassButton
-import com.naury.kinetica.ui.GlassButtonKind
-import com.naury.kinetica.ui.GlassButtonSize
-import com.naury.kinetica.ui.GlassCarousel
-import com.naury.kinetica.ui.GlassChipGroup
-import com.naury.kinetica.ui.GlassChipSelection
-import com.naury.kinetica.ui.GlassDatePicker
-import com.naury.kinetica.ui.GlassIslandContent
-import com.naury.kinetica.ui.GlassIslandHost
-import com.naury.kinetica.ui.GlassIslandState
-import com.naury.kinetica.ui.GlassLargeTitleBar
-import com.naury.kinetica.ui.GlassMenuItem
-import com.naury.kinetica.ui.GlassPageIndicator
-import com.naury.kinetica.ui.GlassProgressBar
-import com.naury.kinetica.ui.GlassProgressRing
-import com.naury.kinetica.ui.GlassScaffold
-import com.naury.kinetica.ui.GlassSearchBar
-import com.naury.kinetica.ui.GlassSnackbarHost
-import com.naury.kinetica.ui.GlassSnackbarResult
-import com.naury.kinetica.ui.GlassSnackbarState
-import com.naury.kinetica.ui.GlassSpeedDial
-import com.naury.kinetica.ui.GlassStepper
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.GlassSurface
-import com.naury.kinetica.ui.GlassTab
-import com.naury.kinetica.ui.GlassTextField
-import com.naury.kinetica.ui.GlassTimePicker
-import com.naury.kinetica.ui.GlassTopTabs
 import com.naury.kinetica.ui.GradientText
-import com.naury.kinetica.ui.LocalGlassContentColor
+import com.naury.kinetica.ui.KButton
+import com.naury.kinetica.ui.KButtonSize
+import com.naury.kinetica.ui.KCarousel
+import com.naury.kinetica.ui.KChipGroup
+import com.naury.kinetica.ui.KChipSelection
+import com.naury.kinetica.ui.KDatePicker
+import com.naury.kinetica.ui.KIslandContent
+import com.naury.kinetica.ui.KIslandHost
+import com.naury.kinetica.ui.KIslandState
+import com.naury.kinetica.ui.KLargeTitleBar
+import com.naury.kinetica.ui.KMenuItem
+import com.naury.kinetica.ui.KPageIndicator
+import com.naury.kinetica.ui.KProgressBar
+import com.naury.kinetica.ui.KProgressRing
+import com.naury.kinetica.ui.KSearchBar
+import com.naury.kinetica.ui.KSnackbarHost
+import com.naury.kinetica.ui.KSnackbarResult
+import com.naury.kinetica.ui.KSnackbarState
+import com.naury.kinetica.ui.KSpeedDial
+import com.naury.kinetica.ui.KStepper
+import com.naury.kinetica.ui.KSurface
+import com.naury.kinetica.ui.KTab
+import com.naury.kinetica.ui.KTextField
+import com.naury.kinetica.ui.KTimePicker
+import com.naury.kinetica.ui.KTopTabs
+import com.naury.kinetica.ui.KVariant
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.MeshGradientBackground
 import com.naury.kinetica.ui.MeshGradients
 import com.naury.kinetica.ui.ScrambleText
 import com.naury.kinetica.ui.ShimmerText
 import com.naury.kinetica.ui.SwipeCardStack
 import com.naury.kinetica.ui.SwipeDirection
-import com.naury.kinetica.ui.glassBadge
-import com.naury.kinetica.ui.rememberGlassIslandState
-import com.naury.kinetica.ui.rememberGlassLargeTitleState
-import com.naury.kinetica.ui.rememberGlassSnackbarState
+import com.naury.kinetica.ui.kBadge
+import com.naury.kinetica.ui.rememberKIslandState
+import com.naury.kinetica.ui.rememberKLargeTitleState
+import com.naury.kinetica.ui.rememberKSnackbarState
 import com.naury.kinetica.ui.rememberSwipeCardStackState
 import com.naury.kinetica.ui.shake
 import com.naury.kinetica.ui.sparkle
@@ -111,27 +111,27 @@ import kotlinx.coroutines.launch
  */
 @Composable
 internal fun ComponentsDemo(onBack: () -> Unit) {
-    val island = rememberGlassIslandState()
-    val snackbar = rememberGlassSnackbarState()
+    val island = rememberKIslandState()
+    val snackbar = rememberKSnackbarState()
     val pager = rememberPagerState { COMPONENT_TABS.size }
     // 탭마다 목록 스크롤 위치가 따로 있고, 큰 제목은 지금 보이는 탭 목록의 위치를 따른다.
     // 맨 위에 있는 탭으로 옮기면 큰 제목이 다시 펼쳐져 탭 줄 아래에 빈 공간이 생기지 않는다.
     val lists = List(COMPONENT_TABS.size) { rememberLazyListState() }
-    val title = rememberGlassLargeTitleState(lists[pager.settledPage])
+    val title = rememberKLargeTitleState(lists[pager.settledPage])
     var dial by rememberSaveable { mutableStateOf(false) }
     var onboarding by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val notify: (String) -> Unit = { scope.launch { snackbar.show(it) } }
     Box(Modifier.fillMaxSize()) {
-        GlassScaffold(
+        KineticaScaffold(
             Modifier.fillMaxSize(),
-            style = GlassStyles.Liquid,
-            background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Candy) },
+            surface = demoSurface(COMPONENTS_DEMO_LOOK),
+            background = { DemoBackdrop { MeshBackdrop(light = MeshGradients.Candy, dark = MeshGradients.Midnight) } },
             topBar = {
                 // 탭 줄은 큰 제목과 함께 올라가 작은 바 밑에 붙고, 접히면 글래스 배경이 탭 줄까지 이어진다.
-                GlassLargeTitleBar(title, "컴포넌트", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH, bottom = {
-                    GlassTopTabs(
-                        COMPONENT_TABS.map { GlassTab(it) },
+                KLargeTitleBar(title, "컴포넌트", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH, bottom = {
+                    KTopTabs(
+                        COMPONENT_TABS.map { KTab(it) },
                         pager,
                         // bottom 줄은 이미 contentMaxWidth 안에 놓이므로, 큰 제목의 안쪽 여백(20dp)만 맞춘다.
                         Modifier.padding(horizontal = 20.dp).fillMaxWidth().padding(bottom = 6.dp),
@@ -159,8 +159,8 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
                 }
             }
             if (pager.currentPage == 0) DemoDial(dial, { dial = it }, notify)
-            GlassSnackbarHost(snackbar, Modifier.padding(bottom = 96.dp))
-            GlassIslandHost(island)
+            KSnackbarHost(snackbar, Modifier.padding(bottom = 96.dp))
+            KIslandHost(island)
         }
         if (onboarding) OnboardingAgain { onboarding = false }
     }
@@ -183,7 +183,7 @@ internal fun ComponentTabList(padding: PaddingValues, connection: NestedScrollCo
 }
 
 @Composable
-private fun BasicTab(padding: PaddingValues, connection: NestedScrollConnection, island: GlassIslandState, snackbar: GlassSnackbarState) {
+private fun BasicTab(padding: PaddingValues, connection: NestedScrollConnection, island: KIslandState, snackbar: KSnackbarState) {
     val scope = rememberCoroutineScope()
     ComponentTabList(padding, connection) {
         item { ButtonsCard() }
@@ -198,13 +198,13 @@ private fun BasicTab(padding: PaddingValues, connection: NestedScrollConnection,
             NotifyCard(
                 onIsland = {
                     scope.launch {
-                        island.show(GlassIslandContent("새 메시지", "민지: 오늘 저녁 어때?", icon = ShowcaseIcons.Bell, accent = Color(0xFF34C759)))
+                        island.show(KIslandContent("새 메시지", "민지: 오늘 저녁 어때?", icon = ShowcaseIcons.Bell, accent = Color(0xFF34C759)))
                     }
                 },
                 onTimer = {
                     scope.launch {
                         island.show(
-                            GlassIslandContent(
+                            KIslandContent(
                                 "타이머",
                                 "남은 시간 00:42",
                                 icon = ShowcaseIcons.Sparkle,
@@ -217,7 +217,7 @@ private fun BasicTab(padding: PaddingValues, connection: NestedScrollConnection,
                 onSnackbar = {
                     scope.launch {
                         val result = snackbar.show("사진을 지웠어요", "되돌리기")
-                        if (result == GlassSnackbarResult.Action) snackbar.show("사진을 되돌렸어요")
+                        if (result == KSnackbarResult.Action) snackbar.show("사진을 되돌렸어요")
                     }
                 },
             )
@@ -229,13 +229,13 @@ private fun BasicTab(padding: PaddingValues, connection: NestedScrollConnection,
 @Composable
 private fun DemoDial(open: Boolean, onOpenChange: (Boolean) -> Unit, notify: (String) -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
-        GlassSpeedDial(
+        KSpeedDial(
             open,
             onOpenChange,
             listOf(
-                GlassMenuItem("사진 찍기", ShowcaseIcons.Sparkle) { notify("카메라를 열어요") },
-                GlassMenuItem("메모", ShowcaseIcons.Pen) { notify("새 메모") },
-                GlassMenuItem("공유", ShowcaseIcons.Cloud) { notify("공유할 곳을 골라요") },
+                KMenuItem("사진 찍기", ShowcaseIcons.Sparkle) { notify("카메라를 열어요") },
+                KMenuItem("메모", ShowcaseIcons.Pen) { notify("새 메모") },
+                KMenuItem("공유", ShowcaseIcons.Cloud) { notify("공유할 곳을 골라요") },
             ),
             Modifier.navigationBarsPadding().padding(24.dp),
         )
@@ -247,16 +247,16 @@ private fun ButtonsCard() {
     var loading by remember { mutableStateOf(false) }
     DemoCard("버튼", "채움, 옅은 색, 글래스, 글자만 있는 버튼입니다. 누르면 젤리처럼 눌리고, 로딩 중에는 폭을 유지한 채 링이 돕니다.") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            GlassButton("결제하기", { loading = !loading }, loading = loading)
-            GlassButton("장바구니", {}, kind = GlassButtonKind.Tinted)
-            GlassButton("더 보기", {}, kind = GlassButtonKind.Glass)
-            GlassButton("취소", {}, kind = GlassButtonKind.Plain)
+            KButton("결제하기", { loading = !loading }, loading = loading)
+            KButton("장바구니", {}, variant = KVariant.Tonal)
+            KButton("더 보기", {}, variant = KVariant.Glass)
+            KButton("취소", {}, variant = KVariant.Text)
         }
         // 크기가 다른 버튼은 한 줄에 세로 가운데로 맞춰 따로 보여 준다.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            GlassButton("작게", {}, size = GlassButtonSize.Small, kind = GlassButtonKind.Tinted)
-            GlassButton("보통", {}, kind = GlassButtonKind.Tinted)
-            GlassButton("크게", {}, size = GlassButtonSize.Large)
+            KButton("작게", {}, size = KButtonSize.Small, variant = KVariant.Tonal)
+            KButton("보통", {}, variant = KVariant.Tonal)
+            KButton("크게", {}, size = KButtonSize.Large)
         }
     }
 }
@@ -267,17 +267,17 @@ private fun StepperCard() {
     var chips by rememberSaveable { mutableStateOf(setOf(0)) }
     DemoCard("스테퍼, 칩, 배지", "숫자는 굴러가며 바뀌고, 길게 누르면 점점 빨라집니다. 배지는 숫자가 바뀔 때 톡 튑니다.") {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            GlassStepper(count, { count = it }, range = 0..120)
+            KStepper(count, { count = it }, range = 0..120)
             // 앱 아이콘처럼 그린 알림 아이콘에 배지를 붙인다.
             Box(
                 Modifier
                     .size(44.dp)
                     .background(Brush.linearGradient(listOf(Color(0xFF7C8CFF), Color(0xFF4A5AE8))), RoundedCornerShape(12.dp))
-                    .glassBadge(count.takeIf { it > 0 }),
+                    .kBadge(count.takeIf { it > 0 }),
                 contentAlignment = Alignment.Center,
             ) { ShowcaseIcon(ShowcaseIcons.Bell, 22.dp, Color.White) }
         }
-        GlassChipGroup(listOf("전체", "사진", "동영상", "스크린샷", "즐겨찾기"), chips, { chips = it }, selection = GlassChipSelection.Multiple)
+        KChipGroup(listOf("전체", "사진", "동영상", "스크린샷", "즐겨찾기"), chips, { chips = it }, selection = KChipSelection.Multiple)
     }
 }
 
@@ -285,10 +285,10 @@ private fun StepperCard() {
 private fun ProgressCard() {
     var progress by remember { mutableFloatStateOf(0.35f) }
     DemoCard("진행 표시", "값이 바뀌면 용수철처럼 따라가고, 물결을 켜면 액체가 차오르듯 출렁입니다.") {
-        GlassProgressBar(progress, Modifier.fillMaxWidth(), thickness = 12.dp, wave = true)
+        KProgressBar(progress, Modifier.fillMaxWidth(), thickness = 12.dp, wave = true)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            GlassProgressRing(progress, Modifier.size(88.dp), wave = true) { Label("${(progress * 100).toInt()}%", 16, FontWeight.Bold) }
-            GlassProgressRing(null, Modifier.size(48.dp))
+            KProgressRing(progress, Modifier.size(88.dp), wave = true) { Label("${(progress * 100).toInt()}%", 16, FontWeight.Bold) }
+            KProgressRing(null, Modifier.size(48.dp))
             Pill("+ 20%") { progress = if (progress >= 1f) 0f else (progress + 0.2f).coerceAtMost(1f) }
         }
     }
@@ -301,8 +301,8 @@ private fun InputCard() {
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     var tries by rememberSaveable { mutableIntStateOf(0) }
     DemoCard("검색과 입력", "검색창을 누르면 취소 버튼이 밀려 들어옵니다. 이메일 형식이 틀리면 테두리가 빨개지며 흔들립니다.") {
-        GlassSearchBar(query, { query = it }, {}, placeholder = "메뉴나 가게 이름")
-        GlassTextField(
+        KSearchBar(query, { query = it }, {}, placeholder = "메뉴나 가게 이름")
+        KTextField(
             email,
             {
                 email = it
@@ -314,7 +314,7 @@ private fun InputCard() {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
             placeholder = "name@example.com",
             supportingText = "영수증을 받을 주소입니다",
-            leadingIcon = { ShowcaseIcon(ShowcaseIcons.Mail, 20.dp, LocalGlassContentColor.current.copy(alpha = 0.6f)) },
+            leadingIcon = { ShowcaseIcon(ShowcaseIcons.Mail, 20.dp, LocalKineticaContentColor.current.copy(alpha = 0.6f)) },
         )
         Pill("확인") {
             if ("@" !in email) {
@@ -331,8 +331,8 @@ private fun PickerCard() {
     var hour by rememberSaveable { mutableIntStateOf(9) }
     var minute by rememberSaveable { mutableIntStateOf(30) }
     DemoCard("휠 피커", "iOS처럼 원통에 붙은 휠입니다. 굴리면 항목마다 가볍게 진동하고 가운데에 맞춰 멈춥니다.") {
-        GlassDatePicker(date, { date = it }, Modifier.fillMaxWidth())
-        GlassTimePicker(hour, minute, { h, m ->
+        KDatePicker(date, { date = it }, Modifier.fillMaxWidth())
+        KTimePicker(hour, minute, { h, m ->
             hour = h
             minute = m
         }, Modifier.fillMaxWidth())
@@ -343,10 +343,10 @@ private fun PickerCard() {
 private fun CarouselCard() {
     val pager = rememberPagerState { PHOTO_COLORS.size }
     DemoCard("캐러셀", "옆 카드가 살짝 보이고, 멀어질수록 작아지며 기웁니다. 아래 인디케이터가 액체처럼 이어집니다.") {
-        GlassCarousel(PHOTO_COLORS.size, Modifier.fillMaxWidth().height(180.dp), state = pager) { page ->
+        KCarousel(PHOTO_COLORS.size, Modifier.fillMaxWidth().height(180.dp), state = pager) { page ->
             Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)).background(Brush.linearGradient(PHOTO_COLORS[page])))
         }
-        GlassPageIndicator(pager, Modifier.align(Alignment.CenterHorizontally))
+        KPageIndicator(pager, Modifier.align(Alignment.CenterHorizontally))
     }
 }
 
@@ -384,7 +384,7 @@ private fun CardStackCard(notify: (String) -> Unit) {
 private fun TextEffectsCard() {
     var round by remember { mutableIntStateOf(0) }
     DemoCard("글자 효과", "빛이 흐르는 글자, 색이 흐르는 글자, 뒤섞였다 맞춰지는 글자. 카드에 손가락을 대고 움직여 보세요.") {
-        GlassSurface(Modifier.fillMaxWidth().spotlight(shape = INNER_SHAPE).sparkle(), shape = INNER_SHAPE) {
+        KSurface(Modifier.fillMaxWidth().spotlight(shape = INNER_SHAPE).sparkle(), shape = INNER_SHAPE) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ShimmerText("밀어서 잠금 해제", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold))
                 GradientText("Kinetica", style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Black))
@@ -416,3 +416,5 @@ internal val PHOTO_COLORS = listOf(
     listOf(Color(0xFF8E54E9), Color(0xFF4776E6)),
     listOf(Color(0xFFFF5C8A), Color(0xFFFFC15E)),
 )
+
+private val COMPONENTS_DEMO_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = false)

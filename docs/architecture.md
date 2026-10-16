@@ -3,7 +3,7 @@
 ## 모듈과 의존 방향
 
 ```text
-sample-showcase ─┬─ kinetica-ui (글래스 UI·고급 효과) ── Compose만
+sample-showcase ─┬─ kinetica-ui (UI 키트·고급 효과) ── Compose만
                  ├─ kinetica-board-compose ── kinetica-render-compose, kinetica-history, kinetica-serialization
                  ├─ kinetica-player-compose ── kinetica-render-compose, kinetica-motion, kinetica-serialization(api)
                  ├─ kinetica-editor-compose ─┬─ kinetica-render-compose ── kinetica-core

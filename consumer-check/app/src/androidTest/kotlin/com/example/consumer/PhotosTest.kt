@@ -24,7 +24,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.math.abs
 
-/** 시나리오 6: 사진 격자에서 GlassImageViewer(창 모드)를 열고, 세로 스크롤 안 BeforeAfterSlider를 쓴다. */
+/** 시나리오 6: 사진 격자에서 KImageViewer(창 모드)를 열고, 세로 스크롤 안 BeforeAfterSlider를 쓴다. */
 @RunWith(AndroidJUnit4::class)
 class PhotosTest {
     @get:Rule

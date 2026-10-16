@@ -41,14 +41,14 @@ import com.naury.kinetica.presets.EffectPresets
 import com.naury.kinetica.render.ViewEffects
 import com.naury.kinetica.serialization.RemoteSceneLoader
 import com.naury.kinetica.serialization.SceneFetch
-import com.naury.kinetica.ui.GlassStyle
-import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.view.GlassDialogs
-import com.naury.kinetica.ui.view.GlassPopupHandle
-import com.naury.kinetica.ui.view.GlassPopupOptions
-import com.naury.kinetica.ui.view.GlassSheets
-import com.naury.kinetica.ui.view.GlassSurfaceView
-import com.naury.kinetica.ui.view.GlassToasts
+import com.naury.kinetica.ui.SurfaceStyle
+import com.naury.kinetica.ui.SurfaceStyles
+import com.naury.kinetica.ui.view.KDialogs
+import com.naury.kinetica.ui.view.KPopupHandle
+import com.naury.kinetica.ui.view.KPopupOptions
+import com.naury.kinetica.ui.view.KSheets
+import com.naury.kinetica.ui.view.KSurfaceView
+import com.naury.kinetica.ui.view.KToasts
 
 /** Compose 없이 만든 화면. 레이아웃 XML에 보드와 재생기, 글래스 표면을 넣고, 기존 View를 위젯으로 쓴다. 글래스 창도 코드로 띄운다. */
 class XmlActivity : ComponentActivity() {
@@ -99,8 +99,8 @@ class XmlActivity : ComponentActivity() {
             "orders.count" to DataValue.Number(42.0),
             "orders.average" to DataValue.Number(30_571.0),
         )
-        promo.setOnActionListener { raw -> GlassToasts.show(this, "받은 동작: ${SceneAction.parse(raw).name}") }
-        setUpGlass()
+        promo.setOnActionListener { raw -> KToasts.show(this, "받은 동작: ${SceneAction.parse(raw).name}") }
+        setUpSurface()
         // 화면을 돌리거나 폴더블을 접고 펴서 액티비티가 다시 만들어지면 열려 있던 창은 닫히므로, 저장해 둔 상태로 다시 띄운다.
         when (savedInstanceState?.getString(KEY_POPUP)) {
             POPUP_SHEET -> showSheet(savedInstanceState.getString(KEY_MEMO).orEmpty())
@@ -124,22 +124,22 @@ class XmlActivity : ComponentActivity() {
         if (sheetOpen) outState.putString(KEY_MEMO, memoField?.text?.toString())
     }
 
-    private var sheet: GlassPopupHandle? = null
-    private var dialog: GlassPopupHandle? = null
+    private var sheet: KPopupHandle? = null
+    private var dialog: KPopupHandle? = null
     private var memoField: EditText? = null
 
-    /** XML 화면에서 글래스 시트, 다이얼로그, 토스트를 띄우고 GlassSurfaceView 글자 색을 스타일에 맞춘다. */
-    private fun setUpGlass() {
-        val caption = findViewById<GlassSurfaceView>(R.id.promo_caption)
+    /** XML 화면에서 글래스 시트, 다이얼로그, 토스트를 띄우고 KSurfaceView 글자 색을 스타일에 맞춘다. */
+    private fun setUpSurface() {
+        val caption = findViewById<KSurfaceView>(R.id.promo_caption)
         val captionText = findViewById<TextView>(R.id.promo_caption_text)
         captionText.setTextColor(caption.contentColor)
         // auto 스타일은 다크 모드를 따라 바뀌므로 글자 색도 함께 바꾼다.
         caption.setOnContentColorChangeListener { captionText.setTextColor(it) }
-        findViewById<Button>(R.id.glass_sheet).apply { stylePill(this) }.setOnClickListener { showSheet() }
-        findViewById<Button>(R.id.glass_dialog).apply { stylePill(this) }.setOnClickListener { showDialog() }
-        findViewById<Button>(R.id.glass_toast).apply {
+        findViewById<Button>(R.id.k_sheet).apply { stylePill(this) }.setOnClickListener { showSheet() }
+        findViewById<Button>(R.id.k_dialog).apply { stylePill(this) }.setOnClickListener { showDialog() }
+        findViewById<Button>(R.id.k_toast).apply {
             stylePill(this)
-        }.setOnClickListener { GlassToasts.show(this, "XML 화면에서 띄운 글래스 토스트") }
+        }.setOnClickListener { KToasts.show(this, "XML 화면에서 띄운 글래스 토스트") }
     }
 
     /** 보드 위젯 한 개. 왼쪽 위에 아이콘과 이름, 아래에 값과 설명을 둔 카드다. */
@@ -199,7 +199,7 @@ class XmlActivity : ComponentActivity() {
         memoField = memo
         val save = Button(this).apply {
             text = "저장"
-            stylePill(this, filled = true, ink = sheetStyle.onGlass.toArgb())
+            stylePill(this, filled = true, ink = sheetStyle.contentColor.toArgb())
         }
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -208,18 +208,18 @@ class XmlActivity : ComponentActivity() {
             addView(memo, blockParams(top = 4))
             addView(save, blockParams(top = 12))
         }
-        val sheet = GlassSheets.show(this, content, GlassPopupOptions(sheetStyle, "글래스 시트"))
+        val sheet = KSheets.show(this, content, KPopupOptions(sheetStyle, "글래스 시트"))
         this.sheet = sheet
         save.setOnClickListener {
             sheet.dismiss()
-            GlassToasts.show(this, "저장했습니다: ${memo.text}")
+            KToasts.show(this, "저장했습니다: ${memo.text}")
         }
     }
 
     private fun showDialog() {
         val ok = Button(this).apply {
             text = "확인"
-            stylePill(this, filled = true, ink = sheetStyle.onGlass.toArgb())
+            stylePill(this, filled = true, ink = sheetStyle.contentColor.toArgb())
         }
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -227,16 +227,16 @@ class XmlActivity : ComponentActivity() {
             addView(sheetText("바깥을 누르거나 뒤로 가기를 하면 닫힙니다.", 14f))
             addView(ok, blockParams(top = 8))
         }
-        val dialog = GlassDialogs.show(this, content, GlassPopupOptions(sheetStyle, "글래스 다이얼로그"))
+        val dialog = KDialogs.show(this, content, KPopupOptions(sheetStyle, "글래스 다이얼로그"))
         this.dialog = dialog
         ok.setOnClickListener { dialog.dismiss() }
     }
 
     /** 시스템 다크 모드에 맞춘 스타일. 글자 색도 같은 스타일에서 가져온다. */
-    private val sheetStyle: GlassStyle
+    private val sheetStyle: SurfaceStyle
         get() {
             val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-            return if (night) GlassStyles.LiquidDark else GlassStyles.Liquid
+            return if (night) SurfaceStyles.LiquidDark else SurfaceStyles.Liquid
         }
 
     /**
@@ -271,7 +271,7 @@ class XmlActivity : ComponentActivity() {
     private fun styleField(field: EditText) {
         field.background = GradientDrawable().apply {
             cornerRadius = dp(12f)
-            val ink = sheetStyle.onGlass.toArgb()
+            val ink = sheetStyle.contentColor.toArgb()
             setColor(ColorUtils.setAlphaComponent(ink, FIELD_ALPHA))
             setStroke(dp(1f).toInt(), ColorUtils.setAlphaComponent(ink, STROKE_ALPHA))
         }
@@ -279,7 +279,7 @@ class XmlActivity : ComponentActivity() {
         field.setPadding(horizontal, 0, horizontal, 0)
         field.minHeight = dp(48f).toInt()
         field.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-        field.setTextColor(sheetStyle.onGlass.toArgb())
+        field.setTextColor(sheetStyle.contentColor.toArgb())
     }
 
     private fun blockParams(top: Int) =
@@ -293,7 +293,7 @@ class XmlActivity : ComponentActivity() {
         this.text = text
         setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp)
         if (sizeSp >= TITLE_SP) typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        setTextColor(sheetStyle.onGlass.toArgb())
+        setTextColor(sheetStyle.contentColor.toArgb())
         setPadding(0, 0, 0, (resources.displayMetrics.density * 8).toInt())
     }
 

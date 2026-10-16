@@ -23,8 +23,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.naury.kinetica.ui.GlassDialog
-import com.naury.kinetica.ui.GlassSheet
+import com.naury.kinetica.ui.KDialog
+import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.shake
 
 /** 시트와 다이얼로그 안에 Material 입력 폼을 넣는 화면. */
@@ -39,10 +39,10 @@ fun FormScreen() {
         Button({ dialog = true }, Modifier.testTag("openFormDialog")) { Text("로그인 다이얼로그") }
     }
 
-    GlassSheet(sheet, { sheet = false }, title = "배송지") {
+    KSheet(sheet, { sheet = false }, title = "배송지") {
         AddressForm(onSubmit = { submitted = it; sheet = false })
     }
-    GlassDialog(dialog, { dialog = false }, title = "로그인") {
+    KDialog(dialog, { dialog = false }, title = "로그인") {
         LoginForm(onSubmit = { submitted = it; dialog = false })
     }
 }

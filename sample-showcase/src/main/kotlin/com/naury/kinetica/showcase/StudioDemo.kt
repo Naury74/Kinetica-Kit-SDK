@@ -68,11 +68,12 @@ import com.naury.kinetica.render.ContentImageLoader
 import com.naury.kinetica.serialization.FileSceneRepository
 import com.naury.kinetica.serialization.LoadResult
 import com.naury.kinetica.serialization.SaveResult
-import com.naury.kinetica.ui.GlassSheet
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.GlassToastHost
-import com.naury.kinetica.ui.glassClickable
-import com.naury.kinetica.ui.rememberGlassToastState
+import com.naury.kinetica.ui.KSheet
+import com.naury.kinetica.ui.KToastHost
+import com.naury.kinetica.ui.SurfaceStyles
+import com.naury.kinetica.ui.kClickable
+import com.naury.kinetica.ui.rememberKToastState
 import java.io.File
 import java.util.UUID
 import kotlin.random.Random
@@ -93,7 +94,7 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
     val sales = rememberLiveSales()
     val session by model.session.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
-    val toast = rememberGlassToastState()
+    val toast = rememberKToastState()
     LaunchedEffect(message) {
         message?.let {
             model.messageShown()
@@ -143,7 +144,7 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
         export.launch(if (asMockup) "kinetica-mockup.png" else "kinetica-scene.png")
     }
     StudioMoreSheet(more, theme.isDark, { more = false }, moreActions)
-    GlassToastHost(toast)
+    KToastHost(toast)
 }
 
 /** 2초마다 하루씩 밀려나는 최근 7일 매출(0..1). 매출 그래프 위젯에 넘긴다. */
@@ -167,7 +168,7 @@ private fun StudioMoreSheet(
     onDismiss: () -> Unit,
     actions: List<Triple<String, ImageVector, () -> Unit>>,
 ) {
-    GlassSheet(visible, onDismiss, style = if (dark) GlassStyles.LiquidDark else GlassStyles.Liquid, title = "더 보기") {
+    KSheet(visible, onDismiss, surface = if (dark) SurfaceStyles.LiquidDark else SurfaceStyles.Liquid, title = "더 보기") {
         Column(Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
             actions.forEach { (label, icon, action) ->
                 MoreRow(label, icon) {
@@ -187,7 +188,7 @@ private fun PreviewBack(color: Color, onClick: () -> Unit) {
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .heightIn(min = 44.dp)
             .clip(CircleShape)
-            .glassClickable(CircleShape, onClick = onClick)
+            .kClickable(CircleShape, onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -205,7 +206,7 @@ private fun MoreRow(label: String, icon: ImageVector, onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 52.dp)
             .clip(shape)
-            .glassClickable(shape, onClick = onClick)
+            .kClickable(shape, onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -19,12 +19,12 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.consumer.R
-import com.naury.kinetica.ui.GlassColorPicker
-import com.naury.kinetica.ui.GlassSignaturePad
+import com.naury.kinetica.ui.KColorPicker
+import com.naury.kinetica.ui.KSignaturePad
 import com.naury.kinetica.ui.SignaturePadState
 import com.naury.kinetica.ui.rememberSignaturePadState
 
-/** NestedScrollView 안 ComposeView에 GlassColorPicker와 GlassSignaturePad를 넣은 XML 호스트 화면. */
+/** NestedScrollView 안 ComposeView에 KColorPicker와 KSignaturePad를 넣은 XML 호스트 화면. */
 class XmlComposeActivity : AppCompatActivity() {
     /** 시험과 XML 버튼이 함께 쓰는 서명 상태. ComposeView가 처음 그려질 때 채운다. */
     var signature: SignaturePadState? = null
@@ -38,7 +38,7 @@ class XmlComposeActivity : AppCompatActivity() {
 
         findViewById<ComposeView>(R.id.colorPicker).setContent {
             var color by rememberSaveable(stateSaver = ColorSaver) { mutableStateOf(Color(0xFF0A84FF)) }
-            GlassColorPicker(color, { color = it }, Modifier.testTag("xmlColorPicker"))
+            KColorPicker(color, { color = it }, Modifier.testTag("xmlColorPicker"))
             LaunchedEffect(Unit) {
                 snapshotFlow { color }.collect { colorValue.text = "색: #%08X".format(it.toArgb()) }
             }
@@ -46,7 +46,7 @@ class XmlComposeActivity : AppCompatActivity() {
         findViewById<ComposeView>(R.id.signature).setContent {
             val state = rememberSignaturePadState()
             signature = state
-            GlassSignaturePad(Modifier.fillMaxWidth().height(200.dp).testTag("xmlSignature"), state)
+            KSignaturePad(Modifier.fillMaxWidth().height(200.dp).testTag("xmlSignature"), state)
             LaunchedEffect(state) {
                 snapshotFlow { state.isEmpty }.collect { signatureState.text = if (it) "서명: 없음" else "서명: 있음" }
             }

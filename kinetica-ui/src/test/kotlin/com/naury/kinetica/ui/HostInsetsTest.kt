@@ -67,14 +67,14 @@ class HostInsetsTest {
     @Composable
     private fun Screen(hosted: Boolean, content: @Composable () -> Unit) {
         activityView = LocalView.current
-        if (hosted) GlassScaffold(Modifier.fillMaxSize()) { content() } else Box(Modifier.fillMaxSize()) { content() }
+        if (hosted) KineticaScaffold(Modifier.fillMaxSize()) { content() } else Box(Modifier.fillMaxSize()) { content() }
     }
 
     @Composable
     private fun SheetWithField() {
-        GlassSheet(true, {}) {
+        KSheet(true, {}) {
             overlayView = LocalView.current
-            GlassTextField("", {}, "이름", Modifier.testTag("field"))
+            KTextField("", {}, "이름", Modifier.testTag("field"))
         }
     }
 
@@ -97,7 +97,7 @@ class HostInsetsTest {
     }
 
     @Test
-    fun `GlassScaffold 안 시트는 내비게이션 바와 키보드 위로 올라오고 여백이 겹치지 않는다`() = checkSheet(hosted = true)
+    fun `KineticaScaffold 안 시트는 내비게이션 바와 키보드 위로 올라오고 여백이 겹치지 않는다`() = checkSheet(hosted = true)
 
     @Test
     fun `밖에서 연 시트는 대화 상자 창의 인셋으로 같은 여백을 낸다`() = checkSheet(hosted = false)
@@ -106,7 +106,7 @@ class HostInsetsTest {
     fun `다이얼로그는 키보드와 상태 표시줄을 피한다`() {
         compose.setContent {
             Screen(hosted = true) {
-                GlassDialog(true, {}, Modifier.testTag("panel")) { GlassTextField("", {}, "메모") }
+                KDialog(true, {}, Modifier.testTag("panel")) { KTextField("", {}, "메모") }
             }
         }
         send(activityView, status = STATUS, nav = NAV, ime = IME)
@@ -118,10 +118,10 @@ class HostInsetsTest {
     @Test
     fun `스낵바는 내비게이션 바와 키보드 위에 뜬다`() {
         lateinit var scope: CoroutineScope
-        val snackbar = GlassSnackbarState()
+        val snackbar = KSnackbarState()
         compose.setContent {
             scope = rememberCoroutineScope()
-            Screen(hosted = true) { GlassSnackbarHost(snackbar, Modifier.testTag("pill")) }
+            Screen(hosted = true) { KSnackbarHost(snackbar, Modifier.testTag("pill")) }
         }
         compose.mainClock.autoAdvance = false
         scope.launch { snackbar.show("저장했어요", durationMs = 10_000) }
@@ -140,7 +140,7 @@ class HostInsetsTest {
         var peekTop by mutableStateOf(0f)
         compose.setContent {
             Screen(hosted = false) {
-                GlassDetentSheet(rememberGlassDetentSheetState(listOf(Detent.Peek(PEEK.dp), Detent.Full)), Modifier.testTag("container")) {
+                KDetentSheet(rememberKDetentSheetState(listOf(Detent.Peek(PEEK.dp), Detent.Full)), Modifier.testTag("container")) {
                     BasicText("내용", Modifier.testTag("body"))
                 }
             }

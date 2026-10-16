@@ -43,11 +43,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.FlipCard
-import com.naury.kinetica.ui.GlassBlobButton
-import com.naury.kinetica.ui.GlassBlobGroup
-import com.naury.kinetica.ui.GlassChipGroup
-import com.naury.kinetica.ui.GlassIndication
-import com.naury.kinetica.ui.GlassSwitch
+import com.naury.kinetica.ui.KBlobButton
+import com.naury.kinetica.ui.KBlobGroup
+import com.naury.kinetica.ui.KChipGroup
+import com.naury.kinetica.ui.KIndication
+import com.naury.kinetica.ui.KSwitch
 import com.naury.kinetica.ui.ParticleField
 import com.naury.kinetica.ui.ParticlePreset
 import com.naury.kinetica.ui.holographic
@@ -77,7 +77,7 @@ private fun ParticleCard() {
     var preset by rememberSaveable { mutableStateOf(ParticlePreset.Snow) }
     val particles = rememberParticleFieldState()
     DemoCard("파티클", "칩으로 프리셋을 바꿉니다. 버튼을 누르면 불꽃놀이로 바꾸고 바로 하나를 터뜨립니다.") {
-        GlassChipGroup(PARTICLE_NAMES, setOf(preset.ordinal), { picked ->
+        KChipGroup(PARTICLE_NAMES, setOf(preset.ordinal), { picked ->
             picked.firstOrNull()?.let { preset = ParticlePreset.entries[it] }
         })
         Box(
@@ -148,16 +148,16 @@ private fun BlobCard(notify: (String) -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
     val gap by animateDpAsState(if (open) 20.dp else 0.dp, spring(dampingRatio = 0.6f, stiffness = 300f), label = "blob-gap")
     DemoCard("액체 버튼과 방울 묶음", "버튼을 누르면 누른 자리가 오목하게 들어갔다가 출렁이며 돌아옵니다. 방울은 가까워지면 녹아 붙고 멀어지면 떨어집니다.") {
-        GlassBlobButton("구매하기", { notify("구매 버튼을 눌렀어요") }, Modifier.fillMaxWidth())
+        KBlobButton("구매하기", { notify("구매 버튼을 눌렀어요") }, Modifier.fillMaxWidth())
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            GlassBlobGroup(Modifier.padding(16.dp), color = Color(0xFF7B61FF)) {
+            KBlobGroup(Modifier.padding(16.dp), color = Color(0xFF7B61FF)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                     BLOB_ICONS.forEach { (name, icon) ->
                         Box(
                             Modifier
                                 .blob()
                                 .size(52.dp)
-                                .clickable(null, GlassIndication(CircleShape, Color.White), role = Role.Button) { open = !open }
+                                .clickable(null, KIndication(CircleShape, Color.White), role = Role.Button) { open = !open }
                                 .semantics { contentDescription = name },
                             contentAlignment = Alignment.Center,
                         ) { Image(rememberVectorPainter(icon), null, Modifier.size(24.dp), colorFilter = ColorFilter.tint(Color.White)) }
@@ -175,7 +175,7 @@ private fun HoloCard() {
     DemoCard("홀로그램 카드", "카드를 누른 채 움직이면 무지개빛 광택이 따라옵니다. 센서를 켜면 기기를 기울여도 움직입니다.") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Label("기울기 센서", 15, FontWeight.SemiBold, Modifier.weight(1f))
-            GlassSwitch(sensor, { sensor = it })
+            KSwitch(sensor, { sensor = it })
         }
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Column(

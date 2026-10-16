@@ -36,7 +36,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * RTL 화면에서 한국어처럼 LTR인 문구는 문단 방향을 내용으로 정해야 끝의 마침표가 앞으로 가지 않는다.
- * 별도 대화 상자나 팝업 창은 Robolectric에서 RTL이 풀리지 않으므로(supportsRtl 없음) 모두 GlassScaffold 안 같은 창에 그린다.
+ * 별도 대화 상자나 팝업 창은 Robolectric에서 RTL이 풀리지 않으므로(supportsRtl 없음) 모두 KineticaScaffold 안 같은 창에 그린다.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -52,7 +52,7 @@ class TextDirectionRtlTest {
         compose.setContent {
             scope = rememberCoroutineScope()
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                GlassScaffold(Modifier.fillMaxSize()) {
+                KineticaScaffold(Modifier.fillMaxSize()) {
                     Box(Modifier.fillMaxSize().background(Color.White))
                     content()
                 }
@@ -86,11 +86,11 @@ class TextDirectionRtlTest {
 
     @Test
     fun `토스트와 스낵바`() {
-        val toast = GlassToastState()
-        val snackbar = GlassSnackbarState()
+        val toast = KToastState()
+        val snackbar = KSnackbarState()
         showRtl {
-            GlassToastHost(toast)
-            GlassSnackbarHost(snackbar)
+            KToastHost(toast)
+            KSnackbarHost(snackbar)
         }
         scope.launch { toast.show("저장했어요.", durationMs = 60_000) }
         scope.launch { snackbar.show("사진을 지웠어요.", actionLabel = "되돌리기", durationMs = 60_000) }
@@ -103,7 +103,7 @@ class TextDirectionRtlTest {
     fun `툴팁`() {
         showRtl {
             Box(Modifier.fillMaxSize()) {
-                Box(Modifier.align(Alignment.Center).size(48.dp).glassTooltip("필터를 바꿔요.", visible = true, onDismiss = {}))
+                Box(Modifier.align(Alignment.Center).size(48.dp).kTooltip("필터를 바꿔요.", visible = true, onDismiss = {}))
             }
         }
 
@@ -112,7 +112,7 @@ class TextDirectionRtlTest {
 
     @Test
     fun `온보딩`() {
-        showRtl { GlassOnboarding(listOf(OnboardingPage("환영해요.", "시작해 볼까요.")), onFinish = {}) }
+        showRtl { KOnboarding(listOf(OnboardingPage("환영해요.", "시작해 볼까요.")), onFinish = {}) }
 
         assertPeriodAtEnd("환영해요.")
         assertPeriodAtEnd("시작해 볼까요.")
@@ -120,7 +120,7 @@ class TextDirectionRtlTest {
 
     @Test
     fun `빈 화면`() {
-        showRtl { GlassEmptyState("결과 없음.", message = "다시 찾아보세요.") }
+        showRtl { KEmptyState("결과 없음.", message = "다시 찾아보세요.") }
 
         assertPeriodAtEnd("결과 없음.")
         assertPeriodAtEnd("다시 찾아보세요.")

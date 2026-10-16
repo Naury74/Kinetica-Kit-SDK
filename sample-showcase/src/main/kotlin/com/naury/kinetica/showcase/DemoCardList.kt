@@ -14,16 +14,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.naury.kinetica.ui.GlassWindowWidth
-import com.naury.kinetica.ui.rememberGlassWindowLayout
+import com.naury.kinetica.ui.KWindowWidth
+import com.naury.kinetica.ui.rememberKWindowLayout
 
 /** 넓은 창(840dp 이상)에서 데모 카드를 두 열로 놓을 때 본문 최대 폭 */
 internal val WIDE_READING_WIDTH = 1120.dp
 
 /** 이 창에서 데모 카드 목록과 상단 바가 함께 쓸 본문 최대 폭. 넓은 창이면 두 열 폭이다. */
 @Composable
-internal fun demoContentWidth(): Dp =
-    if (rememberGlassWindowLayout().widthClass == GlassWindowWidth.Expanded) WIDE_READING_WIDTH else READING_WIDTH
+internal fun demoContentWidth(): Dp = if (rememberKWindowLayout().widthClass == KWindowWidth.Expanded) WIDE_READING_WIDTH else READING_WIDTH
 
 /**
  * 데모 카드 목록. 폰과 펼친 폴더블 세로처럼 좁은 창에서는 한 열, 태블릿 가로처럼 넓은 창에서는 두 열로 놓아 양옆이 비지 않게 한다.

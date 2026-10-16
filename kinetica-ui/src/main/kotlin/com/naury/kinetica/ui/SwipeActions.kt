@@ -400,7 +400,7 @@ private fun ActionButton(action: SwipeAction, pinSide: Int, state: SwipeActionsS
             .clipToBounds()
             .clickable(
                 null,
-                GlassIndication(color = Color.White, pressedAlpha = ACTION_PRESS),
+                KIndication(color = Color.White, pressedAlpha = ACTION_PRESS),
                 role = Role.Button,
                 onClickLabel = action.label,
                 onClick = onClick,

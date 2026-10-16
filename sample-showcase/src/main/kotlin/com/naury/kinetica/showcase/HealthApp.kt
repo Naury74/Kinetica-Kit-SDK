@@ -35,36 +35,37 @@ import com.naury.kinetica.ui.ActivityRings
 import com.naury.kinetica.ui.ChartSeries
 import com.naury.kinetica.ui.ChartSlice
 import com.naury.kinetica.ui.FlipDigits
-import com.naury.kinetica.ui.GlassBarChart
-import com.naury.kinetica.ui.GlassCalendar
-import com.naury.kinetica.ui.GlassCalendarColors
-import com.naury.kinetica.ui.GlassCalendarSelection
-import com.naury.kinetica.ui.GlassChartDefaults
-import com.naury.kinetica.ui.GlassDonutChart
-import com.naury.kinetica.ui.GlassLargeTitleBar
-import com.naury.kinetica.ui.GlassLineChart
-import com.naury.kinetica.ui.GlassRangeSlider
-import com.naury.kinetica.ui.GlassScaffold
-import com.naury.kinetica.ui.GlassSlideToConfirm
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KBarChart
+import com.naury.kinetica.ui.KCalendar
+import com.naury.kinetica.ui.KCalendarColors
+import com.naury.kinetica.ui.KCalendarSelection
+import com.naury.kinetica.ui.KChartDefaults
+import com.naury.kinetica.ui.KDonutChart
+import com.naury.kinetica.ui.KLargeTitleBar
+import com.naury.kinetica.ui.KLineChart
+import com.naury.kinetica.ui.KRangeSlider
+import com.naury.kinetica.ui.KSlideToConfirm
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.MeshGradientBackground
 import com.naury.kinetica.ui.MeshGradients
 import com.naury.kinetica.ui.countdownText
 import com.naury.kinetica.ui.rememberCountdown
-import com.naury.kinetica.ui.rememberGlassCalendarState
-import com.naury.kinetica.ui.rememberGlassLargeTitleState
+import com.naury.kinetica.ui.rememberKCalendarState
+import com.naury.kinetica.ui.rememberKLargeTitleState
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
 /** 건강 앱: 활동 링, 주간 걸음 수, 수면·지출 차트, 운동 달력, 다음 운동까지 플립 카운트다운, 심박 범위. */
 @Composable
 internal fun HealthApp(onBack: () -> Unit) {
-    val title = rememberGlassLargeTitleState()
-    GlassScaffold(
+    val title = rememberKLargeTitleState()
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.LiquidDark,
-        background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Ocean) },
-        topBar = { GlassLargeTitleBar(title, "건강", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH) },
+        surface = demoSurface(HEALTH_APP_LOOK),
+        background = { DemoBackdrop { MeshBackdrop(light = MeshGradients.Candy, dark = MeshGradients.Ocean) } },
+        topBar = { KLargeTitleBar(title, "건강", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().nestedScroll(title.connection),
@@ -93,17 +94,17 @@ private fun RingsCard() {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             ActivityRings(
                 listOf(
-                    ActivityRing(0.82f, GlassChartDefaults.Move, "움직이기"),
-                    ActivityRing(1.24f, GlassChartDefaults.Exercise, "운동하기"),
-                    ActivityRing(0.58f, GlassChartDefaults.Stand, "일어서기"),
+                    ActivityRing(0.82f, KChartDefaults.Move, "움직이기"),
+                    ActivityRing(1.24f, KChartDefaults.Exercise, "운동하기"),
+                    ActivityRing(0.58f, KChartDefaults.Stand, "일어서기"),
                 ),
                 Modifier.size(132.dp),
             )
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // 링 색 글자는 파란 배경에서 대비가 낮아, 색은 앞 점으로만 보이고 글자는 흰색으로 쓴다.
-                RingLegend("움직이기", "410/500kcal", GlassChartDefaults.Move)
-                RingLegend("운동하기", "37/30분", GlassChartDefaults.Exercise)
-                RingLegend("일어서기", "7/12시간", GlassChartDefaults.Stand)
+                RingLegend("움직이기", "410/500kcal", KChartDefaults.Move)
+                RingLegend("운동하기", "37/30분", KChartDefaults.Exercise)
+                RingLegend("일어서기", "7/12시간", KChartDefaults.Stand)
             }
         }
     }
@@ -114,8 +115,8 @@ private fun RingLegend(name: String, value: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(10.dp).background(color, CircleShape))
         Column(Modifier.padding(start = 10.dp)) {
-            Label(name, 13, color = Color.White.copy(alpha = 0.75f))
-            Label(value, 16, FontWeight.SemiBold, color = Color.White)
+            Label(name, 13, color = LocalKineticaContentColor.current.copy(alpha = 0.75f))
+            Label(value, 16, FontWeight.SemiBold)
         }
     }
 }
@@ -123,21 +124,21 @@ private fun RingLegend(name: String, value: String, color: Color) {
 @Composable
 private fun StepsCard() {
     DemoCard("걸음 수", "선이 그려지며 나타납니다. 손가락을 대고 옆으로 움직이면 그날 값이 보입니다.") {
-        GlassLineChart(
+        KLineChart(
             listOf(
                 ChartSeries(
                     listOf(6.2f, 8.1f, 7.4f, 9.8f, 5.6f, 11.2f, 10.4f),
-                    GlassChartDefaults.Blue,
+                    KChartDefaults.Blue,
                     "이번 주",
-                    GlassChartDefaults.fill(GlassChartDefaults.Blue),
+                    KChartDefaults.fill(KChartDefaults.Blue),
                 ),
-                ChartSeries(listOf(5.1f, 6.4f, 7.9f, 6.8f, 7.2f, 8.5f, 6.1f), GlassChartDefaults.Palette[3], "지난주"),
+                ChartSeries(listOf(5.1f, 6.4f, 7.9f, 6.8f, 7.2f, 8.5f, 6.1f), KChartDefaults.Palette[3], "지난주"),
             ),
             Modifier.fillMaxWidth().height(200.dp),
             labels = DAYS,
             valueFormatter = { "${(it * 1000).roundToInt()}걸음" },
         )
-        GlassBarChart(
+        KBarChart(
             listOf(
                 7.2f,
                 6.5f,
@@ -159,12 +160,12 @@ private fun StepsCard() {
 @Composable
 private fun SpendCard() {
     DemoCard("이번 달 지출", "조각을 누르면 튀어나오고 가운데에 금액이 나옵니다.") {
-        GlassDonutChart(
+        KDonutChart(
             listOf(
-                ChartSlice(42f, "식비", GlassChartDefaults.Palette[0]),
-                ChartSlice(18f, "교통", GlassChartDefaults.Palette[1]),
-                ChartSlice(25f, "운동", GlassChartDefaults.Palette[2]),
-                ChartSlice(15f, "기타", GlassChartDefaults.Palette[4]),
+                ChartSlice(42f, "식비", KChartDefaults.Palette[0]),
+                ChartSlice(18f, "교통", KChartDefaults.Palette[1]),
+                ChartSlice(25f, "운동", KChartDefaults.Palette[2]),
+                ChartSlice(15f, "기타", KChartDefaults.Palette[4]),
             ),
             Modifier.size(200.dp).align(Alignment.CenterHorizontally),
             valueFormatter = { "${it.roundToInt()}만 원" },
@@ -177,23 +178,23 @@ private fun HeartRateCard() {
     var range by rememberSaveable(saver = rangeStateSaver) { mutableStateOf(100f..150f) }
     DemoCard("목표 심박 범위", "두 손잡이를 끌어 운동할 때 유지할 심박 범위를 정합니다.") {
         Label("${range.start.roundToInt()}–${range.endInclusive.roundToInt()} bpm", 22, FontWeight.Bold)
-        GlassRangeSlider(range, { range = it }, valueRange = 40f..200f, valueLabel = { "${it.roundToInt()}" })
+        KRangeSlider(range, { range = it }, valueRange = 40f..200f, valueLabel = { "${it.roundToInt()}" })
     }
 }
 
 @Composable
 private fun WorkoutCalendarCard() {
-    val calendar = rememberGlassCalendarState()
-    var selection by rememberSaveable(saver = calendarRangeSaver) { mutableStateOf<GlassCalendarSelection>(GlassCalendarSelection.Range()) }
+    val calendar = rememberKCalendarState()
+    var selection by rememberSaveable(saver = calendarRangeSaver) { mutableStateOf<KCalendarSelection>(KCalendarSelection.Range()) }
     val today = remember { LocalDate.now() }
     DemoCard("운동 기록", "운동한 날에는 점이 찍혀 있습니다. 두 날을 누르면 그 기간이 이어진 띠로 칠해집니다.") {
-        GlassCalendar(
+        KCalendar(
             calendar,
             selection,
             { selection = it },
-            events = { day -> if (day.isBefore(today) && day.dayOfMonth % 3 != 0) listOf(GlassChartDefaults.Exercise) else emptyList() },
+            events = { day -> if (day.isBefore(today) && day.dayOfMonth % 3 != 0) listOf(KChartDefaults.Exercise) else emptyList() },
             // 파란 배경에서도 주말 글자가 읽히도록 밝은 색을 쓴다.
-            colors = GlassCalendarColors(sunday = Color(0xFFFF9A8F), saturday = Color(0xFFA8DCFF)),
+            colors = KCalendarColors(sunday = Color(0xFFFF9A8F), saturday = Color(0xFFA8DCFF)),
         )
     }
 }
@@ -205,19 +206,21 @@ private fun NextWorkoutCard() {
     var started by remember { mutableStateOf(false) }
     DemoCard("다음 운동까지", "숫자가 바뀔 때마다 위 반쪽이 접혀 내려갑니다.") {
         FlipDigits(countdownText(left), Modifier.align(Alignment.CenterHorizontally))
-        GlassSlideToConfirm(if (started) "운동 시작됨" else "밀어서 지금 시작", { started = true }, Modifier.fillMaxWidth(), confirmed = started)
+        KSlideToConfirm(if (started) "운동 시작됨" else "밀어서 지금 시작", { started = true }, Modifier.fillMaxWidth(), confirmed = started)
     }
 }
 
 private val DAYS = listOf("월", "화", "수", "목", "금", "토", "일")
 
 /** 기간 선택을 시작일, 끝일(epoch day, 없으면 null)로 저장한다. 하루 선택은 이 화면에서 쓰지 않는다. */
-private val calendarRangeSaver = Saver<MutableState<GlassCalendarSelection>, ArrayList<Long?>>(
+private val calendarRangeSaver = Saver<MutableState<KCalendarSelection>, ArrayList<Long?>>(
     save = { state ->
-        val range = state.value as? GlassCalendarSelection.Range ?: GlassCalendarSelection.Range()
+        val range = state.value as? KCalendarSelection.Range ?: KCalendarSelection.Range()
         arrayListOf(range.start?.toEpochDay(), range.end?.toEpochDay())
     },
     restore = { saved ->
-        mutableStateOf(GlassCalendarSelection.Range(saved[0]?.let(LocalDate::ofEpochDay), saved[1]?.let(LocalDate::ofEpochDay)))
+        mutableStateOf(KCalendarSelection.Range(saved[0]?.let(LocalDate::ofEpochDay), saved[1]?.let(LocalDate::ofEpochDay)))
     },
 )
+
+private val HEALTH_APP_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = true)

@@ -54,29 +54,34 @@ import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.CoachMarkHost
 import com.naury.kinetica.ui.CoachMarkState
 import com.naury.kinetica.ui.CoachStep
-import com.naury.kinetica.ui.GlassAdaptiveDefaults
-import com.naury.kinetica.ui.GlassDrawer
-import com.naury.kinetica.ui.GlassEmptyIcon
-import com.naury.kinetica.ui.GlassEmptyIconKind
-import com.naury.kinetica.ui.GlassEmptyState
-import com.naury.kinetica.ui.GlassExpandable
-import com.naury.kinetica.ui.GlassListDetail
-import com.naury.kinetica.ui.GlassScaffold
-import com.naury.kinetica.ui.GlassSnackbarHost
-import com.naury.kinetica.ui.GlassSnackbarResult
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.GlassSurface
-import com.naury.kinetica.ui.LocalGlassContentColor
+import com.naury.kinetica.ui.KAdaptiveDefaults
+import com.naury.kinetica.ui.KDrawer
+import com.naury.kinetica.ui.KEmptyIcon
+import com.naury.kinetica.ui.KEmptyIconKind
+import com.naury.kinetica.ui.KEmptyState
+import com.naury.kinetica.ui.KExpandable
+import com.naury.kinetica.ui.KListDetail
+import com.naury.kinetica.ui.KSnackbarHost
+import com.naury.kinetica.ui.KSnackbarResult
+import com.naury.kinetica.ui.KSurface
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.KineticaTheme
+import com.naury.kinetica.ui.LocalKineticaContentColor
+import com.naury.kinetica.ui.LocalKineticaSurface
 import com.naury.kinetica.ui.MenuCloseIcon
 import com.naury.kinetica.ui.ReorderableItem
+import com.naury.kinetica.ui.SurfaceStyle
+import com.naury.kinetica.ui.SurfaceStyles
 import com.naury.kinetica.ui.SwipeAction
 import com.naury.kinetica.ui.SwipeActionsRow
 import com.naury.kinetica.ui.coachMarkTarget
-import com.naury.kinetica.ui.glassBadge
-import com.naury.kinetica.ui.glassClickable
+import com.naury.kinetica.ui.kBadge
+import com.naury.kinetica.ui.kClickable
+import com.naury.kinetica.ui.kSurface
 import com.naury.kinetica.ui.rememberCoachMarkState
-import com.naury.kinetica.ui.rememberGlassDrawerState
-import com.naury.kinetica.ui.rememberGlassSnackbarState
+import com.naury.kinetica.ui.rememberKDrawerState
+import com.naury.kinetica.ui.rememberKSnackbarState
 import com.naury.kinetica.ui.rememberReorderableListState
 import com.naury.kinetica.ui.rememberSwipeActionsGroup
 import com.naury.kinetica.ui.rememberSwipeActionsState
@@ -90,20 +95,23 @@ import kotlinx.coroutines.launch
 internal fun MailApp(onBack: () -> Unit) {
     var selected by rememberSaveable { mutableStateOf<Int?>(null) }
     val mails = remember { mutableStateListOf<Mail>().apply { addAll(MAILS) } }
-    // 두 칸 배치에서는 목록이 옆에 그대로 보이므로 상세 칸에 뒤로 버튼을 두지 않는다.
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val twoPane = maxWidth >= GlassAdaptiveDefaults.TwoPaneMinWidth
-        MailPanes(selected, { selected = it }, mails, twoPane, onBack)
+    // 코치 마크와 서랍은 스캐폴드 밖에 뜨므로 테마로 같은 표면을 넘긴다.
+    KineticaTheme(surface = demoSurface(MAIL_LOOK)) {
+        // 두 칸 배치에서는 목록이 옆에 그대로 보이므로 상세 칸에 뒤로 버튼을 두지 않는다.
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val twoPane = maxWidth >= KAdaptiveDefaults.TwoPaneMinWidth
+            MailPanes(selected, { selected = it }, mails, twoPane, onBack)
+        }
     }
 }
 
 @Composable
 private fun MailPanes(selected: Int?, select: (Int?) -> Unit, mails: SnapshotStateList<Mail>, twoPane: Boolean, onBack: () -> Unit) {
-    GlassListDetail(
+    KListDetail(
         selected,
         onBack = { select(null) },
         modifier = Modifier.fillMaxSize(),
-        style = GlassStyles.OneUi,
+        surface = demoSurface(MAIL_LOOK),
         emptyDetail = { NoMailSelected() },
         list = {
             MailList(mails, selected, onBack, onOpen = { select(it) }, onDelete = { if (selected == it) select(null) })
@@ -113,27 +121,27 @@ private fun MailPanes(selected: Int?, select: (Int?) -> Unit, mails: SnapshotSta
 
 @Composable
 private fun MailList(mails: SnapshotStateList<Mail>, selected: Int?, onBack: () -> Unit, onOpen: (Int) -> Unit, onDelete: (Int) -> Unit) {
-    val drawer = rememberGlassDrawerState()
+    val drawer = rememberKDrawerState()
     val coach = rememberCoachMarkState()
     var toured by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { if (!toured) coach.start() }
-    GlassDrawer(drawerContent = { MailFolders(onBack) { scope.launch { drawer.close() } } }, state = drawer) {
-        GlassScaffold(
+    KDrawer(drawerContent = { MailFolders(onBack) { scope.launch { drawer.close() } } }, state = drawer) {
+        KineticaScaffold(
             Modifier.fillMaxSize(),
-            style = GlassStyles.OneUi,
-            background = { Aurora(Modifier.fillMaxSize(), dark = false) },
+            surface = demoSurface(MAIL_LOOK),
+            background = { DemoBackdrop() },
             topBar = {
                 // 목록이 제목 아래로 지나갈 때 글자가 겹쳐 보이지 않게 위쪽을 화면 바탕색으로 덮고 아래로 갈수록 투명하게 한다.
                 Row(
                     Modifier.fillMaxWidth()
-                        .background(Brush.verticalGradient(0f to HEADER_SCRIM, 0.7f to HEADER_SCRIM, 1f to HEADER_SCRIM.copy(alpha = 0f)))
+                        .background(headerScrim())
                         .windowInsetsPadding(
                             WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                         ).padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    GlassSurface(
+                    KSurface(
                         { scope.launch { drawer.open() } },
                         Modifier
                             .size(44.dp)
@@ -161,7 +169,7 @@ private fun Inbox(
     val listState = rememberLazyListState()
     val reorder = rememberReorderableListState(listState) { from, to -> mails.add(to - 1, mails.removeAt(from - 1)) }
     val group = rememberSwipeActionsGroup()
-    val snackbar = rememberGlassSnackbarState()
+    val snackbar = rememberKSnackbarState()
     val scope = rememberCoroutineScope()
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -184,7 +192,7 @@ private fun Inbox(
                             val index = mails.indexOf(mail)
                             mails.remove(mail)
                             onDelete(mail.id)
-                            scope.launch { if (snackbar.show("메일을 지웠어요", "되돌리기") == GlassSnackbarResult.Action) mails.add(index, mail) }
+                            scope.launch { if (snackbar.show("메일을 지웠어요", "되돌리기") == KSnackbarResult.Action) mails.add(index, mail) }
                         },
                         SwipeAction("보관", Color(0xFF0A84FF)) {},
                     ),
@@ -196,7 +204,7 @@ private fun Inbox(
             }
         }
     }
-    GlassSnackbarHost(snackbar)
+    KSnackbarHost(snackbar)
 }
 
 @Composable
@@ -205,13 +213,14 @@ private fun MailRow(mail: Mail, selected: Boolean, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .clip(MAIL_ROW_SHAPE)
-            .background(if (selected) Color(0xFFE3E9FF) else Color.White)
-            .glassClickable(MAIL_ROW_SHAPE, onClick = onClick)
+            .kSurface(LocalKineticaSurface.current, MAIL_ROW_SHAPE)
+            .background(if (selected) KineticaTheme.colors.accent.copy(alpha = 0.14f) else Color.Transparent)
+            .kClickable(MAIL_ROW_SHAPE, onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(42.dp).background(mail.color, CircleShape).glassBadge(
+            Modifier.size(42.dp).background(mail.color, CircleShape).kBadge(
                 mail.unread.takeIf {
                     it > 0
                 },
@@ -221,8 +230,8 @@ private fun MailRow(mail: Mail, selected: Boolean, onClick: () -> Unit) {
             Label(mail.from.take(1), 17, FontWeight.Bold, color = Color.White)
         }
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
-            Label(mail.from, 15, FontWeight.SemiBold, color = Color(0xFF15161A))
-            Label(mail.subject, 13, color = Color(0xFF55575E))
+            Label(mail.from, 15, FontWeight.SemiBold)
+            Label(mail.subject, 13, color = LocalKineticaContentColor.current.copy(alpha = 0.62f))
         }
     }
 }
@@ -230,10 +239,10 @@ private fun MailRow(mail: Mail, selected: Boolean, onClick: () -> Unit) {
 /** 메일 본문. 좁은 화면에서는 목록 위로 밀려 들어오므로 배경을 직접 칠한다. */
 @Composable
 private fun MailDetail(mail: Mail, onClose: (() -> Unit)?) {
-    GlassScaffold(
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.OneUi,
-        background = { Aurora(Modifier.fillMaxSize(), dark = false) },
+        surface = demoSurface(MAIL_LOOK),
+        background = { DemoBackdrop() },
         topBar = { DemoTopBar(mail.from, "받은편지함", onClose) },
     ) { padding ->
         ReadingContainer { MailBody(mail, padding.calculateTopPadding()) }
@@ -262,10 +271,10 @@ private fun MailBody(mail: Mail, top: Dp) {
             }
             Column(Modifier.padding(start = 12.dp)) {
                 Label(mail.from, 15, FontWeight.SemiBold)
-                Label("나에게 · 오전 9:41", 12, color = LocalGlassContentColor.current.copy(alpha = 0.6f))
+                Label("나에게 · 오전 9:41", 12, color = LocalKineticaContentColor.current.copy(alpha = 0.6f))
             }
         }
-        GlassSurface(Modifier.fillMaxWidth()) {
+        KSurface(Modifier.fillMaxWidth()) {
             Label(mail.body, 15, modifier = Modifier.padding(18.dp))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -280,11 +289,11 @@ private fun MailBody(mail: Mail, top: Dp) {
 private fun NoMailSelected() {
     Box(Modifier.fillMaxSize()) {
         Aurora(Modifier.fillMaxSize(), dark = false)
-        GlassEmptyState(
+        KEmptyState(
             "메일을 골라 주세요",
             Modifier.align(Alignment.Center).padding(24.dp),
             message = "왼쪽 목록에서 메일을 누르면 여기에 본문이 열립니다.",
-            art = { GlassEmptyIcon(GlassEmptyIconKind.EmptyInbox, Modifier.size(72.dp)) },
+            art = { KEmptyIcon(KEmptyIconKind.EmptyInbox, Modifier.size(72.dp)) },
         )
     }
 }
@@ -292,7 +301,7 @@ private fun NoMailSelected() {
 @Composable
 private fun Tips() {
     var open by rememberSaveable { mutableStateOf(false) }
-    GlassExpandable(open, { open = it }, header = { Label("이 화면에서 해 볼 것", 15, FontWeight.SemiBold) }) {
+    KExpandable(open, { open = it }, header = { Label("이 화면에서 해 볼 것", 15, FontWeight.SemiBold) }) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Label("• 메일을 왼쪽으로 밀면 보관·삭제, 끝까지 밀면 바로 삭제", 13)
             Label("• 오른쪽으로 밀면 읽음 표시", 13)
@@ -317,8 +326,8 @@ private fun MailFolders(onBack: () -> Unit, close: () -> Unit) {
                 Modifier
                     .fillMaxWidth()
                     .clip(FOLDER_SHAPE)
-                    .background(if (selected) LocalGlassContentColor.current.copy(alpha = 0.08f) else Color.Transparent)
-                    .glassClickable(FOLDER_SHAPE) {
+                    .background(if (selected) LocalKineticaContentColor.current.copy(alpha = 0.08f) else Color.Transparent)
+                    .kClickable(FOLDER_SHAPE) {
                         current = index
                         close()
                     }
@@ -364,3 +373,25 @@ private val TOUR = listOf(
 )
 
 private val HEADER_SCRIM = Color(0xF2F6F5FB)
+private val HEADER_SCRIM_DARK = Color(0xF20E0F14)
+
+/** 목록이 제목 아래로 지나갈 때 글자가 겹치지 않게 덮는 그라디언트. 단색과 톤 표면이면 그 바탕색을 쓴다. */
+@Composable
+private fun headerScrim(): Brush {
+    val surface = LocalKineticaSurface.current
+    val color = when {
+        surface !is SurfaceStyle.Glass -> surface.background.copy(alpha = 0.95f)
+        surface.isDark -> HEADER_SCRIM_DARK
+        else -> HEADER_SCRIM
+    }
+    return Brush.verticalGradient(0f to color, 0.7f to color, 1f to color.copy(alpha = 0f))
+}
+
+private val MAIL_LOOK =
+    DemoLook(
+        GlassStyles.OneUi,
+        GlassStyles.OneUiDark,
+        defaultDark = false,
+        solidLight = SurfaceStyles.OneUi,
+        solidDark = SurfaceStyles.OneUiDark,
+    )

@@ -45,7 +45,9 @@ class EffectsTest {
     @Test
     fun `메시 그라디언트는 바탕을 색으로 채우고 잘못된 색 수는 거부한다`() {
         compose.setContent {
-            GlassScaffold(Modifier.fillMaxSize(), background = { MeshGradientBackground(Modifier.testTag("mesh"), MeshGradients.Sunset) }) {
+            KineticaScaffold(Modifier.fillMaxSize(), background = {
+                MeshGradientBackground(Modifier.testTag("mesh"), MeshGradients.Sunset)
+            }) {
                 BasicText("위 콘텐츠")
             }
         }

@@ -72,12 +72,12 @@ class HostUsageTest {
         "shake" to { Modifier.shake(0) },
         "sparkle" to { Modifier.sparkle() },
         "spotlight" to { Modifier.spotlight() },
-        "glassBadge" to { Modifier.glassBadge(3) },
+        "kBadge" to { Modifier.kBadge(3) },
         "skeleton" to { Modifier.skeleton(visible = false) },
         "glass" to { Modifier.glass(shape = CircleShape) },
-        "glassContextMenu" to { Modifier.glassContextMenu(listOf(GlassMenuItem("삭제") {})) },
+        "kContextMenu" to { Modifier.kContextMenu(listOf(KMenuItem("삭제") {})) },
         "tooltipOnLongPress" to { Modifier.tooltipOnLongPress("도움말") },
-        "expandSource" to { Modifier.expandSource(rememberGlassExpandState(), "card") },
+        "expandSource" to { Modifier.expandSource(rememberKExpandState(), "card") },
         "coachMarkTarget" to { Modifier.coachMarkTarget(rememberCoachMarkState(), "target") },
     )
 
@@ -135,27 +135,30 @@ class HostUsageTest {
     }
 
     @Test
-    fun `GlassTheme은 다크 스타일과 강조색과 글꼴을 컴포넌트 기본값으로 넘긴다`() {
+    fun `KineticaTheme은 다크 스타일과 강조색과 글꼴을 컴포넌트 기본값으로 넘긴다`() {
         var style: GlassStyle? = null
         var ink = Color.Unspecified
         var scaffoldStyle: GlassStyle? = null
+        var surface: SurfaceStyle? = null
         compose.setContent {
-            GlassTheme(
+            KineticaTheme(
                 darkTheme = true,
-                colors = GlassColors(accent = Color.Red),
+                colors = KineticaColors(accent = Color.Red),
                 // 줄 높이 같은 크기 값은 컴포넌트가 정하므로 무시되어야 한다.
                 textStyle = TextStyle(fontFamily = FontFamily.Serif, fontSize = 40.sp, lineHeight = 60.sp),
             ) {
                 style = LocalGlassStyle.current
-                ink = LocalGlassContentColor.current
-                GlassScaffold {
+                surface = KineticaTheme.surface
+                ink = LocalKineticaContentColor.current
+                KineticaScaffold {
                     scaffoldStyle = LocalGlassStyle.current
-                    GlassButton("결제", {}, Modifier.testTag("pay"))
+                    KButton("결제", {}, Modifier.testTag("pay"))
                 }
             }
         }
         assertThat(style).isEqualTo(GlassStyles.LiquidDark)
         assertThat(scaffoldStyle).isEqualTo(GlassStyles.LiquidDark)
+        assertThat(surface).isEqualTo(SurfaceStyles.LiquidDark)
         assertThat(ink).isEqualTo(Color.White)
 
         val pixels = compose.onNodeWithTag("pay").captureToImage().toPixelMap()
@@ -192,7 +195,7 @@ class HostUsageTest {
                             .sparkle()
                             .jellyPress()
                             .motionTilt()
-                            .glassBadge(i % 5)
+                            .kBadge(i % 5)
                             .skeleton(visible = i % 2 == 0)
                             .glass(),
                     ) { ShimmerText("항목 $i") }

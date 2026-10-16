@@ -74,7 +74,7 @@ class HostFocusTest {
 
     private fun checkModal(modal: @Composable () -> Unit) {
         compose.setContent {
-            GlassScaffold(Modifier.fillMaxSize()) {
+            KineticaScaffold(Modifier.fillMaxSize()) {
                 Background()
                 modal()
             }
@@ -101,13 +101,13 @@ class HostFocusTest {
     }
 
     @Test
-    fun `GlassScaffold 안 다이얼로그는 초점을 안으로 가져가고 닫히면 연 버튼으로 돌려준다`() {
-        checkModal { GlassDialog(open, { open = false }) { Panel() } }
+    fun `KineticaScaffold 안 다이얼로그는 초점을 안으로 가져가고 닫히면 연 버튼으로 돌려준다`() {
+        checkModal { KDialog(open, { open = false }) { Panel() } }
     }
 
     @Test
-    fun `GlassScaffold 안 시트도 같은 초점 규칙을 따른다`() {
-        checkModal { GlassSheet(open, { open = false }) { Panel() } }
+    fun `KineticaScaffold 안 시트도 같은 초점 규칙을 따른다`() {
+        checkModal { KSheet(open, { open = false }) { Panel() } }
     }
 
     /**
@@ -119,7 +119,7 @@ class HostFocusTest {
         compose.setContent {
             Box(Modifier.fillMaxSize()) {
                 Background()
-                GlassDialog(open, { open = false }) { Panel() }
+                KDialog(open, { open = false }) { Panel() }
             }
         }
         compose.runOnIdle { opener.requestFocus() }
@@ -136,9 +136,9 @@ class HostFocusTest {
     fun `터치로 연 시트는 안쪽 입력란에 저절로 초점을 주지 않고 뒤 입력란 초점은 걷는다`() {
         val field = FocusRequester()
         compose.setContent {
-            GlassScaffold(Modifier.fillMaxSize()) {
+            KineticaScaffold(Modifier.fillMaxSize()) {
                 androidx.compose.foundation.text.BasicTextField("", {}, Modifier.testTag("back").focusRequester(field))
-                GlassSheet(open, { open = false }) { androidx.compose.foundation.text.BasicTextField("", {}, Modifier.testTag("inside")) }
+                KSheet(open, { open = false }) { androidx.compose.foundation.text.BasicTextField("", {}, Modifier.testTag("inside")) }
             }
         }
         compose.runOnIdle { field.requestFocus() }
@@ -152,9 +152,9 @@ class HostFocusTest {
     @Test
     fun `컨텍스트 메뉴가 열리면 뒤 화면은 TalkBack에서 숨는다`() {
         compose.setContent {
-            GlassScaffold(Modifier.fillMaxSize()) {
+            KineticaScaffold(Modifier.fillMaxSize()) {
                 Column {
-                    BasicText("사진", Modifier.testTag("photo").glassContextMenu(listOf(GlassMenuItem("복사") {})))
+                    BasicText("사진", Modifier.testTag("photo").kContextMenu(listOf(KMenuItem("복사") {})))
                     BasicText("뒤 버튼", Modifier.clickable { })
                 }
             }
@@ -175,7 +175,7 @@ class HostFocusTest {
         lateinit var coach: CoachMarkState
         compose.setContent {
             coach = rememberCoachMarkState()
-            GlassScaffold(Modifier.fillMaxSize()) {
+            KineticaScaffold(Modifier.fillMaxSize()) {
                 BasicText("뒤 버튼", Modifier.coachMarkTarget(coach, "back").clickable { })
                 CoachMarkHost(coach, listOf(CoachStep("back", "안내", "여기를 누르세요")))
             }
@@ -192,13 +192,13 @@ class HostFocusTest {
 
     @Test
     fun `토스트와 스낵바는 뒤 화면을 숨기지 않는다`() {
-        val toast = GlassToastState()
+        val toast = KToastState()
         lateinit var scope: CoroutineScope
         compose.setContent {
             scope = rememberCoroutineScope()
-            GlassScaffold(Modifier.fillMaxSize()) {
+            KineticaScaffold(Modifier.fillMaxSize()) {
                 BasicText("뒤 버튼", Modifier.clickable { })
-                GlassToastHost(toast)
+                KToastHost(toast)
             }
         }
         compose.mainClock.autoAdvance = false
@@ -210,12 +210,12 @@ class HostFocusTest {
 
     @Test
     fun `서랍이 열리면 뒤 화면은 숨고 초점은 서랍 안으로 들어갔다가 닫히면 돌아온다`() {
-        lateinit var drawer: GlassDrawerState
+        lateinit var drawer: KDrawerState
         lateinit var scope: CoroutineScope
         compose.setContent {
-            drawer = rememberGlassDrawerState()
+            drawer = rememberKDrawerState()
             scope = rememberCoroutineScope()
-            GlassDrawer(drawerContent = { Panel() }, state = drawer) { Background() }
+            KDrawer(drawerContent = { Panel() }, state = drawer) { Background() }
         }
         compose.runOnIdle { opener.requestFocus() }
         scope.launch { drawer.open() }

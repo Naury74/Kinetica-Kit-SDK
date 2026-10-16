@@ -26,11 +26,11 @@ import com.naury.kinetica.board.KineticaBoardView
 import com.naury.kinetica.player.KineticaPlayerView
 import com.naury.kinetica.presets.EffectPresets
 import com.naury.kinetica.render.ViewEffects
-import com.naury.kinetica.ui.view.GlassDialogs
-import com.naury.kinetica.ui.view.GlassPopupHandle
-import com.naury.kinetica.ui.view.GlassPopupOptions
-import com.naury.kinetica.ui.view.GlassSheets
-import com.naury.kinetica.ui.view.GlassToasts
+import com.naury.kinetica.ui.view.KDialogs
+import com.naury.kinetica.ui.view.KPopupHandle
+import com.naury.kinetica.ui.view.KPopupOptions
+import com.naury.kinetica.ui.view.KSheets
+import com.naury.kinetica.ui.view.KToasts
 
 /** AppCompat + CoordinatorLayout + Fragment 두 개로 만든 XML 호스트 화면. Navigation component 없이 FragmentManager 뒤로 가기 스택을 쓴다. */
 open class XmlHostActivity : AppCompatActivity() {
@@ -50,7 +50,7 @@ open class XmlHostActivity : AppCompatActivity() {
     }
 }
 
-/** RecyclerView 항목마다 GlassSurfaceView와 ViewEffects를 붙인 목록. */
+/** RecyclerView 항목마다 KSurfaceView와 ViewEffects를 붙인 목록. */
 class ListFragment : Fragment(R.layout.fragment_list) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val last = view.findViewById<TextView>(R.id.lastClicked)
@@ -90,7 +90,7 @@ private class RowAdapter(private val onClick: (Int) -> Unit, private val onOpen:
 
 /** ViewPager2 안에 보드와 재생기를 두고, Fragment에서 글래스 시트, 다이얼로그, 토스트를 부르는 화면. */
 class DetailFragment : Fragment(R.layout.fragment_detail) {
-    private var sheet: GlassPopupHandle? = null
+    private var sheet: KPopupHandle? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val position = requireArguments().getInt("position")
@@ -101,7 +101,7 @@ class DetailFragment : Fragment(R.layout.fragment_detail) {
         view.findViewById<ViewPager2>(R.id.pager).adapter = PageAdapter(board) { event.text = "이벤트: $it" }
 
         view.findViewById<Button>(R.id.openSheet).setOnClickListener {
-            val handle = GlassSheets.show(requireActivity(), R.layout.sheet_form, GlassPopupOptions(title = "메모", lifecycleOwner = viewLifecycleOwner))
+            val handle = KSheets.show(requireActivity(), R.layout.sheet_form, KPopupOptions(title = "메모", lifecycleOwner = viewLifecycleOwner))
             handle.contentView?.findViewById<Button>(R.id.sheetClose)?.setOnClickListener {
                 event.text = "이벤트: 시트 저장 " + handle.contentView?.findViewById<EditText>(R.id.sheetInput)?.text
                 handle.dismiss()
@@ -111,9 +111,9 @@ class DetailFragment : Fragment(R.layout.fragment_detail) {
         }
         view.findViewById<Button>(R.id.openDialog).setOnClickListener {
             val body = TextView(requireContext()).apply { text = "XML 다이얼로그 내용"; setPadding(48, 48, 48, 48) }
-            GlassDialogs.show(requireActivity(), body, GlassPopupOptions(title = "확인", lifecycleOwner = viewLifecycleOwner))
+            KDialogs.show(requireActivity(), body, KPopupOptions(title = "확인", lifecycleOwner = viewLifecycleOwner))
         }
-        view.findViewById<Button>(R.id.showToast).setOnClickListener { GlassToasts.show(requireActivity(), "XML 토스트") }
+        view.findViewById<Button>(R.id.showToast).setOnClickListener { KToasts.show(requireActivity(), "XML 토스트") }
     }
 
     companion object {

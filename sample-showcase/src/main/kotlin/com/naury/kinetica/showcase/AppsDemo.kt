@@ -15,16 +15,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.GlassSurface
-import com.naury.kinetica.ui.LocalGlassContentColor
+import com.naury.kinetica.ui.KSurface
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.MeshGradientBackground
 import com.naury.kinetica.ui.MeshGradients
 import com.naury.kinetica.ui.PushNavigation
@@ -51,10 +52,10 @@ internal fun AppsDemo(onBack: () -> Unit) {
 @Composable
 private fun AppsHome(onBack: () -> Unit, open: (String) -> Unit) {
     val list = rememberLazyListState()
-    GlassScaffold(
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.LiquidDark,
-        background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Midnight) },
+        surface = demoSurface(APPS_DEMO_LOOK),
+        background = { DemoBackdrop { MeshBackdrop(light = MeshGradients.Candy, dark = MeshGradients.Midnight) } },
         topBar = { DemoTopBar("앱 화면 예", "컴포넌트를 조합해 만든 실제 앱 같은 화면", onBack, scrolled = { list.canScrollBackward }) },
     ) { padding ->
         LazyColumn(
@@ -76,13 +77,13 @@ private fun AppsHome(onBack: () -> Unit, open: (String) -> Unit) {
 
 @Composable
 private fun AppEntry(app: AppInfo, onClick: () -> Unit) {
-    GlassSurface(onClick, Modifier.fillMaxWidth().jellyPress(0.04f)) {
+    KSurface(onClick, Modifier.fillMaxWidth().jellyPress(0.04f)) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Label(app.title, 19, FontWeight.Bold)
-                Label(app.summary, 13, color = LocalGlassContentColor.current.copy(alpha = 0.72f))
+                Label(app.summary, 13, color = LocalKineticaContentColor.current.copy(alpha = 0.72f))
             }
-            ShowcaseIcon(ShowcaseIcons.Chevron, 20.dp, LocalGlassContentColor.current.copy(alpha = 0.6f))
+            ShowcaseIcon(ShowcaseIcons.Chevron, 20.dp, LocalKineticaContentColor.current.copy(alpha = 0.6f))
         }
     }
 }
@@ -97,3 +98,5 @@ private val APPS = listOf(
     AppInfo("mail", "메일", "메일을 누르면 본문이 열리고, 펼친 폴더블이나 태블릿에서는 목록과 본문이 두 칸으로 나란히 보입니다. 밀어서 보관·삭제, 길게 눌러 순서 바꾸기, 서랍 메뉴도 있습니다."),
     AppInfo("health", "건강", "활동 링, 그려지며 나타나는 선 그래프, 막대·도넛 차트, 달력, 플립 카운트다운, 범위 슬라이더."),
 )
+
+private val APPS_DEMO_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = true)

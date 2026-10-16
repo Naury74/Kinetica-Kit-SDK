@@ -55,7 +55,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="Compose 코드 없이 KineticaBoardView, KineticaPlayerView, GlassSurfaceView를 레이아웃 XML에 넣고, 글래스 시트와 다이얼로그, 토스트는 코드 한 줄로 띄웁니다."
+        android:text="Compose 코드 없이 KineticaBoardView, KineticaPlayerView, KSurfaceView를 레이아웃 XML에 넣고, 글래스 시트와 다이얼로그, 토스트는 코드 한 줄로 띄웁니다."
         android:textColor="@color/xml_body"
         android:textSize="13sp" />
 
@@ -67,7 +67,7 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/glass_sheet"
+            android:id="@+id/k_sheet"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="0dp"
             android:layout_height="44dp"
@@ -75,7 +75,7 @@
             android:text="시트" />
 
         <Button
-            android:id="@+id/glass_dialog"
+            android:id="@+id/k_dialog"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="0dp"
             android:layout_height="44dp"
@@ -84,7 +84,7 @@
             android:text="다이얼로그" />
 
         <Button
-            android:id="@+id/glass_toast"
+            android:id="@+id/k_toast"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="0dp"
             android:layout_height="44dp"
@@ -161,7 +161,7 @@
             app:kinetica_fit="responsive" />
 
             <!-- 뒤에 그려진 재생기 화면을 블러 처리해 비추는 글래스 태그. 서버에서 받은 장면이라는 것을 알려 준다. -->
-            <com.naury.kinetica.ui.view.GlassSurfaceView
+            <com.naury.kinetica.ui.view.KSurfaceView
                 android:id="@+id/promo_caption"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -169,7 +169,7 @@
                 android:layout_marginTop="30dp"
                 android:layout_marginEnd="36dp"
                 app:kinetica_cornerRadius="14dp"
-                app:kinetica_glassStyle="liquid">
+                app:kinetica_surfaceStyle="liquid">
 
                 <TextView
                     android:id="@+id/promo_caption_text"
@@ -180,7 +180,7 @@
                     android:text="실시간"
                     android:textSize="12sp"
                     android:textStyle="bold" />
-            </com.naury.kinetica.ui.view.GlassSurfaceView>
+            </com.naury.kinetica.ui.view.KSurfaceView>
     </FrameLayout>
 </LinearLayout>
 </androidx.core.widget.NestedScrollView>

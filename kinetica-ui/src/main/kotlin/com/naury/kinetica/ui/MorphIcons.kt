@@ -28,13 +28,13 @@ import kotlin.math.sin
  * 아이콘만 그리므로 TalkBack 이름과 클릭은 감싸는 버튼에 둔다.
  *
  * ```kotlin
- * GlassButton(..., onClick = { playing = !playing }) { PlayPauseIcon(playing) }
+ * KButton(..., onClick = { playing = !playing }) { PlayPauseIcon(playing) }
  * ```
  *
  * @param playing true면 일시정지 막대(재생 중), false면 재생 삼각형을 그린다.
  */
 @Composable
-public fun PlayPauseIcon(playing: Boolean, modifier: Modifier = Modifier, color: Color = LocalGlassContentColor.current) {
+public fun PlayPauseIcon(playing: Boolean, modifier: Modifier = Modifier, color: Color = LocalKineticaContentColor.current) {
     val progress = morphProgress(playing)
     val paint = remember { MorphPaint() }
     Canvas(modifier.size(ICON_SIZE)) {
@@ -68,7 +68,7 @@ public fun PlayPauseIcon(playing: Boolean, modifier: Modifier = Modifier, color:
  * @param open true면 ×, false면 세 줄을 그린다.
  */
 @Composable
-public fun MenuCloseIcon(open: Boolean, modifier: Modifier = Modifier, color: Color = LocalGlassContentColor.current) {
+public fun MenuCloseIcon(open: Boolean, modifier: Modifier = Modifier, color: Color = LocalKineticaContentColor.current) {
     val progress = morphProgress(open)
     Canvas(modifier.size(ICON_SIZE)) {
         val p = progress.value
@@ -91,7 +91,7 @@ public fun MenuCloseIcon(open: Boolean, modifier: Modifier = Modifier, color: Co
  * @param open true면 ×, false면 +를 그린다.
  */
 @Composable
-public fun PlusCloseIcon(open: Boolean, modifier: Modifier = Modifier, color: Color = LocalGlassContentColor.current) {
+public fun PlusCloseIcon(open: Boolean, modifier: Modifier = Modifier, color: Color = LocalKineticaContentColor.current) {
     val progress = morphProgress(open)
     Canvas(modifier.size(ICON_SIZE)) {
         val stroke = size.minDimension * STROKE_RATIO

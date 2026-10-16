@@ -45,18 +45,18 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import com.naury.kinetica.ui.GlassExpandHost
-import com.naury.kinetica.ui.GlassExpandState
-import com.naury.kinetica.ui.GlassIconButton
-import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.GlassSurface
-import com.naury.kinetica.ui.LocalGlassContentColor
+import com.naury.kinetica.ui.KExpandHost
+import com.naury.kinetica.ui.KExpandState
+import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KSurface
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.PushNavigation
 import com.naury.kinetica.ui.expandSource
-import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.jellyPress
-import com.naury.kinetica.ui.rememberGlassExpandState
+import com.naury.kinetica.ui.kClickable
+import com.naury.kinetica.ui.rememberKExpandState
 
 /**
  * 화면 이동 데모. 카드를 누르면 그 자리에서 상세 화면으로 커지고, 아래로 끌면 닫힌다. 목록 항목을 누르면 iOS처럼 다음 화면이
@@ -80,11 +80,11 @@ internal fun NavigationDemo(onBack: () -> Unit) {
 
 @Composable
 private fun NavigationHome(onBack: () -> Unit, onStoryOpen: (Boolean) -> Unit, push: (String) -> Unit) {
-    val expand = rememberGlassExpandState()
-    GlassScaffold(
+    val expand = rememberKExpandState()
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.Liquid,
-        background = { Aurora(Modifier.fillMaxSize(), dark = false) },
+        surface = demoSurface(NAVIGATION_LOOK),
+        background = { DemoBackdrop() },
         topBar = { DemoTopBar("화면 이동", "카드는 제자리에서 열리고, 목록은 옆에서 밀려 들어옵니다", onBack) },
     ) { padding ->
         LazyColumn(
@@ -106,14 +106,14 @@ private fun NavigationHome(onBack: () -> Unit, onStoryOpen: (Boolean) -> Unit, p
             }
             item { MenuList(MENU, push) }
         }
-        GlassExpandHost(expand, cornerRadius = 28.dp, title = "이야기") { key -> StoryDetail(STORIES[key as Int], expand) }
+        KExpandHost(expand, cornerRadius = 28.dp, title = "이야기") { key -> StoryDetail(STORIES[key as Int], expand) }
         val expanded = expand.expandedKey != null
         SideEffect { onStoryOpen(expanded) }
     }
 }
 
 @Composable
-private fun StoryCard(story: Story, expand: GlassExpandState, index: Int) {
+private fun StoryCard(story: Story, expand: KExpandState, index: Int) {
     Box(
         Modifier
             .widthIn(max = READING_WIDTH)
@@ -121,7 +121,7 @@ private fun StoryCard(story: Story, expand: GlassExpandState, index: Int) {
             .expandSource(expand, index)
             .jellyPress(0.03f)
             .clip(STORY_SHAPE)
-            .glassClickable(STORY_SHAPE) { expand.expand(index) }
+            .kClickable(STORY_SHAPE) { expand.expand(index) }
             .semantics { contentDescription = "${story.title} 열기" },
     ) { StoryCover(story) }
 }
@@ -141,7 +141,7 @@ private fun StoryCover(story: Story) {
 }
 
 @Composable
-private fun StoryDetail(story: Story, expand: GlassExpandState) {
+private fun StoryDetail(story: Story, expand: KExpandState) {
     Box(Modifier.fillMaxSize().background(Color(0xFFF7F7FA))) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             StoryCover(story)
@@ -158,7 +158,7 @@ private fun StoryDetail(story: Story, expand: GlassExpandState) {
                 repeat(6) { Label(story.body, 16, color = Color(0xFF3A3B40)) }
             }
         }
-        GlassIconButton(
+        KIconButton(
             ShowcaseIcons.Close,
             "닫기",
             { expand.collapse() },
@@ -172,10 +172,10 @@ private fun StoryDetail(story: Story, expand: GlassExpandState) {
 
 @Composable
 private fun NavigationDetail(screen: String, depth: Int, back: () -> Unit, push: (String) -> Unit) {
-    GlassScaffold(
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.Liquid,
-        background = { Aurora(Modifier.fillMaxSize(), dark = depth % 2 == 0) },
+        surface = demoSurface(NAVIGATION_LOOK),
+        background = { DemoBackdrop { Aurora(Modifier.fillMaxSize(), dark = depth % 2 == 0) } },
         topBar = { DemoTopBar(screen.substringAfterLast('/'), "${depth}단계 화면, 왼쪽 가장자리를 밀면 뒤로 갑니다", back) },
     ) { padding ->
         LazyColumn(
@@ -197,19 +197,19 @@ private fun NavigationDetail(screen: String, depth: Int, back: () -> Unit, push:
 @Composable
 private fun MenuList(items: List<String>, push: (String) -> Unit) {
     // 행 눌림 표시가 카드 모서리 밖으로 나가지 않도록 6dp 안쪽에 18dp(바깥 24dp − 6dp) 모서리로 그린다.
-    GlassSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth()) {
+    KSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth()) {
         Column(Modifier.padding(6.dp)) {
             items.forEach { item ->
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .clip(MENU_ROW_SHAPE)
-                        .glassClickable(MENU_ROW_SHAPE) { push(item) }
+                        .kClickable(MENU_ROW_SHAPE) { push(item) }
                         .padding(horizontal = 14.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Label(item.substringAfterLast('/'), 16, modifier = Modifier.weight(1f))
-                    ShowcaseIcon(ShowcaseIcons.Chevron, 18.dp, LocalGlassContentColor.current.copy(alpha = 0.5f))
+                    ShowcaseIcon(ShowcaseIcons.Chevron, 18.dp, LocalKineticaContentColor.current.copy(alpha = 0.5f))
                 }
             }
         }
@@ -242,3 +242,5 @@ private val STORIES = listOf(
         "해가 지기 30분 전이 가장 좋습니다. 하늘이 주황에서 보라로 바뀌는 동안 천천히 걸어 보세요.",
     ),
 )
+
+private val NAVIGATION_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = false)

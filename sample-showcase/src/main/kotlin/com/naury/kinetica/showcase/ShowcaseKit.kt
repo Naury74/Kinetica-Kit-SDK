@@ -64,16 +64,16 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
-import com.naury.kinetica.ui.GlassButtonKind
-import com.naury.kinetica.ui.GlassIconButton
-import com.naury.kinetica.ui.GlassIndication
-import com.naury.kinetica.ui.GlassSurface
-import com.naury.kinetica.ui.LocalGlassContentColor
-import com.naury.kinetica.ui.LocalGlassStyle
+import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIndication
+import com.naury.kinetica.ui.KSurface
+import com.naury.kinetica.ui.KTone
+import com.naury.kinetica.ui.KVariant
+import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.jellyPress
 
 /**
- * 글래스 상단 바. 뒤로 가기 버튼, 제목, 화면을 한 줄로 설명하는 부제를 보여 준다. 넓은 화면에서는 읽기 폭에 맞춰 가운데 둔다.
+ * 데모 상단 바. 뒤로 가기 버튼, 제목, 화면을 한 줄로 설명하는 부제와 표면 스타일 버튼을 보여 준다. 넓은 화면에서는 읽기 폭에 맞춰 가운데 둔다.
  * [onBack]이 `null`이면 뒤로 버튼을 두지 않는다(두 칸 배치의 상세 칸처럼 돌아갈 곳이 없을 때).
  */
 @Composable
@@ -93,24 +93,38 @@ internal fun DemoTopBar(
             contentAlignment = Alignment.TopCenter,
         ) {
             // 바깥 28dp 캡슐 안에 6dp 여백으로 44dp 원형 버튼을 넣어 모서리가 같은 중심으로 굽게 한다.
-            GlassSurface(
+            KSurface(
                 Modifier.padding(horizontal = 16.dp, vertical = 8.dp).widthIn(max = maxWidth).fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
             ) {
-                Row(Modifier.padding(6.dp).padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (onBack != null) {
-                        GlassIconButton(
+                        KIconButton(
                             ShowcaseIcons.Back,
                             "뒤로",
                             onBack,
-                            kind = GlassButtonKind.Plain,
-                            accent = LocalGlassContentColor.current,
+                            variant = KVariant.Text,
+                            tone = KTone.Neutral,
                         )
                     }
-                    Column(Modifier.padding(start = if (onBack != null) 6.dp else 14.dp, top = 4.dp, bottom = 4.dp)) {
+                    Column(
+                        Modifier.weight(1f).padding(
+                            start = if (onBack !=
+                                null
+                            ) {
+                                6.dp
+                            } else {
+                                14.dp
+                            },
+                            top = 4.dp,
+                            bottom = 4.dp,
+                            end = 4.dp,
+                        ),
+                    ) {
                         Label(title, 17, FontWeight.Bold)
-                        Label(subtitle, 12, color = LocalGlassContentColor.current.copy(alpha = 0.65f))
+                        Label(subtitle, 12, color = LocalKineticaContentColor.current.copy(alpha = 0.65f))
                     }
+                    SurfacePickerButton()
                 }
             }
         }
@@ -119,14 +133,14 @@ internal fun DemoTopBar(
 
 /**
  * 스크롤한 내용이 상태 표시줄 아래로 지나갈 때 시계, 아이콘과 겹쳐 읽기 어렵지 않도록 위에서 아래로 옅어지는 그라디언트를 깐다.
- * 띠처럼 보이지 않게 상태 표시줄보다 조금 더 내려와 끝이 0으로 사라진다. GlassScaffold의 가장자리 블러와 함께 쓴다.
- * 글래스 글자 색이 밝으면(어두운 화면) 검정, 아니면 흰색이다.
+ * 띠처럼 보이지 않게 상태 표시줄보다 조금 더 내려와 끝이 0으로 사라진다. KineticaScaffold의 가장자리 블러와 함께 쓴다.
+ * 표면 글자 색이 밝으면(어두운 화면) 검정, 아니면 흰색이다.
  * [scrolled]를 주면 맨 위에 있을 때는 거의 보이지 않다가 내용이 상태 표시줄 아래로 들어가면 짙어진다.
  * 없으면 스크롤 위치를 모르므로 중간 세기로 늘 깐다.
  */
 @Composable
 internal fun StatusBarScrim(
-    color: Color = if (LocalGlassStyle.current.onGlass.isLight()) Color.Black else Color.White,
+    color: Color = if (LocalKineticaContentColor.current.isLight()) Color.Black else Color.White,
     scrolled: (() -> Boolean)? = null,
 ) {
     val target = when {
@@ -190,13 +204,13 @@ internal fun ReadingContainer(content: @Composable () -> Unit) {
 @Composable
 internal fun navigationBarBottom(): Dp = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-/** 제목과 설명이 있는 글래스 카드. 시연할 내용은 [content]에 넣는다. */
+/** 제목과 설명이 있는 데모 카드. 시연할 내용은 [content]에 넣는다. */
 @Composable
 internal fun DemoCard(title: String, description: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    GlassSurface(modifier.fillMaxWidth(), shape = CARD_SHAPE) {
+    KSurface(modifier.fillMaxWidth(), shape = CARD_SHAPE) {
         Column(Modifier.padding(CARD_PADDING), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Label(title, 18, FontWeight.Bold)
-            Label(description, 13, color = LocalGlassContentColor.current.copy(alpha = 0.7f))
+            Label(description, 13, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))
             content()
         }
     }
@@ -214,7 +228,7 @@ internal val INNER_SHAPE = RoundedCornerShape(12.dp)
 /** 캡슐 모양 버튼. [filled]면 배경을 채워 그리고, 누르면 젤리처럼 눌리며 캡슐 모양으로 어두워진다. */
 @Composable
 internal fun Pill(text: String, modifier: Modifier = Modifier, filled: Boolean = false, onClick: () -> Unit) {
-    val ink = LocalGlassContentColor.current
+    val ink = LocalKineticaContentColor.current
     if (filled) {
         val onInk = if (ink.isLight()) Color.Black else Color.White
         Box(
@@ -223,14 +237,14 @@ internal fun Pill(text: String, modifier: Modifier = Modifier, filled: Boolean =
                 .defaultMinSize(minHeight = 40.dp)
                 .background(ink, CircleShape)
                 .clip(CircleShape)
-                .clickable(null, GlassIndication(CircleShape, onInk), role = Role.Button, onClick = onClick)
+                .clickable(null, KIndication(CircleShape, onInk), role = Role.Button, onClick = onClick)
                 .padding(horizontal = 18.dp, vertical = 10.dp),
             contentAlignment = Alignment.Center,
         ) {
             BasicText(text, style = TextStyle(color = onInk, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
         }
     } else {
-        GlassSurface(onClick, modifier.jellyPress().defaultMinSize(minHeight = 40.dp), shape = CircleShape) {
+        KSurface(onClick, modifier.jellyPress().defaultMinSize(minHeight = 40.dp), shape = CircleShape) {
             Box(Modifier.align(Alignment.Center).padding(horizontal = 18.dp, vertical = 10.dp)) { Label(text, 14, FontWeight.SemiBold) }
         }
     }
@@ -241,7 +255,7 @@ internal fun Pill(text: String, modifier: Modifier = Modifier, filled: Boolean =
 internal fun ShowcaseIcon(
     icon: ImageVector,
     size: Dp = 22.dp,
-    color: Color = LocalGlassContentColor.current,
+    color: Color = LocalKineticaContentColor.current,
     modifier: Modifier = Modifier,
 ) {
     Image(rememberVectorPainter(icon), null, modifier.size(size), colorFilter = ColorFilter.tint(color))
@@ -253,7 +267,7 @@ internal fun Label(
     size: Int,
     weight: FontWeight = FontWeight.Normal,
     modifier: Modifier = Modifier,
-    color: Color = LocalGlassContentColor.current,
+    color: Color = LocalKineticaContentColor.current,
 ) {
     // 쇼케이스 문구는 한국어라 RTL 화면에서도 문단 방향은 글 내용(왼쪽에서 오른쪽)을 따라야 끝의 마침표, 물음표가 앞으로 가지 않는다.
     // 정렬은 화면 방향의 시작 쪽(RTL이면 오른쪽)에 맞춘다.

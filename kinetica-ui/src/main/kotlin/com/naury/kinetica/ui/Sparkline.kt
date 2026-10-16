@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * 목록 행이나 카드 귀퉁이에 넣는 작은 선 그래프. 축과 눈금 없이 흐름만 보이고, 마지막 점을 강조한다.
- * 애니메이션이 없어 스크롤 목록에 많이 넣어도 다시 그릴 일이 적다. 시간 축은 RTL에서도 왼쪽이 처음이다([GlassLineChart] 참고).
+ * 애니메이션이 없어 스크롤 목록에 많이 넣어도 다시 그릴 일이 적다. 시간 축은 RTL에서도 왼쪽이 처음이다([KLineChart] 참고).
  *
  * TalkBack은 처음 값과 마지막 값, 최저값, 최고값을 읽는다. 크기를 정하지 않으면 최소 72×28dp이다.
  *
@@ -36,10 +36,10 @@ import androidx.compose.ui.unit.dp
 public fun Sparkline(
     points: List<Float>,
     modifier: Modifier = Modifier,
-    color: Color = GlassTheme.colors.accent,
+    color: Color = KineticaTheme.colors.accent,
     fill: Boolean = true,
     lineWidth: Dp = 1.5.dp,
-    valueFormatter: (Float) -> String = GlassChartDefaults::formatValue,
+    valueFormatter: (Float) -> String = KChartDefaults::formatValue,
 ) {
     require(points.all { it.isFinite() }) { "points에 NaN이나 무한대를 넣을 수 없습니다." }
     val description = if (points.isEmpty()) {
@@ -69,7 +69,7 @@ public fun Sparkline(
                     buffer.ys[i] = inset + (size.height - inset * 2) * (1f - range.fraction(value))
                 }
                 buffer.build(points.size, smooth = true, bottom = size.height)
-                val brush = GlassChartDefaults.fill(color)
+                val brush = KChartDefaults.fill(color)
                 onDrawBehind {
                     if (points.isEmpty()) return@onDrawBehind
                     if (fill) drawPath(buffer.area, brush, alpha = FILL_ALPHA)

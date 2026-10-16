@@ -47,13 +47,13 @@ import androidx.compose.ui.unit.dp
  * ```
  *
  * @param shape 블록 모양
- * @param color 블록 색. 기본값은 글래스 텍스트 색을 옅게 쓴 것이다.
+ * @param color 블록 색. 기본값은 텍스트 색을 옅게 쓴 것이다.
  */
 @Composable
 public fun Modifier.skeleton(
     visible: Boolean,
     shape: Shape = RoundedCornerShape(8.dp),
-    color: Color = LocalGlassContentColor.current.copy(alpha = BLOCK_ALPHA),
+    color: Color = LocalKineticaContentColor.current.copy(alpha = BLOCK_ALPHA),
 ): Modifier {
     val cover = animateFloatAsState(if (visible) 1f else 0f, tween(FADE_MS), label = "skeleton")
     val still = reducedMotion()
@@ -103,7 +103,7 @@ public fun Modifier.skeleton(
  * @param lineHeight 막대 높이
  */
 @Composable
-public fun GlassSkeletonText(lines: Int, modifier: Modifier = Modifier, lineHeight: Dp = 14.dp) {
+public fun KSkeletonText(lines: Int, modifier: Modifier = Modifier, lineHeight: Dp = 14.dp) {
     require(lines >= 1) { "lines는 1 이상이어야 합니다." }
     val loading = stringResource(R.string.kinetica_ui_loading)
     Column(

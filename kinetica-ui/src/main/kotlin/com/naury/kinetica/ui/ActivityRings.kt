@@ -46,7 +46,7 @@ import kotlinx.coroutines.launch
  *
  * ```kotlin
  * ActivityRings(
- *     listOf(ActivityRing(0.8f, GlassChartDefaults.Move, "움직이기"), ActivityRing(1.3f, GlassChartDefaults.Exercise, "운동하기")),
+ *     listOf(ActivityRing(0.8f, KChartDefaults.Move, "움직이기"), ActivityRing(1.3f, KChartDefaults.Exercise, "운동하기")),
  *     Modifier.size(140.dp),
  * )
  * ```
@@ -62,7 +62,7 @@ public fun ActivityRings(
     modifier: Modifier = Modifier,
     thickness: Dp = 14.dp,
     gap: Dp = 3.dp,
-    style: GlassStyle = LocalGlassStyle.current,
+    surface: SurfaceStyle = KineticaTheme.surface,
     content: @Composable BoxScope.() -> Unit = {},
 ) {
     require(thickness > 0.dp && gap >= 0.dp) { "thickness는 0보다 크고 gap은 0 이상이어야 합니다." }
@@ -88,7 +88,7 @@ public fun ActivityRings(
             },
         contentAlignment = Alignment.Center,
     ) {
-        CompositionLocalProvider(LocalGlassContentColor provides style.onGlass) { content() }
+        CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) { content() }
     }
 }
 

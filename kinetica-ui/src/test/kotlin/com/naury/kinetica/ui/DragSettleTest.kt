@@ -66,8 +66,8 @@ class DragSettleTest {
     @Test
     fun `시트를 반쯤 끌다 천천히 놓으면 제자리로 돌아간다`() {
         compose.setContent {
-            GlassScaffold(Modifier.fillMaxSize()) {
-                GlassSheet(true, {}) { Box(Modifier.fillMaxWidth().height(300.dp).testTag("sheet")) }
+            KineticaScaffold(Modifier.fillMaxSize()) {
+                KSheet(true, {}) { Box(Modifier.fillMaxWidth().height(300.dp).testTag("sheet")) }
             }
         }
         compose.waitForIdle()
@@ -81,8 +81,8 @@ class DragSettleTest {
     @Test
     fun `시트 안 스크롤 내용으로 끌다 놓아도 제자리로 돌아간다`() {
         compose.setContent {
-            GlassScaffold(Modifier.fillMaxSize()) {
-                GlassSheet(true, {}) {
+            KineticaScaffold(Modifier.fillMaxSize()) {
+                KSheet(true, {}) {
                     Column(Modifier.fillMaxWidth().height(300.dp).testTag("sheet").verticalScroll(rememberScrollState())) {
                         repeat(30) { BasicText("줄 $it", Modifier.height(40.dp)) }
                     }
@@ -99,11 +99,11 @@ class DragSettleTest {
 
     @Test
     fun `여러 높이 시트는 느리게 놓아도 가장 가까운 높이에 멈춘다`() {
-        lateinit var state: GlassDetentSheetState
+        lateinit var state: KDetentSheetState
         compose.setContent {
-            state = rememberGlassDetentSheetState(initialDetent = Detent.Fraction(0.5f))
+            state = rememberKDetentSheetState(initialDetent = Detent.Fraction(0.5f))
             Box(Modifier.fillMaxSize()) {
-                GlassDetentSheet(state, Modifier.testTag("sheet")) { Box(Modifier.fillMaxSize().testTag("body")) }
+                KDetentSheet(state, Modifier.testTag("sheet")) { Box(Modifier.fillMaxSize().testTag("body")) }
             }
         }
         compose.waitForIdle()
@@ -116,11 +116,11 @@ class DragSettleTest {
 
     @Test
     fun `여러 높이 시트를 목록으로 끌다 천천히 놓아도 높이에 멈춘다`() {
-        lateinit var state: GlassDetentSheetState
+        lateinit var state: KDetentSheetState
         compose.setContent {
-            state = rememberGlassDetentSheetState(initialDetent = Detent.Full)
+            state = rememberKDetentSheetState(initialDetent = Detent.Full)
             Box(Modifier.fillMaxSize()) {
-                GlassDetentSheet(state) {
+                KDetentSheet(state) {
                     LazyColumn(Modifier.fillMaxSize().testTag("list")) {
                         items(50) { BasicText("항목 $it", Modifier.fillMaxWidth().height(48.dp)) }
                     }
@@ -136,11 +136,11 @@ class DragSettleTest {
 
     @Test
     fun `여러 높이 시트는 두 손가락으로 끌다 하나씩 떼도 높이에 멈춘다`() {
-        lateinit var state: GlassDetentSheetState
+        lateinit var state: KDetentSheetState
         compose.setContent {
-            state = rememberGlassDetentSheetState(initialDetent = Detent.Fraction(0.5f))
+            state = rememberKDetentSheetState(initialDetent = Detent.Fraction(0.5f))
             Box(Modifier.fillMaxSize()) {
-                GlassDetentSheet(state) { Box(Modifier.fillMaxSize().testTag("body")) }
+                KDetentSheet(state) { Box(Modifier.fillMaxSize().testTag("body")) }
             }
         }
         compose.waitForIdle()
@@ -163,11 +163,11 @@ class DragSettleTest {
 
     @Test
     fun `여러 높이 시트가 움직이는 중에 눌렀다 떼도 높이에 멈춘다`() {
-        lateinit var state: GlassDetentSheetState
+        lateinit var state: KDetentSheetState
         compose.setContent {
-            state = rememberGlassDetentSheetState(initialDetent = Detent.Fraction(0.5f))
+            state = rememberKDetentSheetState(initialDetent = Detent.Fraction(0.5f))
             Box(Modifier.fillMaxSize()) {
-                GlassDetentSheet(state) {
+                KDetentSheet(state) {
                     LazyColumn(Modifier.fillMaxSize().testTag("list")) {
                         items(50) { BasicText("항목 $it", Modifier.fillMaxWidth().height(48.dp)) }
                     }
@@ -191,10 +191,10 @@ class DragSettleTest {
 
     @Test
     fun `서랍을 반쯤 끌다 천천히 놓으면 열리거나 닫힌다`() {
-        lateinit var state: GlassDrawerState
+        lateinit var state: KDrawerState
         compose.setContent {
-            state = rememberGlassDrawerState()
-            GlassDrawer(drawerContent = { BasicText("메뉴") }, Modifier.testTag("root"), state) { Box(Modifier.fillMaxSize()) }
+            state = rememberKDrawerState()
+            KDrawer(drawerContent = { BasicText("메뉴") }, Modifier.testTag("root"), state) { Box(Modifier.fillMaxSize()) }
         }
         compose.waitForIdle()
         slowDrag("root", start = Offset(4f, 600f), dx = 300f, dy = 0f)
@@ -242,7 +242,7 @@ class DragSettleTest {
     @Test
     fun `당겨서 새로 고침을 조금 당기다 천천히 놓으면 제자리로 돌아온다`() {
         compose.setContent {
-            GlassRefreshBox(false, {}, Modifier.fillMaxSize()) {
+            KRefreshBox(false, {}, Modifier.fillMaxSize()) {
                 LazyColumn(Modifier.fillMaxSize().testTag("list")) {
                     items(30) { BasicText("항목 $it", Modifier.fillMaxWidth().height(48.dp).testTag("row$it")) }
                 }
@@ -258,11 +258,11 @@ class DragSettleTest {
 
     @Test
     fun `스낵바를 옆으로 조금 끌다 천천히 놓으면 제자리로 돌아온다`() {
-        val snackbar = GlassSnackbarState()
+        val snackbar = KSnackbarState()
         // 시계를 자동으로 흘리면 표시 시간까지 건너뛰어 스낵바가 닫힌다.
         compose.mainClock.autoAdvance = false
         compose.setContent {
-            GlassScaffold(Modifier.fillMaxSize()) { GlassSnackbarHost(snackbar) }
+            KineticaScaffold(Modifier.fillMaxSize()) { KSnackbarHost(snackbar) }
             LaunchedEffect(Unit) { snackbar.show("저장했어요", durationMs = 60_000) }
         }
         compose.mainClock.advanceTimeBy(1_000)

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 액티비티 content 위에 붙는 글래스 창 오버레이. -->
+    <item name="kinetica_ui_overlay_host" type="id" />
+</resources>

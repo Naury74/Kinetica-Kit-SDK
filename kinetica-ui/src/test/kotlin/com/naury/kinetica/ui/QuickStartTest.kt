@@ -47,15 +47,15 @@ class QuickStartTest {
     fun `빠른 시작 예제는 Material 테마 안에서 함께 그려지고 토스트가 뜬다`() {
         compose.setContent {
             MaterialTheme {
-                GlassTheme(
-                    colors = GlassColors(accent = MaterialTheme.colorScheme.primary, onAccent = MaterialTheme.colorScheme.onPrimary),
+                KineticaTheme(
+                    colors = KineticaColors(accent = MaterialTheme.colorScheme.primary, onAccent = MaterialTheme.colorScheme.onPrimary),
                     textStyle = MaterialTheme.typography.bodyLarge,
                 ) {
-                    GlassScaffold { padding ->
+                    KineticaScaffold { padding ->
                         Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) { Examples() }
                         // 화면 아래에 늘 떠 있는 시트라서 스크롤 목록 밖, 화면 루트에 둔다.
-                        val sheet = rememberGlassDetentSheetState(listOf(Detent.Peek(120.dp), Detent.Fraction(0.5f), Detent.Full))
-                        GlassDetentSheet(sheet, title = "주변 장소") { Text("장소") }
+                        val sheet = rememberKDetentSheetState(listOf(Detent.Peek(120.dp), Detent.Fraction(0.5f), Detent.Full))
+                        KDetentSheet(sheet, title = "주변 장소") { Text("장소") }
                     }
                 }
             }
@@ -67,36 +67,36 @@ class QuickStartTest {
 
     @androidx.compose.runtime.Composable
     private fun Examples() {
-        Card(Modifier.jellyPress().glassBadge(3)) { Text("카드") }
+        Card(Modifier.jellyPress().kBadge(3)) { Text("카드") }
 
         var open by remember { mutableStateOf(false) }
-        GlassSheet(open, onDismissRequest = { open = false }, title = "공유") { Text("링크 복사") }
+        KSheet(open, onDismissRequest = { open = false }, title = "공유") { Text("링크 복사") }
 
         var confirm by remember { mutableStateOf(false) }
-        GlassDialog(visible = confirm, onDismissRequest = { confirm = false }, title = "주문 확인") {
+        KDialog(visible = confirm, onDismissRequest = { confirm = false }, title = "주문 확인") {
             Text("결제할까요?")
-            GlassButton("결제", onClick = { confirm = false })
+            KButton("결제", onClick = { confirm = false })
         }
 
-        val toast = rememberGlassToastState()
+        val toast = rememberKToastState()
         val scope = rememberCoroutineScope()
-        GlassToastHost(toast)
-        GlassButton("저장", onClick = { scope.launch { toast.show("저장했어요") } })
+        KToastHost(toast)
+        KButton("저장", onClick = { scope.launch { toast.show("저장했어요") } })
 
         var tab by rememberSaveable { mutableIntStateOf(0) }
-        GlassTabBar(listOf(GlassTab("홈"), GlassTab("검색")), tab, onSelect = { tab = it })
+        KTabBar(listOf(KTab("홈"), KTab("검색")), tab, onSelect = { tab = it })
 
         var volume by remember { mutableFloatStateOf(0.4f) }
-        GlassSlider(volume, onValueChange = { volume = it }, Modifier.fillMaxWidth())
+        KSlider(volume, onValueChange = { volume = it }, Modifier.fillMaxWidth())
 
-        GlassLineChart(
+        KLineChart(
             points = listOf(3f, 5f, 4f, 8f, 6f),
             Modifier.fillMaxWidth().height(160.dp),
             labels = listOf("월", "화", "수", "목", "금"),
         )
 
-        var selection by remember { mutableStateOf<GlassCalendarSelection>(GlassCalendarSelection.Single()) }
-        GlassCalendar(rememberGlassCalendarState(), selection, onSelectionChange = { selection = it })
+        var selection by remember { mutableStateOf<KCalendarSelection>(KCalendarSelection.Single()) }
+        KCalendar(rememberKCalendarState(), selection, onSelectionChange = { selection = it })
 
         SwipeActionsRow(endActions = listOf(SwipeAction("삭제", Color.Red, removesRow = true) {})) { Text("메일") }
 

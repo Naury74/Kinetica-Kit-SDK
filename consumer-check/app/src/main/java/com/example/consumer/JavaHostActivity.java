@@ -14,11 +14,11 @@ import com.naury.kinetica.board.KineticaBoardState;
 import com.naury.kinetica.board.KineticaBoardView;
 import com.naury.kinetica.presets.EffectPresets;
 import com.naury.kinetica.render.ViewEffects;
-import com.naury.kinetica.ui.view.GlassDialogs;
-import com.naury.kinetica.ui.view.GlassPopupHandle;
-import com.naury.kinetica.ui.view.GlassPopupOptions;
-import com.naury.kinetica.ui.view.GlassSheets;
-import com.naury.kinetica.ui.view.GlassToasts;
+import com.naury.kinetica.ui.view.KDialogs;
+import com.naury.kinetica.ui.view.KPopupHandle;
+import com.naury.kinetica.ui.view.KPopupOptions;
+import com.naury.kinetica.ui.view.KSheets;
+import com.naury.kinetica.ui.view.KToasts;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +49,7 @@ public class JavaHostActivity extends AppCompatActivity {
         sheet.setOnClickListener(v -> {
             TextView body = new TextView(this);
             body.setText("자바에서 연 시트");
-            GlassPopupHandle handle = GlassSheets.show(this, body, new GlassPopupOptions(null, "자바 시트"));
+            KPopupHandle handle = KSheets.show(this, body, new KPopupOptions(null, "자바 시트"));
             handle.setOnDismissListener(() -> status.setText("시트 닫힘"));
         });
         root.addView(sheet);
@@ -59,13 +59,13 @@ public class JavaHostActivity extends AppCompatActivity {
         dialog.setOnClickListener(v -> {
             TextView body = new TextView(this);
             body.setText("자바에서 연 다이얼로그");
-            GlassDialogs.show(this, body);
+            KDialogs.show(this, body);
         });
         root.addView(dialog);
 
         Button toast = new Button(this);
         toast.setText("자바 토스트");
-        toast.setOnClickListener(v -> GlassToasts.show(this, "자바 토스트"));
+        toast.setOnClickListener(v -> KToasts.show(this, "자바 토스트"));
         root.addView(toast);
 
         List<BoardWidget> catalog = Arrays.asList(new BoardWidget("a", "에이"), new BoardWidget("b", "비"));

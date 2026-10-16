@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,8 +46,10 @@ import com.naury.kinetica.board.KineticaBoard
 import com.naury.kinetica.board.KineticaBoardState
 import com.naury.kinetica.board.rememberKineticaBoardState
 import com.naury.kinetica.render.HOST_VIEW_UNITS_PER_DP
-import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.LocalKineticaSurface
+import com.naury.kinetica.ui.SurfaceStyles
 
 /**
  * 대시보드 보드 데모. 가게 주인이 홈 화면 위젯을 직접 배치한다. 위젯은 호스트 앱의 평범한 Compose 화면이고, 보드는 위치와 크기만 관리한다.
@@ -76,10 +79,10 @@ internal fun BoardDemo(onBack: () -> Unit, viewModel: StoreViewModel = viewModel
     // 넓은 창(840dp 이상)의 격자 배치에서는 열을 늘릴 수 있도록 상단 바, 칩 줄, 보드를 함께 넓힌다.
     // 자유 배치는 폭 비율대로 위젯을 늘리므로 읽기 폭으로 묶어 위젯이 지나치게 커지지 않게 한다.
     val contentWidth = if (grid) demoContentWidth() else READING_WIDTH
-    GlassScaffold(
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.OneUi,
-        background = { Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFEDEBFF), Color(0xFFF6F7FB))))) },
+        surface = demoSurface(BOARD_DEMO_LOOK),
+        background = { DemoBackdrop { BoardBackground() } },
         topBar = {
             Column {
                 DemoTopBar("대시보드 보드", "길게 눌러 편집하고, 위로 끌어 스냅 레이아웃을 골라 보세요", onBack, contentWidth)
@@ -140,3 +143,20 @@ private fun boardWidth(available: Dp, grid: Boolean, contentWidth: Dp): Dp {
 
 private val BOARD_GAP = 12.dp
 private val REFERENCE_DP = (KineticaBoardState.REFERENCE_WIDTH / HOST_VIEW_UNITS_PER_DP).toFloat()
+
+/** 글래스 보드 뒤에 까는 옅은 그라디언트. 어두운 표면이면 짙은 남색으로 바꾼다. */
+@Composable
+private fun BoardBackground() {
+    val dark = LocalKineticaSurface.current.isDark
+    val colors = if (dark) listOf(Color(0xFF1B1A33), Color(0xFF0D0E14)) else listOf(Color(0xFFEDEBFF), Color(0xFFF6F7FB))
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colors)))
+}
+
+private val BOARD_DEMO_LOOK =
+    DemoLook(
+        GlassStyles.OneUi,
+        GlassStyles.OneUiDark,
+        defaultDark = false,
+        solidLight = SurfaceStyles.OneUi,
+        solidDark = SurfaceStyles.OneUiDark,
+    )

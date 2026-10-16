@@ -283,6 +283,22 @@ internal object ShowcaseIcons {
         close()
     }
 
+    /** 반은 비고 반은 줄무늬인 원. 표면 스타일 고르기 버튼에 쓴다. */
+    val Contrast = line {
+        moveTo(12f, 3f)
+        arcTo(9f, 9f, 0f, false, true, 12f, 21f)
+        arcTo(9f, 9f, 0f, false, true, 12f, 3f)
+        close()
+        moveTo(12f, 3f)
+        lineTo(12f, 21f)
+        moveTo(12f, 7.5f)
+        lineTo(19.2f, 7.5f)
+        moveTo(12f, 12f)
+        lineTo(21f, 12f)
+        moveTo(12f, 16.5f)
+        lineTo(19.2f, 16.5f)
+    }
+
     private fun line(mirrored: Boolean = false, block: PathBuilder.() -> Unit): ImageVector = ImageVector.Builder(
         defaultWidth = 24.dp,
         defaultHeight = 24.dp,

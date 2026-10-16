@@ -5,7 +5,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
 /**
- * [GlassOnboarding]의 한 페이지.
+ * [KOnboarding]의 한 페이지.
  *
  * @property title 큰 제목. TalkBack에서 제목으로 읽힌다.
  * @property body 제목 아래 설명

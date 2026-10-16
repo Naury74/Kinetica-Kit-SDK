@@ -106,7 +106,7 @@ class Effects2Test {
         assertTrue("화면을 떠났는데 센서가 남았다", rule.becomes(3_000) { !appHasActiveSensorConnection() })
         // 떠난 뒤 프레임이 계속 돌아도(입자·물결 정리 실패) 홈 화면은 정상으로 눌려야 한다.
         Thread.sleep(1_000)
-        rule.onNodeWithTag("openGlassSheet").performClick()
-        rule.waitTag("glassSheetOk")
+        rule.onNodeWithTag("openKSheet").performClick()
+        rule.waitTag("kSheetOk")
     }
 }

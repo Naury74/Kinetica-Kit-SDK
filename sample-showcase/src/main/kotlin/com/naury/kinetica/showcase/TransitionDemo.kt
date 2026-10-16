@@ -41,9 +41,9 @@ import com.naury.kinetica.player.SceneTransition
 import com.naury.kinetica.player.SharedScenePlayer
 import com.naury.kinetica.player.dragToDismiss
 import com.naury.kinetica.player.rememberTransitionDriver
-import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.glassClickable
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.kClickable
 
 /**
  * 장면 전환 데모. 카드를 누르면 morphKey가 같은 노드끼리 이어지며 상세 화면이 된다. 아래로 끌거나 뒤로 가기를 누르면 닫히고,
@@ -71,10 +71,10 @@ private fun SceneGrid(
     onBack: () -> Unit,
     onOpen: (GalleryItem) -> Unit,
 ) {
-    GlassScaffold(
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.LiquidDark,
-        background = { Aurora(Modifier.fillMaxSize(), dark = true) },
+        surface = demoSurface(TRANSITION_DEMO_LOOK),
+        background = { DemoBackdrop() },
         topBar = { DemoTopBar("장면 전환", "카드가 상세 화면으로 이어지고, 아래로 끌면 닫힙니다", onBack) },
     ) { padding ->
         LazyVerticalGrid(
@@ -99,7 +99,7 @@ private fun SceneGrid(
                             .padding(6.dp)
                             .aspectRatio(1080f / 1920f)
                             .clip(RoundedCornerShape(20.dp))
-                            .glassClickable(RoundedCornerShape(20.dp)) { onOpen(item) }
+                            .kClickable(RoundedCornerShape(20.dp)) { onOpen(item) }
                             .semantics { contentDescription = "${item.title} 열기" },
                     )
                 }
@@ -138,3 +138,5 @@ private fun SceneDetail(item: GalleryItem, shared: SharedTransitionScope, visibi
 
 // 장면 바탕색과 같게 둬서 화면 비율이 달라도 위아래에 띠가 보이지 않게 한다.
 private val DARK = Color(0xFF15181E)
+
+private val TRANSITION_DEMO_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = true)

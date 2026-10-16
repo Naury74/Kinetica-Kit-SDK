@@ -25,14 +25,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.consumer.m3.rememberSamplePhotos
-import com.naury.kinetica.ui.GlassImageViewer
-import com.naury.kinetica.ui.GlassScaffold
-import com.naury.kinetica.ui.GlassSystemBarIcons
-import com.naury.kinetica.ui.rememberGlassImageViewerState
+import com.naury.kinetica.ui.KImageViewer
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.KSystemBarIcons
+import com.naury.kinetica.ui.rememberKImageViewerState
 
 /**
  * 밝은 배경에 어두운 상태 표시줄 아이콘을 쓰는 호스트 화면. 사진 뷰어를 열면 아이콘이 밝아졌다가 닫으면 돌아와야 한다.
- * [hostIcons]는 호스트가 직접 두는 GlassSystemBarIcons 요청이다(null이면 두지 않는다).
+ * [hostIcons]는 호스트가 직접 두는 KSystemBarIcons 요청이다(null이면 두지 않는다).
  */
 open class BarIconsActivity : ComponentActivity() {
     var hostIcons by mutableStateOf<Boolean?>(null)
@@ -53,7 +53,7 @@ open class BarIconsActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 if (inScaffold) {
-                    GlassScaffold(background = { Box(Modifier.fillMaxSize().background(Color(0xFFF7F7F7))) }) { Body() }
+                    KineticaScaffold(background = { Box(Modifier.fillMaxSize().background(Color(0xFFF7F7F7))) }) { Body() }
                 } else {
                     Box(Modifier.fillMaxSize().background(Color(0xFFF7F7F7))) { Body() }
                 }
@@ -64,18 +64,18 @@ open class BarIconsActivity : ComponentActivity() {
     @Composable
     private fun Body() {
         val photos = rememberSamplePhotos(3)
-        val viewer = rememberGlassImageViewerState()
+        val viewer = rememberKImageViewerState()
         SideEffect { viewerOpen = viewer.isOpen }
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
             Text(if (viewer.isOpen) "뷰어 열림" else "뷰어 닫힘", Modifier.testTag("barViewerState"))
             Button({ viewer.open(0) }, Modifier.testTag("barOpen")) { Text("사진 보기") }
         }
-        hostIcons?.let { GlassSystemBarIcons(light = it) }
-        GlassImageViewer(viewer, photos)
+        hostIcons?.let { KSystemBarIcons(light = it) }
+        KImageViewer(viewer, photos)
     }
 }
 
-/** [BarIconsActivity]와 같고 GlassScaffold 안에 둔다. 뷰어는 별도 창이 아니라 스캐폴드 오버레이에 뜬다. */
+/** [BarIconsActivity]와 같고 KineticaScaffold 안에 둔다. 뷰어는 별도 창이 아니라 스캐폴드 오버레이에 뜬다. */
 class BarIconsScaffoldActivity : BarIconsActivity() {
     override val inScaffold: Boolean = true
 }

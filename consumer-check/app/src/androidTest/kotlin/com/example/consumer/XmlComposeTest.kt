@@ -31,7 +31,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** 시나리오 9: XML NestedScrollView 안 ComposeView에 넣은 GlassColorPicker와 GlassSignaturePad의 터치와 스크롤. */
+/** 시나리오 9: XML NestedScrollView 안 ComposeView에 넣은 KColorPicker와 KSignaturePad의 터치와 스크롤. */
 @RunWith(AndroidJUnit4::class)
 class XmlComposeTest {
     @get:Rule

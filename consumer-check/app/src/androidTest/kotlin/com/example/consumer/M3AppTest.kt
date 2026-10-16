@@ -33,7 +33,7 @@ abstract class M3AppTest<A : ComponentActivity>(type: Class<A>) {
     }
 
     @Test
-    fun glassSheetClosesBeforeNavHostPops() {
+    fun kSheetClosesBeforeNavHostPops() {
         rule.onNodeWithTag("goDetail").performClick()
         rule.waitTag("detailScreen")
         rule.onNodeWithTag("detailOpenSheet").performClick()
@@ -47,38 +47,38 @@ abstract class M3AppTest<A : ComponentActivity>(type: Class<A>) {
     }
 
     @Test
-    fun glassSheetButtonReceivesClick() {
-        rule.onNodeWithTag("openGlassSheet").performClick()
-        rule.waitTag("glassSheetOk")
-        rule.onNodeWithTag("glassSheetOk").performClick()
-        rule.waitGone("glassSheetBody")
+    fun kSheetButtonReceivesClick() {
+        rule.onNodeWithTag("openKSheet").performClick()
+        rule.waitTag("kSheetOk")
+        rule.onNodeWithTag("kSheetOk").performClick()
+        rule.waitGone("kSheetBody")
         rule.onNodeWithTag("lastEvent").assertTextContains("sheet-ok", substring = true)
     }
 
     @Test
-    fun glassDialogOverMaterialSheetBackOrder() {
+    fun kDialogOverMaterialSheetBackOrder() {
         rule.onNodeWithTag("openMaterialSheet").performClick()
-        rule.waitTag("materialSheetOpensGlass")
-        rule.onNodeWithTag("materialSheetOpensGlass").performClick()
-        rule.waitTag("glassDialogBody")
+        rule.waitTag("materialSheetOpensKSheet")
+        rule.onNodeWithTag("materialSheetOpensKSheet").performClick()
+        rule.waitTag("kDialogBody")
         back(rule)
-        rule.waitGone("glassDialogBody")
+        rule.waitGone("kDialogBody")
         rule.onNodeWithTag("materialSheetBody").assertIsDisplayed()
         back(rule)
         rule.waitGone("materialSheetBody")
     }
 
     @Test
-    fun materialDialogOverGlassDialog() {
-        rule.onNodeWithTag("openGlassDialog").performClick()
+    fun materialDialogOverKDialog() {
+        rule.onNodeWithTag("openKDialog").performClick()
         rule.waitTag("dialogOpensMaterial")
         rule.onNodeWithTag("dialogOpensMaterial").performClick()
         rule.waitTag("materialDialogOk")
         rule.onNodeWithTag("materialDialogOk").performClick()
         rule.waitGone("materialDialogBody")
-        rule.onNodeWithTag("glassDialogBody").assertIsDisplayed()
+        rule.onNodeWithTag("kDialogBody").assertIsDisplayed()
         back(rule)
-        rule.waitGone("glassDialogBody")
+        rule.waitGone("kDialogBody")
         rule.onNodeWithTag("lastEvent").assertTextContains("material-ok", substring = true)
     }
 
@@ -159,34 +159,34 @@ abstract class M3AppTest<A : ComponentActivity>(type: Class<A>) {
 
     @Test
     fun rotationKeepsOpenSheet() {
-        rule.onNodeWithTag("openGlassSheet").performClick()
-        rule.waitTag("glassSheetBody")
+        rule.onNodeWithTag("openKSheet").performClick()
+        rule.waitTag("kSheetBody")
         rule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
         Thread.sleep(1_500)
-        rule.waitTag("glassSheetBody")
+        rule.waitTag("kSheetBody")
         rule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
         Thread.sleep(1_500)
-        rule.waitTag("glassSheetOk")
-        rule.onNodeWithTag("glassSheetOk").performClick()
-        rule.waitGone("glassSheetBody")
+        rule.waitTag("kSheetOk")
+        rule.onNodeWithTag("kSheetOk").performClick()
+        rule.waitGone("kSheetBody")
     }
 
     @Test
     fun darkModeToggleWithOpenDialog() {
-        rule.onNodeWithTag("openGlassDialog").performClick()
-        rule.waitTag("glassDialogBody")
+        rule.onNodeWithTag("openKDialog").performClick()
+        rule.waitTag("kDialogBody")
         try {
             TestSupport.shell("cmd uimode night yes")
             Thread.sleep(2_000)
-            rule.waitTag("glassDialogBody")
-            rule.onNodeWithTag("glassDialogBody").assertIsDisplayed()
+            rule.waitTag("kDialogBody")
+            rule.onNodeWithTag("kDialogBody").assertIsDisplayed()
         } finally {
             TestSupport.shell("cmd uimode night no")
             Thread.sleep(2_000)
         }
-        rule.waitTag("glassDialogBody")
+        rule.waitTag("kDialogBody")
         back(rule)
-        rule.waitGone("glassDialogBody")
+        rule.waitGone("kDialogBody")
     }
 
     /** 토스트는 상태 표시줄 아래에, 시트 버튼은 내비게이션 바 위에 있어야 한다. */
@@ -203,10 +203,10 @@ abstract class M3AppTest<A : ComponentActivity>(type: Class<A>) {
         val toastTop = rule.onNodeWithText("저장했어요").fetchSemanticsNode().positionOnScreen.y
         assertTrue("토스트가 상태 표시줄(${bars[0].top}px)에 가린다: top=$toastTop", toastTop >= bars[0].top)
 
-        rule.onNodeWithTag("openGlassSheet").performClick()
-        rule.waitTag("glassSheetOk")
+        rule.onNodeWithTag("openKSheet").performClick()
+        rule.waitTag("kSheetOk")
         Thread.sleep(TestSupport.SETTLE_MS)
-        val ok = rule.onNodeWithTag("glassSheetOk").fetchSemanticsNode()
+        val ok = rule.onNodeWithTag("kSheetOk").fetchSemanticsNode()
         val bottom = ok.positionOnScreen.y + ok.size.height
         assertTrue("시트 버튼이 내비게이션 바(${bars[0].bottom}px)에 가린다: bottom=$bottom, screen=$screenHeight", bottom <= screenHeight - bars[0].bottom)
     }

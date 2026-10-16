@@ -60,24 +60,24 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.naury.kinetica.ui.Detent
-import com.naury.kinetica.ui.GlassDetentSheet
-import com.naury.kinetica.ui.GlassDialog
-import com.naury.kinetica.ui.GlassExpandHost
-import com.naury.kinetica.ui.GlassMenuItem
-import com.naury.kinetica.ui.GlassMiniPlayer
-import com.naury.kinetica.ui.GlassSheet
-import com.naury.kinetica.ui.GlassSnackbarHost
-import com.naury.kinetica.ui.GlassSnackbarResult
-import com.naury.kinetica.ui.GlassToastHost
+import com.naury.kinetica.ui.KDetentSheet
+import com.naury.kinetica.ui.KDialog
+import com.naury.kinetica.ui.KExpandHost
+import com.naury.kinetica.ui.KMenuItem
+import com.naury.kinetica.ui.KMiniPlayer
+import com.naury.kinetica.ui.KSheet
+import com.naury.kinetica.ui.KSnackbarHost
+import com.naury.kinetica.ui.KSnackbarResult
+import com.naury.kinetica.ui.KToastHost
 import com.naury.kinetica.ui.PushNavigation
 import com.naury.kinetica.ui.expandSource
-import com.naury.kinetica.ui.glassContextMenu
-import com.naury.kinetica.ui.glassOrigin
-import com.naury.kinetica.ui.rememberGlassDetentSheetState
-import com.naury.kinetica.ui.rememberGlassExpandState
-import com.naury.kinetica.ui.rememberGlassSnackbarState
-import com.naury.kinetica.ui.rememberGlassToastState
-import com.naury.kinetica.ui.rememberGlassMiniPlayerState
+import com.naury.kinetica.ui.kContextMenu
+import com.naury.kinetica.ui.kOrigin
+import com.naury.kinetica.ui.rememberKDetentSheetState
+import com.naury.kinetica.ui.rememberKExpandState
+import com.naury.kinetica.ui.rememberKSnackbarState
+import com.naury.kinetica.ui.rememberKToastState
+import com.naury.kinetica.ui.rememberKMiniPlayerState
 import kotlinx.coroutines.launch
 
 /** 아래 탭 세 개(홈, 효과, 폼)와 그 밖에서 여는 화면의 경로. */
@@ -103,7 +103,7 @@ object Routes {
 }
 
 /**
- * Material3 앱에 Kinetica 글래스 UI를 섞어 쓰는 화면. GlassScaffold 없이 Material Scaffold와 Navigation Compose 안에서 부른다.
+ * Material3 앱에 Kinetica 글래스 UI를 섞어 쓰는 화면. KineticaScaffold 없이 Material Scaffold와 Navigation Compose 안에서 부른다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -154,23 +154,23 @@ fun M3App() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeScreen(nav: NavHostController) {
-    var glassSheet by rememberSaveable { mutableStateOf(false) }
-    var glassDialog by rememberSaveable { mutableStateOf(false) }
+    var kSheet by rememberSaveable { mutableStateOf(false) }
+    var kDialog by rememberSaveable { mutableStateOf(false) }
     var materialSheet by rememberSaveable { mutableStateOf(false) }
     var materialDialog by rememberSaveable { mutableStateOf(false) }
     var lastEvent by rememberSaveable { mutableStateOf("없음") }
     var origin by remember { mutableStateOf<Offset?>(null) }
-    val toast = rememberGlassToastState()
-    val snackbar = rememberGlassSnackbarState()
-    val expand = rememberGlassExpandState()
+    val toast = rememberKToastState()
+    val snackbar = rememberKSnackbarState()
+    val expand = rememberKExpandState()
     val scope = rememberCoroutineScope()
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("마지막 이벤트: $lastEvent", Modifier.testTag("lastEvent"))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button({ glassSheet = true }, Modifier.testTag("openGlassSheet")) { Text("글래스 시트") }
-                Button({ glassDialog = true }, Modifier.testTag("openGlassDialog").glassOrigin { origin = it }) { Text("글래스 다이얼로그") }
+                Button({ kSheet = true }, Modifier.testTag("openKSheet")) { Text("글래스 시트") }
+                Button({ kDialog = true }, Modifier.testTag("openKDialog").kOrigin { origin = it }) { Text("글래스 다이얼로그") }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton({ materialSheet = true }, Modifier.testTag("openMaterialSheet")) { Text("Material 시트") }
@@ -181,17 +181,17 @@ private fun HomeScreen(nav: NavHostController) {
                 Button({
                     scope.launch {
                         val result = snackbar.show("항목을 지웠어요", actionLabel = "되돌리기", durationMs = 10_000)
-                        lastEvent = if (result == GlassSnackbarResult.Action) "snackbar-action" else "snackbar-dismissed"
+                        lastEvent = if (result == KSnackbarResult.Action) "snackbar-action" else "snackbar-dismissed"
                     }
                 }, Modifier.testTag("showSnackbar")) { Text("스낵바") }
             }
             ListItem(
                 headlineContent = { Text("길게 눌러 메뉴 열기") },
-                supportingContent = { Text("glassContextMenu를 붙인 Material ListItem") },
-                modifier = Modifier.testTag("contextItem").glassContextMenu(
+                supportingContent = { Text("kContextMenu를 붙인 Material ListItem") },
+                modifier = Modifier.testTag("contextItem").kContextMenu(
                     listOf(
-                        GlassMenuItem("공유") { lastEvent = "menu-share" },
-                        GlassMenuItem("삭제", destructive = true) { lastEvent = "menu-delete" },
+                        KMenuItem("공유") { lastEvent = "menu-share" },
+                        KMenuItem("삭제", destructive = true) { lastEvent = "menu-delete" },
                     ),
                 ),
             )
@@ -208,19 +208,19 @@ private fun HomeScreen(nav: NavHostController) {
             }
         }
 
-        GlassSheet(glassSheet, { glassSheet = false }, title = "글래스 시트") {
-            Text("시트 내용", Modifier.testTag("glassSheetBody"))
-            Button({ glassSheet = false; lastEvent = "sheet-ok" }, Modifier.testTag("glassSheetOk")) { Text("확인") }
+        KSheet(kSheet, { kSheet = false }, title = "글래스 시트") {
+            Text("시트 내용", Modifier.testTag("kSheetBody"))
+            Button({ kSheet = false; lastEvent = "sheet-ok" }, Modifier.testTag("kSheetOk")) { Text("확인") }
         }
-        GlassDialog(glassDialog, { glassDialog = false }, origin = origin, title = "글래스 다이얼로그") {
-            Text("다이얼로그 내용", Modifier.testTag("glassDialogBody"))
+        KDialog(kDialog, { kDialog = false }, origin = origin, title = "글래스 다이얼로그") {
+            Text("다이얼로그 내용", Modifier.testTag("kDialogBody"))
             Button({ materialDialog = true }, Modifier.testTag("dialogOpensMaterial")) { Text("Material 다이얼로그 겹치기") }
         }
         if (materialSheet) {
             ModalBottomSheet(onDismissRequest = { materialSheet = false }) {
                 Column(Modifier.padding(16.dp)) {
                     Text("Material 시트 내용", Modifier.testTag("materialSheetBody"))
-                    Button({ glassDialog = true }, Modifier.testTag("materialSheetOpensGlass")) { Text("글래스 다이얼로그 열기") }
+                    Button({ kDialog = true }, Modifier.testTag("materialSheetOpensKSheet")) { Text("글래스 다이얼로그 열기") }
                     Spacer(Modifier.height(48.dp))
                 }
             }
@@ -233,10 +233,10 @@ private fun HomeScreen(nav: NavHostController) {
                 text = { Text("AlertDialog 내용", Modifier.testTag("materialDialogBody")) },
             )
         }
-        GlassToastHost(toast)
+        KToastHost(toast)
         // 호스트의 NavigationBar 위에 띄우려고 modifier로 아래 여백을 준다.
-        GlassSnackbarHost(snackbar, bottomOffset = 80.dp)
-        GlassExpandHost(expand, title = "카드 상세") { key ->
+        KSnackbarHost(snackbar, bottomOffset = 80.dp)
+        KExpandHost(expand, title = "카드 상세") { key ->
             Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(24.dp)) {
                 Text("상세: $key", Modifier.testTag("expandDetail"))
             }
@@ -252,7 +252,7 @@ private fun DetailScreen() {
         Text("상세 화면", Modifier.testTag("detailScreen"))
         Button({ sheet = true }, Modifier.testTag("detailOpenSheet")) { Text("시트 열기") }
     }
-    GlassSheet(sheet, { sheet = false }, title = "상세 시트") {
+    KSheet(sheet, { sheet = false }, title = "상세 시트") {
         Text("상세 시트 내용", Modifier.testTag("detailSheetBody"))
         LazyColumn(Modifier.fillMaxWidth()) { items(40) { Text("행 $it", Modifier.padding(8.dp)) } }
     }
@@ -261,17 +261,17 @@ private fun DetailScreen() {
 /** 부른 자리에 그리는 미니 플레이어와 여러 높이 시트. 문서대로 화면을 채우는 Box 안에 둔다. */
 @Composable
 private fun MediaScreen() {
-    val player = rememberGlassMiniPlayerState()
+    val player = rememberKMiniPlayerState()
     val detents = remember { listOf(Detent.Peek(96.dp), Detent.Fraction(0.5f), Detent.Full) }
-    val sheet = rememberGlassDetentSheetState(detents)
+    val sheet = rememberKDetentSheetState(detents)
     var clicks by rememberSaveable { mutableIntStateOf(0) }
     Box(Modifier.fillMaxSize().background(Color(0xFF335577))) {
         Button({ clicks++ }, Modifier.align(Alignment.Center).testTag("mediaBehind")) { Text("뒤 버튼 $clicks") }
         Text("펼침: ${player.isExpanded}", Modifier.align(Alignment.TopStart).padding(8.dp).testTag("miniState"), color = Color.White)
-        GlassDetentSheet(sheet, title = "장소") {
+        KDetentSheet(sheet, title = "장소") {
             LazyColumn(Modifier.fillMaxWidth()) { items(30) { Text("장소 $it", Modifier.padding(12.dp).testTag("place$it")) } }
         }
-        GlassMiniPlayer(
+        KMiniPlayer(
             player,
             artwork = { Box(Modifier.size(48.dp).background(Color(0xFFFF8800), RoundedCornerShape(8.dp))) },
             barBottomPadding = 8.dp,

@@ -59,11 +59,11 @@ import com.naury.kinetica.serialization.DecodeResult
 import com.naury.kinetica.serialization.RemoteSceneLoader
 import com.naury.kinetica.serialization.SceneCodec
 import com.naury.kinetica.serialization.SceneFetch
-import com.naury.kinetica.ui.GlassScaffold
-import com.naury.kinetica.ui.GlassSheet
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.GlassToastHost
-import com.naury.kinetica.ui.rememberGlassToastState
+import com.naury.kinetica.ui.KSheet
+import com.naury.kinetica.ui.KToastHost
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.rememberKToastState
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlinx.coroutines.delay
@@ -82,7 +82,7 @@ internal fun ServerDemo(onBack: () -> Unit) {
     var sales by rememberSaveable { mutableDoubleStateOf(1_284_000.0) }
     var orders by rememberSaveable { mutableIntStateOf(265) }
     var showJson by rememberSaveable { mutableStateOf(false) }
-    val toast = rememberGlassToastState()
+    val toast = rememberKToastState()
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         while (true) {
@@ -91,10 +91,10 @@ internal fun ServerDemo(onBack: () -> Unit) {
             orders += 1
         }
     }
-    GlassScaffold(
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.Liquid,
-        background = { Box(Modifier.fillMaxSize().background(Color(0xFFF3F4F8))) },
+        surface = demoSurface(SERVER_DEMO_LOOK),
+        background = { DemoBackdrop { Box(Modifier.fillMaxSize().background(Color(0xFFF3F4F8))) } },
         topBar = { DemoTopBar("서버 화면", "서버 JSON으로 그리고, 숫자와 버튼은 앱과 연결됩니다", onBack) },
         bottomBar = {
             ServerActions(
@@ -117,7 +117,7 @@ internal fun ServerDemo(onBack: () -> Unit) {
             scope.launch { toast.show("앱이 받은 동작: ${action.name}, filter=${action["filter"]}") }
         }
         JsonSheet(showJson, version) { showJson = false }
-        GlassToastHost(toast)
+        KToastHost(toast)
     }
 }
 
@@ -168,7 +168,7 @@ private fun PromoArea(
 
 @Composable
 private fun JsonSheet(show: Boolean, version: Int, onDismiss: () -> Unit) {
-    GlassSheet(show, onDismiss, title = "서버 JSON") {
+    KSheet(show, onDismiss, title = "서버 JSON") {
         Label("서버가 보낸 JSON입니다. 형식은 docs/34에 정리되어 있어요.", 16)
         Spacer(Modifier.height(10.dp))
         Box(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState())) {
@@ -416,3 +416,5 @@ private fun text(
       "text": "$text", "fontSize": $size, "fontWeight": $weight, $extra
       "style": { "fill": "$color" }
     }"""
+
+private val SERVER_DEMO_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = false)

@@ -74,7 +74,7 @@ public fun LikeButton(
     val motion = remember { LikeMotion(liked) }
     LaunchedEffect(motion, liked) { motion.animateTo(liked, this) }
     val haptic = LocalHapticFeedback.current
-    val content = LocalGlassContentColor.current
+    val content = LocalKineticaContentColor.current
     val label = stringResource(R.string.kinetica_ui_like)
     val state = stringResource(if (liked) R.string.kinetica_ui_liked else R.string.kinetica_ui_not_liked)
     Row(

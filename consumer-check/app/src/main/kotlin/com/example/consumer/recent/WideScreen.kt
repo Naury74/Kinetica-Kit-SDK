@@ -17,9 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.naury.kinetica.ui.GlassTabletopLayout
-import com.naury.kinetica.ui.glassReadableWidth
-import com.naury.kinetica.ui.rememberGlassWindowLayout
+import com.naury.kinetica.ui.KTabletopLayout
+import com.naury.kinetica.ui.kReadableWidth
+import com.naury.kinetica.ui.rememberKWindowLayout
 
 /**
  * 영상 앱 화면. 위는 영상, 아래는 설명 글과 조작부다. 탁자 모드면 접힌 선 위아래로 나뉘고, 넓은 창에서는 글이 읽기 좋은 폭으로 줄어든다.
@@ -27,20 +27,20 @@ import com.naury.kinetica.ui.rememberGlassWindowLayout
  */
 @Composable
 fun WideHostScreen() {
-    val window = rememberGlassWindowLayout()
+    val window = rememberKWindowLayout()
     Column(Modifier.fillMaxSize()) {
         Text(
             "구간 ${window.widthClass} 열 ${window.columns(minCellWidth = 280.dp)} 자세 ${window.posture} 짧음 ${window.isShort}",
             Modifier.testTag("windowInfo"),
         )
-        GlassTabletopLayout(
+        KTabletopLayout(
             Modifier.fillMaxWidth().weight(1f).testTag("tabletop"),
             top = { Box(Modifier.fillMaxWidth().height(180.dp).background(Color.Black).testTag("video")) },
             bottom = {
                 Column(Modifier.fillMaxSize().background(Color(0xFFEFEFEF)).testTag("controls")) {
                     Text(
                         "영상 설명 ".repeat(40),
-                        Modifier.glassReadableWidth().padding(vertical = 8.dp).testTag("readable"),
+                        Modifier.kReadableWidth().padding(vertical = 8.dp).testTag("readable"),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }

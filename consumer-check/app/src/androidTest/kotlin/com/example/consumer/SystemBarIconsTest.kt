@@ -20,7 +20,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -84,7 +83,7 @@ class SystemBarIconsScaffoldTest {
         assertTrue("닫으면 호스트의 어두운 아이콘으로 돌아와야 한다", rule.becomes { hostDark() })
     }
 
-    /** 호스트가 먼저 GlassSystemBarIcons(light = true)를 두고 뷰어를 열었다 닫으면 호스트 요청이 남는다. 호스트가 빼면 원래대로 돌아온다. */
+    /** 호스트가 먼저 KSystemBarIcons(light = true)를 두고 뷰어를 열었다 닫으면 호스트 요청이 남는다. 호스트가 빼면 원래대로 돌아온다. */
     @Test
     fun hostRequestSurvivesViewer() {
         rule.waitTag("barOpen")
@@ -113,23 +112,28 @@ class SystemBarIconsScaffoldTest {
     }
 
     /**
-     * 뷰어가 떠 있는 동안 호스트가 GlassSystemBarIcons 없이 창 설정을 직접 바꾸면(예: 앱 안 다크 모드 전환),
-     * 뷰어를 닫을 때 그 값이 아니라 뷰어를 열 때 기억한 값으로 되돌린다.
+     * 어두운 화면(밝은 아이콘)인 호스트가 뷰어를 연 동안 KSystemBarIcons 없이 창 설정을 직접 바꾸면(예: 앱 안에서 밝은 테마로 전환),
+     * 뷰어를 닫을 때 뷰어를 열 때 기억한 값이 아니라 호스트가 바꾼 값이 남아야 한다.
+     * 뷰어가 쓴 값과 같은 값을 다시 쓰는 것은 창 상태가 바뀌지 않아 SDK가 알 수 없으므로, 뷰어와 다른 값으로 바꾸는 경우를 본다.
      */
-    @Ignore("SDK 결함: 뷰어를 열 때 기억한 아이콘 모양으로 되돌려, 그 사이 호스트가 창에 직접 바꾼 값을 덮어쓴다. 고쳐지면 켠다.")
     @Test
     fun directHostChangeWhileOpenIsKept() {
         rule.waitTag("barOpen")
-        rule.openViewer()
         rule.runOnIdle {
             WindowCompat.getInsetsController(rule.activity.window, rule.activity.window.decorView).isAppearanceLightStatusBars = false
         }
+        assertFalse(hostDark())
+        rule.openViewer()
+        assertFalse(hostDark())
+        rule.runOnIdle {
+            WindowCompat.getInsetsController(rule.activity.window, rule.activity.window.decorView).isAppearanceLightStatusBars = true
+        }
         rule.closeViewer()
-        assertFalse("뷰어를 연 동안 호스트가 바꾼 설정(밝은 아이콘)이 남아야 한다", hostDark())
+        assertTrue("뷰어를 연 동안 호스트가 바꾼 설정(어두운 아이콘)이 남아야 한다", hostDark())
     }
 }
 
-/** 시나리오 9(이어서): GlassScaffold 밖에서는 뷰어가 별도 Dialog 창에 뜬다. 그 창의 아이콘이 밝아지고 호스트 창은 건드리지 않아야 한다. */
+/** 시나리오 9(이어서): KineticaScaffold 밖에서는 뷰어가 별도 Dialog 창에 뜬다. 그 창의 아이콘이 밝아지고 호스트 창은 건드리지 않아야 한다. */
 @RunWith(AndroidJUnit4::class)
 @androidx.test.filters.SdkSuppress(minSdkVersion = 29)
 class SystemBarIconsWindowTest {
@@ -152,7 +156,7 @@ class SystemBarIconsWindowTest {
         assertTrue(hostDark())
     }
 
-    /** 호스트 창에 둔 GlassSystemBarIcons는 뷰어 창과 따로 논다. 열고 닫아도 호스트 요청이 그대로다. */
+    /** 호스트 창에 둔 KSystemBarIcons는 뷰어 창과 따로 논다. 열고 닫아도 호스트 요청이 그대로다. */
     @Test
     fun hostRequestOnActivityWindowIsIndependent() {
         rule.waitTag("barOpen")

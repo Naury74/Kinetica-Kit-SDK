@@ -37,7 +37,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** 시나리오 7: 호스트 앱 안에서 GlassListDetail, GlassAdaptiveNavigation, GlassFloatingTabBar를 화면 회전과 함께 쓴다. */
+/** 시나리오 7: 호스트 앱 안에서 KListDetail, KAdaptiveNavigation, KFloatingTabBar를 화면 회전과 함께 쓴다. */
 @RunWith(AndroidJUnit4::class)
 class AdaptiveAppTest {
     @get:Rule

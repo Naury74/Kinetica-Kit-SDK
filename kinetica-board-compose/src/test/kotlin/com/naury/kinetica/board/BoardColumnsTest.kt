@@ -206,4 +206,27 @@ class BoardColumnsTest {
         val plain = (0 until 5).map { "w$it" to GridCell(it % 2, it / 2, 1, 1) }
         assertThat(flowCells(plain, emptyMap(), 4).values.map { it.row * 4 + it.column }).containsExactly(0, 1, 2, 3, 4).inOrder()
     }
+
+    @Test
+    fun `열 수는 Compose 상태라 읽은 곳이 바뀜을 알 수 있다`() {
+        val state = KineticaBoardState.create(catalog, grid)
+        val reads = mutableListOf<Any>()
+        val snapshot = androidx.compose.runtime.snapshots.Snapshot.takeSnapshot(readObserver = { reads += it })
+        try {
+            snapshot.enter { state.activeColumns }
+        } finally {
+            snapshot.dispose()
+        }
+        assertThat(reads).isNotEmpty()
+
+        val changed = mutableListOf<Any>()
+        val handle = androidx.compose.runtime.snapshots.Snapshot.registerApplyObserver { objects, _ -> changed.addAll(objects) }
+        try {
+            state.activeColumns = 4
+            androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications()
+        } finally {
+            handle.dispose()
+        }
+        assertThat(changed).containsAnyIn(reads)
+    }
 }

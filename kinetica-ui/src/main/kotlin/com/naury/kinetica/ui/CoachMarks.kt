@@ -181,10 +181,10 @@ private class CoachTargetNode(var state: CoachMarkState, var id: String) :
 
 /**
  * 기능 안내 오버레이. [CoachMarkState.start]를 부르면 화면이 어두워지고 지금 단계의 대상 요소 둘레만 둥글게 뚫려 밝게 보인다.
- * 옆에는 제목, 설명, 단계 표시, 다음과 건너뛰기 버튼이 있는 글래스 카드가 뜬다. 다음 단계로 넘어가면 구멍이 새 대상으로 부드럽게
+ * 옆에는 제목, 설명, 단계 표시, 다음과 건너뛰기 버튼이 있는 카드가 뜬다. 다음 단계로 넘어가면 구멍이 새 대상으로 부드럽게
  * 옮겨 가며 크기가 바뀐다. 구멍을 눌러도 다음 단계로 가고, 뒤로 가기를 하면 건너뛴다.
  *
- * [GlassScaffold] 안에서는 바까지 덮는 오버레이 레이어에 그린다. 밖에서 쓰면 호출한 위치에 그리므로 화면을 감싼 `Box`의 마지막 자식으로 둔다.
+ * [KineticaScaffold] 안에서는 바까지 덮는 오버레이 레이어에 그린다. 밖에서 쓰면 호출한 위치에 그리므로 화면을 감싼 `Box`의 마지막 자식으로 둔다.
  * TalkBack은 단계가 바뀔 때마다 제목과 설명을 읽으며, 설명에 있는 사용자 지정 동작으로 다음 단계로 가거나 건너뛸 수 있다.
  *
  * ```kotlin
@@ -205,7 +205,7 @@ public fun CoachMarkHost(
     steps: List<CoachStep>,
     modifier: Modifier = Modifier,
     onFinish: (completed: Boolean) -> Unit = {},
-    style: GlassStyle = LocalGlassStyle.current,
+    surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val finish by rememberUpdatedState(onFinish)
     SideEffect {
@@ -219,10 +219,10 @@ public fun CoachMarkHost(
         shown.steps = steps
         shown.index = state.currentStep
     }
-    GlassOverlay(visible) { transition ->
+    KOverlay(visible) { transition ->
         val last = shown.steps
         if (last.isNotEmpty()) {
-            CoachLayer(CoachFrame(state, last, shown.index.coerceIn(last.indices), style), transition, modifier)
+            CoachLayer(CoachFrame(state, last, shown.index.coerceIn(last.indices), surface), transition, modifier)
         }
     }
 }
@@ -234,7 +234,7 @@ private class ShownStep {
 }
 
 /** 한 프레임에 그릴 안내 내용. 파라미터 수를 줄이려고 묶었다. */
-private class CoachFrame(val state: CoachMarkState, val steps: List<CoachStep>, val index: Int, val style: GlassStyle) {
+private class CoachFrame(val state: CoachMarkState, val steps: List<CoachStep>, val index: Int, val surface: SurfaceStyle) {
     val step: CoachStep get() = steps[index]
 }
 
@@ -328,13 +328,17 @@ private fun Spotlight(hole: State<Rect>, ring: State<Float>, onHoleTap: () -> Un
  * 설명 카드는 어두운 스크림 위에 뜨므로 일반 팝업 글래스로는 뒤 목록 글자가 비쳐 읽기 어렵다. 스타일의 불투명 대체 색으로
  * 진하게 칠해 글자 대비를 확보한다.
  */
-private fun GlassStyle.forCoachCard(): GlassStyle = forPopup().let {
-    it.copy(tint = it.fallback.copy(alpha = maxOf(it.fallback.alpha, CARD_TINT_ALPHA)))
+private fun SurfaceStyle.forCoachCard(): SurfaceStyle = when (val popup = forPopup()) {
+    is SurfaceStyle.Glass -> popup.style.let {
+        SurfaceStyle.Glass(it.copy(tint = it.fallback.copy(alpha = maxOf(it.fallback.alpha, CARD_TINT_ALPHA))))
+    }
+
+    else -> popup
 }
 
 @Composable
 private fun CoachCard(frame: CoachFrame, hole: State<Rect>) {
-    val style = frame.style
+    val surface = frame.surface
     val safe = WindowInsets.safeDrawing
     Column(
         Modifier
@@ -349,13 +353,13 @@ private fun CoachCard(frame: CoachFrame, hole: State<Rect>) {
                     val r = hole.value
                     val anchor = if (r.isEmpty) Rect(Offset(container.width / 2f, container.height / 2f), 0f) else r
                     val spacing = TooltipSpacing(margin, CARD_GAP.toPx(), 0f, insets)
-                    val placed = placeTooltip(anchor, container, IntSize(card.width, card.height), GlassTooltipPlacement.Below, spacing)
+                    val placed = placeTooltip(anchor, container, IntSize(card.width, card.height), KTooltipPlacement.Below, spacing)
                     val middle = insets.top + (container.height - insets.top - insets.bottom - card.height) / 2
                     val y = if (r.isEmpty) middle else placed.y
                     card.place(placed.x, y)
                 }
             }
-            .glass(style.forCoachCard(), RoundedCornerShape(CARD_CORNER))
+            .kSurface(surface.forCoachCard(), RoundedCornerShape(CARD_CORNER))
             .semantics { paneTitle = frame.step.title }
             .padding(20.dp),
     ) {
@@ -401,12 +405,12 @@ private fun CoachText(frame: CoachFrame) {
             ThemedText(
                 step.title,
                 Modifier.semantics { heading() },
-                style = TextStyle(color = frame.style.onGlass, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+                style = TextStyle(color = frame.surface.contentColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
             )
             Spacer(Modifier.height(6.dp))
             ThemedText(
                 step.body,
-                style = TextStyle(color = frame.style.onGlass.copy(alpha = BODY_ALPHA), fontSize = 15.sp, lineHeight = 21.sp),
+                style = TextStyle(color = frame.surface.contentColor.copy(alpha = BODY_ALPHA), fontSize = 15.sp, lineHeight = 21.sp),
             )
         }
     }
@@ -416,15 +420,15 @@ private fun CoachText(frame: CoachFrame) {
 private fun CoachControls(frame: CoachFrame) {
     val last = frame.index == frame.steps.lastIndex
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        StepDots(frame.steps.size, frame.index, frame.style.onGlass)
+        StepDots(frame.steps.size, frame.index, frame.surface.contentColor)
         Spacer(Modifier.weight(1f))
         if (!last) {
-            CoachButton(stringResource(R.string.kinetica_ui_coach_skip), filled = false, frame.style) { frame.state.skip() }
+            CoachButton(stringResource(R.string.kinetica_ui_coach_skip), filled = false, frame.surface) { frame.state.skip() }
         }
         CoachButton(
             stringResource(if (last) R.string.kinetica_ui_coach_done else R.string.kinetica_ui_coach_next),
             filled = true,
-            frame.style,
+            frame.surface,
         ) { frame.state.next() }
     }
 }
@@ -444,14 +448,14 @@ private fun StepDots(count: Int, current: Int, color: Color) {
 }
 
 @Composable
-private fun CoachButton(text: String, filled: Boolean, style: GlassStyle, onClick: () -> Unit) {
-    val ink = style.onGlass
+private fun CoachButton(text: String, filled: Boolean, surface: SurfaceStyle, onClick: () -> Unit) {
+    val ink = surface.contentColor
     val onInk = if (ink.luminance() > LIGHT_INK) Color.Black else Color.White
     Box(
         Modifier
             .heightIn(min = BUTTON_HEIGHT)
             .then(if (filled) Modifier.background(ink, CircleShape) else Modifier)
-            .clickable(null, GlassIndication(CircleShape), role = Role.Button, onClick = onClick)
+            .clickable(null, KIndication(CircleShape), role = Role.Button, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {

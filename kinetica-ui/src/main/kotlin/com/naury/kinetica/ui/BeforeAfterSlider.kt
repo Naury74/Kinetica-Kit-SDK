@@ -86,7 +86,7 @@ import kotlinx.coroutines.launch
  * @param initial 처음 손잡이 위치. 시작 쪽 가장자리가 0, 끝 쪽 가장자리가 1이다. 0..1 밖이면 [IllegalArgumentException]을 던진다.
  * @param beforeLabel [before] 쪽 위에 띄우는 라벨. `null`이면 띄우지 않는다. 손잡이가 라벨을 덮을 만큼 다가오면 사라진다.
  * @param afterLabel [after] 쪽 위에 띄우는 라벨. `null`이면 띄우지 않는다.
- * @param style 손잡이와 라벨의 글래스 스타일. 두 이미지를 비춘다.
+ * @param surface 손잡이와 라벨의 글래스 스타일. 두 이미지를 비춘다.
  */
 @Composable
 public fun BeforeAfterSlider(
@@ -96,12 +96,12 @@ public fun BeforeAfterSlider(
     initial: Float = 0.5f,
     beforeLabel: String? = stringResource(R.string.kinetica_ui_compare_before),
     afterLabel: String? = stringResource(R.string.kinetica_ui_compare_after),
-    style: GlassStyle = LocalGlassStyle.current,
+    surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     require(initial in 0f..1f) { "initial은 0..1이어야 합니다." }
     val split = rememberSaveable { mutableFloatStateOf(initial) }
     val compare = remember(split) { CompareState(split) }
-    CompareBox(compare, before, after, modifier, CompareLabels(beforeLabel, afterLabel), style)
+    CompareBox(compare, before, after, modifier, CompareLabels(beforeLabel, afterLabel), surface)
 }
 
 /**
@@ -126,14 +126,14 @@ public fun BeforeAfterSlider(
     modifier: Modifier = Modifier,
     beforeLabel: String? = stringResource(R.string.kinetica_ui_compare_before),
     afterLabel: String? = stringResource(R.string.kinetica_ui_compare_after),
-    style: GlassStyle = LocalGlassStyle.current,
+    surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val split = remember { mutableFloatStateOf(position.coerceIn(0f, 1f)) }
     // 그리기 단계에서 읽는 값이므로 컴포지션마다 호스트 값으로 맞춘다. 같은 값이면 상태가 바뀌지 않는다.
     split.floatValue = position.coerceIn(0f, 1f)
     val latest by rememberUpdatedState(onPositionChange)
     val compare = remember(split) { CompareState(split) { latest(it) } }
-    CompareBox(compare, before, after, modifier, CompareLabels(beforeLabel, afterLabel), style)
+    CompareBox(compare, before, after, modifier, CompareLabels(beforeLabel, afterLabel), surface)
 }
 
 /** 손잡이 양쪽 위에 띄우는 라벨. */
@@ -146,7 +146,7 @@ private fun CompareBox(
     after: @Composable () -> Unit,
     modifier: Modifier,
     labels: CompareLabels,
-    style: GlassStyle,
+    surface: SurfaceStyle,
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     compare.rtl = rtl
@@ -187,10 +187,10 @@ private fun CompareBox(
                 },
             ) { before() }
         }
-        labels.before?.let { CompareLabel(it, Alignment.TopStart, style, backdrop) { compare.startRoom() } }
-        labels.after?.let { CompareLabel(it, Alignment.TopEnd, style, backdrop) { compare.width - compare.startRoom() } }
+        labels.before?.let { CompareLabel(it, Alignment.TopStart, surface, backdrop) { compare.startRoom() } }
+        labels.after?.let { CompareLabel(it, Alignment.TopEnd, surface, backdrop) { compare.width - compare.startRoom() } }
         Divider(compare::splitX)
-        Handle(compare::splitX, compare.dragging, focused, style, backdrop)
+        Handle(compare::splitX, compare.dragging, focused, surface, backdrop)
     }
 }
 
@@ -279,14 +279,14 @@ private fun BoxScope.Divider(splitX: () -> Float) {
 }
 
 @Composable
-private fun BoxScope.Handle(splitX: () -> Float, dragging: Boolean, focused: Boolean, style: GlassStyle, backdrop: GlassBackdrop) {
+private fun BoxScope.Handle(splitX: () -> Float, dragging: Boolean, focused: Boolean, surface: SurfaceStyle, backdrop: GlassBackdrop) {
     val grow by animateFloatAsState(
         if (dragging) HANDLE_GROW else 1f,
         spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "handle",
     )
-    val accent = GlassTheme.colors.accent
-    val ink = style.onGlass
+    val accent = KineticaTheme.colors.accent
+    val ink = surface.contentColor
     val chevrons = remember { Path() }
     Box(
         Modifier
@@ -297,7 +297,7 @@ private fun BoxScope.Handle(splitX: () -> Float, dragging: Boolean, focused: Boo
                 scaleY = grow
             }
             .size(HANDLE_SIZE)
-            .glass(style, CircleShape, backdrop)
+            .kSurface(surface, CircleShape, backdrop)
             .drawBehind {
                 drawChevrons(chevrons, ink)
                 if (focused) drawCircle(accent, size.minDimension / 2 - FOCUS_WIDTH.toPx() / 2, style = Stroke(FOCUS_WIDTH.toPx()))
@@ -326,7 +326,7 @@ private fun DrawScope.drawChevrons(path: Path, color: Color) {
 
 /** 위쪽 모서리에 띄우는 라벨. [room]은 라벨 쪽에 남은 너비(px)로, 라벨이 들어갈 자리가 모자라면 흐려진다. */
 @Composable
-private fun BoxScope.CompareLabel(text: String, alignment: Alignment, style: GlassStyle, backdrop: GlassBackdrop, room: () -> Float) {
+private fun BoxScope.CompareLabel(text: String, alignment: Alignment, surface: SurfaceStyle, backdrop: GlassBackdrop, room: () -> Float) {
     var labelWidth by remember { mutableIntStateOf(0) }
     Box(
         Modifier
@@ -337,11 +337,11 @@ private fun BoxScope.CompareLabel(text: String, alignment: Alignment, style: Gla
                 val needed = labelWidth + LABEL_MARGIN.toPx() * 2
                 alpha = ((room() - needed) / LABEL_FADE.toPx()).coerceIn(0f, 1f)
             }
-            .glass(style, CircleShape, backdrop)
+            .kSurface(surface, CircleShape, backdrop)
             .clearAndSetSemantics { }
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
-        ThemedText(text, style = TextStyle(color = style.onGlass, fontSize = 12.sp, fontWeight = FontWeight.SemiBold), maxLines = 1)
+        ThemedText(text, style = TextStyle(color = surface.contentColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold), maxLines = 1)
     }
 }
 

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 앱 테마에서 모든 KSurfaceView의 기본 스타일을 정하는 테마 속성. 예: <item name="kinetica_surfaceViewStyle">@style/MySurface</item> -->
+    <attr name="kinetica_surfaceViewStyle" format="reference" />
+
+    <!-- KSurfaceView XML 속성. 코드에서 이름이 같은 속성과 같은 역할을 한다. -->
+    <declare-styleable name="KineticaSurfaceView">
+        <!-- 표면 스타일. auto는 시스템 다크 모드에 따라 liquid나 liquidDark를 고른다. cleanLight부터는 블러 없는 단색과 톤 표면이다. -->
+        <attr name="kinetica_surfaceStyle" format="enum">
+            <enum name="auto" value="0" />
+            <enum name="liquid" value="1" />
+            <enum name="liquidDark" value="2" />
+            <enum name="acrylic" value="3" />
+            <enum name="acrylicDark" value="4" />
+            <enum name="oneUi" value="5" />
+            <enum name="oneUiDark" value="6" />
+            <enum name="vision" value="7" />
+            <enum name="material" value="8" />
+            <enum name="materialDark" value="9" />
+            <enum name="frosted" value="10" />
+            <enum name="mica" value="11" />
+            <enum name="micaDark" value="12" />
+            <enum name="harmonyOs" value="13" />
+            <enum name="obsidian" value="14" />
+            <enum name="pastel" value="15" />
+            <enum name="clear" value="16" />
+            <enum name="cleanLight" value="17" />
+            <enum name="cleanDark" value="18" />
+            <enum name="solidOneUi" value="19" />
+            <enum name="solidOneUiDark" value="20" />
+            <enum name="solidMaterial" value="21" />
+            <enum name="solidMaterialDark" value="22" />
+            <enum name="tonal" value="23" />
+            <enum name="tonalDark" value="24" />
+        </attr>
+        <!-- 모서리 반경. 기본값은 24dp. 자식 View도 이 모양으로 잘린다. -->
+        <attr name="kinetica_cornerRadius" format="dimension" />
+    </declare-styleable>
+</resources>

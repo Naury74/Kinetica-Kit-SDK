@@ -237,7 +237,7 @@ class Effects2Test {
     @Test
     fun `액체 버튼은 버튼 역할로 눌리고 쉴 때 모양은 요소 크기에 맞다`() {
         var clicks = 0
-        compose.setContent { GlassBlobButton("시작하기", onClick = { clicks++ }, Modifier.testTag("blob")) }
+        compose.setContent { KBlobButton("시작하기", onClick = { clicks++ }, Modifier.testTag("blob")) }
         compose.onNodeWithTag("blob")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .performClick()
@@ -259,7 +259,7 @@ class Effects2Test {
     fun `방울 그룹은 표시한 요소 자리에 방울을 그린다`() {
         compose.setContent {
             Box(Modifier.background(Color.White).testTag("group")) {
-                GlassBlobGroup(Modifier.padding(20.dp), color = Color.Red) {
+                KBlobGroup(Modifier.padding(20.dp), color = Color.Red) {
                     Row {
                         Box(Modifier.size(40.dp).blob())
                         Box(Modifier.size(40.dp))

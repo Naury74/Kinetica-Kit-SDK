@@ -3,7 +3,7 @@ package com.naury.kinetica.ui
 import androidx.compose.ui.geometry.Rect
 
 /** 오버레이 기준 좌표(px)로 옮긴 접힌 선과 자세 */
-internal class PlayerFold(val bounds: Rect, val posture: GlassPosture)
+internal class PlayerFold(val bounds: Rect, val posture: KPosture)
 
 /** 펼친 화면의 아트 자리와 내용 자리. 내용 자리는 펼친 화면([PlayerGeometry.full]) 기준 LTR 좌표(px)다. */
 internal class FullPlayerLayout(val art: Rect, val content: Rect)
@@ -35,7 +35,7 @@ internal class PlayerMetrics(
  */
 internal fun fullPlayerLayout(width: Float, full: Rect, hasArtwork: Boolean, fold: PlayerFold?, m: PlayerMetrics): FullPlayerLayout {
     val tabletop = fold?.takeIf {
-        it.posture == GlassPosture.Tabletop && it.bounds.width > it.bounds.height &&
+        it.posture == KPosture.Tabletop && it.bounds.width > it.bounds.height &&
             it.bounds.top - full.top >= m.minPane && full.bottom - it.bounds.bottom >= m.minPane
     }
     val wide = hasArtwork && width >= m.wideMin && width >= full.height * WIDE_RATIO

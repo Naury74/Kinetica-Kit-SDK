@@ -26,7 +26,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** 시나리오 5: Material3 Scaffold 안 가입 폼에서 GlassPasswordField, GlassTagInput, GlassCodeInput을 쓴다. */
+/** 시나리오 5: Material3 Scaffold 안 가입 폼에서 KPasswordField, KTagInput, KCodeInput을 쓴다. */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(AndroidJUnit4::class)
 class AuthFormTest {
@@ -39,11 +39,11 @@ class AuthFormTest {
         rule.waitTag("suEmail")
     }
 
-    /** GlassPasswordField와 GlassTagInput의 안쪽 입력란은 fieldModifier로 붙인 태그로 찾는다. */
+    /** KPasswordField와 KTagInput의 안쪽 입력란은 fieldModifier로 붙인 태그로 찾는다. */
     private fun fieldIn(tag: String): SemanticsNodeInteraction = rule.onNodeWithTag("${tag}Field")
 
     @Test
-    fun imeMovesThroughGlassFieldsAndCodeOpensNextScreen() {
+    fun imeMovesThroughFieldsAndCodeOpensNextScreen() {
         rule.onNodeWithTag("suEmail").performClick()
         rule.onNodeWithTag("suEmail").performTextInput("a@b.co")
         rule.onNodeWithTag("suEmail").performImeAction()
@@ -100,7 +100,7 @@ class AuthFormTest {
         rule.onNodeWithTag("welcome").assertTextContains("paste@b.co", substring = true)
     }
 
-    /** GlassSheet 안에서도 비밀번호 '완료'에서 PIN 칸으로 가고, PIN을 다 채우면 시트가 닫히며 키보드도 내려간다. */
+    /** KSheet 안에서도 비밀번호 '완료'에서 PIN 칸으로 가고, PIN을 다 채우면 시트가 닫히며 키보드도 내려간다. */
     @Test
     fun pinSheetMovesFocusAndCloses() {
         rule.onNodeWithTag("suOpenPinSheet").performScrollTo().performClick()

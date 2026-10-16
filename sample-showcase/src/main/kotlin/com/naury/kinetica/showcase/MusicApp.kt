@@ -49,22 +49,24 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.naury.kinetica.ui.AvatarStack
-import com.naury.kinetica.ui.GlassAvatar
-import com.naury.kinetica.ui.GlassFloatingTabBar
-import com.naury.kinetica.ui.GlassIndication
-import com.naury.kinetica.ui.GlassMiniPlayerBar
-import com.naury.kinetica.ui.GlassMiniPlayerFullScreen
-import com.naury.kinetica.ui.GlassRating
-import com.naury.kinetica.ui.GlassScaffold
-import com.naury.kinetica.ui.GlassSkeletonText
-import com.naury.kinetica.ui.GlassSlider
 import com.naury.kinetica.ui.GlassStyles
-import com.naury.kinetica.ui.GlassSurface
-import com.naury.kinetica.ui.GlassTab
+import com.naury.kinetica.ui.KAvatar
+import com.naury.kinetica.ui.KFloatingTabBar
+import com.naury.kinetica.ui.KIndication
+import com.naury.kinetica.ui.KMiniPlayerBar
+import com.naury.kinetica.ui.KMiniPlayerFullScreen
+import com.naury.kinetica.ui.KRating
+import com.naury.kinetica.ui.KSkeletonText
+import com.naury.kinetica.ui.KSlider
+import com.naury.kinetica.ui.KSurface
+import com.naury.kinetica.ui.KTab
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.KineticaTheme
 import com.naury.kinetica.ui.LikeButton
+import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.PlayPauseIcon
-import com.naury.kinetica.ui.rememberGlassFloatingTabBarState
-import com.naury.kinetica.ui.rememberGlassMiniPlayerState
+import com.naury.kinetica.ui.rememberKFloatingTabBarState
+import com.naury.kinetica.ui.rememberKMiniPlayerState
 import com.naury.kinetica.ui.skeleton
 import kotlinx.coroutines.delay
 
@@ -81,18 +83,18 @@ internal fun MusicApp(onBack: () -> Unit, model: MusicViewModel = viewModel()) {
         delay(1500)
         loading = false
     }
-    val bar = rememberGlassFloatingTabBarState()
+    val bar = rememberKFloatingTabBarState()
     val list = rememberLazyListState()
-    val player = rememberGlassMiniPlayerState()
+    val player = rememberKMiniPlayerState()
     val song = TRACKS[track]
-    GlassScaffold(
+    KineticaScaffold(
         Modifier.fillMaxSize(),
-        style = GlassStyles.LiquidDark,
-        background = { Aurora(Modifier.fillMaxSize(), dark = true) },
+        surface = demoSurface(MUSIC_APP_LOOK),
+        background = { DemoBackdrop() },
         topBar = { DemoTopBar("음악", "목록을 내리면 탭 바가 줄어듭니다", onBack, scrolled = { list.canScrollBackward }) },
         bottomBar = {
-            GlassFloatingTabBar(MUSIC_TABS, tab, { tab = it }, state = bar, accessory = {
-                GlassMiniPlayerBar(player, artwork = { Artwork(song) }) { MiniBar(song, model.playing, model::togglePlaying) }
+            KFloatingTabBar(MUSIC_TABS, tab, { tab = it }, state = bar, accessory = {
+                KMiniPlayerBar(player, artwork = { Artwork(song) }) { MiniBar(song, model.playing, model::togglePlaying) }
             })
         },
     ) { padding ->
@@ -107,14 +109,14 @@ internal fun MusicApp(onBack: () -> Unit, model: MusicViewModel = viewModel()) {
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { Label(MUSIC_HEADERS[tab], 20, FontWeight.Bold, color = Color.White) }
+            item { Label(MUSIC_HEADERS[tab], 20, FontWeight.Bold) }
             tabTracks(tab).forEach { index ->
                 item(TRACKS[index].title) {
                     TrackRow(TRACKS[index], loading, index == track && model.playing) { model.play(index) }
                 }
             }
         }
-        GlassMiniPlayerFullScreen(player, artwork = { Artwork(song) }) { FullPlayer(song, model) }
+        KMiniPlayerFullScreen(player, artwork = { Artwork(song) }) { FullPlayer(song, model) }
     }
 }
 
@@ -127,18 +129,18 @@ private fun tabTracks(tab: Int): List<Int> = when (tab) {
 
 @Composable
 private fun TrackRow(song: Song, loading: Boolean, current: Boolean, onClick: () -> Unit) {
-    GlassSurface(onClick, Modifier.fillMaxWidth()) {
+    KSurface(onClick, Modifier.fillMaxWidth()) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).skeleton(loading).clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(song.colors)))
             Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
                 if (loading) {
-                    GlassSkeletonText(2)
+                    KSkeletonText(2)
                 } else {
                     Label(song.title, 16, FontWeight.SemiBold)
-                    Label(song.artist, 13, color = Color.White.copy(alpha = 0.7f))
+                    Label(song.artist, 13, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))
                 }
             }
-            if (current) Label("재생 중", 12, FontWeight.SemiBold, color = Color(0xFF7AE0FF))
+            if (current) Label("재생 중", 12, FontWeight.SemiBold, color = KineticaTheme.colors.accent)
         }
     }
 }
@@ -152,8 +154,8 @@ private fun Artwork(song: Song) {
 private fun MiniBar(song: Song, playing: Boolean, toggle: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end = 10.dp)) {
-            Label(song.title, 14, FontWeight.SemiBold, color = Color.White)
-            Label(song.artist, 11, color = Color.White.copy(alpha = 0.7f))
+            Label(song.title, 14, FontWeight.SemiBold)
+            Label(song.artist, 11, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))
         }
         PlayButton(playing, 36, toggle)
     }
@@ -189,14 +191,14 @@ private fun FullPlayerBody(song: Song, model: MusicViewModel, track: Int, side: 
             }
             LikeButton(model.isLiked(track), { model.setLiked(track, it) }, count = model.likes(track))
         }
-        GlassSlider(model.position, { model.position = it })
+        KSlider(model.position, { model.position = it })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             PlayButton(model.playing, 72, model::togglePlaying)
         }
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Label("이 곡 평가", 13, color = Color.White.copy(alpha = 0.7f))
-            GlassRating(model.rating(track), { model.setRating(track, it) }, allowHalf = true, starSize = 24.dp)
+            KRating(model.rating(track), { model.setRating(track, it) }, allowHalf = true, starSize = 24.dp)
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AvatarStack(FRIENDS, max = 4, size = 32.dp)
@@ -218,14 +220,14 @@ private fun PlayButton(playing: Boolean, size: Int, toggle: () -> Unit) {
             .size(size.dp)
             .clip(CircleShape)
             .background(Color.White.copy(alpha = 0.18f))
-            .clickable(null, GlassIndication(CircleShape, Color.White), role = Role.Button, onClick = toggle)
+            .clickable(null, KIndication(CircleShape, Color.White), role = Role.Button, onClick = toggle)
             .semantics { contentDescription = if (playing) "일시 정지" else "재생" },
         contentAlignment = Alignment.Center,
     ) { PlayPauseIcon(playing, Modifier.size((size / 2).dp), Color.White) }
 }
 
 private val MUSIC_TABS =
-    listOf(GlassTab("홈", ShowcaseIcons.Home), GlassTab("둘러보기", ShowcaseIcons.Sparkle), GlassTab("보관함", ShowcaseIcons.Grid))
+    listOf(KTab("홈", ShowcaseIcons.Home), KTab("둘러보기", ShowcaseIcons.Sparkle), KTab("보관함", ShowcaseIcons.Grid))
 private val MUSIC_HEADERS = listOf("지금 많이 듣는 곡", "새로 나온 곡", "좋아요한 곡")
 
 /** 펼친 플레이어가 큰 아트 양옆에 두는 여백. 글자 시작선을 아트에 맞춘다. */
@@ -241,7 +243,7 @@ private val TRACKS = listOf(
     Song("도시의 밤", "네온", listOf(Color(0xFFFF5C8A), Color(0xFF8E54E9))),
     Song("첫눈", "윈터", listOf(Color(0xFFB993D6), Color(0xFF8CA6DB))),
 )
-private val FRIENDS = listOf("민지", "서준", "하은", "도윤", "지우", "Ana").map { GlassAvatar(it) }
+private val FRIENDS = listOf("민지", "서준", "하은", "도윤", "지우", "Ana").map { KAvatar(it) }
 
 /**
  * 음악 데모 상태. 화면보다 오래 살아 있어 음악 화면을 나갔다 들어오거나 회전해도 고른 곡, 재생 여부,
@@ -289,3 +291,5 @@ internal class MusicViewModel : ViewModel() {
         const val DEFAULT_RATING = 4f
     }
 }
+
+private val MUSIC_APP_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = true)

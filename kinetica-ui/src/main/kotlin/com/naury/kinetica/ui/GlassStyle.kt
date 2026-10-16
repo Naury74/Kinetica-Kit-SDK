@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
  * @property grain 노이즈 질감의 진하기(0..1). Windows Acrylic처럼 유리에 질감을 준다.
  * @property refraction 가장자리 굴절 정도(0..1). 가장자리 근처의 배경을 안쪽으로 휘어 Liquid Glass처럼 렌즈 효과를 낸다. API 33부터 동작한다.
  * @property fallback 블러를 쓸 수 없을 때 칠할 색
- * @property onGlass 글래스 위에 올리는 텍스트와 아이콘 색
+ * @property onGlass 표면 위에 올리는 텍스트와 아이콘 색
  */
 @Immutable
 public data class GlassStyle(

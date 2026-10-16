@@ -86,7 +86,7 @@ public object MeshGradients {
  * 부모를 가득 채우며, 크기를 제한하려면 [modifier]에 크기를 지정한다. 장식이므로 접근성 트리에 나타나지 않는다.
  *
  * ```kotlin
- * GlassScaffold(background = { MeshGradientBackground(palette = MeshGradients.Aurora) }) { padding -> ... }
+ * KineticaScaffold(background = { MeshGradientBackground(palette = MeshGradients.Aurora) }) { padding -> ... }
  * ```
  *
  * @param palette 색 구성

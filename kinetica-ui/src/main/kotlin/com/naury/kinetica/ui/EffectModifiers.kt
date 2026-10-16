@@ -53,7 +53,7 @@ import kotlinx.coroutines.launch
  * 처음 컴포지션될 때는 흔들지 않는다. '애니메이션 삭제' 접근성 설정이 켜져 있으면 흔들지 않으므로, 오류는 색이나 문구로도 알려야 한다.
  *
  * ```kotlin
- * GlassSurface(Modifier.shake(errorCount)) { ... }   // 틀릴 때마다 errorCount를 1 올린다
+ * KSurface(Modifier.shake(errorCount)) { ... }   // 틀릴 때마다 errorCount를 1 올린다
  * ```
  *
  * @param distance 처음 흔들리는 폭. 점점 줄어들며 멈춘다.
@@ -88,7 +88,7 @@ public fun Modifier.shake(trigger: Any?, distance: Dp = 10.dp, durationMs: Int =
  * [enabled]가 false이거나 '애니메이션 삭제' 접근성 설정이 켜져 있으면 그리지 않고, 요소가 창 밖에 있는 동안에는 멈춘다.
  *
  * ```kotlin
- * GlassButton(onClick = {}, modifier = Modifier.sparkle()) { Text("새 기능") }
+ * KButton(onClick = {}, modifier = Modifier.sparkle()) { Text("새 기능") }
  * ```
  *
  * @param color 별 색
@@ -246,7 +246,7 @@ private fun Modifier.parallaxLayer(rate: Float, pullState: ParallaxState?, scrol
  * 터치 이벤트를 소비하지 않으므로 클릭과 스크롤은 그대로 동작한다.
  *
  * ```kotlin
- * GlassSurface(Modifier.spotlight(shape = RoundedCornerShape(24.dp)), shape = RoundedCornerShape(24.dp)) { ... }
+ * KSurface(Modifier.spotlight(shape = RoundedCornerShape(24.dp)), shape = RoundedCornerShape(24.dp)) { ... }
  * ```
  *
  * @param color 빛 색. 알파로 진하기를 정한다.

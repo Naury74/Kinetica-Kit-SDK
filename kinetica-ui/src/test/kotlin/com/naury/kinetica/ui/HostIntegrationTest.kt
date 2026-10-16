@@ -91,12 +91,12 @@ class HostIntegrationTest {
     private fun screenHeight(): Dp = heightOf("screen")
 
     /** 시트 최대 높이: 화면 높이에서 위쪽 간격을 뺀 값(Robolectric은 상태 표시줄 인셋이 0이다). */
-    private fun sheetMax(): Dp = screenHeight() - GlassSheetDefaults.TopGap
+    private fun sheetMax(): Dp = screenHeight() - KSheetDefaults.TopGap
 
     private fun checkSheetBodies(hosted: Boolean) {
         var body by mutableStateOf(Body.Lazy)
         compose.setContent {
-            Screen(hosted) { GlassSheet(true, {}, Modifier.testTag("panel")) { HostBody(body) } }
+            Screen(hosted) { KSheet(true, {}, Modifier.testTag("panel")) { HostBody(body) } }
         }
         Body.entries.forEach { next ->
             body = next
@@ -121,7 +121,7 @@ class HostIntegrationTest {
     @Composable
     private fun Screen(hosted: Boolean, content: @Composable () -> Unit) {
         if (hosted) {
-            GlassScaffold(Modifier.fillMaxSize().testTag("screen")) { content() }
+            KineticaScaffold(Modifier.fillMaxSize().testTag("screen")) { content() }
         } else {
             Box(Modifier.fillMaxSize().testTag("screen")) { content() }
         }
@@ -133,7 +133,7 @@ class HostIntegrationTest {
     }
 
     @Test
-    fun `GlassScaffold 밖에서 연 시트도 같은 높이 정책을 따른다`() {
+    fun `KineticaScaffold 밖에서 연 시트도 같은 높이 정책을 따른다`() {
         checkSheetBodies(hosted = false)
         compose.onAllNodes(isDialog()).assertCountEquals(1)
     }
@@ -142,7 +142,7 @@ class HostIntegrationTest {
     fun `다이얼로그는 긴 내용에서도 화면을 넘지 않고 안쪽 목록이 스크롤된다`() {
         var body by mutableStateOf(Body.Lazy)
         compose.setContent {
-            Screen(hosted = true) { GlassDialog(true, {}, Modifier.testTag("panel")) { HostBody(body) } }
+            Screen(hosted = true) { KDialog(true, {}, Modifier.testTag("panel")) { HostBody(body) } }
         }
         Body.entries.forEach { next ->
             body = next
@@ -175,15 +175,15 @@ class HostIntegrationTest {
 
     @Composable
     private fun Nested() {
-        val expand = rememberGlassExpandState()
-        val drawer = rememberGlassDrawerState(initiallyOpen = true)
-        GlassDrawer(drawerContent = { LazyColumn(Modifier.testTag("drawer")) { items(100) { Row(it) } } }, state = drawer) {
-            GlassScaffold(Modifier.fillMaxSize().testTag("screen")) {
-                GlassDetentSheet(rememberGlassDetentSheetState(initialDetent = Detent.Full)) {
+        val expand = rememberKExpandState()
+        val drawer = rememberKDrawerState(initiallyOpen = true)
+        KDrawer(drawerContent = { LazyColumn(Modifier.testTag("drawer")) { items(100) { Row(it) } } }, state = drawer) {
+            KineticaScaffold(Modifier.fillMaxSize().testTag("screen")) {
+                KDetentSheet(rememberKDetentSheetState(initialDetent = Detent.Full)) {
                     LazyColumn(Modifier.fillMaxSize().testTag("detent")) { items(100) { Row(it) } }
                 }
-                GlassMiniPlayer(
-                    rememberGlassMiniPlayerState(initiallyExpanded = true),
+                KMiniPlayer(
+                    rememberKMiniPlayerState(initiallyExpanded = true),
                     collapsed = { BasicText("막대") },
                     expanded = {
                         Column(Modifier.fillMaxSize()) {
@@ -192,29 +192,29 @@ class HostIntegrationTest {
                         }
                     },
                 )
-                GlassExpandHost(expand) { LazyColumn(Modifier.fillMaxSize().testTag("expand")) { items(100) { Row(it) } } }
+                KExpandHost(expand) { LazyColumn(Modifier.fillMaxSize().testTag("expand")) { items(100) { Row(it) } } }
                 androidx.compose.runtime.LaunchedEffect(Unit) { expand.expand("card") }
             }
         }
     }
 
     @Test
-    fun `GlassScaffold 밖 Column 안에서 불러도 주변 배치가 그대로이고 알림은 내용 크기 창에 뜬다`() {
-        val toast = GlassToastState()
-        val snackbar = GlassSnackbarState()
-        val island = GlassIslandState()
+    fun `KineticaScaffold 밖 Column 안에서 불러도 주변 배치가 그대로이고 알림은 내용 크기 창에 뜬다`() {
+        val toast = KToastState()
+        val snackbar = KSnackbarState()
+        val island = KIslandState()
         var open by mutableStateOf(false)
         lateinit var scope: CoroutineScope
         compose.setContent {
             scope = rememberCoroutineScope()
             Column(Modifier.fillMaxSize().testTag("screen"), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 BasicText("위", Modifier.testTag("top"))
-                GlassSheet(open, { open = false }) { BasicText("시트 안") }
-                GlassDialog(open, { open = false }) { BasicText("다이얼로그 안") }
-                GlassToastHost(toast)
-                GlassSnackbarHost(snackbar)
-                GlassIslandHost(island)
-                BasicText("아래", Modifier.testTag("bottom").glassContextMenu(listOf(GlassMenuItem("복사") {})))
+                KSheet(open, { open = false }) { BasicText("시트 안") }
+                KDialog(open, { open = false }) { BasicText("다이얼로그 안") }
+                KToastHost(toast)
+                KSnackbarHost(snackbar)
+                KIslandHost(island)
+                BasicText("아래", Modifier.testTag("bottom").kContextMenu(listOf(KMenuItem("복사") {})))
             }
         }
         val before = compose.onNodeWithTag("bottom").getBoundsInRoot()
@@ -222,7 +222,7 @@ class HostIntegrationTest {
         compose.mainClock.autoAdvance = false
         scope.launch { toast.show("토스트", durationMs = 5_000) }
         scope.launch { snackbar.show("스낵바", durationMs = 5_000) }
-        scope.launch { island.show(GlassIslandContent("아일랜드", "내용"), durationMs = 5_000) }
+        scope.launch { island.show(KIslandContent("아일랜드", "내용"), durationMs = 5_000) }
         compose.mainClock.advanceTimeBy(1_000)
         assertThat(compose.onNodeWithTag("bottom").getBoundsInRoot()).isEqualTo(before)
         compose.onNodeWithText("시트 안").assertExists()
@@ -252,7 +252,7 @@ class HostIntegrationTest {
     fun `호스트 modifier의 testTag와 padding이 패널에 그대로 들어간다`() {
         compose.setContent {
             Screen(hosted = true) {
-                GlassSheet(true, {}, Modifier.padding(horizontal = 20.dp).testTag("sheet")) { BasicText("시트") }
+                KSheet(true, {}, Modifier.padding(horizontal = 20.dp).testTag("sheet")) { BasicText("시트") }
             }
         }
         val sheet = compose.onNodeWithTag("sheet").getBoundsInRoot()
@@ -267,8 +267,8 @@ class HostIntegrationTest {
         compose.setContent {
             Screen(hosted = true) {
                 if (present) {
-                    GlassSheet(open, { open = false }) { BasicText("시트 안") }
-                    GlassDialog(open, { open = false }) { BasicText("다이얼로그 안") }
+                    KSheet(open, { open = false }) { BasicText("시트 안") }
+                    KDialog(open, { open = false }) { BasicText("다이얼로그 안") }
                 }
             }
         }
@@ -296,7 +296,7 @@ class HostIntegrationTest {
     fun `밖에서 빠르게 열고 닫아도 대화 상자 창이 남지 않는다`() {
         var open by mutableStateOf(false)
         compose.setContent {
-            Screen(hosted = false) { GlassSheet(open, { open = false }) { BasicText("시트 안") } }
+            Screen(hosted = false) { KSheet(open, { open = false }) { BasicText("시트 안") } }
         }
         compose.mainClock.autoAdvance = false
         repeat(TOGGLES) {
@@ -315,7 +315,7 @@ class HostIntegrationTest {
         val restore = StateRestorationTester(compose)
         restore.setContent {
             var open by rememberSaveable { mutableStateOf(true) }
-            GlassScaffold(Modifier.fillMaxSize()) { GlassSheet(open, { open = false }) { BasicText("시트 안") } }
+            KineticaScaffold(Modifier.fillMaxSize()) { KSheet(open, { open = false }) { BasicText("시트 안") } }
         }
         compose.onAllNodesWithText("시트 안").assertCountEquals(1)
         restore.emulateSavedInstanceStateRestore()
@@ -340,7 +340,7 @@ class HostIntegrationTest {
         compose.setContent {
             BackHandler { calls += "화면" }
             Screen(hosted) {
-                GlassSheet(open, {
+                KSheet(open, {
                     calls += "시트"
                     open = false
                 }) {

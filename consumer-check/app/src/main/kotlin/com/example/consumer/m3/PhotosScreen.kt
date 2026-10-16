@@ -39,16 +39,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.BeforeAfterSlider
-import com.naury.kinetica.ui.GlassImageViewer
+import com.naury.kinetica.ui.KImageViewer
 import com.naury.kinetica.ui.imageViewerSource
-import com.naury.kinetica.ui.rememberGlassImageViewerState
+import com.naury.kinetica.ui.rememberKImageViewerState
 import kotlin.math.roundToInt
 
-/** 사진 앱 화면. 썸네일 격자에서 누른 사진이 GlassImageViewer로 커지며 열린다. 뷰어는 GlassScaffold 밖이라 별도 창에 뜬다. */
+/** 사진 앱 화면. 썸네일 격자에서 누른 사진이 KImageViewer로 커지며 열린다. 뷰어는 KineticaScaffold 밖이라 별도 창에 뜬다. */
 @Composable
 fun PhotosScreen() {
     val photos = rememberSamplePhotos(18)
-    val viewer = rememberGlassImageViewerState()
+    val viewer = rememberKImageViewerState()
     Column(Modifier.fillMaxSize()) {
         Text(
             if (viewer.isOpen) "뷰어 열림 ${viewer.page}" else "뷰어 닫힘",
@@ -71,7 +71,7 @@ fun PhotosScreen() {
             }
         }
     }
-    GlassImageViewer(viewer, photos, contentDescriptions = List(photos.size) { "사진 ${it + 1}" })
+    KImageViewer(viewer, photos, contentDescriptions = List(photos.size) { "사진 ${it + 1}" })
 }
 
 /** 세로 스크롤 글 사이에 놓은 전후 비교 슬라이더. 세로로 끌면 글이 스크롤되고 가로로 끌면 손잡이가 움직여야 한다. */

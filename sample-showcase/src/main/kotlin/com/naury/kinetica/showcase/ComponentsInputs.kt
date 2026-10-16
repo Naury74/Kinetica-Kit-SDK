@@ -32,14 +32,14 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.naury.kinetica.ui.GlassCodeInput
-import com.naury.kinetica.ui.GlassColorPicker
-import com.naury.kinetica.ui.GlassPasswordField
-import com.naury.kinetica.ui.GlassResult
-import com.naury.kinetica.ui.GlassResultMark
-import com.naury.kinetica.ui.GlassSignaturePad
-import com.naury.kinetica.ui.GlassTagInput
-import com.naury.kinetica.ui.LocalGlassContentColor
+import com.naury.kinetica.ui.KCodeInput
+import com.naury.kinetica.ui.KColorPicker
+import com.naury.kinetica.ui.KPasswordField
+import com.naury.kinetica.ui.KResult
+import com.naury.kinetica.ui.KResultMark
+import com.naury.kinetica.ui.KSignaturePad
+import com.naury.kinetica.ui.KTagInput
+import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.PasswordStrength
 import com.naury.kinetica.ui.passwordStrength
 import com.naury.kinetica.ui.rememberSignaturePadState
@@ -61,15 +61,15 @@ internal fun InputTab(padding: PaddingValues, connection: NestedScrollConnection
 private fun CodeCard() {
     var code by rememberSaveable { mutableStateOf("") }
     var submitted by rememberSaveable { mutableStateOf<String?>(null) }
-    var result by rememberSaveable { mutableStateOf<GlassResult?>(null) }
+    var result by rememberSaveable { mutableStateOf<KResult?>(null) }
     LaunchedEffect(submitted) {
         val sent = submitted ?: return@LaunchedEffect
-        result = GlassResult.Loading
+        result = KResult.Loading
         delay(1200)
-        result = if (sent == SAMPLE_CODE) GlassResult.Success else GlassResult.Failure
+        result = if (sent == SAMPLE_CODE) KResult.Success else KResult.Failure
     }
     DemoCard("인증번호", "${SAMPLE_CODE}을 넣으면 확인 표시가, 다른 번호를 넣으면 실패 표시가 그려집니다. 붙여 넣기와 SMS 자동 채우기도 받습니다.") {
-        GlassCodeInput(
+        KCodeInput(
             code,
             {
                 code = it
@@ -79,12 +79,12 @@ private fun CodeCard() {
                 }
             },
             Modifier.fillMaxWidth(),
-            error = result == GlassResult.Failure,
+            error = result == KResult.Failure,
             onComplete = { submitted = it },
         )
         result?.let { state ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                GlassResultMark(state, size = 56.dp)
+                KResultMark(state, size = 56.dp)
                 Label(CODE_MESSAGES.getValue(state), 15, FontWeight.SemiBold)
             }
         }
@@ -95,7 +95,7 @@ private fun CodeCard() {
 private fun TagCard() {
     var tags by rememberSaveable { mutableStateOf(listOf("디자인", "모션")) }
     DemoCard("태그", "쉼표나 완료 키를 누르면 칩이 됩니다. 이미 있는 태그를 넣으면 그 칩이 흔들리고, 빈 입력란에서 지우기를 두 번 누르면 마지막 칩이 지워집니다.") {
-        GlassTagInput(tags, { tags = it }, Modifier.fillMaxWidth(), placeholder = "태그 추가", suggestions = TAG_SUGGESTIONS)
+        KTagInput(tags, { tags = it }, Modifier.fillMaxWidth(), placeholder = "태그 추가", suggestions = TAG_SUGGESTIONS)
     }
 }
 
@@ -111,7 +111,7 @@ private fun ColorCard() {
                 Label("이번 달 사용 금액 128,400원", 13, color = ink.copy(alpha = 0.8f))
             }
         }
-        GlassColorPicker(color, { color = it }, Modifier.fillMaxWidth())
+        KColorPicker(color, { color = it }, Modifier.fillMaxWidth())
     }
 }
 
@@ -120,7 +120,7 @@ private fun SignatureCard() {
     val signature = rememberSignaturePadState()
     var saved by remember { mutableStateOf<ImageBitmap?>(null) }
     DemoCard("서명", "빠르게 그으면 가늘게, 천천히 그으면 굵게 그려집니다. 저장을 누르면 이미지로 내보낸 결과를 아래에 보여 줍니다.") {
-        GlassSignaturePad(Modifier.fillMaxWidth().height(180.dp), signature)
+        KSignaturePad(Modifier.fillMaxWidth().height(180.dp), signature)
         Pill("저장", filled = true) {
             if (!signature.isEmpty) saved = signature.toImageBitmap(width = 600, color = Color(0xFF15161A), background = Color.White)
         }
@@ -132,7 +132,7 @@ private fun SignatureCard() {
                     .fillMaxWidth()
                     .height(120.dp)
                     .background(Color.White, INNER_SHAPE)
-                    .border(1.dp, LocalGlassContentColor.current.copy(alpha = 0.2f), INNER_SHAPE),
+                    .border(1.dp, LocalKineticaContentColor.current.copy(alpha = 0.2f), INNER_SHAPE),
                 contentScale = ContentScale.Fit,
             )
         }
@@ -144,17 +144,17 @@ private fun PasswordCard() {
     var password by rememberSaveable { mutableStateOf("") }
     val strength = passwordStrength(password)
     DemoCard("비밀번호", "눈 아이콘으로 보이거나 숨깁니다. 입력하는 동안 강도 막대와 조건 목록이 바뀝니다.") {
-        GlassPasswordField(password, { password = it }, "새 비밀번호", Modifier.fillMaxWidth(), showChecklist = true)
+        KPasswordField(password, { password = it }, "새 비밀번호", Modifier.fillMaxWidth(), showChecklist = true)
         if (password.isNotEmpty()) Label("passwordStrength() 결과: ${STRENGTH_NAMES.getValue(strength)}", 13)
     }
 }
 
 private const val SAMPLE_CODE = "123456"
 private val CODE_MESSAGES = mapOf(
-    GlassResult.Loading to "확인하는 중…",
-    GlassResult.Success to "인증되었습니다",
-    GlassResult.Failure to "인증번호가 맞지 않아요",
-    GlassResult.Warning to "잠시 후 다시 시도해 주세요",
+    KResult.Loading to "확인하는 중…",
+    KResult.Success to "인증되었습니다",
+    KResult.Failure to "인증번호가 맞지 않아요",
+    KResult.Warning to "잠시 후 다시 시도해 주세요",
 )
 private val STRENGTH_NAMES = mapOf(PasswordStrength.Weak to "약함", PasswordStrength.Medium to "보통", PasswordStrength.Strong to "강함")
 private val TAG_SUGGESTIONS = listOf("디자인", "개발", "기획", "모션", "마케팅", "데이터", "디자인 시스템", "접근성")

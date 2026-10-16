@@ -29,8 +29,8 @@ class MainActivity : ComponentActivity() {
             "XML 호스트" to XmlHostActivity::class.java,
             "Java 호스트" to JavaHostActivity::class.java,
             "보드" to BoardActivity::class.java,
-            "글래스" to GlassActivity::class.java,
-            "XML 글래스" to XmlGlassActivity::class.java,
+            "글래스" to SurfaceActivity::class.java,
+            "XML 글래스" to XmlSurfaceActivity::class.java,
         )
         setContent {
             Column(Modifier.safeDrawingPadding()) {

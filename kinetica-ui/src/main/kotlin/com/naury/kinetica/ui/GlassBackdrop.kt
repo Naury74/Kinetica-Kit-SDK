@@ -56,8 +56,8 @@ import kotlin.random.Random
  * 글래스 표면이 비춰 보일 배경. [glassBackdrop]을 붙인 요소의 그리기 내용을 기록해 두면, [glass] 표면이 자기 위치에 해당하는
  * 부분을 블러 처리해 그린다.
  *
- * 글래스 표면은 배경 요소 바깥, 즉 형제나 그 위 레이어에 둬야 한다. [GlassScaffold]는 이 배치를 알아서 맞춘다.
- * 바와 다이얼로그는 화면 전체를 비추고, 콘텐츠 안의 글래스는 [GlassScaffold]의 `background`만 비춘다.
+ * 글래스 표면은 배경 요소 바깥, 즉 형제나 그 위 레이어에 둬야 한다. [KineticaScaffold]는 이 배치를 알아서 맞춘다.
+ * 바와 다이얼로그는 화면 전체를 비추고, 콘텐츠 안의 글래스는 [KineticaScaffold]의 `background`만 비춘다.
  */
 @Stable
 public class GlassBackdrop internal constructor(internal val layer: GraphicsLayer) {
@@ -82,7 +82,7 @@ public fun rememberGlassBackdrop(): GlassBackdrop {
     return remember(layer) { GlassBackdrop(layer) }
 }
 
-/** 가장 가까운 [GlassScaffold]가 제공하는 배경. 없으면 `null`이고, 이때 글래스는 [GlassStyle.fallback] 색으로 칠해진다. */
+/** 가장 가까운 [KineticaScaffold]가 제공하는 배경. 없으면 `null`이고, 이때 글래스는 [GlassStyle.fallback] 색으로 칠해진다. */
 public val LocalGlassBackdrop: androidx.compose.runtime.ProvidableCompositionLocal<GlassBackdrop?> = staticCompositionLocalOf { null }
 
 // 다이얼로그·시트 같은 팝업 판 안이면 true. 그 안의 글래스는 판 위에 얹힌 한 겹으로 그린다.
@@ -218,7 +218,7 @@ internal fun sampleTranslation(glass: Offset, backdropOrigin: Offset, pad: Float
 }
 
 /** 프레임마다 RenderEffect를 새로 만들지 않도록 마지막 값을 보관한다. */
-private class EffectCache {
+internal class EffectCache {
     var key: Any? = null
     var effect: androidx.compose.ui.graphics.RenderEffect? = null
 
@@ -366,14 +366,21 @@ private fun DrawScope.drawEdgeLight(outline: Outline, style: GlassStyle, level: 
 
 /** 표면 바깥에만 드리우는 부드러운 그림자. 반투명한 글래스 안으로 그림자가 비치지 않도록 안쪽은 잘라 낸다. */
 private fun DrawScope.drawOuterShadow(outline: Outline, style: GlassStyle, level: Float, cache: EffectCache) {
-    val radius = style.shadow.toPx() * level
-    if (radius < MIN_PX) return
+    drawSoftShadow(outline, style.shadow.toPx() * level, SHADOW_ALPHA * level, cache)
+}
+
+/**
+ * [outline] 바깥에 반경 [radius](px)의 그림자를 [alpha] 진하기로 드리운다. 안쪽은 칠하지 않는다.
+ * Paint와 Path는 [cache]에 두고 반경이나 모양이 바뀔 때만 새로 만든다.
+ */
+internal fun DrawScope.drawSoftShadow(outline: Outline, radius: Float, alpha: Float, cache: EffectCache) {
+    if (radius < MIN_PX || alpha <= 0f) return
     val path = cachedPath(outline, cache)
     if (cache.shadowRadius != radius) {
         cache.shadowRadius = radius
         cache.shadowPaint.maskFilter = BlurMaskFilter(radius, BlurMaskFilter.Blur.NORMAL)
     }
-    cache.shadowPaint.color = Color.Black.copy(alpha = SHADOW_ALPHA * level).toArgb()
+    cache.shadowPaint.color = Color.Black.copy(alpha = alpha.coerceIn(0f, 1f)).toArgb()
     clipPath(path, clipOp = ClipOp.Difference) {
         drawIntoCanvas { canvas ->
             canvas.nativeCanvas.save()
@@ -385,7 +392,7 @@ private fun DrawScope.drawOuterShadow(outline: Outline, style: GlassStyle, level
 }
 
 /** 모양이 같으면 이전 Path를 재사용한다. */
-private fun cachedPath(outline: Outline, cache: EffectCache): Path {
+internal fun cachedPath(outline: Outline, cache: EffectCache): Path {
     val key = when (outline) {
         is Outline.Rectangle -> outline.rect
         is Outline.Rounded -> outline.roundRect

@@ -46,12 +46,15 @@ import androidx.compose.ui.unit.sp
 import com.naury.kinetica.presets.EffectPresets
 import com.naury.kinetica.render.kineticaEffects
 import com.naury.kinetica.ui.ConfettiHost
-import com.naury.kinetica.ui.GlassScaffold
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.LocalKineticaContentColor
+import com.naury.kinetica.ui.LocalKineticaSurface
 import com.naury.kinetica.ui.RollingText
+import com.naury.kinetica.ui.SurfaceStyles
 import com.naury.kinetica.ui.TypewriterText
-import com.naury.kinetica.ui.glassClickable
 import com.naury.kinetica.ui.glowBorder
+import com.naury.kinetica.ui.kClickable
 import com.naury.kinetica.ui.magnetic
 import com.naury.kinetica.ui.motionTilt
 import com.naury.kinetica.ui.rememberConfettiState
@@ -64,10 +67,10 @@ import kotlin.random.Random
 internal fun MotionDemo(onBack: () -> Unit) {
     var siri by remember { mutableStateOf(false) }
     val confetti = rememberConfettiState()
-    GlassScaffold(
+    KineticaScaffold(
         Modifier.fillMaxSize().then(if (siri) Modifier.glowBorder(RectangleShape, width = 4.dp, glow = 28.dp) else Modifier),
-        style = GlassStyles.OneUi,
-        background = { Aurora(Modifier.fillMaxSize(), dark = false) },
+        surface = demoSurface(MOTION_DEMO_LOOK),
+        background = { DemoBackdrop() },
         topBar = { DemoTopBar("모션 효과", "Modifier 한 줄로 붙이는 애니메이션", onBack, demoContentWidth()) },
     ) { padding ->
         DemoCardList(padding.calculateTopPadding() + 8.dp, navigationBarBottom() + 40.dp) {
@@ -106,9 +109,18 @@ private fun JellyCard() {
             Box(
                 Modifier.magnetic(
                     0.35f,
-                ).heightIn(min = 44.dp).background(Color(0xFF15161A), CircleShape).padding(horizontal = 22.dp, vertical = 10.dp),
+                ).heightIn(
+                    min = 44.dp,
+                ).background(LocalKineticaContentColor.current, CircleShape).padding(horizontal = 22.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center,
-            ) { Label("자석 버튼", 14, FontWeight.SemiBold, color = Color.White) }
+            ) {
+                Label(
+                    "자석 버튼",
+                    14,
+                    FontWeight.SemiBold,
+                    color = if (LocalKineticaContentColor.current.isLight()) Color.Black else Color.White,
+                )
+            }
         }
     }
 }
@@ -119,7 +131,7 @@ private fun GlowCard(on: Boolean, toggle: () -> Unit) {
         Box(
             Modifier.fillMaxWidth().height(
                 90.dp,
-            ).glowBorder(INNER_SHAPE).background(Color.White.copy(alpha = 0.6f), INNER_SHAPE),
+            ).glowBorder(INNER_SHAPE).background(LocalKineticaSurface.current.background.copy(alpha = 0.6f), INNER_SHAPE),
             contentAlignment = Alignment.Center,
         ) { Label("AI가 답변을 쓰고 있어요…", 15, FontWeight.Medium) }
         Pill(if (on) "화면 글로우 끄기" else "화면 전체에 켜기", filled = on, onClick = toggle)
@@ -132,7 +144,7 @@ private fun RollingCard() {
     DemoCard("숫자 롤링", "RollingText입니다. 주행 거리계처럼 바뀐 자릿수만 위아래로 굴러갑니다.") {
         RollingText(
             NumberFormat.getNumberInstance(Locale.KOREA).format(sales) + "원",
-            style = TextStyle(fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color(0xFF15161A)),
+            style = TextStyle(fontSize = 34.sp, fontWeight = FontWeight.Bold, color = LocalKineticaContentColor.current),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Pill("+ 주문") { sales += Random.nextLong(3_000, 60_000) }
@@ -146,7 +158,7 @@ private fun TypewriterCard() {
     var round by remember { mutableIntStateOf(0) }
     val lines = listOf("오늘 매출이 어제보다 12% 늘었어요.", "가장 많이 팔린 메뉴는 아메리카노예요.", "오후 3시에 손님이 가장 많아요.")
     DemoCard("타자기 효과", "TypewriterText입니다. 안내 문구나 AI 답변을 한 글자씩 써 내려갑니다.") {
-        TypewriterText(lines[round % lines.size], style = TextStyle(fontSize = 17.sp, color = Color(0xFF15161A)))
+        TypewriterText(lines[round % lines.size], style = TextStyle(fontSize = 17.sp, color = LocalKineticaContentColor.current))
         Pill("다음 문장") { round++ }
     }
 }
@@ -166,7 +178,7 @@ private fun PresetsCard() {
                                     .kineticaEffects(EffectPresets.all.getValue(name), INNER_SHAPE)
                                     .clip(INNER_SHAPE)
                                     .background(color)
-                                    .glassClickable(INNER_SHAPE) { taps++ },
+                                    .kClickable(INNER_SHAPE) { taps++ },
                             )
                             Label(label, 12, modifier = Modifier.padding(top = 6.dp))
                         }
@@ -224,3 +236,12 @@ private fun TiltCard() {
         }
     }
 }
+
+private val MOTION_DEMO_LOOK =
+    DemoLook(
+        GlassStyles.OneUi,
+        GlassStyles.OneUiDark,
+        defaultDark = false,
+        solidLight = SurfaceStyles.OneUi,
+        solidDark = SurfaceStyles.OneUiDark,
+    )

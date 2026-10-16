@@ -44,15 +44,15 @@ import kotlinx.coroutines.launch
  * @property image 사진처럼 원 안에 대신 그릴 콘텐츠. 원 모양으로 잘린다.
  */
 @Immutable
-public data class GlassAvatar(val name: String, val color: Color = Color.Unspecified, val image: (@Composable () -> Unit)? = null)
+public data class KAvatar(val name: String, val color: Color = Color.Unspecified, val image: (@Composable () -> Unit)? = null)
 
 /**
- * 원형 아바타를 겹쳐 늘어놓는다. [max]명을 넘으면 마지막에 "+3"처럼 남은 사람 수를 글래스 원으로 보여 준다.
+ * 원형 아바타를 겹쳐 늘어놓는다. [max]명을 넘으면 마지막에 "+3"처럼 남은 사람 수를 원으로 보여 준다.
  * 처음 나타날 때 앞에서부터 차례로 미끄러져 들어온다. RTL에서는 오른쪽부터 쌓인다.
  * TalkBack은 보이는 사람들의 이름과 남은 인원을 한 번에 읽는다.
  *
  * ```kotlin
- * AvatarStack(listOf(GlassAvatar("Ana"), GlassAvatar("Ben"), GlassAvatar("김민수")), max = 3)
+ * AvatarStack(listOf(KAvatar("Ana"), KAvatar("Ben"), KAvatar("김민수")), max = 3)
  * ```
  *
  * @param max 원으로 보일 최대 인원. 1 미만이면 [IllegalArgumentException]을 던진다.
@@ -61,12 +61,12 @@ public data class GlassAvatar(val name: String, val color: Color = Color.Unspeci
  */
 @Composable
 public fun AvatarStack(
-    avatars: List<GlassAvatar>,
+    avatars: List<KAvatar>,
     modifier: Modifier = Modifier,
     max: Int = 4,
     size: Dp = 36.dp,
     ringColor: Color = Color.White,
-    style: GlassStyle = LocalGlassStyle.current,
+    surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     require(max >= 1) { "max는 1 이상이어야 합니다." }
     val shown = avatars.take(max)
@@ -102,11 +102,11 @@ public fun AvatarStack(
         }
         if (extra > 0) {
             Box(
-                Modifier.appearing(appear[shown.size], sign * travel).then(circle).glass(style, CircleShape),
+                Modifier.appearing(appear[shown.size], sign * travel).then(circle).kSurface(surface, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 // RTL에서도 "+3" 순서가 뒤집히지 않도록 LTR로 격리한다.
-                Initials("$LTR_ISOLATE+$extra$POP_ISOLATE", size, style.onGlass)
+                Initials("$LTR_ISOLATE+$extra$POP_ISOLATE", size, surface.contentColor)
             }
         }
     }
@@ -178,7 +178,7 @@ internal fun initialsOf(name: String): String {
 
 private fun firstGlyph(word: String): String = word.substring(0, word.offsetByCodePoints(0, 1))
 
-private fun GlassAvatar.backgroundColor(): Color =
+private fun KAvatar.backgroundColor(): Color =
     if (color != Color.Unspecified) color else AVATAR_COLORS[name.hashCode().absoluteValue % AVATAR_COLORS.size]
 
 private const val LTR_ISOLATE = '\u2066'

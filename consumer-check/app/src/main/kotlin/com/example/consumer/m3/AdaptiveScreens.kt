@@ -27,17 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.naury.kinetica.ui.GlassAdaptiveNavigation
-import com.naury.kinetica.ui.GlassFloatingTabBar
-import com.naury.kinetica.ui.GlassListDetail
-import com.naury.kinetica.ui.GlassTab
-import com.naury.kinetica.ui.rememberGlassFloatingTabBarState
+import com.naury.kinetica.ui.KAdaptiveNavigation
+import com.naury.kinetica.ui.KFloatingTabBar
+import com.naury.kinetica.ui.KListDetail
+import com.naury.kinetica.ui.KTab
+import com.naury.kinetica.ui.rememberKFloatingTabBarState
 
 /** 메일 목록과 상세. 화면 폭이 600dp보다 좁으면 상세가 밀려 들어오고 넓으면 두 칸이 된다. */
 @Composable
 fun MailScreen() {
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
-    GlassListDetail(
+    KListDetail(
         selected,
         onBack = { selected = null },
         modifier = Modifier.fillMaxSize().testTag("listDetail"),
@@ -61,16 +61,16 @@ fun MailScreen() {
 }
 
 private val adaptiveTabs = listOf(
-    GlassTab("홈", Icons.Filled.Home),
-    GlassTab("검색", Icons.Filled.Search),
-    GlassTab("보관함", Icons.Filled.Favorite),
+    KTab("홈", Icons.Filled.Home),
+    KTab("검색", Icons.Filled.Search),
+    KTab("보관함", Icons.Filled.Favorite),
 )
 
 /** 폭에 따라 아래 탭 바와 시작 쪽 레일을 바꾸는 탭 화면. 목록은 탭 바가 차지하는 여백을 contentPadding으로 받는다. */
 @Composable
 fun AdaptiveTabsScreen() {
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    GlassAdaptiveNavigation(adaptiveTabs, tab, onSelect = { tab = it }, modifier = Modifier.fillMaxSize().testTag("adaptiveNav")) { padding ->
+    KAdaptiveNavigation(adaptiveTabs, tab, onSelect = { tab = it }, modifier = Modifier.fillMaxSize().testTag("adaptiveNav")) { padding ->
         val list = rememberLazyListState()
         Column(Modifier.fillMaxSize()) {
             Text("탭 $tab 첫 항목 ${list.firstVisibleItemIndex}", Modifier.padding(padding).padding(8.dp).testTag("adaptiveState"))
@@ -81,11 +81,11 @@ fun AdaptiveTabsScreen() {
     }
 }
 
-/** 화면 아래에 떠 있다가 스크롤하면 접히는 탭 바. GlassScaffold 없이 Material Scaffold 안 Box에 둔다. */
+/** 화면 아래에 떠 있다가 스크롤하면 접히는 탭 바. KineticaScaffold 없이 Material Scaffold 안 Box에 둔다. */
 @Composable
 fun FloatingTabsScreen() {
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    val bar = rememberGlassFloatingTabBarState()
+    val bar = rememberKFloatingTabBarState()
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             Modifier.fillMaxSize().nestedScroll(bar.nestedScrollConnection).testTag("floatingList"),
@@ -97,6 +97,6 @@ fun FloatingTabsScreen() {
             "탭 $tab 접힘 ${bar.isCollapsed}",
             Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.surface).padding(8.dp).testTag("floatingState"),
         )
-        GlassFloatingTabBar(adaptiveTabs, tab, onSelect = { tab = it }, modifier = Modifier.align(Alignment.BottomCenter).testTag("floatingBar"), state = bar)
+        KFloatingTabBar(adaptiveTabs, tab, onSelect = { tab = it }, modifier = Modifier.align(Alignment.BottomCenter).testTag("floatingBar"), state = bar)
     }
 }

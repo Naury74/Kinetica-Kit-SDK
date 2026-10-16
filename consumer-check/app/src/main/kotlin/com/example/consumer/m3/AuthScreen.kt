@@ -27,10 +27,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.naury.kinetica.ui.GlassCodeInput
-import com.naury.kinetica.ui.GlassPasswordField
-import com.naury.kinetica.ui.GlassSheet
-import com.naury.kinetica.ui.GlassTagInput
+import com.naury.kinetica.ui.KCodeInput
+import com.naury.kinetica.ui.KPasswordField
+import com.naury.kinetica.ui.KSheet
+import com.naury.kinetica.ui.KTagInput
 import com.naury.kinetica.ui.passwordStrength
 
 /** 시험용 인증번호. 실제 앱이라면 서버가 확인한다. */
@@ -63,12 +63,12 @@ fun SignUpScreen(onVerified: (String) -> Unit) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
         )
         // Next에 콜백을 주지 않으면 기본 동작대로 다음 입력란(관심사)으로 간다.
-        GlassPasswordField(
+        KPasswordField(
             password, { password = it }, label = "비밀번호", modifier = Modifier.testTag("suPassword"), showChecklist = true,
             imeAction = ImeAction.Next, fieldModifier = Modifier.testTag("suPasswordField"),
         )
         // 글자가 있으면 완료 키가 칩을 만들고, 빈 입력란에서 누르면 기본 동작대로 키보드가 내려간다.
-        GlassTagInput(
+        KTagInput(
             interests, { interests = it }, Modifier.fillMaxWidth().testTag("suTags"), placeholder = "관심사",
             suggestions = listOf("디자인", "개발", "사진", "여행", "음악", "디저트"),
             fieldModifier = Modifier.testTag("suTagsField"),
@@ -76,7 +76,7 @@ fun SignUpScreen(onVerified: (String) -> Unit) {
         Text("관심사: ${interests.joinToString(",")}", Modifier.testTag("suTagsValue"))
         Button({ codeSent = true; code = ""; codeError = false }, Modifier.testTag("suSendCode")) { Text("인증번호 받기") }
         if (codeSent) {
-            GlassCodeInput(
+            KCodeInput(
                 code,
                 { code = it; codeError = false },
                 Modifier.testTag("suCode").focusRequester(codeFocus),
@@ -97,7 +97,7 @@ fun SignUpScreen(onVerified: (String) -> Unit) {
         TextButton({ pinSheet = true }, Modifier.testTag("suOpenPinSheet")) { Text("PIN 바꾸기") }
     }
 
-    GlassSheet(pinSheet, { pinSheet = false }, title = "PIN 바꾸기") {
+    KSheet(pinSheet, { pinSheet = false }, title = "PIN 바꾸기") {
         PinChangeForm(onDone = { pinResult = it; pinSheet = false })
     }
 }
@@ -109,12 +109,12 @@ private fun PinChangeForm(onDone: (String) -> Unit) {
     var pin by rememberSaveable { mutableStateOf("") }
     val pinFocus = remember { FocusRequester() }
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        GlassPasswordField(
+        KPasswordField(
             current, { current = it }, label = "현재 비밀번호", modifier = Modifier.testTag("pinCurrent"), showStrength = false,
             imeAction = ImeAction.Next, keyboardActions = KeyboardActions(onNext = { pinFocus.requestFocus() }),
             fieldModifier = Modifier.testTag("pinCurrentField"),
         )
-        GlassCodeInput(
+        KCodeInput(
             pin, { pin = it }, Modifier.testTag("pinCode").focusRequester(pinFocus), length = 4, mask = true,
             onComplete = { onDone("변경됨:${current.length}:${it.length}") },
         )

@@ -17,18 +17,18 @@
 호스트 뷰는 편집하는 동안에도 실제로 동작합니다. 텍스트, 표시 여부, 이미지, 색은 호스트 데이터 키에 바인딩되어 실시간으로 바뀌고, 사용자가 요소를 누르면 지정한 동작 이름이 호스트로 전달됩니다.
 그 밑에는 정밀하게 편집할 수 있는 2D 장면(scene graph)과 시간 기반 애니메이션, 장면 전환이 있습니다. 전체 방향과 단계는 [ADR-0006](docs/adr/0006-host-ui-composer.md)과 [UI 조립 계획](docs/30-ui-composer.md)을 참고하세요.
 
-- **Glass UI**: 배경을 블러 처리해 비치는 글래스 화면 구성 요소입니다([docs/35](docs/35-glass-ui.md)).
-  - 기본 표면 `GlassScaffold`, `GlassSurface`
+- **UI 키트**: 다이얼로그, 바텀 시트, 토스트, 탭 바, 입력란 같은 컴포넌트입니다. 표면 스타일로 배경이 비치는 글래스, 깔끔한 단색, 강조색을 섞은 톤 중에서 고릅니다([docs/35](docs/35-ui-kit.md)).
+  - 기본 표면 `KineticaScaffold`, `KSurface`
   - 다이얼로그, 바텀 시트, 토스트, 탭 바, 길게 눌러 여는 메뉴, 세그먼트 버튼, 스위치, 슬라이더, 당겨서 새로 고침
   - 버튼, 스테퍼, 칩, 물결 진행 표시, 배지, iOS식 휠 피커와 날짜·시간 선택기, 검색창, 떠오르는 라벨 입력란
   - 접히는 큰 제목 바, 캐러셀과 페이지 점, 틴더식 카드 더미, 펼쳐지는 버튼 메뉴, 다이내믹 아일랜드식 알림, 되돌리기 스낵바
   - 밀어서 동작 고르는 목록 행, 끌어서 순서 바꾸기, 아코디언, 밀어서 확정
   - 선·막대·도넛 차트, 스파크라인, 활동 링, 월 달력(기간 선택), 플립 시계, 범위 슬라이더
   - 미니 플레이어, 모양이 바뀌는 아이콘, 별점, 좋아요, 아바타 묶음, 스켈레톤, 여러 높이 바텀 시트, 상단 탭, 툴팁, 기능 안내, 서랍
-  - 카드가 커지며 열리는 상세 화면(`GlassExpandHost`), iOS처럼 밀어 넣는 화면 이동(`PushNavigation`)
+  - 카드가 커지며 열리는 상세 화면(`KExpandHost`), iOS처럼 밀어 넣는 화면 이동(`PushNavigation`)
   - 인증번호 입력, 태그 입력, 색 선택기, 서명란, 강도 막대가 있는 비밀번호 입력란
   - 핀치 확대와 끌어 닫기를 지원하는 사진 뷰어, 전후 비교 슬라이더, 결과 표시 애니메이션, 온보딩, 빈 화면
-  - 폴더블과 태블릿용 적응형 레이아웃: 목록-상세 두 칸(`GlassListDetail`), 내비게이션 레일, 스크롤하면 줄어드는 떠 있는 탭 바
+  - 폴더블과 태블릿용 적응형 레이아웃: 목록-상세 두 칸(`KListDetail`), 내비게이션 레일, 스크롤하면 줄어드는 떠 있는 탭 바
   - 스타일: Liquid, Acrylic, One UI, Vision, Material, Frosted, Mica, HarmonyOS, Obsidian, Pastel
   - 효과: 움직이는 메시 그라디언트 배경, 빛·색이 흐르는 글자, 흔들기, 반짝이, 스크롤 시차, 손가락 스포트라이트, 글로우 테두리, 젤리처럼 눌리는 버튼, 끌면 손가락을 따라왔다 돌아오는 자석 효과, 기기를 기울이면 따라 기우는 3D 효과, 숫자 롤링, 타자기 텍스트, 컨페티, 물결 왜곡, 파티클(눈, 불꽃놀이, 거품, 불꽃), 뒤집는 카드, 액체 버튼과 방울 묶음, 홀로그램 카드
 - **Board**: 호스트 화면에 넣는 위젯 보드 `KineticaBoard`와 XML용 `KineticaBoardView`입니다([docs/31](docs/31-board.md)).
@@ -47,7 +47,7 @@
 <table>
   <tr>
     <td align="center" width="33%"><img src="docs/images/showcase-home.png" width="220" alt="쇼케이스 첫 화면"><br><b>쇼케이스</b><br>모든 기능을 앱 하나에서 써 보기</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-glass.png" width="220" alt="글래스 다이얼로그"><br><b>글래스 UI</b><br>배경이 블러로 비치는 다이얼로그, 시트, 탭 바</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-glass.png" width="220" alt="글래스 다이얼로그"><br><b>UI 키트</b><br>글래스, 단색, 톤 표면으로 바꿔 보는 다이얼로그, 시트, 탭 바</td>
     <td align="center" width="33%"><img src="docs/images/showcase-motion.png" width="220" alt="모션 효과"><br><b>모션 효과</b><br>글로우 테두리, 젤리, 자석, 숫자 롤링, 컨페티</td>
   </tr>
   <tr>
@@ -86,7 +86,7 @@
 - [샘플 앱 내려받기 (kinetica-showcase.apk)](https://github.com/Naury74/Kinetica-Kit-SDK/releases/latest/download/kinetica-showcase.apk)
 - Android 8.0(API 26) 이상에서 설치할 수 있습니다. 처음 설치할 때 "출처를 알 수 없는 앱" 설치를 허용해야 합니다.
 - 체험용 키로 서명한 앱입니다. 새 버전이 기존 앱 위에 설치되지 않으면 기존 샘플 앱을 지운 뒤 다시 설치하세요.
-- 글래스 블러 효과는 Android 12 이상에서만 보입니다.
+- 글래스 표면의 블러는 Android 12 이상에서만 보입니다. 단색과 톤 표면은 모든 버전에서 같게 보입니다.
 
 ## 지금 되는 것 (1.0.0-alpha01)
 
@@ -148,7 +148,7 @@
   - 스키마 버전이 있는 JSON. 크기와 중첩 깊이에 상한이 있고 migration 구조를 갖추고 있습니다.
   - 원자적으로 파일을 바꿔 쓰는 파일 저장소
   - 화면과 같은 그리기 코드로 만드는 PNG 내보내기
-- **샘플**: 샘플 앱은 `sample-showcase` 하나입니다. 첫 화면에서 글래스 UI, 모션 효과, 대시보드 보드, 앱 화면 예, 컴포넌트, 화면 이동, 장면 전환, 서버 화면, 화면 만들기(편집기)를 고를 수 있고, 맨 아래에서 Compose를 쓰지 않는 XML 화면 예를 열 수 있습니다.
+- **샘플**: 샘플 앱은 `sample-showcase` 하나입니다. 첫 화면에서 표면 스타일(글래스, 단색, 톤)과 밝기를 고르고, UI 키트, 모션 효과, 대시보드 보드, 앱 화면 예, 컴포넌트, 화면 이동, 장면 전환, 서버 화면, 화면 만들기(편집기)를 고를 수 있고, 맨 아래에서 Compose를 쓰지 않는 XML 화면 예를 열 수 있습니다.
 
 아직 없는 기능과 제한 사항은 [알려진 제한](#알려진-제한)을 보세요.
 
@@ -176,7 +176,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.naurylab:kinetica-ui:1.0.0-alpha01")              // 글래스 UI, 다이얼로그, 시트, 탭 바, 고급 효과
+    implementation("com.naurylab:kinetica-ui:1.0.0-alpha01")              // UI 키트(글래스, 단색, 톤 표면), 다이얼로그, 시트, 탭 바, 고급 효과
     implementation("com.naurylab:kinetica-board-compose:1.0.0-alpha01")    // 호스트 위젯을 자유롭게 배치하는 대시보드 보드
     implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha01")   // 모션 효과, 화면 전환, 숫자 애니메이션만 쓸 때
     implementation("com.naurylab:kinetica-presets:1.0.0-alpha01")          // EffectPresets, UiKit (선택)
@@ -269,7 +269,7 @@ KineticaPlayer(document, slots = slots, data = data, fit = SceneFit.Responsive, 
 | `kinetica-player-compose` | Android | `KineticaPlayer`, `RemoteKineticaPlayer`, 전환 그리기, 끌어서 닫기 |
 | `kinetica-board-compose` | Android | 위젯 보드 `KineticaBoard`, `KineticaBoardView` |
 | `kinetica-export-android` | Android | PNG 내보내기 |
-| `kinetica-ui` | Android | 글래스 UI 키트(`GlassScaffold`, 다이얼로그, 시트, 컨트롤, 전환)와 고급 효과. 다른 Kinetica 모듈 없이 단독으로 쓸 수 있습니다 |
+| `kinetica-ui` | Android | UI 키트(`KineticaScaffold`, 다이얼로그, 시트, 컨트롤, 전환)와 고급 효과. 표면은 글래스, 단색, 톤 중에서 고릅니다. 다른 Kinetica 모듈 없이 단독으로 쓸 수 있습니다 |
 
 모듈 간 의존 방향, 데이터 흐름, 좌표계는 [docs/architecture.md](docs/architecture.md)에 정리되어 있습니다. 기능을 하나씩 확인해 보는 순서는 [docs/evaluation.md](docs/evaluation.md)를 보세요.
 

@@ -1,5 +1,6 @@
 package com.naury.kinetica.editor
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
@@ -98,8 +99,11 @@ public fun KineticaEditor(
     toolbarEnd: @Composable RowScope.() -> Unit = {},
 ) {
     // 입력란·칩·시트가 호스트 MaterialTheme이 아니라 편집기 색을 따르게 한다.
+    // MaterialTheme은 LocalIndication을 리플로 되돌리므로, 호스트가 정한 눌림 표시(KineticaTheme의 KIndication 등)를 다시 넣어
+    // toolbarEnd나 슬롯에 넣은 호스트 버튼이 편집기 밖과 같은 눌림 표시를 쓰게 한다.
+    val hostIndication = LocalIndication.current
     MaterialTheme(colorScheme = remember(theme) { theme.colorScheme() }) {
-        CompositionLocalProvider(LocalStudioTheme provides theme) {
+        CompositionLocalProvider(LocalStudioTheme provides theme, LocalIndication provides hostIndication) {
             EditorContent(session, modifier, images, theme, config, slots, hostViews, data, onExit, toolbarEnd)
         }
     }

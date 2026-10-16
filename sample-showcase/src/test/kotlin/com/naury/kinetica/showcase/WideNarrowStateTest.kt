@@ -77,7 +77,7 @@ class WideNarrowStateTest {
     @Test
     fun `글래스 데모는 다시 만들어져도 열린 다이얼로그를 유지한다`() {
         val restoration = StateRestorationTester(compose)
-        restoration.setContent { GlassDemo {} }
+        restoration.setContent { UiKitDemo {} }
         compose.waitForIdle()
         compose.onNodeWithText("팝업").performClick()
         compose.waitForIdle()

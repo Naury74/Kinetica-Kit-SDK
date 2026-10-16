@@ -54,9 +54,9 @@ import com.naury.kinetica.board.KineticaBoardState
 import com.naury.kinetica.presets.EffectPresets
 import com.naury.kinetica.render.HOST_VIEW_UNITS_PER_DP
 import com.naury.kinetica.render.animateNumberAsState
-import com.naury.kinetica.ui.GlassButton
-import com.naury.kinetica.ui.GlassButtonSize
-import com.naury.kinetica.ui.GlassTextField
+import com.naury.kinetica.ui.KButton
+import com.naury.kinetica.ui.KButtonSize
+import com.naury.kinetica.ui.KTextField
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -270,7 +270,7 @@ private fun FitText(text: String, color: Color, max: TextUnit, modifier: Modifie
 private fun Memo(id: String) = Card(Color(0xFFFFF7D6)) {
     var text by rememberSaveable { mutableStateOf("") }
     CardHeader("메모 " + id.substringAfter("memo.", "1"))
-    GlassTextField(text, { text = it }, "오늘 할 일", Modifier.fillMaxWidth().weight(1f), singleLine = false)
+    KTextField(text, { text = it }, "오늘 할 일", Modifier.fillMaxWidth().weight(1f), singleLine = false)
 }
 
 @Composable
@@ -279,7 +279,7 @@ private fun Notice() = Card(Color(0xFFEFF2FF)) {
     CardHeader("공지")
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Text("다음 주 월요일은 정기 휴무입니다", color = ink, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        GlassButton(if (read == 0) "확인" else "확인 $read", { read++ }, size = GlassButtonSize.Small)
+        KButton(if (read == 0) "확인" else "확인 $read", { read++ }, size = KButtonSize.Small)
     }
 }
 

@@ -8,8 +8,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".BoardActivity" android:exported="false" />
-        <activity android:name=".GlassActivity" android:exported="false" />
-        <activity android:name=".XmlGlassActivity" android:exported="false" />
+        <activity android:name=".SurfaceActivity" android:exported="false" />
+        <activity android:name=".XmlSurfaceActivity" android:exported="false" />
         <activity android:name=".m3.M3EdgeActivity" android:exported="true" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".m3.M3NoEdgeActivity" android:exported="false" />
         <activity android:name=".xml.XmlHostActivity" android:exported="true" />

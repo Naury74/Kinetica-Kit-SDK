@@ -1,5 +1,6 @@
 package com.naury.kinetica.board
 
+import androidx.compose.runtime.mutableIntStateOf
 import com.naury.kinetica.core.command.CommandResult
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.geometry.Rect
@@ -67,12 +68,15 @@ public class KineticaBoardState private constructor(
 
     /**
      * 위치를 다루는 함수가 쓰는 격자 열 수. [KineticaBoard]가 보드 폭에 맞춰 정한다. 자유 배치면 0, 열 수를 바꾸지 않는 격자면
-     * [BoardArrangement.Grid.columns]다.
+     * [BoardArrangement.Grid.columns]다. Compose 상태이므로 컴포지션에서 읽으면 열 수가 바뀔 때 다시 그려진다.
      */
-    public var activeColumns: Int = baseGrid?.columns ?: 0
+    public var activeColumns: Int
+        get() = activeColumnsState.intValue
         internal set(value) {
-            if (baseGrid != null) field = value.coerceIn(1, GridColumns.MAX_COLUMNS)
+            if (baseGrid != null) activeColumnsState.intValue = value.coerceIn(1, GridColumns.MAX_COLUMNS)
         }
+
+    private val activeColumnsState = mutableIntStateOf(baseGrid?.columns ?: 0)
 
     // 지금 열 수의 격자. 가장 좁은 열 수면 노드 위치를, 다른 열 수면 노드 metadata의 칸을 쓴다.
     private val activeGrid: BoardArrangement.Grid? get() = baseGrid?.withColumns(activeColumns)

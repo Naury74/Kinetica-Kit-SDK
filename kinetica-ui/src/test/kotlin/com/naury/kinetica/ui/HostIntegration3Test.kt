@@ -72,7 +72,7 @@ class HostIntegration3Test {
     @Test
     fun `색상 바퀴를 끄는 동안 View 부모가 가로채지 못하고 손을 떼면 풀린다`() {
         compose.setContent {
-            InRecordingParent { GlassColorPicker(androidx.compose.ui.graphics.Color.Blue, {}, Modifier.size(320.dp, 600.dp)) }
+            InRecordingParent { KColorPicker(androidx.compose.ui.graphics.Color.Blue, {}, Modifier.size(320.dp, 600.dp)) }
         }
         val wheel = compose.onNode(
             SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription) and
@@ -165,7 +165,7 @@ class HostIntegration3Test {
         var tags by mutableStateOf(listOf<String>())
         var nexts = 0
         compose.setContent {
-            GlassTagInput(
+            KTagInput(
                 tags,
                 { tags = it },
                 imeAction = ImeAction.Next,
@@ -191,7 +191,7 @@ class HostIntegration3Test {
         var codeNexts = 0
         compose.setContent {
             Column(Modifier.fillMaxWidth()) {
-                GlassPasswordField(
+                KPasswordField(
                     "",
                     {},
                     label = "비밀번호",
@@ -200,7 +200,7 @@ class HostIntegration3Test {
                     keyboardActions = KeyboardActions(onNext = { nexts++ }),
                     fieldModifier = Modifier.testTag("pwField"),
                 )
-                GlassCodeInput(
+                KCodeInput(
                     "",
                     {},
                     Modifier.testTag("code"),

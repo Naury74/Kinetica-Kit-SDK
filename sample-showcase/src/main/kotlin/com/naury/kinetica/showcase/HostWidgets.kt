@@ -33,8 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.editor.HostViewOption
-import com.naury.kinetica.ui.GlassButton
-import com.naury.kinetica.ui.GlassButtonSize
+import com.naury.kinetica.ui.KButton
+import com.naury.kinetica.ui.KButtonSize
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -116,7 +116,7 @@ private fun Counter() {
             WidgetLabel("방문자")
             Text("${count}명", color = cardText, fontSize = 24.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
-        GlassButton("+1", { count++ }, size = GlassButtonSize.Small)
+        KButton("+1", { count++ }, size = KButtonSize.Small)
     }
 }
 

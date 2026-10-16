@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.FlipCard
-import com.naury.kinetica.ui.GlassBlobButton
+import com.naury.kinetica.ui.KBlobButton
 import com.naury.kinetica.ui.ParticleField
 import com.naury.kinetica.ui.ParticlePreset
 import com.naury.kinetica.ui.holographic
@@ -80,7 +80,7 @@ fun Effects2Screen(leave: () -> Unit) {
             TextButton({ flipped = !flipped }, Modifier.testTag("flipToggle")) { Text("뒤집기") }
         }
         Text("뒤집힘 $flipped", Modifier.testTag("flipState"))
-        GlassBlobButton("방울 $blob", onClick = { blob++ }, modifier = Modifier.padding(8.dp).testTag("blobButton"))
+        KBlobButton("방울 $blob", onClick = { blob++ }, modifier = Modifier.padding(8.dp).testTag("blobButton"))
         TextButton(leave, Modifier.testTag("effects2Leave")) { Text("떠나기") }
     }
 }
