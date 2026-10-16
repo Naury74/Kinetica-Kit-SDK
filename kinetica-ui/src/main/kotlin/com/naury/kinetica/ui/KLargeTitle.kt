@@ -3,6 +3,7 @@
 
 package com.naury.kinetica.ui
 
+import android.os.Build
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
@@ -213,6 +215,7 @@ public fun KLargeTitleBar(
     var smallHeight by remember { mutableIntStateOf(0) }
     var bottomHeight by remember { mutableIntStateOf(0) }
     state.scrollable?.let { SettleHalfCollapsed(state, it) }
+    ReportStatusBarCover(surface) { barLevel >= 1f }
     Box(modifier.fillMaxWidth()) {
         // 다 접히면 아래 줄이 작은 바 바로 밑에 오므로, 글래스 배경을 두 줄 높이만큼 깐다.
         BarBackground(surface, barLevel) { smallHeight + if (bottom != null) bottomHeight else 0 }
@@ -252,6 +255,26 @@ private fun SettleHalfCollapsed(state: KLargeTitleState, scrollable: ScrollableS
             val by = if (offset / range >= HALF) range - offset else -offset
             if (still) scrollable.scrollBy(by) else scrollable.animateScrollBy(by, spring(stiffness = Spring.StiffnessMediumLow))
         }
+    }
+}
+
+/**
+ * 다 접힌 바가 상태 표시줄을 불투명하게 덮으면 [KineticaScaffold]에 알려, 그 아래에서 보이지 않는 가장자리 흐림을 그리지 않게 한다.
+ * 스캐폴드의 topBar 칸에 놓였을 때만 알린다.
+ */
+@Composable
+private fun ReportStatusBarCover(surface: SurfaceStyle, collapsed: () -> Boolean) {
+    val host = LocalKineticaHost.current ?: return
+    if (!LocalTopBarSlot.current) return
+    // 글래스는 배경 기록을 블러 처리해 불투명하게 칠하고, 단색과 톤은 표면 색이 불투명할 때만 덮는다.
+    val opaque = when (surface) {
+        is SurfaceStyle.Glass -> LocalGlassBackdrop.current != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+        else -> surface.fillColor.alpha >= 1f
+    }
+    val covered = opaque && collapsed()
+    DisposableEffect(host, covered) {
+        host.statusBarCovered = covered
+        onDispose { host.statusBarCovered = false }
     }
 }
 

@@ -73,6 +73,9 @@ public class GlassBackdrop internal constructor(internal val layer: GraphicsLaye
 
     /** 배경을 기록하는 중인지 나타낸다. 실수로 배경 안에 둔 글래스가 자기 자신을 기록해 그리기가 순환하지 않도록, 이때는 글래스를 그리지 않는다. */
     internal var recording: Boolean = false
+
+    /** 이 배경을 비추는 글래스들이 함께 쓰는 블러 기록. null이면 글래스마다 따로 블러를 건다. */
+    internal var shared: SharedBlurs? = null
 }
 
 /** 컴포지션에 유지되는 [GlassBackdrop]을 만든다. */
@@ -173,7 +176,12 @@ public fun Modifier.glass(
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))
                     drawRect(style.onGlass.copy(alpha = LAYERED_ALPHA * level))
                 } else if (canBlur && backdrop != null) {
-                    drawBackdrop(backdrop, Sampler(blurLayer, sampleLayer, effects, position), style, outline, level)
+                    val sampler = Sampler(blurLayer, sampleLayer, effects, position)
+                    // 강도가 1보다 작으면 블러 반경이 프레임마다 바뀌므로 함께 쓰는 기록 대신 혼자 건다.
+                    val shared = backdrop.shared?.takeIf { level >= 1f && it.owner === view }
+                    if (shared == null || !drawSharedBackdrop(backdrop, shared, sampler, style, cornerOf(outline))) {
+                        drawBackdrop(backdrop, sampler, style, outline, level)
+                    }
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))
                 } else if (windowBlurred) {
                     drawRect(style.tint.copy(alpha = (style.tint.alpha + WINDOW_TINT_EXTRA).coerceAtMost(1f) * level))
@@ -186,7 +194,7 @@ public fun Modifier.glass(
         }
 }
 
-private class PositionHolder {
+internal class PositionHolder {
     var offset: Offset = Offset.Zero
     var root: Offset = Offset.Zero
 
@@ -194,6 +202,14 @@ private class PositionHolder {
     var sampling = false
     var pad = 0f
     var scale = 1f
+
+    /** 이번에 그린 기록 여백(px)과 배율을 기억하고 [layer]를 지금 위치로 옮긴다. */
+    fun update(backdrop: GlassBackdrop, layer: GraphicsLayer, pad: Float, scale: Float) {
+        this.pad = pad
+        this.scale = scale
+        sampling = true
+        follow(backdrop, layer)
+    }
 
     fun at(backdrop: GlassBackdrop): Offset = if (backdrop.rootRelative) root else offset
 
@@ -232,18 +248,18 @@ internal class EffectCache {
 /** 기록한 영역의 크기, 가장자리 여백, 모서리 반경(px). */
 private class Region(val size: IntSize, val pad: Float, val corner: Float)
 
-/** 글래스 하나가 배경을 옮겨 그릴 때 쓰는 레이어(블러를 거는 쪽, 배경을 옮겨 놓는 쪽), 효과 캐시, 위치. */
-private class Sampler(val layer: GraphicsLayer, val sample: GraphicsLayer, val cache: EffectCache, val position: PositionHolder)
-
 private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, style: GlassStyle, outline: Outline, level: Float) {
     val layer = sampler.layer
     val cache = sampler.cache
-    val blurPx = style.blur.toPx() * level
+    val fullBlurPx = style.blur.toPx()
+    val blurPx = fullBlurPx * level
     // 블러가 크면 배경을 낮은 해상도로 기록해 흐린 뒤 늘려 그린다. 흐린 결과는 줄였다 늘려도 차이가 거의 없고,
     // GPU가 칠할 픽셀과 레이어 텍스처 메모리가 크게 줄어 목록에 글래스가 많을 때 스크롤이 덜 끊긴다.
-    val scale = sampleScale(blurPx)
+    // 배율과 여백은 강도와 상관없이 최대 블러로 정한다. 다이얼로그 스크림처럼 강도가 커지는 동안 기록 크기가 프레임마다 바뀌면
+    // 그때마다 레이어와 블러 텍스처를 새로 잡아, 열리는 순간 프레임이 크게 밀린다.
+    val scale = sampleScale(fullBlurPx)
     // 블러와 굴절은 가장자리 바깥의 픽셀을 끌어오므로 그만큼 넓게 기록한다.
-    val pad = ceil(blurPx * 2f + style.refraction * REFRACTION_DP * density).toInt()
+    val pad = ceil(fullBlurPx * 2f + style.refraction * REFRACTION_DP * density).toInt()
     val fullSize = IntSize(ceil(size.width).toInt() + pad * 2, ceil(size.height).toInt() + pad * 2)
     if (fullSize.width <= 0 || fullSize.height <= 0) return
     val recordSize = IntSize(ceil(fullSize.width * scale).toInt().coerceAtLeast(1), ceil(fullSize.height * scale).toInt().coerceAtLeast(1))
@@ -259,17 +275,13 @@ private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, st
     sample.pivotOffset = Offset.Zero
     sample.scaleX = scale
     sample.scaleY = scale
-    val position = sampler.position
-    position.pad = pad.toFloat()
-    position.scale = scale
-    position.sampling = true
-    position.follow(backdrop, sample)
+    sampler.position.update(backdrop, sample, pad.toFloat(), scale)
     layer.record(recordSize) { drawLayer(sample) }
     translate(-pad.toFloat(), -pad.toFloat()) { scale(1f / scale, pivot = Offset.Zero) { drawLayer(layer) } }
 }
 
 /** 블러 반경(px)에 맞춘 기록 배율. 블러가 작으면 원래 해상도, 클수록 낮춘다. */
-private fun sampleScale(blurPx: Float): Float = when {
+internal fun sampleScale(blurPx: Float): Float = when {
     blurPx < FULL_RES_BLUR_PX -> 1f
     blurPx < THIRD_RES_BLUR_PX -> HALF
     else -> THIRD
@@ -277,6 +289,21 @@ private fun sampleScale(blurPx: Float): Float = when {
 
 @RequiresApi(Build.VERSION_CODES.S)
 private fun glassEffect(blurPx: Float, style: GlassStyle, level: Float, region: Region): androidx.compose.ui.graphics.RenderEffect? {
+    var effect = colorBlurEffect(blurPx, style, level)
+    val refraction = style.refraction * level
+    if (refraction > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // 기기 GPU가 셰이더를 지원하지 않으면 굴절 없이 그린다.
+        val strength = refraction * region.pad.coerceAtMost(MAX_REFRACTION_PX)
+        runCatching { refractionEffect(region.size, region.pad, region.corner, strength) }.getOrNull()?.let {
+            effect = RenderEffect.createChainEffect(effect, it)
+        }
+    }
+    return effect.asComposeRenderEffect()
+}
+
+/** 채도와 밝기를 바꾸고 [blurPx](px)만큼 블러 처리하는 효과. [level]만큼 약하게 건다. */
+@RequiresApi(Build.VERSION_CODES.S)
+internal fun colorBlurEffect(blurPx: Float, style: GlassStyle, level: Float): RenderEffect {
     val saturation = 1f + (style.saturation - 1f) * level
     val brightness = style.brightness * level * BRIGHTNESS_SCALE
     val color = ColorMatrix().apply { setSaturation(saturation) }.also {
@@ -292,24 +319,19 @@ private fun glassEffect(blurPx: Float, style: GlassStyle, level: Float, region: 
     ) {
         effect = RenderEffect.createChainEffect(effect, RenderEffect.createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP))
     }
-    val refraction = style.refraction * level
-    if (refraction > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        // 기기 GPU가 셰이더를 지원하지 않으면 굴절 없이 그린다.
-        runCatching { refractionEffect(region.size, region.pad, region.corner, refraction) }.getOrNull()?.let {
-            effect =
-                RenderEffect.createChainEffect(effect, it)
-        }
-    }
-    return effect.asComposeRenderEffect()
+    return effect
 }
 
+/**
+ * 굴절 셰이더 효과. [size]는 여백까지 포함한 기록 크기, [pad]는 모양 바깥 여백, [strength]는 가장자리에서 끌어올 최대 거리(모두 px)다.
+ */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun refractionEffect(size: IntSize, pad: Float, corner: Float, strength: Float): RenderEffect {
+internal fun refractionEffect(size: IntSize, pad: Float, corner: Float, strength: Float): RenderEffect {
     val shader = RuntimeShader(REFRACTION_SHADER)
     shader.setFloatUniform("size", size.width - pad * 2, size.height - pad * 2)
     shader.setFloatUniform("pad", pad)
     shader.setFloatUniform("radius", corner)
-    shader.setFloatUniform("strength", strength * pad.coerceAtMost(MAX_REFRACTION_PX))
+    shader.setFloatUniform("strength", strength)
     return RenderEffect.createRuntimeShaderEffect(shader, "content")
 }
 
@@ -336,7 +358,7 @@ half4 main(float2 coord) {
 }
 """
 
-private fun cornerOf(outline: Outline): Float = (outline as? Outline.Rounded)?.roundRect?.topLeftCornerRadius?.x ?: 0f
+internal fun cornerOf(outline: Outline): Float = (outline as? Outline.Rounded)?.roundRect?.topLeftCornerRadius?.x ?: 0f
 
 private fun DrawScope.clipOutline(outline: Outline, block: DrawScope.() -> Unit) {
     clipPath(outline.toPath(), block = block)
@@ -424,7 +446,7 @@ private object GrainBrush {
     }
 }
 
-private const val REFRACTION_DP = 14f
+internal const val REFRACTION_DP = 14f
 private const val FULL_RES_BLUR_PX = 12f
 private const val THIRD_RES_BLUR_PX = 48f
 private const val HALF = 0.5f
@@ -433,7 +455,7 @@ private const val MIN_PX = 0.5f
 private const val EDGE_FADE_AT = 0.45f
 private const val EDGE_FADE = 0.25f
 private const val GRAY_LEVELS = 256
-private const val MAX_REFRACTION_PX = 48f
+internal const val MAX_REFRACTION_PX = 48f
 private const val BRIGHTNESS_SCALE = 255f
 private const val SHADOW_ALPHA = 0.22f
 private const val SHADOW_DROP = 0.35f

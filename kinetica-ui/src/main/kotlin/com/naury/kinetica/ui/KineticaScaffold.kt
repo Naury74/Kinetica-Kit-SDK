@@ -93,6 +93,8 @@ public fun KineticaScaffold(
     // 자기 자신을 다시 그리지 않는다. 그래서 콘텐츠 안 글래스는 배경을, 바는 배경과 콘텐츠를, 오버레이는 화면 전체를 비춘다.
     // 단색과 톤 표면은 비출 것이 없으므로 기록용 레이어를 만들지 않는다.
     val layers = if (surface is SurfaceStyle.Glass) rememberScaffoldBackdrops() else null
+    // 콘텐츠 안 카드와 버튼은 모두 같은 배경을 비추므로 블러를 한 번만 하고 함께 쓴다.
+    layers?.let { ShareBlurs(it.background) }
     val host = remember { KOverlayHost() }
     PushBackBarIcons(host, backdropColor)
     var topHeight by remember { mutableIntStateOf(0) }
@@ -120,8 +122,8 @@ public fun KineticaScaffold(
                         }
                     }
                 }
-                if (edgeFade) EdgeFade(layers?.content, surface.background, Modifier.align(Alignment.TopCenter))
-                CompositionLocalProvider(LocalGlassBackdrop provides layers?.content) {
+                if (edgeFade) EdgeFade(host, layers?.content, surface.background, Modifier.align(Alignment.TopCenter))
+                CompositionLocalProvider(LocalGlassBackdrop provides layers?.content, LocalTopBarSlot provides true) {
                     Box(
                         Modifier.align(Alignment.TopCenter).onSizeChanged {
                             topHeight = it.height
@@ -129,6 +131,8 @@ public fun KineticaScaffold(
                         },
                         content = topBar,
                     )
+                }
+                CompositionLocalProvider(LocalGlassBackdrop provides layers?.content) {
                     Box(
                         Modifier.align(Alignment.BottomCenter).onSizeChanged {
                             bottomHeight = it.height
@@ -202,8 +206,9 @@ private fun Modifier.pushBack(host: KOverlayHost): Modifier = drawWithCache {
  * 상태 표시줄 아래로 들어간 콘텐츠를 흐리게 사라지게 한다. 글래스면 블러 처리하고, 아니면 바탕색으로 덮는다. 아래로 갈수록 옅어진다.
  */
 @Composable
-private fun EdgeFade(backdrop: GlassBackdrop?, page: Color, modifier: Modifier) {
+private fun EdgeFade(host: KOverlayHost, backdrop: GlassBackdrop?, page: Color, modifier: Modifier) {
     if (backdrop == null && page.alpha == 0f) return
+    if (host.statusBarCovered) return
     Box(
         modifier
             .fillMaxWidth()
@@ -249,10 +254,19 @@ internal enum class OverlayKind {
 
 internal val LocalKineticaHost = staticCompositionLocalOf<KOverlayHost?> { null }
 
+/** [KineticaScaffold]의 topBar 칸 안이면 true. 상단 바가 상태 표시줄을 덮는다고 알릴 수 있는 자리인지 가린다. */
+internal val LocalTopBarSlot = staticCompositionLocalOf { false }
+
 /** [KineticaScaffold]의 오버레이 레이어에 그릴 항목들. 어디서 열든 배경 기록 바깥에 그린다. */
 @Stable
 internal class KOverlayHost {
     val entries = mutableStateListOf<OverlayEntry>()
+
+    /**
+     * 상단 바가 상태 표시줄 영역을 불투명하게 덮고 있는지. 덮고 있으면 그 아래의 가장자리 흐림은 보이지 않으므로 만들지 않는다.
+     * 가장자리 흐림은 화면 폭 블러와 화면 밖 레이어를 하나씩 쓰므로 스크롤 내내 그리면 비용이 크다.
+     */
+    var statusBarCovered by mutableStateOf(false)
 
     // bottomBar 높이(px). 스낵바가 탭 바를 덮지 않고 그 위에 뜨는 데 쓴다.
     var bottomBarPx by mutableIntStateOf(0)
