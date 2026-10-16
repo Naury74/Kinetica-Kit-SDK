@@ -82,6 +82,13 @@ import kotlinx.coroutines.launch
  * @param clearable `true`면 포커스를 받고 글자가 있을 때 끝에 지우기 버튼이 나타난다. [readOnly]이거나 [enabled]가 `false`면 나오지 않는다.
  * @param leadingIcon 앞쪽 아이콘. 18~20dp 크기로 넣는다.
  * @param trailingIcon 끝쪽 아이콘이나 버튼. 지우기 버튼이 보일 때는 그 뒤에 놓인다.
+ * @param minLines [singleLine]이 `false`일 때 비어 있어도 차지하는 최소 줄 수. 1 미만이거나 [maxLines]보다 크면
+ *   [IllegalArgumentException]을 던진다. 여러 줄 입력은 [KTextArea]가 더 편하다.
+ * @param variant 입력란 모양. 기본값 [KTextFieldVariant.Surface]는 표면 스타일로 칠한 상자다.
+ * @param prefix 입력한 글자 앞에 붙는 고정 글자(예: "₩", "https://"). 라벨이 떠올라 있을 때만 보인다. 값에는 들어가지 않는다.
+ * @param suffix 입력한 글자 뒤에 붙는 고정 글자(예: "kg", "@gmail.com"). [prefix]와 같은 규칙을 따른다.
+ * @param maxLength 최대 글자 수. 넘는 입력은 잘라서 [onValueChange]에 넘기고, 입력란 아래 끝에 '지금 글자 수/최대'를 보여 준다.
+ *   `null`이면 제한도 표시도 없다. 1 미만이면 [IllegalArgumentException]을 던진다.
  */
 @Composable
 public fun KTextField(
@@ -104,8 +111,46 @@ public fun KTextField(
     clearable: Boolean = true,
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
+    minLines: Int = 1,
+    variant: KTextFieldVariant = KTextFieldVariant.Surface,
+    prefix: String? = null,
+    suffix: String? = null,
+    maxLength: Int? = null,
 ) {
     require(maxLines >= 1) { "maxLines는 1 이상이어야 합니다." }
+    require(minLines in 1..(if (singleLine) 1 else maxLines)) { "minLines는 1 이상, maxLines 이하여야 합니다." }
+    require(maxLength == null || maxLength >= 1) { "maxLength는 1 이상이어야 합니다." }
+    val change: (String) -> Unit = if (maxLength == null) onValueChange else { text -> onValueChange(text.take(maxLength)) }
+    val config = FieldConfig(
+        variant = variant,
+        texts = FieldTexts(label, placeholder, prefix, suffix, error, supportingText),
+        lines = FieldLines(singleLine, minLines, maxLines),
+        maxLength = maxLength,
+        slots = FieldSlots(leadingIcon, trailingIcon),
+        flags = FieldFlags(clearable, enabled, readOnly),
+    )
+    val input = FieldInput(keyboardOptions, keyboardActions, visualTransformation, interactionSource)
+    if (variant == KTextFieldVariant.Surface) {
+        SurfaceTextField(value, change, config, input, surface, modifier)
+    } else {
+        VariantTextField(value, change, config, input, surface, modifier)
+    }
+}
+
+/** 표면 스타일로 칠한 기본 입력란([KTextFieldVariant.Surface]) */
+@Composable
+private fun SurfaceTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    config: FieldConfig,
+    input: FieldInput,
+    surface: SurfaceStyle,
+    modifier: Modifier,
+) {
+    val texts = config.texts
+    val error = texts.error
+    val flags = config.flags
+    val lines = config.lines
     var focused by remember { mutableStateOf(false) }
     val motion = remember { FieldMotion(value.isNotEmpty(), error) }
     val colors = KineticaTheme.colors
@@ -117,8 +162,15 @@ public fun KTextField(
     }
     LaunchedEffect(focused) { motion.levels.focusTo(focused) }
     LaunchedEffect(error) { motion.onError(error, still) }
-    val parts = FieldParts(label, placeholder, leadingIcon, trailingIcon) {
-        FieldClearButton(clearable && enabled && !readOnly && focused && value.isNotEmpty(), surface.contentColor) { onValueChange("") }
+    val parts = FieldParts(
+        texts.label,
+        texts.placeholder,
+        config.slots,
+        FieldAffix(texts.prefix, texts.suffix),
+        !lines.single && lines.min > 1,
+    ) {
+        val show = flags.clearable && flags.enabled && !flags.readOnly && focused && value.isNotEmpty()
+        FieldClearButton(show, surface.contentColor) { onValueChange("") }
     }
     Column(modifier.keepVisibleWhileFocused(focused)) {
         ProvideFieldSelection(colors.accent) {
@@ -129,7 +181,7 @@ public fun KTextField(
                     .fillMaxWidth()
                     .graphicsLayer {
                         translationX = motion.shake.value * density
-                        alpha = if (enabled) 1f else DISABLED_ALPHA
+                        alpha = if (flags.enabled) 1f else DISABLED_ALPHA
                         // 화면 밖 버퍼를 쓰면 그림자가 요소 경계에서 잘려 모서리가 각져 보인다.
                         compositingStrategy = CompositingStrategy.ModulateAlpha
                     }
@@ -137,20 +189,21 @@ public fun KTextField(
                     .fieldFocusFrame(FIELD_CORNER, motion.levels, colors.accent, colors.destructive)
                     .onFocusChanged { focused = it.isFocused }
                     .semantics { if (error != null) error(error) },
-                enabled = enabled,
-                readOnly = readOnly,
-                singleLine = singleLine,
-                maxLines = if (singleLine) 1 else maxLines,
-                interactionSource = interactionSource,
-                keyboardActions = keyboardActions,
+                enabled = flags.enabled,
+                readOnly = flags.readOnly,
+                singleLine = lines.single,
+                maxLines = if (lines.single) 1 else lines.max,
+                minLines = if (lines.single) 1 else lines.min,
+                interactionSource = input.interactionSource,
+                keyboardActions = input.keyboardActions,
                 textStyle = themed(TextStyle(color = surface.contentColor, fontSize = FIELD_FONT_SIZE)),
                 cursorBrush = SolidColor(colors.accent),
-                keyboardOptions = keyboardOptions,
-                visualTransformation = visualTransformation,
+                keyboardOptions = input.keyboardOptions,
+                visualTransformation = input.visualTransformation,
                 decorationBox = { field -> FieldDecoration(parts, surface, motion, value.isEmpty(), field) },
             )
         }
-        FieldSupportText(error, supportingText, surface)
+        FieldSupportRow(error, texts.supporting, surface, config.maxLength?.let { value.length to it }, FIELD_PADDING)
     }
 }
 
@@ -158,8 +211,9 @@ public fun KTextField(
 internal class FieldParts(
     val label: String,
     val placeholder: String?,
-    val leading: (@Composable () -> Unit)?,
-    val trailing: (@Composable () -> Unit)?,
+    val slots: FieldSlots,
+    val affix: FieldAffix,
+    val multiLine: Boolean,
     val clear: @Composable () -> Unit,
 )
 
@@ -190,7 +244,7 @@ private fun FieldDecoration(parts: FieldParts, surface: SurfaceStyle, motion: Fi
     val grow = LocalDensity.current.fontScale.coerceAtLeast(1f)
     Row(
         Modifier.heightIn(min = FIELD_HEIGHT * grow).padding(
-            start = if (parts.leading !=
+            start = if (parts.slots.leading !=
                 null
             ) {
                 ICON_START
@@ -201,7 +255,7 @@ private fun FieldDecoration(parts: FieldParts, surface: SurfaceStyle, motion: Fi
         ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        parts.leading?.let {
+        parts.slots.leading?.let {
             CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor.copy(alpha = ICON_ALPHA)) { it() }
             Spacer(Modifier.width(ICON_GAP))
         }
@@ -209,7 +263,7 @@ private fun FieldDecoration(parts: FieldParts, surface: SurfaceStyle, motion: Fi
             FloatingLabelArea(parts, surface, motion, empty, grow, field)
         }
         parts.clear()
-        parts.trailing?.let { it() }
+        parts.slots.trailing?.let { it() }
     }
 }
 
@@ -232,7 +286,12 @@ private fun FloatingLabelArea(
                 transformOrigin = TransformOrigin(if (rtl) 1f else 0f, 0f)
                 scaleX = 1f - (1f - LABEL_SCALE) * up
                 scaleY = scaleX
-                val rest = centering.restPx(LABEL_REST * density * grow, LABEL_NUDGE.toPx())
+                // 여러 줄 입력란은 라벨을 가운데가 아니라 첫 줄 자리에 둔다.
+                val rest = if (parts.multiLine) {
+                    (INPUT_TOP * grow).toPx() + LABEL_NUDGE.toPx()
+                } else {
+                    centering.restPx(LABEL_REST * density * grow, LABEL_NUDGE.toPx())
+                }
                 translationY = rest + (LABEL_FLOAT * density * grow - rest) * up
             },
             style = TextStyle(fontSize = FIELD_FONT_SIZE),
@@ -243,7 +302,13 @@ private fun FloatingLabelArea(
             },
             maxLines = 1,
         )
-        Box(Modifier.fillMaxWidth().padding(top = INPUT_TOP * grow, bottom = INPUT_BOTTOM).align(Alignment.TopStart)) {
+        FieldAffixes(
+            parts.affix.prefix,
+            parts.affix.suffix,
+            surface.contentColor,
+            { motion.float.value },
+            Modifier.fillMaxWidth().padding(top = INPUT_TOP * grow, bottom = INPUT_BOTTOM).align(Alignment.TopStart),
+        ) {
             if (empty && parts.placeholder != null) {
                 ThemedText(
                     parts.placeholder,
@@ -259,7 +324,7 @@ private fun FloatingLabelArea(
 }
 
 /** 라벨 위치, 포커스, 오류 표시, 흔들림 애니메이션 값. */
-private class FieldMotion(filled: Boolean, initialError: String?) {
+internal class FieldMotion(filled: Boolean, initialError: String?) {
     val float = Animatable(if (filled) 1f else 0f)
     val levels = FieldLevels(focused = false, error = initialError != null)
 

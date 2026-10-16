@@ -60,6 +60,12 @@
 - `KPasswordField`, `KTagInput`에 안쪽 입력란에 붙는 `fieldModifier`를 추가했습니다. `modifier`는 예전처럼 바깥 묶음에 붙습니다.
 - `BeforeAfterSlider(position, onPositionChange, before, after)`: 손잡이 위치를 호스트가 들고 있는 버전을 추가했습니다.
 
+### 기본 컴포넌트 추가
+
+- 폼과 목록: `KCheckbox`(사각·원형·미정), `KRadio`/`KRadioGroup`, `KSwitch` 모양 3종(iOS·Material·One UI), `KListItem`, `KListSection`과 긴 목록용 `kListSection`, `KDivider`, 설정 행 프리셋 5종, `KTextField` 모양(외곽선·채움·밑줄·인라인)과 접두·접미·글자 수, `KTextArea`.
+- 버튼, 칩, 카드: `KButton`의 뒤 아이콘·전체 폭·성공 모핑, `KIconToggleButton`, `KFab`/`KExtendedFab`, `KSplitButton`, `KButtonGroup`/`KToggleGroup`, 칩 4종과 `KChipRow`, `KCard`·`KSelectableCard`·`KMediaCard`·`KHorizontalCard`, 숫자·상태 배지, `KAvatar` 크기·상태.
+- 내비게이션과 오버레이: `KTopAppBar`(Small·CenterAligned·Medium), `KBottomAppBar`, `KFloatingToolbar`, 탭 인디케이터 3종과 탭 배지, 아이콘·여러 칸 세그먼트, `KDropdownMenu`(체크·하위 메뉴·키보드 이동), `KSelect`, `KAutocomplete`, `KAlertDialog`, `KActionSheet`(넓은 화면 팝오버), 모달 서랍, `kRichTooltip`, `KSearchView`.
+
 ### 중립 이름과 표면 스타일
 UI 키트를 글래스 전용이 아니라 표면을 고르는 키트로 바꾸면서 이름을 정리했습니다. 호환용 옛 이름은 두지 않습니다.
 

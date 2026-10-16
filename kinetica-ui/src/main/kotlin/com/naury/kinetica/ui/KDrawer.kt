@@ -72,6 +72,15 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+/** [KDrawer]가 열릴 때 뒤 화면을 어떻게 다룰지 정한다. */
+public enum class KDrawerMode {
+    /** One UI나 Telegram처럼 뒤 화면을 옆으로 밀면서 작게 줄이고 모서리를 둥글게 깎는다. */
+    Push,
+
+    /** Material 모달 서랍처럼 뒤 화면은 그 자리에 두고 어둡게 덮은 위로 서랍이 올라온다. 글래스 표면이면 서랍에 뒤 화면이 블러 처리되어 비친다. */
+    Modal,
+}
+
 /** [KDrawer]가 열린 정도. [rememberKDrawerState]로 만든다. */
 @Stable
 public class KDrawerState internal constructor(initiallyOpen: Boolean) {
@@ -116,8 +125,9 @@ public fun rememberKDrawerState(initiallyOpen: Boolean = false): KDrawerState =
     rememberSaveable(saver = KDrawerState.Saver) { KDrawerState(initiallyOpen) }
 
 /**
- * 시작 쪽 가장자리(RTL이면 오른쪽)에서 끌어 여는 글래스 서랍. 열리면 One UI나 Telegram처럼 [content]가 옆으로 밀리면서 작아지고
- * 모서리가 둥글어지며, 서랍 유리에는 밀려난 화면이 블러 처리되어 비친다. 화면 가장자리 24dp 안에서 끌면 열리고, 열린 동안에는
+ * 시작 쪽 가장자리(RTL이면 오른쪽)에서 끌어 여는 글래스 서랍. 기본 [KDrawerMode.Push]에서는 열리면 One UI나 Telegram처럼 [content]가
+ * 옆으로 밀리면서 작아지고 모서리가 둥글어지며, 서랍 유리에는 밀려난 화면이 블러 처리되어 비친다. [KDrawerMode.Modal]이면 뒤 화면은
+ * 그 자리에서 어두워지고 서랍이 그 위를 덮는다. 화면 가장자리 24dp 안에서 끌면 열리고, 열린 동안에는
  * 어디서든 반대로 끌거나 밀려난 화면을 누르거나 뒤로 가기를 하면 닫힌다. 뒤로 가기 예측 제스처를 따라 조금씩 닫히기도 한다.
  * 제스처 내비게이션(Android 10 이상)에서는 시작 가장자리의 세로 가운데 200dp를 시스템 뒤로 가기 제스처에서 빼서 서랍이 먼저 받는다.
  *
@@ -137,6 +147,7 @@ public fun rememberKDrawerState(initiallyOpen: Boolean = false): KDrawerState =
  * @param drawerContent 서랍 안 내용. 서랍 높이로 제한되므로 길면 `LazyColumn`이나 `verticalScroll`을 쓴다.
  *   상태 표시줄, 내비게이션 바, 화면 컷아웃, 키보드 여백은 서랍이 넣는다.
  * @param gesturesEnabled false면 끌어서 열고 닫지 않는다. 열린 서랍은 바깥을 누르거나 뒤로 가기로 닫을 수 있다.
+ * @param mode 뒤 화면을 밀어낼지([KDrawerMode.Push]), 그 자리에 두고 덮을지([KDrawerMode.Modal]) 정한다. 끌기, 뒤로 가기, 초점 처리는 같다.
  * @param content 서랍 뒤 화면
  */
 @Composable
@@ -146,6 +157,7 @@ public fun KDrawer(
     state: KDrawerState = rememberKDrawerState(),
     gesturesEnabled: Boolean = true,
     surface: SurfaceStyle = KineticaTheme.surface,
+    mode: KDrawerMode = KDrawerMode.Push,
     content: @Composable () -> Unit,
 ) {
     val direction = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
@@ -177,7 +189,17 @@ public fun KDrawer(
     }
     Box(modifier.fillMaxSize().then(drag)) {
         Box(Modifier.fillMaxSize().glassBackdrop(backdrop).background(behind)) {
-            Box(Modifier.fillMaxSize().pushedBack(state, direction)) {
+            Box(
+                Modifier.fillMaxSize().then(
+                    if (mode ==
+                        KDrawerMode.Push
+                    ) {
+                        Modifier.pushedBack(state, direction)
+                    } else {
+                        Modifier.dimmed(state)
+                    },
+                ),
+            ) {
                 // 열린 동안 뒤 화면은 TalkBack과 키보드 초점에서 빠진다. 닫기 영역은 그 바깥에 두어 TalkBack에 남긴다.
                 Box(Modifier.fillMaxSize().modalBackground(contentFocus, state.isOpen)) { content() }
                 if (shown) CloseCatcher { scope.launch { state.close() } }
@@ -299,6 +321,12 @@ private fun Modifier.pushedBack(state: KDrawerState, direction: Float): Modifier
     drawRect(Color.Black, alpha = PUSH_DIM * state.progress)
 }
 
+/** 모달 서랍이 열린 만큼 뒤 화면을 어둡게 덮는다. 밀거나 줄이지 않는다. */
+private fun Modifier.dimmed(state: KDrawerState): Modifier = drawWithContent {
+    drawContent()
+    drawRect(Color.Black, alpha = MODAL_DIM * state.progress)
+}
+
 /**
  * 닫혀 있으면 시작 쪽 가장자리에서 여는 방향으로 끄는 것만, 열려 있으면 어디서든 닫는 방향으로 끄는 것만 가로챈다.
  * 화면 안 버튼이 움직임을 먼저 소비해도 끌기를 놓치지 않도록 Initial 단계에서 판단하고, 가로로 움직이기 전에 손을 떼면
@@ -362,5 +390,6 @@ private const val DRAWER_DAMPING = 0.86f
 private const val PUSH_SCALE = 0.14f
 private const val PUSH_SHIFT = 0.86f
 private const val PUSH_DIM = 0.08f
+private const val MODAL_DIM = 0.32f
 private const val BACK_PEEK = 0.4f
 private const val HALF = 0.5f

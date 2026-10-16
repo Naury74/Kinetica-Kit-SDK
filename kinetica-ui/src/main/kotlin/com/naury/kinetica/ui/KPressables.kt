@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
  * @param enabled `false`면 누를 수 없고 흐리게 그린다.
  * @param variant 모양. 기본값은 [KVariant.Glass]다.
  * @param tone 색 역할. 기본값은 [KTone.Accent]다.
+ * @param shape 버튼 모양. 기본값은 원이고, 둥근 사각형을 주면 눌림 표시도 같은 모양으로 잘린다. 크기는 [KIconButtonSizes]에 모아 두었다.
  */
 @Composable
 public fun KIconButton(
@@ -50,17 +51,18 @@ public fun KIconButton(
     size: Dp = KMetrics.IconButton,
     enabled: Boolean = true,
     surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = CircleShape,
 ) {
     val diameter = size.coerceAtLeast(MIN_ICON_BUTTON)
     val colors = tone.colors(surface)
-    val ink = variantContent(variant, tone, colors, surface)
+    val ink = buttonInk(variant, tone, colors, surface)
     Box(
         modifier
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
             .size(diameter)
-            .variantBackground(variant, colors, surface, CircleShape)
-            .clip(CircleShape)
-            .clickable(null, KIndication(CircleShape, ink, PRESS_ALPHA), enabled, role = Role.Button) {
+            .variantBackground(variant, colors, surface, shape)
+            .clip(shape)
+            .clickable(null, KIndication(shape, ink, PRESS_ALPHA), enabled, role = Role.Button) {
                 onClick()
             }
             .then(if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier),

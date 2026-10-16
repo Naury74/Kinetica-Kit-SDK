@@ -113,7 +113,7 @@ public fun AvatarStack(
 }
 
 @Composable
-private fun Initials(text: String, size: Dp, color: Color) {
+internal fun Initials(text: String, size: Dp, color: Color) {
     // 원 크기가 고정이라 글꼴 배율을 따르지 않는다. 이름은 TalkBack이 따로 읽는다.
     val fontSize = with(LocalDensity.current) {
         (
@@ -178,7 +178,7 @@ internal fun initialsOf(name: String): String {
 
 private fun firstGlyph(word: String): String = word.substring(0, word.offsetByCodePoints(0, 1))
 
-private fun KAvatar.backgroundColor(): Color =
+internal fun KAvatar.backgroundColor(): Color =
     if (color != Color.Unspecified) color else AVATAR_COLORS[name.hashCode().absoluteValue % AVATAR_COLORS.size]
 
 private const val LTR_ISOLATE = '\u2066'

@@ -1,0 +1,10 @@
+<resources>
+    <string name="kinetica_ui_done">완료</string>
+    <string name="kinetica_ui_more_options">옵션 더 보기</string>
+    <string name="kinetica_ui_status_online">온라인</string>
+    <string name="kinetica_ui_status_busy">다른 용무 중</string>
+    <string name="kinetica_ui_status_away">자리 비움</string>
+    <string name="kinetica_ui_status_offline">오프라인</string>
+    <string name="kinetica_ui_avatar_status">%1$s, %2$s</string>
+    <string name="kinetica_ui_chip_remove">%s 지우기</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_menu_back">뒤로</string>
+    <string name="kinetica_ui_menu_submenu">하위 메뉴</string>
+    <string name="kinetica_ui_select_open">목록 열기</string>
+    <string name="kinetica_ui_select_none">선택 안 됨</string>
+    <string name="kinetica_ui_suggestions">추천 %1$d개</string>
+    <string name="kinetica_ui_action_cancel">취소</string>
+    <string name="kinetica_ui_search_recent">최근 검색</string>
+    <string name="kinetica_ui_search_clear_recent">모두 지우기</string>
+    <string name="kinetica_ui_search_remove_recent">%1$s 지우기</string>
+    <string name="kinetica_ui_search_fill">%1$s 입력하기</string>
+    <string name="kinetica_ui_search_close">검색 닫기</string>
+    <string name="kinetica_ui_toolbar_more">더 보기</string>
+</resources>

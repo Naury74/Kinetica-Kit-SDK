@@ -49,6 +49,7 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun InputTab(padding: PaddingValues, connection: NestedScrollConnection) {
     ComponentTabList(padding, connection) {
+        formsAndLists()
         item { CodeCard() }
         item { TagCard() }
         item { ColorCard() }

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_char_count">%2$d자 중 %1$d자</string>
+</resources>

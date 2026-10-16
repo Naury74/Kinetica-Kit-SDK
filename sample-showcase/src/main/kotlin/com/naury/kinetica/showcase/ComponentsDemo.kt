@@ -136,7 +136,7 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
                         // bottom 줄은 이미 contentMaxWidth 안에 놓이므로, 큰 제목의 안쪽 여백(20dp)만 맞춘다.
                         Modifier.padding(horizontal = 20.dp).fillMaxWidth().padding(bottom = 6.dp),
                         // 큰 글자에서는 네 칸을 똑같이 나누면 "미디어"가 잘리므로 가로로 스크롤하는 탭으로 바꾼다.
-                        scrollable = LocalDensity.current.fontScale > 1.3f,
+                        scrollable = LocalDensity.current.fontScale > 1.3f || COMPONENT_TABS.size > 4,
                     )
                 })
             },
@@ -154,6 +154,8 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
                         0 -> BasicTab(list, title.connection, island, snackbar)
                         1 -> InputTab(list, title.connection)
                         2 -> MediaTab(list, title.connection) { onboarding = true }
+                        4 -> ButtonsChipsCardsTab(list, title.connection)
+                        5 -> NavOverlayTab(list, title.connection)
                         else -> EffectsTab(list, title.connection, notify)
                     }
                 }
@@ -406,7 +408,7 @@ private fun NotifyCard(onIsland: () -> Unit, onTimer: () -> Unit, onSnackbar: ()
     }
 }
 
-private val COMPONENT_TABS = listOf("기본", "입력", "미디어", "효과")
+private val COMPONENT_TABS = listOf("기본", "입력", "미디어", "효과", "버튼·칩·카드", "내비게이션·오버레이")
 private val PEOPLE = listOf("하늘", "바다", "숲", "노을", "별")
 private val SCRAMBLE = listOf("ACCESS GRANTED", "SYNC COMPLETE", "HELLO, KINETICA")
 internal val PHOTO_COLORS = listOf(

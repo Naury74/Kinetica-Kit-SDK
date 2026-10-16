@@ -426,3 +426,105 @@ p50이 8.3 ms(120Hz 한 프레임)보다 큰 것은 입력부터 화면 표시�
 
 `sample-showcase`의 **UI 키트** 화면에서 표면 종류(글래스, 단색, 톤)와 프리셋을 바꿔 보고 다이얼로그, 바텀 시트, 토스트, 탭 바, 컨트롤, 슬라이더, 당겨서 새로 고침을 확인할 수 있다.
 **화면 이동**에서는 카드가 커지는 상세 화면과 push 전환, 가장자리에서 끌어 뒤로 가기를, **모션 효과**에서는 고급 효과를 확인한다.
+
+## 폼과 목록
+
+설정 화면과 입력 폼을 만드는 기본 컴포넌트다. 모두 `surface`를 받으므로 글래스, 단색, 톤 표면에서 같은 코드로 쓴다.
+쇼케이스 **컴포넌트** 화면의 **입력** 탭 맨 위에 설정 앱처럼 꾸민 예가 있다.
+
+| 구성 요소 | 하는 일 |
+| --- | --- |
+| `KCheckbox(checked, onCheckedChange, shape)` / `KTriStateCheckbox(state, onClick)` | 켜지면 상자가 튀듯 차오르고 체크 표시가 획 순서대로 그려진다. `shape`는 `Square`와 `Circle`, 미정 상태는 가로 막대다. 콜백이 `null`이면 누를 수 없는 표시만 그린다 |
+| `KRadio(selected, onClick)` / `KRadioGroup(options, selectedIndex, onSelect)` | 선택되면 가운데 점이 살짝 튀며 커진다. 묶음은 행 전체를 누를 수 있고 TalkBack이 한 묶음으로 읽는다 |
+| `KSwitch(checked, onCheckedChange, variant)` | `KSwitchVariant.Ios`(기본, 손잡이가 늘어나고 출렁임), `Material`(켜지면 손잡이가 커지며 체크가 그려짐), `OneUi`(얇은 트랙에 테두리 두른 손잡이). `accent`를 넘기지 않으면 iOS는 `positive`, 나머지는 `accent` 색이다. RTL에서는 켜진 손잡이가 왼쪽에 간다 |
+| `KListItem(headline, supporting, overline, leading, trailing, onClick)` | 1~3줄 목록 행. 앞쪽은 `KListLeading.Icon`(색 사각형 안 아이콘 가능), `Avatar`, `Thumbnail`, `Custom`, 끝쪽은 `KListTrailing.Value`, `Switch`, `Checkbox`, `Radio`, `Disclosure`, `Custom`이다. 끝쪽이 스위치, 체크박스, 라디오면 행 전체가 그 컨트롤 하나가 된다 |
+| `KListSection(header, footer, style) { item { … } }` | 행 묶음. `InsetGrouped`는 표면 하나에 행을 담아 첫 행 위와 끝 행 아래만 둥글게 하고, 눌림 표시도 그 모서리로 자른다. `Plain`은 표면 없이 놓는다. 행 사이 구분선은 행 글자가 시작하는 곳부터 긋는다 |
+| `KDivider(startInset)` / `KVerticalDivider()` | 기본 두께는 화면 픽셀 하나다 |
+| `KSwitchRow`, `KCheckboxRow`, `KRadioRow`, `KValueRow`, `KDisclosureRow` | 설정 화면 행 프리셋. `KListItem` 위에 얹은 것이라 섹션 안에서 구분선과 모서리가 맞는다 |
+| `KTextField(…, variant, prefix, suffix, maxLength, minLines)` | `KTextFieldVariant`로 모양을 고른다. `Surface`(기본, 표면 상자), `Outlined`(떠오른 라벨이 위 테두리에 걸치고 그 자리 테두리가 끊김), `Filled`(옅은 바탕과 아래 선), `Underline`(아래 선만), `Inline`(라벨 왼쪽 고정, 값 오른쪽 정렬, 섹션 행 안에 넣는다). 접두와 접미 글자는 라벨이 떠오를 때 나타나고, `maxLength`를 주면 넘는 입력을 자르고 아래 끝에 글자 수를 보여 준다 |
+| `KTextArea(value, onValueChange, label, minLines, maxLines, maxLength)` | 여러 줄 입력란. 최소 줄 수만큼 높이를 잡고 최대 줄 수까지 자란다. 라벨은 첫 줄 자리에서 떠오른다 |
+
+```kotlin
+KListSection(header = "연결", footer = "비행기 모드를 켜면 모든 무선 연결이 끊깁니다.") {
+    item { KSwitchRow("비행기 모드", airplane, { airplane = it }, leading = KListLeading.Icon(Icons.Plane, container = Orange)) }
+    item { KDisclosureRow("Wi-Fi", onClick = ::openWifi, value = "Home") }
+}
+KTextField(price, { price = it }, "가격", variant = KTextFieldVariant.Outlined, prefix = "₩", maxLength = 10)
+```
+
+기존 `KTextField`와 `KSwitch` 호출은 그대로 컴파일된다. 새 파라미터는 모두 끝에 기본값과 함께 붙었고, `KSwitch`의 `onCheckedChange`는 `null`을 받을 수 있게 넓어졌다.
+`KSwitch`의 `accent` 기본값은 `Color.Unspecified`로 바뀌었지만 iOS 모양에서는 전처럼 `positive` 색을 쓴다.
+
+섹션 안 행은 한꺼번에 구성된다. 행이 많으면 `LazyColumn` 안에서 `kListSection(items, key, header, footer, sectionKey) { item -> … }`을 쓴다.
+머리글, 행, 꼬리글이 각각 지연 항목이 되어 보이는 행만 구성하고, 행마다 표면을 따로 그리되 이어지는 위아래 가장자리는 잘라 `KListSection`과 같은 모양이 된다.
+행 사이가 붙어야 하므로 그 `LazyColumn`에는 `verticalArrangement` 간격을 주지 않는다.
+`LazyColumn`에 행 300개를 놓아도 가만히 있는 동안이나 스위치가 넘어가는 동안 행을 다시 구성하지 않는 것을 `KFormsTest`가 확인한다.
+
+## 버튼, 칩, 카드
+
+버튼과 칩, 카드는 모두 `variant`(모양), `tone`(색 역할), `surface`(표면 스타일)를 따로 받는다. 글래스 표면에서 `Outlined` 버튼을 쓰거나 단색 표면에서 `Glass` 카드를 써도 된다.
+글자가 표면 위에 놓이는 `Tonal`, `Outlined`, `Text` 모양에서는 색 역할의 색이 표면과 대비 3:1이 안 되면(흰 표면 위 초록 글자처럼) 글자 색을 조금 어둡게, 어두운 표면이면 밝게 고쳐 쓴다.
+
+| 컴포넌트 | 쓰임 |
+| --- | --- |
+| `KButton` | 기존 파라미터에 `trailingIcon`(뒤 아이콘), `fullWidth`(받은 폭 채우기), `success`(로딩 뒤 원으로 줄며 체크 표시)가 더해졌다. 크기는 `Small`, `Medium`, `Large` |
+| `KIconButton`, `KIconToggleButton` | 아이콘 버튼에 `shape`(원, 둥근 사각형)가 더해졌고, 크기는 `KIconButtonSizes.Small`(36dp), `Medium`(44dp), `Large`(56dp)를 쓴다. 토글은 켜질 때 색이 가운데에서 퍼지고 `checkedIcon`으로 바뀐다 |
+| `KFab`, `KExtendedFab` | 떠 있는 주 동작 버튼. 크기 `Small`, `Regular`, `Large`. 확장형은 `expanded = rememberFabExpanded(listState)`를 넘기면 목록을 내릴 때 아이콘만 남게 접힌다 |
+| `KSplitButton` | 주 동작과 꺾쇠 버튼을 붙인 분할 버튼. 꺾쇠를 누르면 `onMenuClick`이 불리고, `menuExpanded`면 꺾쇠 버튼이 원으로 바뀐다. 메뉴는 호출한 쪽이 띄운다 |
+| `KButtonGroup`, `KToggleGroup` | 가로 버튼 묶음. `KGroupStyle.Connected`(맞붙은 칸)와 `Separated`(떨어진 캡슐)가 있고, 누르고 있는 칸이 넓어지며 양옆 칸이 비켜 준다. 묶음 전체 폭은 그대로다. 토글 묶음은 `KGroupSelection.Single`, `Multiple` |
+| `KFilterChip`, `KInputChip`, `KAssistChip`, `KSuggestionChip` | 칩 단독 컴포넌트. 필터 칩은 켜면 체크가 그려지고, 입력 칩은 아바타와 지우기 버튼이 있다. 동작 칩은 앞 아이콘을 강조색으로, 제안 칩은 글자만 쓴다 |
+| `KChipRow`, `KChipGroup` | `KChipRow`는 칩을 한 줄에 놓고 가로로 스크롤한다. `KChipGroup`은 이름 목록으로 필터 칩 묶음을 만들고, `wrap = false`면 같은 방식으로 한 줄에 둔다 |
+| `KCard` | `Glass`(기본), `Elevated`, `Filled`, `Tonal`, `Outlined`, `Text` 카드. `Filled`에 `KTone.Accent`를 주면 강조색으로 채운 판이 된다 |
+| `KSelectableCard` | 요금제, 배송 방법처럼 큰 선택지. 고르면 테두리가 굵어지고 위 끝 모서리에 체크 원이 튀어나온다. 하나만 고르면 `role = Role.RadioButton` |
+| `KMediaCard`, `KHorizontalCard` | 사진 위 글자 카드(아래쪽 스크림으로 흰 글자 대비 확보)와 썸네일+글자 가로 카드. 썸네일 모서리는 카드와 동심원으로 깎는다 |
+| `KBadge`, `KStatusBadge` | `KBadge(count)`는 줄 안 숫자 배지, `KBadge("NEW")`는 글자 배지, `KStatusBadge(text, KStatus.Success)`는 상태 배지다. 다른 요소 모서리에 겹치는 배지는 그대로 `Modifier.kBadge` |
+| `KAvatar` | 사람 한 명의 아바타. `KAvatar(KAvatar("민지"), size = KAvatarSize.Large, status = KAvatarStatus.Online)`처럼 `AvatarStack`에 넣는 값을 그대로 넘긴다. 크기 5단계, 원이나 둥근 사각형 |
+
+```kotlin
+KButton("장바구니에 담기", onClick = ::add, loading = adding, success = added, fullWidth = true, size = KButtonSize.Large)
+KToggleGroup(listOf(KGroupItem("일"), KGroupItem("주"), KGroupItem("월")), setOf(period), { period = it.first() }, Modifier.fillMaxWidth())
+KChipRow(contentPadding = PaddingValues(horizontal = 20.dp)) { filters.forEach { f -> KFilterChip(f.name, f.on, { toggle(f) }) } }
+KSelectableCard(plan == Yearly, { plan = Yearly }, role = Role.RadioButton) { Text("연간 결제") }
+```
+
+기존 `KButton`, `KIconButton`, `KChipGroup`, `kBadge`, `AvatarStack` 호출은 그대로 컴파일된다. 새 파라미터는 모두 기본값이 있고, `KChipGroup`의 칩은 `KFilterChip`과 같은 모양으로 그린다.
+'애니메이션 삭제' 설정에서는 성공 모핑, 토글 채우기, 선택 카드 체크, 확장 FAB 접기가 바로 끝나고 버튼 묶음은 비켜 주지 않는다.
+`LazyColumn`에 버튼, 필터 칩, 배지, 아바타, 토글 버튼을 담은 행 300개를 놓아도 로딩 링이 도는 동안 행을 다시 구성하지 않는 것을 `KButtonsChipsCardsTest`가 확인한다.
+쇼케이스 **컴포넌트** 화면의 **버튼·칩·카드** 탭에서 쇼핑과 프로필 장면, 모양과 색 역할 조합을 볼 수 있다.
+
+## 내비게이션, 앱 바, 오버레이
+
+새 컴포넌트는 모두 `surface`를 받고 `Modifier.kSurface`로 그린다. 메뉴, 선택 목록, 다이얼로그, 시트, 검색 화면은 `KineticaScaffold` 안에서는 오버레이 레이어에 그려 글래스 표면에 배경이 비치고, 밖에서는 기존 규칙대로 창을 따로 띄운다(모달은 대화 상자 창, 메뉴와 자동 완성은 팝업 창).
+
+| 컴포넌트 | 쓰임 |
+| --- | --- |
+| `KTopAppBar` | 상단 앱 바. `KTopAppBarVariant.Small`(제목 시작 쪽), `CenterAligned`(가운데), `Medium`(26sp 제목이 스크롤하면 위 줄 작은 제목으로 접힘). `rememberKTopAppBarState(listState)`를 넘기면 맨 위에서는 배경이 없다가 콘텐츠가 바 아래로 지나갈 때 배경과 경계선이 나타난다. 높이가 고정이라 콘텐츠 패딩이 바뀌지 않는다 |
+| `KBottomAppBar` | 화면 아래 도구 막대. 시작 쪽 `actions`, 끝 쪽 `floatingActionButton` |
+| `KFloatingToolbar` | 떠 있는 캡슐 도구 막대. `rememberKFloatingToolbarState()`의 `connection`을 목록에 붙이면 아래로 스크롤할 때 접히고 위로 스크롤하면 펼쳐진다. FAB는 캡슐 옆에 남는다 |
+| `KTopTabs(indicator = …)` | 인디케이터 `KTabIndicator.Pill`(기본), `Underline`(강조색 밑줄), `Segmented`(트랙 위 밝은 칸). 어느 모양이든 페이지를 넘기는 동안 손가락을 따라 늘어났다 줄어든다 |
+| `KTab(badge, dot)` | 탭 배지. `KTabBar`, `KFloatingTabBar`는 아이콘 모서리에, 아이콘 없는 탭과 `KTopTabs`는 이름 옆에 붙는다 |
+| `KSegmentedControl(segments: List<KSegment>, …)` | 아이콘 칸, 아이콘과 글자 칸. `selected: Set<Int>`를 받는 오버로드는 여러 칸을 함께 켜고(체크 표시가 밀려 들어옴), `requireSelection`이면 마지막 칸을 끌 수 없다 |
+| `KDropdownMenu` | 버튼에 붙는 메뉴. `KMenuEntry.Action`(아이콘, 끝 글자, 위험), `Check`(누르면 메뉴를 열어 둔 채 켜고 끔), `Submenu`(같은 판 안에서 넘어감), `Section`, `Divider`. 앵커 아래 공간이 모자라거나 키보드가 올라와 있으면 위로 뒤집고, 화면 가장자리에서는 안으로 밀어 넣는다. 키보드로 열면 첫 항목에 초점이 가고 방향키로 옮기며, 끝 방향키로 하위 메뉴에 들어가고 시작 방향키나 Esc로 나온다 |
+| `KSelect` | 입력란 모양의 선택 상자. 상자 폭과 같은 목록이 펼쳐지고 고른 항목에 체크가 붙는다. TalkBack은 고른 값을 상태로 읽는다 |
+| `KAutocomplete` | 글자를 치면 제안이 뜨는 입력란. 초점과 키보드는 입력란에 남고, 아래 방향키와 Enter로 고르며 Esc로 닫는다. 같은 부분은 굵게 표시한다 |
+| `KAlertDialog` | 제목, 본문, 아이콘, 버튼 1~3개(`KDialogAction`과 `KDialogActionStyle.Default`, `Preferred`, `Destructive`, `Cancel`). 짧은 두 버튼은 나란히(취소가 시작 쪽), 셋이거나 글자가 길면 세로로 쌓고 취소를 맨 아래에 둔다 |
+| `KActionSheet` | iOS 동작 시트. 동작 판과 떨어진 취소 판, 아래로 끌어 닫기(손을 떼면 닫힘이나 제자리로 스프링 정착). `presentation = KSheetPresentation.Auto`면 600dp 이상 창에서 버튼 옆 팝오버로 바뀐다(취소는 바깥 누르기로 대신) |
+| `KDrawer(mode = KDrawerMode.Modal)` | 모달 서랍. 기존 서랍(`Push`)은 뒤 화면을 밀어내고, `Modal`은 뒤 화면을 그 자리에서 어둡게 덮는다. 끌기, 뒤로 가기 예측, 초점 처리는 같다 |
+| `Modifier.kRichTooltip` | 제목, 설명, 글자 버튼이 있는 툴팁. 저절로 닫히지 않고 바깥을 누르거나 버튼을 누르면 닫힌다 |
+| `KSearchView` | 누르면 캡슐이 커져 검색 화면이 된다. 좁은 창은 화면 전체, 600dp 이상은 캡슐 자리에서 펼쳐지는 판(최대 720dp). 비어 있으면 최근 검색(지우기, 모두 지우기), 글자가 있으면 제안(끝 화살표로 검색어 칸에만 채우기) |
+
+```kotlin
+val bar = rememberKTopAppBarState(listState)
+KineticaScaffold(topBar = { KTopAppBar("사진", state = bar, onBack = ::finish) }) { padding -> /* 목록 */ }
+
+Box {
+    KIconButton(MoreIcon, "더 보기", { menu = true })
+    KDropdownMenu(menu, { menu = false }, listOf(KMenuEntry.Check("숨긴 파일", hidden) { hidden = it }, KMenuEntry.Action("삭제", destructive = true) { delete() }))
+}
+KAlertDialog(asking, { asking = false }, "삭제할까요?", listOf(KDialogAction("취소", KDialogActionStyle.Cancel) {}, KDialogAction("삭제", KDialogActionStyle.Destructive, onClick = ::delete)))
+```
+
+`KDropdownMenu`, `KActionSheet`의 팝오버, `KSearchView`는 부른 자리의 부모 레이아웃을 앵커로 쓰므로, 여는 버튼과 함께 `Box`로 감싸 부른다. 보이는 동안 크기 0인 요소가 그 자리에 하나 놓인다.
+큰 제목 바 `KLargeTitleBar`는 그대로 두었다. iOS와 One UI 화면처럼 34sp 큰 제목이 필요하면 큰 제목 바를, 상세 화면이나 편집 화면에는 `KTopAppBar`를 쓴다.
+'애니메이션 삭제' 설정에서는 메뉴와 시트, 검색 화면이 바로 열리고 닫히며, 하위 메뉴와 세그먼트 체크도 움직이지 않고 바뀐다.
+쇼케이스 **컴포넌트** 화면의 **내비게이션·오버레이** 탭에서 모두 눌러 볼 수 있다. 동작은 `KOverlaysTest`가 확인한다.

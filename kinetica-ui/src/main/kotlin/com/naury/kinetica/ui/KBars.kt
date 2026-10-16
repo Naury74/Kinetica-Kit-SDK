@@ -70,9 +70,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** [KTabBar]의 탭 항목. [icon]이 없으면 텍스트만 표시한다. */
+/**
+ * [KTabBar], [KFloatingTabBar], [KTopTabs]의 탭 항목. [icon]이 없으면 텍스트만 표시한다.
+ *
+ * @property badge 탭에 붙일 배지 숫자. null이거나 0 이하면 배지가 없다. 아이콘이 있으면 아이콘 모서리에, 없으면 이름 옆에 붙는다.
+ * @property dot true면 숫자 없이 작은 점 배지를 붙인다. [badge]보다 우선한다.
+ */
 @Immutable
-public data class KTab(val label: String, val icon: ImageVector? = null)
+public data class KTab(val label: String, val icon: ImageVector? = null, val badge: Int? = null, val dot: Boolean = false)
 
 /**
  * 화면 아래에 떠 있는 탭 바. 선택한 탭의 인디케이터가 이동할 때 앞쪽 가장자리가 먼저 가고 뒤쪽이 따라와,
@@ -166,7 +171,7 @@ internal fun TabContent(tab: KTab, color: Color, selected: Boolean, compact: Boo
             Image(
                 rememberVectorPainter(icon),
                 contentDescription = null,
-                Modifier.size(COMPACT_TAB_ICON),
+                Modifier.size(COMPACT_TAB_ICON).kBadge(tab.badge, tab.dot),
                 colorFilter = ColorFilter.tint(color),
             )
             Spacer(Modifier.width(COMPACT_TAB_GAP))
@@ -176,10 +181,22 @@ internal fun TabContent(tab: KTab, color: Color, selected: Boolean, compact: Boo
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         icon?.let {
-            Image(rememberVectorPainter(it), contentDescription = null, Modifier.size(TAB_ICON), colorFilter = ColorFilter.tint(color))
+            Image(
+                rememberVectorPainter(it),
+                contentDescription = null,
+                Modifier.size(TAB_ICON).kBadge(tab.badge, tab.dot),
+                colorFilter = ColorFilter.tint(color),
+            )
             Spacer(Modifier.height(KMetrics.TabIconGap))
         }
-        ThemedText(tab.label, style = TextStyle(color = color, fontSize = 11.sp, fontWeight = weight), maxLines = 1)
+        if (icon == null && (tab.dot || (tab.badge ?: 0) > 0)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ThemedText(tab.label, style = TextStyle(color = color, fontSize = 11.sp, fontWeight = weight), maxLines = 1)
+                KBadge(tab.badge, Modifier.padding(start = 4.dp), dot = tab.dot)
+            }
+        } else {
+            ThemedText(tab.label, style = TextStyle(color = color, fontSize = 11.sp, fontWeight = weight), maxLines = 1)
+        }
     }
 }
 

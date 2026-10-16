@@ -58,12 +58,15 @@ class EditorHostTest {
         // 도구 모음 오른쪽 여백(8dp)과 그룹 안쪽 여백만큼만 떨어져 있어야 한다. 시스템 바 인셋은 호스트가 safeDrawingPadding으로 뺐다.
         val insetRight = TestSupport.systemBars(rule.activity).right
         assertTrue("나가기 버튼이 오른쪽 끝에 있지 않다: ${exit.right} / ${root.right}", root.right - insetRight - exit.right <= 16 * density)
-        assertTrue("호스트 버튼은 나가기 앞에 있어야 한다", bounds("hostShare").right <= exit.left)
+        // 폭이 좁은 기기에서는 도구 모음이 가로로 스크롤되어 호스트 버튼이 처음에 화면 밖에 있을 수 있으므로 스크롤해서 찾는다.
+        rule.onNodeWithTag("hostShare").performScrollTo()
+        rule.waitForIdle()
+        assertTrue("호스트 버튼은 나가기 앞에 있어야 한다", bounds("hostShare").right <= exitButton().fetchSemanticsNode().boundsInRoot.left + 1f)
 
         exitButton().performClick()
         rule.waitText("나가기 1")
-        rule.onNodeWithTag("hostExport").performClick()
-        rule.onNodeWithTag("hostShare").performClick()
+        rule.onNodeWithTag("hostExport").performScrollTo().performClick()
+        rule.onNodeWithTag("hostShare").performScrollTo().performClick()
         rule.waitText("내보내기 1 공유 1")
         assertEquals(1, rule.activity.exits)
     }

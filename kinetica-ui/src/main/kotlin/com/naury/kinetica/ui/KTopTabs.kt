@@ -1,3 +1,6 @@
+// 파일 이름은 대표 컴포저블인 KTopTabs를 따른다.
+@file:Suppress("MatchingDeclarationName")
+
 package com.naury.kinetica.ui
 
 import androidx.compose.foundation.Image
@@ -32,6 +35,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.lerp
@@ -52,6 +56,18 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlinx.coroutines.launch
 
+/** [KTopTabs]의 선택 인디케이터 모양 */
+public enum class KTabIndicator {
+    /** 고른 탭 뒤에 옅은 캡슐을 깐다. One UI 탭과 같다. */
+    Pill,
+
+    /** 고른 탭 이름 아래에 강조색 밑줄을 긋고, 고른 탭 이름도 강조색으로 쓴다. Material 기본 탭과 같다. */
+    Underline,
+
+    /** 탭 줄 전체에 옅은 트랙을 깔고, 고른 탭 자리에 밝은 칸이 미끄러진다. iOS 세그먼트 컨트롤과 같다. */
+    Segmented,
+}
+
 /**
  * [PagerState]와 함께 쓰는 상단 탭. 페이지를 넘기는 동안 인디케이터가 손가락을 따라 실시간으로 움직이며, 앞쪽 끝이 먼저 가고
  * 뒤쪽 끝이 따라와 액체처럼 늘어났다 줄어든다. 탭 글자 색도 넘어간 비율만큼 섞인다. 탭을 누르면 그 페이지로 이동한다.
@@ -71,6 +87,9 @@ import kotlinx.coroutines.launch
  * @param tabs 탭 목록. 비어 있으면 [IllegalArgumentException]을 던진다. 탭 수는 [pagerState]의 페이지 수와 같아야 하며,
  *   다르면 짧은 쪽에 맞춰 그린다.
  * @param scrollable true면 가로 스크롤 탭, false면 너비를 똑같이 나눈 고정 탭. 기본값은 탭이 5개 이상일 때 true다.
+ * @param indicator 선택 인디케이터 모양. 어느 모양이든 페이지를 넘기는 동안 손가락을 따라 늘어났다 줄어든다.
+ *
+ * [KTab.badge]나 [KTab.dot]을 주면 탭 이름 옆에 배지가 붙는다.
  */
 @Composable
 public fun KTopTabs(
@@ -79,6 +98,7 @@ public fun KTopTabs(
     modifier: Modifier = Modifier,
     scrollable: Boolean = tabs.size > MAX_FIXED_TABS,
     surface: SurfaceStyle = KineticaTheme.surface,
+    indicator: KTabIndicator = KTabIndicator.Pill,
 ) {
     require(tabs.isNotEmpty()) { "tabs가 비어 있으면 안 됩니다." }
     val bounds = remember(tabs.size) { TabBounds(tabs.size) }
@@ -104,11 +124,13 @@ public fun KTopTabs(
     } else {
         Modifier.fillMaxWidth()
     }
+    val accent = KineticaTheme.colors.accent
+    val look = IndicatorLook(indicator, surface, accent)
     Box(modifier.onSizeChanged { bounds.setViewport(it.width.toFloat()) }.padding(vertical = 6.dp)) {
         Row(
             rowModifier
                 .onSizeChanged { bounds.setContent(it.width.toFloat()) }
-                .drawBehind { drawLiquidIndicator(bounds, position(), surface) }
+                .drawBehind { drawTabIndicator(bounds, position(), look) }
                 .selectableGroup(),
             horizontalArrangement = if (scrollable) Arrangement.spacedBy(2.dp) else Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -117,7 +139,19 @@ public fun KTopTabs(
             tabs.forEachIndexed { index, tab ->
                 TopTab(
                     tab,
-                    TopTabLook(index, index == selected, scrollable, surface),
+                    TopTabLook(
+                        index,
+                        index == selected,
+                        scrollable,
+                        surface,
+                        if (indicator ==
+                            KTabIndicator.Underline
+                        ) {
+                            accent
+                        } else {
+                            surface.contentColor
+                        },
+                    ),
                     { 1f - abs(position() - index).coerceAtMost(1f) },
                     Modifier.onPlaced { bounds.set(index, it.positionInParent().x, it.size.width.toFloat()) },
                 ) { scope.launch { pagerState.animateScrollToPage(index) } }
@@ -127,7 +161,10 @@ public fun KTopTabs(
 }
 
 /** 탭 하나를 그리는 데 필요한 고정 값. 파라미터 수를 줄이려고 묶었다. */
-private class TopTabLook(val index: Int, val selected: Boolean, val scrollable: Boolean, val surface: SurfaceStyle)
+private class TopTabLook(val index: Int, val selected: Boolean, val scrollable: Boolean, val surface: SurfaceStyle, val activeColor: Color)
+
+/** 인디케이터를 그리는 데 필요한 값 */
+private class IndicatorLook(val kind: KTabIndicator, val surface: SurfaceStyle, val accent: Color)
 
 @Composable
 private fun RowScope.TopTab(tab: KTab, look: TopTabLook, activeness: () -> Float, modifier: Modifier, onClick: () -> Unit) {
@@ -146,7 +183,7 @@ private fun RowScope.TopTab(tab: KTab, look: TopTabLook, activeness: () -> Float
     ) {
         tab.icon?.let { icon ->
             val painter = rememberVectorPainter(icon)
-            val filters = remember(idle, surface.contentColor) { ColorFilter.tint(idle) to ColorFilter.tint(surface.contentColor) }
+            val filters = remember(idle, look.activeColor) { ColorFilter.tint(idle) to ColorFilter.tint(look.activeColor) }
             // 두 색으로 겹쳐 그리고 투명도만 바꿔 프레임마다 ColorFilter를 만들지 않는다.
             Box(
                 Modifier
@@ -166,8 +203,9 @@ private fun RowScope.TopTab(tab: KTab, look: TopTabLook, activeness: () -> Float
             style = TextStyle(fontSize = 15.sp, fontWeight = if (look.selected) FontWeight.SemiBold else FontWeight.Medium),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            color = { lerp(idle, surface.contentColor, activeness()) },
+            color = { lerp(idle, look.activeColor, activeness()) },
         )
+        if (tab.dot || (tab.badge ?: 0) > 0) KBadge(tab.badge, Modifier.padding(start = 6.dp), dot = tab.dot)
     }
 }
 
@@ -207,25 +245,70 @@ private class TabBounds(count: Int) {
     fun centerOf(index: Int): Float = left[index] + width[index] / 2f
 }
 
+/** [look]의 모양으로 인디케이터를 그린다. 세그먼트 모양은 탭 줄 전체에 트랙을 먼저 깐다. */
+private fun DrawScope.drawTabIndicator(bounds: TabBounds, position: Float, look: IndicatorLook) {
+    when (look.kind) {
+        KTabIndicator.Pill -> drawLiquidIndicator(bounds, position, look.surface)
+
+        KTabIndicator.Underline -> liquidSpan(bounds, position)?.let { (left, right) ->
+            val inset = UNDERLINE_INSET.toPx().coerceAtMost((right - left) / UNDERLINE_MAX_INSET)
+            val height = UNDERLINE_HEIGHT.toPx()
+            drawRoundRect(
+                look.accent,
+                topLeft = Offset(left + inset, size.height - height),
+                size = Size(right - left - inset * 2, height),
+                cornerRadius = CornerRadius(height / 2),
+            )
+        }
+
+        KTabIndicator.Segmented -> {
+            val ink = look.surface.contentColor
+            drawRoundRect(ink.copy(alpha = TRACK_ALPHA), cornerRadius = CornerRadius(size.height / 2))
+            liquidSpan(bounds, position)?.let { (left, right) ->
+                val inset = INDICATOR_INSET.toPx() + 1.dp.toPx()
+                val height = size.height - inset * 2
+                val thumb = if (look.surface.isDark) Color.White.copy(alpha = DARK_THUMB_ALPHA) else Color.White
+                // 밝은 칸이 트랙 위에 떠 보이도록 아래로 살짝 비낀 옅은 그림자를 먼저 깐다.
+                drawRoundRect(
+                    Color.Black.copy(alpha = THUMB_SHADOW_ALPHA),
+                    topLeft = Offset(left + inset, inset + 1.dp.toPx()),
+                    size = Size(right - left - inset * 2, height),
+                    cornerRadius = CornerRadius(height / 2),
+                )
+                drawRoundRect(
+                    thumb,
+                    topLeft = Offset(left + inset, inset),
+                    size = Size(right - left - inset * 2, height),
+                    cornerRadius = CornerRadius(height / 2),
+                )
+            }
+        }
+    }
+}
+
+/** [position] 사이에서 앞쪽 끝은 빨리, 뒤쪽 끝은 늦게 움직이는 인디케이터의 왼쪽과 오른쪽 끝(px). 탭을 아직 재지 않았으면 null이다. */
+private fun liquidSpan(bounds: TabBounds, position: Float): Pair<Float, Float>? {
+    val count = bounds.left.size
+    val from = floor(position).toInt().coerceIn(0, count - 1)
+    val to = (from + 1).coerceAtMost(count - 1)
+    val f = position - from
+    if (bounds.width[from] <= 0f) return null
+    val fromLeft = bounds.left[from]
+    val toLeft = bounds.left[to]
+    val forward = toLeft >= fromLeft
+    val fast = 1f - (1f - f) * (1f - f)
+    val slow = f * f
+    val left = lerpFloat(fromLeft, toLeft, if (forward) slow else fast)
+    val right = lerpFloat(fromLeft + bounds.width[from], toLeft + bounds.width[to], if (forward) fast else slow)
+    return left to right
+}
+
 /**
  * [position]에 맞춰 캡슐 인디케이터를 그린다. 페이지 사이에서 앞쪽 끝은 빨리, 뒤쪽 끝은 늦게 움직여 늘어났다 줄어든다.
  * 왼쪽 끝과 오른쪽 끝을 따로 보간하므로 RTL처럼 다음 탭이 왼쪽에 있어도 같은 식으로 그려진다.
  */
 private fun DrawScope.drawLiquidIndicator(bounds: TabBounds, position: Float, surface: SurfaceStyle) {
-    val count = bounds.left.size
-    val from = floor(position).toInt().coerceIn(0, count - 1)
-    val to = (from + 1).coerceAtMost(count - 1)
-    val f = position - from
-    if (bounds.width[from] <= 0f) return
-    val fromLeft = bounds.left[from]
-    val fromRight = fromLeft + bounds.width[from]
-    val toLeft = bounds.left[to]
-    val toRight = toLeft + bounds.width[to]
-    val forward = toLeft >= fromLeft
-    val fast = 1f - (1f - f) * (1f - f)
-    val slow = f * f
-    val left = lerpFloat(fromLeft, toLeft, if (forward) slow else fast)
-    val right = lerpFloat(fromRight, toRight, if (forward) fast else slow)
+    val (left, right) = liquidSpan(bounds, position) ?: return
     val inset = INDICATOR_INSET.toPx()
     val height = size.height - inset * 2
     drawRoundRect(
@@ -247,3 +330,9 @@ private val TAB_PADDING = 14.dp
 private val SCROLL_MIN_WIDTH = 56.dp
 private val SCROLL_EDGE = 12.dp
 private val ICON_SIZE = 18.dp
+private val UNDERLINE_HEIGHT = 3.dp
+private val UNDERLINE_INSET = 12.dp
+private const val UNDERLINE_MAX_INSET = 4f
+private const val TRACK_ALPHA = 0.07f
+private const val DARK_THUMB_ALPHA = 0.18f
+private const val THUMB_SHADOW_ALPHA = 0.06f
