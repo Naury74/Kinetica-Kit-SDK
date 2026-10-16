@@ -116,7 +116,7 @@ public sealed interface KMenuEntry {
 
     /**
      * 누르면 같은 판 안에서 [entries]로 넘어가는 항목. 넘어간 판 맨 위의 뒤로 줄을 누르면 돌아온다.
-     * 좁은 폰 화면에서도 옆으로 펼칠 자리가 필요 없도록 iOS처럼 판 안에서 넘긴다. 비어 있으면 [IllegalArgumentException]을 던진다.
+     * 좁은 폰 화면에서도 옆으로 펼칠 자리가 필요 없도록 판 안에서 넘긴다. 비어 있으면 [IllegalArgumentException]을 던진다.
      */
     @Immutable
     public data class Submenu(

@@ -74,10 +74,10 @@ import kotlinx.coroutines.launch
 
 /** [KDrawer]가 열릴 때 뒤 화면을 어떻게 다룰지 정한다. */
 public enum class KDrawerMode {
-    /** One UI나 Telegram처럼 뒤 화면을 옆으로 밀면서 작게 줄이고 모서리를 둥글게 깎는다. */
+    /** 뒤 화면을 옆으로 밀면서 작게 줄이고 모서리를 둥글게 깎는다. */
     Push,
 
-    /** Material 모달 서랍처럼 뒤 화면은 그 자리에 두고 어둡게 덮은 위로 서랍이 올라온다. 글래스 표면이면 서랍에 뒤 화면이 블러 처리되어 비친다. */
+    /** 뒤 화면은 그 자리에 두고 어둡게 덮은 위로 서랍이 올라온다. 글래스 표면이면 서랍에 뒤 화면이 블러 처리되어 비친다. */
     Modal,
 }
 
@@ -125,7 +125,7 @@ public fun rememberKDrawerState(initiallyOpen: Boolean = false): KDrawerState =
     rememberSaveable(saver = KDrawerState.Saver) { KDrawerState(initiallyOpen) }
 
 /**
- * 시작 쪽 가장자리(RTL이면 오른쪽)에서 끌어 여는 글래스 서랍. 기본 [KDrawerMode.Push]에서는 열리면 One UI나 Telegram처럼 [content]가
+ * 시작 쪽 가장자리(RTL이면 오른쪽)에서 끌어 여는 글래스 서랍. 기본 [KDrawerMode.Push]에서는 열리면 [content]가
  * 옆으로 밀리면서 작아지고 모서리가 둥글어지며, 서랍 유리에는 밀려난 화면이 블러 처리되어 비친다. [KDrawerMode.Modal]이면 뒤 화면은
  * 그 자리에서 어두워지고 서랍이 그 위를 덮는다. 화면 가장자리 24dp 안에서 끌면 열리고, 열린 동안에는
  * 어디서든 반대로 끌거나 밀려난 화면을 누르거나 뒤로 가기를 하면 닫힌다. 뒤로 가기 예측 제스처를 따라 조금씩 닫히기도 한다.

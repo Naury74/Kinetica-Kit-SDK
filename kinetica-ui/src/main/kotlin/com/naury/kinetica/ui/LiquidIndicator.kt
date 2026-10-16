@@ -14,12 +14,17 @@ internal class LiquidIndicator {
     val right = Animatable(0f)
     private var placed = false
 
-    suspend fun moveTo(index: Int, count: Int, width: Float, rtl: Boolean = false) = coroutineScope {
-        if (width <= 0f) return@coroutineScope
+    suspend fun moveTo(index: Int, count: Int, width: Float, rtl: Boolean = false) {
+        if (width <= 0f) return
         val cell = width / count
         // Row는 RTL에서 0번 칸을 오른쪽 끝에 놓는다. 인디케이터는 물리 좌표로 그리므로 칸 순서를 뒤집는다.
         val targetLeft = cell * (if (rtl) count - 1 - index else index)
-        val targetRight = targetLeft + cell
+        moveTo(targetLeft, targetLeft + cell)
+    }
+
+    /** 칸 폭이 서로 다를 때 쓴다. [targetLeft]와 [targetRight]는 물리 좌표(px)다. */
+    suspend fun moveTo(targetLeft: Float, targetRight: Float) = coroutineScope {
+        if (targetRight <= targetLeft) return@coroutineScope
         if (!placed) {
             placed = true
             left.snapTo(targetLeft)

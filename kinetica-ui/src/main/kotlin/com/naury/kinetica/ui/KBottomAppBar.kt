@@ -119,7 +119,7 @@ public fun rememberKFloatingToolbarState(initiallyExpanded: Boolean = true): KFl
     rememberSaveable(saver = KFloatingToolbarState.Saver) { KFloatingToolbarState(initiallyExpanded) }
 
 /**
- * 화면 아래 가운데에 떠 있는 캡슐 도구 막대(Material 3 Expressive의 떠 있는 툴바). [content] 버튼들을 캡슐에 담고,
+ * 화면 아래 가운데에 떠 있는 캡슐 도구 막대. [content] 버튼들을 캡슐에 담고,
  * [floatingActionButton]은 캡슐 옆에 따로 둔다. [expanded]가 false가 되면 캡슐이 오므라들며 사라지고 [floatingActionButton]만 남는다.
  * '애니메이션 삭제' 설정에서는 바로 숨는다.
  *

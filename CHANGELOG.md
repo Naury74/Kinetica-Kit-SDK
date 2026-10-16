@@ -65,6 +65,9 @@
 - 폼과 목록: `KCheckbox`(사각·원형·미정), `KRadio`/`KRadioGroup`, `KSwitch` 모양 3종(iOS·Material·One UI), `KListItem`, `KListSection`과 긴 목록용 `kListSection`, `KDivider`, 설정 행 프리셋 5종, `KTextField` 모양(외곽선·채움·밑줄·인라인)과 접두·접미·글자 수, `KTextArea`.
 - 버튼, 칩, 카드: `KButton`의 뒤 아이콘·전체 폭·성공 모핑, `KIconToggleButton`, `KFab`/`KExtendedFab`, `KSplitButton`, `KButtonGroup`/`KToggleGroup`, 칩 4종과 `KChipRow`, `KCard`·`KSelectableCard`·`KMediaCard`·`KHorizontalCard`, 숫자·상태 배지, `KAvatar` 크기·상태.
 - 내비게이션과 오버레이: `KTopAppBar`(Small·CenterAligned·Medium), `KBottomAppBar`, `KFloatingToolbar`, 탭 인디케이터 3종과 탭 배지, 아이콘·여러 칸 세그먼트, `KDropdownMenu`(체크·하위 메뉴·키보드 이동), `KSelect`, `KAutocomplete`, `KAlertDialog`, `KActionSheet`(넓은 화면 팝오버), 모달 서랍, `kRichTooltip`, `KSearchView`.
+- 피드백과 로딩: `KToaster`(쌓임·위치·promise), 스낵바 종류 아이콘·두 줄, `KBanner`·`KAlert`·`KNoticeBar`, `KLoadingIndicator` 5종과 `borderSpinner`, 분할·버퍼·단계 진행 막대, 스켈레톤 프리셋과 펄스형, 빈 화면 그림 4종, 새로 고침 표시 2종, `KHaptics`.
+- 데이터와 도메인: `KAreaChart`, `KMultiBarChart`, `KPieChart`, `KHeatmap`/`KCalendarHeatmap`, `KChartPalettes`, `KStatCard`, `KGauge`, `KTimeline`, `KStepIndicator`·`KWizard`, `KProfileHeader`, `KPriceTag`·`KPricingCard`, `KQuantityStepper`, `KKeypad`·`KAmountInput`, 날짜·시간 범위 다이얼로그, `KWeekStrip`.
+- 소셜과 모션: `KChatBubble`·`KChatInput`·`KTypingIndicator`, `KStoryRing`·`KStoryViewer`, `KAttachmentChip`·`KFileDropZone`, `KIndexBar`, `KPagination`·`KBreadcrumb`, `KMapPin`, `KFullScreenModal`, `KCircularReveal`, 공유 요소 전환, `staggerIn`·`scrollTransform`, 장바구니로 날아가기·길게 눌러 확인·복사됨·+1, `MorphIcon`, 오로라·별빛·이미지 대표색 배경.
 
 ### 중립 이름과 표면 스타일
 UI 키트를 글래스 전용이 아니라 표면을 고르는 키트로 바꾸면서 이름을 정리했습니다. 호환용 옛 이름은 두지 않습니다.
@@ -95,6 +98,9 @@ UI 키트를 글래스 전용이 아니라 표면을 고르는 키트로 바꾸�
 - `KineticaScaffold`의 `indication` 기본값이 `KineticaTheme`을 따릅니다. 테마에서 `indication = null`로 끄면 스캐폴드도 호스트 값을 그대로 둡니다
 - `KineticaEditor`가 안에서 `MaterialTheme`을 다시 감싸도 호스트의 `LocalIndication`을 유지합니다. Material 3 `Card(onClick)`처럼 리플을 직접 쓰는 컴포넌트와 `MaterialTheme` 감싸는 순서는 docs/35에 적었습니다
 - 보드: `KineticaBoardState.activeColumns`가 Compose 상태가 되어, 컴포지션에서 읽으면 열 수가 바뀔 때 다시 그려집니다
+- `KSegmentedControl`: 큰 글꼴에서 이름이 `maxLines`(기본 2)줄까지 줄을 바꾸며 컨트롤이 높아집니다. 이름 길이에 비례한 칸 폭(`sizing = KSegmentSizing.Proportional`), 인디케이터 색(`tone`), TalkBack 역할(`role`)을 고를 수 있습니다
+- `KGlassLayer`: 호스트가 직접 만든 글래스 판 안의 글래스 카드가 판을 뚫고 뒤 배경을 비추지 않도록, 판 위 한 겹으로 그리게 합니다. `KDialog`, `KSheet` 같은 팝업도 같은 방식을 씁니다
+- `KineticaScaffold`: 시트가 콘텐츠를 절반 넘게 밀어내는 동안 상태 표시줄 아이콘을 `backdropColor` 밝기에 맞추고 닫으면 되돌립니다. 밝은 테마에서 검은 배경 위 어두운 아이콘이 보이지 않던 문제를 고쳤습니다
 - `rememberKWindowLayout`은 창 크기를 읽으므로 계측 테스트에서는 `ForcedSize`가 아니라 `WindowSize`로 시험한다고 KDoc에 적었습니다
 
 ### 알파 동안 바뀐 이름
@@ -102,6 +108,14 @@ UI 키트를 글래스 전용이 아니라 표면을 고르는 키트로 바꾸�
 - `KCalendar`의 `onSelect` → `onSelectionChange`, `animateNumberAsState`의 `target` → `targetValue`
 - `MiniPlayerState`·`DetentSheetState`·`TooltipState`·`TooltipPlacement`·`SlideToConfirmState`와 `remember*` 함수, `rememberLargeTitleState` → 앞에 `K`를 붙인 이름(`KMiniPlayerState`, `rememberKLargeTitleState` 등)
 - `KMiniPlayer`의 `collapsed`·`expanded` 슬롯이 진행도를 `() -> Float`로 받음
+- `KSwitchVariant`의 플랫폼 이름을 모양 이름으로 바꿨습니다.
+
+  | 전 | 후 |
+  |---|---|
+  | `KSwitchVariant.Ios` | `KSwitchVariant.Capsule` |
+  | `KSwitchVariant.Material` | `KSwitchVariant.Check` |
+  | `KSwitchVariant.OneUi` | `KSwitchVariant.Slim` |
+- `KSegmentedControl`(한 칸 고르기)의 TalkBack 역할 기본값이 `Role.Tab`에서 `Role.RadioButton`으로 바뀌었습니다. 예전처럼 읽게 하려면 `role = Role.Tab`을 넘깁니다. 이름이 기본 2줄까지 줄을 바꾸므로(`maxLines`), 한 줄로 두려면 `maxLines = 1`을 넘깁니다
 - 서버 화면·재생기 안정성: 같은 묶음을 기다리던 화면이 먼저 요청한 화면을 떠나면 멈추던 문제, 캐시 일부 손상 시 화면을 다시 받지 못하던 문제, 캐시 저장 실패가 앱을 죽이던 문제, 마이그레이션 예외가 밖으로 새던 문제(`SaveFailure.InvalidDocument` 추가)
 - 재생기: 화면이 가려지면 멈추고 돌아오면 이어서 재생, `RemoteKineticaPlayer` 회전 뒤 처음부터 다시 재생하지 않음, 실행 중 바뀐 '애니메이션 삭제' 설정을 따르며 재생 위치·속도를 이어받음
 - 보드: 넓은 화면 열 수. `BoardArrangement.Grid(columnsByWidth = GridColumns.Adaptive(160f, maxColumns = 6))` 또는 `GridColumns.breakpoints(600f to 4, 840f to 6)`로 펼친 폴더블과 태블릿에서 열을 늘립니다. 열 수마다 배치를 따로 기억해 넓은 화면에서 옮긴 위젯은 넓은 배치에만 남고, 접었다 펴도 두 배치가 그대로입니다. 처음 넓어질 때는 좁은 배치를 읽는 순서대로 흘려 넣되, 앞쪽 빈칸에 들어가는 위젯을 먼저 채웁니다. 저장 형식은 예전과 호환되며(넓은 배치는 노드 metadata `kinetica.cells`), 기본값은 예전처럼 열 수를 바꾸지 않습니다. XML은 `app:kinetica_minCellWidth`, `app:kinetica_maxColumns`, 코드에서는 `KineticaBoardView.columnsByWidth`. 지금 열 수는 `KineticaBoardState.activeColumns`

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">Sending</string>
+    <string name="kinetica_ui_chat_sent">Sent</string>
+    <string name="kinetica_ui_chat_delivered">Delivered</string>
+    <string name="kinetica_ui_chat_read">Read</string>
+    <string name="kinetica_ui_chat_failed">Not sent</string>
+    <string name="kinetica_ui_chat_typing">Typing</string>
+    <string name="kinetica_ui_chat_hint">Message</string>
+    <string name="kinetica_ui_chat_attach">Attach</string>
+    <string name="kinetica_ui_chat_send">Send</string>
+    <string name="kinetica_ui_chat_voice">Voice message</string>
+    <string name="kinetica_ui_story_new">New story</string>
+    <string name="kinetica_ui_story_seen">Viewed</string>
+    <string name="kinetica_ui_story_position">Story %1$d of %2$d</string>
+    <string name="kinetica_ui_story_next">Next story</string>
+    <string name="kinetica_ui_story_previous">Previous story</string>
+    <string name="kinetica_ui_story_pause">Pause</string>
+    <string name="kinetica_ui_story_resume">Resume</string>
+    <string name="kinetica_ui_story_paused">Paused</string>
+    <string name="kinetica_ui_drop_title">Add files</string>
+    <string name="kinetica_ui_drop_release">Release to add</string>
+    <string name="kinetica_ui_attach_uploading">Uploading %d%%</string>
+    <string name="kinetica_ui_attach_uploading_plain">Uploading</string>
+    <string name="kinetica_ui_attach_failed">Upload failed</string>
+    <string name="kinetica_ui_attach_cancel">Cancel upload</string>
+    <string name="kinetica_ui_attach_retry">Retry</string>
+    <string name="kinetica_ui_attach_remove">Remove</string>
+    <string name="kinetica_ui_index_bar">Index</string>
+    <string name="kinetica_ui_index_jump">Jump to %s</string>
+    <string name="kinetica_ui_page_previous">Previous page</string>
+    <string name="kinetica_ui_page_next">Next page</string>
+    <string name="kinetica_ui_page_number">Page %d</string>
+    <string name="kinetica_ui_breadcrumb">Breadcrumb</string>
+    <string name="kinetica_ui_breadcrumb_current">Current location</string>
+    <string name="kinetica_ui_breadcrumb_more">Show full path</string>
+    <string name="kinetica_ui_map_cluster">%d places</string>
+    <string name="kinetica_ui_pin_selected">Selected</string>
+    <string name="kinetica_ui_hold_confirm">Hold to confirm</string>
+    <string name="kinetica_ui_copy_action">Copy</string>
+    <string name="kinetica_ui_copy_done">Copied</string>
+</resources>

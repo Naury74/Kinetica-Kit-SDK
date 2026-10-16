@@ -175,7 +175,7 @@ class KFormsTest {
         compose.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Box(Modifier.background(Color.Black)) {
-                    KSwitch(true, {}, Modifier.testTag("switch"), accent = Color.Blue, variant = KSwitchVariant.Material)
+                    KSwitch(true, {}, Modifier.testTag("switch"), accent = Color.Blue, variant = KSwitchVariant.Check)
                 }
             }
         }

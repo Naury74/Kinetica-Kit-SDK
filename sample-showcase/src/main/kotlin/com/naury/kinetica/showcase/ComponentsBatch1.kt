@@ -88,7 +88,7 @@ private fun ConnectionSection() {
     var variant by rememberSaveable { mutableIntStateOf(0) }
     val switch = KSwitchVariant.entries[variant]
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        KSegmentedControl(listOf("iOS", "Material", "One UI"), variant, { variant = it }, Modifier.fillMaxWidth())
+        KSegmentedControl(listOf("캡슐", "체크", "슬림"), variant, { variant = it }, Modifier.fillMaxWidth())
         KListSection(header = "연결", footer = "비행기 모드를 켜면 Wi-Fi와 블루투스를 뺀 모든 무선 연결이 끊깁니다.") {
             item {
                 KSwitchRow("비행기 모드", airplane, { airplane = it }, leading = icon(ShowcaseIcons.Send, FormOrange), variant = switch)

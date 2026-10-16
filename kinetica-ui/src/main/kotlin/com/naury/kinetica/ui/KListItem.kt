@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.sp
 @Immutable
 public sealed interface KListLeading {
     /**
-     * 아이콘. [container]를 주면 iOS 설정 화면처럼 그 색의 둥근 사각형 안에 흰 아이콘을 그린다.
+     * 아이콘. [container]를 주면 설정 화면처럼 그 색의 둥근 사각형 안에 흰 아이콘을 그린다.
      *
      * @property tint 아이콘 색. [Color.Unspecified]면 [container]가 있을 때 흰색, 없을 때 표면 글자 색을 옅게 쓴다.
      * @property container 아이콘 뒤 둥근 사각형 색. `null`이면 그리지 않는다.
@@ -79,7 +79,7 @@ public sealed interface KListTrailing {
     public data class Switch(
         val checked: Boolean,
         val onCheckedChange: (Boolean) -> Unit,
-        val variant: KSwitchVariant = KSwitchVariant.Ios,
+        val variant: KSwitchVariant = KSwitchVariant.Capsule,
     ) : KListTrailing
 
     /** 체크박스. 행 전체가 [Role.Checkbox]가 된다. */

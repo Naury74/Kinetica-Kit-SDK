@@ -25,7 +25,7 @@ public fun KSwitchRow(
     subtitle: String? = null,
     leading: KListLeading? = null,
     enabled: Boolean = true,
-    variant: KSwitchVariant = KSwitchVariant.Ios,
+    variant: KSwitchVariant = KSwitchVariant.Capsule,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     KListItem(

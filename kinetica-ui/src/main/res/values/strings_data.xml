@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_data_series">Series %1$d</string>
+    <string name="kinetica_ui_data_pair">%1$s %2$s</string>
+    <plurals name="kinetica_ui_chart_area">
+        <item quantity="one">Area chart, %2$d series, %1$d point</item>
+        <item quantity="other">Area chart, %2$d series, %1$d points</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_stacked_bar">
+        <item quantity="one">Stacked bar chart, %2$d series, %1$d bar</item>
+        <item quantity="other">Stacked bar chart, %2$d series, %1$d bars</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_grouped_bar">
+        <item quantity="one">Grouped bar chart, %2$d series, %1$d group</item>
+        <item quantity="other">Grouped bar chart, %2$d series, %1$d groups</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_pie">
+        <item quantity="one">Pie chart, %1$d slice, total %2$s</item>
+        <item quantity="other">Pie chart, %1$d slices, total %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_heatmap_cell">%1$s, %2$s</string>
+    <string name="kinetica_ui_heatmap_empty">No data</string>
+    <string name="kinetica_ui_heatmap_less">Less</string>
+    <string name="kinetica_ui_heatmap_more">More</string>
+    <string name="kinetica_ui_stat_up">Up %1$s</string>
+    <string name="kinetica_ui_stat_down">Down %1$s</string>
+    <string name="kinetica_ui_stat_flat">No change</string>
+    <string name="kinetica_ui_step_done">Completed</string>
+    <string name="kinetica_ui_step_current">In progress</string>
+    <string name="kinetica_ui_step_upcoming">Not started</string>
+    <string name="kinetica_ui_step_error">Problem</string>
+    <string name="kinetica_ui_step_of">Step %2$d of %1$d, %3$s</string>
+    <string name="kinetica_ui_step_name">Step %1$d, %2$s</string>
+    <string name="kinetica_ui_step_count">%1$d/%2$d</string>
+    <string name="kinetica_ui_wizard_next">Next</string>
+    <string name="kinetica_ui_wizard_back">Back</string>
+    <string name="kinetica_ui_wizard_finish">Done</string>
+    <string name="kinetica_ui_price_original">regular price %1$s</string>
+    <string name="kinetica_ui_price_discount">%1$d%% off</string>
+    <string name="kinetica_ui_billing_monthly">Monthly</string>
+    <string name="kinetica_ui_billing_yearly">Yearly</string>
+    <string name="kinetica_ui_quantity">Quantity</string>
+    <string name="kinetica_ui_quantity_add">Add</string>
+    <string name="kinetica_ui_keypad_decimal">Decimal point</string>
+    <string name="kinetica_ui_keypad_backspace">Delete</string>
+    <string name="kinetica_ui_pin_state">%2$d of %1$d digits entered</string>
+    <string name="kinetica_ui_range_today">Today</string>
+    <string name="kinetica_ui_range_last_days">Last %1$d days</string>
+    <string name="kinetica_ui_range_this_month">This month</string>
+    <string name="kinetica_ui_range_last_month">Last month</string>
+    <string name="kinetica_ui_range_morning">Morning</string>
+    <string name="kinetica_ui_range_afternoon">Afternoon</string>
+    <string name="kinetica_ui_range_work">Work hours</string>
+    <string name="kinetica_ui_range_date_title">Select dates</string>
+    <string name="kinetica_ui_range_time_title">Select time range</string>
+    <string name="kinetica_ui_range_start">Start %1$s</string>
+    <string name="kinetica_ui_range_end">End %1$s</string>
+    <string name="kinetica_ui_range_next_day">Ends the next day</string>
+    <string name="kinetica_ui_range_pick_start">Pick a start date</string>
+    <string name="kinetica_ui_range_pick_end">%1$s ~ pick an end date</string>
+    <string name="kinetica_ui_range_summary">%1$s ~ %2$s</string>
+    <string name="kinetica_ui_range_cancel">Cancel</string>
+    <string name="kinetica_ui_range_apply">Apply</string>
+    <plurals name="kinetica_ui_range_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="kinetica_ui_week_previous">Previous week</string>
+    <string name="kinetica_ui_week_next">Next week</string>
+    <plurals name="kinetica_ui_week_events">
+        <item quantity="one">%1$d event</item>
+        <item quantity="other">%1$d events</item>
+    </plurals>
+</resources>

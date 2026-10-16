@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.sp
 
 /** [KListSection]의 모양 */
 public enum class KListSectionStyle {
-    /** iOS 설정 화면처럼 행들을 둥근 표면 하나에 담는다. 첫 행은 위 모서리, 끝 행은 아래 모서리만 둥글다. */
+    /** 설정 화면처럼 행들을 둥근 표면 하나에 담는다. 첫 행은 위 모서리, 끝 행은 아래 모서리만 둥글다. */
     InsetGrouped,
 
     /** 표면 없이 화면 바탕 위에 행을 놓는다. 구분선은 행 글자 시작부터 끝까지 그린다. */

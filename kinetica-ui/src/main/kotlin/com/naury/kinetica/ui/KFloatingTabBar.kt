@@ -134,7 +134,7 @@ public fun rememberKFloatingTabBarState(initiallyCollapsed: Boolean = false): KF
     rememberSaveable(saver = KFloatingTabBarState.Saver) { KFloatingTabBarState(initiallyCollapsed) }
 
 /**
- * iOS 26처럼 화면 아래에 떠 있다가 스크롤하면 줄어드는 탭 바. 목록을 아래로 스크롤하면 시작 쪽의 작은 캡슐로 줄어들어
+ * 화면 아래에 떠 있다가 스크롤하면 줄어드는 탭 바. 목록을 아래로 스크롤하면 시작 쪽의 작은 캡슐로 줄어들어
  * 선택한 탭 아이콘만 보이고, 위로 스크롤하거나 캡슐을 누르면 다시 펼쳐진다. [accessory]가 있으면 펼친 동안에는 탭 바 위에 붙어 있다가,
  * 접히면 캡슐 옆으로 내려와 한 줄이 된다. [KineticaScaffold]의 `bottomBar`에 넣으면 뒤로 지나가는 내용을 블러로 비춘다.
  *

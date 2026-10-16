@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * 글자로 쓸 [color]가 [background] 위에서 [minRatio] 대비를 넘도록 어둡게(배경이 어두우면 밝게) 고친다.
- * iOS 초록처럼 밝은 강조색을 흰 표면 위 글자로 쓰면 대비가 2:1 남짓이라 읽기 어렵다. 이미 충분하면 그대로 돌려준다.
+ * 밝은 초록 같은 강조색을 흰 표면 위 글자로 쓰면 대비가 2:1 남짓이라 읽기 어렵다. 이미 충분하면 그대로 돌려준다.
  */
 internal fun readableOn(color: Color, background: Color, minRatio: Float = READABLE_RATIO): Color {
     val under = if (background.luminance() > HALF) Color.White else Color.Black

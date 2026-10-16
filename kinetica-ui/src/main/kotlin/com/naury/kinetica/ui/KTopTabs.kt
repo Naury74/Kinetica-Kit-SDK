@@ -58,13 +58,13 @@ import kotlinx.coroutines.launch
 
 /** [KTopTabs]의 선택 인디케이터 모양 */
 public enum class KTabIndicator {
-    /** 고른 탭 뒤에 옅은 캡슐을 깐다. One UI 탭과 같다. */
+    /** 고른 탭 뒤에 옅은 캡슐을 깐다. */
     Pill,
 
-    /** 고른 탭 이름 아래에 강조색 밑줄을 긋고, 고른 탭 이름도 강조색으로 쓴다. Material 기본 탭과 같다. */
+    /** 고른 탭 이름 아래에 강조색 밑줄을 긋고, 고른 탭 이름도 강조색으로 쓴다. */
     Underline,
 
-    /** 탭 줄 전체에 옅은 트랙을 깔고, 고른 탭 자리에 밝은 칸이 미끄러진다. iOS 세그먼트 컨트롤과 같다. */
+    /** 탭 줄 전체에 옅은 트랙을 깔고, 고른 탭 자리에 밝은 칸이 미끄러진다. [KSegmentedControl]과 같은 모양이다. */
     Segmented,
 }
 

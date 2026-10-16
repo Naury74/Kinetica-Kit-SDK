@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -54,7 +56,7 @@ import androidx.compose.ui.unit.dp
  * [surface]가 글래스면 화면을 배경으로 기록해 두고 바와 오버레이가 그 배경을 블러 처리해 비춰 보이게 한다. [content] 안의 카드 같은
  * 글래스 요소는 [background]를 비춘다. 단색이나 톤 표면이면 배경을 기록하지 않아 그 비용이 없고, [SurfaceStyle.background]를 바탕에 칠한다.
  *
- * 바텀 시트가 열려 있으면 iOS 시트처럼 콘텐츠가 살짝 뒤로 물러나며 모서리가 둥글어진다. [surface]는 이 안의 컴포넌트가 쓰는 기본 표면이고,
+ * 바텀 시트가 열려 있으면 콘텐츠가 살짝 뒤로 물러나며 모서리가 둥글어진다. [surface]는 이 안의 컴포넌트가 쓰는 기본 표면이고,
  * 기본값은 [KineticaTheme]이 정한 표면(없으면 [SurfaceStyles.Liquid])이다.
  *
  * ```kotlin
@@ -64,8 +66,10 @@ import androidx.compose.ui.unit.dp
  * ```
  *
  * @param background 콘텐츠 뒤에 깔리는 배경. 글래스 표면이면 사진이나 그라디언트처럼 비칠 색이 있어야 효과가 살아난다.
- * @param backdropColor 바텀 시트가 열려 콘텐츠가 물러날 때 드러나는 배경색
- * @param edgeFade true면 스크롤된 콘텐츠가 상태 표시줄 아래에서 iOS처럼 흐려지며 사라진다. 단색과 톤 표면에서는 바탕색으로 덮어 사라지게 한다.
+ * @param backdropColor 바텀 시트가 열려 콘텐츠가 물러날 때 드러나는 배경색. 콘텐츠가 절반 넘게 물러나면 이 색이 상태 표시줄 뒤에 깔리므로,
+ * 그동안 상태 표시줄 아이콘을 이 색의 밝기에 맞추고(어두운 색이면 밝은 아이콘) 시트가 내려가면 되돌린다. [systemBarIcons]와 상관없이 적용하며,
+ * 투명에 가까운 색(알파 0.5 미만)이면 무엇이 비칠지 알 수 없어 건드리지 않는다.
+ * @param edgeFade true면 스크롤된 콘텐츠가 상태 표시줄 아래에서 흐려지며 사라진다. 단색과 톤 표면에서는 바탕색으로 덮어 사라지게 한다.
  * @param indication 이 안에서 쓴 일반 `clickable`의 눌림 표시(`LocalIndication`). 기본값은 [KineticaTheme]의 `indication`이고
  * 테마가 없으면 [KIndication]이다. null이면 바깥(호스트) 값을 그대로 둔다.
  * @param systemBarIcons true면 상태 표시줄과 내비게이션 바 아이콘을 [surface] 밝기에 맞춘다(어두운 표면이면 밝은 아이콘).
@@ -90,6 +94,7 @@ public fun KineticaScaffold(
     // 단색과 톤 표면은 비출 것이 없으므로 기록용 레이어를 만들지 않는다.
     val layers = if (surface is SurfaceStyle.Glass) rememberScaffoldBackdrops() else null
     val host = remember { KOverlayHost() }
+    PushBackBarIcons(host, backdropColor)
     var topHeight by remember { mutableIntStateOf(0) }
     var bottomHeight by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
@@ -144,6 +149,17 @@ public fun KineticaScaffold(
     }
 }
 
+/**
+ * 시트가 콘텐츠를 [PUSH_ICON_THRESHOLD]보다 많이 밀어내면 상태 표시줄 뒤에 [backdropColor]가 드러나므로, 그동안 상태 표시줄 아이콘을
+ * 그 색의 밝기에 맞춘다. 경계를 넘을 때만 다시 구성되도록 참/거짓으로 줄여 읽는다.
+ */
+@Composable
+private fun PushBackBarIcons(host: KOverlayHost, backdropColor: Color) {
+    val pushed by remember(host) { derivedStateOf { host.pushBack > PUSH_ICON_THRESHOLD } }
+    val opaque = backdropColor.alpha >= OPAQUE_BACKDROP
+    SystemBarIcons(if (pushed && opaque) backdropColor.luminance() < DARK_LUMINANCE else null, statusOnly = true)
+}
+
 /** 글래스 스캐폴드가 기록하는 세 겹의 배경. */
 private class ScaffoldBackdrops(val screen: GlassBackdrop, val content: GlassBackdrop, val background: GlassBackdrop)
 
@@ -164,7 +180,7 @@ private fun Modifier.recordInto(backdrop: GlassBackdrop?): Modifier = if (backdr
 public val LocalKineticaIndication: androidx.compose.runtime.ProvidableCompositionLocal<Indication?> =
     staticCompositionLocalOf { KIndication() }
 
-/** 시트가 열린 정도만큼 콘텐츠를 살짝 줄이고 내려 둥글게 자른다(iOS 시트 뒤 화면). 그리기 단계에서 읽어 다시 컴포지션하지 않는다. */
+/** 시트가 열린 정도만큼 콘텐츠를 살짝 줄이고 내려 둥글게 자른다. 그리기 단계에서 읽어 다시 컴포지션하지 않는다. */
 private fun Modifier.pushBack(host: KOverlayHost): Modifier = drawWithCache {
     val clip = Path()
     onDrawWithContent {
@@ -275,6 +291,9 @@ internal class OverlayEntry(val id: Any, val modal: Boolean) {
 }
 
 private const val PUSH_SCALE = 0.07f
+private const val PUSH_ICON_THRESHOLD = 0.5f
+private const val OPAQUE_BACKDROP = 0.5f
+private const val DARK_LUMINANCE = 0.5f
 private const val EDGE_PAGE_ALPHA = 0.92f
 private val EDGE_BLUR = 16.dp
 private val EDGE_EXTRA = 12.dp

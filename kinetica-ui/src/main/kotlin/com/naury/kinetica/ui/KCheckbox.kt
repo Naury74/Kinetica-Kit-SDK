@@ -41,10 +41,10 @@ import kotlinx.coroutines.launch
 
 /** [KCheckbox]의 모양. */
 public enum class KCheckboxShape {
-    /** 모서리가 둥근 사각형. Material과 One UI의 기본 모양이다. */
+    /** 모서리가 둥근 사각형. 가장 흔한 체크박스 모양이다. */
     Square,
 
-    /** 원. iOS 목록의 선택 표시나 할 일 앱의 완료 표시에 어울린다. */
+    /** 원. 목록의 선택 표시나 할 일 앱의 완료 표시에 어울린다. */
     Circle,
 }
 

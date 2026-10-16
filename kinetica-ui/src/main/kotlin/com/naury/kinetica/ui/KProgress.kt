@@ -62,7 +62,7 @@ import kotlin.math.sin
  * ```
  *
  * @param progress 0..1 사이의 진행 비율. 범위를 벗어나면 가까운 끝 값으로 그리고, NaN은 0으로 본다. `null`이면 진행 정도를 모르는 상태다.
- * @param color 채워지는 부분의 색. 기본값은 iOS 파랑이다.
+ * @param color 채워지는 부분의 색. 기본값은 테마 강조색([KineticaColors.accent])이다.
  * @param thickness 막대 두께. 물결을 켜면 10dp 이상일 때 잘 보인다.
  * @param wave 앞 끝을 물결 모양으로 출렁이게 할지 여부
  */
@@ -116,7 +116,7 @@ public fun KProgressBar(
  * ```
  *
  * @param progress 0..1 사이의 진행 비율. 범위를 벗어나면 가까운 끝 값으로 그리고, NaN은 0으로 본다. `null`이면 진행 정도를 모르는 상태다.
- * @param color 원호 색. 기본값은 iOS 파랑이다.
+ * @param color 원호 색. 기본값은 테마 강조색([KineticaColors.accent])이다.
  * @param thickness 원호 두께
  * @param wave 링 안쪽에 물결치는 수면을 그릴지 여부. [progress]가 `null`이면 그리지 않는다.
  */

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_data_series">%1$d번째 계열</string>
+    <string name="kinetica_ui_data_pair">%1$s %2$s</string>
+    <plurals name="kinetica_ui_chart_area">
+        <item quantity="other">영역 차트, 계열 %2$d개, 값 %1$d개</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_stacked_bar">
+        <item quantity="other">누적 막대 그래프, 계열 %2$d개, 막대 %1$d개</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_grouped_bar">
+        <item quantity="other">묶음 막대 그래프, 계열 %2$d개, 묶음 %1$d개</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_pie">
+        <item quantity="other">파이 차트, 항목 %1$d개, 합계 %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_heatmap_cell">%1$s %2$s</string>
+    <string name="kinetica_ui_heatmap_empty">기록 없음</string>
+    <string name="kinetica_ui_heatmap_less">적음</string>
+    <string name="kinetica_ui_heatmap_more">많음</string>
+    <string name="kinetica_ui_stat_up">%1$s 증가</string>
+    <string name="kinetica_ui_stat_down">%1$s 감소</string>
+    <string name="kinetica_ui_stat_flat">변화 없음</string>
+    <string name="kinetica_ui_step_done">완료</string>
+    <string name="kinetica_ui_step_current">진행 중</string>
+    <string name="kinetica_ui_step_upcoming">대기</string>
+    <string name="kinetica_ui_step_error">문제 있음</string>
+    <string name="kinetica_ui_step_of">%1$d단계 중 %2$d단계, %3$s</string>
+    <string name="kinetica_ui_step_name">%1$d단계, %2$s</string>
+    <string name="kinetica_ui_step_count">%1$d/%2$d</string>
+    <string name="kinetica_ui_wizard_next">다음</string>
+    <string name="kinetica_ui_wizard_back">이전</string>
+    <string name="kinetica_ui_wizard_finish">완료</string>
+    <string name="kinetica_ui_price_original">정가 %1$s</string>
+    <string name="kinetica_ui_price_discount">%1$d%% 할인</string>
+    <string name="kinetica_ui_billing_monthly">월간</string>
+    <string name="kinetica_ui_billing_yearly">연간</string>
+    <string name="kinetica_ui_quantity">수량</string>
+    <string name="kinetica_ui_quantity_add">담기</string>
+    <string name="kinetica_ui_keypad_decimal">소수점</string>
+    <string name="kinetica_ui_keypad_backspace">지우기</string>
+    <string name="kinetica_ui_pin_state">%1$d자리 중 %2$d자리 입력함</string>
+    <string name="kinetica_ui_range_today">오늘</string>
+    <string name="kinetica_ui_range_last_days">최근 %1$d일</string>
+    <string name="kinetica_ui_range_this_month">이번 달</string>
+    <string name="kinetica_ui_range_last_month">지난달</string>
+    <string name="kinetica_ui_range_morning">오전</string>
+    <string name="kinetica_ui_range_afternoon">오후</string>
+    <string name="kinetica_ui_range_work">업무 시간</string>
+    <string name="kinetica_ui_range_date_title">기간 선택</string>
+    <string name="kinetica_ui_range_time_title">시간 선택</string>
+    <string name="kinetica_ui_range_start">시작 %1$s</string>
+    <string name="kinetica_ui_range_end">종료 %1$s</string>
+    <string name="kinetica_ui_range_next_day">종료 시각은 다음 날입니다</string>
+    <string name="kinetica_ui_range_pick_start">시작일을 고르세요</string>
+    <string name="kinetica_ui_range_pick_end">%1$s ~ 종료일을 고르세요</string>
+    <string name="kinetica_ui_range_summary">%1$s ~ %2$s</string>
+    <string name="kinetica_ui_range_cancel">취소</string>
+    <string name="kinetica_ui_range_apply">적용</string>
+    <plurals name="kinetica_ui_range_days">
+        <item quantity="other">%1$d일</item>
+    </plurals>
+    <string name="kinetica_ui_week_previous">이전 주</string>
+    <string name="kinetica_ui_week_next">다음 주</string>
+    <plurals name="kinetica_ui_week_events">
+        <item quantity="other">일정 %1$d개</item>
+    </plurals>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_feedback_info">정보</string>
+    <string name="kinetica_ui_feedback_success">성공</string>
+    <string name="kinetica_ui_feedback_warning">경고</string>
+    <string name="kinetica_ui_feedback_error">오류</string>
+    <string name="kinetica_ui_feedback_expand">알림 모두 보기</string>
+    <string name="kinetica_ui_feedback_collapse">알림 겹쳐 두기</string>
+    <string name="kinetica_ui_feedback_loading_text">불러오는 중…</string>
+    <string name="kinetica_ui_feedback_step">%2$d단계 중 %1$d단계</string>
+</resources>

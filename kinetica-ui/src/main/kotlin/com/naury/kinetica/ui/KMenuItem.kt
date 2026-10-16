@@ -70,7 +70,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 public data class KMenuItem(val label: String, val icon: ImageVector? = null, val destructive: Boolean = false, val onClick: () -> Unit)
 
 /**
- * 길게 누르면 iOS 컨텍스트 메뉴처럼 열리는 메뉴를 붙인다. 햅틱과 함께 이 요소가 살짝 떠오르고 배경이 흐려지며,
+ * 길게 누르면 열리는 컨텍스트 메뉴를 붙인다. 햅틱과 함께 이 요소가 살짝 떠오르고 배경이 흐려지며,
  * 요소 아래에 메뉴가 뜬다. 아래에 공간이 없으면 위에 뜬다. 메뉴 바깥을 누르거나 뒤로 가기를 하면 닫히고,
  * 항목을 누르면 메뉴를 닫은 뒤 그 항목의 동작을 실행한다. 짧은 탭과 스크롤은 요소가 그대로 받는다.
  * TalkBack에서는 같은 항목이 요소의 사용자 지정 동작으로 노출된다. [KineticaScaffold] 안에서 쓴다.

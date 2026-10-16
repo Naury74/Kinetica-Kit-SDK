@@ -356,9 +356,11 @@ public fun KDetentSheet(
                     val next = state.higher() ?: state.lowestVisible
                     scope.launch { state.animateTo(next) }
                 }
-                CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor, LocalGlassLayered provides true) {
-                    header()
-                    Column(Modifier.weight(1f).windowInsetsPadding(insets), content = content)
+                CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) {
+                    KGlassLayer {
+                        header()
+                        Column(Modifier.weight(1f).windowInsetsPadding(insets), content = content)
+                    }
                 }
             }
         }

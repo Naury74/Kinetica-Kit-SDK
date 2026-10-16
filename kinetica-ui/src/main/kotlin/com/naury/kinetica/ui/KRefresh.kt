@@ -30,7 +30,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -38,7 +37,6 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
@@ -52,7 +50,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 당겨서 새로 고침 컨테이너. 목록 맨 위에서 더 당기면 콘텐츠가 고무줄처럼 버티며 내려오고, 위쪽에 글래스 물방울이 차오른다.
+ * 당겨서 새로 고침 컨테이너. 목록 맨 위에서 더 당기면 콘텐츠가 고무줄처럼 버티며 내려오고, 위쪽에 글래스 물방울([indicator]로 바꿀 수 있다)이 차오른다.
  * 당긴 거리가 [threshold]를 넘으면 햅틱과 함께 물방울이 길쭉해지고, 이때 손을 떼면 [onRefresh]를 호출한다.
  * 물방울은 [refreshing]이 `false`가 될 때까지 돈다. TalkBack에서는 "새로 고침" 사용자 지정 동작으로 실행할 수 있다.
  *
@@ -62,6 +60,8 @@ import kotlinx.coroutines.launch
  * @param threshold 손을 뗐을 때 새로 고침이 실행되는 최소 당김 거리
  * @param indicatorTop 이 컨테이너 위쪽 끝에서 물방울까지의 거리. [KineticaScaffold] 안에서는 상단 바 높이
  *   (`padding.calculateTopPadding()`)를 넘겨야 물방울이 바에 가리지 않는다.
+ * @param indicator 당길 때 보이는 표시. [KRefreshIndicator.Drop](기본값, 글래스 물방울), [KRefreshIndicator.Arrow](원 화살표),
+ *   [KRefreshIndicator.Dots](점 세 개)
  */
 @Composable
 public fun KRefreshBox(
@@ -71,11 +71,12 @@ public fun KRefreshBox(
     surface: SurfaceStyle = KineticaTheme.surface,
     threshold: Dp = 80.dp,
     indicatorTop: Dp = 0.dp,
+    indicator: KRefreshIndicator = KRefreshIndicator.Drop,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val latestRefresh by rememberUpdatedState(onRefresh)
     val latestRefreshing by rememberUpdatedState(refreshing)
-    val haptic = LocalHapticFeedback.current
+    val haptics = rememberKHaptics()
     val scope = rememberCoroutineScope()
     val trigger = with(LocalDensity.current) { threshold.toPx() }
     // 드래그 중에는 한 프레임에 스크롤이 여러 번 들어오므로 상태에 바로 더하고, 손을 뗀 뒤의 복귀만 애니메이션으로 처리한다.
@@ -111,7 +112,7 @@ public fun KRefreshBox(
                 val resistance = (1f - pull.value / (trigger * MAX_FRACTION)).coerceIn(0f, 1f) * DRAG_RATE
                 val before = pull.value
                 pull.drag(available.y * resistance)
-                if (before < trigger && pull.value >= trigger) haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                if (before < trigger && pull.value >= trigger) haptics.perform(KHapticType.Edge)
                 return Offset(0f, available.y)
             }
 
@@ -157,19 +158,14 @@ public fun KRefreshBox(
             },
     ) {
         Box(Modifier.graphicsLayer { translationY = pull.value }, propagateMinConstraints = true, content = content)
-        RefreshDrop(
-            pull.value / trigger,
-            refreshing,
-            surface,
-            refreshingLabel,
-            Modifier.align(Alignment.TopCenter).padding(top = indicatorTop).graphicsLayer { translationY = pull.value / 2 },
-        )
+        val place = Modifier.align(Alignment.TopCenter).padding(top = indicatorTop).graphicsLayer { translationY = pull.value / 2 }
+        RefreshIndicator(indicator, { pull.value / trigger }, refreshing, surface, refreshingLabel, place)
     }
 }
 
 /** 당긴 정도([level], 1이면 임계값)만큼 차오르는 글래스 물방울. 임계값을 넘으면 세로로 길쭉해지고, 새로 고침 중에는 링이 돈다. */
 @Composable
-private fun RefreshDrop(level: Float, refreshing: Boolean, surface: SurfaceStyle, label: String, modifier: Modifier) {
+internal fun RefreshDrop(level: Float, refreshing: Boolean, surface: SurfaceStyle, label: String, modifier: Modifier) {
     if (level <= 0f && !refreshing) return
     val spin by rememberInfiniteTransition(label = "refresh-spin").animateFloat(
         0f,

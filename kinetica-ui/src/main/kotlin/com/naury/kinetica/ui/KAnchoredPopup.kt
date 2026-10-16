@@ -306,7 +306,7 @@ internal fun PopupPanel(
             .kSurface(surface.forPopup(), PopupPanelShape)
             .padding(vertical = PopupPanelPadding),
     ) {
-        CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor, LocalGlassLayered provides true) { content() }
+        CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) { KGlassLayer { content() } }
     }
 }
 

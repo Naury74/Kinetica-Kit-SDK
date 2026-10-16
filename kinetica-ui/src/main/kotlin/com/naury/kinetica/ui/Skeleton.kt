@@ -1,3 +1,6 @@
+// 파일 이름은 대표 컴포저블인 Modifier.skeleton를 따른다.
+@file:Suppress("MatchingDeclarationName")
+
 package com.naury.kinetica.ui
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -34,6 +37,16 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlin.math.cos
+
+/** 스켈레톤 블록이 불러오는 중임을 보여 주는 방식. */
+public enum class KSkeletonStyle {
+    /** 빛 한 줄기가 비스듬히 흘러간다. */
+    Shimmer,
+
+    /** 블록 전체가 천천히 옅어졌다 짙어진다. 블록이 많아 빛 흐름이 어지러울 때나 차분한 화면에 쓴다. */
+    Pulse,
+}
 
 /**
  * 불러오는 동안 이 요소 자리에 회색 블록을 그리고, 그 위로 빛이 비스듬히 흘러간다. [visible]이 false가 되면
@@ -48,12 +61,14 @@ import androidx.compose.ui.unit.dp
  *
  * @param shape 블록 모양
  * @param color 블록 색. 기본값은 텍스트 색을 옅게 쓴 것이다.
+ * @param style 움직임. [KSkeletonStyle.Shimmer](기본값)는 빛이 흐르고, [KSkeletonStyle.Pulse]는 블록이 옅어졌다 짙어진다.
  */
 @Composable
 public fun Modifier.skeleton(
     visible: Boolean,
     shape: Shape = RoundedCornerShape(8.dp),
     color: Color = LocalKineticaContentColor.current.copy(alpha = BLOCK_ALPHA),
+    style: KSkeletonStyle = KSkeletonStyle.Shimmer,
 ): Modifier {
     val cover = animateFloatAsState(if (visible) 1f else 0f, tween(FADE_MS), label = "skeleton")
     val still = reducedMotion()
@@ -84,6 +99,11 @@ public fun Modifier.skeleton(
                     drawContext.canvas.restore()
                 }
                 if (c <= 0f) return@onDrawWithContent
+                if (style == KSkeletonStyle.Pulse) {
+                    val wave = if (still) 0f else (1f - cos(clock.seconds * TWO_PI / PULSE_SECONDS)) / 2f
+                    drawOutline(outline, color, alpha = c * (1f - wave * PULSE_DEPTH))
+                    return@onDrawWithContent
+                }
                 drawOutline(outline, color, alpha = c)
                 if (still) return@onDrawWithContent
                 val travel = (size.width + band * 2) * (clock.seconds * MS_PER_SECOND % SHIMMER_MS / SHIMMER_MS) - band
@@ -101,9 +121,15 @@ public fun Modifier.skeleton(
  *
  * @param lines 줄 수. 1 미만이면 [IllegalArgumentException]을 던진다.
  * @param lineHeight 막대 높이
+ * @param style 움직임. [Modifier.skeleton] 참고
  */
 @Composable
-public fun KSkeletonText(lines: Int, modifier: Modifier = Modifier, lineHeight: Dp = 14.dp) {
+public fun KSkeletonText(
+    lines: Int,
+    modifier: Modifier = Modifier,
+    lineHeight: Dp = 14.dp,
+    style: KSkeletonStyle = KSkeletonStyle.Shimmer,
+) {
     require(lines >= 1) { "lines는 1 이상이어야 합니다." }
     val loading = stringResource(R.string.kinetica_ui_loading)
     Column(
@@ -112,7 +138,7 @@ public fun KSkeletonText(lines: Int, modifier: Modifier = Modifier, lineHeight: 
     ) {
         repeat(lines) { i ->
             val width = if (i == lines - 1 && lines > 1) LAST_LINE else 1f
-            Spacer(Modifier.fillMaxWidth(width).height(lineHeight).skeleton(true, RoundedCornerShape(lineHeight / 2)))
+            Spacer(Modifier.fillMaxWidth(width).height(lineHeight).skeleton(true, RoundedCornerShape(lineHeight / 2), style = style))
         }
     }
 }
@@ -126,3 +152,6 @@ private const val BAND = 0.6f
 private const val SLANT = 0.35f
 private const val LINE_GAP = 0.7f
 private const val LAST_LINE = 0.6f
+private const val PULSE_SECONDS = 1.4f
+private const val PULSE_DEPTH = 0.55f
+private const val TWO_PI = 6.2831855f

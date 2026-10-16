@@ -55,7 +55,7 @@ public enum class KTopAppBarVariant {
     /** 한 줄 바. 제목은 뒤로 버튼 다음 시작 쪽에 놓인다. 상세 화면의 기본 바다. */
     Small,
 
-    /** 한 줄 바. 제목을 바 가운데에 놓는다. iOS 기본 바와 같다. */
+    /** 한 줄 바. 제목을 바 가운데에 놓는다. */
     CenterAligned,
 
     /**
@@ -128,8 +128,8 @@ public fun rememberKTopAppBarState(scrollState: ScrollState): KTopAppBarState = 
  * 상단 앱 바. 뒤로 버튼, 제목, 끝 쪽 버튼을 한 줄에 놓는다. [state]를 주면 맨 위에서는 배경 없이 화면과 이어져 보이다가,
  * 콘텐츠가 바 아래로 지나가면 표면 스타일 배경과 아래 경계선이 서서히 나타난다. [state]가 null이면 배경을 늘 그린다.
  *
- * [KLargeTitleBar]와의 차이: 큰 제목 바는 iOS와 One UI처럼 34sp 큰 제목이 가운데 작은 제목으로 바뀌고 당기면 늘어난다.
- * 이 바는 Material 앱 바에 가깝고, 큰 제목이 필요 없는 상세 화면이나 편집 화면에 쓴다. [KTopAppBarVariant.Medium]은 그 사이로
+ * [KLargeTitleBar]와의 차이: 큰 제목 바는 34sp 큰 제목이 가운데 작은 제목으로 바뀌고 당기면 늘어난다.
+ * 이 바는 큰 제목이 필요 없는 상세 화면이나 편집 화면에 쓴다. [KTopAppBarVariant.Medium]은 그 사이로
  * 26sp 제목이 시작 쪽 작은 제목으로 접힌다.
  *
  * 바 높이는 고정이라 [KineticaScaffold]의 `topBar`에 두면 콘텐츠 패딩이 스크롤 중에 바뀌지 않는다.

@@ -154,7 +154,7 @@ public class SwipeActionsState internal constructor(internal val group: SwipeAct
 public fun rememberSwipeActionsState(group: SwipeActionsGroup? = null): SwipeActionsState = remember(group) { SwipeActionsState(group) }
 
 /**
- * iOS 메일처럼 옆으로 밀면 뒤에서 색 버튼이 드러나는 행. 시작 쪽으로 밀면 [endActions], 끝 쪽으로 밀면 [startActions]가 보인다.
+ * 메일 앱 목록처럼 옆으로 밀면 뒤에서 색 버튼이 드러나는 행. 시작 쪽으로 밀면 [endActions], 끝 쪽으로 밀면 [startActions]가 보인다.
  * 버튼은 목록 순서대로 바깥 가장자리부터 안쪽으로 놓인다. [fullSwipe]가 `true`면 버튼이 모두 드러난 뒤에도 계속 밀어
  * 행 너비의 절반을 넘겼을 때 가장 바깥 버튼이 드러난 영역을 채우고 햅틱을 준다. 그 상태로 놓으면 그 동작을 실행한다.
  * RTL에서는 시작과 끝이 뒤집힌다.

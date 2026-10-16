@@ -156,6 +156,9 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
                         2 -> MediaTab(list, title.connection) { onboarding = true }
                         4 -> ButtonsChipsCardsTab(list, title.connection)
                         5 -> NavOverlayTab(list, title.connection)
+                        6 -> FeedbackTab(list, title.connection)
+                        7 -> DataDomainTab(list, title.connection)
+                        8 -> SocialMotionTab(list, title.connection)
                         else -> EffectsTab(list, title.connection, notify)
                     }
                 }
@@ -408,7 +411,7 @@ private fun NotifyCard(onIsland: () -> Unit, onTimer: () -> Unit, onSnackbar: ()
     }
 }
 
-private val COMPONENT_TABS = listOf("기본", "입력", "미디어", "효과", "버튼·칩·카드", "내비게이션·오버레이")
+private val COMPONENT_TABS = listOf("기본", "입력", "미디어", "효과", "버튼·칩·카드", "내비게이션·오버레이", "피드백·로딩", "데이터·도메인", "소셜·모션")
 private val PEOPLE = listOf("하늘", "바다", "숲", "노을", "별")
 private val SCRAMBLE = listOf("ACCESS GRANTED", "SYNC COMPLETE", "HELLO, KINETICA")
 internal val PHOTO_COLORS = listOf(

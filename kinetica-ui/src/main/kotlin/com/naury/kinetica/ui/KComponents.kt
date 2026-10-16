@@ -157,8 +157,8 @@ public fun KDialog(
                         .blockTouches()
                         .padding(24.dp),
                 ) {
-                    CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor, LocalGlassLayered provides true) {
-                        content()
+                    CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) {
+                        KGlassLayer { content() }
                     }
                 }
             }
@@ -287,7 +287,7 @@ private fun SheetPanel(
                 .size(40.dp, 5.dp)
                 .background(surface.contentColor.copy(alpha = 0.28f), RoundedCornerShape(3.dp)),
         )
-        CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor, LocalGlassLayered provides true) { content() }
+        CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) { KGlassLayer { content() } }
         Box(Modifier.padding(bottom = 16.dp))
     }
 }

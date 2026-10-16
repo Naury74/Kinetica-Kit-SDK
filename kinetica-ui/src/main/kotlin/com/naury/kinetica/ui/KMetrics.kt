@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 /**
- * 컴포넌트가 함께 쓰는 치수. iOS와 One UI의 기준에 맞춰, 터치 영역과 아이콘 크기, 아이콘과 글자 간격, 안쪽 모서리를 한곳에서 정한다.
+ * 컴포넌트가 함께 쓰는 치수. 모바일 플랫폼 디자인 지침에서 흔히 쓰는 값으로 터치 영역과 아이콘 크기, 아이콘과 글자 간격, 안쪽 모서리를 한곳에서 정한다.
  */
 internal object KMetrics {
     /** 누를 수 있는 요소의 최소 터치 영역 */

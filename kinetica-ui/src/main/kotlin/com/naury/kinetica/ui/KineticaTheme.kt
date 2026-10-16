@@ -40,7 +40,7 @@ public data class KineticaColors(
     val onDestructive: Color = Color.White,
 )
 
-/** 지금 적용된 [KineticaColors]. [KineticaTheme] 밖에서는 iOS 시스템 색에 가까운 기본값이다. */
+/** 지금 적용된 [KineticaColors]. [KineticaTheme] 밖에서는 [KineticaColors]의 기본값이다. */
 public val LocalKineticaColors: ProvidableCompositionLocal<KineticaColors> = staticCompositionLocalOf { KineticaColors() }
 
 /**

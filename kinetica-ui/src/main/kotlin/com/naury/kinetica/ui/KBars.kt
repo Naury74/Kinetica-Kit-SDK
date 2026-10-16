@@ -161,7 +161,7 @@ private fun TabItem(tab: KTab, selected: Boolean, surface: SurfaceStyle, modifie
 @Composable
 internal fun compactHeight(): Boolean = LocalConfiguration.current.screenHeightDp < COMPACT_HEIGHT_DP
 
-/** 탭 하나의 아이콘과 이름. 보통은 위아래로, [compact]면 iOS 가로 화면처럼 옆으로 놓는다. */
+/** 탭 하나의 아이콘과 이름. 보통은 위아래로, [compact]면 가로 화면에 맞게 옆으로 놓는다. */
 @Composable
 internal fun TabContent(tab: KTab, color: Color, selected: Boolean, compact: Boolean) {
     val icon = tab.icon
@@ -210,7 +210,9 @@ public class KToastState {
     /**
      * [text]를 [durationMs](ms) 동안 보여 주고, 토스트가 사라질 때까지 일시 중단한다. 앞선 토스트가 있으면 그 뒤에 보여 준다.
      *
-     * @param tone 토스트의 색 역할. [KTone.Neutral]이 아니면 글자 앞에 그 색의 점을 찍어 성공이나 오류를 구분한다.
+     * @param tone 토스트의 색 역할. [KTone.Neutral]이 아니면 글자 앞에 상태 아이콘([KStatusIcon])을 단다. [KTone.Positive]는 성공,
+     *   [KTone.Destructive]는 오류, [KTone.Accent]는 정보 아이콘이다. 오류는 TalkBack이 읽던 것을 끊고 바로 읽는다.
+     *   종류, 위치, 쌓기, 로딩에서 결과로 바뀌는 토스트가 필요하면 [KToaster]를 쓴다.
      */
     public suspend fun show(text: String, durationMs: Long = DEFAULT_TOAST_MS, tone: KTone = KTone.Neutral) {
         queue.withLock {
@@ -236,7 +238,7 @@ public fun rememberKToastState(): KToastState = remember { KToastState() }
 public fun KToastHost(state: KToastState, modifier: Modifier = Modifier, surface: SurfaceStyle = KineticaTheme.surface) {
     var last by remember { mutableStateOf("") }
     state.message?.let { last = it }
-    val dot = if (state.tone == KTone.Neutral) null else state.tone.colors(surface).color
+    val status = state.tone.asStatus()
     // KineticaScaffold에 상단 바가 있으면 바 제목을 가리지 않게 바 아래에 띄운다. 바 높이에 상태 표시줄이 이미 들어 있다.
     val topBar = LocalKineticaHost.current?.topBarPx ?: 0
     val insets = if (topBar > 0) {
@@ -262,11 +264,15 @@ public fun KToastHost(state: KToastState, modifier: Modifier = Modifier, surface
                     alpha = progress.coerceIn(0f, 1f)
                 }
                 .kSurface(surface, CircleShape)
-                .semantics { liveRegion = LiveRegionMode.Polite }
+                .semantics(mergeDescendants = true) {
+                    liveRegion = if (status == KStatus.Error) LiveRegionMode.Assertive else LiveRegionMode.Polite
+                }
                 .padding(horizontal = 22.dp, vertical = 12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                dot?.let { Box(Modifier.padding(end = TOAST_DOT_GAP).size(TOAST_DOT).background(it, CircleShape)) }
+                if (status != KStatus.Neutral) {
+                    KStatusIcon(status, Modifier.padding(end = TOAST_ICON_GAP), statusLabel(status), TOAST_ICON, surface = surface)
+                }
                 ThemedText(last, style = TextStyle(color = surface.contentColor, fontSize = 14.sp, fontWeight = FontWeight.Medium))
             }
         }
@@ -289,6 +295,6 @@ private const val DEFAULT_TOAST_MS = 2_200L
 private const val TOAST_GAP_MS = 250L
 private const val TOAST_OUT_MS = 200
 private val TOAST_TRAVEL = 24.dp
-private val TOAST_DOT = 8.dp
-private val TOAST_DOT_GAP = 8.dp
+private val TOAST_ICON = 18.dp
+private val TOAST_ICON_GAP = 8.dp
 private const val TOAST_START_SCALE = 0.9f

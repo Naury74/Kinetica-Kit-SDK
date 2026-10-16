@@ -34,14 +34,14 @@ import kotlinx.coroutines.launch
 
 /** [KSwitch]의 모양. */
 public enum class KSwitchVariant(internal val width: Dp, internal val height: Dp) {
-    /** iOS 26 스위치. 누르는 동안 손잡이가 옆으로 늘어나고, 켜고 끌 때 출렁이며 넘어간다. 56×32dp. */
-    Ios(56.dp, 32.dp),
+    /** 캡슐 트랙 안에 흰 손잡이가 들어 있다. 누르는 동안 손잡이가 옆으로 늘어나고, 켜고 끌 때 출렁이며 넘어간다. 56×32dp. */
+    Capsule(56.dp, 32.dp),
 
-    /** Material 3 스위치. 꺼지면 테두리 트랙에 작은 손잡이, 켜지면 손잡이가 커지며 안에 체크가 그려진다. 누르면 손잡이가 더 커진다. 52×32dp. */
-    Material(52.dp, 32.dp),
+    /** 꺼지면 테두리만 있는 트랙에 작은 손잡이, 켜지면 손잡이가 커지며 안에 체크가 그려진다. 누르면 손잡이가 더 커진다. 52×32dp. */
+    Check(52.dp, 32.dp),
 
-    /** One UI 스위치. 얇은 트랙 위에 테두리 두른 큰 손잡이가 걸쳐 있고, 누르는 동안 손잡이 둘레에 옅은 원이 퍼진다. 50×28dp. */
-    OneUi(50.dp, 28.dp),
+    /** 얇은 트랙 위에 테두리 두른 큰 손잡이가 걸쳐 있고, 누르는 동안 손잡이 둘레에 옅은 원이 퍼진다. 50×28dp. */
+    Slim(50.dp, 28.dp),
 }
 
 /**
@@ -52,11 +52,11 @@ public enum class KSwitchVariant(internal val width: Dp, internal val height: Dp
  *
  * ```kotlin
  * KSwitch(wifi, { wifi = it })
- * KSwitch(sync, { sync = it }, variant = KSwitchVariant.OneUi)
+ * KSwitch(sync, { sync = it }, variant = KSwitchVariant.Slim)
  * ```
  *
  * @param enabled `false`면 누를 수 없고 흐리게 그린다.
- * @param accent 켜진 트랙 색. [Color.Unspecified]면 [KSwitchVariant.Ios]는 [KineticaColors.positive],
+ * @param accent 켜진 트랙 색. [Color.Unspecified]면 [KSwitchVariant.Capsule]는 [KineticaColors.positive],
  *   나머지는 [KineticaColors.accent]를 쓴다.
  * @param surface 꺼진 트랙과 손잡이 색을 정하는 표면
  */
@@ -68,7 +68,7 @@ public fun KSwitch(
     enabled: Boolean = true,
     accent: Color = Color.Unspecified,
     surface: SurfaceStyle = KineticaTheme.surface,
-    variant: KSwitchVariant = KSwitchVariant.Ios,
+    variant: KSwitchVariant = KSwitchVariant.Capsule,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val motion = rememberSwitchMotion(checked, variant, interaction)
@@ -76,7 +76,7 @@ public fun KSwitch(
     val paint = SwitchPaint(
         on = if (accent.isSpecified) {
             accent
-        } else if (variant == KSwitchVariant.Ios) {
+        } else if (variant == KSwitchVariant.Capsule) {
             colors.positive
         } else {
             colors.accent
@@ -107,9 +107,9 @@ public fun KSwitch(
                 val position = motion.position.value
                 val press = motion.press.value
                 when (variant) {
-                    KSwitchVariant.Ios -> drawIosSwitch(position, press, paint)
-                    KSwitchVariant.Material -> drawMaterialSwitch(position, press, paint)
-                    KSwitchVariant.OneUi -> drawOneUiSwitch(position, press, paint)
+                    KSwitchVariant.Capsule -> drawCapsuleSwitch(position, press, paint)
+                    KSwitchVariant.Check -> drawCheckSwitch(position, press, paint)
+                    KSwitchVariant.Slim -> drawSlimSwitch(position, press, paint)
                 }
             },
     )
@@ -133,8 +133,8 @@ private fun rememberSwitchMotion(checked: Boolean, variant: KSwitchVariant, inte
         if (still) {
             motion.position.snapTo(target)
         } else {
-            // iOS 스위치만 넘어갈 때 출렁인다. 다른 둘은 바로 멈춰야 손잡이가 트랙 밖으로 나가 보이지 않는다.
-            val damping = if (variant == KSwitchVariant.Ios) IOS_DAMPING else Spring.DampingRatioNoBouncy
+            // 캡슐 스위치만 넘어갈 때 출렁인다. 다른 둘은 바로 멈춰야 손잡이가 트랙 밖으로 나가 보이지 않는다.
+            val damping = if (variant == KSwitchVariant.Capsule) CAPSULE_DAMPING else Spring.DampingRatioNoBouncy
             motion.position.animateTo(target, spring(dampingRatio = damping, stiffness = Spring.StiffnessMediumLow))
         }
     }
@@ -152,12 +152,12 @@ private fun rememberSwitchMotion(checked: Boolean, variant: KSwitchVariant, inte
 /** 왼쪽에서 잰 [x]를 레이아웃 방향에 맞춘다. 오른쪽에서 왼쪽 언어에서는 켜진 쪽이 왼쪽이다. */
 private fun DrawScope.mirrored(x: Float): Float = if (layoutDirection == LayoutDirection.Rtl) size.width - x else x
 
-private fun DrawScope.drawIosSwitch(position: Float, press: Float, paint: SwitchPaint) {
+private fun DrawScope.drawCapsuleSwitch(position: Float, press: Float, paint: SwitchPaint) {
     val t = position.coerceIn(0f, 1f)
-    drawRoundRect(lerp(paint.ink.copy(alpha = IOS_OFF_ALPHA), paint.on, t), cornerRadius = CornerRadius(size.height / 2))
-    val inset = IOS_THUMB_INSET.toPx()
+    drawRoundRect(lerp(paint.ink.copy(alpha = CAPSULE_OFF_ALPHA), paint.on, t), cornerRadius = CornerRadius(size.height / 2))
+    val inset = CAPSULE_THUMB_INSET.toPx()
     val thumbHeight = size.height - inset * 2
-    val thumbWidth = thumbHeight * (1f + IOS_STRETCH * press)
+    val thumbWidth = thumbHeight * (1f + CAPSULE_STRETCH * press)
     val travel = size.width - inset * 2 - thumbWidth
     val start = inset + travel * position
     val left = if (layoutDirection == LayoutDirection.Rtl) size.width - start - thumbWidth else start
@@ -166,27 +166,27 @@ private fun DrawScope.drawIosSwitch(position: Float, press: Float, paint: Switch
     drawRoundRect(Color.White, Offset(left, inset), Size(thumbWidth, thumbHeight), corner)
 }
 
-private fun DrawScope.drawMaterialSwitch(position: Float, press: Float, paint: SwitchPaint) {
+private fun DrawScope.drawCheckSwitch(position: Float, press: Float, paint: SwitchPaint) {
     val t = position.coerceIn(0f, 1f)
     val radius = size.height / 2
-    drawRoundRect(lerp(paint.ink.copy(alpha = M3_OFF_FILL), paint.on, t), cornerRadius = CornerRadius(radius))
-    val border = M3_BORDER.toPx()
+    drawRoundRect(lerp(paint.ink.copy(alpha = MARK_OFF_FILL), paint.on, t), cornerRadius = CornerRadius(radius))
+    val border = MARK_BORDER.toPx()
     if (t < 1f) {
         drawRoundRect(
-            paint.ink.copy(alpha = M3_OFF_BORDER * (1f - t)),
+            paint.ink.copy(alpha = MARK_OFF_BORDER * (1f - t)),
             Offset(border / 2, border / 2),
             Size(size.width - border, size.height - border),
             CornerRadius(radius - border / 2),
             style = Stroke(border),
         )
     }
-    val diameter = M3_THUMB_OFF.toPx() + (M3_THUMB_ON - M3_THUMB_OFF).toPx() * t
-    val thumb = diameter + (M3_THUMB_PRESSED.toPx() - diameter) * press
+    val diameter = MARK_THUMB_OFF.toPx() + (MARK_THUMB_ON - MARK_THUMB_OFF).toPx() * t
+    val thumb = diameter + (MARK_THUMB_PRESSED.toPx() - diameter) * press
     val center = Offset(mirrored(radius + (size.width - radius * 2) * t), size.height / 2)
-    val thumbColor = lerp(paint.ink.copy(alpha = M3_OFF_THUMB), if (paint.dark) Color(M3_DARK_THUMB) else Color.White, t)
+    val thumbColor = lerp(paint.ink.copy(alpha = MARK_OFF_THUMB), if (paint.dark) Color(MARK_DARK_THUMB) else Color.White, t)
     drawCircle(thumbColor, thumb / 2, center)
-    val draw = ((t - M3_CHECK_FROM) / (1f - M3_CHECK_FROM)).coerceIn(0f, 1f)
-    if (draw > 0f) drawThumbCheck(center, M3_CHECK.toPx(), draw, paint.on)
+    val draw = ((t - MARK_CHECK_FROM) / (1f - MARK_CHECK_FROM)).coerceIn(0f, 1f)
+    if (draw > 0f) drawThumbCheck(center, MARK_CHECK.toPx(), draw, paint.on)
 }
 
 /** 손잡이 안 체크. 두 획을 [progress]만큼 앞에서부터 그린다. 매 프레임 Path를 만들지 않도록 선 두 개로 그린다. */
@@ -194,7 +194,7 @@ private fun DrawScope.drawThumbCheck(center: Offset, size: Float, progress: Floa
     val a = center + Offset(-size * CHECK_LEFT, 0f)
     val b = center + Offset(-size * CHECK_MID_X, size * CHECK_MID_Y)
     val c = center + Offset(size * CHECK_RIGHT_X, -size * CHECK_RIGHT_Y)
-    val stroke = M3_CHECK_STROKE.toPx()
+    val stroke = MARK_CHECK_STROKE.toPx()
     val first = (progress / CHECK_SPLIT).coerceAtMost(1f)
     drawLine(color, a, a + (b - a) * first, stroke, StrokeCap.Round)
     if (progress > CHECK_SPLIT) {
@@ -203,11 +203,11 @@ private fun DrawScope.drawThumbCheck(center: Offset, size: Float, progress: Floa
     }
 }
 
-private fun DrawScope.drawOneUiSwitch(position: Float, press: Float, paint: SwitchPaint) {
+private fun DrawScope.drawSlimSwitch(position: Float, press: Float, paint: SwitchPaint) {
     val t = position.coerceIn(0f, 1f)
-    val trackHeight = ONE_TRACK.toPx()
-    val inset = ONE_TRACK_INSET.toPx()
-    val trackColor = lerp(paint.ink.copy(alpha = ONE_OFF_TRACK), paint.on, t)
+    val trackHeight = SLIM_TRACK.toPx()
+    val inset = SLIM_TRACK_INSET.toPx()
+    val trackColor = lerp(paint.ink.copy(alpha = SLIM_OFF_TRACK), paint.on, t)
     drawRoundRect(
         trackColor,
         Offset(inset, (size.height - trackHeight) / 2),
@@ -216,31 +216,31 @@ private fun DrawScope.drawOneUiSwitch(position: Float, press: Float, paint: Swit
     )
     val radius = size.height / 2
     val center = Offset(mirrored(radius + (size.width - radius * 2) * t), size.height / 2)
-    if (press > 0f) drawCircle(trackColor.copy(alpha = ONE_HALO * press), radius * ONE_HALO_SCALE, center)
-    val ring = ONE_RING.toPx()
+    if (press > 0f) drawCircle(trackColor.copy(alpha = SLIM_HALO * press), radius * SLIM_HALO_SCALE, center)
+    val ring = SLIM_RING.toPx()
     drawCircle(Color.Black.copy(alpha = THUMB_SHADOW), radius - ring / 2, center + Offset(0f, THUMB_DROP.toPx()))
-    drawCircle(if (paint.dark) Color(ONE_DARK_THUMB) else Color.White, radius - ring / 2, center)
-    drawCircle(lerp(paint.ink.copy(alpha = ONE_OFF_RING), paint.on, t), radius - ring / 2 - ring / 2, center, style = Stroke(ring))
+    drawCircle(if (paint.dark) Color(SLIM_DARK_THUMB) else Color.White, radius - ring / 2, center)
+    drawCircle(lerp(paint.ink.copy(alpha = SLIM_OFF_RING), paint.on, t), radius - ring / 2 - ring / 2, center, style = Stroke(ring))
 }
 
-private const val IOS_DAMPING = 0.62f
-private val IOS_THUMB_INSET = 3.dp
-private const val IOS_STRETCH = 0.35f
-private const val IOS_OFF_ALPHA = 0.18f
+private const val CAPSULE_DAMPING = 0.62f
+private val CAPSULE_THUMB_INSET = 3.dp
+private const val CAPSULE_STRETCH = 0.35f
+private const val CAPSULE_OFF_ALPHA = 0.18f
 private val THUMB_DROP = 1.dp
 private const val THUMB_SHADOW = 0.15f
 
-private const val M3_OFF_FILL = 0.08f
-private const val M3_OFF_BORDER = 0.5f
-private const val M3_OFF_THUMB = 0.55f
-private const val M3_DARK_THUMB = 0xFF1C1B1F
-private val M3_BORDER = 2.dp
-private val M3_THUMB_OFF = 16.dp
-private val M3_THUMB_ON = 24.dp
-private val M3_THUMB_PRESSED = 28.dp
-private val M3_CHECK = 10.dp
-private val M3_CHECK_STROKE = 2.dp
-private const val M3_CHECK_FROM = 0.4f
+private const val MARK_OFF_FILL = 0.08f
+private const val MARK_OFF_BORDER = 0.5f
+private const val MARK_OFF_THUMB = 0.55f
+private const val MARK_DARK_THUMB = 0xFF1C1B1F
+private val MARK_BORDER = 2.dp
+private val MARK_THUMB_OFF = 16.dp
+private val MARK_THUMB_ON = 24.dp
+private val MARK_THUMB_PRESSED = 28.dp
+private val MARK_CHECK = 10.dp
+private val MARK_CHECK_STROKE = 2.dp
+private const val MARK_CHECK_FROM = 0.4f
 private const val CHECK_LEFT = 0.5f
 private const val CHECK_MID_X = 0.12f
 private const val CHECK_MID_Y = 0.38f
@@ -248,11 +248,11 @@ private const val CHECK_RIGHT_X = 0.55f
 private const val CHECK_RIGHT_Y = 0.42f
 private const val CHECK_SPLIT = 0.35f
 
-private val ONE_TRACK = 16.dp
-private val ONE_TRACK_INSET = 3.dp
-private val ONE_RING = 2.dp
-private const val ONE_OFF_TRACK = 0.2f
-private const val ONE_OFF_RING = 0.4f
-private const val ONE_HALO = 0.18f
-private const val ONE_HALO_SCALE = 1.55f
-private const val ONE_DARK_THUMB = 0xFF2C2C2F
+private val SLIM_TRACK = 16.dp
+private val SLIM_TRACK_INSET = 3.dp
+private val SLIM_RING = 2.dp
+private const val SLIM_OFF_TRACK = 0.2f
+private const val SLIM_OFF_RING = 0.4f
+private const val SLIM_HALO = 0.18f
+private const val SLIM_HALO_SCALE = 1.55f
+private const val SLIM_DARK_THUMB = 0xFF2C2C2F

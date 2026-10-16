@@ -68,7 +68,7 @@ import kotlinx.coroutines.launch
 
 /** [KColorPicker]의 기본값. */
 public object KColorPickerDefaults {
-    /** 기본 프리셋 색. iOS 시스템 색에 가까운 열 가지와 흰색, 검정이다. */
+    /** 기본 프리셋 색. 자주 쓰는 선명한 색 열 가지와 흰색, 검정이다. */
     public val Presets: List<Color> = listOf(
         Color(0xFFFF3B30),
         Color(0xFFFF9500),
