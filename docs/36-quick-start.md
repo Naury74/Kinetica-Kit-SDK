@@ -1,22 +1,22 @@
-# 36 — 5분 시작
+# 36 — 빠른 시작
 
-Compose 앱에 Kinetica의 효과와 UI 컴포넌트를 붙이는 가장 짧은 길입니다. 자세한 설명은 [35 UI 키트](35-ui-kit.md)와 [33 모션 효과](33-effects.md)를 보세요.
+Compose 앱에 Kinetica UI 키트와 효과를 붙이는 가장 짧은 길입니다. 컴포넌트 전체는 [35 UI 키트](35-ui-kit.md)에, 누름과 등장 효과는 [33 모션 효과](33-effects.md)에 있습니다.
 
 ## 1. 의존성
 
 ```kotlin
 dependencies {
-    implementation("com.naurylab:kinetica-ui:1.0.0-alpha01")             // UI 컴포넌트, 효과 수정자
-    implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha01") // Modifier.kineticaEffects, 화면 전환, 숫자 애니메이션
-    implementation("com.naurylab:kinetica-presets:1.0.0-alpha01")        // EffectPresets
+    implementation("com.naurylab:kinetica-ui:1.0.0-alpha01")             // UI 컴포넌트와 효과 수정자. 이것만 있어도 됩니다
+    implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha01") // 필요하면: Modifier.kineticaEffects, 화면 전환, 숫자 애니메이션
+    implementation("com.naurylab:kinetica-presets:1.0.0-alpha01")        // 필요하면: EffectPresets
 }
 ```
 
-`kinetica-ui`는 Compose foundation만 쓰고 Material 3에 의존하지 않습니다. Material 3 앱과 함께 써도 됩니다.
+`kinetica-ui`는 Compose foundation 위에 만들었고 Material 3에 의존하지 않습니다. Material 3 앱과 함께 써도 됩니다.
 
-## 2. 테마 맞추기
+## 2. 테마와 표면 스타일
 
-화면 루트를 `KineticaTheme`으로 한 번 감쌉니다. 다크 모드에 따라 표면 스타일이 바뀌고, 강조색과 글꼴이 앱과 같아집니다. 글래스 대신 단색 표면을 쓰려면 `surface = SurfaceStyles.CleanLight`처럼 넘깁니다.
+화면 루트를 `KineticaTheme`으로 한 번 감쌉니다. 강조색과 글꼴을 앱과 맞추고, 표면 스타일을 고릅니다.
 
 ```kotlin
 MaterialTheme(colorScheme = scheme, typography = typography) {
@@ -27,7 +27,15 @@ MaterialTheme(colorScheme = scheme, typography = typography) {
 }
 ```
 
-다이얼로그, 시트, 토스트가 배경을 블러로 비추게 하려면 화면을 `KineticaScaffold`로 감쌉니다. 감싸지 않아도 동작하며, 그때는 별도 창에 반투명 색으로 그립니다.
+`surface`를 주지 않으면 다크 모드에 따라 글래스 표면(`SurfaceStyles.Liquid`, `LiquidDark`)을 씁니다. 블러 없는 단색이나 브랜드 색을 섞은 톤을 원하면 이렇게 넘깁니다.
+
+| 원하는 모양 | `KineticaTheme(surface = …)` |
+| --- | --- |
+| 배경이 비치는 글래스 | `SurfaceStyles.Liquid`, `Acrylic`, `OneUiGlass`, `Vision` 등. 어두운 화면은 `LiquidDark`처럼 `Dark`가 붙은 것 |
+| 깔끔한 단색 | `SurfaceStyles.CleanLight`, `CleanDark`, `OneUi`, `Material` 등 |
+| 브랜드 색을 옅게 섞은 톤 | `SurfaceStyles.tonal(brandColor, dark = isDark)` |
+
+글래스 표면에서 다이얼로그, 시트, 토스트가 배경을 블러로 비추게 하려면 화면을 `KineticaScaffold`로 감쌉니다. 감싸지 않아도 동작하며, 그때는 별도 창에 반투명 색으로 그립니다.
 
 ```kotlin
 KineticaScaffold(background = { Image(painterResource(R.drawable.photo), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }) { padding ->
@@ -54,7 +62,7 @@ KSheet(open, onDismissRequest = { open = false }, title = "공유") {
 }
 ```
 
-**다이얼로그.**
+**다이얼로그.** `title`은 화면에 보이지 않고 TalkBack이 창 이름으로 읽습니다. 보이는 제목은 내용에 넣습니다.
 
 ```kotlin
 KDialog(visible = confirm, onDismissRequest = { confirm = false }, title = "주문 확인") {
@@ -124,9 +132,9 @@ Box(
     Modifier
         .kineticaEffects(EffectPresets.card, shape) // 1. 움직임: kineticaEffects, jellyPress, magnetic, motionTilt, shake
         .glowBorder(shape)                          // 2. 겉에 그리는 효과: glowBorder, sparkle, kBadge, skeleton
-        .glass(shape = shape)                       // 3. 배경: glass, background
+        .glass(shape = shape)                       // 3. 배경: glass, kSurface, background
         .clip(shape)                                // 4. 자르기
-        .clickable { open(item) }                   // 5. 입력: clickable, kContextMenu, tooltipOnLongPress
+        .clickable { open(item) }                   // 5. 입력: clickable, kClickable, kContextMenu, tooltipOnLongPress
         .padding(16.dp),
 ) { Text(item.title) }
 ```
@@ -137,9 +145,9 @@ Box(
 
 | 증상 | 원인과 해결 |
 | --- | --- |
-| 글래스가 흐리지 않고 반투명 색으로만 보인다 | 비출 배경이 없습니다. `KineticaScaffold`의 `background`에 사진이나 그라디언트를 넣거나, API 31 미만 기기인지 확인합니다. |
+| 글래스가 흐리지 않고 반투명 색으로만 보인다 | 비출 배경이 없습니다. `KineticaScaffold`의 `background`에 사진이나 그라디언트를 넣습니다. Android 12 미만 기기에서는 블러 대신 반투명 색을 칠합니다. |
 | Material `Card`에 `Modifier.glass()`를 붙였는데 글래스가 안 보인다 | `Card`가 자기 배경색으로 덮습니다. `CardDefaults.cardColors(containerColor = Color.Transparent)`를 주거나 `Box`에 붙입니다. |
-| 다크 모드인데 표면이 밝다 | 화면을 `KineticaTheme`으로 감싸지 않았거나, `KineticaScaffold(surface = …)`에 밝은 표면을 직접 넘겼습니다. |
+| 다크 모드인데 표면이 밝다 | 화면을 `KineticaTheme`으로 감싸지 않았거나, `KineticaTheme(surface = …)`나 `KineticaScaffold(surface = …)`에 밝은 표면을 직접 넘겼습니다. 단색과 톤은 `CleanDark`, `tonal(색, dark = true)`처럼 어두운 쪽을 따로 넘깁니다. |
 | 버튼 색이 앱 색과 다르다 | `KineticaTheme(colors = KineticaColors(accent = …))`로 맞춥니다. 컴포넌트마다 `tone`(`KTone.Destructive` 등)으로 색 역할을 바꿀 수도 있습니다. |
 | Material `Card(onClick)`를 누르면 리플이 나온다 | Material 컴포넌트는 `LocalIndication` 대신 자기 리플을 씁니다. `KSurface(onClick = …)`나 `Modifier.kClickable(shape)`을 씁니다. `KineticaTheme` 안에서 `MaterialTheme`을 다시 감싸도 리플로 돌아가므로 `MaterialTheme`은 바깥에 둡니다. |
 | 배지나 반짝이 일부가 잘린다 | 요소 바깥까지 그리는 효과입니다. `clip`보다 앞에 두고, 부모가 자르지 않게 여백을 줍니다. |
@@ -152,15 +160,16 @@ Box(
 
 ## 6. 화면 배치 팁
 
-- **스낵바와 하단 막대**: `KineticaScaffold` 안이면 스낵바가 `bottomBar` 위에 저절로 뜬다. Material `NavigationBar`를 쓰면 `KSnackbarHost(state, bottomOffset = 80.dp)`처럼 막대 높이를 준다.
-- **펼친 카드(KExpandHost)**: 상세 화면은 상태 표시줄 뒤까지 그린다(위쪽 사진이 화면 끝까지 닿게). 글자나 버튼이 상태 표시줄에 가리지 않게 상세 안의 해당 요소에 `Modifier.statusBarsPadding()`을 붙인다.
-- **미니 플레이어와 여러 높이 시트를 함께 쓸 때**: 시트가 낮은 높이(`Detent.Peek`)일 때 제목이 플레이어 막대에 가리지 않도록 `KMiniPlayer(barBottomPadding = 피크 높이)`로 막대를 시트 위에 띄우거나, 시트가 펼쳐진 동안 플레이어를 숨긴다.
-- **`KSheet`·`KDialog`의 `title`**: 화면에 보이는 제목이 아니라 TalkBack이 읽는 창 이름이다. 보이는 제목은 내용에 직접 넣는다.
+- **스낵바와 하단 막대**: `KineticaScaffold` 안이면 스낵바가 `bottomBar` 위에 저절로 뜹니다. Material `NavigationBar`를 쓰면 `KSnackbarHost(state, bottomOffset = 80.dp)`처럼 막대 높이를 줍니다.
+- **펼친 카드(`KExpandHost`)**: 상세 화면은 위쪽 사진이 화면 끝까지 닿도록 상태 표시줄 뒤까지 그립니다. 글자나 버튼이 상태 표시줄에 가리지 않게 상세 안의 해당 요소에 `Modifier.statusBarsPadding()`을 붙입니다.
+- **미니 플레이어와 여러 높이 시트를 함께 쓸 때**: 시트가 가장 낮은 높이(`Detent.Peek`)일 때 제목이 플레이어 막대에 가리지 않도록 `KMiniPlayer(barBottomPadding = 피크 높이)`로 막대를 시트 위에 띄우거나, 시트가 펼쳐진 동안 플레이어를 숨깁니다.
+- **`KSheet`와 `KDialog`의 `title`**: 화면에 보이는 제목이 아니라 TalkBack이 읽는 창 이름입니다. 보이는 제목은 내용에 직접 넣습니다.
 
 ## 7. 테스트하는 법
 
-- 토스트·스낵바·아일랜드는 표시 시간을 Compose 시계로 잰다. `waitForIdle()`이나 `waitUntil`은 시계를 끝까지 흘려 표시 시간이 바로 지나 버리므로, `compose.mainClock.autoAdvance = false`로 멈춘 뒤 `advanceTimeBy(ms)`로 넘기며 확인한다.
-- 시계를 멈춘 상태에서 스낵바 동작 버튼은 `performClick()` 대신 `performSemanticsAction(SemanticsActions.OnClick)`로 누른다.
-- `KMiniPlayer` 막대 안의 `testTag`는 병합된 트리에 나오지 않으므로 `onNodeWithTag(tag, useUnmergedTree = true)`로 찾는다.
-- 다이얼로그·시트를 `KineticaScaffold` 밖에서 열면 별도 창에 뜬다. Compose UI 테스트는 여러 창의 노드를 함께 찾으므로 그대로 `onNodeWithText` 등을 쓰면 된다.
-
+- 토스트, 스낵바, 아일랜드는 표시 시간을 Compose 시계로 잽니다. `waitForIdle()`이나 `waitUntil`은 시계를 끝까지 흘려 표시 시간이 바로 지나 버리므로, `compose.mainClock.autoAdvance = false`로 멈춘 뒤 `advanceTimeBy(ms)`로 넘기며 확인합니다.
+- 시계를 멈춘 상태에서 상태를 바꿨다면 `compose.waitForIdle()`로 재구성을 먼저 돌린 뒤 `advanceTimeBy`를 부릅니다.
+- 시계를 멈춘 상태에서 스낵바 동작 버튼은 `performClick()` 대신 `performSemanticsAction(SemanticsActions.OnClick)`으로 누릅니다.
+- `KMiniPlayer` 막대 안의 `testTag`는 병합된 트리에 나오지 않으므로 `onNodeWithTag(tag, useUnmergedTree = true)`로 찾습니다.
+- 다이얼로그와 시트를 `KineticaScaffold` 밖에서 열면 별도 창에 뜹니다. Compose UI 테스트는 여러 창의 노드를 함께 찾으므로 그대로 `onNodeWithText` 등을 쓰면 됩니다.
+- 넓은 화면을 흉내 낼 때 `rememberKWindowLayout()`을 쓰는 화면은 창 크기를 읽으므로 계측 테스트에서 `ForcedSize`가 아니라 `WindowSize`로 바꿉니다.

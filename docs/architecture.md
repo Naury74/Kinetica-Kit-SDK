@@ -3,7 +3,7 @@
 ## 모듈과 의존 방향
 
 ```text
-sample-showcase ─┬─ kinetica-ui (UI 키트·고급 효과) ── Compose만
+sample-showcase ─┬─ kinetica-ui (UI 키트와 효과) ── Compose, androidx.window, activity-compose만
                  ├─ kinetica-board-compose ── kinetica-render-compose, kinetica-history, kinetica-serialization
                  ├─ kinetica-player-compose ── kinetica-render-compose, kinetica-motion, kinetica-serialization(api)
                  ├─ kinetica-editor-compose ─┬─ kinetica-render-compose ── kinetica-core
@@ -20,6 +20,7 @@ kinetica-java ── kinetica-core, kinetica-history, kinetica-serialization
 - `kinetica-core`는 Kotlin 표준 라이브러리만 씁니다. history, motion, serialization은 `StateFlow`와 IO dispatcher 때문에 `kotlinx-coroutines-core`를 추가로 쓰고, serialization은 JSON 처리를 위해 `kotlinx-serialization-json`도 씁니다.
 - `kinetica-gestures`는 history와 guides에 의존하지 않습니다. 문서 수정은 `GestureHost`로, 스냅은 `DragSnap`으로만 주고받습니다.
 - `kinetica-render-compose`는 편집 도구나 실행 취소 기능에 의존하지 않습니다. 렌더러가 받는 입력은 문서와 viewport뿐입니다.
+- `kinetica-ui`는 다른 Kinetica 모듈에 의존하지 않습니다. 장면 엔진 없이 UI 키트만 쓰는 앱에는 엔진 모듈이 들어가지 않습니다.
 - 모듈 사이에 의존을 새로 추가할 때는 [ADR](adr)을 남깁니다.
 
 ## 데이터 흐름

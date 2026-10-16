@@ -29,7 +29,7 @@ build: Kotlin 2.4.21로 올림
 | scope | 모듈 |
 | --- | --- |
 | `core` · `history` · `motion` · `guides` · `presets` · `serialization` · `java` | `kinetica-*` JVM 모듈 |
-| `render` · `gestures` · `editor` · `player` · `export` | Android 모듈 |
+| `ui` · `board` · `render` · `gestures` · `editor` · `player` · `export` | Android 모듈 |
 | `sample` | sample-showcase |
 | `build` · `ci` | 빌드 설정, CI |
 

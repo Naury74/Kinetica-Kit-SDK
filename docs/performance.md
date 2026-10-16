@@ -1,4 +1,8 @@
-# Kinetica JVM 기준 측정
+# 성능 측정
+
+장면 엔진의 JVM 측정과 위젯 보드의 실기기 측정이다. UI 키트 화면의 실기기 프레임 측정은 [35 UI 키트](35-ui-kit.md#성능)에 있다.
+
+## JVM 기준 측정
 
 - 날짜: 2026-10-13
 - 기기: Apple M5, OpenJDK 64-Bit Server VM 25.0.3, Mac OS X aarch64
@@ -36,11 +40,11 @@
 | 2000 | JSON 쓰기 | 4.356 | 5.709 |
 | 2000 | JSON 읽기(검증 포함) | 10.362 | 27.021 |
 
-## 해석
+### 해석
 
 - 노드가 2,000개여도 명령 적용 p95가 0.4ms 안팎이라 명세 목표(p95 12ms)보다 훨씬 작다. 명령마다 문서 전체를 다시 검증하지만 아직 병목은 아니다.
 - JSON 읽기는 노드 2,000개에서 GC 영향으로 p95가 다른 작업보다 크다. 읽기는 IO 스레드에서 하므로 화면 프레임에는 영향을 주지 않는다.
-- 실기기(2026-10-14, Galaxy Z Fold7 커버 화면 120Hz, sample-board release 빌드, `dumpsys gfxinfo`)에서 보드 스크롤 프레임은 p50 5 ms, p90 7 ms였다.
+- 실기기(2026-10-14, Galaxy Z Fold7 커버 화면 120Hz, release 빌드, `dumpsys gfxinfo`)에서 보드 스크롤 프레임은 p50 5 ms, p90 7 ms였다. 당시 보드 전용 샘플(sample-board)로 쟀고, 지금은 같은 화면이 sample-showcase의 대시보드 보드에 들어 있다.
   편집 중 위젯을 드래그할 때 놓친 프레임은 18.8%에서 6~9%로 줄었다. 드래그하는 동안 다른 위젯의 노드를 같은 객체로 유지하도록 고친 결과다. API 26·27 기기와 중급 기기에서는 아직 재지 않았다.
 
 다시 측정하려면 `./gradlew :benchmarks:runBenchmarks`를 실행한다. 결과는 `benchmarks/build/reports/benchmarks/jvm.md`에 생긴다.

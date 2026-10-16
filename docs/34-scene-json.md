@@ -112,7 +112,7 @@ RemoteKineticaPlayer(
 
 | type | 키 |
 | --- | --- |
-| `frame` | `children`, `cornerRadius`, `corners`([왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래]), `clip`, `layout`: `direction`(`row`·`column`) `gap` `padding`([왼쪽, 위, 오른쪽, 아래]) `main`(`start` `center` `end` `between`) `cross`(`start` `center` `end` `stretch`) `hugWidth` `hugHeight` `wrap` `lineGap` |
+| `frame` | `children`, `cornerRadius`, `corners`([왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래]), `clip`, `layout`: `direction`(`row`, `column`) `gap` `padding`([왼쪽, 위, 오른쪽, 아래]) `main`(`start` `center` `end` `between`) `cross`(`start` `center` `end` `stretch`) `hugWidth` `hugHeight` `wrap` `lineGap` |
 | `rect` | `cornerRadius`, `corners` |
 | `polygon` | `sides`(3..64), `innerRatio`(별 모양) |
 | `text` | `text`, `fontSize`, `fontWeight`(100..900), `align`(`start` `center` `end`), `lineHeight`, `letterSpacing`, `fontFamily`, `italic`, `decoration`(`none` `underline` `strike`), `autoSize`(`fixed` `height` `auto`), `spans`, `numberFormat`: `prefix` `suffix` `decimals`(0..6) `grouping`(기본 `true`) |
