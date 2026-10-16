@@ -64,6 +64,21 @@
 
 위 이미지는 `sample-showcase`를 Android 에뮬레이터에서 실행해 찍은 실제 화면입니다. 샘플 앱 하나에 데모 아홉 가지와 XML 화면 예가 들어 있습니다.
 
+### 폴더블·태블릿
+
+폭이 넓은 화면에서는 첫 화면이 두 칸으로 나뉘고, 메일 예는 목록과 본문을 나란히 보여 줍니다. 전체 화면 플레이어는 앨범 아트와 재생 조작부를 옆으로 놓고, 보드의 격자 배치는 칸 폭을 160dp 이상으로 유지하면서 열을 최대 6개까지 늘립니다. 아래는 Pixel 9 Pro Fold 에뮬레이터를 펼친 상태로 찍은 화면입니다.
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/images/showcase-fold-home.png" width="360" alt="펼친 폴더블에서 쇼케이스 첫 화면"><br><b>쇼케이스</b><br>두 칸으로 나뉜 데모 목록</td>
+    <td align="center" width="50%"><img src="docs/images/showcase-fold-mail.png" width="360" alt="펼친 폴더블에서 메일 예"><br><b>메일</b><br>왼쪽에 목록, 오른쪽에 본문</td>
+  </tr>
+  <tr>
+    <td align="center" width="50%"><img src="docs/images/showcase-fold-player.png" width="360" alt="펼친 폴더블에서 음악 플레이어"><br><b>음악 플레이어</b><br>앨범 아트와 조작부를 나란히</td>
+    <td align="center" width="50%"><img src="docs/images/showcase-fold-board.png" width="360" alt="펼친 폴더블에서 4열 보드"><br><b>대시보드 보드</b><br>폭에 맞춰 4열로 늘어난 격자</td>
+  </tr>
+</table>
+
 ## 샘플 앱 내려받기
 
 소스를 받지 않고도 기능을 직접 써 볼 수 있도록 샘플 앱(APK)을 [Releases](https://github.com/Naury74/Kinetica-Kit-SDK/releases/latest)에 올려 둡니다.
