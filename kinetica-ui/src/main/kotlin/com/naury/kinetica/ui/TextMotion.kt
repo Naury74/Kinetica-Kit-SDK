@@ -17,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -34,6 +33,8 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
@@ -55,9 +56,11 @@ public fun RollingText(text: String, modifier: Modifier = Modifier, style: TextS
     SideEffect { last.text = text }
     val still = reducedMotion()
     // 글자를 한 칸씩 Row에 늘어놓으므로 RTL에서는 순서가 뒤집힌다("1,235"가 "532,1"). 숫자는 어느 언어에서나 왼쪽부터 쓰므로 LTR로 고정한다.
+    // 바깥을 자르지 않는다. 자리가 모자라 폭이 줄면 Text처럼 글자가 넘쳐 보여야 하는데, 자르면 숫자가 통째로 사라진다.
+    // 굴러가는 숫자의 위아래는 자리마다 drawDigits가 자른다.
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(
-            modifier.clipToBounds().semantics(mergeDescendants = true) {
+            modifier.semantics(mergeDescendants = true) {
                 contentDescription = text
             },
             verticalAlignment = Alignment.CenterVertically,
@@ -102,9 +105,11 @@ private fun RollingDigit(digit: Int, up: Boolean, still: Boolean, style: TextSty
                 // 자리 너비는 목표 숫자 기준이라 굴러가는 동안 다시 재지 않는다.
                 val face = faces[digit]
                 val placeable = measurable.measure(Constraints.fixed(face.size.width, faces.height))
+                // 받은 폭보다 크게 보고하면 Compose가 줄인 폭의 가운데에 맞춰 놓아 숫자가 앞 글자 쪽으로 밀린다.
+                // Text처럼 받은 폭만 차지하고 숫자는 그 자리 왼쪽부터 그려 오른쪽으로 넘치게 한다.
                 layout(
-                    placeable.width,
-                    placeable.height,
+                    constraints.constrainWidth(placeable.width),
+                    constraints.constrainHeight(placeable.height),
                     mapOf(FirstBaseline to face.firstBaseline.roundToInt(), LastBaseline to face.lastBaseline.roundToInt()),
                 ) { placeable.place(0, 0) }
             }
