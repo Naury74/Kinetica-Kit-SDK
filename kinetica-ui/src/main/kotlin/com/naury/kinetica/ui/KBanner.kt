@@ -128,7 +128,11 @@ public fun KBanner(
                     Modifier.fillMaxWidth().padding(top = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                 ) {
-                    actions.forEach { KButton(it.label, it.onClick, variant = KVariant.Text, size = KButtonSize.Small, surface = surface) }
+                    // 글자 버튼은 표면 색을 바탕으로 대비를 맞추므로, 상태 색이 깔린 배너 바탕을 표면으로 넘겨 그 위에서 4.5:1을 맞춘다.
+                    val actionSurface = SurfaceStyle.Solid(ink.back, surface.contentColor, surface.background)
+                    actions.forEach {
+                        KButton(it.label, it.onClick, variant = KVariant.Text, size = KButtonSize.Small, surface = actionSurface)
+                    }
                 }
             }
         }

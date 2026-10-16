@@ -173,7 +173,7 @@ Box(Modifier.fillMaxWidth().height(240.dp)) {
 
 `KTone`은 `Accent`(강조색), `Neutral`(표면 글자 색), `Destructive`(삭제처럼 되돌리기 어려운 동작), `Positive`(저장, 완료) 넷이고, 색은 `KineticaColors`에서 가져온다.
 `Glass`와 `Elevated`는 표면 글자 색을 쓰고, `Destructive`와 `Positive`일 때만 그 색으로 글자를 칠한다.
-글자가 표면 위에 놓이는 `Tonal`, `Outlined`, `Text`에서는 색 역할의 색이 표면과 대비 3:1이 안 되면(흰 표면 위 초록 글자처럼) 밝은 표면에서는 조금 어둡게, 어두운 표면에서는 밝게 고쳐 쓴다.
+글자가 표면 위에 놓이는 `Tonal`, `Outlined`, `Text`에서는 색 역할의 색이 바탕과 WCAG 대비 4.5:1(글자 없는 아이콘 버튼과 FAB은 3:1)이 안 되면 기준을 막 넘는 만큼만 밝은 표면에서는 어둡게, 어두운 표면에서는 밝게 고쳐 쓴다. 흰 표면 위 기본 강조색 `#0A84FF`(3.6:1)는 조금 짙은 파랑이 되고, 대비가 충분한 브랜드 색은 그대로 쓴다.
 
 ```kotlin
 KButton("결제하기", onClick = ::pay)                                              // Filled + Accent

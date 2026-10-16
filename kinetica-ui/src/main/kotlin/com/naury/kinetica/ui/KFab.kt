@@ -82,7 +82,7 @@ public fun KFab(
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val colors = tone.colors(surface)
-    val ink = buttonInk(variant, tone, colors, surface)
+    val ink = buttonInk(variant, tone, colors, surface, INK_GRAPHIC_CONTRAST)
     val haptic = LocalHapticFeedback.current
     Box(
         modifier

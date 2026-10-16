@@ -89,8 +89,11 @@ public enum class KButtonSize(
  * 이웃 요소가 움직이지 않는다. 그동안 누를 수 없고 TalkBack은 '완료'를 덧붙인다. `false`로 돌리면 원래 버튼으로 펼쳐진다.
  * 보통 [loading]에서 바로 [success]로 넘긴 뒤 1~2초 뒤 되돌린다.
  *
- * 글자가 표면 위에 놓이는 [KVariant.Tonal], [KVariant.Outlined], [KVariant.Text]에서는 색 역할의 색이 표면과 대비 3:1이 안 되면
- * (흰 표면 위 초록처럼) 글자 색을 조금 어둡게(어두운 표면이면 밝게) 고쳐 쓴다.
+ * 글자가 표면 위에 놓이는 [KVariant.Tonal], [KVariant.Outlined], [KVariant.Text](그리고 [KTone.Destructive], [KTone.Positive]로 칠한
+ * [KVariant.Glass], [KVariant.Elevated])에서는 글자 색이 바탕과 WCAG 대비 4.5:1이 안 되면 기준을 막 넘는 만큼만 어둡게(어두운 표면이면 밝게)
+ * 고쳐 쓴다. 흰 표면 위 기본 강조색 #0A84FF(3.6:1)는 조금 짙은 파랑이 된다. [KineticaColors]로 넘긴 브랜드 색이 이미 4.5:1을 넘으면
+ * 그대로 쓴다. 글래스 표면은 블러를 못 쓸 때의 색을 바탕으로 본다. [KButtonSize.Large]도 18sp 세미볼드라 WCAG의 큰 글자(24sp, 굵게면 18.66sp)에
+ * 들지 않으므로 같은 4.5:1을 쓴다. [KVariant.Filled]의 글자는 [KineticaColors.onAccent] 같은 지정한 색을 그대로 쓴다.
  *
  * ```kotlin
  * KButton("결제하기", onClick = ::pay, loading = paying, success = paid)
@@ -183,10 +186,19 @@ private fun ButtonLabel(text: String, icon: ImageVector?, trailing: ImageVector?
     }
 }
 
-/** 표면 위에 놓이는 글자는 대비를 맞춘 색을 쓴다. 채운 모양은 [ToneColors.onColor] 그대로다. */
-internal fun buttonInk(variant: KVariant, tone: KTone, colors: ToneColors, surface: SurfaceStyle): Color {
+/**
+ * 표면 위에 놓이는 글자와 아이콘은 [minRatio] 대비를 맞춘 색을 쓴다. 채운 모양은 [ToneColors.onColor] 그대로다.
+ * 글자는 [INK_TEXT_CONTRAST], 글자 없는 아이콘 버튼은 [INK_GRAPHIC_CONTRAST]를 넘긴다.
+ */
+internal fun buttonInk(
+    variant: KVariant,
+    tone: KTone,
+    colors: ToneColors,
+    surface: SurfaceStyle,
+    minRatio: Float = INK_TEXT_CONTRAST,
+): Color {
     val ink = variantContent(variant, tone, colors, surface)
-    return if (variant == KVariant.Filled) ink else readableOn(ink, variantInkBackground(variant, colors, surface))
+    return if (variant == KVariant.Filled) ink else readableOn(ink, variantInkBackground(variant, colors, surface), minRatio)
 }
 
 /** 성공 모핑 진행(0..1). '애니메이션 삭제'면 바로 바뀐다. */

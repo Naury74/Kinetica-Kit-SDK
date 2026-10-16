@@ -80,7 +80,7 @@ public fun KIconToggleButton(
     val haptic = LocalHapticFeedback.current
     val on = tone.colors(surface)
     val neutral = KTone.Neutral.colors(surface)
-    val offInk = buttonInk(variant, KTone.Neutral, neutral, surface)
+    val offInk = buttonInk(variant, KTone.Neutral, neutral, surface, INK_GRAPHIC_CONTRAST)
     val level = rememberToggleLevel(checked)
     val fill = on.color
     Box(

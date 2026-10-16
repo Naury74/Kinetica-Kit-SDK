@@ -17,20 +17,22 @@ import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * 글자로 쓸 [color]가 [background] 위에서 [minRatio] 대비를 넘도록 어둡게(배경이 어두우면 밝게) 고친다.
- * 밝은 초록 같은 강조색을 흰 표면 위 글자로 쓰면 대비가 2:1 남짓이라 읽기 어렵다. 이미 충분하면 그대로 돌려준다.
+ * 밝은 초록 같은 강조색을 흰 표면 위 글자로 쓰면 대비가 2:1 남짓이라 읽기 어렵다. 이미 충분하면 그대로 돌려주고,
+ * 모자라면 [minRatio]를 막 넘는 만큼만 검정(또는 흰색) 쪽으로 옮겨 색이 필요 이상 칙칙해지지 않게 한다.
  */
 internal fun readableOn(color: Color, background: Color, minRatio: Float = READABLE_RATIO): Color {
     val under = if (background.luminance() > HALF) Color.White else Color.Black
     val base = if (background.alpha < 1f) background.compositeOver(under) else background
     if (contrast(color, base) >= minRatio) return color
     val toward = if (base.luminance() > HALF) Color.Black else Color.White
-    var step = 1
-    var fixed = color
-    while (step <= READABLE_STEPS && contrast(fixed, base) < minRatio) {
-        fixed = lerp(color, toward, step * READABLE_STEP)
-        step++
+    // 섞는 비율이 커질수록 대비가 (한 번 내려갔다가도) 결국 커지므로, 처음 기준을 넘는 비율을 이분 탐색으로 찾는다.
+    var low = 0f
+    var high = 1f
+    repeat(READABLE_SEARCH_STEPS) {
+        val mid = (low + high) / 2
+        if (contrast(lerp(color, toward, mid), base) >= minRatio) high = mid else low = mid
     }
-    return fixed
+    return lerp(color, toward, high)
 }
 
 /** 두 색의 WCAG 대비 비율(1..21) */
@@ -47,11 +49,14 @@ internal fun variantInkBackground(variant: KVariant, colors: ToneColors, surface
     else -> surface.inkBackground()
 }
 
-/** 표면 위 글자의 바탕. 글래스는 투명해 뒤가 비치므로 글자 색의 반대 밝기로 본다. */
+/**
+ * 표면 위 글자의 바탕. 글래스는 투명해 뒤가 비치므로 글자 색의 반대 밝기로 본다. 거의 불투명한 색은 불투명으로 돌려줘,
+ * 대비를 고칠 때와 잴 때 같은 바탕을 보게 한다.
+ */
 internal fun SurfaceStyle.inkBackground(): Color {
     val fill = fillColor
     return if (fill.alpha >= OPAQUE) {
-        fill
+        fill.copy(alpha = 1f)
     } else if (isDark) {
         Color(DARK_BACK)
     } else {
@@ -113,8 +118,13 @@ private const val OPAQUE = 0.95f
 private const val DARK_BACK = 0xFF1C1C1E
 private const val TONAL_BACK = 0.16f
 private const val READABLE_RATIO = 3f
-private const val READABLE_STEPS = 8
-private const val READABLE_STEP = 0.08f
+
+/** 보통 크기 글자의 최소 대비(WCAG 1.4.3). 버튼 글자는 모두 이 기준이다. */
+internal const val INK_TEXT_CONTRAST = 4.5f
+
+/** 글자 없는 아이콘의 최소 대비(WCAG 1.4.11) */
+internal const val INK_GRAPHIC_CONTRAST = 3f
+private const val READABLE_SEARCH_STEPS = 12
 private const val CONTRAST_OFFSET = 0.05f
 private const val CHECK_X0 = 0.15f
 private const val CHECK_Y0 = 0.52f

@@ -55,7 +55,7 @@ public fun KIconButton(
 ) {
     val diameter = size.coerceAtLeast(MIN_ICON_BUTTON)
     val colors = tone.colors(surface)
-    val ink = buttonInk(variant, tone, colors, surface)
+    val ink = buttonInk(variant, tone, colors, surface, INK_GRAPHIC_CONTRAST)
     Box(
         modifier
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
