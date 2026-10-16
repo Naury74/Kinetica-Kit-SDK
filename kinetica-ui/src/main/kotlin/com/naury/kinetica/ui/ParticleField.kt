@@ -66,6 +66,7 @@ public fun rememberParticleFieldState(autoLaunch: Boolean = true): ParticleField
  * 배경에 까는 입자 애니메이션. 눈, 불꽃놀이, 거품, 튀는 불꽃 가운데 [preset]으로 고른다.
  * 입자는 처음에 고정 크기 배열로 만들어 두고 재사용하므로 프레임마다 객체를 만들지 않는다.
  * 요소가 창 밖에 있는 동안에는 멈추고, '애니메이션 삭제' 접근성 설정이 켜져 있으면 몇 초 진행된 모습을 멈춘 그림으로 보여 준다.
+ * 글래스 [KineticaScaffold]의 `background`에 두면 다이얼로그나 시트가 열려 있는 동안도 멈춘다.
  *
  * 부모를 가득 채우며 터치는 받지 않는다. 장식이므로 접근성 트리에 나타나지 않는다.
  *
@@ -89,7 +90,7 @@ public fun ParticleField(
     require(density in MIN_DENSITY..MAX_DENSITY) { "density는 0.1..4여야 합니다." }
     require(colors.isNotEmpty()) { "colors가 비어 있습니다." }
     val still = reducedMotion()
-    val clock = rememberLoopClock(running = !still)
+    val clock = rememberLoopClock(running = !still && !shouldPauseBackground())
     val engine = remember(preset, density, colors) { particleSystem(preset, density, colors) }
     Spacer(
         modifier

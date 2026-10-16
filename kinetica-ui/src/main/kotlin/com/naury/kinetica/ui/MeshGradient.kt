@@ -82,6 +82,8 @@ public object MeshGradients {
  * Apple 배경화면처럼 큰 색 덩어리가 천천히 떠다니며 섞이는 움직이는 배경을 그린다.
  * Android 13(API 33)부터는 AGSL 셰이더로 부드럽게 섞고, 그보다 낮은 버전에서는 원형 그라디언트를 겹쳐 그린다.
  * '애니메이션 삭제' 접근성 설정이 켜져 있거나 [speed]가 0이면 멈춘 그림으로 보인다.
+ * 글래스 [KineticaScaffold]의 `background`에 두면 그 스캐폴드에 다이얼로그나 시트가 열려 있는 동안 멈췄다가 닫히면 이어서 움직인다.
+ * 그림은 초당 30번 바뀐다. 이 배경을 비추는 글래스가 바뀔 때마다 블러를 다시 하므로 화면 주사율만큼 바꾸지 않는다.
  *
  * 부모를 가득 채우며, 크기를 제한하려면 [modifier]에 크기를 지정한다. 장식이므로 접근성 트리에 나타나지 않는다.
  *
@@ -96,7 +98,7 @@ public object MeshGradients {
 public fun MeshGradientBackground(modifier: Modifier = Modifier, palette: MeshPalette = MeshGradients.Aurora, speed: Float = 1f) {
     require(speed >= 0f) { "speed는 0 이상이어야 합니다." }
     val still = reducedMotion() || speed == 0f
-    val clock = rememberLoopClock(running = !still)
+    val clock = rememberLoopClock(running = !still && !shouldPauseBackground(), frameRate = BACKGROUND_FRAME_RATE)
     val painter = remember(palette) { MeshPainter(palette) }
     val time = remember { MeshTime() }
     Spacer(

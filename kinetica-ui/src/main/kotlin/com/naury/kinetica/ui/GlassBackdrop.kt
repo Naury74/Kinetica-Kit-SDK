@@ -136,8 +136,9 @@ public fun Modifier.glassBackdrop(backdrop: GlassBackdrop): Modifier = this
  *
  * @param style 기본값은 [LocalGlassStyle]이다.
  *
- * @param intensity 효과 강도(0..1). 블러, 색 덮기, 그림자를 함께 줄인다. 다이얼로그 배경이 서서히 흐려지는 애니메이션에 쓴다.
- *   범위를 벗어난 값은 0..1로 맞춘다.
+ * @param intensity 효과 강도(0..1). 블러 처리한 배경, 색 덮기, 그림자, 테두리를 함께 옅게 한다. 다이얼로그 배경이 서서히 흐려지는
+ *   애니메이션에 쓴다. 블러 반경은 강도와 상관없이 [GlassStyle.blur] 그대로이고, 강도가 낮을수록 흐린 배경을 옅게 덮는다.
+ *   0이면 배경을 블러 처리하지 않는다. 범위를 벗어난 값은 0..1로 맞춘다.
  */
 @Composable
 public fun Modifier.glass(
@@ -176,11 +177,13 @@ public fun Modifier.glass(
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))
                     drawRect(style.onGlass.copy(alpha = LAYERED_ALPHA * level))
                 } else if (canBlur && backdrop != null) {
-                    val sampler = Sampler(blurLayer, sampleLayer, effects, position)
-                    // 강도가 1보다 작으면 블러 반경이 프레임마다 바뀌므로 함께 쓰는 기록 대신 혼자 건다.
-                    val shared = backdrop.shared?.takeIf { level >= 1f && it.owner === view }
-                    if (shared == null || !drawSharedBackdrop(backdrop, shared, sampler, style, cornerOf(outline))) {
-                        drawBackdrop(backdrop, sampler, style, outline, level)
+                    if (level > 0f) {
+                        val sampler = Sampler(blurLayer, sampleLayer, effects, position)
+                        val shared = backdrop.shared?.takeIf { it.owner === view }
+                        val cover = blurCover(level)
+                        if (shared == null || !drawSharedBackdrop(backdrop, shared, sampler, style, Cut(cornerOf(outline), cover))) {
+                            drawBackdrop(backdrop, sampler, style, outline, cover)
+                        }
                     }
                     drawRect(style.tint.copy(alpha = style.tint.alpha * level))
                 } else if (windowBlurred) {
@@ -192,6 +195,15 @@ public fun Modifier.glass(
             }
             drawEdgeLight(outline, style, level)
         }
+}
+
+/**
+ * 강도 [level](0..1)에서 흐린 배경을 덮는 알파. 블러 반경을 키울 때는 반경이 절반만 되어도 거의 다 흐려 보이므로,
+ * 알파로 덮을 때도 앞쪽에서 빨리 짙어지게 해 그때와 비슷하게 보이게 한다.
+ */
+internal fun blurCover(level: Float): Float {
+    val rest = 1f - level.coerceIn(0f, 1f)
+    return 1f - rest * rest
 }
 
 internal class PositionHolder {
@@ -248,33 +260,35 @@ internal class EffectCache {
 /** 기록한 영역의 크기, 가장자리 여백, 모서리 반경(px). */
 private class Region(val size: IntSize, val pad: Float, val corner: Float)
 
-private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, style: GlassStyle, outline: Outline, level: Float) {
+private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, style: GlassStyle, outline: Outline, alpha: Float) {
     val layer = sampler.layer
     val cache = sampler.cache
-    val fullBlurPx = style.blur.toPx()
-    val blurPx = fullBlurPx * level
+    val blurPx = style.blur.toPx()
     // 블러가 크면 배경을 낮은 해상도로 기록해 흐린 뒤 늘려 그린다. 흐린 결과는 줄였다 늘려도 차이가 거의 없고,
     // GPU가 칠할 픽셀과 레이어 텍스처 메모리가 크게 줄어 목록에 글래스가 많을 때 스크롤이 덜 끊긴다.
-    // 배율과 여백은 강도와 상관없이 최대 블러로 정한다. 다이얼로그 스크림처럼 강도가 커지는 동안 기록 크기가 프레임마다 바뀌면
-    // 그때마다 레이어와 블러 텍스처를 새로 잡아, 열리는 순간 프레임이 크게 밀린다.
-    val scale = sampleScale(fullBlurPx)
+    val scale = sampleScale(blurPx)
     // 블러와 굴절은 가장자리 바깥의 픽셀을 끌어오므로 그만큼 넓게 기록한다.
-    val pad = ceil(fullBlurPx * 2f + style.refraction * REFRACTION_DP * density).toInt()
+    val pad = ceil(blurPx * 2f + style.refraction * REFRACTION_DP * density).toInt()
     val fullSize = IntSize(ceil(size.width).toInt() + pad * 2, ceil(size.height).toInt() + pad * 2)
     if (fullSize.width <= 0 || fullSize.height <= 0) return
     val recordSize = IntSize(ceil(fullSize.width * scale).toInt().coerceAtLeast(1), ceil(fullSize.height * scale).toInt().coerceAtLeast(1))
     val corner = cornerOf(outline)
-    val key = listOf(blurPx, style.saturation * level + (1 - level), style.brightness * level, style.refraction * level, recordSize, corner)
+    // 강도는 효과에 넣지 않고 레이어 알파로만 낸다. 스크림처럼 강도가 프레임마다 바뀔 때 블러 반경까지 바꾸면 효과를 매번 새로 만들고,
+    // GPU는 반경에 따라 크기가 달라지는 블러 중간 텍스처를 프레임마다 새로 잡는다(Fold7에서 시트 열고 닫는 프레임마다 약 50번, 35~45ms).
+    val key = listOf(blurPx, style.saturation, style.brightness, style.refraction, recordSize, corner)
     if (cache.key != key && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         cache.key = key
-        cache.effect = glassEffect(blurPx * scale, style, level, Region(recordSize, pad * scale, corner * scale))
+        cache.effect = glassEffect(blurPx * scale, style, Region(recordSize, pad * scale, corner * scale))
+        GlassStats.effectBuilds++
     }
     layer.renderEffect = cache.effect
+    layer.alpha = alpha
     val sample = sampler.sample
     sample.record(backdrop.layer.size) { drawLayer(backdrop.layer) }
     sample.pivotOffset = Offset.Zero
     sample.scaleX = scale
     sample.scaleY = scale
+    sample.alpha = 1f
     sampler.position.update(backdrop, sample, pad.toFloat(), scale)
     layer.record(recordSize) { drawLayer(sample) }
     translate(-pad.toFloat(), -pad.toFloat()) { scale(1f / scale, pivot = Offset.Zero) { drawLayer(layer) } }
@@ -288,9 +302,9 @@ internal fun sampleScale(blurPx: Float): Float = when {
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
-private fun glassEffect(blurPx: Float, style: GlassStyle, level: Float, region: Region): androidx.compose.ui.graphics.RenderEffect? {
-    var effect = colorBlurEffect(blurPx, style, level)
-    val refraction = style.refraction * level
+private fun glassEffect(blurPx: Float, style: GlassStyle, region: Region): androidx.compose.ui.graphics.RenderEffect? {
+    var effect = colorBlurEffect(blurPx, style)
+    val refraction = style.refraction
     if (refraction > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         // 기기 GPU가 셰이더를 지원하지 않으면 굴절 없이 그린다.
         val strength = refraction * region.pad.coerceAtMost(MAX_REFRACTION_PX)
@@ -301,11 +315,11 @@ private fun glassEffect(blurPx: Float, style: GlassStyle, level: Float, region: 
     return effect.asComposeRenderEffect()
 }
 
-/** 채도와 밝기를 바꾸고 [blurPx](px)만큼 블러 처리하는 효과. [level]만큼 약하게 건다. */
+/** 채도와 밝기를 바꾸고 [blurPx](px)만큼 블러 처리하는 효과. */
 @RequiresApi(Build.VERSION_CODES.S)
-internal fun colorBlurEffect(blurPx: Float, style: GlassStyle, level: Float): RenderEffect {
-    val saturation = 1f + (style.saturation - 1f) * level
-    val brightness = style.brightness * level * BRIGHTNESS_SCALE
+internal fun colorBlurEffect(blurPx: Float, style: GlassStyle): RenderEffect {
+    val saturation = style.saturation
+    val brightness = style.brightness * BRIGHTNESS_SCALE
     val color = ColorMatrix().apply { setSaturation(saturation) }.also {
         it.postConcat(
             ColorMatrix(
@@ -314,9 +328,7 @@ internal fun colorBlurEffect(blurPx: Float, style: GlassStyle, level: Float): Re
         )
     }
     var effect: RenderEffect = RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(color))
-    if (blurPx >
-        MIN_PX
-    ) {
+    if (blurPx > MIN_PX) {
         effect = RenderEffect.createChainEffect(effect, RenderEffect.createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP))
     }
     return effect

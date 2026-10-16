@@ -111,12 +111,8 @@ public fun KineticaScaffold(
         Box(modifier) {
             Box(Modifier.fillMaxSize().recordInto(layers?.screen).modalBackground(host.background, host.modalOpen)) {
                 Box(Modifier.fillMaxSize().recordInto(layers?.content).background(backdropColor)) {
-                    // graphicsLayer를 만들지 않고 그리기 단계에서만 축소해야 안쪽 글래스가 배경 기록에서 빠진다.
-                    Box(Modifier.fillMaxSize().pushBack(host)) {
-                        Box(
-                            Modifier.fillMaxSize().background(surface.background).recordInto(layers?.background),
-                            content = background,
-                        )
+                    PushBackBox(host) {
+                        ScaffoldBackground(host.takeIf { layers != null }, layers?.background, surface, background)
                         CompositionLocalProvider(LocalGlassBackdrop provides layers?.background) {
                             with(density) { content(PaddingValues(top = topHeight.toDp(), bottom = bottomHeight.toDp())) }
                         }
@@ -154,6 +150,22 @@ public fun KineticaScaffold(
 }
 
 /**
+ * 스캐폴드 배경 칸. 글래스 표면이면 모달이 열린 동안 뒤 화면이 블러로 덮이므로, 움직이는 배경이 그동안 멈춰
+ * 블러를 프레임마다 다시 하지 않도록 [host]를 알린다.
+ */
+@Composable
+private fun ScaffoldBackground(
+    host: KOverlayHost?,
+    backdrop: GlassBackdrop?,
+    surface: SurfaceStyle,
+    background: @Composable BoxScope.() -> Unit,
+) {
+    CompositionLocalProvider(LocalBackgroundHost provides host) {
+        Box(Modifier.fillMaxSize().background(surface.background).recordInto(backdrop), content = background)
+    }
+}
+
+/**
  * 시트가 콘텐츠를 [PUSH_ICON_THRESHOLD]보다 많이 밀어내면 상태 표시줄 뒤에 [backdropColor]가 드러나므로, 그동안 상태 표시줄 아이콘을
  * 그 색의 밝기에 맞춘다. 경계를 넘을 때만 다시 구성되도록 참/거짓으로 줄여 읽는다.
  */
@@ -183,6 +195,26 @@ private fun Modifier.recordInto(backdrop: GlassBackdrop?): Modifier = if (backdr
  */
 public val LocalKineticaIndication: androidx.compose.runtime.ProvidableCompositionLocal<Indication?> =
     staticCompositionLocalOf { KIndication() }
+
+/**
+ * 시트가 열린 정도만큼 [content]를 뒤로 물린다. 축소는 그리기 단계에서만 해서 안쪽 글래스의 화면 좌표가 바뀌지 않게 한다.
+ * 안쪽은 변환 없는 레이어에 두고 물러나는 동안 화면 밖 버퍼로 그린다. 그러면 배율이 프레임마다 바뀌어도 안쪽 글자와 그림자를
+ * 새 배율로 다시 래스터화하지 않고 버퍼 하나를 늘려 그리며, 스크림과 시트가 블러하려고 뒤 화면을 다시 그릴 때도 버퍼만 그린다.
+ * Fold7에서는 이 재래스터화로 여는 프레임마다 텍스처 업로드가 15~25번 생겼다.
+ */
+@Composable
+private fun PushBackBox(host: KOverlayHost, content: @Composable BoxScope.() -> Unit) {
+    Box(Modifier.fillMaxSize().pushBack(host)) {
+        Box(
+            Modifier.fillMaxSize().graphicsLayer {
+                // 모달이 열리는 첫 프레임에 버퍼로 바꾸면 그 프레임에는 시트 판이 빈 버퍼를 비출 수 있어, 모달이 붙는 순간(아직 물러나기 전) 바꾼다.
+                val pushing = host.modalOpen || host.pushBack > 0f
+                compositingStrategy = if (pushing) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+            },
+            content = content,
+        )
+    }
+}
 
 /** 시트가 열린 정도만큼 콘텐츠를 살짝 줄이고 내려 둥글게 자른다. 그리기 단계에서 읽어 다시 컴포지션하지 않는다. */
 private fun Modifier.pushBack(host: KOverlayHost): Modifier = drawWithCache {
@@ -253,6 +285,22 @@ internal enum class OverlayKind {
 }
 
 internal val LocalKineticaHost = staticCompositionLocalOf<KOverlayHost?> { null }
+
+/** 글래스 [KineticaScaffold]의 background 칸 안이면 그 스캐폴드의 오버레이 호스트. */
+internal val LocalBackgroundHost = staticCompositionLocalOf<KOverlayHost?> { null }
+
+/**
+ * 글래스 [KineticaScaffold]의 `background` 안에서 부르면, 그 스캐폴드에 다이얼로그나 시트가 열려 있는 동안 true다. 그 밖에서는 늘 false다.
+ *
+ * 모달이 열린 동안 뒤 화면은 스크림 블러와 판 블러가 덮는다. 이때 배경이 한 프레임이라도 바뀌면 화면 크기 블러와 판 블러를 모두 다시 해야 하므로,
+ * 직접 만든 움직이는 배경은 이 값이 true인 동안 애니메이션을 멈춘다. [MeshGradientBackground], [AuroraBackground] 같은 키트 배경은 알아서 멈춘다.
+ *
+ * ```kotlin
+ * KineticaScaffold(background = { MyAnimatedBackground(paused = shouldPauseBackground()) }) { padding -> … }
+ * ```
+ */
+@Composable
+public fun shouldPauseBackground(): Boolean = LocalBackgroundHost.current?.modalOpen == true
 
 /** [KineticaScaffold]의 topBar 칸 안이면 true. 상단 바가 상태 표시줄을 덮는다고 알릴 수 있는 자리인지 가린다. */
 internal val LocalTopBarSlot = staticCompositionLocalOf { false }

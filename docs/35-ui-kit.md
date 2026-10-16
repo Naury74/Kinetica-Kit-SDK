@@ -880,6 +880,8 @@ Box(
 - 반복 효과(`glowBorder`, `sparkle`, `skeleton`, 글자 효과, 움직이는 배경, 로딩 링, 입력 중 점, 스토리 링 회전)는 요소가 창 밖으로 스크롤되어 나가 있는 동안 멈춘다.
 - 배경 효과는 앱이 백그라운드로 가면(Lifecycle STARTED 미만) 멈추고, `motionTilt`는 센서를 놓는다.
 
+움직이는 배경(`MeshGradientBackground`, `AuroraBackground`)은 초당 30번만 바뀌고, 시트나 다이얼로그가 열려 있는 동안에는 멈춥니다. 뒤 화면이 블러에 가려 움직임이 보이지 않는데 블러를 매 프레임 다시 할 필요가 없기 때문입니다. 직접 만든 움직이는 배경도 같은 규칙을 따르게 하려면 `KineticaScaffold`의 `background` 안에서 `shouldPauseBackground()`를 읽어 시계를 멈춥니다.
+
 ## 넓은 화면과 폴더블
 
 화면 폭에 따라 배치를 바꾸는 컴포넌트와 창 정보 도우미다. 두 칸으로 나누는 기준 폭은 `KAdaptiveDefaults.TwoPaneMinWidth`(600dp)이고, 컴포저블이 받은 폭으로 판단하므로 멀티 윈도우에서도 맞게 동작한다.

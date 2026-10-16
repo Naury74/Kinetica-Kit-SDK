@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.platform.LocalGraphicsContext
@@ -77,16 +78,20 @@ internal fun ShareBlurs(backdrop: GlassBackdrop) {
 /** 글래스 하나가 배경을 그릴 때 쓰는 레이어와 캐시. [Modifier.glass]가 요소마다 하나씩 들고 있다. */
 internal class Sampler(val layer: GraphicsLayer, val sample: GraphicsLayer, val cache: EffectCache, val position: PositionHolder)
 
+/** 함께 쓰는 블러에서 잘라 그릴 모양의 모서리 반경(px)과 덮는 알파(0..1). */
+internal class Cut(val corner: Float, val alpha: Float)
+
 /**
  * 함께 쓰는 블러에서 이 글래스 자리를 잘라 그린다. 함께 쓸 수 없으면(다른 창, 스타일이 너무 많음) false를 돌려주고 아무것도 그리지 않는다.
  * 굴절이 있으면 잘라 온 블러 위에 굴절 셰이더만 요소마다 건다. 블러는 다시 하지 않는다.
+ * 강도가 1보다 작으면 같은 블러를 [Cut.alpha]만큼만 덮으므로 강도가 바뀌어도 함께 쓰는 기록을 그대로 쓴다.
  */
 internal fun DrawScope.drawSharedBackdrop(
     backdrop: GlassBackdrop,
     blurs: SharedBlurs,
     sampler: Sampler,
     style: GlassStyle,
-    corner: Float,
+    cut: Cut,
 ): Boolean {
     val source = backdrop.layer.size
     if (source.width <= 0 || source.height <= 0) return false
@@ -98,7 +103,8 @@ internal fun DrawScope.drawSharedBackdrop(
         shared.recordedSize = sharedSize
         shared.recordedLayer = backdrop.layer
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            shared.layer.renderEffect = colorBlurEffect(blurPx * scale, style, 1f).asComposeRenderEffect()
+            shared.layer.renderEffect = colorBlurEffect(blurPx * scale, style).asComposeRenderEffect()
+            GlassStats.effectBuilds++
         }
         shared.layer.record(sharedSize) { scale(scale, pivot = Offset.Zero) { drawLayer(backdrop.layer) } }
     }
@@ -111,9 +117,15 @@ internal fun DrawScope.drawSharedBackdrop(
     if (refraction <= 0f || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         sampler.position.update(backdrop, sample, pad = 0f, scale = scale)
         sampler.layer.renderEffect = null
+        // 겹쳐 그리는 것이 블러 레이어 하나뿐이라 알파를 그 그리기에 바로 곱한다. 겹침 처리로 두면 알파가 1보다 작을 때
+        // 기록 전체 크기의 화면 밖 레이어를 하나 더 만든다.
+        sample.compositingStrategy = CompositingStrategy.ModulateAlpha
+        sample.alpha = cut.alpha
         scale(1f / scale, pivot = Offset.Zero) { drawLayer(sample) }
     } else {
-        drawRefracted(backdrop, sampler, style, Refraction(blurPx, scale, corner))
+        sample.compositingStrategy = CompositingStrategy.Auto
+        sample.alpha = 1f
+        drawRefracted(backdrop, sampler, style, Refraction(blurPx, scale, cut.corner), cut.alpha)
     }
     return true
 }
@@ -121,7 +133,7 @@ internal fun DrawScope.drawSharedBackdrop(
 /** 굴절을 거는 데 필요한 값. 블러 반경(px), 기록 배율, 모서리 반경(px). */
 private class Refraction(val blurPx: Float, val scale: Float, val corner: Float)
 
-private fun DrawScope.drawRefracted(backdrop: GlassBackdrop, sampler: Sampler, style: GlassStyle, refraction: Refraction) {
+private fun DrawScope.drawRefracted(backdrop: GlassBackdrop, sampler: Sampler, style: GlassStyle, refraction: Refraction, alpha: Float) {
     val scale = refraction.scale
     // 굴절 세기는 혼자 블러를 걸 때와 같은 식으로 정해 모양이 달라지지 않게 한다. 기록 여백은 굴절이 끌어올 거리만큼만 둔다.
     val legacyPad = ceil(refraction.blurPx * 2f + style.refraction * REFRACTION_DP * density) * scale
@@ -136,9 +148,11 @@ private fun DrawScope.drawRefracted(backdrop: GlassBackdrop, sampler: Sampler, s
         cache.effect = runCatching {
             refractionEffect(regionSize, padScaled.toFloat(), refraction.corner * scale, strength).asComposeRenderEffect()
         }.getOrNull()
+        GlassStats.effectBuilds++
     }
     val layer = sampler.layer
     layer.renderEffect = cache.effect
+    layer.alpha = alpha
     val pad = padScaled / scale
     sampler.position.update(backdrop, sampler.sample, pad, scale)
     // 레이어 크기를 단위로 맞추면 스크롤로 빠진 카드의 텍스처를 새로 들어온 비슷한 크기의 카드가 그대로 이어 쓴다.
@@ -148,6 +162,11 @@ private fun DrawScope.drawRefracted(backdrop: GlassBackdrop, sampler: Sampler, s
 
 /** 레이어 크기(px)를 [LAYER_BUCKET] 단위로 올린다. */
 internal fun bucket(px: Int): Int = (px + LAYER_BUCKET - 1) / LAYER_BUCKET * LAYER_BUCKET
+
+/** 글래스 효과를 새로 만든 횟수. 강도 애니메이션 동안 효과를 다시 만들지 않는지 테스트에서 확인한다. */
+internal object GlassStats {
+    var effectBuilds: Int = 0
+}
 
 private const val MAX_SHARED = 4
 private const val LAYER_BUCKET = 32
