@@ -129,12 +129,12 @@ internal fun DrawScope.drawSharedBackdrop(
     sample.scaleY = 1f
     // 굴절은 함께 쓰는 지도에 자리를 잡아 건다. 지도가 꽉 찼으면 이 글래스만 혼자 굴절 레이어를 쓴다.
     if (bent && !mapRegion(shared, sampler, style, geometry, sharedSize)) {
-        sample.record(sharedSize) { drawLayer(shared.layer) }
+        sampler.cache.sampleRecord.record(this, sample, shared.layer, sharedSize)
         sample.compositingStrategy = CompositingStrategy.Auto
         sample.alpha = 1f
         drawRefracted(backdrop, sampler, style, geometry, cut.alpha)
     } else {
-        sample.record(sharedSize) { drawLayer(if (bent) shared.refracted else shared.layer) }
+        sampler.cache.sampleRecord.record(this, sample, if (bent) shared.refracted else shared.layer, sharedSize)
         drawCut(backdrop, sampler, scale, cut.alpha)
     }
     return true
@@ -207,9 +207,31 @@ private fun DrawScope.drawRefracted(backdrop: GlassBackdrop, sampler: Sampler, s
     val pad = padScaled / scale
     sampler.position.update(backdrop, sampler.sample, pad, scale)
     // 레이어 크기를 단위로 맞추면 스크롤로 빠진 카드의 텍스처를 새로 들어온 비슷한 크기의 카드가 그대로 이어 쓴다.
-    layer.record(IntSize(bucket(regionSize.width), bucket(regionSize.height))) { drawLayer(sampler.sample) }
+    cache.layerRecord.record(this, layer, sampler.sample, IntSize(bucket(regionSize.width), bucket(regionSize.height)))
     GlassStats.elementLayers++
     translate(-pad, -pad) { scale(1f / scale, pivot = Offset.Zero) { drawLayer(layer) } }
+}
+
+/**
+ * 레이어 하나를 [GraphicsLayer] 하나만 그리는 내용으로 기록하되, 지난번과 대상, 원본, 크기가 같으면 다시 기록하지 않는다.
+ *
+ * 기록하면 내용이 같아도 HWUI는 표시 목록이 바뀐 것으로 보고 그 레이어를 처음부터 다시 그린다. 블러가 걸린 레이어면 배경이 그대로여도
+ * 블러를 다시 하므로, 바 위 숫자나 테두리처럼 글래스와 같은 레이어에서 움직이는 요소가 매 프레임 글래스 블러를 부르게 된다.
+ * 원본 레이어의 내용이 바뀌는 것은 다시 기록하지 않아도 HWUI가 원본의 변경 영역으로 따라간다.
+ */
+internal class RecordGuard {
+    private var target: GraphicsLayer? = null
+    private var source: GraphicsLayer? = null
+    private var size = IntSize.Zero
+
+    fun record(scope: DrawScope, target: GraphicsLayer, source: GraphicsLayer, size: IntSize) {
+        if (this.target === target && this.source === source && this.size == size) return
+        this.target = target
+        this.source = source
+        this.size = size
+        GlassStats.layerRecords++
+        with(scope) { target.record(size) { drawLayer(source) } }
+    }
 }
 
 /** 레이어 크기(px)를 [LAYER_BUCKET] 단위로 올린다. */
@@ -224,6 +246,12 @@ internal object GlassStats {
 
     /** 글래스가 자기 화면 밖 레이어(혼자 거는 블러나 굴절)를 기록한 횟수. 배경이 바뀔 때 요소마다 렌더 패스가 생기는지 가늠한다. */
     var elementLayers: Int = 0
+
+    /** 글래스가 자기 레이어(배경을 옮겨 놓는 레이어, 혼자 거는 블러나 굴절 레이어)를 실제로 다시 기록한 횟수. 배경이 그대로면 늘지 않아야 한다. */
+    var layerRecords: Int = 0
+
+    /** [Modifier.glass]가 그린 횟수. 기록 횟수 테스트에서 그리기가 실제로 다시 불렸는지 확인하는 데 쓴다. */
+    var glassDraws: Int = 0
 }
 
 private const val MAX_SHARED = 4

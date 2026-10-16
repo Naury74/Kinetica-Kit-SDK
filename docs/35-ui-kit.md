@@ -882,7 +882,7 @@ Box(
 - 반복 효과(`glowBorder`, `sparkle`, `skeleton`, 글자 효과, 움직이는 배경, 로딩 링, 입력 중 점, 스토리 링 회전)는 요소가 창 밖으로 스크롤되어 나가 있는 동안 멈춘다.
 - 배경 효과는 앱이 백그라운드로 가면(Lifecycle STARTED 미만) 멈추고, `motionTilt`는 센서를 놓는다.
 
-움직이는 배경(`MeshGradientBackground`, `AuroraBackground`)은 초당 30번만 바뀌고, 시트나 다이얼로그가 열려 있는 동안에는 멈춥니다. 뒤 화면이 블러에 가려 움직임이 보이지 않는데 블러를 매 프레임 다시 할 필요가 없기 때문입니다. 직접 만든 움직이는 배경도 같은 규칙을 따르게 하려면 `KineticaScaffold`의 `background` 안에서 `shouldPauseBackground()`를 읽어 시계를 멈춥니다.
+움직이는 배경(`MeshGradientBackground`, `AuroraBackground`)은 시트나 다이얼로그가 열려 있는 동안 멈춥니다. 뒤 화면이 블러에 가려 움직임이 보이지 않는데 블러를 매 프레임 다시 할 필요가 없기 때문입니다. 직접 만든 움직이는 배경도 같은 규칙을 따르게 하려면 `KineticaScaffold`의 `background` 안에서 `shouldPauseBackground()`를 읽어 시계를 멈춥니다.
 
 ## 넓은 화면과 폴더블
 
@@ -1022,6 +1022,24 @@ p50이 120Hz 한 프레임(8.3 ms)보다 큰 것은 입력부터 화면 표시�
 - 효과 값은 그리기 단계에서 읽으므로 애니메이션 중에 재구성하지 않는다. `LazyColumn` 300행에 효과, 글래스, 배지, 로딩 표시, 차트, 말풍선 등을 놓아도 애니메이션 중에 행을 다시 구성하지 않는 것을
   `HostUsageTest`, `KFormsTest`, `KButtonsChipsCardsTest`, `KFeedbackTest`, `KDataChartsTest`, `KMotionExtrasTest`가 확인한다.
 - 소프트웨어 렌더러(SwiftShader 에뮬레이터)에서는 블러가 매우 느리다. 에뮬레이터는 `-gpu host`로 실행한다.
+
+### 영상 위 글래스
+
+영상 통화처럼 `background`에 TextureView 영상을 두고 그 위에 글래스 바를 띄우면, 블러는 영상 프레임이 바뀔 때만 다시 한다(30fps 영상이면 120Hz 화면에서 네 프레임에 한 번).
+
+- 글래스는 배경 기록과 자기 레이어 크기가 그대로면 레이어를 다시 기록하지 않는다. 바 위 숫자 굴림이나 테두리 애니메이션 때문에 글래스가 다시 그려져도 HWUI가 지난 블러 결과를 그대로 쓴다.
+  배경을 기록하는 요소도 자기 레이어에 두어, 형제나 부모가 다시 그려질 때 배경 기록을 같은 내용으로 다시 하지 않는다(`GlassRedrawCostTest`).
+- 바는 기본으로 배경과 콘텐츠를 함께 비춘다. 그래서 콘텐츠 안에서 매 프레임 움직이는 요소(말하는 사람 테두리 등)가 있으면 바 블러도 매 프레임 다시 한다.
+  바 뒤로 보일 것이 영상뿐이면 바에 `LocalScaffoldBackground`를 비추게 한다. 스타일이 같으면 콘텐츠 글래스와 블러 기록 하나를 함께 쓴다.
+
+```kotlin
+bottomBar = {
+    CompositionLocalProvider(LocalGlassBackdrop provides LocalScaffoldBackground.current) { CallDock() }
+}
+```
+
+- 블러 반경은 모양을 보고 고르면 된다. Fold7 영상 통화 화면에서 바 블러를 12, 18, 24, 32dp로 바꿔 재도 프레임 p50 9~11 ms, p90 13~16 ms로 차이가 없었다.
+  기록 해상도는 반경에 맞춰 알아서 낮춘다(밀도 2.6 기준 약 5dp 미만은 원래 해상도, 18dp 미만은 1/2, 그 이상은 1/3). 비용을 가르는 것은 반경이 아니라 블러를 몇 프레임마다 다시 하느냐다.
 
 ## 쇼케이스에서 확인하기
 

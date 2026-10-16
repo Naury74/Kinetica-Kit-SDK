@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.nativeCanvas
@@ -77,6 +78,9 @@ public class GlassBackdrop internal constructor(internal val layer: GraphicsLaye
 
     /** 이 배경을 비추는 글래스들이 함께 쓰는 블러 기록. null이면 글래스마다 따로 블러를 건다. */
     internal var shared: SharedBlurs? = null
+
+    /** 배경을 기록한 횟수. 테스트에서 배경 밖 요소만 움직일 때 배경을 다시 기록하지 않는지 확인하는 데 쓴다. */
+    internal var records: Int = 0
 }
 
 /** 컴포지션에 유지되는 [GlassBackdrop]을 만든다. */
@@ -112,8 +116,12 @@ public fun Modifier.glassBackdrop(backdrop: GlassBackdrop): Modifier = this
         backdrop.origin = it.positionOnScreen()
         backdrop.size = it.size
     }
+    // 기록하는 요소를 자기 레이어에 둔다. 그러지 않으면 형제나 부모가 다시 그려질 때마다(바 위 숫자, 움직이는 테두리) 배경 기록도
+    // 같은 내용으로 다시 하고, HWUI는 기록 전체가 바뀐 것으로 보아 이 배경을 비추는 모든 글래스의 블러를 다시 한다.
+    .graphicsLayer()
     .drawWithContent {
         backdrop.recording = true
+        backdrop.records++
         try {
             backdrop.layer.record { this@drawWithContent.drawContent() }
         } finally {
@@ -170,6 +178,7 @@ public fun Modifier.glass(
         .drawBehind {
             position.sampling = false
             if (backdrop?.recording == true) return@drawBehind
+            GlassStats.glassDraws++
             position.region.used = false
             val outline = shape.createOutline(size, layoutDirection, this)
             val level = intensity.coerceIn(0f, 1f)
@@ -265,6 +274,10 @@ internal class EffectCache {
     var shadowRadius = -1f
     var outlineKey: Any? = null
     var path: Path = Path()
+
+    // 배경을 옮겨 놓는 레이어와 블러를 거는 레이어. 같은 내용이면 다시 기록하지 않아 HWUI가 블러 결과를 그대로 쓰게 한다.
+    val sampleRecord = RecordGuard()
+    val layerRecord = RecordGuard()
 }
 
 /** 기록한 영역의 크기, 가장자리 여백, 모서리 반경(px). */
@@ -294,13 +307,13 @@ private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, st
     layer.renderEffect = cache.effect
     layer.alpha = alpha
     val sample = sampler.sample
-    sample.record(backdrop.layer.size) { drawLayer(backdrop.layer) }
+    cache.sampleRecord.record(this, sample, backdrop.layer, backdrop.layer.size)
     sample.pivotOffset = Offset.Zero
     sample.scaleX = scale
     sample.scaleY = scale
     sample.alpha = 1f
     sampler.position.update(backdrop, sample, pad.toFloat(), scale)
-    layer.record(recordSize) { drawLayer(sample) }
+    cache.layerRecord.record(this, layer, sample, recordSize)
     GlassStats.elementLayers++
     translate(-pad.toFloat(), -pad.toFloat()) { scale(1f / scale, pivot = Offset.Zero) { drawLayer(layer) } }
 }

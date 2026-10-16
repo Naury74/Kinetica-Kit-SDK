@@ -106,6 +106,7 @@ public fun KineticaScaffold(
     val density = LocalDensity.current
     CompositionLocalProvider(
         LocalGlassBackdrop provides layers?.screen,
+        LocalScaffoldBackground provides layers?.background,
         LocalKineticaHost provides host,
         LocalKineticaSurface provides surface,
         LocalGlassStyle provides surface.glassStyle(),
@@ -292,6 +293,22 @@ private fun EdgeFade(host: KOverlayHost, backdrop: GlassBackdrop?, page: Color, 
         }
     }
 }
+
+/**
+ * 가장 가까운 글래스 [KineticaScaffold]의 `background` 칸만 기록한 배경. 스캐폴드 밖이거나 단색, 톤 표면이면 `null`이다.
+ *
+ * 바(`topBar`, `bottomBar`)의 글래스는 기본으로 배경과 콘텐츠를 함께 비추므로, 콘텐츠 안에서 매 프레임 움직이는 요소(말하는 사람 테두리,
+ * 진행 표시 등)가 있으면 바 블러도 매 프레임 다시 한다. 영상 통화처럼 바 뒤로 보일 것이 배경뿐이면 바에서 이 배경을 비추게 한다.
+ * 그러면 콘텐츠 글래스와 같은 블러 기록을 함께 써서 블러도 배경이 바뀔 때만 한 번 한다.
+ *
+ * ```kotlin
+ * bottomBar = {
+ *     CompositionLocalProvider(LocalGlassBackdrop provides LocalScaffoldBackground.current) { CallDock() }
+ * }
+ * ```
+ */
+public val LocalScaffoldBackground: androidx.compose.runtime.ProvidableCompositionLocal<GlassBackdrop?> =
+    staticCompositionLocalOf { null }
 
 /** [Modifier.glass]가 기본으로 쓰는 글래스 스타일. 글래스 표면이면 그 스타일이, 아니면 표면 밝기에 맞춘 Liquid 스타일이 들어간다. 테마가 없으면 [GlassStyles.Liquid]다. */
 public val LocalGlassStyle: androidx.compose.runtime.ProvidableCompositionLocal<GlassStyle> =
