@@ -9,7 +9,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 새 기능
 
-- 입력 컴포넌트 `KTextField`, `KTextArea`, `KChatInput`의 `TextFieldState` 오버로드와 `KChatInput`의 `maxLength`·`showCounter`, `KIslandContent.leading`과 `KIslandState.show(key, replaceShowing)`, `glowBorder`의 `intensity`(값·람다).
+- 입력 컴포넌트 `KTextField`, `KTextArea`, `KChatInput`의 `TextFieldState` 오버로드와 `KChatInput`의 `maxLength`·`showCounter`·`counterThreshold`(한도에 가까울 때만 글자 수 표시)·`label`(TalkBack 이름), `KIslandContent.leading`과 `KIslandState.show(key, replaceShowing)`, `glowBorder`의 `intensity`(값·람다).
 
 #### UI 키트 (`kinetica-ui`, 새 모듈)
 
@@ -115,6 +115,8 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - 반투명 그룹 안에서 겹친 자식이 더 진해 보이던 문제(레이어 하나로 합성), API 26·27에서 사진 EXIF 방향이 반영되지 않던 문제
 - 노드 순서가 바뀌면 호스트 뷰 상태가 초기화되던 문제, 아주 깊은 JSON 중첩이 스택을 넘기던 문제
 - 타임라인에서 길게 누른 뒤 이어서 끌면 키 줄이 밀려 손가락과 사각형이 어긋나던 문제
+- `KChatInput`, `KSearchBar`, `KSearchView`, `KTagInput`에 글을 쓰면 안내 글이 사라지면서 입력란 이름도 없어져 TalkBack이 '편집 상자'라고만 읽던 문제. 이제 안내 글(또는 `label`)을 입력란 접근성 이름으로 내보냅니다
+- `RollingText` 값이 짧은 간격으로 연달아 바뀌면 마지막 숫자가 빈칸으로 남을 수 있던 문제. 굴러가는 중에 새 값이 오면 지금 위치에서 이어 굴립니다
 
 ### 알파 동안 바뀐 이름
 

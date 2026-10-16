@@ -769,6 +769,12 @@ KMapPin(label = "₩12,000", selected = true)
 
 `KChatInput`은 화면 키보드의 Enter 키가 기본으로 보내기 키입니다(`imeSend = true`). 줄 바꿈 키로 두려면 `imeSend = false`를 넘깁니다. 하드웨어 키보드에서는 Enter가 보내고 Shift+Enter가 줄을 바꿉니다.
 
+글자 수는 `showCounter = true`면 늘 보이고, `counterThreshold = 50`을 주면 남은 글자가 50자 이하가 될 때부터 보입니다. TalkBack은 입력란 이름으로 `label`을 읽고, 없으면 `placeholder`를 읽습니다. 글을 쓰기 시작해 안내 글이 사라져도 이름은 남습니다.
+
+```kotlin
+KChatInput(draft, { draft = it }, onSend = { draft = "" }, placeholder = "메시지 보내기", label = "민지에게 메시지", maxLength = 500, counterThreshold = 50)
+```
+
 다이얼로그나 바텀 시트 안에서 받은 말풍선은 그림자 없이 옅게 그려집니다. 판 위에서도 떠 보이게 하려면 `variant = KVariant.Elevated`를 넘깁니다.
 
 ## 효과와 모션
@@ -807,7 +813,7 @@ Box(Modifier.glowBorder({ level }, RoundedCornerShape(24.dp)))
 
 | 효과 | 사용법 |
 | --- | --- |
-| 숫자 롤링 | `RollingText("1,284,000원")`. 바뀐 자릿수만 위아래로 굴러간다 |
+| 숫자 롤링 | `RollingText("1,284,000원")`. 바뀐 자릿수만 위아래로 굴러가고, 굴러가는 중에 값이 또 바뀌면 지금 위치에서 이어 굴러간다 |
 | 타자기 | `TypewriterText("…")`. 깜박이는 커서와 함께 한 글자씩 나타난다 |
 | 글자 효과 | `ShimmerText`(빛이 흐르는 글자), `GradientText`(색이 흐르는 글자), `ScrambleText`(뒤섞였다 맞춰지는 글자) |
 | 컨페티 | `ConfettiHost(state)` + `rememberConfettiState().burst(origin)` |

@@ -60,12 +60,18 @@ import androidx.compose.ui.unit.sp
  * KChatInput(draft, { draft = it }, onSend = { send(draft); draft = "" }, onAttach = ::pickFile, onVoice = ::record)
  * ```
  *
- * @param placeholder 비어 있을 때 보이는 안내. null이면 '메시지'다.
+ * @param placeholder 비어 있을 때 보이는 안내. null이면 '메시지'다. [label]이 없으면 TalkBack도 이 글을 입력란 이름으로 읽는다.
  * @param maxLines 입력란이 커지는 최대 줄 수. 넘으면 입력란 안에서 스크롤한다. 1보다 작으면 [IllegalArgumentException]을 던진다.
  * @param maxLength 최대 글자 수. 넘는 입력은 잘라서 [onValueChange]에 넘긴다. `null`이면 제한이 없다. 1 미만이면 [IllegalArgumentException]을 던진다.
  * @param showCounter `true`이고 [maxLength]가 있으면 입력란 안 아래 끝에 '지금 글자 수/최대'를 작게 보여 준다.
+ *   한도에 가까워졌을 때만 보이려면 [counterThreshold]를 쓴다.
  * @param imeSend `true`면 화면 키보드의 Enter 키가 보내기 키(`ImeAction.Send`)가 되어 누르면 보낸다. `false`면 줄 바꿈 키다.
  *   하드웨어 키보드의 Enter는 이 값과 관계없이 보낸다.
+ * @param label TalkBack이 읽는 입력란 이름. 글자가 있든 없든 입력란 접근성 노드의 contentDescription으로 남는다.
+ *   null이면 [placeholder]를, 그것도 null이면 '메시지'를 이름으로 쓴다.
+ * @param counterThreshold [maxLength]가 있을 때 남은 글자 수가 이 값 이하가 되어야 글자 수를 보여 준다. 예를 들어 최대 500자에
+ *   50을 주면 450자부터 보인다. 이 값을 주면 [showCounter]와 관계없이 이 규칙을 따른다. 0이면 꽉 찼을 때만 보인다.
+ *   음수면 [IllegalArgumentException]을 던진다.
  */
 @Composable
 public fun KChatInput(
@@ -82,8 +88,11 @@ public fun KChatInput(
     maxLength: Int? = null,
     showCounter: Boolean = false,
     imeSend: Boolean = true,
+    label: String? = null,
+    counterThreshold: Int? = null,
 ) {
-    val options = ChatOptions(onAttach, onVoice, placeholder, enabled, ChatTyping(maxLines, maxLength, showCounter, imeSend))
+    val counter = ChatCounterRule(showCounter, counterThreshold)
+    val options = ChatOptions(onAttach, onVoice, placeholder, enabled, ChatTyping(maxLines, maxLength, counter, imeSend), label)
     val send = chatSend(onSend)
     val canSend = enabled && value.isNotBlank()
     val source = FieldSource.Value(
@@ -108,8 +117,14 @@ public fun KChatInput(
  * @param maxLength 최대 글자 수. 꽉 찬 뒤의 입력은 받지 않고, 여유가 있을 때 길게 붙여 넣으면 넘치는 끝부분을 버린다.
  *   바깥에서 [state]에 직접 넣은 글자는 자르지 않는다. `null`이면 제한이 없다. 1 미만이면 [IllegalArgumentException]을 던진다.
  * @param showCounter `true`이고 [maxLength]가 있으면 입력란 안 아래 끝에 '지금 글자 수/최대'를 작게 보여 준다.
+ *   한도에 가까워졌을 때만 보이려면 [counterThreshold]를 쓴다.
  * @param imeSend `true`면 화면 키보드의 Enter 키가 보내기 키(`ImeAction.Send`)가 되어 누르면 보낸다. `false`면 줄 바꿈 키다.
  *   하드웨어 키보드의 Enter는 이 값과 관계없이 보낸다.
+ * @param label TalkBack이 읽는 입력란 이름. 글자가 있든 없든 입력란 접근성 노드의 contentDescription으로 남는다.
+ *   null이면 [placeholder]를, 그것도 null이면 '메시지'를 이름으로 쓴다.
+ * @param counterThreshold [maxLength]가 있을 때 남은 글자 수가 이 값 이하가 되어야 글자 수를 보여 준다. 예를 들어 최대 500자에
+ *   50을 주면 450자부터 보인다. 이 값을 주면 [showCounter]와 관계없이 이 규칙을 따른다. 0이면 꽉 찼을 때만 보인다.
+ *   음수면 [IllegalArgumentException]을 던진다.
  */
 @Composable
 public fun KChatInput(
@@ -125,8 +140,11 @@ public fun KChatInput(
     maxLength: Int? = null,
     showCounter: Boolean = false,
     imeSend: Boolean = true,
+    label: String? = null,
+    counterThreshold: Int? = null,
 ) {
-    val options = ChatOptions(onAttach, onVoice, placeholder, enabled, ChatTyping(maxLines, maxLength, showCounter, imeSend))
+    val counter = ChatCounterRule(showCounter, counterThreshold)
+    val options = ChatOptions(onAttach, onVoice, placeholder, enabled, ChatTyping(maxLines, maxLength, counter, imeSend), label)
     val send = chatSend(onSend)
     val canSend = enabled && state.text.isNotBlank()
     val source = FieldSource.State(
@@ -144,14 +162,25 @@ private class ChatOptions(
     val placeholder: String?,
     val enabled: Boolean,
     val typing: ChatTyping,
+    val label: String?,
 )
 
 /** 입력란 줄 수, 글자 수, 키보드 설정 */
-private class ChatTyping(val maxLines: Int, val maxLength: Int?, val showCounter: Boolean, val imeSend: Boolean) {
+private class ChatTyping(val maxLines: Int, val maxLength: Int?, val counter: ChatCounterRule, val imeSend: Boolean) {
     init {
         require(maxLines >= 1) { "maxLines는 1 이상이어야 합니다." }
         require(maxLength == null || maxLength >= 1) { "maxLength는 1 이상이어야 합니다." }
     }
+}
+
+/** 글자 수를 언제 보여 줄지. [threshold]가 있으면 [always]보다 앞선다. */
+internal class ChatCounterRule(private val always: Boolean, private val threshold: Int?) {
+    init {
+        require(threshold == null || threshold >= 0) { "counterThreshold는 0 이상이어야 합니다." }
+    }
+
+    /** 지금 [count]자이고 최대가 [max]자일 때 글자 수를 보여 줄지 */
+    fun visible(count: Int, max: Int): Boolean = if (threshold != null) max - count <= threshold else always
 }
 
 @Composable
@@ -204,7 +233,9 @@ private fun ChatField(source: FieldSource, options: ChatOptions, surface: Surfac
     val style = themed(TextStyle(color = ink, fontSize = 16.sp, lineHeight = 22.sp))
     val placeholder = options.placeholder ?: stringResource(R.string.kinetica_ui_chat_hint)
     val typing = options.typing
-    val counter = typing.maxLength?.takeIf { typing.showCounter }
+    val name = options.label ?: placeholder
+    val count = source.text.length
+    val counter = typing.maxLength?.takeIf { typing.counter.visible(count, it) }
     val basics = FieldBasics(
         enabled = options.enabled,
         readOnly = false,
@@ -217,17 +248,24 @@ private fun ChatField(source: FieldSource, options: ChatOptions, surface: Surfac
         source,
         modifier
             .heightIn(min = KMetrics.MinTouch)
-            .kSurface(surface.forField(), FIELD_SHAPE),
+            .kSurface(surface.forField(), FIELD_SHAPE)
+            .fieldName(name),
         basics,
     ) { inner ->
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp), verticalAlignment = Alignment.Bottom) {
             Box(Modifier.weight(1f).padding(vertical = 11.dp), contentAlignment = Alignment.CenterStart) {
                 if (source.text.isEmpty()) {
-                    ThemedText(placeholder, style = style.copy(color = ink.copy(alpha = PLACEHOLDER_ALPHA)), maxLines = 1)
+                    ThemedText(
+                        placeholder,
+                        // 라벨이 따로 있으면 안내 글은 이름이 아니라 힌트이므로 TalkBack이 읽게 둔다.
+                        if (options.label == null) Modifier.fieldNameText() else Modifier,
+                        style = style.copy(color = ink.copy(alpha = PLACEHOLDER_ALPHA)),
+                        maxLines = 1,
+                    )
                 }
                 inner()
             }
-            if (counter != null) ChatCounter(source.text.length, counter, ink)
+            if (counter != null) ChatCounter(count, counter, ink)
         }
     }
 }

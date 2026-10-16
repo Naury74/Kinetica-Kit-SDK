@@ -475,6 +475,8 @@ class UiKitDocExamplesTest {
         KStoryRing(seen = false, onClick = { story = true }) { KAvatar(KAvatar("민지"), size = KAvatarSize.Large) }
         KAttachmentChip("견적서_최종.pdf", detail = "2.4MB", status = KAttachmentStatus.Uploading, progress = 0.4f, onRemove = {})
         KMapPin(label = "₩12,000", selected = true)
+        // 같은 절 아래의 글자 수와 TalkBack 이름 예
+        KChatInput(draft, { draft = it }, onSend = { draft = "" }, placeholder = "메시지 보내기", label = "민지에게 메시지", maxLength = 500, counterThreshold = 50)
     }
 
     @Composable

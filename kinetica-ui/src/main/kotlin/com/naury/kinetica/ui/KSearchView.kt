@@ -99,7 +99,7 @@ private class SearchLists(
  *
  * @param onRemoveRecent null이 아니면 최근 검색 줄 끝에 지우기 버튼을 놓는다.
  * @param onClearRecent null이 아니면 최근 검색 제목 줄에 '모두 지우기'를 놓는다.
- * @param placeholder 검색어가 비어 있을 때 보이는 안내 글
+ * @param placeholder 검색어가 비어 있을 때 보이는 안내 글. TalkBack은 검색어가 있을 때도 이 글을 입력란 이름으로 읽는다.
  * @param content 제안 아래에 이어 그릴 내용(검색 결과 미리 보기 등). 판 안에서 함께 스크롤된다.
  */
 @Composable
@@ -294,17 +294,14 @@ private fun SearchTopRow(frame: SearchFrame, field: SearchField) {
         )
         Box(Modifier.weight(1f).padding(start = 4.dp), contentAlignment = Alignment.CenterStart) {
             if (field.query.isEmpty()) {
-                ThemedText(
-                    frame.placeholder,
-                    style = TextStyle(color = surface.contentColor.copy(alpha = FIELD_HINT_ALPHA), fontSize = 18.sp),
-                    maxLines = 1,
-                )
+                val hint = TextStyle(color = surface.contentColor.copy(alpha = FIELD_HINT_ALPHA), fontSize = 18.sp)
+                ThemedText(frame.placeholder, Modifier.fieldNameText(), style = hint, maxLines = 1)
             }
             ProvideFieldSelection(accent) {
                 BasicTextField(
                     field.query,
                     field.onQueryChange,
-                    Modifier.fillMaxWidth().focusRequester(requester),
+                    Modifier.fillMaxWidth().focusRequester(requester).fieldName(frame.placeholder),
                     singleLine = true,
                     textStyle = themed(TextStyle(color = surface.contentColor, fontSize = 18.sp)),
                     cursorBrush = SolidColor(accent),

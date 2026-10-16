@@ -64,7 +64,7 @@ import androidx.compose.ui.unit.sp
  * @param query 입력한 검색어
  * @param onQueryChange 바뀐 검색어를 받는다.
  * @param onSearch 키보드의 검색 키를 눌렀을 때 그때의 검색어를 받는다.
- * @param placeholder 검색어가 비어 있을 때 보이는 안내 글. 기본값은 '검색'이다.
+ * @param placeholder 검색어가 비어 있을 때 보이는 안내 글. 기본값은 '검색'이다. TalkBack은 검색어가 있을 때도 이 글을 입력란 이름으로 읽는다.
  * @param showCancel `false`면 포커스를 받아도 '취소' 버튼을 띄우지 않는다. 지우기 버튼만으로 충분한 좁은 자리에 쓴다.
  */
 @Composable
@@ -105,7 +105,8 @@ public fun KSearchBar(
                     }
                     .kSurface(surface.forField(), CircleShape)
                     .fieldFocusFrame(SEARCH_HEIGHT / 2, levels, accent, accent)
-                    .onFocusChanged { focused = it.isFocused },
+                    .onFocusChanged { focused = it.isFocused }
+                    .fieldName(placeholder),
                 singleLine = true,
                 textStyle = textStyle,
                 cursorBrush = SolidColor(accent),
@@ -145,6 +146,7 @@ private fun SearchDecoration(
             if (query.isEmpty()) {
                 ThemedText(
                     placeholder,
+                    Modifier.fieldNameText(),
                     style = TextStyle(color = surface.contentColor.copy(alpha = HINT_ALPHA), fontSize = SEARCH_FONT_SIZE),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

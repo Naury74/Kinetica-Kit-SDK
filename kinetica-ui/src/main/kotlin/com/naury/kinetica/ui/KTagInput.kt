@@ -105,7 +105,7 @@ import kotlin.math.roundToInt
  *
  * @param tags 지금 태그 목록. 순서대로 칩을 그린다.
  * @param onTagsChange 태그를 추가하거나 지운 새 목록을 받는다. 추가한 태그는 앞뒤 공백을 지운 값이다.
- * @param placeholder 태그가 하나도 없고 입력란이 비어 있을 때 보이는 안내 문구
+ * @param placeholder 태그가 하나도 없고 입력란이 비어 있을 때 보이는 안내 문구이자 TalkBack이 읽는 입력란 이름. 비어 있으면 이름은 '태그 추가'다.
  * @param suggestions 추천 태그. 입력한 글자로 시작하는 항목을 먼저, 글자가 들어간 항목을 그다음에 최대 5개 보여 준다.
  *   이미 추가한 태그는 빠진다.
  * @param imeAction 키보드 동작 키의 종류. 입력 중인 글자가 있으면 동작 키는 그 글자를 칩으로 만들고 입력란에 머문다.
@@ -236,6 +236,7 @@ private fun TagField(model: TagInputModel, look: TagFieldLook, modifier: Modifie
 private fun TagTextField(model: TagInputModel, look: TagFieldLook, modifier: Modifier, onAction: KeyboardActionScope.() -> Unit) {
     val placeholder = look.placeholder
     val surface = look.surface
+    val name = placeholder.ifEmpty { stringResource(R.string.kinetica_ui_tag_field) }
     BasicTextField(
         model.text,
         model::type,
@@ -244,7 +245,7 @@ private fun TagTextField(model: TagInputModel, look: TagFieldLook, modifier: Mod
             .padding(horizontal = FIELD_PADDING)
             .onFocusChanged { model.focused = it.isFocused }
             .onPreviewKeyEvent { event -> event.type == KeyEventType.KeyDown && event.key == Key.Backspace && model.backspace() }
-            .semantics { if (placeholder.isNotEmpty()) contentDescription = placeholder },
+            .fieldName(name),
         singleLine = true,
         textStyle = themed(TextStyle(color = surface.contentColor, fontSize = FIELD_FONT_SIZE)),
         cursorBrush = SolidColor(KineticaTheme.colors.accent),
@@ -262,6 +263,7 @@ private fun TagTextField(model: TagInputModel, look: TagFieldLook, modifier: Mod
                 if (model.text.isEmpty() && model.tags.isEmpty() && placeholder.isNotEmpty()) {
                     ThemedText(
                         placeholder,
+                        Modifier.fieldNameText(),
                         style = TextStyle(color = surface.contentColor.copy(alpha = PLACEHOLDER_ALPHA), fontSize = FIELD_FONT_SIZE),
                         maxLines = 1,
                     )
