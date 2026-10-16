@@ -9,6 +9,7 @@ import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -157,6 +158,7 @@ public fun Modifier.glass(
     val windowBlurred = LocalWindowBlur.current?.enabled == true
     val position = remember { PositionHolder() }
     val effects = remember { EffectCache() }
+    DisposableEffect(position) { onDispose { position.region.release() } }
     return this
         .onGloballyPositioned {
             position.offset = it.positionOnScreen()
@@ -168,6 +170,7 @@ public fun Modifier.glass(
         .drawBehind {
             position.sampling = false
             if (backdrop?.recording == true) return@drawBehind
+            position.region.used = false
             val outline = shape.createOutline(size, layoutDirection, this)
             val level = intensity.coerceIn(0f, 1f)
             drawOuterShadow(outline, style, level, effects)
@@ -193,6 +196,8 @@ public fun Modifier.glass(
                 }
                 if (style.grain > 0f) drawRect(GrainBrush.value, alpha = style.grain * level)
             }
+            // 굴절 지도를 쓰지 않게 됐으면(강도 0, 스타일 변경, 다른 경로) 자리를 비워 다른 글래스 자리에 남지 않게 한다.
+            if (!position.region.used) position.region.release()
             drawEdgeLight(outline, style, level)
         }
 }
@@ -215,6 +220,9 @@ internal class PositionHolder {
     var pad = 0f
     var scale = 1f
 
+    /** 함께 쓰는 굴절 지도에 잡은 자리. 지도를 쓰는 동안 위치가 바뀌면 자리도 함께 옮긴다. */
+    val region = RefractionRegion()
+
     /** 이번에 그린 기록 여백(px)과 배율을 기억하고 [layer]를 지금 위치로 옮긴다. */
     fun update(backdrop: GlassBackdrop, layer: GraphicsLayer, pad: Float, scale: Float) {
         this.pad = pad
@@ -229,6 +237,8 @@ internal class PositionHolder {
     fun follow(backdrop: GlassBackdrop, layer: GraphicsLayer): Boolean {
         if (!sampling) return false
         val move = sampleTranslation(at(backdrop), backdrop.origin, pad, scale)
+        // 지도를 쓰는 글래스는 여백 없이 기록 전체를 옮겨 그리므로, 이동량을 뒤집은 값이 지도에서 글래스의 왼쪽 위다.
+        if (region.bound) region.place(-move.x, -move.y)
         if (layer.translationX == move.x && layer.translationY == move.y) return false
         layer.translationX = move.x
         layer.translationY = move.y
@@ -291,6 +301,7 @@ private fun DrawScope.drawBackdrop(backdrop: GlassBackdrop, sampler: Sampler, st
     sample.alpha = 1f
     sampler.position.update(backdrop, sample, pad.toFloat(), scale)
     layer.record(recordSize) { drawLayer(sample) }
+    GlassStats.elementLayers++
     translate(-pad.toFloat(), -pad.toFloat()) { scale(1f / scale, pivot = Offset.Zero) { drawLayer(layer) } }
 }
 

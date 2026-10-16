@@ -146,6 +146,8 @@ Box(Modifier.fillMaxWidth().height(240.dp)) {
 `GlassStyle`의 값은 `blur`, `saturation`, `brightness`, `tint`, `edgeLight`, `edgeWidth`, `shadow`, `grain`, `refraction`(API 33 이상에서 가장자리 굴절), `fallback`(블러를 쓸 수 없을 때 칠할 색), `onGlass`(글자 색)다.
 `GlassStyles`에는 위 표의 글래스 프리셋과 함께, 색과 테두리 없이 블러만 주는 `Clear`가 있다(다이얼로그 뒤 배경을 흐릴 때 쓴다). 블러는 Android 12(API 31) 이상에서만 그려지고, 그 아래에서는 `fallback` 색을 칠한다.
 
+`KineticaScaffold` 콘텐츠 안의 글래스는 배경 블러를 한 번만 하고 함께 쓴다. 굴절도 화면에 있는 글래스 32개까지는 셰이더 하나가 한 번에 걸고, 그보다 많으면 넘친 글래스만 따로 건다. 그래서 움직이는 배경 위에 카드와 버튼이 많아도 배경이 바뀌는 프레임의 GPU 비용은 글래스 수와 거의 상관없다. 상단 바, 탭 바, 사진마다 따로 둔 `GlassBackdrop` 위 글래스는 비추는 대상이 달라 각자 블러를 건다.
+
 ### 치수 기준
 
 | 항목 | 기준 |

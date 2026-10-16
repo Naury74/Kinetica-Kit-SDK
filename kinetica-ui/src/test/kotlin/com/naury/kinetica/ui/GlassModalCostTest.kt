@@ -181,6 +181,44 @@ class GlassModalCostTest {
     }
 
     @Test
+    fun `시트가 열리는 동안만 물러난 콘텐츠를 버퍼로 그리고 다 열려 멈추면 놓는다`() {
+        // 영상처럼 멈출 수 없는 배경이면 버퍼를 프레임마다 다시 채우는 비용만 들므로, 멈춘 뒤에는 원래 경로로 그려야 한다.
+        var open by mutableStateOf(false)
+        var host: KOverlayHost? = null
+        compose.setContent {
+            KineticaScaffold(Modifier.size(360.dp, 640.dp), surface = SurfaceStyles.Liquid, background = {
+                Box(Modifier.fillMaxSize().background(gradient))
+            }) {
+                host = LocalKineticaHost.current
+                KSheet(open, { open = false }) { Text("시트", Modifier.padding(vertical = 40.dp)) }
+            }
+        }
+        compose.waitForIdle()
+        val h = requireNotNull(host)
+        fun buffered() = h.buffer.use(h.pushBack, h.modalOpen)
+        assertThat(buffered()).isFalse()
+        compose.mainClock.autoAdvance = false
+        open = true
+        repeat(MOVING_FRAMES) {
+            compose.mainClock.advanceTimeByFrame()
+            compose.waitForIdle()
+        }
+        assertThat(h.modalOpen).isTrue()
+        assertThat(buffered()).isTrue()
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+        assertThat(buffered()).isFalse()
+        // 끌어 닫기처럼 값이 다시 움직이면 버퍼로 돌아간다.
+        h.entries.first().pushBack = 0.5f
+        assertThat(buffered()).isTrue()
+        open = false
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+        assertThat(buffered()).isFalse()
+    }
+
+    @Test
     fun `단색 스캐폴드에서는 모달이 열려도 배경을 멈추지 않는다`() {
         var held: Boolean? = null
         compose.setContent {
@@ -222,6 +260,7 @@ class GlassModalCostTest {
         const val FRAMES_PER_SECOND = 120
         const val NANOS_PER_FRAME = 1_000_000_000L / FRAMES_PER_SECOND
         const val FIRST_FRAMES = 6
+        const val MOVING_FRAMES = 4
         const val OPEN_FRAMES = 30
         const val CLOSE_FRAMES = 14
         val STRONG = GlassStyle(blur = 24.dp, saturation = 1f, tint = Color.Transparent, edgeLight = Color.Transparent, shadow = 0.dp)

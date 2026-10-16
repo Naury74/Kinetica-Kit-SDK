@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -25,6 +26,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +50,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * kinetica-ui 화면의 기본 골격. 상단·하단 바([topBar], [bottomBar])와 이 안에서 연 다이얼로그, 바텀 시트, 토스트를 한 오버레이 레이어에 띄운다.
@@ -198,21 +202,45 @@ public val LocalKineticaIndication: androidx.compose.runtime.ProvidableCompositi
 
 /**
  * 시트가 열린 정도만큼 [content]를 뒤로 물린다. 축소는 그리기 단계에서만 해서 안쪽 글래스의 화면 좌표가 바뀌지 않게 한다.
- * 안쪽은 변환 없는 레이어에 두고 물러나는 동안 화면 밖 버퍼로 그린다. 그러면 배율이 프레임마다 바뀌어도 안쪽 글자와 그림자를
- * 새 배율로 다시 래스터화하지 않고 버퍼 하나를 늘려 그리며, 스크림과 시트가 블러하려고 뒤 화면을 다시 그릴 때도 버퍼만 그린다.
- * Fold7에서는 이 재래스터화로 여는 프레임마다 텍스처 업로드가 15~25번 생겼다.
+ * 물러나는 정도가 바뀌는 동안에는 안쪽을 변환 없는 레이어에 두고 화면 밖 버퍼로 그린다. 그러면 배율이 프레임마다 바뀌어도 안쪽 글자와
+ * 그림자를 새 배율로 다시 래스터화하지 않고 버퍼 하나를 늘려 그린다. Fold7에서는 이 재래스터화로 여는 프레임마다 텍스처 업로드가 15~25번 생겼다.
+ * 다 열려 멈추면 버퍼를 놓는다. 영상처럼 멈출 수 없는 배경이면 버퍼를 프레임마다 다시 채우는 비용만 더해지기 때문이다
+ * (Fold7 호스트 앱에서 시트를 연 채 중간값 8ms가 11~13ms로 늘었다). 배율이 그대로면 다시 래스터화할 일도 없다.
  */
 @Composable
 private fun PushBackBox(host: KOverlayHost, content: @Composable BoxScope.() -> Unit) {
+    LaunchedEffect(host) {
+        snapshotFlow { host.pushBack to host.modalOpen }.collectLatest { (push, modal) ->
+            delay(PUSH_SETTLE_MS)
+            host.buffer.settle(push, modal)
+        }
+    }
     Box(Modifier.fillMaxSize().pushBack(host)) {
         Box(
             Modifier.fillMaxSize().graphicsLayer {
                 // 모달이 열리는 첫 프레임에 버퍼로 바꾸면 그 프레임에는 시트 판이 빈 버퍼를 비출 수 있어, 모달이 붙는 순간(아직 물러나기 전) 바꾼다.
-                val pushing = host.modalOpen || host.pushBack > 0f
-                compositingStrategy = if (pushing) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                val buffered = host.buffer.use(host.pushBack, host.modalOpen)
+                compositingStrategy = if (buffered) CompositingStrategy.Offscreen else CompositingStrategy.Auto
             },
             content = content,
         )
+    }
+}
+
+/**
+ * 뒤로 물러난 콘텐츠를 화면 밖 버퍼로 그릴지 정한다. 모달이 붙었거나 물러나 있는 동안, 마지막으로 멈춘 값과 지금 값이 다르면 버퍼를 쓴다.
+ * 값을 [settle]로 기록하면 같은 값인 동안은 버퍼를 쓰지 않는다.
+ */
+@Stable
+internal class PushBuffer {
+    private var restPush by mutableFloatStateOf(-1f)
+    private var restModal by mutableStateOf(false)
+
+    fun use(push: Float, modal: Boolean): Boolean = (modal || push > 0f) && (push != restPush || modal != restModal)
+
+    fun settle(push: Float, modal: Boolean) {
+        restPush = push
+        restModal = modal
     }
 }
 
@@ -342,6 +370,9 @@ internal class KOverlayHost {
         background.restoreFocusedChild()
     }
 
+    /** 물러난 콘텐츠를 화면 밖 버퍼로 그릴지. */
+    val buffer = PushBuffer()
+
     /** 열린 시트들이 콘텐츠를 밀어내는 정도 중 가장 큰 값(0..1). */
     val pushBack: Float get() = entries.maxOfOrNull { it.pushBack } ?: 0f
 }
@@ -353,6 +384,9 @@ internal class OverlayEntry(val id: Any, val modal: Boolean) {
 }
 
 private const val PUSH_SCALE = 0.07f
+
+// 물러나는 정도가 이 시간(ms) 동안 그대로면 다 열린 것으로 보고 버퍼를 놓는다. 끄는 손가락이 잠깐 멈춘 정도로는 놓지 않을 만큼 둔다.
+private const val PUSH_SETTLE_MS = 150L
 private const val PUSH_ICON_THRESHOLD = 0.5f
 private const val OPAQUE_BACKDROP = 0.5f
 private const val DARK_LUMINANCE = 0.5f
