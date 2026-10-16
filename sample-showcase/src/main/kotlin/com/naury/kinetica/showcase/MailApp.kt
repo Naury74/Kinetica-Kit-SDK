@@ -6,6 +6,7 @@ package com.naury.kinetica.showcase
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -42,6 +43,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -52,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.CoachMarkHost
 import com.naury.kinetica.ui.CoachMarkState
 import com.naury.kinetica.ui.CoachStep
+import com.naury.kinetica.ui.GlassAdaptiveDefaults
 import com.naury.kinetica.ui.GlassDrawer
 import com.naury.kinetica.ui.GlassEmptyIcon
 import com.naury.kinetica.ui.GlassEmptyIconKind
@@ -87,16 +90,25 @@ import kotlinx.coroutines.launch
 internal fun MailApp(onBack: () -> Unit) {
     var selected by rememberSaveable { mutableStateOf<Int?>(null) }
     val mails = remember { mutableStateListOf<Mail>().apply { addAll(MAILS) } }
+    // 두 칸 배치에서는 목록이 옆에 그대로 보이므로 상세 칸에 뒤로 버튼을 두지 않는다.
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val twoPane = maxWidth >= GlassAdaptiveDefaults.TwoPaneMinWidth
+        MailPanes(selected, { selected = it }, mails, twoPane, onBack)
+    }
+}
+
+@Composable
+private fun MailPanes(selected: Int?, select: (Int?) -> Unit, mails: SnapshotStateList<Mail>, twoPane: Boolean, onBack: () -> Unit) {
     GlassListDetail(
         selected,
-        onBack = { selected = null },
+        onBack = { select(null) },
         modifier = Modifier.fillMaxSize(),
         style = GlassStyles.OneUi,
         emptyDetail = { NoMailSelected() },
         list = {
-            MailList(mails, selected, onBack, onOpen = { selected = it }, onDelete = { if (selected == it) selected = null })
+            MailList(mails, selected, onBack, onOpen = { select(it) }, onDelete = { if (selected == it) select(null) })
         },
-    ) { id -> MAILS.firstOrNull { it.id == id }?.let { MailDetail(it) { selected = null } } }
+    ) { id -> MAILS.firstOrNull { it.id == id }?.let { MailDetail(it, if (twoPane) null else ({ select(null) })) } }
 }
 
 @Composable
@@ -112,10 +124,13 @@ private fun MailList(mails: SnapshotStateList<Mail>, selected: Int?, onBack: () 
             style = GlassStyles.OneUi,
             background = { Aurora(Modifier.fillMaxSize(), dark = false) },
             topBar = {
+                // 목록이 제목 아래로 지나갈 때 글자가 겹쳐 보이지 않게 위쪽을 화면 바탕색으로 덮고 아래로 갈수록 투명하게 한다.
                 Row(
-                    Modifier.fillMaxWidth().windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    ).padding(16.dp),
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(0f to HEADER_SCRIM, 0.7f to HEADER_SCRIM, 1f to HEADER_SCRIM.copy(alpha = 0f)))
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                        ).padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     GlassSurface(
@@ -129,7 +144,7 @@ private fun MailList(mails: SnapshotStateList<Mail>, selected: Int?, onBack: () 
                     Label("받은편지함", 22, FontWeight.Bold, Modifier.padding(start = 14.dp))
                 }
             },
-        ) { padding -> Inbox(mails, selected, padding.calculateTopPadding(), coach, onOpen, onDelete) }
+        ) { padding -> ReadingContainer { Inbox(mails, selected, padding.calculateTopPadding(), coach, onOpen, onDelete) } }
         CoachMarkHost(coach, TOUR, onFinish = { toured = true })
     }
 }
@@ -214,43 +229,48 @@ private fun MailRow(mail: Mail, selected: Boolean, onClick: () -> Unit) {
 
 /** 메일 본문. 좁은 화면에서는 목록 위로 밀려 들어오므로 배경을 직접 칠한다. */
 @Composable
-private fun MailDetail(mail: Mail, onClose: () -> Unit) {
+private fun MailDetail(mail: Mail, onClose: (() -> Unit)?) {
     GlassScaffold(
         Modifier.fillMaxSize(),
         style = GlassStyles.OneUi,
         background = { Aurora(Modifier.fillMaxSize(), dark = false) },
         topBar = { DemoTopBar(mail.from, "받은편지함", onClose) },
     ) { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    start = readingPadding(),
-                    end = readingPadding(),
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom =
-                        navigationBarBottom() + 40.dp,
-                ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Label(mail.subject, 22, FontWeight.Bold)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).background(mail.color, CircleShape), contentAlignment = Alignment.Center) {
-                    Label(mail.from.take(1), 16, FontWeight.Bold, color = Color.White)
-                }
-                Column(Modifier.padding(start = 12.dp)) {
-                    Label(mail.from, 15, FontWeight.SemiBold)
-                    Label("나에게 · 오전 9:41", 12, color = LocalGlassContentColor.current.copy(alpha = 0.6f))
-                }
+        ReadingContainer { MailBody(mail, padding.calculateTopPadding()) }
+    }
+}
+
+@Composable
+private fun MailBody(mail: Mail, top: Dp) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(
+                start = readingPadding(),
+                end = readingPadding(),
+                top = top + 8.dp,
+                bottom =
+                    navigationBarBottom() + 40.dp,
+            ),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Label(mail.subject, 22, FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(40.dp).background(mail.color, CircleShape), contentAlignment = Alignment.Center) {
+                Label(mail.from.take(1), 16, FontWeight.Bold, color = Color.White)
             }
-            GlassSurface(Modifier.fillMaxWidth()) {
-                Label(mail.body, 15, modifier = Modifier.padding(18.dp))
+            Column(Modifier.padding(start = 12.dp)) {
+                Label(mail.from, 15, FontWeight.SemiBold)
+                Label("나에게 · 오전 9:41", 12, color = LocalGlassContentColor.current.copy(alpha = 0.6f))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pill("답장", filled = true) {}
-                Pill("전달") {}
-            }
+        }
+        GlassSurface(Modifier.fillMaxWidth()) {
+            Label(mail.body, 15, modifier = Modifier.padding(18.dp))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Pill("답장", filled = true) {}
+            Pill("전달") {}
         }
     }
 }
@@ -271,7 +291,7 @@ private fun NoMailSelected() {
 
 @Composable
 private fun Tips() {
-    var open by remember { mutableStateOf(false) }
+    var open by rememberSaveable { mutableStateOf(false) }
     GlassExpandable(open, { open = it }, header = { Label("이 화면에서 해 볼 것", 15, FontWeight.SemiBold) }) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Label("• 메일을 왼쪽으로 밀면 보관·삭제, 끝까지 밀면 바로 삭제", 13)
@@ -342,3 +362,5 @@ private val TOUR = listOf(
     CoachStep("menu", "메뉴", "여기를 누르거나 왼쪽 가장자리에서 끌면 메일함 서랍이 열려요."),
     CoachStep("row", "밀어서 정리", "메일을 왼쪽으로 밀면 보관·삭제, 오른쪽으로 밀면 읽음 표시를 해요."),
 )
+
+private val HEADER_SCRIM = Color(0xF2F6F5FB)

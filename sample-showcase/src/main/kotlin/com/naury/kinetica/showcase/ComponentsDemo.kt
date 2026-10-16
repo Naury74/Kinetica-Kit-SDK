@@ -23,12 +23,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -37,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -107,11 +111,14 @@ import kotlinx.coroutines.launch
  */
 @Composable
 internal fun ComponentsDemo(onBack: () -> Unit) {
-    val title = rememberGlassLargeTitleState()
     val island = rememberGlassIslandState()
     val snackbar = rememberGlassSnackbarState()
     val pager = rememberPagerState { COMPONENT_TABS.size }
-    var dial by remember { mutableStateOf(false) }
+    // 탭마다 목록 스크롤 위치가 따로 있고, 큰 제목은 지금 보이는 탭 목록의 위치를 따른다.
+    // 맨 위에 있는 탭으로 옮기면 큰 제목이 다시 펼쳐져 탭 줄 아래에 빈 공간이 생기지 않는다.
+    val lists = List(COMPONENT_TABS.size) { rememberLazyListState() }
+    val title = rememberGlassLargeTitleState(lists[pager.settledPage])
+    var dial by rememberSaveable { mutableStateOf(false) }
     var onboarding by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val notify: (String) -> Unit = { scope.launch { snackbar.show(it) } }
@@ -122,11 +129,13 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
             background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Candy) },
             topBar = {
                 // 탭 줄은 큰 제목과 함께 올라가 작은 바 밑에 붙고, 접히면 글래스 배경이 탭 줄까지 이어진다.
-                GlassLargeTitleBar(title, "컴포넌트", onBack = onBack, bottom = {
+                GlassLargeTitleBar(title, "컴포넌트", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH, bottom = {
                     GlassTopTabs(
                         COMPONENT_TABS.map { GlassTab(it) },
                         pager,
                         Modifier.padding(horizontal = readingPadding(16.dp)).fillMaxWidth().padding(bottom = 6.dp),
+                        // 큰 글자에서는 네 칸을 똑같이 나누면 "미디어"가 잘리므로 가로로 스크롤하는 탭으로 바꾼다.
+                        scrollable = LocalDensity.current.fontScale > 1.3f,
                     )
                 })
             },
@@ -139,11 +148,13 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
                     navigationBarBottom() + 120.dp,
             )
             HorizontalPager(pager, Modifier.fillMaxSize()) { page ->
-                when (page) {
-                    0 -> BasicTab(list, title.connection, island, snackbar)
-                    1 -> InputTab(list, title.connection)
-                    2 -> MediaTab(list, title.connection) { onboarding = true }
-                    else -> EffectsTab(list, title.connection, notify)
+                CompositionLocalProvider(LocalTabListState provides lists[page]) {
+                    when (page) {
+                        0 -> BasicTab(list, title.connection, island, snackbar)
+                        1 -> InputTab(list, title.connection)
+                        2 -> MediaTab(list, title.connection) { onboarding = true }
+                        else -> EffectsTab(list, title.connection, notify)
+                    }
                 }
             }
             if (pager.currentPage == 0) DemoDial(dial, { dial = it }, notify)
@@ -154,12 +165,16 @@ internal fun ComponentsDemo(onBack: () -> Unit) {
     }
 }
 
+/** 탭 한 장의 목록 스크롤 상태. [ComponentsDemo]가 탭마다 넣어 준다. */
+private val LocalTabListState = staticCompositionLocalOf<LazyListState> { error("ComponentsDemo 안에서만 씁니다.") }
+
 /** 탭 한 장의 목록. 스크롤하면 큰 제목이 접힌다. */
 @Composable
 internal fun ComponentTabList(padding: PaddingValues, connection: NestedScrollConnection, content: LazyListScope.() -> Unit) {
     LazyColumn(
         // 입력란에 초점이 가면 키보드 높이만큼 목록이 줄어 입력란이 가려지지 않는다.
         Modifier.fillMaxSize().imePadding().nestedScroll(connection),
+        state = LocalTabListState.current,
         contentPadding = padding,
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
@@ -247,8 +262,8 @@ private fun ButtonsCard() {
 
 @Composable
 private fun StepperCard() {
-    var count by remember { mutableIntStateOf(2) }
-    var chips by remember { mutableStateOf(setOf(0)) }
+    var count by rememberSaveable { mutableIntStateOf(2) }
+    var chips by rememberSaveable { mutableStateOf(setOf(0)) }
     DemoCard("스테퍼, 칩, 배지", "숫자는 굴러가며 바뀌고, 길게 누르면 점점 빨라집니다. 배지는 숫자가 바뀔 때 톡 튑니다.") {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             GlassStepper(count, { count = it }, range = 0..120)
@@ -273,10 +288,10 @@ private fun ProgressCard() {
 
 @Composable
 private fun InputCard() {
-    var query by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-    var tries by remember { mutableIntStateOf(0) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
+    var tries by rememberSaveable { mutableIntStateOf(0) }
     DemoCard("검색과 입력", "검색창을 누르면 취소 버튼이 밀려 들어옵니다. 이메일 형식이 틀리면 테두리가 빨개지며 흔들립니다.") {
         GlassSearchBar(query, { query = it }, {}, placeholder = "메뉴나 가게 이름")
         GlassTextField(
@@ -304,9 +319,9 @@ private fun InputCard() {
 
 @Composable
 private fun PickerCard() {
-    var date by remember { mutableStateOf(LocalDate.now()) }
-    var hour by remember { mutableIntStateOf(9) }
-    var minute by remember { mutableIntStateOf(30) }
+    var date by rememberSaveable { mutableStateOf(LocalDate.now()) }
+    var hour by rememberSaveable { mutableIntStateOf(9) }
+    var minute by rememberSaveable { mutableIntStateOf(30) }
     DemoCard("휠 피커", "iOS처럼 원통에 붙은 휠입니다. 굴리면 항목마다 가볍게 진동하고 가운데에 맞춰 멈춥니다.") {
         GlassDatePicker(date, { date = it }, Modifier.fillMaxWidth())
         GlassTimePicker(hour, minute, { h, m ->

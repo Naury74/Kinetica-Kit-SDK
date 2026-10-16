@@ -27,9 +27,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -64,11 +65,13 @@ import com.naury.kinetica.ui.rememberGlassExpandState
 @Composable
 internal fun NavigationDemo(onBack: () -> Unit) {
     var stack by rememberSaveable { mutableStateOf(listOf(ROOT)) }
-    // 하위 화면은 단계마다 밝고 어두운 배경이 번갈아 나온다. 맨 위 화면 기준으로 한 번만 정한다.
-    StatusBarIcons(darkBackground = stack.size > 1 && (stack.size - 1) % 2 == 0)
+    var storyOpen by remember { mutableStateOf(false) }
+    // 하위 화면은 단계마다 밝고 어두운 배경이 번갈아 나온다. 첫 화면에서 연 이야기 상세는 위쪽이 어두운 사진이다.
+    // 사라지는 화면이 늦게 정리되며 값을 덮지 않도록 맨 위 화면 기준으로 여기서 한 번만 정한다.
+    StatusBarIcons(darkBackground = if (stack.size == 1) storyOpen else (stack.size - 1) % 2 == 0)
     PushNavigation(stack, onBack = { stack = stack.dropLast(1) }) { screen ->
         if (screen == ROOT) {
-            NavigationHome(onBack) { stack = stack + it }
+            NavigationHome(onBack, { storyOpen = it }) { stack = stack + it }
         } else {
             NavigationDetail(screen, depth = stack.indexOf(screen), { stack = stack.dropLast(1) }) { stack = stack + it }
         }
@@ -76,7 +79,7 @@ internal fun NavigationDemo(onBack: () -> Unit) {
 }
 
 @Composable
-private fun NavigationHome(onBack: () -> Unit, push: (String) -> Unit) {
+private fun NavigationHome(onBack: () -> Unit, onStoryOpen: (Boolean) -> Unit, push: (String) -> Unit) {
     val expand = rememberGlassExpandState()
     GlassScaffold(
         Modifier.fillMaxSize(),
@@ -96,22 +99,16 @@ private fun NavigationHome(onBack: () -> Unit, push: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item { Label("카드를 눌러 열어 보세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = 520.dp).fillMaxWidth()) }
+            item { Label("카드를 눌러 열어 보세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = READING_WIDTH).fillMaxWidth()) }
             STORIES.forEachIndexed { index, story -> item("story$index") { StoryCard(story, expand, index) } }
-            item { Label("항목을 눌러 들어간 뒤, 왼쪽 가장자리를 밀어 돌아와 보세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = 520.dp).fillMaxWidth()) }
+            item {
+                Label("항목을 눌러 들어간 뒤, 왼쪽 가장자리를 밀어 돌아와 보세요", 15, FontWeight.SemiBold, Modifier.widthIn(max = READING_WIDTH).fillMaxWidth())
+            }
             item { MenuList(MENU, push) }
         }
         GlassExpandHost(expand, cornerRadius = 28.dp, title = "이야기") { key -> StoryDetail(STORIES[key as Int], expand) }
-        // 상세 위쪽은 어두운 사진이라, 열려 있는 동안 상태 표시줄 아이콘을 밝게 바꾼다.
-        val view = LocalView.current
         val expanded = expand.expandedKey != null
-        DisposableEffect(expanded) {
-            val window = (view.context as? android.app.Activity)?.window
-            val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-            val before = controller?.isAppearanceLightStatusBars
-            if (expanded) controller?.isAppearanceLightStatusBars = false
-            onDispose { if (before != null) controller.isAppearanceLightStatusBars = before }
-        }
+        SideEffect { onStoryOpen(expanded) }
     }
 }
 
@@ -119,7 +116,7 @@ private fun NavigationHome(onBack: () -> Unit, push: (String) -> Unit) {
 private fun StoryCard(story: Story, expand: GlassExpandState, index: Int) {
     Box(
         Modifier
-            .widthIn(max = 520.dp)
+            .widthIn(max = READING_WIDTH)
             .fillMaxWidth()
             .expandSource(expand, index)
             .jellyPress(0.03f)
@@ -148,7 +145,15 @@ private fun StoryDetail(story: Story, expand: GlassExpandState) {
     Box(Modifier.fillMaxSize().background(Color(0xFFF7F7FA))) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             StoryCover(story)
-            Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // 넓은 화면에서도 본문 한 줄이 너무 길지 않게 읽기 폭으로 묶어 가운데 둔다.
+            Column(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .widthIn(max = READING_WIDTH)
+                    .padding(24.dp)
+                    .padding(bottom = navigationBarBottom()),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
                 Label("아래로 끌면 작아지면서 원래 카드로 돌아갑니다.", 15, FontWeight.SemiBold, color = Color(0xFF15161A))
                 repeat(6) { Label(story.body, 16, color = Color(0xFF3A3B40)) }
             }
@@ -192,7 +197,7 @@ private fun NavigationDetail(screen: String, depth: Int, back: () -> Unit, push:
 @Composable
 private fun MenuList(items: List<String>, push: (String) -> Unit) {
     // 행 눌림 표시가 카드 모서리 밖으로 나가지 않도록 6dp 안쪽에 18dp(바깥 24dp − 6dp) 모서리로 그린다.
-    GlassSurface(Modifier.widthIn(max = 520.dp).fillMaxWidth()) {
+    GlassSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth()) {
         Column(Modifier.padding(6.dp)) {
             items.forEach { item ->
                 Row(

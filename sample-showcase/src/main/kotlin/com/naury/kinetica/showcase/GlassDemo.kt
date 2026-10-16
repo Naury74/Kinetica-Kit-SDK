@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -73,8 +74,8 @@ internal fun GlassDemo(onBack: () -> Unit) {
     var styleIndex by rememberSaveable { mutableIntStateOf(0) }
     var dark by rememberSaveable { mutableStateOf(false) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    var dialog by remember { mutableStateOf(false) }
-    var sheet by remember { mutableStateOf(false) }
+    var dialog by rememberSaveable { mutableStateOf(false) }
+    var sheet by rememberSaveable { mutableStateOf(false) }
     var origin by remember { mutableStateOf<Offset?>(null) }
     val toast = rememberGlassToastState()
     val scope = rememberCoroutineScope()
@@ -84,7 +85,7 @@ internal fun GlassDemo(onBack: () -> Unit) {
         Modifier.fillMaxSize(),
         style = style,
         background = { Aurora(Modifier.fillMaxSize(), dark) },
-        topBar = { DemoTopBar("글래스 UI · ${option.name}", "배경이 비치는 글래스 표면과 다이얼로그, 시트, 토스트", onBack) },
+        topBar = { DemoTopBar("글래스 UI · ${option.name}", "배경이 비치는 글래스 표면과 다이얼로그, 시트, 토스트", onBack, demoContentWidth()) },
         bottomBar = {
             GlassTabBar(
                 listOf(
@@ -100,22 +101,13 @@ internal fun GlassDemo(onBack: () -> Unit) {
     ) { padding ->
         // 맨 위에서 당기면 글래스 인디케이터가 물방울처럼 차오르고, 놓으면 새로 고침한다.
         DemoRefresh(padding.calculateTopPadding(), { toast.show("새로 고쳤어요") }) {
-            LazyColumn(
-                Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = readingPadding(),
-                    end = readingPadding(),
-                    top =
-                        padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 16.dp,
-                ),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                item { Intro(dark) }
-                item {
-                    Chips(STYLES.map { it.name }, styleIndex) { styleIndex = it }
-                    Spacer(Modifier.height(8.dp))
-                    Chips(listOf("라이트", "다크"), if (dark) 1 else 0) { dark = it == 1 }
+            DemoCardList(padding.calculateTopPadding() + 8.dp, padding.calculateBottomPadding() + 16.dp) {
+                item(span = StaggeredGridItemSpan.FullLine) { Intro(dark) }
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Chips(STYLES.map { it.name }, styleIndex) { styleIndex = it }
+                        Chips(listOf("라이트", "다크"), if (dark) 1 else 0) { dark = it == 1 }
+                    }
                 }
                 item { PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } } }
                 item { ControlsCard() }
@@ -181,7 +173,7 @@ private fun DemoPopups(
         Label("공유하기", 20, FontWeight.Bold)
         Spacer(Modifier.height(12.dp))
         // 입력란을 누르면 시트가 키보드 위로 올라온다(contentWindowInsets 기본값).
-        var note by remember { mutableStateOf("") }
+        var note by rememberSaveable { mutableStateOf("") }
         GlassTextField(note, { note = it }, "함께 보낼 메모", Modifier.fillMaxWidth(), placeholder = "받는 사람에게 남길 말")
         Spacer(Modifier.height(8.dp))
         SHARE_TARGETS.forEach { (item, icon) ->
@@ -202,11 +194,11 @@ private fun DemoPopups(
 
 @Composable
 private fun ControlsCard() {
-    var view by remember { mutableIntStateOf(0) }
-    var notify by remember { mutableStateOf(true) }
-    var dark by remember { mutableStateOf(false) }
-    var volume by remember { mutableFloatStateOf(0.6f) }
-    var size by remember { mutableFloatStateOf(2f) }
+    var view by rememberSaveable { mutableIntStateOf(0) }
+    var notify by rememberSaveable { mutableStateOf(true) }
+    var dark by rememberSaveable { mutableStateOf(false) }
+    var volume by rememberSaveable { mutableFloatStateOf(0.6f) }
+    var size by rememberSaveable { mutableFloatStateOf(2f) }
     GlassSurface(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Label("컨트롤", 18, FontWeight.Bold)
@@ -248,11 +240,12 @@ private val STYLES = listOf(
 private fun Intro(dark: Boolean) {
     val ink = if (dark) Color.White else Color(0xFF15161A)
     Column(Modifier.padding(top = 8.dp)) {
-        BasicText("배경이 비치는 글래스", style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold, color = ink))
+        Label("배경이 비치는 글래스", 30, FontWeight.Bold, color = ink)
         Spacer(Modifier.height(6.dp))
-        BasicText(
+        Label(
             "GlassScaffold 하나만 쓰면 상단 바와 팝업, 시트, 토스트 뒤로 배경이 흐리게 비칩니다. 아래에서 스타일을 바꿔 보세요.",
-            style = TextStyle(fontSize = 15.sp, color = ink.copy(alpha = 0.8f)),
+            15,
+            color = ink.copy(alpha = 0.8f),
         )
     }
 }

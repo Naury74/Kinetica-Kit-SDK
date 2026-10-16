@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- XML 레이아웃 화면 색. 다크 모드 값은 values-night에 있다. -->
+    <color name="xml_background">#F3F4F8</color>
+    <color name="xml_title">#15161A</color>
+    <color name="xml_body">#6B7280</color>
+    <!-- 캡슐 버튼 바탕과 글자에 쓰는 잉크 색 -->
+    <color name="xml_ink">#15161A</color>
+</resources>

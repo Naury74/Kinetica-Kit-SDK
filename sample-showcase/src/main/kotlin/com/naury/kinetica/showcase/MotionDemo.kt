@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +26,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,19 +66,9 @@ internal fun MotionDemo(onBack: () -> Unit) {
         Modifier.fillMaxSize().then(if (siri) Modifier.glowBorder(RectangleShape, width = 4.dp, glow = 28.dp) else Modifier),
         style = GlassStyles.OneUi,
         background = { Aurora(Modifier.fillMaxSize(), dark = false) },
-        topBar = { DemoTopBar("모션 효과", "Modifier 한 줄로 붙이는 애니메이션", onBack) },
+        topBar = { DemoTopBar("모션 효과", "Modifier 한 줄로 붙이는 애니메이션", onBack, demoContentWidth()) },
     ) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = readingPadding(),
-                end = readingPadding(),
-                top = padding.calculateTopPadding() + 8.dp,
-                bottom =
-                    navigationBarBottom() + 40.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
+        DemoCardList(padding.calculateTopPadding() + 8.dp, navigationBarBottom() + 40.dp) {
             item { GlowCard(siri) { siri = !siri } }
             item { JellyCard() }
             item {
@@ -112,9 +104,11 @@ internal fun MotionDemo(onBack: () -> Unit) {
 private fun JellyCard() {
     DemoCard("젤리 버튼과 자석 버튼", "Modifier.jellyPress와 Modifier.magnetic입니다. 누르면 젤리처럼 납작해지고, 끌면 손가락을 따라옵니다.") {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Pill("젤리 버튼", Modifier.height(44.dp), filled = true) {}
+            Pill("젤리 버튼", Modifier.heightIn(min = 44.dp), filled = true) {}
             Box(
-                Modifier.magnetic(0.35f).size(width = 140.dp, height = 44.dp).background(Color(0xFF15161A), CircleShape),
+                Modifier.magnetic(
+                    0.35f,
+                ).heightIn(min = 44.dp).background(Color(0xFF15161A), CircleShape).padding(horizontal = 22.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) { Label("자석 버튼", 14, FontWeight.SemiBold, color = Color.White) }
         }
@@ -136,7 +130,7 @@ private fun GlowCard(on: Boolean, toggle: () -> Unit) {
 
 @Composable
 private fun RollingCard() {
-    var sales by remember { mutableLongStateOf(1_284_000L) }
+    var sales by rememberSaveable { mutableLongStateOf(1_284_000L) }
     DemoCard("숫자 롤링", "RollingText입니다. 주행 거리계처럼 바뀐 자릿수만 위아래로 굴러갑니다.") {
         RollingText(
             NumberFormat.getNumberInstance(Locale.KOREA).format(sales) + "원",
@@ -161,7 +155,7 @@ private fun TypewriterCard() {
 
 @Composable
 private fun PresetsCard() {
-    var taps by remember { mutableIntStateOf(0) }
+    var taps by rememberSaveable { mutableIntStateOf(0) }
     DemoCard("프리셋 효과", "Modifier.kineticaEffects(EffectPresets.…) 한 줄로 어떤 뷰에든 누름, 등장, 반복 애니메이션을 붙입니다. 누른 횟수 $taps") {
         // 세 칸씩 나눠 카드 폭을 고르게 채운다.
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -36,8 +36,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.naury.kinetica.motion.MorphResult
-import com.naury.kinetica.motion.SceneMorph
 import com.naury.kinetica.motion.TransitionEnd
 import com.naury.kinetica.player.SceneTransition
 import com.naury.kinetica.player.SharedScenePlayer
@@ -81,9 +79,10 @@ private fun SceneGrid(
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(160.dp),
+            // 카드 칸마다 6dp 여백이 있어 그만큼 빼면 카드 가장자리가 상단 바 캡슐과 맞는다. 넓은 화면에서는 같은 읽기 폭으로 가운데 둔다.
             contentPadding = PaddingValues(
-                start = 12.dp,
-                end = 12.dp,
+                start = readingPadding(16.dp) - 6.dp,
+                end = readingPadding(16.dp) - 6.dp,
                 top = padding.calculateTopPadding(),
                 bottom =
                     navigationBarBottom() + 24.dp,
@@ -111,7 +110,6 @@ private fun SceneGrid(
 /** 카드 장면에서 상세 장면으로 morph한다. 완전히 닫혔을 때 [onClosed]를 한 번만 부른다. */
 @Composable
 private fun SceneDetail(item: GalleryItem, shared: SharedTransitionScope, visibility: AnimatedVisibilityScope, onClosed: () -> Unit) {
-    val morph = remember(item) { (SceneMorph.create(item.card, item.detail) as MorphResult.Ready).morph }
     val opening = rememberTransitionDriver()
     val closing = rememberTransitionDriver(onEnd = { if (it == TransitionEnd.Completed) onClosed() })
     LaunchedEffect(opening) { opening.animateTo(forward = true) }
@@ -120,6 +118,9 @@ private fun SceneDetail(item: GalleryItem, shared: SharedTransitionScope, visibi
     val close by closing.state.collectAsState()
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val travel = with(LocalDensity.current) { maxHeight.toPx() } * 0.6f
+        // 상세 장면 높이를 화면 비율에 맞춰 위아래에 빈 띠가 생기지 않게 한다.
+        val height = 1080.0 * maxHeight.value / maxWidth.value.coerceAtLeast(1f)
+        val morph = remember(item, height) { item.morph(height) }
         with(shared) {
             Box(Modifier.fillMaxSize().sharedBounds(rememberSharedContentState(item.id), visibility).dragToDismiss(closing, travel)) {
                 SceneTransition(morph, open.progress * (1.0 - close.progress), Modifier.fillMaxSize(), background = DARK)

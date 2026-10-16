@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,7 +74,7 @@ internal fun EffectsTab(padding: PaddingValues, connection: NestedScrollConnecti
 
 @Composable
 private fun ParticleCard() {
-    var preset by remember { mutableStateOf(ParticlePreset.Snow) }
+    var preset by rememberSaveable { mutableStateOf(ParticlePreset.Snow) }
     val particles = rememberParticleFieldState()
     DemoCard("파티클", "칩으로 프리셋을 바꿉니다. 버튼을 누르면 불꽃놀이로 바꾸고 바로 하나를 터뜨립니다.") {
         GlassChipGroup(PARTICLE_NAMES, setOf(preset.ordinal), { picked ->
@@ -95,14 +96,15 @@ private fun ParticleCard() {
 
 @Composable
 private fun FlipCardCard() {
-    var flipped by remember { mutableStateOf(false) }
+    var flipped by rememberSaveable { mutableStateOf(false) }
     DemoCard("뒤집는 카드", "카드를 좌우로 끌면 손을 따라 돌고, 놓으면 가까운 면에 멈춥니다. 버튼으로도 뒤집을 수 있습니다.") {
         FlipCard(
             flipped,
             { flipped = it },
             Modifier.fillMaxWidth().aspectRatio(1.586f),
-            front = { PaymentCardFront() },
-            back = { PaymentCardBack() },
+            // 실물 카드처럼 크기가 정해진 면이라 큰 글자 설정에서 카드 번호가 두 줄로 넘어가지 않게 배율을 제한한다.
+            front = { CappedFontScale(1.3f) { PaymentCardFront() } },
+            back = { CappedFontScale(1.3f) { PaymentCardBack() } },
         )
         Pill(if (flipped) "앞면 보기" else "뒷면 보기") { flipped = !flipped }
     }
@@ -113,7 +115,7 @@ private fun PaymentCardFront() {
     Column(
         Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(INNER_SHAPE)
             .background(Brush.linearGradient(listOf(Color(0xFF232526), Color(0xFF414345))))
             .padding(22.dp),
     ) {
@@ -129,7 +131,7 @@ private fun PaymentCardBack() {
     Column(
         Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(INNER_SHAPE)
             .background(Brush.linearGradient(listOf(Color(0xFF414345), Color(0xFF232526)))),
     ) {
         Spacer(Modifier.height(28.dp))
@@ -143,7 +145,7 @@ private fun PaymentCardBack() {
 
 @Composable
 private fun BlobCard(notify: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
+    var open by rememberSaveable { mutableStateOf(false) }
     val gap by animateDpAsState(if (open) 20.dp else 0.dp, spring(dampingRatio = 0.6f, stiffness = 300f), label = "blob-gap")
     DemoCard("액체 버튼과 방울 묶음", "버튼을 누르면 누른 자리가 오목하게 들어갔다가 출렁이며 돌아옵니다. 방울은 가까워지면 녹아 붙고 멀어지면 떨어집니다.") {
         GlassBlobButton("구매하기", { notify("구매 버튼을 눌렀어요") }, Modifier.fillMaxWidth())

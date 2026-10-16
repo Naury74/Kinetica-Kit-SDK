@@ -17,9 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,7 +64,7 @@ internal fun HealthApp(onBack: () -> Unit) {
         Modifier.fillMaxSize(),
         style = GlassStyles.LiquidDark,
         background = { MeshGradientBackground(Modifier.fillMaxSize(), palette = MeshGradients.Ocean) },
-        topBar = { GlassLargeTitleBar(title, "건강", onBack = onBack) },
+        topBar = { GlassLargeTitleBar(title, "건강", onBack = onBack, contentMaxWidth = TITLE_MAX_WIDTH) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().nestedScroll(title.connection),
@@ -171,7 +174,7 @@ private fun SpendCard() {
 
 @Composable
 private fun HeartRateCard() {
-    var range by remember { mutableStateOf(100f..150f) }
+    var range by rememberSaveable(saver = rangeStateSaver) { mutableStateOf(100f..150f) }
     DemoCard("목표 심박 범위", "두 손잡이를 끌어 운동할 때 유지할 심박 범위를 정합니다.") {
         Label("${range.start.roundToInt()}–${range.endInclusive.roundToInt()} bpm", 22, FontWeight.Bold)
         GlassRangeSlider(range, { range = it }, valueRange = 40f..200f, valueLabel = { "${it.roundToInt()}" })
@@ -181,7 +184,7 @@ private fun HeartRateCard() {
 @Composable
 private fun WorkoutCalendarCard() {
     val calendar = rememberGlassCalendarState()
-    var selection by remember { mutableStateOf<GlassCalendarSelection>(GlassCalendarSelection.Range()) }
+    var selection by rememberSaveable(saver = calendarRangeSaver) { mutableStateOf<GlassCalendarSelection>(GlassCalendarSelection.Range()) }
     val today = remember { LocalDate.now() }
     DemoCard("운동 기록", "운동한 날에는 점이 찍혀 있습니다. 두 날을 누르면 그 기간이 이어진 띠로 칠해집니다.") {
         GlassCalendar(
@@ -207,3 +210,14 @@ private fun NextWorkoutCard() {
 }
 
 private val DAYS = listOf("월", "화", "수", "목", "금", "토", "일")
+
+/** 기간 선택을 시작일, 끝일(epoch day, 없으면 null)로 저장한다. 하루 선택은 이 화면에서 쓰지 않는다. */
+private val calendarRangeSaver = Saver<MutableState<GlassCalendarSelection>, ArrayList<Long?>>(
+    save = { state ->
+        val range = state.value as? GlassCalendarSelection.Range ?: GlassCalendarSelection.Range()
+        arrayListOf(range.start?.toEpochDay(), range.end?.toEpochDay())
+    },
+    restore = { saved ->
+        mutableStateOf(GlassCalendarSelection.Range(saved[0]?.let(LocalDate::ofEpochDay), saved[1]?.let(LocalDate::ofEpochDay)))
+    },
+)

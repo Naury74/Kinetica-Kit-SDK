@@ -40,6 +40,7 @@ import com.naury.kinetica.serialization.SceneFetch
 import com.naury.kinetica.ui.GlassStyle
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.view.GlassDialogs
+import com.naury.kinetica.ui.view.GlassPopupHandle
 import com.naury.kinetica.ui.view.GlassPopupOptions
 import com.naury.kinetica.ui.view.GlassSheets
 import com.naury.kinetica.ui.view.GlassSurfaceView
@@ -68,7 +69,7 @@ class XmlActivity : ComponentActivity() {
         val board = findViewById<KineticaBoardView>(R.id.board)
         val edit = findViewById<Button>(R.id.edit)
         // 화면을 회전해도 배치와 실행 취소 기록이 유지되고, 화면이 가려질 때마다 저장된다.
-        val state = BoardStates.obtain(this, catalog, BoardStorage.sharedPreferences(this, "showcase-xml", "board"))
+        val state = BoardStates.obtain(this, catalog, BoardStorage.sharedPreferences(this, "showcase-xml", "board-v2"))
         board.setBoard(state) { id, context ->
             val key = state.widgetKeyOf(id) ?: id
             TextView(context).apply {
@@ -91,11 +92,36 @@ class XmlActivity : ComponentActivity() {
         board.setOnLongPressListener { if (!board.isEditing) toggle() }
 
         val promo = findViewById<KineticaPlayerView>(R.id.promo)
-        promo.setLoader(RemoteSceneLoader({ SceneFetch.Body(promoJson(0).toByteArray()) }))
+        promo.setLoader(RemoteSceneLoader({ SceneFetch.Body(promoJson(0, heroOnly = true).toByteArray()) }))
         promo.data = SceneData.of("sales.today" to DataValue.Number(1_284_000.0))
         promo.setOnActionListener { raw -> GlassToasts.show(this, "받은 동작: ${SceneAction.parse(raw).name}") }
         setUpGlass()
+        // 화면을 돌리거나 폴더블을 접고 펴서 액티비티가 다시 만들어지면 열려 있던 창은 닫히므로, 저장해 둔 상태로 다시 띄운다.
+        when (savedInstanceState?.getString(KEY_POPUP)) {
+            POPUP_SHEET -> showSheet(savedInstanceState.getString(KEY_MEMO).orEmpty())
+            POPUP_DIALOG -> showDialog()
+        }
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val sheetOpen = sheet?.isShowing == true
+        outState.putString(
+            KEY_POPUP,
+            if (sheetOpen) {
+                POPUP_SHEET
+            } else if (dialog?.isShowing == true) {
+                POPUP_DIALOG
+            } else {
+                null
+            },
+        )
+        if (sheetOpen) outState.putString(KEY_MEMO, memoField?.text?.toString())
+    }
+
+    private var sheet: GlassPopupHandle? = null
+    private var dialog: GlassPopupHandle? = null
+    private var memoField: EditText? = null
 
     /** XML 화면에서 글래스 시트, 다이얼로그, 토스트를 띄우고 GlassSurfaceView 글자 색을 스타일에 맞춘다. */
     private fun setUpGlass() {
@@ -111,11 +137,13 @@ class XmlActivity : ComponentActivity() {
         }.setOnClickListener { GlassToasts.show(this, "XML 화면에서 띄운 글래스 토스트") }
     }
 
-    private fun showSheet() {
+    private fun showSheet(memoText: String = "") {
         val memo = EditText(this).apply {
             hint = "메모를 입력하면 시트가 키보드 위로 올라옵니다"
             styleField(this)
+            setText(memoText)
         }
+        memoField = memo
         val save = Button(this).apply {
             text = "저장"
             stylePill(this, filled = true, ink = sheetStyle.onGlass.toArgb())
@@ -128,6 +156,7 @@ class XmlActivity : ComponentActivity() {
             addView(save, blockParams(top = 12))
         }
         val sheet = GlassSheets.show(this, content, GlassPopupOptions(sheetStyle, "글래스 시트"))
+        this.sheet = sheet
         save.setOnClickListener {
             sheet.dismiss()
             GlassToasts.show(this, "저장했습니다: ${memo.text}")
@@ -146,6 +175,7 @@ class XmlActivity : ComponentActivity() {
             addView(ok, blockParams(top = 8))
         }
         val dialog = GlassDialogs.show(this, content, GlassPopupOptions(sheetStyle, "글래스 다이얼로그"))
+        this.dialog = dialog
         ok.setOnClickListener { dialog.dismiss() }
     }
 
@@ -160,7 +190,7 @@ class XmlActivity : ComponentActivity() {
      * 버튼을 높이 44dp 캡슐로 칠한다. [filled]면 [ink] 바탕에 대비되는 글자, 아니면 [ink]를 옅게 깐 바탕에 [ink] 글자.
      * 누르면 리플 대신 살짝 줄고 어두워진다.
      */
-    private fun stylePill(button: Button, filled: Boolean = false, ink: Int = INK) {
+    private fun stylePill(button: Button, filled: Boolean = false, ink: Int = getColor(R.color.xml_ink)) {
         val light = Color.luminance(ink) > HALF
         button.background = GradientDrawable().apply {
             cornerRadius = dp(22f)
@@ -215,20 +245,31 @@ class XmlActivity : ComponentActivity() {
     }
 
     private companion object {
+        const val KEY_POPUP = "popup"
+        const val KEY_MEMO = "memo"
+        const val POPUP_SHEET = "sheet"
+        const val POPUP_DIALOG = "dialog"
         const val TITLE_SP = 18f
         const val HALF = 0.5f
         const val TINT_ALPHA = 0x14
         const val FIELD_ALPHA = 0x0F
         const val STROKE_ALPHA = 0x24
-        const val INK = 0xFF15161A.toInt()
 
         /** XML 버튼 눌림: 리플 대신 살짝 줄고 어두워진다. */
         val PRESS_EFFECTS = NodeEffects(press = listOf(PressEffect(PressKind.Scale, amount = 0.96), PressEffect(PressKind.Dim)))
         val catalog = listOf(
-            BoardWidget("inbox", "받은 메시지", widthDp = 176f, heightDp = 100f),
-            BoardWidget("tasks", "할 일", widthDp = 176f, heightDp = 100f),
-            BoardWidget("calendar", "일정", widthDp = 360f, heightDp = 120f),
+            BoardWidget("inbox", "받은 메시지", widthDp = 176f, heightDp = 116f),
+            BoardWidget("tasks", "할 일", widthDp = 176f, heightDp = 116f),
+            BoardWidget("calendar", "일정", widthDp = 368f, heightDp = 128f),
+            BoardWidget("notes", "메모", widthDp = 176f, heightDp = 104f),
+            BoardWidget("weather", "날씨", widthDp = 176f, heightDp = 104f),
         )
-        val COLORS = mapOf("inbox" to 0xFF5B6CFF.toInt(), "tasks" to 0xFF0E9F6E.toInt(), "calendar" to 0xFFE0740B.toInt())
+        val COLORS = mapOf(
+            "inbox" to 0xFF5B6CFF.toInt(),
+            "tasks" to 0xFF0E9F6E.toInt(),
+            "calendar" to 0xFFE0740B.toInt(),
+            "notes" to 0xFF8B5CF6.toInt(),
+            "weather" to 0xFF0284C7.toInt(),
+        )
     }
 }

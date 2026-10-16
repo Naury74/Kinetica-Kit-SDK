@@ -15,7 +15,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,16 +28,16 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -109,6 +111,8 @@ internal enum class Demo(val title: String, val summary: String, val icon: Image
 @Composable
 private fun Showcase() {
     var current by rememberSaveable { mutableStateOf<Demo?>(null) }
+    // 데모에서 돌아왔을 때 첫 화면 스크롤 위치가 남도록 목록 상태를 화면 전환 바깥에 둔다.
+    val homeList = rememberLazyListState()
     BackHandler(enabled = current != null) { current = null }
     // 첫 화면은 배경이 어두워 상태 표시줄 아이콘을 밝게 두고, 나머지는 배경이 밝아 어둡게 둔다. 편집기는 시스템 테마를 따른다.
     val view = LocalView.current
@@ -122,7 +126,7 @@ private fun Showcase() {
         transitionSpec = { ContentTransitions.sharedAxisZ(forward = targetState != null) },
         label = "showcase",
     ) { demo ->
-        if (demo == null) Home { current = it } else DemoScreen(demo) { current = null }
+        if (demo == null) Home(homeList) { current = it } else DemoScreen(demo) { current = null }
     }
 }
 
@@ -146,49 +150,70 @@ private fun isDarkScreen(demo: Demo?, systemDark: Boolean): Boolean =
     demo == null || demo == Demo.Transition || demo == Demo.Apps || (demo == Demo.Studio && systemDark)
 
 @Composable
-private fun Home(open: (Demo) -> Unit) {
+private fun Home(list: LazyListState, open: (Demo) -> Unit) {
     GlassScaffold(Modifier.fillMaxSize(), style = GlassStyles.LiquidDark, background = {
         Aurora(Modifier.fillMaxSize(), dark = true)
     }) { padding ->
         // 폰에서는 한 줄, 가로 화면이나 펼친 폴더블, 태블릿에서는 카드 폭에 맞춰 두세 줄로 놓는다.
+        // 같은 줄 카드는 설명 길이가 달라도 높이를 맞춘다.
         val side = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
         val layout = LocalLayoutDirection.current
-        LazyVerticalGrid(
-            GridCells.Adaptive(340.dp),
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 20.dp + side.calculateStartPadding(layout),
-                end = 20.dp + side.calculateEndPadding(layout),
-                top = padding.calculateTopPadding(),
-                bottom = navigationBarBottom() + 24.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            item(span = { GridItemSpan(maxLineSpan) }) { Hero() }
-            Demo.entries.forEach { demo -> item(demo.name) { DemoEntry(demo) { open(demo) } } }
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                val context = LocalContext.current
-                Row(
-                    Modifier
-                        .clip(CircleShape)
-                        .glassClickable(CircleShape) { context.startActivity(Intent(context, XmlActivity::class.java)) }
-                        .padding(vertical = 10.dp, horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Label("XML 레이아웃으로 만든 화면 보기", 15, FontWeight.SemiBold, color = Color.White)
-                    ShowcaseIcon(ShowcaseIcons.Chevron, 18.dp, Color.White, Modifier.padding(start = 4.dp))
+        val start = 20.dp + side.calculateStartPadding(layout)
+        val end = 20.dp + side.calculateEndPadding(layout)
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val columns = ((maxWidth - start - end + HOME_GAP) / (HOME_CELL + HOME_GAP)).toInt().coerceIn(1, Demo.entries.size)
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                state = list,
+                contentPadding = PaddingValues(
+                    start = start,
+                    end = end,
+                    top = padding.calculateTopPadding(),
+                    bottom = navigationBarBottom() + 24.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(HOME_GAP),
+            ) {
+                item { Hero() }
+                Demo.entries.chunked(columns).forEach { row ->
+                    item(row.first().name) {
+                        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(HOME_GAP)) {
+                            row.forEach { demo -> DemoEntry(demo, Modifier.weight(1f).fillMaxHeight()) { open(demo) } }
+                            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
                 }
+                homeFooter()
             }
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Label(
-                    "모든 화면은 SDK 모듈을 그대로 사용합니다. 코드는 sample-showcase 모듈에서 볼 수 있습니다.",
-                    12,
-                    color = Color.White.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
+            // 카드가 상태 표시줄 아래로 지나갈 때 시계와 아이콘이 카드 글자와 겹쳐 보이지 않게 위쪽을 어둡게 덮는다.
+            StatusBarScrim(Color.Black)
         }
+    }
+}
+
+private val HOME_CELL = 340.dp
+private val HOME_GAP = 14.dp
+
+private fun LazyListScope.homeFooter() {
+    item {
+        val context = LocalContext.current
+        Row(
+            Modifier
+                .clip(CircleShape)
+                .glassClickable(CircleShape) { context.startActivity(Intent(context, XmlActivity::class.java)) }
+                .padding(vertical = 10.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Label("XML 레이아웃으로 만든 화면 보기", 15, FontWeight.SemiBold, color = Color.White)
+            ShowcaseIcon(ShowcaseIcons.Chevron, 18.dp, Color.White, Modifier.padding(start = 4.dp))
+        }
+    }
+    item {
+        Label(
+            "모든 화면은 SDK 모듈을 그대로 사용합니다. 코드는 sample-showcase 모듈에서 볼 수 있습니다.",
+            12,
+            color = Color.White.copy(alpha = 0.6f),
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
 }
 
@@ -205,8 +230,8 @@ private fun Hero() {
 }
 
 @Composable
-private fun DemoEntry(demo: Demo, onClick: () -> Unit) {
-    GlassSurface(onClick, Modifier.fillMaxWidth().fillMaxHeight().jellyPress(0.04f)) {
+private fun DemoEntry(demo: Demo, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    GlassSurface(onClick, modifier.jellyPress(0.04f)) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).background(demo.accent.copy(alpha = 0.9f), CircleShape), contentAlignment = Alignment.Center) {
                 ShowcaseIcon(demo.icon, 24.dp, Color(0xFF15161A))

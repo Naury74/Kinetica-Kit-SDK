@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -28,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +55,7 @@ import com.naury.kinetica.ui.tooltipOnLongPress
 @Composable
 internal fun MapApp(onBack: () -> Unit) {
     val sheet = rememberGlassDetentSheetState(detents = listOf(Detent.Peek(150.dp), Detent.Fraction(0.5f), Detent.Full))
-    var query by remember { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
     GlassScaffold(Modifier.fillMaxSize(), style = GlassStyles.OneUi, background = { FakeMap(Modifier.fillMaxSize()) }) { _ ->
         Box(Modifier.fillMaxSize()) {
             Row(
@@ -64,9 +66,9 @@ internal fun MapApp(onBack: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 GlassIconButton(ShowcaseIcons.Back, "뒤로", onBack)
-                GlassSurface(Modifier.height(44.dp).tooltipOnLongPress("길게 눌러 도움말을 보여 줍니다"), shape = CircleShape) {
+                GlassSurface(Modifier.heightIn(min = 44.dp).tooltipOnLongPress("길게 눌러 도움말을 보여 줍니다"), shape = CircleShape) {
                     Row(
-                        Modifier.align(Alignment.Center).padding(start = 12.dp, end = 16.dp),
+                        Modifier.align(Alignment.Center).padding(start = 12.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         ShowcaseIcon(ShowcaseIcons.Location, 18.dp)

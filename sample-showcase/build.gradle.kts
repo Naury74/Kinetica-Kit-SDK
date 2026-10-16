@@ -32,6 +32,13 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions.unitTests {
+        isIncludeAndroidResources = true
+        all {
+            // Robolectric은 JDK 내부 API로 FileDescriptor를 다루는데, JDK 17+는 이를 기본으로 export하지 않는다.
+            it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED", "--enable-native-access=ALL-UNNAMED")
+        }
+    }
 }
 
 dependencies {
@@ -50,8 +57,11 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
 
+    testImplementation(libs.junit4)
+    testImplementation(libs.truth)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.compose.ui.test.junit4)
-    testImplementation(libs.androidx.compose.ui.test.manifest)
+    // 앱 모듈의 Robolectric 테스트는 테스트용 빈 액티비티가 debug 매니페스트에 있어야 띄울 수 있다.
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

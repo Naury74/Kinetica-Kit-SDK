@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,9 +59,9 @@ internal fun InputTab(padding: PaddingValues, connection: NestedScrollConnection
 
 @Composable
 private fun CodeCard() {
-    var code by remember { mutableStateOf("") }
-    var submitted by remember { mutableStateOf<String?>(null) }
-    var result by remember { mutableStateOf<GlassResult?>(null) }
+    var code by rememberSaveable { mutableStateOf("") }
+    var submitted by rememberSaveable { mutableStateOf<String?>(null) }
+    var result by rememberSaveable { mutableStateOf<GlassResult?>(null) }
     LaunchedEffect(submitted) {
         val sent = submitted ?: return@LaunchedEffect
         result = GlassResult.Loading
@@ -91,7 +93,7 @@ private fun CodeCard() {
 
 @Composable
 private fun TagCard() {
-    var tags by remember { mutableStateOf(listOf("디자인", "모션")) }
+    var tags by rememberSaveable { mutableStateOf(listOf("디자인", "모션")) }
     DemoCard("태그", "쉼표나 완료 키를 누르면 칩이 됩니다. 이미 있는 태그를 넣으면 그 칩이 흔들리고, 빈 입력란에서 지우기를 두 번 누르면 마지막 칩이 지워집니다.") {
         GlassTagInput(tags, { tags = it }, Modifier.fillMaxWidth(), placeholder = "태그 추가", suggestions = TAG_SUGGESTIONS)
     }
@@ -99,10 +101,10 @@ private fun TagCard() {
 
 @Composable
 private fun ColorCard() {
-    var color by remember { mutableStateOf(Color(0xFF5B6CFF)) }
+    var color by rememberSaveable(saver = colorStateSaver) { mutableStateOf(Color(0xFF5B6CFF)) }
     val shown by animateColorAsState(color, label = "preview")
     DemoCard("색 선택", "고리에서 색조를, 가운데 사각형에서 채도와 명도를 고릅니다. 고른 색이 위 카드에 바로 반영됩니다.") {
-        Box(Modifier.fillMaxWidth().height(96.dp).background(shown, INNER_SHAPE).padding(18.dp)) {
+        Box(Modifier.fillMaxWidth().heightIn(min = 96.dp).background(shown, INNER_SHAPE).padding(18.dp)) {
             val ink = if (shown.isLight() || shown.alpha < 0.4f) Color(0xFF15161A) else Color.White
             Column {
                 Label("미리보기 카드", 18, FontWeight.Bold, color = ink)
@@ -139,7 +141,7 @@ private fun SignatureCard() {
 
 @Composable
 private fun PasswordCard() {
-    var password by remember { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     val strength = passwordStrength(password)
     DemoCard("비밀번호", "눈 아이콘으로 보이거나 숨깁니다. 입력하는 동안 강도 막대와 조건 목록이 바뀝니다.") {
         GlassPasswordField(password, { password = it }, "새 비밀번호", Modifier.fillMaxWidth(), showChecklist = true)

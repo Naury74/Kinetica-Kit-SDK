@@ -68,8 +68,8 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun MusicApp(onBack: () -> Unit) {
     var loading by remember { mutableStateOf(true) }
-    var playing by remember { mutableStateOf(false) }
-    var track by remember { mutableIntStateOf(0) }
+    var playing by rememberSaveable { mutableStateOf(false) }
+    var track by rememberSaveable { mutableIntStateOf(0) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         delay(1500)
@@ -156,10 +156,10 @@ private fun MiniBar(song: Song, playing: Boolean, toggle: () -> Unit) {
 
 @Composable
 private fun FullPlayer(song: Song, playing: Boolean, toggle: () -> Unit) {
-    var liked by remember { mutableStateOf(false) }
-    var likes by remember { mutableIntStateOf(1284) }
-    var rating by remember { mutableFloatStateOf(4f) }
-    var position by remember { mutableFloatStateOf(0.32f) }
+    var liked by rememberSaveable { mutableStateOf(false) }
+    var likes by rememberSaveable { mutableIntStateOf(1284) }
+    var rating by rememberSaveable { mutableFloatStateOf(4f) }
+    var position by rememberSaveable { mutableFloatStateOf(0.32f) }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(
             start = 28.dp,

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/root"
+    android:background="@color/xml_background">
+
+<LinearLayout
+    android:id="@+id/content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="XML 레이아웃 화면"
+        android:textColor="@color/xml_title"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="Compose 코드 없이 KineticaBoardView, KineticaPlayerView, ViewEffects, GlassSurfaceView를 레이아웃 XML에서 바로 쓰고, 글래스 시트와 다이얼로그, 토스트는 코드 한 줄로 띄웁니다."
+        android:textColor="@color/xml_body"
+        android:textSize="13sp" />
+
+    <!-- 버튼 모양은 XmlActivity.stylePill에서 캡슐로 칠한다. 같은 폭으로 줄을 채운다. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/edit"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="편집" />
+
+        <Button
+            android:id="@+id/glass_sheet"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="시트" />
+
+        <Button
+            android:id="@+id/glass_dialog"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="다이얼로그" />
+
+        <Button
+            android:id="@+id/glass_toast"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="토스트" />
+    </LinearLayout>
+
+    <!-- 넓은 화면(폭 600dp 이상): 보드와 재생기 장면을 나란히 둔다. 장면이 화면 폭으로 늘어나 보드를 가리지 않도록 폭을 정해 둔다.
+         보드 가장자리 간격(12dp)과 장면 안쪽 여백(16dp)만큼 바깥으로 넓혀 위젯과 카드 끝을 버튼 줄과 맞춘다.
+         음수 여백은 layout_marginHorizontal로 주면 무시되므로 Start/End로 준다.
+         baselineAligned를 끄지 않으면 기준선을 재려고 보드를 폭 제한 없이 한 번 더 측정한다. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginStart="-12dp"
+        android:layout_marginEnd="-16dp"
+        android:layout_weight="1"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <com.naury.kinetica.board.KineticaBoardView
+            android:id="@+id/board"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            app:kinetica_accentColor="#5B6CFF" />
+
+        <!-- 장면을 이 폭에 맞춰 펼친다(responsive). 높이는 매출 카드 높이(약 240dp)에 맞췄다. -->
+        <FrameLayout
+            android:layout_width="400dp"
+            android:layout_height="244dp">
+
+            <com.naury.kinetica.player.KineticaPlayerView
+                android:id="@+id/promo"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:kinetica_fit="responsive" />
+
+            <!-- 앞에 그려진 재생기 화면을 블러 처리해 비추는 글래스 캡션. -->
+            <com.naury.kinetica.ui.view.GlassSurfaceView
+                android:id="@+id/promo_caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="28dp"
+                android:layout_marginEnd="36dp"
+                app:kinetica_cornerRadius="18dp"
+                app:kinetica_glassStyle="liquid">
+
+                <TextView
+                    android:id="@+id/promo_caption_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:text="GlassSurfaceView 캡션"
+                    android:textSize="13sp" />
+            </com.naury.kinetica.ui.view.GlassSurfaceView>
+        </FrameLayout>
+    </LinearLayout>
+</LinearLayout>
+</FrameLayout>
