@@ -1,5 +1,6 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -140,6 +141,8 @@ public fun KChatBubble(
 
 /**
  * 채팅 말풍선. 보낸 말풍선은 기본으로 강조색으로 채우고([KVariant.Filled]), 받은 말풍선은 표면 스타일로 그린다([KVariant.Glass]).
+ * [KSheet]나 [KDialog], [KGlassLayer] 같은 팝업 판 안에서는 [KVariant.Glass]를 그림자 없이 옅은 한 겹으로 그린다. 판 위에서도 떠 보이게
+ * 하려면 [KVariant.Elevated]를, 더 가볍게 하려면 [KVariant.Outlined]나 `variant = KVariant.Tonal, tone = KTone.Neutral`을 넘긴다.
  * [position]에 따라 묶음 안쪽 모서리를 작게 깎고, [tail]이 `true`면 묶음 마지막 말풍선 아래 모서리에 꼬리를 붙인다.
  * 꼬리는 늘 바깥쪽(보낸 말풍선은 끝 쪽)에 붙으므로 RTL에서는 좌우가 바뀐다. 꼬리를 그리지 않아도 꼬리 자리 폭(6dp)은 비워 두므로
  * 묶음 안 말풍선의 가장자리가 나란하다.
@@ -189,7 +192,7 @@ public fun KChatBubble(
                         )
                     }
                 }
-                .variantBackground(variant, colors, surface, shape)
+                .bubbleBackground(variant, colors, surface, shape)
                 .clip(shape)
                 .then(
                     if (onLongClick != null) {
@@ -211,6 +214,18 @@ public fun KChatBubble(
         }
     }
 }
+
+/**
+ * 말풍선 배경. 팝업 판 안([KGlassLayer], [KSheet], [KDialog])의 [KVariant.Glass]는 그림자와 가장자리 빛이 판 위에서 무거워 보이므로,
+ * 표면 글자 색을 옅게 깐 한 겹으로 그린다. 단색과 톤 표면은 [kSurface]가 판 안에서 이미 그렇게 그린다.
+ */
+@Composable
+private fun Modifier.bubbleBackground(variant: KVariant, colors: ToneColors, surface: SurfaceStyle, shape: Shape): Modifier =
+    if (variant == KVariant.Glass && surface is SurfaceStyle.Glass && LocalGlassLayered.current) {
+        background(surface.contentColor.copy(alpha = LAYERED_BUBBLE_ALPHA), shape)
+    } else {
+        variantBackground(variant, colors, surface, shape)
+    }
 
 /** 보낸 말풍선은 강조색으로 채우고 받은 말풍선은 표면 스타일 그대로 그린다. */
 internal fun defaultChatVariant(side: KChatSide): KVariant = if (side == KChatSide.Sent) KVariant.Filled else KVariant.Glass
@@ -360,6 +375,7 @@ private const val TAIL_CURVE = 0.35f
 private const val TAIL_INNER = 0.25f
 private const val TAIL_LIFT = 0.15f
 private const val META_ALPHA = 0.68f
+private const val LAYERED_BUBBLE_ALPHA = 0.12f
 private const val STATUS_STROKE = 1.5f
 private const val UNIT = 16f
 private const val HASH = 31

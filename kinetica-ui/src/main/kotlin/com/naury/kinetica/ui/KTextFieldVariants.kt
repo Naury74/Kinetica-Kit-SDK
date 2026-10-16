@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -52,7 +50,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -103,13 +100,8 @@ internal class FieldLines(val single: Boolean, val min: Int, val max: Int) {
 private fun variantTextStyle(ink: Color, inline: Boolean): TextStyle =
     TextStyle(color = ink, fontSize = VARIANT_FONT, textAlign = if (inline) TextAlign.End else TextAlign.Unspecified)
 
-/** 키보드와 입력 처리 설정 */
-internal class FieldInput(
-    val keyboardOptions: KeyboardOptions,
-    val keyboardActions: KeyboardActions,
-    val visualTransformation: VisualTransformation,
-    val interactionSource: MutableInteractionSource?,
-)
+/** 키보드 설정과 상호작용 관찰 */
+internal class FieldInput(val keyboardOptions: KeyboardOptions, val interactionSource: MutableInteractionSource?)
 
 /** 앞쪽과 끝쪽 슬롯 */
 internal class FieldSlots(val leading: (@Composable () -> Unit)?, val trailing: (@Composable () -> Unit)?)
@@ -149,26 +141,27 @@ private fun metricsOf(variant: KTextFieldVariant): VariantMetrics = when (varian
 }
 
 @Composable
-internal fun VariantTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    config: FieldConfig,
-    input: FieldInput,
-    surface: SurfaceStyle,
-    modifier: Modifier,
-) {
+internal fun VariantTextField(source: FieldSource, config: FieldConfig, input: FieldInput, surface: SurfaceStyle, modifier: Modifier) {
     var focused by remember { mutableStateOf(false) }
     val texts = config.texts
     val inline = config.variant == KTextFieldVariant.Inline
-    val motion = rememberVariantMotion(value.isNotEmpty(), focused, inline, texts.error)
+    val empty = source.text.isEmpty()
+    val motion = rememberVariantMotion(!empty, focused, inline, texts.error)
     val geometry = remember { LabelGeometry() }
     val colors = KineticaTheme.colors
     val metrics = metricsOf(config.variant)
+    val basics = FieldBasics(
+        enabled = config.flags.enabled,
+        readOnly = config.flags.readOnly,
+        lines = config.lines,
+        textStyle = themed(variantTextStyle(surface.contentColor, inline)),
+        cursorBrush = SolidColor(colors.accent),
+        input = input,
+    )
     Column(modifier.keepVisibleWhileFocused(focused)) {
         ProvideFieldSelection(colors.accent) {
-            BasicTextField(
-                value,
-                onValueChange,
+            SourceTextField(
+                source,
                 Modifier
                     .fillMaxWidth()
                     // 떠오른 라벨이 위 테두리에 걸쳐 반쯤 밖으로 나오므로 그만큼 자리를 비운다.
@@ -180,27 +173,15 @@ internal fun VariantTextField(
                     .variantChrome(config.variant, motion, geometry, surface.contentColor)
                     .onFocusChanged { focused = it.isFocused }
                     .semantics { texts.error?.let { error(it) } },
-                enabled = config.flags.enabled,
-                readOnly = config.flags.readOnly,
-                textStyle = themed(variantTextStyle(surface.contentColor, inline)),
-                keyboardOptions = input.keyboardOptions,
-                keyboardActions = input.keyboardActions,
-                singleLine = config.lines.single,
-                maxLines = config.lines.visibleMax,
-                minLines = config.lines.visibleMin,
-                visualTransformation = input.visualTransformation,
-                interactionSource = input.interactionSource,
-                cursorBrush = SolidColor(colors.accent),
-                decorationBox = { field ->
-                    val showClear =
-                        config.flags.clearable && config.flags.enabled && !config.flags.readOnly && focused && value.isNotEmpty()
-                    VariantDecoration(config, metrics, surface, motion, geometry, value.isEmpty(), field) {
-                        FieldClearButton(showClear, surface.contentColor) { onValueChange("") }
-                    }
-                },
-            )
+                basics,
+            ) { field ->
+                val showClear = config.flags.clearable && config.flags.enabled && !config.flags.readOnly && focused && !empty
+                VariantDecoration(config, metrics, surface, motion, geometry, empty, field) {
+                    FieldClearButton(showClear, surface.contentColor) { source.clear() }
+                }
+            }
         }
-        FieldSupportRow(texts.error, texts.supporting, surface, config.maxLength?.let { value.length to it }, metrics.supportStart)
+        FieldSupportRow(texts.error, texts.supporting, surface, config.maxLength?.let { source.text.length to it }, metrics.supportStart)
     }
 }
 

@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
+import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 /** 시스템의 '애니메이션 삭제' 접근성 설정이 켜져 있는지 확인한다. 켜져 있으면 반복 애니메이션과 기울기 효과를 멈춘다. */
@@ -56,10 +57,16 @@ internal fun reducedMotion(): Boolean {
  * 화면 전체 가장자리에 붙이면 음성 입력 중임을 알리는 표시로 쓸 수 있다. '애니메이션 삭제' 접근성 설정이 켜져 있으면 회전하지 않고,
  * 요소가 창 밖으로 스크롤되어 나가 있는 동안에도 멈춘다. 테두리는 콘텐츠 위에 그리므로 [shape]을 요소의 모양과 맞춘다.
  *
+ * 번짐은 테두리 안팎으로 함께 퍼진다. 부모가 `clip`하는 요소(잘라 그리는 카드, `clipToBounds`, 스크롤 영역 등) 안에 두면 바깥 번짐이
+ * 잘리고 안쪽 번짐만 남아 얼룩처럼 보이므로, 자르지 않는 부모 안에 두거나 사방에 [glow]만큼 여백을 둔다.
+ *
+ * 켜고 끌 때 서서히 나타나게 하려면 [intensity]를 애니메이션한다. 매 프레임 바뀌는 값이면 그리기 단계에서 읽는 람다 오버로드를 쓴다.
+ *
  * @param colors 테두리 색. 두 개 미만이면 [IllegalArgumentException]을 던진다.
  * @param width 테두리 두께
  * @param glow 테두리 바깥으로 번지는 블러 반경
  * @param periodMs 한 바퀴 도는 시간(ms). 0 이하면 [IllegalArgumentException]을 던진다.
+ * @param intensity 진하기(0..1). 0이면 그리지 않고 회전도 멈춘다. 범위를 벗어난 값은 0..1로 맞춘다.
  */
 @Composable
 public fun Modifier.glowBorder(
@@ -68,22 +75,58 @@ public fun Modifier.glowBorder(
     width: Dp = 3.dp,
     glow: Dp = 14.dp,
     periodMs: Int = 3_000,
+    intensity: Float = 1f,
 ): Modifier {
-    require(colors.size >= 2) { "colors는 두 개 이상이어야 합니다." }
-    require(periodMs > 0) { "periodMs는 0보다 커야 합니다." }
-    val clock = rememberLoopClock(running = !reducedMotion())
+    val level = intensity.coerceIn(0f, 1f)
+    return drawGlowBorder(GlowSpec(shape, colors, width, glow, periodMs), running = level > 0f) { level }
+}
+
+/**
+ * 진하기를 그리기 단계에서 읽는 [glowBorder]. 켜고 끌 때 `animateFloatAsState`의 값을 넘겨도 다시 구성하지 않고 그리기만 다시 한다.
+ *
+ * ```kotlin
+ * val level by animateFloatAsState(if (listening) 1f else 0f, label = "glow")
+ * Box(Modifier.glowBorder({ level }, RoundedCornerShape(24.dp)))
+ * ```
+ *
+ * @param intensity 진하기(0..1)를 돌려주는 함수. 범위를 벗어난 값은 0..1로 맞춘다. 0이면 그리지 않는다.
+ *   회전 시계는 늘 돌므로, 오래 꺼 둘 때는 수정자를 빼거나 Float 오버로드에 0을 넘긴다.
+ * @see glowBorder 나머지 파라미터의 뜻과 실패 조건
+ */
+@Composable
+public fun Modifier.glowBorder(
+    intensity: () -> Float,
+    shape: Shape = RectangleShape,
+    colors: List<Color> = GlowColors,
+    width: Dp = 3.dp,
+    glow: Dp = 14.dp,
+    periodMs: Int = 3_000,
+): Modifier = drawGlowBorder(GlowSpec(shape, colors, width, glow, periodMs), running = true, intensity)
+
+/** [glowBorder]의 모양 설정 */
+private class GlowSpec(val shape: Shape, val colors: List<Color>, val width: Dp, val glow: Dp, val periodMs: Int)
+
+@Composable
+private fun Modifier.drawGlowBorder(spec: GlowSpec, running: Boolean, intensity: () -> Float): Modifier {
+    require(spec.colors.size >= 2) { "colors는 두 개 이상이어야 합니다." }
+    require(spec.periodMs > 0) { "periodMs는 0보다 커야 합니다." }
+    val clock = rememberLoopClock(running = running && !reducedMotion())
+    val colors = spec.colors
     val argb = remember(colors) { (colors + colors.first()).map { it.toArgb() }.toIntArray() }
     val brush = remember(argb) { GlowPaints(argb) }
     return this
         .loopVisibility(clock)
         .drawWithCache {
-            val path = shape.createOutline(size, layoutDirection, this).asPath().asAndroidPath()
-            val stroke = width.toPx()
-            val blur = glow.toPx()
+            val path = spec.shape.createOutline(size, layoutDirection, this).asPath().asAndroidPath()
+            val stroke = spec.width.toPx()
+            val blur = spec.glow.toPx()
             onDrawWithContent {
                 drawContent()
-                val angle = (clock.seconds * MS_PER_SECOND / periodMs % 1f) * FULL_TURN
+                val level = intensity().coerceIn(0f, 1f)
+                if (level <= 0f) return@onDrawWithContent
+                val angle = (clock.seconds * MS_PER_SECOND / spec.periodMs % 1f) * FULL_TURN
                 brush.update(size.width, size.height, stroke, blur, angle)
+                brush.level(level)
                 drawIntoCanvas { canvas ->
                     canvas.nativeCanvas.drawPath(path, brush.glow)
                     canvas.nativeCanvas.drawPath(path, brush.line)
@@ -119,6 +162,12 @@ private class GlowPaints(private val colors: IntArray) {
         line.strokeWidth = stroke
         matrix.setRotate(angle, width / 2, height / 2)
         shader?.setLocalMatrix(matrix)
+    }
+
+    /** 진하기([level] 0..1)를 두 Paint의 불투명도에 반영한다. */
+    fun level(level: Float) {
+        glow.alpha = (GLOW_ALPHA * level).roundToInt()
+        line.alpha = (OPAQUE * level).roundToInt()
     }
 }
 
@@ -266,6 +315,7 @@ private fun Outline.asPath(): Path = when (this) {
 private const val FULL_TURN = 360f
 private const val MS_PER_SECOND = 1_000f
 private const val GLOW_ALPHA = 150
+private const val OPAQUE = 255
 private const val MAX_JELLY = 0.3f
 private const val JELLY_WIDEN = 0.6f
 private const val JELLY_DAMPING = 0.35f

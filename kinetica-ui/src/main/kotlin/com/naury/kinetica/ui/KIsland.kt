@@ -41,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
@@ -86,6 +87,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -113,6 +115,8 @@ public enum class KIslandResult {
  * @property accent 아이콘과 compact 문구의 색. [Color.Unspecified]면 표면 위 글자 색을 쓴다.
  * @property compactText compact 모드 오른쪽에 보일 짧은 글(예: 타이머 `00:42`)
  * @property trailing expanded 모드 오른쪽에 둘 동작 버튼 슬롯
+ * @property leading 왼쪽에 [icon] 대신 둘 내용(아바타 사진 등). compact 모드에서는 24dp, expanded 모드에서는 44dp 원 안에 잘라 넣는다.
+ *   있으면 [icon]은 쓰지 않는다. TalkBack에 읽히지 않으므로 사람 이름 같은 정보는 [title]에 넣는다.
  */
 @Stable
 public data class KIslandContent(
@@ -122,6 +126,7 @@ public data class KIslandContent(
     val accent: Color = Color.Unspecified,
     val compactText: String? = null,
     val trailing: (@Composable () -> Unit)? = null,
+    val leading: (@Composable () -> Unit)? = null,
 )
 
 /**
@@ -136,8 +141,8 @@ public class KIslandState {
     internal var visible by mutableStateOf(false)
         private set
     internal var timeoutAdjust: (Long) -> Long = { it }
-    private var pending: CompletableDeferred<KIslandResult>? = null
-    private var waiting = 0
+    private var current: IslandEntry? = null
+    private val waitingEntries = ArrayList<IslandEntry>()
     private val queue = Mutex()
 
     /** 알림을 보여 주는 중이면 true. 줄어드는 애니메이션 중에는 false다. */
@@ -147,66 +152,135 @@ public class KIslandState {
      * [content]를 보여 주고 닫힐 때까지 일시 중단한 뒤 닫힌 이유를 돌려준다. 앞선 알림이 있으면 그 뒤에 보여 준다.
      * 호출한 코루틴이 취소되면 알림도 바로 닫는다.
      *
+     * [key]를 주면 같은 종류의 알림이 쌓이지 않는다. 같은 [key]의 알림이 차례를 기다리고 있으면 새로 줄을 서지 않고 그 알림의 내용과
+     * 표시 시간을 이번 값으로 바꾼다. [replaceShowing]이 `true`이고 지금 보이는 알림의 [key]가 같으면 보이는 알림을 바로 바꾸고
+     * 표시 시간을 처음부터 다시 잰다. 이렇게 합쳐진 호출은 모두 그 알림이 닫힐 때 같은 결과를 돌려받는다. 합쳐진 뒤 나중 호출의
+     * 코루틴이 취소되면 기다리기만 그만두고 알림은 그대로 둔다.
+     *
+     * ```kotlin
+     * island.show(KIslandContent("민지", lastMessage, leading = { Avatar(minji) }), key = "chat", replaceShowing = true)
+     * ```
+     *
      * @param durationMs 표시 시간(ms). TalkBack 사용자가 접근성 설정에서 시간을 늘렸으면 그 값을 따른다.
      *   `null`이면 [dismiss]를 부르거나 사용자가 닫을 때까지 보여 준다. 0 이하이면 [IllegalArgumentException]을 던진다.
+     * @param key 알림 종류. `null`이면 합치지 않고 늘 줄을 선다.
+     * @param replaceShowing `true`면 지금 보이는 같은 [key]의 알림도 바꾼다. `false`면 보이는 알림은 두고 그 뒤에 줄을 선다.
      */
-    public suspend fun show(content: KIslandContent, durationMs: Long? = DEFAULT_ISLAND_MS): KIslandResult {
+    public suspend fun show(
+        content: KIslandContent,
+        durationMs: Long? = DEFAULT_ISLAND_MS,
+        key: String? = null,
+        replaceShowing: Boolean = false,
+    ): KIslandResult {
         require(durationMs == null || durationMs > 0) { "durationMs는 0보다 커야 합니다." }
-        waiting++
+        merge(content, durationMs, key, replaceShowing)?.let { return it.result.await() }
+        val entry = IslandEntry(content, durationMs, key)
+        waitingEntries += entry
         try {
             queue.lock()
+        } catch (e: CancellationException) {
+            // 합쳐서 기다리던 호출이 영영 멈추지 않게 함께 끝낸다.
+            entry.result.complete(KIslandResult.Dismissed)
+            throw e
         } finally {
-            waiting--
+            waitingEntries -= entry
         }
         try {
-            val done = CompletableDeferred<KIslandResult>()
-            pending = done
+            current = entry
             visible = true
-            this.content = content
-            expanded = content.compactText == null
-            val result = if (durationMs == null) {
-                done.await()
-            } else {
-                withTimeoutOrNull(timeoutAdjust(durationMs)) { done.await() } ?: KIslandResult.TimedOut
-            }
+            this.content = entry.content
+            expanded = entry.content.compactText == null
+            val result = awaitResult(entry)
+            entry.result.complete(result)
             clear()
             // 다음 알림이 기다리고 있으면 캡슐을 남겨 두고 바로 다시 부풀린다.
             delay(COLLAPSE_MS)
-            if (waiting == 0) {
+            if (waitingEntries.isEmpty()) {
                 visible = false
                 delay(HIDE_MS)
             }
             return result
         } catch (e: CancellationException) {
-            // 표시 중이든 줄어드는 중이든 취소되면 캡슐이 남지 않게 한다.
+            // 표시 중이든 줄어드는 중이든 취소되면 캡슐이 남지 않게 한다. 합쳐서 기다리던 호출도 함께 끝낸다.
+            entry.result.complete(KIslandResult.Dismissed)
             clear()
-            visible = waiting > 0
+            visible = waitingEntries.isNotEmpty()
             throw e
         } finally {
             queue.unlock()
         }
     }
 
+    /** 같은 [key]의 알림이 보이거나 기다리고 있으면 내용을 바꾸고 그 알림을 돌려준다. 합칠 알림이 없으면 null. */
+    private fun merge(content: KIslandContent, durationMs: Long?, key: String?, replaceShowing: Boolean): IslandEntry? {
+        if (key == null) return null
+        val showing = current?.takeIf { replaceShowing && it.key == key }
+        if (showing != null && !showing.result.isCompleted) {
+            showing.content = content
+            showing.durationMs = durationMs
+            if (content.compactText == null) expanded = true
+            this.content = content
+            showing.restart?.complete(Unit)
+            return showing
+        }
+        val waiting = waitingEntries.lastOrNull { it.key == key } ?: return null
+        waiting.content = content
+        waiting.durationMs = durationMs
+        return waiting
+    }
+
+    /** 결과가 나올 때까지 기다린다. 내용이 바뀌어 표시 시간을 다시 재야 하면 처음부터 다시 기다린다. */
+    private suspend fun awaitResult(entry: IslandEntry): KIslandResult {
+        while (true) {
+            val restart = CompletableDeferred<Unit>()
+            entry.restart = restart
+            val race: suspend () -> KIslandResult? = {
+                select {
+                    entry.result.onAwait { it }
+                    restart.onAwait { null }
+                }
+            }
+            val timeout = entry.durationMs?.let(timeoutAdjust)
+            if (timeout == null) {
+                race()?.let { return it }
+            } else {
+                var timedOut = true
+                val result = withTimeoutOrNull(timeout) { race().also { timedOut = false } }
+                if (timedOut) return KIslandResult.TimedOut
+                result?.let { return it }
+            }
+        }
+    }
+
     /** 보여 주는 중인 알림의 내용을 바꾼다. 타이머처럼 계속 바뀌는 값을 갱신할 때 쓴다. 보여 주는 알림이 없으면 아무 일도 하지 않는다. */
     public fun update(content: KIslandContent) {
-        if (this.content != null) this.content = content
+        if (this.content != null) {
+            this.content = content
+            current?.content = content
+        }
     }
 
     /** 보여 주는 중인 알림을 닫는다. [show]는 [KIslandResult.Dismissed]를 돌려준다. */
     public fun dismiss() {
-        pending?.complete(KIslandResult.Dismissed)
+        current?.result?.complete(KIslandResult.Dismissed)
     }
 
     /** compact 모드면 펼치고, 펼쳐져 있으면 [KIslandResult.Clicked]로 끝낸다. */
     internal fun tap() {
-        if (expanded) pending?.complete(KIslandResult.Clicked) else expanded = true
+        if (expanded) current?.result?.complete(KIslandResult.Clicked) else expanded = true
     }
 
     private fun clear() {
-        pending = null
+        current = null
         content = null
         expanded = false
     }
+}
+
+/** 차례를 기다리거나 보이는 알림 하나. 같은 key로 합쳐진 호출이 [result]를 함께 기다린다. */
+private class IslandEntry(var content: KIslandContent, var durationMs: Long?, val key: String?) {
+    val result = CompletableDeferred<KIslandResult>()
+    var restart: CompletableDeferred<Unit>? = null
 }
 
 @Composable
@@ -383,7 +457,11 @@ private fun CompactBody(content: KIslandContent, accent: Color) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        content.icon?.let { IslandIcon(it, accent, COMPACT_ICON) } ?: Spacer(Modifier.size(COMPACT_ICON))
+        when {
+            content.leading != null -> IslandLeading(COMPACT_LEADING, content.leading)
+            content.icon != null -> IslandIcon(content.icon, accent, COMPACT_ICON)
+            else -> Spacer(Modifier.size(COMPACT_ICON))
+        }
         // 가운데는 비워 카메라 홀을 피한다.
         Spacer(Modifier.widthIn(min = COMPACT_GAP))
         ThemedText(
@@ -400,11 +478,14 @@ private fun ExpandedBody(content: KIslandContent, accent: Color, surface: Surfac
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        content.icon?.let {
+        if (content.leading != null) {
+            IslandLeading(EXPANDED_ICON_BOX, content.leading)
+            Spacer(Modifier.size(12.dp))
+        } else if (content.icon != null) {
             Box(
                 Modifier.size(EXPANDED_ICON_BOX).background(accent.copy(alpha = ICON_BACK_ALPHA), CircleShape),
                 contentAlignment = Alignment.Center,
-            ) { IslandIcon(it, accent, EXPANDED_ICON) }
+            ) { IslandIcon(content.icon, accent, EXPANDED_ICON) }
             Spacer(Modifier.size(12.dp))
         }
         Column(Modifier.weight(1f)) {
@@ -428,6 +509,11 @@ private fun ExpandedBody(content: KIslandContent, accent: Color, surface: Surfac
             it()
         }
     }
+}
+
+@Composable
+private fun IslandLeading(size: Dp, content: @Composable () -> Unit) {
+    Box(Modifier.size(size).clip(CircleShape), contentAlignment = Alignment.Center) { content() }
 }
 
 @Composable
@@ -494,6 +580,7 @@ private val ISLAND_MAX_CORNER = 32.dp
 private val COMPACT_MIN_WIDTH = 168.dp
 private val COMPACT_GAP = 48.dp
 private val COMPACT_ICON = 20.dp
+private val COMPACT_LEADING = 24.dp
 private val EXPANDED_ICON = 24.dp
 private val EXPANDED_ICON_BOX = 44.dp
 private val SWIPE_DISMISS = 24.dp

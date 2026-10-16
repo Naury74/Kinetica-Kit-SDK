@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.OutputTransformation
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -117,48 +120,110 @@ public fun KTextField(
     suffix: String? = null,
     maxLength: Int? = null,
 ) {
-    require(maxLines >= 1) { "maxLines는 1 이상이어야 합니다." }
-    require(minLines in 1..(if (singleLine) 1 else maxLines)) { "minLines는 1 이상, maxLines 이하여야 합니다." }
-    require(maxLength == null || maxLength >= 1) { "maxLength는 1 이상이어야 합니다." }
-    val change: (String) -> Unit = if (maxLength == null) onValueChange else { text -> onValueChange(text.take(maxLength)) }
     val config = FieldConfig(
-        variant = variant,
-        texts = FieldTexts(label, placeholder, prefix, suffix, error, supportingText),
-        lines = FieldLines(singleLine, minLines, maxLines),
-        maxLength = maxLength,
-        slots = FieldSlots(leadingIcon, trailingIcon),
-        flags = FieldFlags(clearable, enabled, readOnly),
-    )
-    val input = FieldInput(keyboardOptions, keyboardActions, visualTransformation, interactionSource)
-    if (variant == KTextFieldVariant.Surface) {
-        SurfaceTextField(value, change, config, input, surface, modifier)
+        variant,
+        FieldTexts(label, placeholder, prefix, suffix, error, supportingText),
+        FieldLines(singleLine, minLines, maxLines),
+        maxLength,
+        FieldSlots(leadingIcon, trailingIcon),
+        FieldFlags(clearable, enabled, readOnly),
+    ).checked()
+    val source = FieldSource.Value(value, onValueChange, keyboardActions, visualTransformation, maxLength)
+    TextFieldFrame(source, config, FieldInput(keyboardOptions, interactionSource), surface, modifier)
+}
+
+/**
+ * [TextFieldState]를 받는 입력란. 글자를 상태 객체가 들고 있어서, 통화 화면처럼 자주 다시 그려지는 곳에서도 입력 중인 글자나
+ * 커서를 잃지 않는다. 모양, 라벨, 오류, 지우기 버튼, 글자 수 표시는 String을 받는 [KTextField]와 같고, 여기 적지 않은 파라미터도
+ * 그쪽과 뜻이 같다. 비밀번호처럼 글자를 가려야 하면 String을 받는 쪽에 `PasswordVisualTransformation()`을 넘긴다.
+ *
+ * ```kotlin
+ * val name = rememberTextFieldState()
+ * KTextField(name, "이름", maxLength = 20, onKeyboardAction = { submit(name.text) })
+ * ```
+ *
+ * @param state 입력란 글자와 선택 범위. 바깥에서 `state.edit { … }`나 `state.clearText()`로 바꿀 수 있다.
+ * @param onKeyboardAction IME 동작 키(완료, 검색 등)를 눌렀을 때 할 일. `null`이면 키의 기본 동작(포커스 이동, 키보드 내리기)을 한다.
+ * @param inputTransformation 사용자 입력을 거르거나 고치는 변환. [maxLength]가 있으면 이 변환 뒤에 글자 수 제한을 이어 붙인다.
+ * @param outputTransformation 화면에 보이는 글자만 바꾸는 변환(예: 전화번호 하이픈). 상태 안 글자는 그대로다.
+ * @param maxLength 최대 글자 수. 꽉 찬 뒤의 입력은 받지 않고, 여유가 있을 때 길게 붙여 넣으면 넘치는 끝부분을 버린다.
+ *   입력란 아래 끝에 '지금 글자 수/최대'를 보여 준다. 바깥에서 [state]에 직접 넣은 글자는 자르지 않고 글자 수를 빨갛게 표시한다.
+ *   `null`이면 제한도 표시도 없다. 1 미만이면 [IllegalArgumentException]을 던진다.
+ */
+@Composable
+public fun KTextField(
+    state: TextFieldState,
+    label: String,
+    modifier: Modifier = Modifier,
+    error: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    onKeyboardAction: KeyboardActionHandler? = null,
+    inputTransformation: InputTransformation? = null,
+    outputTransformation: OutputTransformation? = null,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    singleLine: Boolean = true,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    interactionSource: MutableInteractionSource? = null,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    placeholder: String? = null,
+    supportingText: String? = null,
+    clearable: Boolean = true,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    minLines: Int = 1,
+    variant: KTextFieldVariant = KTextFieldVariant.Surface,
+    prefix: String? = null,
+    suffix: String? = null,
+    maxLength: Int? = null,
+) {
+    val config = FieldConfig(
+        variant,
+        FieldTexts(label, placeholder, prefix, suffix, error, supportingText),
+        FieldLines(singleLine, minLines, maxLines),
+        maxLength,
+        FieldSlots(leadingIcon, trailingIcon),
+        FieldFlags(clearable, enabled, readOnly),
+    ).checked()
+    val source = remember(state, inputTransformation, outputTransformation, onKeyboardAction, maxLength) {
+        FieldSource.State(state, inputTransformation, outputTransformation, onKeyboardAction, maxLength)
+    }
+    TextFieldFrame(source, config, FieldInput(keyboardOptions, interactionSource), surface, modifier)
+}
+
+/** 두 오버로드가 같이 쓰는 파라미터 검사 */
+private fun FieldConfig.checked(): FieldConfig {
+    require(lines.max >= 1) { "maxLines는 1 이상이어야 합니다." }
+    require(lines.min in 1..(if (lines.single) 1 else lines.max)) { "minLines는 1 이상, maxLines 이하여야 합니다." }
+    require(maxLength == null || maxLength >= 1) { "maxLength는 1 이상이어야 합니다." }
+    return this
+}
+
+@Composable
+private fun TextFieldFrame(source: FieldSource, config: FieldConfig, input: FieldInput, surface: SurfaceStyle, modifier: Modifier) {
+    if (config.variant == KTextFieldVariant.Surface) {
+        SurfaceTextField(source, config, input, surface, modifier)
     } else {
-        VariantTextField(value, change, config, input, surface, modifier)
+        VariantTextField(source, config, input, surface, modifier)
     }
 }
 
 /** 표면 스타일로 칠한 기본 입력란([KTextFieldVariant.Surface]) */
 @Composable
-private fun SurfaceTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    config: FieldConfig,
-    input: FieldInput,
-    surface: SurfaceStyle,
-    modifier: Modifier,
-) {
+private fun SurfaceTextField(source: FieldSource, config: FieldConfig, input: FieldInput, surface: SurfaceStyle, modifier: Modifier) {
     val texts = config.texts
     val error = texts.error
     val flags = config.flags
     val lines = config.lines
     var focused by remember { mutableStateOf(false) }
-    val motion = remember { FieldMotion(value.isNotEmpty(), error) }
+    val empty = source.text.isEmpty()
+    val motion = remember { FieldMotion(!empty, error) }
     val colors = KineticaTheme.colors
     motion.accent = colors.accent
     motion.errorColor = colors.destructive
     val still = reducedMotion()
-    LaunchedEffect(focused, value.isEmpty()) {
-        motion.float.animateTo(if (focused || value.isNotEmpty()) 1f else 0f, spring(stiffness = Spring.StiffnessMediumLow))
+    LaunchedEffect(focused, empty) {
+        motion.float.animateTo(if (focused || !empty) 1f else 0f, spring(stiffness = Spring.StiffnessMediumLow))
     }
     LaunchedEffect(focused) { motion.levels.focusTo(focused) }
     LaunchedEffect(error) { motion.onError(error, still) }
@@ -169,14 +234,21 @@ private fun SurfaceTextField(
         FieldAffix(texts.prefix, texts.suffix),
         !lines.single && lines.min > 1,
     ) {
-        val show = flags.clearable && flags.enabled && !flags.readOnly && focused && value.isNotEmpty()
-        FieldClearButton(show, surface.contentColor) { onValueChange("") }
+        val show = flags.clearable && flags.enabled && !flags.readOnly && focused && !empty
+        FieldClearButton(show, surface.contentColor) { source.clear() }
     }
+    val basics = FieldBasics(
+        enabled = flags.enabled,
+        readOnly = flags.readOnly,
+        lines = lines,
+        textStyle = themed(TextStyle(color = surface.contentColor, fontSize = FIELD_FONT_SIZE)),
+        cursorBrush = SolidColor(colors.accent),
+        input = input,
+    )
     Column(modifier.keepVisibleWhileFocused(focused)) {
         ProvideFieldSelection(colors.accent) {
-            BasicTextField(
-                value,
-                onValueChange,
+            SourceTextField(
+                source,
                 Modifier
                     .fillMaxWidth()
                     .graphicsLayer {
@@ -189,21 +261,10 @@ private fun SurfaceTextField(
                     .fieldFocusFrame(FIELD_CORNER, motion.levels, colors.accent, colors.destructive)
                     .onFocusChanged { focused = it.isFocused }
                     .semantics { if (error != null) error(error) },
-                enabled = flags.enabled,
-                readOnly = flags.readOnly,
-                singleLine = lines.single,
-                maxLines = if (lines.single) 1 else lines.max,
-                minLines = if (lines.single) 1 else lines.min,
-                interactionSource = input.interactionSource,
-                keyboardActions = input.keyboardActions,
-                textStyle = themed(TextStyle(color = surface.contentColor, fontSize = FIELD_FONT_SIZE)),
-                cursorBrush = SolidColor(colors.accent),
-                keyboardOptions = input.keyboardOptions,
-                visualTransformation = input.visualTransformation,
-                decorationBox = { field -> FieldDecoration(parts, surface, motion, value.isEmpty(), field) },
-            )
+                basics,
+            ) { field -> FieldDecoration(parts, surface, motion, empty, field) }
         }
-        FieldSupportRow(error, texts.supporting, surface, config.maxLength?.let { value.length to it }, FIELD_PADDING)
+        FieldSupportRow(error, texts.supporting, surface, config.maxLength?.let { source.text.length to it }, FIELD_PADDING)
     }
 }
 

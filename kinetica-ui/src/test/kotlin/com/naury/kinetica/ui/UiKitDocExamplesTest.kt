@@ -1,4 +1,4 @@
-@file:Suppress("ktlint", "UNUSED_VARIABLE", "UNUSED_PARAMETER", "UNUSED_ANONYMOUS_PARAMETER", "unused")
+@file:Suppress("ktlint", "MaxLineLength", "FunctionOnlyReturningConstant", "UNUSED_VARIABLE", "UNUSED_PARAMETER", "UNUSED_ANONYMOUS_PARAMETER", "unused")
 
 package com.naury.kinetica.ui
 
@@ -178,7 +178,7 @@ class UiKitDocExamplesTest {
         KIconButton(Icons.Rounded.Share, "공유", onClick = ::share)                        // 기본값 Glass
         KChipGroup(listOf("전체", "사진", "동영상"), filter, { filter = it }, variant = KVariant.Tonal)
         KSurface(onClick = ::open, variant = KVariant.Elevated) { Text("열기", Modifier.padding(16.dp)) }
-        scope.launch { toast.show("저장했어요", tone = KTone.Positive) }                   // 글자 앞에 성공 아이콘
+        KButton("저장", onClick = { scope.launch { toast.show("저장했어요", tone = KTone.Positive) } }) // 글자 앞에 성공 아이콘
     }
 
     @Composable

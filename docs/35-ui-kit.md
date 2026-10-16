@@ -179,7 +179,7 @@ KButton("삭제", onClick = ::delete, variant = KVariant.Outlined, tone = KTone.
 KIconButton(Icons.Rounded.Share, "공유", onClick = ::share)                        // 기본값 Glass
 KChipGroup(listOf("전체", "사진", "동영상"), filter, { filter = it }, variant = KVariant.Tonal)
 KSurface(onClick = ::open, variant = KVariant.Elevated) { Text("열기", Modifier.padding(16.dp)) }
-scope.launch { toast.show("저장했어요", tone = KTone.Positive) }                   // 글자 앞에 성공 아이콘
+KButton("저장", onClick = { scope.launch { toast.show("저장했어요", tone = KTone.Positive) } }) // 글자 앞에 성공 아이콘
 ```
 
 ## 터치 피드백
@@ -287,6 +287,13 @@ KTextField(price, { price = it }, "가격", variant = KTextFieldVariant.Outlined
 KPasswordField(password, { password = it }, "비밀번호", showChecklist = true)
 KCodeInput(code, { code = it }, onComplete = ::verify)
 KAmountInput(amount, { amount = it }, Currency.getInstance("KRW"), label = "보낼 금액")
+```
+
+통화 화면처럼 자주 다시 그려지는 화면에서는 `KTextField`, `KTextArea`, `KChatInput`의 `TextFieldState` 오버로드를 씁니다. String 방식은 값이 늦게 돌아오면 입력 중인 글자를 잃을 수 있습니다. `TextFieldState` 쪽은 `maxLength`가 붙여 넣은 글의 넘치는 끝부분만 버리고, 호스트가 넘긴 `inputTransformation` 뒤에 이어 붙습니다.
+
+```kotlin
+val draft = rememberTextFieldState()
+KChatInput(draft, onSend = { send(draft.text.toString()); draft.clearText() }, maxLength = 500, showCounter = true)
 ```
 
 ### 날짜와 시간
@@ -586,6 +593,12 @@ KineticaScaffold { padding ->
 TalkBack은 토스트, 스낵바, 배너, 아일랜드가 나타나거나 내용이 바뀌면 읽어 준다. `KStatus.Error`는 읽던 것을 끊고 바로 읽고(assertive), 나머지는 읽던 것이 끝난 뒤 읽는다(polite).
 토스트의 표시 시간은 접근성 설정의 '조치를 취할 시간'이 더 길면 그 값을 따른다. 펼친 토스트는 실제 높이로 늘어놓으므로 글자 2배와 RTL에서도 겹치지 않는다.
 
+`KIslandState.show`에 `key`를 주면 같은 종류의 알림이 대기열에 쌓이지 않고 마지막 내용으로 바뀝니다. `replaceShowing = true`이면 지금 보이는 알림도 바꾸고 표시 시간을 다시 잽니다. 아바타처럼 아이콘이 아닌 내용은 `KIslandContent(leading = { … })`로 넣습니다.
+
+```kotlin
+island.show(KIslandContent("민지", message, compactText = "새 메시지", leading = { KAvatar(minji) }), key = "chat", replaceShowing = true)
+```
+
 ### 로딩과 진행
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
@@ -754,6 +767,10 @@ KMapPin(label = "₩12,000", selected = true)
 구글 지도처럼 SurfaceView로 그리는 지도 위에서는 글래스가 지도를 블러로 비추지 못하므로 `KMapPin`에 단색 표면을 쓴다.
 '애니메이션 삭제' 설정에서는 스토리 뷰어가 바로 바뀌고 핀은 떨어지지 않는다. 스토리 자동 넘김은 그대로이며 '조치를 취할 시간' 접근성 설정만큼 늘어난다.
 
+`KChatInput`은 화면 키보드의 Enter 키가 기본으로 보내기 키입니다(`imeSend = true`). 줄 바꿈 키로 두려면 `imeSend = false`를 넘깁니다. 하드웨어 키보드에서는 Enter가 보내고 Shift+Enter가 줄을 바꿉니다.
+
+다이얼로그나 바텀 시트 안에서 받은 말풍선은 그림자 없이 옅게 그려집니다. 판 위에서도 떠 보이게 하려면 `variant = KVariant.Elevated`를 넘깁니다.
+
 ## 효과와 모션
 
 여기 있는 효과는 키트 컴포넌트뿐 아니라 Material `Button`, `Card`, `Image`, `LazyColumn` 항목 같은 호스트 Composable에도 그대로 붙는다. 터치를 소비하지 않으므로 클릭, 리플, TalkBack 역할은 그대로다.
@@ -778,6 +795,13 @@ KMapPin(label = "₩12,000", selected = true)
 | 방울 묶음 | `KBlobGroup { Box(Modifier.blob()) }`. 가까운 방울끼리 메타볼처럼 녹아 붙는다. Android 12 이상에서 이어지고, 그 아래에서는 따로 그린다. 방울은 `Modifier.offset { }`처럼 배치를 바꾸는 방법으로 움직여야 한다 |
 | 길게 눌러 확인 | `Modifier.holdToConfirm(onConfirm)`. 누르고 있는 동안 테두리를 따라 선이 그려지고 다 차야 실행한다. TalkBack에서는 두 번 탭으로 바로 실행한다 |
 | +1 떠오르기 | `Modifier.floatUp(state)` + `rememberKFloatUpState().emit("+1")`. 요소 위로 글자가 톡 튀어나와 떠오른다 |
+
+`glowBorder`는 부모가 clip하는 요소 안에 두면 바깥 번짐이 잘리고 안쪽에 얼룩이 남습니다. 자르지 않는 부모 안에 두거나 사방에 `glow`만큼 여백을 둡니다. 켜고 끌 때는 람다로 진하기를 넘기면 다시 구성하지 않고 서서히 나타납니다.
+
+```kotlin
+val level by animateFloatAsState(if (speaking) 1f else 0f, label = "glow")
+Box(Modifier.glowBorder({ level }, RoundedCornerShape(24.dp)))
+```
 
 ### 글자, 배경, 파티클
 

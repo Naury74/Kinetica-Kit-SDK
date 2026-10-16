@@ -9,6 +9,8 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 새 기능
 
+- 입력 컴포넌트 `KTextField`, `KTextArea`, `KChatInput`의 `TextFieldState` 오버로드와 `KChatInput`의 `maxLength`·`showCounter`, `KIslandContent.leading`과 `KIslandState.show(key, replaceShowing)`, `glowBorder`의 `intensity`(값·람다).
+
 #### UI 키트 (`kinetica-ui`, 새 모듈)
 
 다른 Kinetica 모듈 없이 단독으로 쓰는 Compose 컴포넌트 모음입니다. 자세한 내용은 [docs/35](docs/35-ui-kit.md)에 있습니다.
@@ -77,6 +79,8 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - 배포 artifact만으로 호스트 시나리오를 빌드하고 계측 테스트를 돌리는 `consumer-check`
 
 ### 바뀐 것
+
+- `KChatInput`의 화면 키보드 Enter 키가 기본으로 보내기 키가 됩니다(`imeSend = false`로 되돌림). 다이얼로그·시트 안의 받은 말풍선은 그림자 없이 옅게 그립니다.
 
 알파 개발 중 동작이 바뀐 부분입니다. 공개 전 스냅샷을 쓰던 호스트만 해당합니다.
 
