@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -169,15 +170,17 @@ private fun PasswordDecoration(
         Modifier.heightIn(min = FIELD_HEIGHT * grow).padding(start = FIELD_PADDING, end = TRAILING_PADDING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.weight(1f)) {
+        val centering = remember { LabelCentering() }
+        Box(Modifier.weight(1f).onSizeChanged { centering.area = it.height }) {
             ThemedText(
                 label,
-                Modifier.graphicsLayer {
+                Modifier.onSizeChanged { centering.label = it.height }.graphicsLayer {
                     val up = motion.float.value
                     transformOrigin = TransformOrigin(if (rtl) 1f else 0f, 0f)
                     scaleX = 1f - (1f - LABEL_SCALE) * up
                     scaleY = scaleX
-                    translationY = (LABEL_REST + (LABEL_FLOAT - LABEL_REST) * up) * density * grow
+                    val rest = centering.restPx(LABEL_REST * density * grow, LABEL_NUDGE.toPx())
+                    translationY = rest + (LABEL_FLOAT * density * grow - rest) * up
                 },
                 style = TextStyle(fontSize = FIELD_FONT_SIZE),
                 color = {

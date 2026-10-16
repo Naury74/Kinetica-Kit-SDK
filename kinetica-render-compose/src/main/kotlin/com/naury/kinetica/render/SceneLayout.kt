@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -52,6 +53,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -65,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.core.geometry.Size
@@ -123,26 +126,39 @@ public fun SceneLayout(
     val scope = remember(images, slots, interactive, hiddenSlots) {
         NodeScope(documentState, images, slots, callbacks, effects = interactive, keepHidden = hiddenSlots == HiddenSlotPolicy.Keep)
     }
+    // 장면 좌표는 왼쪽 위 기준의 절대 좌표라 RTL 화면에서도 뒤집지 않는다. 뒤집으면 장면이 영역 밖으로 밀려 보이지 않는다.
+    // 호스트 슬롯 안은 호스트의 레이아웃 방향을 그대로 쓴다.
+    val hostDirection = LocalLayoutDirection.current
     Box(modifier.clipToBounds()) {
-        Box(
-            // artboard가 영역보다 크면 Compose가 가운데 정렬로 밀어내므로 제약 없이 측정해 왼쪽 위에 둔다. 실제 위치는 viewport가 정한다.
-            Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).graphicsLayer {
-                transformOrigin = TransformOrigin(0f, 0f)
-                translationX = viewport.panX.toFloat()
-                translationY = viewport.panY.toFloat()
-                scaleX = viewport.zoom.toFloat()
-                scaleY = viewport.zoom.toFloat()
-            },
-        ) {
-            if (clipToArtboard) {
-                Box(Modifier.requiredSizePx(Size(document.artboard.width, document.artboard.height)).clipToBounds()) {
-                    Artboard(document)
-                    Children(document.rootOrder, scope)
-                }
-            } else {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr, LocalHostLayoutDirection provides hostDirection) {
+            SceneViewport(document, viewport, scope, clipToArtboard)
+        }
+    }
+}
+
+/** 호스트 슬롯 안에 되돌려 줄 호스트의 레이아웃 방향. 장면 안은 항상 LTR로 그린다. */
+private val LocalHostLayoutDirection = staticCompositionLocalOf { LayoutDirection.Ltr }
+
+@Composable
+private fun SceneViewport(document: SceneDocument, viewport: Viewport, scope: NodeScope, clipToArtboard: Boolean) {
+    Box(
+        // artboard가 영역보다 크면 Compose가 가운데 정렬로 밀어내므로 제약 없이 측정해 왼쪽 위에 둔다. 실제 위치는 viewport가 정한다.
+        Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).graphicsLayer {
+            transformOrigin = TransformOrigin(0f, 0f)
+            translationX = viewport.panX.toFloat()
+            translationY = viewport.panY.toFloat()
+            scaleX = viewport.zoom.toFloat()
+            scaleY = viewport.zoom.toFloat()
+        },
+    ) {
+        if (clipToArtboard) {
+            Box(Modifier.requiredSizePx(Size(document.artboard.width, document.artboard.height)).clipToBounds()) {
                 Artboard(document)
                 Children(document.rootOrder, scope)
             }
+        } else {
+            Artboard(document)
+            Children(document.rootOrder, scope)
         }
     }
 }
@@ -373,7 +389,10 @@ private fun HostView(node: SceneNode, content: NodeContent.HostSlot, modifier: M
     ) {
         // 바깥 Box는 기기 픽셀(= 문서 단위)로 측정하고 안쪽만 문서 단위 밀도로 바꿔서, 호스트의 dp 배치가 기기마다 달라지지 않게 한다.
         val fontScale = LocalDensity.current.fontScale
-        CompositionLocalProvider(LocalDensity provides Density(HOST_VIEW_UNITS_PER_DP, fontScale)) { slot() }
+        CompositionLocalProvider(
+            LocalDensity provides Density(HOST_VIEW_UNITS_PER_DP, fontScale),
+            LocalLayoutDirection provides LocalHostLayoutDirection.current,
+        ) { slot() }
     }
 }
 

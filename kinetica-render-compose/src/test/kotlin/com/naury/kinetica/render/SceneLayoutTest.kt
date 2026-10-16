@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -39,6 +40,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.naury.kinetica.core.geometry.Size
@@ -124,6 +126,24 @@ class SceneLayoutTest {
         val pixels = capture { SceneLayout(wide, Viewport(panX = 0.0, panY = 0.0, zoom = 0.5), Modifier.fillMaxSize()) }
 
         assertThat(pixels[2, 2]).isEqualTo(Color.Red)
+        assertThat(pixels[197, 197]).isEqualTo(Color.Red)
+    }
+
+    @Test
+    fun `RTL 화면에서도 장면을 뒤집거나 밀어내지 않고 viewport대로 그린다`() {
+        val wide = scene(
+            SceneNode(NodeId("box"), NodeContent.Rectangle(Size(100.0, 100.0)), style = NodeStyle(fill = blue)),
+        ).copy(artboard = Artboard(400.0, 400.0, red))
+
+        val pixels = capture {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                SceneLayout(wide, Viewport(panX = 0.0, panY = 0.0, zoom = 0.5), Modifier.fillMaxSize())
+            }
+        }
+
+        // 왼쪽 위 파란 상자(문서 0..100 → 화면 0..50)와 나머지 빨간 바탕이 LTR과 같은 자리에 있다.
+        assertThat(pixels[10, 10]).isEqualTo(Color.Blue)
+        assertThat(pixels[190, 10]).isEqualTo(Color.Red)
         assertThat(pixels[197, 197]).isEqualTo(Color.Red)
     }
 

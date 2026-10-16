@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -320,9 +322,12 @@ private fun DonutCenter(slices: List<ChartSlice>, selected: Int?, valueFormatter
             val value = valueFormatter(index?.let { slices[it].value } ?: total)
             val small = TextStyle(color = ink.copy(alpha = CENTER_MUTED), fontSize = 12.sp, textAlign = TextAlign.Center)
             ThemedText(title, style = small, maxLines = 1)
-            ThemedText(
+            // 가운데 구멍 폭이 정해져 있어 큰 글자 설정에서도 한 줄에 들어가도록 글자를 줄인다. 줄 바꿈되면 고리와 겹친다.
+            BasicText(
                 value,
-                style = TextStyle(color = ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
+                style = themed(TextStyle(color = ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = CENTER_MIN_FONT, maxFontSize = 22.sp),
             )
             if (index != null && total > 0f) ThemedText("${(slices[index].value / total * PERCENT).roundToInt()}%", style = small)
         }
@@ -333,6 +338,7 @@ private fun DonutCenter(slices: List<ChartSlice>, selected: Int?, valueFormatter
 private fun donutSummary(slices: List<ChartSlice>, total: Float, valueFormatter: (Float) -> String): String =
     pluralStringResource(R.plurals.kinetica_ui_chart_donut, slices.size, slices.size, valueFormatter(total))
 
+private val CENTER_MIN_FONT = 10.sp
 private const val DONUT_REVEAL_MS = 1_000
 private const val REVEAL_TURN = 60f
 private const val DEGREES = 180f

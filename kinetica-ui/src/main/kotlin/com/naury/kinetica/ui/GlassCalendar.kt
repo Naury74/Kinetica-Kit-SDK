@@ -445,8 +445,9 @@ private fun MonthTitle(month: YearMonth, look: CalendarLook, modifier: Modifier)
 private fun ArrowButton(previous: Boolean, enabled: Boolean, look: CalendarLook, onClick: () -> Unit) {
     // 이전 달 화살표는 읽는 방향의 시작 쪽을 가리킨다. RTL에서는 오른쪽이다.
     val pointLeft = previous != (LocalLayoutDirection.current == LayoutDirection.Rtl)
-    val ink = look.colors.accent
+    // 강조색 배경 위에 놓이면 강조색 화살표가 보이지 않으므로 글래스 글자 색으로 그린다.
     val fill = look.style.onGlass
+    val ink = fill
     Box(
         Modifier
             .size(ARROW_SIZE)

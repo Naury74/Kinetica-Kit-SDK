@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,6 +41,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -219,15 +221,17 @@ private fun FloatingLabelArea(
     field: @Composable () -> Unit,
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    Box(Modifier.fillMaxWidth()) {
+    val centering = remember { LabelCentering() }
+    Box(Modifier.fillMaxWidth().onSizeChanged { centering.area = it.height }) {
         ThemedText(
             parts.label,
-            Modifier.graphicsLayer {
+            Modifier.onSizeChanged { centering.label = it.height }.graphicsLayer {
                 val up = motion.float.value
                 transformOrigin = TransformOrigin(if (rtl) 1f else 0f, 0f)
                 scaleX = 1f - (1f - LABEL_SCALE) * up
                 scaleY = scaleX
-                translationY = (LABEL_REST + (LABEL_FLOAT - LABEL_REST) * up) * density * grow
+                val rest = centering.restPx(LABEL_REST * density * grow, LABEL_NUDGE.toPx())
+                translationY = rest + (LABEL_FLOAT * density * grow - rest) * up
             },
             style = TextStyle(fontSize = FIELD_FONT_SIZE),
             color = {
@@ -299,9 +303,12 @@ private val ERROR_GAP = 6.dp
 private val FIELD_FONT_SIZE = 16.sp
 private val ERROR_FONT_SIZE = 13.sp
 
-/** 라벨이 입력란 가운데에 있을 때와 떠올랐을 때의 위쪽 거리(dp). */
+/** 라벨이 입력란 가운데에 있을 때와 떠올랐을 때의 위쪽 거리(dp). 가운데 값은 높이를 재기 전에만 쓴다. */
 private const val LABEL_REST = 15f
 private const val LABEL_FLOAT = 6f
+
+/** 쉬는 라벨을 입력 영역 세로 가운데보다 이만큼 내려 둔다. 1배 글자에서 예전 위치(15dp)와 같게 하는 값이다. */
+internal val LABEL_NUDGE = 1.dp
 private const val LABEL_SCALE = 0.75f
 private const val PLACEHOLDER_ALPHA = 0.38f
 private const val HELPER_ALPHA = 0.6f
@@ -315,3 +322,15 @@ private const val SHAKE_AT_3 = 180
 private const val SHAKE_AT_4 = 240
 private const val SHAKE_FIRST = 8f
 private const val SHAKE_SECOND = 4f
+
+/**
+ * 비어 있는 입력란의 라벨(쉬는 라벨)을 입력 영역의 세로 가운데에 두기 위해 잰 높이(px).
+ * 글자 크기 배율에 따라 입력 줄과 라벨 줄 높이가 따로 바뀌므로 고정 값 대신 실제로 잰 높이를 쓴다.
+ */
+internal class LabelCentering {
+    var area by mutableIntStateOf(0)
+    var label by mutableIntStateOf(0)
+
+    /** 쉬는 라벨의 위쪽 위치(px). 아직 재지 않았으면 [fallback]을 쓴다. */
+    fun restPx(fallback: Float, nudge: Float): Float = if (area > 0 && label > 0) (area - label) / 2f + nudge else fallback
+}

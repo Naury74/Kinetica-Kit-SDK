@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
@@ -213,27 +214,44 @@ internal fun Modifier.avoidHinge(prefer: Offset? = null, minPane: Dp = 200.dp, h
     return onGloballyPositioned { origin.value = it.positionInWindow() }.layout { measurable, constraints ->
         val width = constraints.maxWidth
         val height = constraints.maxHeight
-        val area = hingeFreeArea(width.toFloat(), height.toFloat(), hinge.translate(-origin.value), prefer?.minus(origin.value), minPane.toPx(), rtl)
+        val area =
+            hingeFreeArea(
+                Size(width.toFloat(), height.toFloat()),
+                hinge.translate(-origin.value),
+                prefer?.minus(origin.value),
+                minPane.toPx(),
+                rtl,
+            )
         val placeable = measurable.measure(Constraints.fixed(area.width.roundToInt(), area.height.roundToInt()))
         layout(width, height) { placeable.place(area.left.roundToInt(), area.top.roundToInt()) }
     }
 }
 
 /** [avoidHinge]가 고르는 칸(px, 이 레이아웃 기준). 접힌 선이 레이아웃을 가로지르지 않으면 전체 영역이다. */
-internal fun hingeFreeArea(width: Float, height: Float, hinge: Rect, prefer: Offset?, minPane: Float, rtl: Boolean): Rect {
-    val whole = Rect(0f, 0f, width, height)
-    if (hinge.width >= hinge.height) {
-        if (hinge.top <= 0f || hinge.bottom >= height) return whole
-        val top = Rect(0f, 0f, width, hinge.top)
-        val bottom = Rect(0f, hinge.bottom, width, height)
-        val wantBottom = prefer != null && prefer.y >= hinge.bottom
-        return pickPane(if (wantBottom) bottom else top, if (wantBottom) top else bottom, minPane, vertical = false) ?: whole
+internal fun hingeFreeArea(size: Size, hinge: Rect, prefer: Offset?, minPane: Float, rtl: Boolean): Rect {
+    val whole = Rect(Offset.Zero, size)
+    val pane = if (hinge.width >= hinge.height) {
+        horizontalHingePane(size, hinge, prefer, minPane)
+    } else {
+        verticalHingePane(size, hinge, prefer, minPane, rtl)
     }
-    if (hinge.left <= 0f || hinge.right >= width) return whole
-    val left = Rect(0f, 0f, hinge.left, height)
-    val right = Rect(hinge.right, 0f, width, height)
+    return pane ?: whole
+}
+
+private fun horizontalHingePane(size: Size, hinge: Rect, prefer: Offset?, minPane: Float): Rect? {
+    if (hinge.top <= 0f || hinge.bottom >= size.height) return null
+    val top = Rect(0f, 0f, size.width, hinge.top)
+    val bottom = Rect(0f, hinge.bottom, size.width, size.height)
+    val wantBottom = prefer != null && prefer.y >= hinge.bottom
+    return pickPane(if (wantBottom) bottom else top, if (wantBottom) top else bottom, minPane, vertical = false)
+}
+
+private fun verticalHingePane(size: Size, hinge: Rect, prefer: Offset?, minPane: Float, rtl: Boolean): Rect? {
+    if (hinge.left <= 0f || hinge.right >= size.width) return null
+    val left = Rect(0f, 0f, hinge.left, size.height)
+    val right = Rect(hinge.right, 0f, size.width, size.height)
     val wantRight = if (prefer != null) prefer.x >= hinge.right else rtl
-    return pickPane(if (wantRight) right else left, if (wantRight) left else right, minPane, vertical = true) ?: whole
+    return pickPane(if (wantRight) right else left, if (wantRight) left else right, minPane, vertical = true)
 }
 
 private fun pickPane(first: Rect, second: Rect, minPane: Float, vertical: Boolean): Rect? {

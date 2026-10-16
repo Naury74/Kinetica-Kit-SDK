@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.ForcedSize
@@ -145,26 +146,38 @@ class GlassWindowInfoTest {
     @Test
     fun `접힌 선 한쪽 칸을 고른다`() {
         val horizontal = Rect(0f, 440f, 900f, 460f)
-        assertThat(hingeFreeArea(900f, 900f, horizontal, null, 200f, rtl = false)).isEqualTo(Rect(0f, 0f, 900f, 440f))
-        assertThat(hingeFreeArea(900f, 900f, horizontal, Offset(10f, 700f), 200f, rtl = false)).isEqualTo(Rect(0f, 460f, 900f, 900f))
+        assertThat(hingeFreeArea(Size(900f, 900f), horizontal, null, 200f, rtl = false)).isEqualTo(Rect(0f, 0f, 900f, 440f))
+        assertThat(hingeFreeArea(Size(900f, 900f), horizontal, Offset(10f, 700f), 200f, rtl = false)).isEqualTo(Rect(0f, 460f, 900f, 900f))
 
         val vertical = Rect(440f, 0f, 460f, 900f)
-        assertThat(hingeFreeArea(900f, 900f, vertical, null, 200f, rtl = false)).isEqualTo(Rect(0f, 0f, 440f, 900f))
-        assertThat(hingeFreeArea(900f, 900f, vertical, null, 200f, rtl = true)).isEqualTo(Rect(460f, 0f, 900f, 900f))
+        assertThat(hingeFreeArea(Size(900f, 900f), vertical, null, 200f, rtl = false)).isEqualTo(Rect(0f, 0f, 440f, 900f))
+        assertThat(hingeFreeArea(Size(900f, 900f), vertical, null, 200f, rtl = true)).isEqualTo(Rect(460f, 0f, 900f, 900f))
 
         // 고른 칸이 너무 좁으면 반대쪽, 둘 다 좁거나 접힌 선이 밖에 있으면 전체를 쓴다.
         val nearTop = Rect(0f, 100f, 900f, 110f)
-        assertThat(hingeFreeArea(900f, 900f, nearTop, null, 200f, rtl = false)).isEqualTo(Rect(0f, 110f, 900f, 900f))
-        assertThat(hingeFreeArea(300f, 300f, Rect(0f, 140f, 300f, 160f), null, 200f, rtl = false)).isEqualTo(Rect(0f, 0f, 300f, 300f))
-        assertThat(hingeFreeArea(900f, 900f, Rect(0f, 950f, 900f, 960f), null, 200f, rtl = false)).isEqualTo(Rect(0f, 0f, 900f, 900f))
+        assertThat(hingeFreeArea(Size(900f, 900f), nearTop, null, 200f, rtl = false)).isEqualTo(Rect(0f, 110f, 900f, 900f))
+        assertThat(hingeFreeArea(Size(300f, 300f), Rect(0f, 140f, 300f, 160f), null, 200f, rtl = false)).isEqualTo(Rect(0f, 0f, 300f, 300f))
+        assertThat(hingeFreeArea(Size(900f, 900f), Rect(0f, 950f, 900f, 960f), null, 200f, rtl = false)).isEqualTo(Rect(0f, 0f, 900f, 900f))
         assertThat(tabletopSplit(900f, 100f, 110f, 200f)).isNull()
     }
 
     @Test
     fun `펼친 플레이어는 넓은 화면에서 나란히, 탁자 모드에서 접힌 선 위아래로 놓는다`() {
         fun layout(width: Float, height: Float, fold: PlayerFold? = null) = fullPlayerLayout(
-            width, Rect(0f, 0f, width, height), hasArtwork = true, fold = fold, small = 40f,
-            handle = 44f, gap = 28f, side = 32f, artMax = 420f, contentMax = 560f, wideMin = 600f, minPane = 200f,
+            width,
+            Rect(0f, 0f, width, height),
+            hasArtwork = true,
+            fold = fold,
+            PlayerMetrics(
+                small = 40f,
+                handle = 44f,
+                gap = 28f,
+                side = 32f,
+                artMax = 420f,
+                contentMax = 560f,
+                wideMin = 600f,
+                minPane = 200f,
+            ),
         )
 
         val phone = layout(400f, 800f)

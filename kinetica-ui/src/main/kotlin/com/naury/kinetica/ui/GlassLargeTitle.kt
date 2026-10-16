@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
@@ -55,6 +56,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
@@ -167,6 +169,8 @@ public fun rememberGlassLargeTitleState(scrollState: ScrollState): GlassLargeTit
  * @param bottom 큰 제목 아래에 붙일 줄(탭이나 검색창). 큰 제목과 함께 올라가다가 다 접히면 작은 바 바로 아래에 붙어 남고,
  *   그때는 글래스 바 배경이 이 줄까지 이어진다. 바 전체 높이는 이 줄을 포함해 고정이다.
  * @param actions 끝 쪽에 놓을 버튼들
+ * @param contentMaxWidth 뒤로 버튼, 버튼들, 큰 제목을 이 폭 안에 두고 가운데 정렬한다. 넓은 화면에서 본문을 읽기 폭으로 묶었을 때
+ *   제목 줄을 본문과 같은 정렬선에 맞추는 데 쓴다. 글래스 배경은 그대로 화면 폭 전체에 깔린다. 기본값은 제한 없음.
  */
 @Composable
 public fun GlassLargeTitleBar(
@@ -177,6 +181,7 @@ public fun GlassLargeTitleBar(
     style: GlassStyle = LocalGlassStyle.current,
     bottom: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    contentMaxWidth: Dp = Dp.Unspecified,
 ) {
     val density = LocalDensity.current
     state.stretchLimit = with(density) { STRETCH_LIMIT.toPx() }
@@ -189,8 +194,8 @@ public fun GlassLargeTitleBar(
     }
     if (bottom == null) {
         Column(modifier.fillMaxWidth()) {
-            SmallBar(state, title, onBack, style, Modifier.barGlass(style, barLevel), actions)
-            LargeTitle(state, title, style)
+            SmallBar(state, title, onBack, style, Modifier.barGlass(style, barLevel), contentMaxWidth, actions)
+            LargeTitle(state, title, style, contentMaxWidth)
         }
         return
     }
@@ -205,8 +210,8 @@ public fun GlassLargeTitleBar(
                 .barGlass(style, barLevel),
         )
         Column(Modifier.fillMaxWidth()) {
-            SmallBar(state, title, onBack, style, Modifier.onSizeChanged { smallHeight = it.height }, actions)
-            LargeTitle(state, title, style)
+            SmallBar(state, title, onBack, style, Modifier.onSizeChanged { smallHeight = it.height }, contentMaxWidth, actions)
+            LargeTitle(state, title, style, contentMaxWidth)
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -228,6 +233,7 @@ private fun SmallBar(
     onBack: (() -> Unit)?,
     style: GlassStyle,
     background: Modifier,
+    maxWidth: Dp,
     actions: @Composable RowScope.() -> Unit,
 ) {
     Box(
@@ -253,7 +259,10 @@ private fun SmallBar(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Row(Modifier.fillMaxWidth().align(Alignment.Center).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.align(Alignment.Center).widthIn(max = maxWidth).fillMaxWidth().padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             onBack?.let { BackButton(style, it) }
             Spacer(Modifier.weight(1f))
             actions()
@@ -262,7 +271,7 @@ private fun SmallBar(
 }
 
 @Composable
-private fun LargeTitle(state: GlassLargeTitleState, title: String, style: GlassStyle) {
+private fun LargeTitle(state: GlassLargeTitleState, title: String, style: GlassStyle, maxWidth: Dp) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(
         Modifier
@@ -274,10 +283,13 @@ private fun LargeTitle(state: GlassLargeTitleState, title: String, style: GlassS
                     this@drawWithContent.drawContent()
                 }
             },
+        contentAlignment = Alignment.TopCenter,
     ) {
         ThemedText(
             title,
             Modifier
+                .widthIn(max = maxWidth)
+                .fillMaxWidth()
                 .padding(start = LARGE_TITLE_INSET, end = LARGE_TITLE_INSET, top = 2.dp, bottom = 10.dp)
                 .graphicsLayer {
                     val collapsed = state.collapsedFraction
