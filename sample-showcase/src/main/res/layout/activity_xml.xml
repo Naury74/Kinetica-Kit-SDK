@@ -6,10 +6,18 @@
     android:layout_height="match_parent"
     android:background="@color/xml_background">
 
+<!-- 좁은 화면에서는 보드와 서버 장면을 한 화면에 다 담지 못하므로 화면 전체를 스크롤한다.
+     보드는 높이 제한이 없으면 위젯 내용만큼 커지고, 편집 중 끌기는 이 스크롤 안에서도 자동 스크롤된다. -->
+<androidx.core.widget.NestedScrollView
+    android:id="@+id/scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
 <LinearLayout
     android:id="@+id/content"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:clipToPadding="false"
     android:orientation="vertical"
     android:padding="16dp">
@@ -87,8 +95,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <!-- 보드 제목과 편집 버튼 -->
@@ -123,13 +130,21 @@
         <com.naury.kinetica.board.KineticaBoardView
             android:id="@+id/board"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="-12dp"
             android:layout_marginEnd="-12dp"
-            android:layout_weight="1"
             app:kinetica_accentColor="#5B6CFF"
             app:kinetica_widgetCornerRadius="20dp" />
     </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="서버에서 받은 화면"
+        android:textColor="@color/xml_title"
+        android:textSize="16sp"
+        android:textStyle="bold" />
 
     <!-- 장면을 화면 폭에 맞춰 펼친다(responsive). 높이는 매출 카드 높이(약 240dp)에 맞췄다.
          장면 안쪽에 16dp 여백이 있어 그만큼 바깥으로 넓혀 카드 가장자리를 버튼 줄과 맞춘다. -->
@@ -162,10 +177,20 @@
                     android:layout_height="wrap_content"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="6dp"
-                    android:text="서버 장면"
+                    android:text="실시간"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </com.naury.kinetica.ui.view.GlassSurfaceView>
     </FrameLayout>
 </LinearLayout>
+</androidx.core.widget.NestedScrollView>
+
+    <!-- 스크롤한 내용이 상태 표시줄 아래로 비치지 않게 덮는 막. 높이는 XmlActivity가 상태 표시줄 높이로 맞춘다. -->
+    <View
+        android:id="@+id/status_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_gravity="top"
+        android:alpha="0.94"
+        android:background="@color/xml_background" />
 </FrameLayout>

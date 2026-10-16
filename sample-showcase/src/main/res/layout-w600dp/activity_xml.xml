@@ -151,7 +151,7 @@
                 android:layout_height="44dp"
                 android:layout_marginTop="12dp"
                 android:gravity="center_vertical"
-                android:text="홍보 화면"
+                android:text="서버에서 받은 화면"
                 android:textColor="@color/xml_title"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -185,7 +185,7 @@
                         android:layout_height="wrap_content"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="6dp"
-                        android:text="서버 장면"
+                        android:text="실시간"
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </com.naury.kinetica.ui.view.GlassSurfaceView>
@@ -193,4 +193,13 @@
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
+
+    <!-- 스크롤한 내용이 상태 표시줄 아래로 비치지 않게 덮는 막. 높이는 XmlActivity가 상태 표시줄 높이로 맞춘다. -->
+    <View
+        android:id="@+id/status_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_gravity="top"
+        android:alpha="0.94"
+        android:background="@color/xml_background" />
 </FrameLayout>

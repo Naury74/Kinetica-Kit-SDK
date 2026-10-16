@@ -62,12 +62,14 @@ class XmlActivity : ComponentActivity() {
         setContentView(R.layout.activity_xml)
         // 배경은 화면 끝까지 칠하고, 내용만 상태 표시줄, 내비게이션 바, 가로 화면 컷아웃, 키보드를 피한다.
         val content = findViewById<View>(R.id.content)
+        val scrim = findViewById<View>(R.id.status_scrim)
         val base = content.paddingLeft
         ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime(),
             )
             view.setPadding(base + bars.left, base + bars.top, base + bars.right, base + bars.bottom)
+            scrim.layoutParams = scrim.layoutParams.apply { height = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top }
             insets
         }
         val board = findViewById<KineticaBoardView>(R.id.board)
