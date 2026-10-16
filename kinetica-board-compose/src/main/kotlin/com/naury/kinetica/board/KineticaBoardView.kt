@@ -43,7 +43,8 @@ public fun interface OnBoardLongPressListener {
  * editButton.setOnClickListener { board.isEditing = !board.isEditing }
  * ```
  *
- * XML 속성: `app:kinetica_editing`, `app:kinetica_stackAutoAdvanceMs`, `app:kinetica_accentColor`. 앱 테마의 `kinetica_boardViewStyle`에
+ * XML 속성: `app:kinetica_editing`, `app:kinetica_stackAutoAdvanceMs`, `app:kinetica_accentColor`, `app:kinetica_widgetCornerRadius`,
+ * `app:kinetica_minCellWidth`, `app:kinetica_maxColumns`. 앱 테마의 `kinetica_boardViewStyle`에
  * 스타일을 지정하면 모든 보드의 기본값이 된다.
  *
  * View에 id가 있으면 화면을 회전해도 편집 모드가 유지된다. 같은 화면에 보드가 여럿이면 id를 서로 다르게 준다(Fragment마다 따로 저장하므로
@@ -71,6 +72,7 @@ public class KineticaBoardView @JvmOverloads constructor(
     private var colorsState by mutableStateOf<BoardColors?>(null)
     private var cornerState by mutableFloatStateOf(DEFAULT_CORNER_DP)
     private var longPressState by mutableStateOf<OnBoardLongPressListener?>(null)
+    private var columnsState by mutableStateOf<GridColumns?>(null)
 
     /** 편집 모드. 켜면 위젯을 옮기고, 크기를 바꾸고, 삭제하거나 추가할 수 있다. */
     public var isEditing: Boolean
@@ -107,6 +109,16 @@ public class KineticaBoardView @JvmOverloads constructor(
             cornerState = value.coerceAtLeast(0f)
         }
 
+    /**
+     * 격자 배치에서 보드 폭에 따라 열 수를 바꾸는 규칙. `null`이 아니면 상태의 [BoardArrangement.Grid.columnsByWidth] 대신 쓴다.
+     * 자유 배치에는 영향이 없다. XML에서는 `app:kinetica_minCellWidth`(필수)와 `app:kinetica_maxColumns`로 [GridColumns.Adaptive]를 준다.
+     */
+    public var columnsByWidth: GridColumns?
+        get() = columnsState
+        set(value) {
+            columnsState = value
+        }
+
     init {
         context.obtainStyledAttributes(attrs, R.styleable.KineticaBoardView, defStyleAttr, defStyleRes).apply {
             try {
@@ -115,6 +127,14 @@ public class KineticaBoardView @JvmOverloads constructor(
                 if (hasValue(R.styleable.KineticaBoardView_kinetica_widgetCornerRadius)) {
                     val px = getDimension(R.styleable.KineticaBoardView_kinetica_widgetCornerRadius, 0f)
                     cornerState = px / resources.displayMetrics.density
+                }
+                if (hasValue(R.styleable.KineticaBoardView_kinetica_minCellWidth)) {
+                    val px = getDimension(R.styleable.KineticaBoardView_kinetica_minCellWidth, 0f)
+                    val max = getInt(R.styleable.KineticaBoardView_kinetica_maxColumns, GridColumns.MAX_COLUMNS)
+                    columnsState = GridColumns.Adaptive(
+                        (px / resources.displayMetrics.density).coerceAtLeast(1f),
+                        max.coerceIn(1, GridColumns.MAX_COLUMNS),
+                    )
                 }
                 if (hasValue(R.styleable.KineticaBoardView_kinetica_accentColor)) {
                     colorsState = BoardColors.fromAccent(getColor(R.styleable.KineticaBoardView_kinetica_accentColor, 0))
@@ -128,7 +148,7 @@ public class KineticaBoardView @JvmOverloads constructor(
                 setContent {
                     board?.let { (state, factory) ->
                         val listener = longPressState
-                        KineticaBoard(
+                        KineticaBoardContent(
                             state,
                             // CoordinatorLayout의 AppBarLayout처럼 nested scroll을 받는 부모가 보드 스크롤에 맞춰 접히고 펼쳐지게 한다.
                             Modifier.fillMaxSize().nestedScroll(rememberNestedScrollInteropConnection()),
@@ -138,6 +158,7 @@ public class KineticaBoardView @JvmOverloads constructor(
                             onLongPress = listener?.let { { it.onLongPress() } },
                             stackAutoAdvanceMs = stackAdvanceState,
                             widgetCornerRadius = cornerState.dp,
+                            columnsByWidth = columnsState,
                         ) { id ->
                             AndroidView(factory = { viewContext -> factory.create(id, viewContext) }, modifier = Modifier.fillMaxSize())
                         }

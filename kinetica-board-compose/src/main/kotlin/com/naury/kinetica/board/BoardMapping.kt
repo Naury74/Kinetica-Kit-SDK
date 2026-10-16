@@ -15,6 +15,9 @@ internal class BoardMapping(
 ) {
     private val scale = displayWidth / KineticaBoardState.REFERENCE_WIDTH
 
+    /** 격자 열 수. 자유 배치면 0. */
+    val columns: Int = (arrangement as? BoardArrangement.Grid)?.columns ?: 0
+
     fun toDisplay(reference: Rect): Rect = mirror(ltrDisplay(reference))
 
     fun toReference(display: Rect): Rect = ltrReference(mirror(display))

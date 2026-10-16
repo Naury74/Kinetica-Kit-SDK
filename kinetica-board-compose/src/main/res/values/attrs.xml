@@ -13,5 +13,9 @@
         <attr name="kinetica_accentColor" format="color" />
         <!-- 편집 테두리와 크기 조절 핸들의 모서리 반지름. 위젯 카드의 모서리 반지름과 같게 준다. -->
         <attr name="kinetica_widgetCornerRadius" format="dimension" />
+        <!-- 격자 배치에서 칸 폭이 이 값보다 좁아지지 않는 만큼 열을 늘린다. 주지 않으면 열 수를 바꾸지 않는다. -->
+        <attr name="kinetica_minCellWidth" format="dimension" />
+        <!-- kinetica_minCellWidth로 늘리는 최대 열 수(1..24). 기본 24. -->
+        <attr name="kinetica_maxColumns" format="integer" />
     </declare-styleable>
 </resources>

@@ -44,10 +44,14 @@ internal fun reconcileStack(node: SceneNode, keys: Set<String>): SceneNode? {
         0 -> null
 
         1 -> members.single().let {
-            node.copy(id = NodeId(it.id), content = slot(node, it.id), metadata = KineticaBoardState.widgetMetadata(it.id, it.key))
+            node.copy(
+                id = NodeId(it.id),
+                content = slot(node, it.id),
+                metadata = KineticaBoardState.widgetMetadata(it.id, it.key) + node.columnCellsMetadata(),
+            )
         }
 
-        else -> node.copy(metadata = stackMetadata(members))
+        else -> node.copy(metadata = stackMetadata(members) + node.columnCellsMetadata())
     }
 }
 
@@ -75,7 +79,13 @@ public fun KineticaBoardState.stack(targetId: String, itemId: String): String? {
     val members = membersOf(target) + membersOf(item)
     val stackId = target.id.value.takeIf { target.stackMembers().isNotEmpty() }
         ?: generateSequence(1) { it + 1 }.map { "stack.$it" }.first { document.node(NodeId(it)) == null }
-    val stackNode = target.copy(id = NodeId(stackId), content = slot(target, stackId), metadata = stackMetadata(members), name = "")
+    // 스택은 대상 위젯의 자리를 열 수마다 그대로 물려받는다.
+    val stackNode = target.copy(
+        id = NodeId(stackId),
+        content = slot(target, stackId),
+        metadata = stackMetadata(members) + target.columnCellsMetadata(),
+        name = "",
+    )
     // 둘을 지운 뒤 원래 대상이 있던 그리기 순서에 넣는다.
     val index = document.rootOrder.takeWhile { it != target.id }.count { it != item.id }
     if (!commands.beginTransaction("stack")) return null
@@ -108,18 +118,20 @@ public fun KineticaBoardState.unstack(stackId: String): Boolean {
     val firstNode = stackNode.copy(
         id = NodeId(first.id),
         content = slot(stackNode, first.id),
-        metadata = KineticaBoardState.widgetMetadata(first.id, first.key),
+        metadata = KineticaBoardState.widgetMetadata(first.id, first.key) + stackNode.columnCellsMetadata(),
     )
     var ok = commands.execute(SceneCommand.RemoveNodes(setOf(stackNode.id))) is CommandResult.Applied &&
         commands.execute(SceneCommand.AddNode(firstNode, start.rootOrder.indexOf(stackNode.id))) is CommandResult.Applied
     members.drop(1).forEach { member ->
         val widget = catalog.firstOrNull { it.key == member.key }
-        val node = widget?.let { placementFor(it, document.value, member.id) }
-            ?: firstNode.copy(id = NodeId(member.id), content = slot(stackNode, member.id).copy(size = Size(1.0, 1.0)))
+        val placed = widget?.let { placementFor(it, document.value, member.id) }
+        val node = placed ?: firstNode.copy(id = NodeId(member.id), content = slot(stackNode, member.id).copy(size = Size(1.0, 1.0)))
+        // 빈칸을 찾아 놓은 위젯만 그 자리의 칸을 가져간다. 대신 놓은 위젯이 첫 위젯의 칸을 물려받으면 겹친다.
+        val cells = placed?.columnCellsMetadata().orEmpty()
         ok =
             ok &&
             commands.execute(
-                SceneCommand.AddNode(node.copy(metadata = KineticaBoardState.widgetMetadata(member.id, member.key))),
+                SceneCommand.AddNode(node.copy(metadata = KineticaBoardState.widgetMetadata(member.id, member.key) + cells)),
             ) is CommandResult.Applied
     }
     if (ok) commands.commitTransaction() else commands.rollbackTransaction()

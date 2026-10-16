@@ -67,6 +67,7 @@
 - `GlassMiniPlayer`의 `collapsed`·`expanded` 슬롯이 진행도를 `() -> Float`로 받음
 - 서버 화면·재생기 안정성: 같은 묶음을 기다리던 화면이 먼저 요청한 화면을 떠나면 멈추던 문제, 캐시 일부 손상 시 화면을 다시 받지 못하던 문제, 캐시 저장 실패가 앱을 죽이던 문제, 마이그레이션 예외가 밖으로 새던 문제(`SaveFailure.InvalidDocument` 추가)
 - 재생기: 화면이 가려지면 멈추고 돌아오면 이어서 재생, `RemoteKineticaPlayer` 회전 뒤 처음부터 다시 재생하지 않음, 실행 중 바뀐 '애니메이션 삭제' 설정을 따르며 재생 위치·속도를 이어받음
+- 보드: 넓은 화면 열 수. `BoardArrangement.Grid(columnsByWidth = GridColumns.Adaptive(160f, maxColumns = 6))` 또는 `GridColumns.breakpoints(600f to 4, 840f to 6)`로 펼친 폴더블과 태블릿에서 열을 늘립니다. 열 수마다 배치를 따로 기억해 넓은 화면에서 옮긴 위젯은 넓은 배치에만 남고, 접었다 펴도 두 배치가 그대로입니다. 처음 넓어질 때는 좁은 배치를 읽는 순서대로 흘려 넣습니다. 저장 형식은 예전과 호환되며(넓은 배치는 노드 metadata `kinetica.cells`), 기본값은 예전처럼 열 수를 바꾸지 않습니다. XML은 `app:kinetica_minCellWidth`, `app:kinetica_maxColumns`, 코드에서는 `KineticaBoardView.columnsByWidth`. 지금 열 수는 `KineticaBoardState.activeColumns`
 - 보드: 저장본으로 열지 못하면 `restoreFailed`로 덮어쓰기 방지, 위젯 100개 편집 끌기에서 다른 위젯 틀을 다시 그리지 않음, 긴 키 `multiple` 위젯 추가 크래시
 - `SceneLayout`: 숨긴 노드(`visible = false`, 불투명도 0, 또는 그런 조상 아래) 안의 호스트 뷰가 컴포지션에서 빠져 스크롤 위치와 입력 중인 글자가 초기화되던 문제를 고쳤습니다. 이제 숨긴 동안에도 상태를 유지하고, 그리지 않으며 터치·포커스·TalkBack에서 빠집니다. 숨긴 동안 비용을 줄이려면 `hiddenSlots = HiddenSlotPolicy.Dispose`를 넘깁니다.
 - 성능: 글래스 블러를 반경에 맞춘 낮은 해상도로 기록(실기기 컴포넌트 화면 스크롤 끊김 5.15% → 0.1% 안팎)

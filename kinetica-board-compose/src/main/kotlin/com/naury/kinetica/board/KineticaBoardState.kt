@@ -32,7 +32,8 @@ import kotlinx.serialization.json.jsonPrimitive
  * 보드 하나의 배치 상태. 위젯을 추가, 삭제, 이동하거나 크기를 바꿀 때마다 실행 취소 한 단계가 쌓인다. [toJson]으로 저장하고 [create]로 복원한다.
  *
  * 배치는 기준 폭([REFERENCE_WIDTH] 문서 단위, 약 393dp)으로 저장한다. 화면 폭이 다르면 가로 위치와 너비를 비율대로 늘려 보여 주므로
- * 폴더블을 접고 펴도 배치가 유지된다. 격자 배치는 칸 위치로 저장한다. 화면을 회전해도 실행 취소 기록을 유지하려면 상태를
+ * 폴더블을 접고 펴도 배치가 유지된다. 격자 배치는 칸 위치로 저장하고, [BoardArrangement.Grid.columnsByWidth]로 열 수가 바뀌면
+ * 열 수마다 배치를 따로 기억한다. 위치를 다루는 함수([rectOf], [place], [moveBy], [resizeBy], [add])는 [activeColumns]열 배치를 쓴다. 화면을 회전해도 실행 취소 기록을 유지하려면 상태를
  * ViewModel처럼 화면보다 오래 사는 곳에 둔다. [rememberKineticaBoardState]가 이 일과 저장을 함께 맡는다.
  *
  * 메인 스레드에서만 사용한다. 다 쓰면 [close]를 호출한다.
@@ -60,6 +61,23 @@ public class KineticaBoardState private constructor(
         private set
 
     internal val commands get() = session.commands
+
+    /** 가장 좁은 열 수의 격자. 자유 배치면 `null`. */
+    internal val baseGrid = arrangement as? BoardArrangement.Grid
+
+    /**
+     * 위치를 다루는 함수가 쓰는 격자 열 수. [KineticaBoard]가 보드 폭에 맞춰 정한다. 자유 배치면 0, 열 수를 바꾸지 않는 격자면
+     * [BoardArrangement.Grid.columns]다.
+     */
+    public var activeColumns: Int = baseGrid?.columns ?: 0
+        internal set(value) {
+            if (baseGrid != null) field = value.coerceIn(1, GridColumns.MAX_COLUMNS)
+        }
+
+    // 지금 열 수의 격자. 가장 좁은 열 수면 노드 위치를, 다른 열 수면 노드 metadata의 칸을 쓴다.
+    private val activeGrid: BoardArrangement.Grid? get() = baseGrid?.withColumns(activeColumns)
+
+    private val usesBaseLayout: Boolean get() = baseGrid == null || activeColumns == baseGrid.columns
 
     /** 놓인 위젯 키. 스택 안에 있는 위젯도 포함한다. */
     private val placedWidgetKeys: Set<String>
@@ -134,25 +152,35 @@ public class KineticaBoardState private constructor(
     public fun place(id: String, rect: Rect): Boolean {
         val document = session.document.value
         if (NodeId.parseOrNull(id)?.let(document::node) == null || rect.width <= 0.0 || rect.height <= 0.0) return false
-        val grid = arrangement as? BoardArrangement.Grid
-        val updates: Map<String, Rect> = if (grid == null) {
-            val rects =
-                document.rootOrder.mapNotNull { other -> rectOf(document.node(other))?.let { other.value to it } }.toMap() + (id to rect)
-            BoardGeometry.pushOverlaps(rects, id, arrangement.gapUnits()).filter { (other, target) ->
-                other == id ||
-                    rectOf(document.node(NodeId(other))) != target
+        val grid = activeGrid
+        val updates: List<SceneNode> = when {
+            grid == null -> {
+                val rects =
+                    document.rootOrder.mapNotNull { other -> rectOf(document.node(other))?.let { other.value to it } }.toMap() +
+                        (id to rect)
+                BoardGeometry.pushOverlaps(rects, id, arrangement.gapUnits())
+                    .filter { (other, target) -> other == id || rectOf(document.node(NodeId(other))) != target }
+                    .mapNotNull { (other, target) -> document.node(NodeId(other))?.let { withRect(it, target) } }
             }
-        } else {
-            val cells = gridCells(document) + (id to BoardGeometry.nearestCell(rect, REFERENCE_WIDTH, grid, arrangement.gapUnits()))
-            BoardGeometry.resolveOverlaps(cells, id)
-                .mapValues { (_, cell) -> BoardGeometry.cellRect(cell, REFERENCE_WIDTH, grid, arrangement.gapUnits()) }
-                .filter { (other, target) -> rectOf(document.node(NodeId(other))) != target }
+
+            usesBaseLayout -> {
+                val cells = gridCells(document) + (id to BoardGeometry.nearestCell(rect, REFERENCE_WIDTH, grid, arrangement.gapUnits()))
+                BoardGeometry.resolveOverlaps(cells, id)
+                    .mapValues { (_, cell) -> BoardGeometry.cellRect(cell, REFERENCE_WIDTH, grid, arrangement.gapUnits()) }
+                    .filter { (other, target) -> rectOf(document.node(NodeId(other))) != target }
+                    .mapNotNull { (other, target) -> document.node(NodeId(other))?.let { withRect(it, target) } }
+            }
+
+            else -> columnUpdates(
+                document,
+                gridCells(document),
+                id,
+                BoardGeometry.nearestCell(rect, REFERENCE_WIDTH, grid, arrangement.gapUnits()),
+                grid.columns,
+            )
         }
         if (!session.commands.beginTransaction("place")) return false
-        val ok = updates.all { (other, target) ->
-            val node = document.node(NodeId(other)) ?: return@all true
-            session.commands.execute(SceneCommand.UpdateProperties(withRect(node, target))) is CommandResult.Applied
-        }
+        val ok = updates.all { session.commands.execute(SceneCommand.UpdateProperties(it)) is CommandResult.Applied }
         if (ok) session.commands.commitTransaction() else session.commands.rollbackTransaction()
         return ok
     }
@@ -180,7 +208,7 @@ public class KineticaBoardState private constructor(
 
     // 격자 배치는 이동량의 크기는 무시하고 방향만 보고 한 칸씩 움직인다.
     private fun step(dxDp: Float, dyDp: Float): Pair<Double, Double> {
-        val grid = arrangement as? BoardArrangement.Grid ?: return dxDp * UNITS to dyDp * UNITS
+        val grid = activeGrid ?: return dxDp * UNITS to dyDp * UNITS
         val width = BoardGeometry.cellWidth(REFERENCE_WIDTH, grid.columns, arrangement.gapUnits())
         return Math.signum(dxDp) * (width + arrangement.gapUnits()) to
             Math.signum(dyDp) * (width * grid.rowHeightRatio + arrangement.gapUnits())
@@ -193,8 +221,11 @@ public class KineticaBoardState private constructor(
         return session.commands.execute(SceneCommand.ReorderNode(NodeId(id), last)) is CommandResult.Applied
     }
 
-    /** 슬롯 [id]의 기준 폭 좌표 사각형. 없으면 `null`. */
-    public fun rectOf(id: String): Rect? = NodeId.parseOrNull(id)?.let { rectOf(session.document.value.node(it)) }
+    /** 슬롯 [id]의 기준 폭 좌표 사각형. 격자 배치면 [activeColumns]열 배치의 칸이다. 없으면 `null`. */
+    public fun rectOf(id: String): Rect? {
+        val node = NodeId.parseOrNull(id)?.let(session.document.value::node) ?: return null
+        return if (usesBaseLayout) rectOf(node) else layoutRects(session.document.value, activeColumns)[node.id.value]
+    }
 
     /** 저장용 JSON. 지금 목록의 키를 함께 남겨 두어, 다음에 열 때 새로 생긴 위젯과 사용자가 삭제한 위젯을 구분한다. */
     public fun toJson(): String {
@@ -211,20 +242,15 @@ public class KineticaBoardState private constructor(
 
     public fun close(): Unit = session.close()
 
-    private fun gridCells(document: SceneDocument): Map<String, GridCell> {
-        val grid = arrangement as? BoardArrangement.Grid ?: return emptyMap()
-        return document.rootOrder.mapNotNull(document::node).associate { node ->
-            node.id.value to
-                BoardGeometry.nearestCell(rectOf(node) ?: Rect(0.0, 0.0, 1.0, 1.0), REFERENCE_WIDTH, grid, arrangement.gapUnits())
-        }
-    }
+    private fun gridCells(document: SceneDocument): Map<String, GridCell> =
+        baseGrid?.let { columnLayout(document, it, activeColumns, arrangement.gapUnits()) }.orEmpty()
 
     internal fun placementFor(widget: BoardWidget, document: SceneDocument, id: String): SceneNode {
         val gap = arrangement.gapUnits()
         val placed = document.rootOrder.mapNotNull { rectOf(document.node(it)) }
         val rect = when (val arrangement = arrangement) {
             is BoardArrangement.Grid -> {
-                val occupied = gridCells(document).values
+                val occupied = columnLayout(document, arrangement, arrangement.columns, gap).values
                 val cell = BoardGeometry.firstFreeCell(occupied, widget.columnSpan, widget.rowSpan, arrangement.columns)
                 BoardGeometry.cellRect(cell, REFERENCE_WIDTH, arrangement, gap)
             }
@@ -234,7 +260,7 @@ public class KineticaBoardState private constructor(
                 BoardGeometry.firstFreeSpot(width, widget.heightDp * UNITS, placed, REFERENCE_WIDTH, gap)
             }
         }
-        return withRect(
+        val node = withRect(
             SceneNode(
                 id = NodeId(id),
                 content = NodeContent.HostSlot(Size(rect.width, rect.height), id),
@@ -244,6 +270,12 @@ public class KineticaBoardState private constructor(
             ),
             rect,
         )
+        // 이미 편집해 기억하는 넓은 배치에 추가하면 그 배치의 첫 빈칸에도 놓는다. 기억하지 않는 배치는 흘려 넣기가 자리를 정한다.
+        val columns = activeColumns
+        val remembered = !usesBaseLayout && document.rootOrder.any { document.node(it)?.columnCells()?.containsKey(columns) == true }
+        if (!remembered) return node
+        val occupied = gridCells(document).values
+        return node.withColumnCell(columns, BoardGeometry.firstFreeCell(occupied, widget.columnSpan, widget.rowSpan, columns))
     }
 
     public companion object {

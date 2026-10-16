@@ -94,6 +94,9 @@ import kotlinx.coroutines.withTimeoutOrNull
  *   가장자리에 스냅된다. 자유 배치에서는 화면 왼쪽이나 오른쪽 가장자리로 끌면 절반, 모서리로 끌면 4분의 1, 위쪽 가장자리로 끌면
  *   전체 화면을 차지한다. 편집 중에는 위젯 내부를 누를 수 없다. 변경할 때마다 [KineticaBoardState]에 실행 취소 한 단계가 쌓인다.
  *
+ * 격자 배치에 [BoardArrangement.Grid.columnsByWidth]가 있으면 보드 폭에 맞춰 열 수를 고르고 그 열 수의 배치를 보여 준다. 폴더블을 접거나
+ * 펴서 열 수가 바뀌는 순간 진행 중인 끌기는 놓지 않고 취소한다.
+ *
  * @param permissions 편집 모드에서 허용할 작업
  * @param colors 편집 화면의 색. 기본값은 현재 MaterialTheme의 primary를 따른다.
  * @param stackAutoAdvanceMs 0보다 크면 사용 모드에서 위젯 스택이 이 간격(ms)마다 다음 위젯으로 넘어간다. 사용자가 직접 넘기면 그때부터
@@ -116,6 +119,24 @@ public fun KineticaBoard(
     widgetCornerRadius: Dp = DEFAULT_CORNER,
     content: @Composable (id: String) -> Unit,
 ) {
+    KineticaBoardContent(state, modifier, editing, permissions, colors, onLongPress, stackAutoAdvanceMs, widgetCornerRadius, null, content)
+}
+
+/** [KineticaBoard]와 같고, [columnsByWidth]가 있으면 격자 배치의 열 수 규칙 대신 쓴다. XML View 속성에서 쓴다. */
+@Composable
+@Suppress("LongParameterList")
+internal fun KineticaBoardContent(
+    state: KineticaBoardState,
+    modifier: Modifier,
+    editing: Boolean,
+    permissions: BoardPermissions,
+    colors: BoardColors,
+    onLongPress: (() -> Unit)?,
+    stackAutoAdvanceMs: Long,
+    widgetCornerRadius: Dp,
+    columnsByWidth: GridColumns?,
+    content: @Composable (id: String) -> Unit,
+) {
     val stored by state.document.collectAsState()
     val density = LocalDensity.current.density
     val zoom = (density / KineticaBoardState.UNITS).toFloat()
@@ -130,7 +151,10 @@ public fun KineticaBoard(
         LocalBoardMirrored provides mirrored,
         LocalWidgetCorner provides widgetCornerRadius.coerceAtLeast(0.dp),
     ) {
-        BoardBody(state, stored, modifier, editing, permissions, colors, onLongPress, scroll, controller, slots, hostDirection, zoom)
+        BoardBody(
+            state, stored, modifier, editing, permissions, colors, onLongPress,
+            scroll, controller, slots, hostDirection, zoom, columnsByWidth,
+        )
     }
 }
 
@@ -149,6 +173,7 @@ private fun BoardBody(
     slots: SceneSlots,
     hostDirection: LayoutDirection,
     zoom: Float,
+    columnsByWidth: GridColumns?,
 ) {
     val mirrored = LocalBoardMirrored.current
     val view = LocalView.current
@@ -161,14 +186,15 @@ private fun BoardBody(
             .nestedScroll(connection, dispatcher)
             .onGloballyPositioned { visibility.coordinates = it },
     ) {
-        val gap = gapDp(state.arrangement) * KineticaBoardState.UNITS
+        val gap = state.arrangement.gapUnits()
         val displayWidth = constraints.maxWidth / zoom.toDouble()
-        val mapping =
-            remember(state.arrangement, displayWidth, gap, mirrored) { BoardMapping(state.arrangement, displayWidth, gap, mirrored) }
+        val arrangement = shownArrangement(state.arrangement, columnsByWidth, (displayWidth / KineticaBoardState.UNITS).toFloat())
+        val mapping = remember(arrangement, displayWidth, gap, mirrored) { BoardMapping(arrangement, displayWidth, gap, mirrored) }
+        // 끌기를 놓거나 키보드로 옮길 때 지금 보이는 열 수의 배치를 바꾸도록 상태에 알린다. 그리기 전에 맞춰야 같은 프레임의 입력도 맞는다.
+        state.activeColumns = mapping.columns
         // 드래그하는 동안 이 화면은 프레임마다 다시 그려진다. 위치가 그대로인 위젯은 같은 Rect 객체를 넘겨야 편집 틀이 다시 그려지지 않는다.
-        val stable = remember(stored, mapping) {
-            stored.rootOrder.associate { id -> id.value to mapping.toDisplay(requireNotNull(KineticaBoardState.rectOf(stored.node(id)))) }
-        }
+        val stable =
+            remember(stored, mapping) { state.layoutRects(stored, mapping.columns).mapValues { (_, rect) -> mapping.toDisplay(rect) } }
         val drag = controller.drag
         val rects = drag?.let { stable + (it.key to it.rect) } ?: stable
         // 편집 중에는 맨 아래 위젯이 위젯 추가 버튼에 가리지 않도록 스크롤 여유를 둔다.
@@ -336,11 +362,6 @@ private fun Modifier.longPressToEdit(onLongPress: () -> Unit): Modifier = pointe
 
 /** NestedScrollView처럼 높이 제한 없이 재는 부모 안에서는 내용 높이만큼 커지고 스크롤은 부모에게 맡긴다. */
 private fun Modifier.heightIfUnbounded(bounded: Boolean, height: Dp): Modifier = if (bounded) this else height(height)
-
-private fun gapDp(arrangement: BoardArrangement): Float = when (arrangement) {
-    is BoardArrangement.Free -> arrangement.gapDp
-    is BoardArrangement.Grid -> arrangement.gapDp
-}
 
 /** 저장된 문서를 현재 화면 폭 좌표로 바꾼 그리기용 문서. */
 private fun displayDocument(state: KineticaBoardState, stored: SceneDocument, rects: Map<String, Rect>, width: Double): SceneDocument {
@@ -515,7 +536,8 @@ private fun BoxScope.ResizeHandle(key: String, label: String, colors: BoardColor
 @Composable
 private fun CancelDragOnResize(controller: BoardDragController, mapping: BoardMapping) {
     val previous = controller.frame?.mapping ?: return
-    if (previous.displayWidth != mapping.displayWidth && controller.drag != null) SideEffect { controller.cancel() }
+    val changed = previous.displayWidth != mapping.displayWidth || previous.columns != mapping.columns
+    if (changed && controller.drag != null) SideEffect { controller.cancel() }
 }
 
 // 키보드로 선택한 위젯이 어느 것인지 알 수 있도록 포커스가 있으면 테두리를 굵고 진하게 그린다.
