@@ -147,6 +147,17 @@ val sheet = rememberKDetentSheetState(listOf(Detent.Peek(120.dp), Detent.Fractio
 KDetentSheet(sheet, title = "주변 장소") { PlaceList() }
 ```
 
+**통화 화면.** 통화 화면은 부품을 하나씩 조합해도 되고, 완성 화면 `KCallScreen`에 상태 하나와 콜백 묶음만 넘겨도 됩니다. 영상은 호스트가 `video` 슬롯에 렌더러를 넣고, 넘기지 않은 콜백의 버튼은 화면에 나오지 않습니다. 소리 크기는 람다로 넘겨야 매 프레임 화면을 다시 구성하지 않습니다. 부품 목록과 직접 조합하는 예는 [35 UI 키트의 통화](35-ui-kit.md#통화)에 있습니다.
+
+```kotlin
+KCallScreen(
+    state = KCallState(KCallPhase.Connected, participants, startedAtMillis = connectedAt),
+    actions = KCallActions(onEnd = vm::hangUp, onToggleMute = vm::toggleMute, onToggleCamera = vm::toggleCamera),
+    video = { p -> VideoRenderer(p.id) },
+    audioLevel = { id -> levels.value[id] ?: 0f },
+)
+```
+
 ## 4. 권장 수정자 순서
 
 순서를 바꿔도 클릭은 동작합니다. 다만 아래 순서를 따라야 움직임이 배경과 리플까지 함께 적용되고, 겉에 그리는 효과가 잘리지 않습니다.

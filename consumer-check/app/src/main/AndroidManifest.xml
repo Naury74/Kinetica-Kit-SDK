@@ -32,5 +32,7 @@
         <activity android:name=".recent.NavigationHostActivity" android:exported="false" />
         <activity android:name=".recent.SceneBundleHostActivity" android:exported="false" />
         <activity android:name=".recent.IslandKeypadHostActivity" android:exported="false" />
+        <activity android:name=".recent.CallHostActivity" android:exported="false" android:supportsPictureInPicture="true" />
+        <activity android:name=".recent.CallPartsActivity" android:exported="false" />
     </application>
 </manifest>

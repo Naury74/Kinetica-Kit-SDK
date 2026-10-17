@@ -9,7 +9,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -82,7 +85,7 @@ class UiKitDocExamplesTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val blocks: List<@Composable () -> Unit> = listOf({ Block01() }, { Block02() }, { Block03() }, { Block04() }, { Block05() }, { Block06() }, { Block07() }, { Block08() }, { Block09() }, { Block10() }, { Block11() }, { Block12() }, { Block13() }, { Block14() }, { Block15() }, { Block15Transitions() }, { Block15NavHost() }, { Block16() }, { Block17() }, { Block18() }, { Block19() }, { Block20() }, { Block21() }, { Block22() }, { Block23() }, { Block24() }, { Block25() }, { Block26() }, { Block27() }, { BlockDesign() }, { Block28() })
+    private val blocks: List<@Composable () -> Unit> = listOf({ Block01() }, { Block02() }, { Block03() }, { Block04() }, { Block05() }, { Block06() }, { Block07() }, { Block08() }, { Block09() }, { Block10() }, { Block11() }, { Block12() }, { Block13() }, { Block14() }, { Block15() }, { Block15Transitions() }, { Block15NavHost() }, { Block16() }, { Block17() }, { Block18() }, { Block19() }, { Block20() }, { Block21() }, { Block22() }, { Block23() }, { Block24() }, { Block25() }, { Block26() }, { Block27() }, { BlockDesign() }, { BlockCall() }, { BlockCallComposed() }, { Block28() })
 
     @Test
     fun `UI 키트 문서의 예가 모두 그려진다`() {
@@ -551,6 +554,76 @@ class UiKitDocExamplesTest {
 
         val window = rememberKWindowLayout()
         LazyVerticalGrid(GridCells.Fixed(window.columns(minCellWidth = 320.dp))) { items(20) { KCard { Text("카드 $it") } } }
+    }
+
+    @Composable
+    private fun BlockCall() {
+        val people = listOf(CallPerson("a", "나", true), CallPerson("b", "민지", false))
+        val call = object { val connectedAt = 0L }
+        val levels = remember { mutableStateOf(mapOf<String, Float>()) }
+        val vm = CallVm()
+        KCallScreen(
+            state = KCallState(
+                phase = KCallPhase.Connected,
+                participants = people.map { KCallParticipant(it.id, it.name, isLocal = it.isLocal, isMuted = it.muted, isVideoOn = it.cameraOn, isSpeaking = it.speaking) },
+                startedAtMillis = call.connectedAt,
+            ),
+            actions = KCallActions(onEnd = vm::hangUp, onToggleMute = vm::toggleMute, onToggleCamera = vm::toggleCamera, onShareScreen = vm::hangUp),
+            video = { p -> VideoRenderer(p.id) },
+            audioLevel = { id -> levels.value[id] ?: 0f },
+        )
+    }
+
+    @Composable
+    private fun BlockCallComposed() {
+        val people = listOf(CallPerson("a", "나", true), CallPerson("b", "민지", false))
+        val me = people.first()
+        val levels = remember { mutableStateOf(mapOf<String, Float>()) }
+        val isVideo = true
+        val sheetOpen = false
+        val reconnecting = false
+        val sharing = false
+        var pinnedId by remember { mutableStateOf<String?>(null) }
+        var audioAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+        val pin = { id: String -> pinnedId = id }
+        val stagePadding = PaddingValues(top = 80.dp, bottom = 120.dp)
+        val dockItems = listOf(KCallDockItem("end", KIcons.CallEnd, "종료", {}, tone = KTone.Destructive, essential = true))
+        val chrome = rememberKCallChromeState(autoHide = isVideo, holdVisible = sheetOpen || reconnecting || sharing)
+        val grid = rememberKParticipantGridState()
+        val tiles = @Composable { layer: KCallLayer ->
+            KParticipantGrid(people, key = { it.id }, state = grid, focusKey = pinnedId, selfKey = me.id, contentPadding = stagePadding, layer = layer) { p, _ ->
+                KParticipantTile(p.name, video = if (p.cameraOn) ({ VideoRenderer(p.id) }) else null, speaking = p.speaking,
+                    audioLevel = { levels.value[p.id] ?: 0f }, onClick = { if (chrome.isVisible) pin(p.id) else chrome.show() }, layer = layer)
+            }
+        }
+        KineticaScaffold(
+            Modifier.kCallChromeTouches(chrome),
+            background = { tiles(KCallLayer.Video) },
+            bottomBar = {
+                CompositionLocalProvider(LocalGlassBackdrop provides LocalScaffoldBackground.current) {
+                    AnimatedVisibility(chrome.isVisible) { KCallDock(dockItems, onItemPositioned = { key, rect -> if (key == "audio") audioAnchor = rect }) }
+                }
+            },
+        ) { tiles(KCallLayer.Overlay) }
+    }
+
+    /** 통화 예에서 쓰는 호스트 쪽 참가자 */
+    private class CallPerson(val id: String, val name: String, val isLocal: Boolean) {
+        val muted = false
+        val cameraOn = true
+        val speaking = !isLocal
+    }
+
+    /** 통화 예에서 쓰는 호스트 쪽 뷰모델 */
+    private class CallVm {
+        fun hangUp() = Unit
+        fun toggleMute() = Unit
+        fun toggleCamera() = Unit
+    }
+
+    @Composable
+    private fun VideoRenderer(id: String) {
+        Box(Modifier.fillMaxSize().testTag("video-$id"))
     }
 
     @Composable

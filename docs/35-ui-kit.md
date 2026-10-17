@@ -1207,13 +1207,90 @@ bottomBar = {
 - `background` 칸 안의 무엇이든 바뀌면 배경 기록 전체가 다시 그려진 것으로 처리되어, 그 프레임에 모든 글래스 블러를 다시 한다. 말하는 사람 테두리나 말하기 고리처럼 매 프레임 움직이는 장식은 `background`가 아니라 `content` 층에 같은 자리로 올린다. `background`에는 영상과 정적인 바탕만 둔다.
 - 블러를 몇 프레임에 한 번으로 솎지 않는다. 배경을 초당 30번만 바꾸게 했더니 블러가 바뀌는 프레임에 비용이 몰려 그 프레임이 마감을 놓쳤다(Fold7 스크롤 끊김 0.1%에서 8~13%로 늘었다).
 
+## 통화
+
+영상 통화와 음성 통화 화면을 만드는 부품과, 그 부품만으로 만든 완성 화면이다. 키트는 UI와 상호작용만 맡고 영상과 오디오는 다루지 않는다. 영상은 호스트가 슬롯에 `AndroidView`(TextureView, SurfaceView)나 Compose 렌더러로 넣는다.
+
+부품은 호스트 상태(`StateFlow`)를 키트 데이터 클래스로 바꾸지 않고 원시 값, 람다, 슬롯으로 받는다. 완성 화면 `KCallScreen`만 상태 하나(`KCallState`)와 콜백 묶음(`KCallActions`)을 받는다.
+
+### 부품
+
+| 컴포넌트 | 하는 일 | 주요 파라미터 |
+| --- | --- | --- |
+| `KCallControlButton` | 원 안 아이콘과 아래 이름표. 켜짐은 원을 채우고, 진행 중은 둘레가 맥박처럼 뛰고, 끊기와 받기는 늘 그 색으로 채운다. TalkBack은 '마이크, 꺼짐, 새 항목 2개'처럼 한 번에 읽는다 | `checked`(null이면 상태 없는 버튼), `checkedIcon`, `tone`, `pending`, `badge`, `size`, `showLabel` |
+| `KCallDock` | 버튼 막대. 폭이 모자라면 원을 48dp로 줄이고, 그래도 넘치면 필수가 아닌 버튼을 끊기 앞 '더보기'로 접는다. '더보기' 배지는 접힌 버튼 배지의 합이다 | `items: List<KCallDockItem>`, `onMore`(null이면 시트를 직접 연다), `onItemPositioned`(버튼 위치), `vertical`. 버튼을 직접 넣는 `KCallDock { }`도 있다 |
+| `KCallTopBar` | 제목, 연결 품질, 통화 시간, 인원, 녹화와 암호화 배지를 담은 상태 캡슐과 앞뒤 버튼. 글자가 커져도 끝 버튼은 밀려나지 않고, 부가 칩은 다 들어갈 때만 보인다 | `startedAtMillis`, `participantCount`, `quality`, `navigation`, `chips`, `actions` |
+| `KParticipantTile` | 영상 슬롯, 카메라가 꺼지면 아바타와 말하기 물결, 이름표, 마이크 꺼짐과 손 들기와 약한 연결 표시, 말하는 동안 글로우 테두리. 누르면 `onClick`, 길게 누르면 고정한다 | `video`, `speaking`, `audioLevel: () -> Float`, `mirror`, `screenShare`, `nameTag`, `layer` |
+| `KParticipantGrid` | 인원과 화면 비율에 맞춘 격자, 1:1 전체 화면과 내 작은 창, 크게 보기와 한 줄 띠, 9명이 넘으면 쪽 넘김. 보이는 칸 근처만 그린다 | `participants`와 `key`(호스트 목록 그대로), `focusKey`, `selfKey`, `contentPadding`, `layer`, `tile` |
+| `KSelfView` | 끌어서 놓으면 가까운 모서리에 붙는 내 영상 창 | `rememberKSelfViewState()`, `size`, `contentPadding` |
+| `KCallStatusView` | 연결 중, 호출 중, 대기, 재연결, 종료, 실패 화면. 펄스 링과 아바타, 문구(바뀌면 TalkBack이 읽는다), 단계에 맞는 버튼 | `status`, `title`, `message`, `detail`, `onCancel`, `onRetry`, `onClose`, `summary` |
+| `KIncomingCall`, `KIncomingCallScreen` | 걸려 온 전화. 버튼 방식과 밀어서 받기 방식, 영상 통화의 음성과 영상 받기, 빠른 답장 시트 | `onAccept`, `onDecline`, `onAcceptVideo`, `onMessage`, `quickReplies`, `style` |
+| `KCallBanner`, `KCallBubble`, `KRaisedHandPill` | 화면 공유 경고와 오류 배너, 버튼 위에 꼬리를 단 말풍선, 손 든 동안의 캡슐 | `liveRegion`, `anchor`(`onItemPositioned` 값), `durationMillis` |
+| `KReactionOverlay`, `KReactionPicker` | 아래에서 떠오르는 이모지 반응(최대 8개)과 반응 고르기 | `rememberKReactionState().send(emoji, from)` |
+| `KParticipantRow`, `KAudioRouteList` | 참가자 목록 행(상태를 글자로도 쓴다)과 오디오 출력 고르기 | `onPin`, `onMute`, `onRemove`, `routes`, `selectedId` |
+| `KAudioLevelIndicator`, `KNetworkQualityIndicator`, `KCallTimer`, `KOngoingCallPill` | 소리 크기 막대와 고리, 연결 품질 막대, 굴러가는 통화 시간, 다른 화면 위 통화 캡슐 | `level: () -> Float`, `quality`, `startedAtMillis` |
+| `rememberKCallChromeState`, `Modifier.kCallChromeTouches` | 영상 통화의 바 자동 숨김. 마지막 터치 뒤 4초(접근성 권장 시간이 더 길면 그 값), TalkBack이 켜져 있으면 숨기지 않는다 | `autoHide`, `holdVisible`, `timeoutMillis` |
+| `rememberKStableSpeaker` | 발표자 보기에서 1.5초 넘게 말해야 큰 화면을 바꾼다 | `speakingKey`, `delayMillis` |
+
+### 완성 화면
+
+```kotlin
+KCallScreen(
+    state = KCallState(
+        phase = KCallPhase.Connected,
+        participants = people.map { KCallParticipant(it.id, it.name, isLocal = it.isLocal, isMuted = it.muted, isVideoOn = it.cameraOn, isSpeaking = it.speaking) },
+        startedAtMillis = call.connectedAt,
+    ),
+    actions = KCallActions(onEnd = vm::hangUp, onToggleMute = vm::toggleMute, onToggleCamera = vm::toggleCamera, onShareScreen = ::requestShare),
+    video = { p -> VideoRenderer(p.id) },
+    audioLevel = { id -> levels.value[id] ?: 0f },
+)
+```
+
+넘기지 않은 콜백의 버튼은 화면에 없다. `KCallState.isVideoCall`이 false면 음성 화면을, 참가자 수에 따라 1:1과 그룹 배치를 고른다. 참가자, 오디오 출력, 반응, 더보기 시트가 들어 있고, 입퇴장과 손 들기는 `island`로 알린다. 일부만 바꾸려면 `dock`(기본 버튼 목록을 받는 슬롯), `extraDockItems`, `topBarActions`, `nameTag`를 쓴다. 화면 속 화면 창에 있으면 `pictureInPicture = true`로 한 사람만 그린다. 소리 크기를 데이터 클래스에 넣지 않고 `audioLevel` 람다로 받는 것은, 초당 수십 번 바뀌는 값 때문에 화면 전체를 다시 구성하지 않기 위해서다.
+
+이 밖에 입장 전 화면 `KCallLobby`(미리보기 슬롯, 마이크 소리 크기, 마이크와 카메라 켜고 끄기, 이름, 참여 버튼)와 걸려 온 전화 화면 `KIncomingCallScreen`이 있다.
+
+### 부품으로 직접 조합하기
+
+영상은 `background`에, 이름표와 글로우 테두리는 `content`에 같은 자리로 그린다. 같은 `KParticipantGridState`를 두 층에 넘기면 타일이 같은 자리로 함께 움직인다. 바는 `LocalScaffoldBackground`를 비춰 영상만 블러한다([영상 위 글래스](#영상-위-글래스)).
+
+```kotlin
+val chrome = rememberKCallChromeState(autoHide = isVideo, holdVisible = sheetOpen || reconnecting || sharing)
+val grid = rememberKParticipantGridState()
+val tiles = @Composable { layer: KCallLayer ->
+    KParticipantGrid(people, key = { it.id }, state = grid, focusKey = pinnedId, selfKey = me.id, contentPadding = stagePadding, layer = layer) { p, _ ->
+        KParticipantTile(p.name, video = if (p.cameraOn) ({ VideoRenderer(p.id) }) else null, speaking = p.speaking,
+            audioLevel = { levels.value[p.id] ?: 0f }, onClick = { if (chrome.isVisible) pin(p.id) else chrome.show() }, layer = layer)
+    }
+}
+KineticaScaffold(
+    Modifier.kCallChromeTouches(chrome),
+    background = { tiles(KCallLayer.Video) },
+    bottomBar = {
+        CompositionLocalProvider(LocalGlassBackdrop provides LocalScaffoldBackground.current) {
+            AnimatedVisibility(chrome.isVisible) { KCallDock(dockItems, onItemPositioned = { key, rect -> if (key == "audio") audioAnchor = rect }) }
+        }
+    },
+) { tiles(KCallLayer.Overlay) }
+```
+
+영상 View는 Compose 위에 그려질 수 있으므로 상단 배너가 있으면 그 높이만큼 `contentPadding`의 위쪽을 늘려 무대를 내린다. 숨김을 막아야 하는 조건(시트, 재연결, 미디어 오류, 내 화면 공유, 다른 통화가 오디오를 가져감, 말풍선 표시, 상대 없음)은 모두 `holdVisible`에 넣는다.
+
+### 통화 화면 성능
+
+- 소리 크기, 글로우 테두리, 말하기 물결은 그리기 단계에서 읽으므로 매 프레임 바뀌어도 다시 구성하지 않는다. 소리 크기는 늘 람다로 넘긴다.
+- 띠와 쪽 넘김은 보이는 칸 근처의 타일만 컴포지션에 남겨 영상 렌더러 수를 보이는 만큼으로 줄인다. 보이는 칸이 바뀔 때만 다시 구성한다.
+- 바 자동 숨김은 터치마다 상태를 바꾸지 않고 숨김 시계만 다시 시작하므로, 만지는 동안 화면을 다시 구성하지 않는다.
+- `KCallScreen`은 영상 위 표면으로 테마 표면의 어두운 짝(`surface` 기본값)을 써 글자 대비를 지킨다.
+
 ## 쇼케이스에서 확인하기
 
 `sample-showcase` 첫 화면은 UI 키트를 가장 크게 두고, 그 아래에 고급 기능(대시보드 보드, 화면 만들기, 서버 화면, XML 화면)을 작게 둔다. 표면 종류와 프리셋, 밝기, 형태(디자인 언어)는 모든 화면 상단 바의 모양 버튼이 여는 시트 한 곳에서 고르고, 모든 데모가 그 값을 따른다. UI 키트를 누르면 분류별 허브가 열린다.
 
 - **표면과 디자인**: 같은 컴포넌트를 글래스, 단색, 톤 프리셋마다 나란히 그려 비교하고, '형태' 줄에서는 지금 표면 그대로 디자인 언어 6종을 나란히 그린다. 프리셋이나 형태의 적용 버튼을 누르면 앱 전체 모양이 그 값으로 바뀐다. 아래에서 다이얼로그, 바텀 시트, 토스트, 탭 바, 컨트롤, 당겨서 새로 고침을 직접 눌러 본다.
-- **앱 화면 예**: 컴포넌트를 조합해 만든 실제 앱 같은 화면 14개다. 형태는 늘 모양 설정을 따르고, 표면은 기본으로 설정을 따르되 목록 위의 '앱 추천'을 고르면 앱마다 추천하는 표면을 쓴다. 칸 오른쪽 위에 앱의 추천 표면을 적어 두었다. 사진이 주인공인 소셜 피드는 표면이 화면 설계의 일부라 단색으로 고정했다.
-- **컴포넌트**: 기본, 입력, 미디어, 효과, 버튼·칩·카드, 내비게이션·오버레이, 피드백·로딩, 데이터·도메인, 소셜·모션 탭에 이 문서의 컴포넌트가 모두 있다. 허브에서 종류를 누르면 그 탭으로 열린다.
+- **앱 화면 예**: 컴포넌트를 조합해 만든 실제 앱 같은 화면 14개다. 형태는 늘 모양 설정을 따르고, 표면은 기본으로 설정을 따르되 목록 위의 '앱 추천'을 고르면 앱마다 추천하는 표면을 쓴다. 칸 오른쪽 위에 앱의 추천 표면을 적어 두었다. 사진이 주인공인 소셜 피드는 표면이 화면 설계의 일부라 단색으로 고정했다. 전화 앱의 걸려 온 전화와 음성 통화는 완성 컴포넌트로 만들었고, 영상 통화는 상단 버튼으로 `KCallScreen` 판과 부품을 직접 조합한 판을 바꿔 볼 수 있다.
+- **컴포넌트**: 기본, 입력, 미디어, 효과, 버튼·칩·카드, 내비게이션·오버레이, 피드백·로딩, 데이터·도메인, 소셜·모션, 통화 탭에 이 문서의 컴포넌트가 모두 있다. 허브에서 종류를 누르면 그 탭으로 열린다.
 - **모션과 화면 전환**: 모션 효과(효과 수정자와 [33 모션 효과](33-effects.md)의 프리셋), 화면 이동, 장면 전환.
   - 화면 이동: 전환 22종을 칩으로 골라 목록에서 상세, 더 깊은 화면까지 쌓아 본다. 쇼핑 상세(Push, Parallax), 설정 하위 화면(CardStack), 새 글(SheetStack 두 겹), 전체 화면 다이얼로그(`cover(Bottom)`), 온보딩에서 홈(Uncover), 앱 열기(Zoom), 스토리(Cube), 카드(Flip), 보정 전후(Wipe), 미디어(BlurDissolve), 누른 버튼에서 퍼지는 테마 전환(원 reveal)과 축하 화면(별 reveal) 예가 있다. 그 아래에서 `KTransitionContent` 탭 전환(TabSlide, SharedAxisX, FadeThrough)과 컨테이너 변환(Card, `listRow`, `fab`, 사진에서 `KImageViewer`)을 본다.
   - 장면 전환: 홈, 상품, 결제 세 화면 번들을 `RemoteKineticaPlayer(bundle, sceneId)`로 재생하며 전환 14종과 방향을 고른다. 뒤로 가기는 `forward = false`다. 중간 프레임 탭에서는 `SceneTransition(from, to, spec, progress)`를 슬라이더로 멈춰 본다.

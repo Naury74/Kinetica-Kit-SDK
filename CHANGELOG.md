@@ -35,6 +35,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - `KExpandHost`의 컨테이너 변환 모양 `KContainerTransform`(`Card`, `listRow(color)`, `fab(color)`)과 예측 뒤로 가기 제스처 대응
 - 화면 전환이 디자인 언어를 따릅니다. `SheetStack`과 `KFullScreenModal`은 sheet 모서리, `CardStack`과 `KExpandHost`의 카드는 card 모서리를 쓰고 기본 스프링은 `KineticaMotion`에 맞춥니다. 기본 디자인 언어에서는 지금까지의 모양 그대로입니다. 직접 만든 전환은 `KTransitionFrame.shapes`로 모서리 크기를 읽습니다
 - 선 아이콘 63종 `KIcons`(홈, 검색, 설정, 더하기, 닫기, 방향, 공유, 휴지통, 하트, 별, 메일, 전화와 통화 끊기, 마이크, 영상, 카메라, 사진, 달력, 사람, 장바구니 등). 뒤로와 앞으로, 보내기 화살표는 RTL에서 뒤집힙니다. 목록은 `KIcons.all`에 있습니다
+- 통화 컴포넌트: 부품 `KCallControlButton`, `KCallDock`(좁으면 '더보기'로 접고 배지를 합침, 버튼 위치 알림), `KCallTopBar`, `KParticipantTile`(영상 슬롯, 아바타, 이름표, 글로우 테두리, 고정), `KParticipantGrid`(인원과 화면 비율별 격자, 1:1 작은 창, 크게 보기와 한 줄 띠, 쪽 넘김), `KSelfView`, `KCallStatusView`, `KIncomingCall`, `KCallBanner`, `KCallBubble`, `KRaisedHandPill`, `KReactionOverlay`, `KReactionPicker`, `KParticipantRow`, `KAudioRouteList`, `KAudioLevelIndicator`, `KNetworkQualityIndicator`, `KCallTimer`, `KOngoingCallPill`, 바 자동 숨김 `rememberKCallChromeState`, 발표자 지연 `rememberKStableSpeaker`, 통화 아이콘 `KCallIcons`. 완성 화면 `KCallScreen`(상태 `KCallState`와 콜백 `KCallActions`, 넘기지 않은 콜백의 버튼은 감춤), `KIncomingCallScreen`, `KCallLobby`. 영상과 오디오는 다루지 않고 영상은 호스트가 슬롯으로 넣습니다. 영상 위 글래스 바가 장식 애니메이션 때문에 블러를 다시 하지 않도록 타일을 영상 층과 장식 층으로 나눠 그립니다
 - `KKeypadMode.Phone`: `*`, `0`, `#` 줄과 통화 버튼 자리(`extraKey`)가 있는 전화 키패드. 0을 길게 누르면 `+`를 넘깁니다
 - `KIslandState.update(content)`: 보여 주는 알림의 내용만 코루틴 없이 바꾸고, 바꿨는지를 돌려줍니다
 - `KListTrailing.Value`의 글자 색 `color`, 지도 핀의 꼬리 끝을 좌표에 맞추는 `Modifier.mapPinAnchor`
