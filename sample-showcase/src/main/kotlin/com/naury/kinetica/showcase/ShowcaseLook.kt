@@ -1,14 +1,21 @@
+// 시트 글자 크기와 프리셋 색은 그 자리에서 읽는 편이 낫다.
+@file:Suppress("MagicNumber")
+
 package com.naury.kinetica.showcase
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.GlassStyle
+import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.KIconButton
 import com.naury.kinetica.ui.KSegmentedControl
 import com.naury.kinetica.ui.KSheet
@@ -45,11 +53,33 @@ internal enum class Brightness(val label: String) {
     Dark("어둡게"),
 }
 
-/** 첫 화면과 데모 상단 바에서 고른 표면 스타일. 모든 데모가 이 값을 따른다. */
+/**
+ * 앱 전체 모양 설정. 상단 바의 모양 버튼이 여는 시트 한 곳에서만 고르고, 모든 화면이 이 값을 따른다.
+ * [preset]이 [DEFAULT_PRESET]이면 화면마다 처음 디자인한 스타일을 쓰고, 아니면 [family]의 프리셋 목록에서 그 순서의 것을 쓴다.
+ */
 @Stable
-internal class ShowcaseLook(family: SurfaceFamily = SurfaceFamily.Glass, brightness: Brightness = Brightness.Auto) {
+internal class ShowcaseLook(
+    family: SurfaceFamily = SurfaceFamily.Glass,
+    brightness: Brightness = Brightness.Auto,
+    preset: Int = DEFAULT_PRESET,
+) {
     var family by mutableStateOf(family)
+        private set
     var brightness by mutableStateOf(brightness)
+    var preset by mutableIntStateOf(preset)
+        private set
+
+    // 디자인 언어(형태) 고르기 자리: kinetica-ui에 KineticaDesigns가 들어오면 여기에 design 값을 더하고,
+    // Saver와 LookPicker, Showcase의 KineticaTheme(design = …)에 같이 잇는다.
+
+    /** 표면 종류와 그 종류의 프리셋을 함께 바꾼다. 종류만 바꾸면 프리셋은 화면 기본으로 돌아간다. */
+    fun select(family: SurfaceFamily, preset: Int = DEFAULT_PRESET) {
+        this.family = family
+        this.preset = preset.coerceIn(DEFAULT_PRESET, presetsOf(family).lastIndex)
+    }
+
+    /** 고른 프리셋. 화면 기본이면 null이다. */
+    val selectedPreset: SurfacePreset? get() = presetsOf(family).getOrNull(preset)
 
     /** 처음 디자인이 어두운 화면인지([defaultDark])를 받아 지금 밝기 설정으로 푼다. */
     fun isDark(defaultDark: Boolean): Boolean = when (brightness) {
@@ -58,10 +88,23 @@ internal class ShowcaseLook(family: SurfaceFamily = SurfaceFamily.Glass, brightn
         Brightness.Dark -> true
     }
 
+    /** [isDark]와 같되, 한 가지 밝기만 있는 프리셋(Obsidian 등)을 골랐으면 그 프리셋의 밝기를 따른다. 상태 표시줄 아이콘 색에 쓴다. */
+    fun resolvedDark(defaultDark: Boolean): Boolean = selectedPreset?.surface(isDark(defaultDark))?.isDark ?: isDark(defaultDark)
+
+    /** 첫 화면에 한 줄로 보여 줄 지금 모양. 예: "글래스", "글래스 · Mica · 어둡게" */
+    fun summary(): String = listOfNotNull(
+        family.label,
+        selectedPreset?.name,
+        brightness.takeIf { it != Brightness.Auto }?.label,
+    ).joinToString(" · ")
+
     companion object {
+        /** 화면마다 처음 디자인한 스타일을 쓴다는 뜻의 프리셋 값 */
+        const val DEFAULT_PRESET = -1
+
         val Saver: Saver<ShowcaseLook, IntArray> = Saver(
-            save = { intArrayOf(it.family.ordinal, it.brightness.ordinal) },
-            restore = { ShowcaseLook(SurfaceFamily.entries[it[0]], Brightness.entries[it[1]]) },
+            save = { intArrayOf(it.family.ordinal, it.brightness.ordinal, it.preset) },
+            restore = { ShowcaseLook(SurfaceFamily.entries[it[0]], Brightness.entries[it[1]], it.getOrElse(2) { DEFAULT_PRESET }) },
         )
     }
 }
@@ -83,10 +126,13 @@ internal class DemoLook(
 
 /** 지금 고른 표면 종류와 밝기에 맞는 이 데모의 표면. */
 @Composable
-internal fun demoSurface(look: DemoLook): SurfaceStyle {
-    val showcase = LocalShowcaseLook.current
-    val dark = showcase.isDark(look.defaultDark)
-    return when (showcase.family) {
+internal fun demoSurface(look: DemoLook): SurfaceStyle = LocalShowcaseLook.current.surfaceFor(look)
+
+/** [look]으로 디자인한 화면이 지금 설정에서 쓸 표면. 프리셋을 골랐으면 화면 기본 대신 그 프리셋을 쓴다. */
+internal fun ShowcaseLook.surfaceFor(look: DemoLook): SurfaceStyle {
+    val dark = isDark(look.defaultDark)
+    selectedPreset?.let { return it.surface(dark) }
+    return when (family) {
         SurfaceFamily.Glass -> SurfaceStyle.Glass(if (dark) look.glassDark else look.glassLight)
         SurfaceFamily.Solid -> if (dark) look.solidDark else look.solidLight
         SurfaceFamily.Tonal -> SurfaceStyle.Tonal(look.tonalAccent, dark)
@@ -110,41 +156,105 @@ internal fun BoxScope.MeshBackdrop(light: MeshPalette, dark: MeshPalette) {
     MeshGradientBackground(Modifier.fillMaxSize(), palette = if (LocalKineticaSurface.current.isDark) dark else light)
 }
 
-/** 표면 종류와 밝기를 고르는 두 줄 세그먼트. */
+/** 모양 시트의 내용: 표면 종류, 프리셋, 밝기. 앱 전체에서 모양을 고르는 곳은 이 한 곳이다. */
 @Composable
-internal fun SurfacePicker(modifier: Modifier = Modifier) {
+internal fun LookPicker(modifier: Modifier = Modifier) {
     val look = LocalShowcaseLook.current
+    val faint = LocalKineticaContentColor.current.copy(alpha = 0.6f)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Label("표면", 13, FontWeight.SemiBold, color = faint)
         KSegmentedControl(
             SurfaceFamily.entries.map { it.label },
             look.family.ordinal,
-            { look.family = SurfaceFamily.entries[it] },
+            { look.select(SurfaceFamily.entries[it]) },
             Modifier.fillMaxWidth(),
         )
+        Label("프리셋", 13, FontWeight.SemiBold, color = faint, modifier = Modifier.padding(top = 8.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val names = listOf("화면 기본") + presetsOf(look.family).map { it.name }
+            names.forEachIndexed { i, name ->
+                val index = i - 1
+                Pill(name, filled = look.preset == index) { look.select(look.family, index) }
+            }
+        }
+        Label("밝기", 13, FontWeight.SemiBold, color = faint, modifier = Modifier.padding(top = 8.dp))
         KSegmentedControl(
             Brightness.entries.map { it.label },
             look.brightness.ordinal,
             { look.brightness = Brightness.entries[it] },
             Modifier.fillMaxWidth(),
         )
+        // 디자인 언어(형태) 고르기 자리: KineticaDesigns가 들어오면 "형태" 제목과 세그먼트를 여기에 더한다.
     }
 }
 
-/** 상단 바 끝에 두는 표면 스타일 버튼. 누르면 바텀 시트에서 표면 종류와 밝기를 바꾼다. */
+/** 앱 전체 모양을 고르는 바텀 시트. 상단 바 버튼과 첫 화면의 모양 줄이 같은 시트를 연다. */
+@Composable
+internal fun LookSheet(visible: Boolean, onDismiss: () -> Unit) {
+    KSheet(visible, onDismiss, title = "모양") {
+        Column(Modifier.verticalScroll(rememberScrollState())) {
+            Label("모양", SHEET_TITLE_SP, FontWeight.Bold)
+            Label(
+                "여기서 고른 표면과 밝기를 모든 화면이 따릅니다. 화면 기본은 화면마다 처음 디자인한 스타일입니다. " +
+                    "단색과 톤은 배경을 기록하지 않아 블러 비용이 없습니다.",
+                SHEET_BODY_SP,
+                color = LocalKineticaContentColor.current.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = 6.dp, bottom = 16.dp),
+            )
+            LookPicker(Modifier.padding(bottom = 8.dp))
+        }
+    }
+}
+
+/** 상단 바 끝에 두는 모양 버튼. 누르면 [LookSheet]가 열린다. */
 @Composable
 internal fun SurfacePickerButton() {
     var open by rememberSaveable { mutableStateOf(false) }
-    KIconButton(ShowcaseIcons.Contrast, "표면 스타일", { open = true }, variant = KVariant.Text, tone = KTone.Neutral)
-    KSheet(open, { open = false }, title = "표면 스타일") {
-        Label("표면 스타일", SHEET_TITLE_SP, FontWeight.Bold)
-        Label(
-            "같은 화면을 글래스, 단색, 톤 표면으로 바꿔 봅니다. 단색과 톤은 배경을 기록하지 않아 블러 비용이 없습니다.",
-            SHEET_BODY_SP,
-            color = LocalKineticaContentColor.current.copy(alpha = 0.7f),
-            modifier = Modifier.padding(top = 6.dp, bottom = 16.dp),
-        )
-        SurfacePicker(Modifier.padding(bottom = 8.dp))
-    }
+    KIconButton(ShowcaseIcons.Contrast, "모양", { open = true }, variant = KVariant.Text, tone = KTone.Neutral)
+    LookSheet(open) { open = false }
+}
+
+/** 프리셋 하나. 밝은 화면과 어두운 화면에 쓸 표면을 함께 둔다. 한 가지 밝기만 있는 프리셋은 둘이 같다. */
+internal class SurfacePreset(val name: String, val light: SurfaceStyle, val dark: SurfaceStyle) {
+    fun surface(dark: Boolean): SurfaceStyle = if (dark) this.dark else light
+}
+
+private fun glass(name: String, light: GlassStyle, dark: GlassStyle = light) =
+    SurfacePreset(name, SurfaceStyle.Glass(light), SurfaceStyle.Glass(dark))
+
+private fun tonal(name: String, accent: Color) = SurfacePreset(name, SurfaceStyle.Tonal(accent), SurfaceStyle.Tonal(accent, dark = true))
+
+private val GLASS_PRESETS = listOf(
+    glass("Liquid", GlassStyles.Liquid, GlassStyles.LiquidDark),
+    glass("Acrylic", GlassStyles.Acrylic, GlassStyles.AcrylicDark),
+    glass("One UI", GlassStyles.OneUi, GlassStyles.OneUiDark),
+    glass("Vision", GlassStyles.Vision),
+    glass("Material", GlassStyles.Material, GlassStyles.MaterialDark),
+    glass("Mica", GlassStyles.Mica, GlassStyles.MicaDark),
+    glass("HarmonyOS", GlassStyles.HarmonyOs),
+    glass("Obsidian", GlassStyles.Obsidian),
+    glass("Pastel", GlassStyles.Pastel),
+    glass("Frosted", GlassStyles.Frosted, GlassStyles.Frosted.copy(tint = Color.Black.copy(alpha = 0.35f), onGlass = Color.White)),
+)
+
+private val SOLID_PRESETS = listOf(
+    SurfacePreset("Clean", SurfaceStyles.CleanLight, SurfaceStyles.CleanDark),
+    SurfacePreset("One UI", SurfaceStyles.OneUi, SurfaceStyles.OneUiDark),
+    SurfacePreset("Material", SurfaceStyles.Material, SurfaceStyles.MaterialDark),
+)
+
+private val TONAL_PRESETS = listOf(
+    tonal("파랑", Color(0xFF3B6CF6)),
+    tonal("보라", Color(0xFF8B5CF6)),
+    tonal("초록", Color(0xFF16A34A)),
+    tonal("주황", Color(0xFFF97316)),
+)
+
+/** [family]에서 고를 수 있는 프리셋 */
+internal fun presetsOf(family: SurfaceFamily): List<SurfacePreset> = when (family) {
+    SurfaceFamily.Glass -> GLASS_PRESETS
+    SurfaceFamily.Solid -> SOLID_PRESETS
+    SurfaceFamily.Tonal -> TONAL_PRESETS
 }
 
 private const val SHEET_TITLE_SP = 20

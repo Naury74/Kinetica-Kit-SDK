@@ -4,10 +4,10 @@
 package com.naury.kinetica.showcase
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,12 +40,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.naury.kinetica.ui.GlassStyle
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.KDialog
 import com.naury.kinetica.ui.KMenuItem
@@ -58,9 +63,9 @@ import com.naury.kinetica.ui.KTabBar
 import com.naury.kinetica.ui.KTextField
 import com.naury.kinetica.ui.KToastHost
 import com.naury.kinetica.ui.KineticaScaffold
+import com.naury.kinetica.ui.KineticaTheme
 import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.SurfaceStyle
-import com.naury.kinetica.ui.SurfaceStyles
 import com.naury.kinetica.ui.glassBackdrop
 import com.naury.kinetica.ui.kClickable
 import com.naury.kinetica.ui.kContextMenu
@@ -71,13 +76,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * UI 키트 데모. 표면 종류(글래스, 단색, 톤)와 프리셋을 바꿔 가며 같은 다이얼로그, 바텀 시트, 토스트, 탭 바가 어떻게 달라지는지 본다.
- * 표면 종류와 밝기는 쇼케이스 전체 설정을 따르고, 프리셋은 이 화면에서만 고른다.
+ * 표면과 디자인 데모. 같은 컴포넌트를 프리셋마다 나란히 그려 비교하고, 누른 프리셋을 앱 전체 모양으로 바로 적용한다.
+ * 고른 값은 다른 모든 화면과 같은 [ShowcaseLook]에 들어가므로 이 화면에만 따로 있는 선택은 없다.
+ * 아래쪽에서는 지금 모양으로 다이얼로그, 바텀 시트, 토스트, 탭 바, 컨트롤을 직접 눌러 본다.
  */
 @Composable
 internal fun UiKitDemo(onBack: () -> Unit) {
     val look = LocalShowcaseLook.current
-    var presetIndex by rememberSaveable { mutableIntStateOf(0) }
     val dark = look.isDark(defaultDark = false)
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var dialog by rememberSaveable { mutableStateOf(false) }
@@ -85,13 +90,11 @@ internal fun UiKitDemo(onBack: () -> Unit) {
     var origin by remember { mutableStateOf<Offset?>(null) }
     val toast = rememberKToastState()
     val scope = rememberCoroutineScope()
-    val presets = presetsOf(look.family)
-    val preset = presets[presetIndex.coerceIn(0, presets.lastIndex)]
     KineticaScaffold(
         Modifier.fillMaxSize(),
-        surface = preset.surface(dark),
+        surface = demoSurface(UI_KIT_LOOK),
         background = { DemoBackdrop() },
-        topBar = { DemoTopBar("UI 키트 · ${preset.name}", "같은 컴포넌트를 글래스, 단색, 톤 표면으로", onBack, demoContentWidth()) },
+        topBar = { DemoTopBar("표면과 디자인", look.summary(), onBack, demoContentWidth()) },
         bottomBar = {
             KTabBar(
                 listOf(
@@ -109,18 +112,8 @@ internal fun UiKitDemo(onBack: () -> Unit) {
         DemoRefresh(padding.calculateTopPadding(), { toast.show("새로 고쳤어요") }) {
             DemoCardList(padding.calculateTopPadding() + 8.dp, padding.calculateBottomPadding() + 16.dp) {
                 item(span = StaggeredGridItemSpan.FullLine) { Intro(look.family) }
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Chips(SurfaceFamily.entries.map { it.label }, look.family.ordinal) {
-                            look.family = SurfaceFamily.entries[it]
-                            presetIndex = 0
-                        }
-                        Chips(presets.map { it.name }, presetIndex) { presetIndex = it }
-                        Chips(listOf("라이트", "다크"), if (dark) 1 else 0) {
-                            look.brightness =
-                                if (it == 1) Brightness.Dark else Brightness.Light
-                        }
-                    }
+                SurfaceFamily.entries.forEach { family ->
+                    item(span = StaggeredGridItemSpan.FullLine, key = family.name) { PresetRow(family, dark) }
                 }
                 item { PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } } }
                 item { ControlsCard() }
@@ -234,55 +227,13 @@ private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
     }
 }
 
-/** 이 화면에서 고르는 표면 프리셋. 밝은 화면과 어두운 화면에 쓸 표면을 함께 둔다. */
-private class SurfacePreset(val name: String, val light: SurfaceStyle, val dark: SurfaceStyle) {
-    fun surface(dark: Boolean): SurfaceStyle = if (dark) this.dark else light
-}
-
-private fun glass(name: String, light: GlassStyle, dark: GlassStyle = light) =
-    SurfacePreset(name, SurfaceStyle.Glass(light), SurfaceStyle.Glass(dark))
-
-private fun tonal(name: String, accent: Color) = SurfacePreset(name, SurfaceStyle.Tonal(accent), SurfaceStyle.Tonal(accent, dark = true))
-
-private val GLASS_PRESETS = listOf(
-    glass("Liquid", GlassStyles.Liquid, GlassStyles.LiquidDark),
-    glass("Acrylic", GlassStyles.Acrylic, GlassStyles.AcrylicDark),
-    glass("One UI", GlassStyles.OneUi, GlassStyles.OneUiDark),
-    glass("Vision", GlassStyles.Vision),
-    glass("Material", GlassStyles.Material, GlassStyles.MaterialDark),
-    glass("Mica", GlassStyles.Mica, GlassStyles.MicaDark),
-    glass("HarmonyOS", GlassStyles.HarmonyOs),
-    glass("Obsidian", GlassStyles.Obsidian),
-    glass("Pastel", GlassStyles.Pastel),
-    glass("Frosted", GlassStyles.Frosted, GlassStyles.Frosted.copy(tint = Color.Black.copy(alpha = 0.35f), onGlass = Color.White)),
-)
-
-private val SOLID_PRESETS = listOf(
-    SurfacePreset("Clean", SurfaceStyles.CleanLight, SurfaceStyles.CleanDark),
-    SurfacePreset("One UI", SurfaceStyles.OneUi, SurfaceStyles.OneUiDark),
-    SurfacePreset("Material", SurfaceStyles.Material, SurfaceStyles.MaterialDark),
-)
-
-private val TONAL_PRESETS = listOf(
-    tonal("파랑", Color(0xFF3B6CF6)),
-    tonal("보라", Color(0xFF8B5CF6)),
-    tonal("초록", Color(0xFF16A34A)),
-    tonal("주황", Color(0xFFF97316)),
-)
-
-private fun presetsOf(family: SurfaceFamily): List<SurfacePreset> = when (family) {
-    SurfaceFamily.Glass -> GLASS_PRESETS
-    SurfaceFamily.Solid -> SOLID_PRESETS
-    SurfaceFamily.Tonal -> TONAL_PRESETS
-}
-
 @Composable
 private fun Intro(family: SurfaceFamily) {
     val ink = LocalKineticaContentColor.current
     val (title, body) = when (family) {
         SurfaceFamily.Glass ->
             "배경이 비치는 글래스" to
-                "KineticaScaffold 하나만 쓰면 상단 바와 팝업, 시트, 토스트 뒤로 배경이 흐리게 비칩니다. 아래에서 프리셋을 바꿔 보세요."
+                "KineticaScaffold 하나만 쓰면 상단 바와 팝업, 시트, 토스트 뒤로 배경이 흐리게 비칩니다. 아래 프리셋을 누르면 모든 화면에 바로 적용됩니다."
 
         SurfaceFamily.Solid ->
             "깔끔한 단색 표면" to
@@ -299,10 +250,66 @@ private fun Intro(family: SurfaceFamily) {
     }
 }
 
+/** [family]의 프리셋을 같은 컴포넌트로 나란히 그린 줄. 누르면 그 프리셋이 앱 전체 모양이 된다. */
 @Composable
-private fun Chips(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        labels.forEachIndexed { i, label -> Pill(label, filled = i == selected) { onSelect(i) } }
+private fun PresetRow(family: SurfaceFamily, dark: Boolean) {
+    val look = LocalShowcaseLook.current
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Label("${family.label} 프리셋", 17, FontWeight.Bold)
+        // 카드 목록의 여백 밖까지 이어지게 그리면 넓은 화면에서 줄 끝이 들쭉날쭉해지므로 목록 폭 안에서 가로로 스크롤한다.
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            val presets = presetsOf(family)
+            items(presets.size, key = { presets[it].name }) { index ->
+                val selected = look.family == family && look.preset == index
+                PresetTile(presets[index], dark, selected) { look.select(family, index) }
+            }
+        }
+    }
+}
+
+/** 프리셋 하나로 그린 작은 화면. 글래스는 비칠 그라디언트를 깔고, 단색과 톤은 그 표면의 바탕색을 깐다. */
+@Composable
+private fun PresetTile(preset: SurfacePreset, dark: Boolean, selected: Boolean, onClick: () -> Unit) {
+    val surface = preset.surface(dark)
+    val backdrop = rememberGlassBackdrop()
+    val ring = LocalKineticaContentColor.current
+    Box(
+        Modifier
+            .width(PRESET_TILE_WIDTH)
+            .clip(PRESET_TILE_SHAPE)
+            .border(if (selected) 2.5.dp else 0.dp, if (selected) ring else Color.Transparent, PRESET_TILE_SHAPE)
+            .kClickable(PRESET_TILE_SHAPE, onClick = onClick)
+            .semantics {
+                this.selected = selected
+                role = Role.RadioButton
+            },
+    ) {
+        Box(
+            Modifier.matchParentSize().glassBackdrop(backdrop).then(
+                if (surface is SurfaceStyle.Glass) {
+                    Modifier.background(Brush.linearGradient(if (surface.isDark) TILE_DARK else TILE_LIGHT))
+                } else {
+                    Modifier.background(surface.background)
+                },
+            ),
+        )
+        KineticaTheme(surface = surface) {
+            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 바깥 24dp 모서리에서 여백 10dp를 빼 안쪽 카드가 같은 중심으로 굽는다.
+                KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), backdrop = backdrop) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Label(preset.name, 15, FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Label("알림", 13, modifier = Modifier.weight(1f))
+                            KSwitch(true, null)
+                        }
+                    }
+                }
+                KSurface(Modifier.fillMaxWidth().height(36.dp), shape = CircleShape, backdrop = backdrop) {
+                    Label(if (selected) "사용 중" else "적용", 13, FontWeight.SemiBold, modifier = Modifier.align(Alignment.Center))
+                }
+            }
+        }
     }
 }
 
@@ -333,6 +340,11 @@ private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
 }
 
 private val ROW_SHAPE = RoundedCornerShape(14.dp)
+private val UI_KIT_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = false)
+private val PRESET_TILE_WIDTH = 150.dp
+private val PRESET_TILE_SHAPE = RoundedCornerShape(24.dp)
+private val TILE_LIGHT = listOf(Color(0xFF8EC5FF), Color(0xFFFFB3D9), Color(0xFFFFE29A))
+private val TILE_DARK = listOf(Color(0xFF1B2A6B), Color(0xFF5B2A86), Color(0xFF0E5E6F))
 private val SHARE_TARGETS = listOf(
     "메시지" to ShowcaseIcons.Message,
     "메일" to ShowcaseIcons.Mail,

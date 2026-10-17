@@ -12,12 +12,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -79,6 +82,8 @@ class WideNarrowStateTest {
         val restoration = StateRestorationTester(compose)
         restoration.setContent { UiKitDemo {} }
         compose.waitForIdle()
+        // 프리셋 비교 줄 아래에 있어 넓은 창에서도 스크롤해야 보인다.
+        compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText("팝업"))
         compose.onNodeWithText("팝업").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("주문을 보낼까요?").assertExists()

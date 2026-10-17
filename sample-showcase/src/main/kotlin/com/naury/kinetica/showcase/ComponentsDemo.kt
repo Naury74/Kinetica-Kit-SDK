@@ -108,13 +108,13 @@ import kotlinx.coroutines.launch
 
 /**
  * 컴포넌트 모음: kinetica-ui 컴포넌트를 종류별 탭(기본, 입력, 미디어, 효과, 버튼·칩·카드 등)으로 나눠 눌러 본다.
- * 탭 바는 큰 제목 아래에 붙어 있고, 탭마다 목록이 따로 스크롤된다.
+ * 탭 바는 큰 제목 아래에 붙어 있고, 탭마다 목록이 따로 스크롤된다. [initialTab]은 처음 열 탭의 순서다(UI 키트 허브에서 분류를 눌러 들어올 때).
  */
 @Composable
-internal fun ComponentsDemo(onBack: () -> Unit) {
+internal fun ComponentsDemo(onBack: () -> Unit, initialTab: Int = 0) {
     val island = rememberKIslandState()
     val snackbar = rememberKSnackbarState()
-    val pager = rememberPagerState { COMPONENT_TABS.size }
+    val pager = rememberPagerState(initialTab.coerceIn(0, COMPONENT_TABS.lastIndex)) { COMPONENT_TABS.size }
     // 탭마다 목록 스크롤 위치가 따로 있고, 큰 제목은 지금 보이는 탭 목록의 위치를 따른다.
     // 맨 위에 있는 탭으로 옮기면 큰 제목이 다시 펼쳐져 탭 줄 아래에 빈 공간이 생기지 않는다.
     val lists = List(COMPONENT_TABS.size) { rememberLazyListState() }
@@ -417,7 +417,7 @@ private fun NotifyCard(onIsland: () -> Unit, onTimer: () -> Unit, onSnackbar: ()
     }
 }
 
-private val COMPONENT_TABS = listOf("기본", "입력", "미디어", "효과", "버튼·칩·카드", "내비게이션·오버레이", "피드백·로딩", "데이터·도메인", "소셜·모션")
+internal val COMPONENT_TABS = listOf("기본", "입력", "미디어", "효과", "버튼·칩·카드", "내비게이션·오버레이", "피드백·로딩", "데이터·도메인", "소셜·모션")
 private val PEOPLE = listOf("하늘", "바다", "숲", "노을", "별")
 private val SCRAMBLE = listOf("ACCESS GRANTED", "SYNC COMPLETE", "HELLO, KINETICA")
 internal val PHOTO_COLORS = listOf(
