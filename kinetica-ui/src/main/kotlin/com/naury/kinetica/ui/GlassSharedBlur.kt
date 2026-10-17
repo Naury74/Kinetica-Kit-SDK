@@ -1,5 +1,6 @@
 package com.naury.kinetica.ui
 
+import android.graphics.ColorMatrixColorFilter
 import android.os.Build
 import android.view.View
 import androidx.compose.runtime.Composable
@@ -7,6 +8,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.GraphicsContext
+import androidx.compose.ui.graphics.asComposeColorFilter
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
@@ -25,12 +27,20 @@ import kotlin.math.ceil
  *
  * 글래스마다 블러를 따로 걸면 요소마다 화면 밖 레이어와 블러 중간 텍스처가 생기고, 목록을 스크롤해 새 카드가 들어올 때마다
  * GPU 메모리를 새로 잡느라 프레임이 밀린다. 배경 하나를 함께 쓰면 블러는 한 번이고 크기도 바뀌지 않아 메모리를 다시 잡지 않는다.
+ *
+ * 블러를 건 레이어를 글래스들이 바로 그리면 안 된다. HWUI는 RenderEffect를 그 레이어를 그리는 자리의 잘림 영역마다 다시 계산하므로,
+ * 글래스 다섯 개가 각자 자기 모양으로 잘라 그리면 배경이 바뀌는 프레임마다 블러를 다섯 번 한다(블러 한 번에 렌더 패스 6개 안팎,
+ * 에뮬레이터에서 프레임당 패스 35개). 그래서 블러는 [SharedBlur.filtered]에 걸고, 그것을 한 번만 그려 둔 화면 밖 레이어
+ * [SharedBlur.layer]를 글래스들이 텍스처로 잘라 쓴다. 굴절 지도도 같은 이유로 [SharedBlur.bent]에 한 번 그려 둔다.
  */
 internal class SharedBlurs(private val context: GraphicsContext, val owner: View) {
     private val entries = HashMap<SharedBlurKey, SharedBlur>()
 
     /** 지금 들고 있는 블러 기록 수. 테스트에서 글래스가 기록을 함께 쓰는지 확인하는 데 쓴다. */
     val count: Int get() = entries.size
+
+    /** 지금 들고 있는 블러 기록들. 테스트에서 글래스가 효과 없는 레이어만 그리는지 확인하는 데 쓴다. */
+    val all: Collection<SharedBlur> get() = entries.values
 
     /** 굴절 지도들에 등록된 자리 수의 합. 테스트에서 굴절 있는 글래스가 지도를 함께 쓰는지 확인하는 데 쓴다. */
     val regions: Int get() = entries.values.sumOf { it.map.count }
@@ -42,14 +52,13 @@ internal class SharedBlurs(private val context: GraphicsContext, val owner: View
     fun obtain(key: SharedBlurKey): SharedBlur? {
         entries[key]?.let { return it }
         if (entries.size >= MAX_SHARED) return null
-        return SharedBlur(context.createGraphicsLayer(), context.createGraphicsLayer()).also { entries[key] = it }
+        return SharedBlur(List(LAYERS) { context.createGraphicsLayer() }).also { entries[key] = it }
     }
 
     fun release() {
         entries.values.forEach {
             it.map.release()
-            context.releaseGraphicsLayer(it.layer)
-            context.releaseGraphicsLayer(it.refracted)
+            it.layers.forEach(context::releaseGraphicsLayer)
         }
         entries.clear()
     }
@@ -59,10 +68,16 @@ internal class SharedBlurs(private val context: GraphicsContext, val owner: View
 internal data class SharedBlurKey(val blurPx: Float, val saturation: Float, val brightness: Float, val scale: Float)
 
 /**
- * 배경 전체를 [SharedBlurKey.scale]배로 줄여 블러 처리한 [layer]와, 그 위에 굴절 있는 글래스들의 굴절을 한 번에 건 [refracted].
- * [refracted]는 굴절 있는 글래스가 처음 쓸 때 기록한다.
+ * 배경 전체를 [SharedBlurKey.scale]배로 줄여 블러를 건 [filtered], 그것을 한 번 그려 채도와 밝기를 입힌 화면 밖 레이어 [layer],
+ * [layer] 위에 굴절 있는 글래스들의 굴절을 한 번에 건 [refracted], 그것을 한 번 그려 둔 화면 밖 레이어 [bent].
+ * 글래스는 효과가 없는 [layer]나 [bent]만 그린다. [refracted]와 [bent]는 굴절 있는 글래스가 처음 쓸 때 기록한다.
  */
-internal class SharedBlur(val layer: GraphicsLayer, val refracted: GraphicsLayer) {
+internal class SharedBlur(val layers: List<GraphicsLayer>) {
+    val filtered: GraphicsLayer = layers[0]
+    val layer: GraphicsLayer = layers[1]
+    val refracted: GraphicsLayer = layers[2]
+    val bent: GraphicsLayer = layers[3]
+
     var recordedSize: IntSize = IntSize.Zero
     var recordedLayer: GraphicsLayer? = null
     var refractedSize: IntSize = IntSize.Zero
@@ -115,10 +130,14 @@ internal fun DrawScope.drawSharedBackdrop(
         shared.recordedSize = sharedSize
         shared.recordedLayer = backdrop.layer
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            shared.layer.renderEffect = colorBlurEffect(blurPx * scale, style).asComposeRenderEffect()
+            shared.filtered.renderEffect = blurEffect(blurPx * scale)?.asComposeRenderEffect()
+            // 채도와 밝기를 효과 사슬에 넣으면 렌더 패스가 하나 더 든다. 레이어를 그릴 때 페인트로 입히면 그 그리기에 섞인다.
+            shared.layer.colorFilter = ColorMatrixColorFilter(glassColorMatrix(style)).asComposeColorFilter()
             GlassStats.effectBuilds++
         }
-        shared.layer.record(sharedSize) { scale(scale, pivot = Offset.Zero) { drawLayer(backdrop.layer) } }
+        shared.filtered.record(sharedSize) { scale(scale, pivot = Offset.Zero) { drawLayer(backdrop.layer) } }
+        shared.layer.compositingStrategy = CompositingStrategy.Offscreen
+        shared.layer.record(sharedSize) { drawLayer(shared.filtered) }
     }
     val refraction = style.refraction
     val bent = refraction > 0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -134,7 +153,7 @@ internal fun DrawScope.drawSharedBackdrop(
         sample.alpha = 1f
         drawRefracted(backdrop, sampler, style, geometry, cut.alpha)
     } else {
-        sampler.cache.sampleRecord.record(this, sample, if (bent) shared.refracted else shared.layer, sharedSize)
+        sampler.cache.sampleRecord.record(this, sample, if (bent) shared.bent else shared.layer, sharedSize)
         drawCut(backdrop, sampler, scale, cut.alpha)
     }
     return true
@@ -169,6 +188,8 @@ private fun DrawScope.mapRegion(
         shared.refractedSize = sharedSize
         shared.map.bounds = sharedSize
         shared.refracted.record(sharedSize) { drawLayer(shared.layer) }
+        shared.bent.compositingStrategy = CompositingStrategy.Offscreen
+        shared.bent.record(sharedSize) { drawLayer(shared.refracted) }
     }
     val scale = refraction.scale
     region.shape(size.width * scale, size.height * scale, refraction.corner * scale, refractionStrength(refraction, style, density))
@@ -255,5 +276,6 @@ internal object GlassStats {
 }
 
 private const val MAX_SHARED = 4
+private const val LAYERS = 4
 private const val LAYER_BUCKET = 32
 private const val SHARED_REFRACTION = "shared"

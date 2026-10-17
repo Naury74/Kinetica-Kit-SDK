@@ -342,20 +342,26 @@ private fun glassEffect(blurPx: Float, style: GlassStyle, region: Region): andro
 /** 채도와 밝기를 바꾸고 [blurPx](px)만큼 블러 처리하는 효과. */
 @RequiresApi(Build.VERSION_CODES.S)
 internal fun colorBlurEffect(blurPx: Float, style: GlassStyle): RenderEffect {
-    val saturation = style.saturation
+    val color = glassColorMatrix(style)
+    val effect: RenderEffect = RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(color))
+    return blurEffect(blurPx)?.let { RenderEffect.createChainEffect(effect, it) } ?: effect
+}
+
+/** [blurPx](px)만큼 블러 처리하는 효과. 반경이 0.5px 이하면 블러가 보이지 않으므로 null이다. */
+@RequiresApi(Build.VERSION_CODES.S)
+internal fun blurEffect(blurPx: Float): RenderEffect? =
+    if (blurPx > MIN_PX) RenderEffect.createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP) else null
+
+/** [style]의 채도와 밝기를 바꾸는 색 행렬. */
+internal fun glassColorMatrix(style: GlassStyle): ColorMatrix {
     val brightness = style.brightness * BRIGHTNESS_SCALE
-    val color = ColorMatrix().apply { setSaturation(saturation) }.also {
+    return ColorMatrix().apply { setSaturation(style.saturation) }.also {
         it.postConcat(
             ColorMatrix(
                 floatArrayOf(1f, 0f, 0f, 0f, brightness, 0f, 1f, 0f, 0f, brightness, 0f, 0f, 1f, 0f, brightness, 0f, 0f, 0f, 1f, 0f),
             ),
         )
     }
-    var effect: RenderEffect = RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(color))
-    if (blurPx > MIN_PX) {
-        effect = RenderEffect.createChainEffect(effect, RenderEffect.createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP))
-    }
-    return effect
 }
 
 /**

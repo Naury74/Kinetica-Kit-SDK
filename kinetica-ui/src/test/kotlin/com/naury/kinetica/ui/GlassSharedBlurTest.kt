@@ -1,6 +1,7 @@
 package com.naury.kinetica.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -23,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
@@ -147,6 +150,64 @@ class GlassSharedBlurTest {
         assertThat(shared.count).isEqualTo(1)
     }
 
+    @Test
+    fun `글래스 여럿이 함께 쓰는 블러는 한 번만 계산되도록 효과 없는 레이어만 그린다`() {
+        // HWUI는 RenderEffect가 걸린 레이어를 그리는 잘림 영역마다 효과를 다시 계산한다. 글래스가 효과 걸린 레이어를 바로 그리면
+        // 배경이 바뀌는 프레임마다 글래스 수만큼 블러를 하므로, 글래스가 그리는 레이어에는 효과가 없어야 한다.
+        for (style in listOf(GlassStyles.Liquid.copy(refraction = 0f), GlassStyles.Liquid)) {
+            val shared = requireNotNull(callScreen(style).shared)
+            assertThat(shared.count).isEqualTo(1)
+            val blur = shared.all.single()
+            assertThat(blur.filtered.renderEffect).isNotNull()
+            assertThat(blur.layer.renderEffect).isNull()
+            assertThat(blur.layer.colorFilter).isNotNull()
+            assertThat(blur.layer.compositingStrategy).isEqualTo(CompositingStrategy.Offscreen)
+            if (style.refraction > 0f) {
+                // Robolectric은 RuntimeShader를 만들지 못해 굴절 효과 자체는 확인하지 않는다. 자리 등록과 레이어 구성만 본다.
+                assertThat(shared.regions).isEqualTo(CALL_GLASSES)
+                assertThat(blur.bent.renderEffect).isNull()
+                assertThat(blur.bent.compositingStrategy).isEqualTo(CompositingStrategy.Offscreen)
+            }
+        }
+    }
+
+    private val callStyle = mutableIntStateOf(0)
+    private var callStyles: List<GlassStyle> = emptyList()
+    private var callBackdrop: GlassBackdrop? = null
+
+    /** 영상 통화처럼 위쪽 바와 버튼 셋, 아래 도크를 둔 화면을 [style]로 그리고 그 배경을 돌려준다. */
+    private fun callScreen(style: GlassStyle): GlassBackdrop {
+        if (callStyles.isEmpty()) {
+            callStyles = listOf(style)
+            compose.setContent { key(callStyle.intValue) { CallScreen(callStyles[callStyle.intValue]) { callBackdrop = it } } }
+        } else {
+            callStyles = callStyles + style
+            callStyle.intValue = callStyles.lastIndex
+        }
+        compose.waitForIdle()
+        compose.onRoot().captureToImage()
+        return requireNotNull(callBackdrop)
+    }
+
+    @Composable
+    private fun CallScreen(style: GlassStyle, onBackdrop: (GlassBackdrop) -> Unit) {
+        KineticaScaffold(
+            Modifier.size(360.dp, 640.dp),
+            surface = SurfaceStyle.Glass(style),
+            background = { Box(Modifier.fillMaxSize().background(gradient)) },
+        ) { _ ->
+            LocalGlassBackdrop.current?.let(onBackdrop)
+            Column(Modifier.fillMaxSize().padding(16.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.weight(1f).height(48.dp).glass(style, RoundedCornerShape(24.dp)))
+                    repeat(CALL_GLASSES - 2) { Box(Modifier.size(48.dp).glass(style, CircleShape)) }
+                }
+                Box(Modifier.weight(1f))
+                Box(Modifier.fillMaxWidth().height(68.dp).glass(style, RoundedCornerShape(34.dp)))
+            }
+        }
+    }
+
     private fun assertFollowsShift(style: GlassStyle) {
         // 처음에는 오른쪽(파란 쪽)에 그렸다가 다시 그리지 않고 레이어 이동만으로 왼쪽(빨간 쪽)에 들어온다.
         val shift = mutableFloatStateOf(280f)
@@ -257,6 +318,7 @@ class GlassSharedBlurTest {
     private companion object {
         const val MAX_DIFFERENCE = 0.02f
         const val STRIPES = 18
+        const val CALL_GLASSES = 5
         val CLEAR = GlassStyle(blur = 0.dp, saturation = 1f, tint = Color.Transparent, edgeLight = Color.Transparent, shadow = 0.dp)
     }
 }
