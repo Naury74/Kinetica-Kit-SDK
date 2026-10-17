@@ -19,23 +19,28 @@
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-surface-glass.png" width="220" alt="글래스 표면의 쇼핑 화면"><br><b>글래스</b><br>배경이 블러로 비치는 표면</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-solid.png" width="220" alt="단색 표면의 쇼핑 화면"><br><b>단색</b><br>같은 화면을 깔끔한 단색으로</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-tonal.png" width="220" alt="톤 표면의 쇼핑 화면"><br><b>톤</b><br>브랜드 색을 옅게 섞은 표면</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-surface-glass.png" width="220" alt="글래스 표면의 송금 앱"><br><b>글래스</b><br>배경이 블러로 비치는 표면</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-solid.png" width="220" alt="단색 표면의 송금 앱"><br><b>단색</b><br>같은 화면을 깔끔한 단색으로</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-tonal.png" width="220" alt="톤 표면의 송금 앱"><br><b>톤</b><br>브랜드 색을 옅게 섞은 표면</td>
   </tr>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-glass.png" width="220" alt="글래스 다이얼로그"><br><b>UI 키트</b><br>글래스 다이얼로그, 단색과 톤으로도 바뀜</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-components.png" width="220" alt="컴포넌트"><br><b>컴포넌트</b><br>버튼부터 차트, 채팅까지 아홉 개 탭</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-motion.png" width="220" alt="모션 효과"><br><b>모션 효과</b><br>글로우 테두리, 젤리, 자석, 숫자 롤링</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-design-material.png" width="220" alt="Material 형태의 할 일 앱"><br><b>Material 형태</b><br>행마다 떨어진 목록, 채운 인디케이터</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-design-fluent.png" width="220" alt="Fluent 형태의 할 일 앱"><br><b>Fluent 형태</b><br>작은 반지름, 그림자 대신 테두리</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-design-brutal.png" width="220" alt="Brutal 형태의 할 일 앱"><br><b>Brutal 형태</b><br>각진 모서리와 오프셋 그림자</td>
   </tr>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-apps.png" width="220" alt="앱 화면 예"><br><b>앱 화면 예</b><br>음악, 지도, 메일, 건강 앱을 컴포넌트로</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-navigation.png" width="220" alt="화면 이동"><br><b>화면 이동</b><br>카드가 커지는 상세, 끌어서 뒤로 가기</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-board.png" width="220" alt="위젯 보드"><br><b>위젯 보드</b><br>사용자가 직접 배치하는 홈 화면</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-forms.png" width="220" alt="형태 비교"><br><b>표면과 디자인</b><br>같은 컴포넌트를 형태 6종으로 비교</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-kit.png" width="220" alt="UI 키트 허브"><br><b>UI 키트</b><br>분류별로 데모에 들어가는 허브</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-apps.png" width="220" alt="앱 화면 예"><br><b>앱 화면 예</b><br>전화, 메신저, 쇼핑, 송금 등 14개 앱</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><img src="docs/images/showcase-call.png" width="220" alt="전화 앱"><br><b>전화 앱</b><br>통화 기록, 키패드, 아일랜드, 영상 통화</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-navigation.png" width="220" alt="CardStack 화면 이동"><br><b>화면 이동</b><br>전환 22종, 뒤로 가기는 되감기</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-transition.png" width="220" alt="장면 전환 중간 프레임"><br><b>장면 전환</b><br>서버 장면 사이 전환 14종</td>
   </tr>
 </table>
 
-모두 `sample-showcase`를 Android 에뮬레이터에서 실행해 찍은 화면입니다. 첫 줄은 같은 컴포넌트 화면을 표면 스타일만 바꿔 찍었습니다. 폴더블과 태블릿 화면, 편집기, 서버 화면은 [쇼케이스 화면 더 보기](#쇼케이스-화면-더-보기)에 있습니다.
+모두 `sample-showcase`를 Android 에뮬레이터에서 실행해 찍은 화면입니다. 첫 줄은 같은 앱 화면을 표면 스타일만 바꿔, 둘째 줄은 단색 표면에서 형태(디자인 언어)만 바꿔 찍었습니다. 폴더블과 태블릿 화면, 편집기, 서버 화면은 [쇼케이스 화면 더 보기](#쇼케이스-화면-더-보기)에 있습니다.
 
 ## 빠른 시작
 
@@ -194,23 +199,28 @@ setContent {
 
 첫 화면에서 가장 크게 보이는 **UI 키트**를 누르면 분류별 허브가 열립니다. 허브에는 표면과 디자인, 앱 화면 예, 컴포넌트(종류별 탭 아홉 개), 모션 효과, 화면 이동, 장면 전환이 있고, 컴포넌트 종류를 누르면 그 탭으로 바로 들어갑니다. 첫 화면 아래 **고급 기능**에서는 대시보드 보드, 화면 만들기 편집기, 서버 화면과 Compose 없이 만든 XML 화면을 열 수 있습니다.
 
-표면 종류(글래스, 단색, 톤)와 프리셋, 밝기는 앱 전체에서 한 곳에서만 고릅니다. 모든 화면 상단 바의 모양 버튼이나 첫 화면의 모양 줄을 누르면 같은 시트가 열리고, 고른 값을 모든 데모가 따릅니다.
+표면 종류(글래스, 단색, 톤)와 프리셋, 밝기, 형태는 앱 전체에서 한 곳에서만 고릅니다. 모든 화면 상단 바의 모양 버튼이나 첫 화면의 모양 줄을 누르면 같은 시트가 열리고, 고른 값을 모든 데모가 따릅니다.
 
 ### 쇼케이스 화면 더 보기
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-home.png" width="220" alt="쇼케이스 첫 화면"><br><b>쇼케이스</b><br>표면 스타일을 고르는 첫 화면</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-home.png" width="220" alt="쇼케이스 첫 화면"><br><b>쇼케이스</b><br>UI 키트와 고급 기능으로 나뉜 첫 화면</td>
     <td align="center" width="33%"><img src="docs/images/showcase-server.png" width="220" alt="서버 화면"><br><b>서버 화면</b><br>JSON만 바꿔 화면 교체, 숫자는 실시간 갱신</td>
     <td align="center" width="33%"><img src="docs/images/showcase-studio.png" width="220" alt="편집기"><br><b>화면 만들기</b><br>앱 안에서 쓰는 화면 편집기</td>
   </tr>
+  <tr>
+    <td align="center" width="33%"><img src="docs/images/showcase-board.png" width="220" alt="위젯 보드"><br><b>위젯 보드</b><br>사용자가 직접 배치하는 홈 화면</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-components.png" width="220" alt="컴포넌트"><br><b>컴포넌트</b><br>버튼부터 차트, 채팅까지 아홉 개 탭</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-motion.png" width="220" alt="모션 효과"><br><b>모션 효과</b><br>글로우 테두리, 젤리, 자석, 숫자 롤링</td>
+  </tr>
 </table>
 
-폭이 넓은 화면에서는 첫 화면이 두 칸으로 나뉘고, 메일 예는 목록과 본문을 나란히 보여 줍니다. 전체 화면 플레이어는 앨범 아트와 조작부를 옆으로 놓고, 보드의 격자는 칸 폭을 160dp 이상으로 유지하며 열을 최대 6개까지 늘립니다. 아래는 Pixel 9 Pro Fold 에뮬레이터를 펼친 상태로 찍었습니다.
+폭이 넓은 화면에서는 첫 화면의 고급 기능이 여러 칸으로 늘어나고, 메일 예는 목록과 본문을 나란히 보여 줍니다. 전체 화면 플레이어는 앨범 아트와 조작부를 옆으로 놓고, 보드의 격자는 칸 폭을 160dp 이상으로 유지하며 열을 최대 6개까지 늘립니다. 아래는 Pixel 9 Pro Fold 에뮬레이터를 펼친 상태로 찍었습니다.
 
 <table>
   <tr>
-    <td align="center" width="50%"><img src="docs/images/showcase-fold-home.png" width="360" alt="펼친 폴더블에서 쇼케이스 첫 화면"><br><b>쇼케이스</b><br>두 칸으로 나뉜 데모 목록</td>
+    <td align="center" width="50%"><img src="docs/images/showcase-fold-home.png" width="360" alt="펼친 폴더블에서 쇼케이스 첫 화면"><br><b>쇼케이스</b><br>UI 키트 카드와 고급 기능 세 칸</td>
     <td align="center" width="50%"><img src="docs/images/showcase-fold-mail.png" width="360" alt="펼친 폴더블에서 메일 예"><br><b>메일</b><br>왼쪽에 목록, 오른쪽에 본문</td>
   </tr>
   <tr>

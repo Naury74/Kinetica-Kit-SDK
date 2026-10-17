@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.KCheckboxRow
 import com.naury.kinetica.ui.KCheckboxShape
 import com.naury.kinetica.ui.KDisclosureRow
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KListItem
 import com.naury.kinetica.ui.KListLeading
 import com.naury.kinetica.ui.KListSection
@@ -91,7 +92,7 @@ private fun ConnectionSection() {
         KSegmentedControl(listOf("캡슐", "체크", "슬림"), variant, { variant = it }, Modifier.fillMaxWidth())
         KListSection(header = "연결", footer = "비행기 모드를 켜면 Wi-Fi와 블루투스를 뺀 모든 무선 연결이 끊깁니다.") {
             item {
-                KSwitchRow("비행기 모드", airplane, { airplane = it }, leading = icon(ShowcaseIcons.Send, FormOrange), variant = switch)
+                KSwitchRow("비행기 모드", airplane, { airplane = it }, leading = icon(KIcons.Send, FormOrange), variant = switch)
             }
             item {
                 KDisclosureRow(
@@ -101,7 +102,7 @@ private fun ConnectionSection() {
                     leading = icon(ShowcaseIcons.Wave, FormBlue),
                 )
             }
-            item { KDisclosureRow("블루투스", {}, value = "켜짐", leading = icon(ShowcaseIcons.Link, FormBlue)) }
+            item { KDisclosureRow("블루투스", {}, value = "켜짐", leading = icon(KIcons.Link, FormBlue)) }
             item {
                 KSwitchRow(
                     "개인용 핫스팟",
@@ -251,7 +252,7 @@ private fun InboxSection() {
 private fun AboutSection() {
     KListSection(header = "정보") {
         item { KValueRow("버전", "1.0.0-alpha01") }
-        item { KValueRow("저장 공간", "12.4GB 사용", leading = icon(ShowcaseIcons.Download, FormGray)) }
+        item { KValueRow("저장 공간", "12.4GB 사용", leading = icon(KIcons.Download, FormGray)) }
         item { KDisclosureRow("오픈 소스 라이선스", {}, leading = icon(ShowcaseIcons.Layers, FormIndigo)) }
     }
 }

@@ -287,7 +287,7 @@ class KButtonsChipsCardsTest {
 
     @Test
     fun `아바타는 이름과 상태를 함께 읽는다`() {
-        compose.setContent { KAvatar(KAvatar("민지"), Modifier.testTag("a"), status = KAvatarStatus.Online, size = KAvatarSize.Large) }
+        compose.setContent { KAvatar(KAvatarData("민지"), Modifier.testTag("a"), status = KAvatarStatus.Online, size = KAvatarSize.Large) }
         compose.onNodeWithContentDescription("민지, Online").assertWidthIsEqualTo(56.dp).assert(role(Role.Image))
     }
 
@@ -331,7 +331,7 @@ class KButtonsChipsCardsTest {
                             KButton("결제", {}, loading = i % 3 == 0)
                             KFilterChip("필터", i % 2 == 0, {})
                             KBadge(i % 5)
-                            KAvatar(KAvatar("사람 $i"), status = KAvatarStatus.Online)
+                            KAvatar(KAvatarData("사람 $i"), status = KAvatarStatus.Online)
                             KIconToggleButton(i % 2 == 1, {}, plus, "좋아요")
                         }
                     }

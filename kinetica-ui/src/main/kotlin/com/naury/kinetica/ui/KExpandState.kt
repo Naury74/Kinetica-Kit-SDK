@@ -11,7 +11,6 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -50,6 +49,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.util.lerp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
@@ -157,7 +157,8 @@ private class ExpandSourceNode(var state: KExpandState, var key: Any) :
  * [KineticaScaffold] 안에 두면 오버레이 레이어에 그린다. 상세 화면의 배경색은 호스트가 정하므로 시스템 바 아이콘은 바꾸지 않는다.
  * 어두운 상세 화면이면 [content] 안에 [KSystemBarIcons]를 둔다.
  *
- * @param cornerRadius 카드의 모서리 반경. 상세 화면이 커지면서 0이 된다. [KContainerTransform.fab]이면 무시하고 원에서 시작한다.
+ * @param cornerRadius 카드의 모서리 반경. 상세 화면이 커지면서 0이 된다. [Dp.Unspecified]면 디자인 언어의 card 토큰 반지름과 모서리 모양을 쓴다
+ *   (기본 디자인에서 24dp). [KContainerTransform.fab]이면 무시하고 원에서 시작한다.
  * @param title 열린 상세 화면의 이름. TalkBack이 창 제목으로 읽는다.
  * @param transform 원래 요소에서 상세 화면으로 커지는 모습
  */
@@ -165,7 +166,7 @@ private class ExpandSourceNode(var state: KExpandState, var key: Any) :
 public fun KExpandHost(
     state: KExpandState,
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = 24.dp,
+    cornerRadius: Dp = Dp.Unspecified,
     title: String? = null,
     transform: KContainerTransform = KContainerTransform.Card,
     content: @Composable (key: Any) -> Unit,
@@ -177,12 +178,15 @@ public fun KExpandHost(
     val back = remember(active) { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val still = reducedMotion()
+    val design = LocalKineticaDesign.current
     LaunchedEffect(active, open) {
-        progress.expandTo(open, still)
+        progress.expandTo(open, still, design.motion)
         if (!open) state.activeKey = null
     }
     val dismissDistance = with(LocalDensity.current) { DISMISS_DISTANCE.toPx() }
-    val cornerPx = with(LocalDensity.current) { cornerRadius.toPx() }
+    val cornerStyle = expandCornerStyle(design.shapes, transform)
+    val density = LocalDensity.current
+    val cornerPx = with(density) { expandCorner(design.shapes, cornerRadius).toPx() }
     fun release() {
         if (drag.value > dismissDistance * DISMISS_FRACTION) {
             state.collapse()
@@ -205,7 +209,7 @@ public fun KExpandHost(
             Box(
                 Modifier
                     .placeAt(shape.frame, bounds.width.roundToInt(), bounds.height.roundToInt())
-                    .clip(RoundedCornerShape(shape.radius))
+                    .clip(shapeOf(cornerStyle, with(density) { shape.radius.toDp() }))
                     .then(if (transform.containerColor.isSpecified) Modifier.background(transform.containerColor) else Modifier)
                     .expandSemantics(title, state)
                     .draggable(
@@ -222,13 +226,21 @@ public fun KExpandHost(
     }
 }
 
+/** 카드 모서리 모양. 원에서 커지는 전환은 늘 둥글고, 나머지는 디자인 언어 card 토큰의 모서리 모양을 따른다. */
+private fun expandCornerStyle(shapes: KineticaShapes, transform: KContainerTransform): KCornerStyle =
+    if (transform.circularSource) KCornerStyle.Round else shapes.cornerOf(shapes.card)
+
+/** 카드 모서리 반경. 호출한 쪽이 정하지 않았으면 디자인 언어 card 토큰 반지름(캡슐 토큰이면 [CARD_CORNER])이다. */
+private fun expandCorner(shapes: KineticaShapes, cornerRadius: Dp): Dp =
+    if (cornerRadius.isSpecified) cornerRadius else shapes.radiusOr(shapes.card, CARD_CORNER)
+
 /** 열거나 닫는 애니메이션. '애니메이션 삭제' 설정이면 바로 옮긴다. */
-private suspend fun Animatable<Float, *>.expandTo(open: Boolean, still: Boolean) {
+private suspend fun Animatable<Float, *>.expandTo(open: Boolean, still: Boolean, motion: KineticaMotion) {
     val target = if (open) 1f else 0f
     if (still) {
         snapTo(target)
     } else {
-        animateTo(target, spring(dampingRatio = if (open) EXPAND_DAMPING else COLLAPSE_DAMPING, stiffness = Spring.StiffnessMediumLow))
+        animateTo(target, motion.tuned(if (open) EXPAND_DAMPING else COLLAPSE_DAMPING, Spring.StiffnessMediumLow))
     }
 }
 
@@ -351,6 +363,7 @@ private const val FALLBACK_INSET = 0.25f
 private const val EXPAND_DAMPING = 0.82f
 private const val COLLAPSE_DAMPING = 0.9f
 private val DISMISS_DISTANCE = 240.dp
+private val CARD_CORNER = 24.dp
 private const val DISMISS_FRACTION = 0.45f
 private const val DRAG_RATE = 0.6f
 private const val DRAG_SHRINK = 0.18f

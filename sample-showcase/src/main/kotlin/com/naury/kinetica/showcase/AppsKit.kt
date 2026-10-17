@@ -32,16 +32,19 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.KineticaColors
 import com.naury.kinetica.ui.KineticaTheme
 import com.naury.kinetica.ui.SurfaceStyle
+import com.naury.kinetica.ui.SurfaceStyles
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
 
 /**
- * 앱 화면 예 하나의 표면과 강조색. 쇼케이스 표면 종류를 따르는 다른 데모와 달리, 앱마다 어울리는 표면(글래스, 단색, 톤)을 하나로 정해 두고
- * 밝기만 쇼케이스 설정을 따른다. 그래야 여러 앱을 오가며 키트가 낼 수 있는 분위기의 폭이 보인다.
+ * 앱 화면 예 하나의 추천 표면과 강조색. 형태(디자인 언어)와 밝기는 늘 쇼케이스 설정을 따른다.
+ * 표면은 [ShowcaseLook.appSurface]가 [AppSurface.FollowLook]이면 설정의 표면 종류와 프리셋을 따르고, [AppSurface.Recommended]면 [light]와 [dark]를 쓴다.
+ * [fixed]인 앱은 표면이 화면 설계의 일부라 설정과 상관없이 늘 추천 표면을 쓴다.
  */
 internal class AppLook(
     val light: SurfaceStyle,
@@ -51,25 +54,53 @@ internal class AppLook(
     val accentDark: Color = accent,
     val onAccent: Color = Color.White,
     val onAccentDark: Color = onAccent,
+    val fixed: Boolean = false,
 )
 
 @Composable
 internal fun AppLook.isDark(): Boolean = LocalShowcaseLook.current.isDark(defaultDark)
 
 @Composable
-internal fun AppLook.surface(): SurfaceStyle = if (isDark()) dark else light
+internal fun AppLook.surface(): SurfaceStyle = LocalShowcaseLook.current.surfaceFor(this)
 
-/** [look]의 표면과 강조색을 테마로 깐다. 스캐폴드 밖에 뜨는 시트, 다이얼로그도 같은 표면을 쓰게 하려고 앱 전체를 감싼다. */
+/** 추천 표면의 종류. 앱 화면 예 목록에 '추천: 톤'처럼 보여 줄 때 쓴다. */
+internal val AppLook.family: SurfaceFamily
+    get() = when (light) {
+        is SurfaceStyle.Glass -> SurfaceFamily.Glass
+        is SurfaceStyle.Tonal -> SurfaceFamily.Tonal
+        else -> SurfaceFamily.Solid
+    }
+
+/**
+ * [app]이 지금 설정에서 쓸 표면. 설정을 따를 때 프리셋을 골랐으면 그 프리셋을, 아니면 고른 표면 종류에서 앱 추천과 가장 가까운 것을 쓴다.
+ * 종류가 같으면 앱 추천 스타일 그대로, 톤이면 앱 강조색으로 섞는다.
+ */
+internal fun ShowcaseLook.surfaceFor(app: AppLook): SurfaceStyle {
+    val dark = isDark(app.defaultDark)
+    val recommended = if (dark) app.dark else app.light
+    val preset = selectedPreset
+    return when {
+        app.fixed || appSurface == AppSurface.Recommended || (family == app.family && preset == null) -> recommended
+        preset != null -> preset.surface(dark)
+        family == SurfaceFamily.Glass -> SurfaceStyle.Glass(if (dark) GlassStyles.LiquidDark else GlassStyles.Liquid)
+        family == SurfaceFamily.Solid -> if (dark) SurfaceStyles.CleanDark else SurfaceStyles.CleanLight
+        else -> SurfaceStyle.Tonal(if (dark) app.accentDark else app.accent, dark)
+    }
+}
+
+/** [look]의 표면과 강조색, 쇼케이스에서 고른 형태를 테마로 깐다. 스캐폴드 밖에 뜨는 시트, 다이얼로그도 같은 표면을 쓰게 하려고 앱 전체를 감싼다. */
 @Composable
 internal fun AppTheme(look: AppLook, content: @Composable () -> Unit) {
+    // 강조색과 배경 그림은 표면이 아니라 밝기 설정을 따른다. 추천 표면 중에는 밝은 화면에 쓰는 어두운 글래스(Vision)도 있다.
     val dark = look.isDark()
     KineticaTheme(
         darkTheme = dark,
-        surface = if (dark) look.dark else look.light,
+        surface = look.surface(),
         colors = KineticaColors(
             accent = if (dark) look.accentDark else look.accent,
             onAccent = if (dark) look.onAccentDark else look.onAccent,
         ),
+        design = LocalShowcaseLook.current.selectedDesign,
         content = content,
     )
 }
@@ -132,69 +163,14 @@ internal val ART_PALETTES = listOf(
 
 internal fun artPalette(index: Int): List<Color> = ART_PALETTES[Math.floorMod(index, ART_PALETTES.size)]
 
-/** 앱 화면 예에서 쓰는 선 아이콘(24 격자). [ShowcaseIcons]에 없는 것만 둔다. */
+/** 앱 화면 예에서만 쓰는 선 아이콘(24 격자). 일반 아이콘은 키트의 KIcons를 쓰고, 여기에는 앱 전용 그림만 둔다. */
 internal object AppIcons {
-    val Search = line {
-        circle(10.5f, 10.5f, 6.5f)
-        moveTo(15.5f, 15.5f)
-        lineTo(20f, 20f)
-    }
-    val Bag = line {
-        moveTo(5f, 8f)
-        lineTo(19f, 8f)
-        lineTo(18f, 20f)
-        lineTo(6f, 20f)
-        close()
-        moveTo(9f, 10f)
-        lineTo(9f, 7f)
-        arcTo(3f, 3f, 0f, false, true, 15f, 7f)
-        lineTo(15f, 10f)
-    }
-    val Heart = line {
-        moveTo(12f, 20f)
-        curveTo(5f, 15.5f, 3f, 12f, 3f, 9f)
-        curveTo(3f, 6.2f, 5.2f, 4.5f, 7.5f, 4.5f)
-        curveTo(9.4f, 4.5f, 11f, 5.6f, 12f, 7.2f)
-        curveTo(13f, 5.6f, 14.6f, 4.5f, 16.5f, 4.5f)
-        curveTo(18.8f, 4.5f, 21f, 6.2f, 21f, 9f)
-        curveTo(21f, 12f, 19f, 15.5f, 12f, 20f)
-        close()
-    }
     val Comment = line {
         moveTo(4f, 12f)
         arcTo(8f, 7.5f, 0f, true, true, 8.5f, 18.6f)
         lineTo(4f, 20f)
         lineTo(5.2f, 16f)
         close()
-    }
-    val Bookmark = line {
-        moveTo(6f, 4f)
-        lineTo(18f, 4f)
-        lineTo(18f, 20f)
-        lineTo(12f, 15.5f)
-        lineTo(6f, 20f)
-        close()
-    }
-    val Card = line {
-        roundRect(3f, 5.5f, 21f, 18.5f, 2.5f)
-        moveTo(3f, 9.5f)
-        lineTo(21f, 9.5f)
-        moveTo(6.5f, 14.5f)
-        lineTo(10f, 14.5f)
-    }
-    val ArrowUp = line {
-        moveTo(12f, 19f)
-        lineTo(12f, 5f)
-        moveTo(6f, 11f)
-        lineTo(12f, 5f)
-        lineTo(18f, 11f)
-    }
-    val ArrowDown = line {
-        moveTo(12f, 5f)
-        lineTo(12f, 19f)
-        moveTo(6f, 13f)
-        lineTo(12f, 19f)
-        lineTo(18f, 13f)
     }
     val Swap = line {
         moveTo(7f, 4f)
@@ -222,100 +198,6 @@ internal object AppIcons {
         moveTo(9f, 12.5f)
         lineTo(15f, 12.5f)
     }
-    val Camera = line {
-        moveTo(3.5f, 8.5f)
-        lineTo(7.5f, 8.5f)
-        lineTo(9f, 6f)
-        lineTo(15f, 6f)
-        lineTo(16.5f, 8.5f)
-        lineTo(20.5f, 8.5f)
-        lineTo(20.5f, 19f)
-        lineTo(3.5f, 19f)
-        close()
-        circle(12f, 13.5f, 3.5f)
-    }
-    val Image = line {
-        roundRect(3.5f, 4.5f, 20.5f, 19.5f, 2.5f)
-        moveTo(3.5f, 16f)
-        lineTo(8.5f, 11f)
-        lineTo(13f, 15.5f)
-        lineTo(15.5f, 13f)
-        lineTo(20.5f, 18f)
-        circle(15.5f, 8.8f, 1.5f)
-    }
-    val File = line {
-        moveTo(6f, 3.5f)
-        lineTo(14f, 3.5f)
-        lineTo(18.5f, 8f)
-        lineTo(18.5f, 20.5f)
-        lineTo(6f, 20.5f)
-        close()
-        moveTo(14f, 3.5f)
-        lineTo(14f, 8f)
-        lineTo(18.5f, 8f)
-    }
-    val Mic = line {
-        roundRect(9f, 3.5f, 15f, 14f, 3f)
-        moveTo(5.5f, 11f)
-        arcTo(6.5f, 6.5f, 0f, false, false, 18.5f, 11f)
-        moveTo(12f, 17.5f)
-        lineTo(12f, 20.5f)
-    }
-    val MicOff = line {
-        roundRect(9f, 3.5f, 15f, 14f, 3f)
-        moveTo(5.5f, 11f)
-        arcTo(6.5f, 6.5f, 0f, false, false, 18.5f, 11f)
-        moveTo(12f, 17.5f)
-        lineTo(12f, 20.5f)
-        moveTo(4f, 4f)
-        lineTo(20f, 20f)
-    }
-    val Video = line {
-        roundRect(3f, 6.5f, 15.5f, 17.5f, 2.5f)
-        moveTo(15.5f, 10.5f)
-        lineTo(21f, 7.5f)
-        lineTo(21f, 16.5f)
-        lineTo(15.5f, 13.5f)
-    }
-    val VideoOff = line {
-        roundRect(3f, 6.5f, 15.5f, 17.5f, 2.5f)
-        moveTo(15.5f, 10.5f)
-        lineTo(21f, 7.5f)
-        lineTo(21f, 16.5f)
-        lineTo(15.5f, 13.5f)
-        moveTo(3f, 4f)
-        lineTo(20f, 21f)
-    }
-    val Speaker = line {
-        moveTo(4f, 9.5f)
-        lineTo(7.5f, 9.5f)
-        lineTo(12f, 5.5f)
-        lineTo(12f, 18.5f)
-        lineTo(7.5f, 14.5f)
-        lineTo(4f, 14.5f)
-        close()
-        moveTo(15.5f, 9f)
-        arcTo(4f, 4f, 0f, false, true, 15.5f, 15f)
-        moveTo(17.8f, 6.5f)
-        arcTo(7.5f, 7.5f, 0f, false, true, 17.8f, 17.5f)
-    }
-    val Dialpad = line {
-        for (row in 0..2) {
-            for (col in 0..2) circle(6.5f + col * 5.5f, 5f + row * 5.5f, 1.1f)
-        }
-        circle(12f, 21f, 1.1f)
-    }
-    val PhoneDown = line {
-        moveTo(3f, 14.5f)
-        curveTo(7.5f, 9.5f, 16.5f, 9.5f, 21f, 14.5f)
-        lineTo(18.5f, 17f)
-        lineTo(15.5f, 15f)
-        lineTo(15.5f, 12.8f)
-        curveTo(13.2f, 12.1f, 10.8f, 12.1f, 8.5f, 12.8f)
-        lineTo(8.5f, 15f)
-        lineTo(5.5f, 17f)
-        close()
-    }
     val Hand = line {
         moveTo(8f, 12f)
         lineTo(8f, 5.5f)
@@ -332,41 +214,6 @@ internal object AppIcons {
         lineTo(4.2f, 13.5f)
         arcTo(1.4f, 1.4f, 0f, false, true, 6.6f, 12.1f)
         lineTo(8f, 14f)
-    }
-    val Users = line {
-        circle(9f, 8.5f, 3.5f)
-        moveTo(2.5f, 19.5f)
-        curveTo(3f, 15.5f, 5.5f, 14f, 9f, 14f)
-        curveTo(12.5f, 14f, 15f, 15.5f, 15.5f, 19.5f)
-        moveTo(15.5f, 5.2f)
-        arcTo(3.3f, 3.3f, 0f, false, true, 15.5f, 11.8f)
-        moveTo(18f, 14.4f)
-        curveTo(20f, 15.2f, 21.2f, 17f, 21.5f, 19.5f)
-    }
-    val Person = line {
-        circle(12f, 8f, 4f)
-        moveTo(4.5f, 20.5f)
-        curveTo(5f, 16f, 8f, 14f, 12f, 14f)
-        curveTo(16f, 14f, 19f, 16f, 19.5f, 20.5f)
-    }
-    val Clock = line {
-        circle(12f, 12f, 8.5f)
-        moveTo(12f, 7.5f)
-        lineTo(12f, 12f)
-        lineTo(15f, 14f)
-    }
-    val Star = line {
-        moveTo(12f, 3.5f)
-        lineTo(14.6f, 9f)
-        lineTo(20.5f, 9.6f)
-        lineTo(16f, 13.6f)
-        lineTo(17.3f, 19.5f)
-        lineTo(12f, 16.5f)
-        lineTo(6.7f, 19.5f)
-        lineTo(8f, 13.6f)
-        lineTo(3.5f, 9.6f)
-        lineTo(9.4f, 9f)
-        close()
     }
     val Bike = line {
         circle(6f, 16.5f, 3.5f)
@@ -389,15 +236,6 @@ internal object AppIcons {
         close()
         moveTo(10f, 13.5f)
         lineTo(21f, 4f)
-    }
-    val Calendar = line {
-        roundRect(3.5f, 5.5f, 20.5f, 20f, 2.5f)
-        moveTo(3.5f, 10f)
-        lineTo(20.5f, 10f)
-        moveTo(8f, 3.5f)
-        lineTo(8f, 7f)
-        moveTo(16f, 3.5f)
-        lineTo(16f, 7f)
     }
     val Seat = line {
         moveTo(7f, 4f)
@@ -444,13 +282,6 @@ internal object AppIcons {
         curveTo(8.2f, 17.2f, 4.8f, 17.4f, 4.2f, 15f)
         curveTo(3.6f, 12.8f, 7f, 11.6f, 10.6f, 12.8f)
     }
-    val Lock = line {
-        roundRect(5f, 10.5f, 19f, 20.5f, 2.5f)
-        moveTo(8f, 10.5f)
-        lineTo(8f, 7.5f)
-        arcTo(4f, 4f, 0f, false, true, 16f, 7.5f)
-        lineTo(16f, 10.5f)
-    }
     val Tv = line {
         roundRect(3f, 5f, 21f, 17f, 2.5f)
         moveTo(8f, 20.5f)
@@ -468,29 +299,6 @@ internal object AppIcons {
         close()
         moveTo(12f, 17f)
         lineTo(12f, 21f)
-    }
-    val Moon = line {
-        moveTo(19.5f, 14.5f)
-        arcTo(8f, 8f, 0f, true, true, 9.5f, 4.5f)
-        arcTo(6.5f, 6.5f, 0f, false, false, 19.5f, 14.5f)
-        close()
-    }
-    val Sun = line {
-        circle(12f, 12f, 4f)
-        for (i in 0 until 8) {
-            val a = Math.toRadians(i * 45.0)
-            moveTo(12f + 6.5f * kotlin.math.cos(a).toFloat(), 12f + 6.5f * kotlin.math.sin(a).toFloat())
-            lineTo(12f + 8.5f * kotlin.math.cos(a).toFloat(), 12f + 8.5f * kotlin.math.sin(a).toFloat())
-        }
-    }
-    val Gear = line {
-        circle(12f, 12f, 3f)
-        for (i in 0 until 8) {
-            val a = Math.toRadians(i * 45.0)
-            moveTo(12f + 6f * kotlin.math.cos(a).toFloat(), 12f + 6f * kotlin.math.sin(a).toFloat())
-            lineTo(12f + 8.5f * kotlin.math.cos(a).toFloat(), 12f + 8.5f * kotlin.math.sin(a).toFloat())
-        }
-        circle(12f, 12f, 6f)
     }
     val Wifi = line {
         moveTo(3f, 9.5f)
@@ -553,11 +361,6 @@ internal object AppIcons {
         lineTo(11.2f, 14.2f)
         lineTo(15.2f, 10f)
     }
-    val Check = line {
-        moveTo(5f, 12.5f)
-        lineTo(10f, 17.5f)
-        lineTo(19f, 7f)
-    }
     val Gift = line {
         roundRect(4f, 9f, 20f, 20.5f, 2f)
         moveTo(3f, 9f)
@@ -582,41 +385,6 @@ internal object AppIcons {
         lineTo(14f, 16.5f)
         circle(6.5f, 18f, 1.8f)
         circle(17.5f, 18f, 1.8f)
-    }
-    val More = line {
-        circle(5.5f, 12f, 0.9f)
-        circle(12f, 12f, 0.9f)
-        circle(18.5f, 12f, 0.9f)
-    }
-    val Edit = line {
-        moveTo(4f, 20f)
-        lineTo(4.8f, 16f)
-        lineTo(15.5f, 5.3f)
-        arcTo(2f, 2f, 0f, false, true, 18.7f, 8.5f)
-        lineTo(8f, 19.2f)
-        close()
-    }
-    val Grid = line {
-        roundRect(4f, 4f, 10.5f, 10.5f, 2f)
-        roundRect(13.5f, 4f, 20f, 10.5f, 2f)
-        roundRect(4f, 13.5f, 10.5f, 20f, 2f)
-        roundRect(13.5f, 13.5f, 20f, 20f, 2f)
-    }
-    val Chart = line {
-        moveTo(4f, 20f)
-        lineTo(20f, 20f)
-        moveTo(7f, 16f)
-        lineTo(7f, 11f)
-        moveTo(12f, 16f)
-        lineTo(12f, 6f)
-        moveTo(17f, 16f)
-        lineTo(17f, 9f)
-    }
-    val Info = line {
-        circle(12f, 12f, 8.5f)
-        moveTo(12f, 11f)
-        lineTo(12f, 16.5f)
-        circle(12f, 7.8f, 0.4f)
     }
 
     private fun PathBuilder.circle(cx: Float, cy: Float, r: Float) {

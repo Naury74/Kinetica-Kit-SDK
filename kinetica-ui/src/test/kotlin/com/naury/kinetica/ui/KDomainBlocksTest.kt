@@ -213,7 +213,7 @@ class KDomainBlocksTest {
     fun `프로필 숫자 칸은 이름과 값을 함께 읽고 누를 수 있다`() {
         var opened = false
         compose.setContent {
-            KProfileHeader("Minji", avatar = KAvatar("Minji"), stats = listOf(KProfileStat("1.2K", "Followers") { opened = true }))
+            KProfileHeader("Minji", avatar = KAvatarData("Minji"), stats = listOf(KProfileStat("1.2K", "Followers") { opened = true }))
         }
         compose.onNodeWithContentDescription("Followers 1.2K").performClick()
         assertThat(opened).isTrue()

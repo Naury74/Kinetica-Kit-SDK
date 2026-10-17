@@ -69,7 +69,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * [KStoryViewer]의 페이지와 진행 상태. [rememberKStoryViewerState]로 만든다. 지금 페이지는 화면 회전 뒤에도 남는다.
@@ -167,7 +169,8 @@ public fun KStoryViewer(
                 events.collect { gesture.back.snapTo(it.progress) }
                 dismiss.value()
             } catch (cancelled: CancellationException) {
-                gesture.back.animateTo(0f)
+                // 제스처를 취소하면 이 코루틴도 취소되므로 되돌리는 애니메이션은 취소되지 않게 돌린다.
+                withContext(NonCancellable) { gesture.back.animateTo(0f) }
                 throw cancelled
             }
         }

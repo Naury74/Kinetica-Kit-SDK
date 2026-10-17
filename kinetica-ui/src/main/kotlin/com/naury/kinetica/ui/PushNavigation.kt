@@ -81,10 +81,11 @@ public fun <T : Any> PushNavigation(
     val nav = remember { PushState(stack) }
     nav.latestStack = stack
     nav.latestBack = rememberUpdatedState(onBack).value
-    nav.spec = transition.animationSpec
+    nav.spec = transitionSpecOf(transition)
     nav.still = reducedMotion()
     val host = remember { TransitionHost() }
     host.endSign = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
+    host.shapes = currentShapes
     LaunchedEffect(stack) { nav.follow(stack, holder) }
     val idle = nav.shown == stack
     val canGoBack = idle && stack.size > 1

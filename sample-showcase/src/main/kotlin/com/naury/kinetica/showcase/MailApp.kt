@@ -61,6 +61,7 @@ import com.naury.kinetica.ui.KEmptyIcon
 import com.naury.kinetica.ui.KEmptyIconKind
 import com.naury.kinetica.ui.KEmptyState
 import com.naury.kinetica.ui.KExpandable
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KListDetail
 import com.naury.kinetica.ui.KSnackbarHost
 import com.naury.kinetica.ui.KSnackbarResult
@@ -96,7 +97,7 @@ internal fun MailApp(onBack: () -> Unit) {
     var selected by rememberSaveable { mutableStateOf<Int?>(null) }
     val mails = remember { mutableStateListOf<Mail>().apply { addAll(MAILS) } }
     // 코치 마크와 서랍은 스캐폴드 밖에 뜨므로 테마로 같은 표면을 넘긴다.
-    KineticaTheme(surface = demoSurface(MAIL_LOOK)) {
+    KineticaTheme(surface = demoSurface(MAIL_LOOK), design = LocalShowcaseLook.current.selectedDesign) {
         // 두 칸 배치에서는 목록이 옆에 그대로 보이므로 상세 칸에 뒤로 버튼을 두지 않는다.
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val twoPane = maxWidth >= KAdaptiveDefaults.TwoPaneMinWidth
@@ -346,10 +347,10 @@ private fun MailFolders(onBack: () -> Unit, close: () -> Unit) {
 private val MAIL_ROW_SHAPE = RoundedCornerShape(16.dp)
 private val FOLDER_SHAPE = RoundedCornerShape(14.dp)
 private val FOLDERS = listOf(
-    "받은편지함" to ShowcaseIcons.Inbox,
-    "보낸편지함" to ShowcaseIcons.Send,
-    "보관함" to ShowcaseIcons.Archive,
-    "휴지통" to ShowcaseIcons.Trash,
+    "받은편지함" to KIcons.Inbox,
+    "보낸편지함" to KIcons.Send,
+    "보관함" to KIcons.Archive,
+    "휴지통" to KIcons.Trash,
 )
 
 private class Mail(val id: Int, val from: String, val subject: String, val color: Color, val unread: Int) {

@@ -145,7 +145,7 @@ class KMediaTest {
     @Test
     fun `아바타 묶음은 보이는 이름과 남은 인원을 한 번에 읽는다`() {
         compose.setContent {
-            AvatarStack(listOf(KAvatar("Ana Kim"), KAvatar("Ben"), KAvatar("김민수"), KAvatar("Dan")), max = 2)
+            AvatarStack(listOf(KAvatarData("Ana Kim"), KAvatarData("Ben"), KAvatarData("김민수"), KAvatarData("Dan")), max = 2)
         }
 
         compose.onNodeWithContentDescription("Ana Kim, Ben and 2 others").assertExists()

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -37,8 +37,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
@@ -149,12 +151,14 @@ private fun ModalPanel(
     content: @Composable () -> Unit,
 ) {
     val still = reducedMotion()
+    val design = LocalKineticaDesign.current
+    val corner = remember(design.shapes) { ModalCorner(design.shapes) }
     val openState = transition.animateFloat(
         transitionSpec = {
             if (still) {
                 tween(0)
             } else if (targetState) {
-                spring(dampingRatio = 1f, stiffness = OPEN_STIFFNESS)
+                design.motion.tuned(1f, OPEN_STIFFNESS)
             } else {
                 tween(CLOSE_MS)
             }
@@ -179,7 +183,7 @@ private fun ModalPanel(
                 scaleX = scale
                 scaleY = scale
                 val rounded = maxOf(back, (dragged * DRAG_ROUND).coerceAtMost(1f), if (open < 1f) 1f else 0f)
-                shape = RoundedCornerShape(CORNER.toPx() * rounded)
+                shape = corner.at(rounded)
                 clip = rounded > 0f
             }
             .semantics { title?.let { paneTitle = it } }
@@ -199,19 +203,36 @@ private fun ModalPanel(
             ),
     ) {
         CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) { content() }
-        if (dragToDismiss) Grabber(surface, Modifier.align(Alignment.TopCenter))
+        if (dragToDismiss) Grabber(surface, corner.grabber, Modifier.align(Alignment.TopCenter))
     }
 }
 
 @Composable
-private fun Grabber(surface: SurfaceStyle, modifier: Modifier) {
+private fun Grabber(surface: SurfaceStyle, shape: Shape, modifier: Modifier) {
     Box(
         modifier
             .statusBarsPadding()
             .padding(top = 6.dp)
             .size(GRABBER_WIDTH, GRABBER_HEIGHT)
-            .background(surface.contentColor.copy(alpha = GRABBER_ALPHA), RoundedCornerShape(GRABBER_HEIGHT)),
+            .background(surface.contentColor.copy(alpha = GRABBER_ALPHA), shape),
     )
+}
+
+/**
+ * 끌거나 뒤로 가기를 할 때 둥글어지는 모서리. 디자인 언어 sheet 토큰의 모서리 모양과 반지름을 따르고, 캡슐 토큰이면 [CORNER]를 쓴다.
+ * 진행 단계별 모양을 미리 만들어 두어 프레임마다 모양 객체를 새로 만들지 않는다.
+ */
+private class ModalCorner(shapes: KineticaShapes) {
+    private val style = shapes.cornerOf(shapes.sheet)
+
+    // 기본 디자인 언어에서는 디자인 언어가 생기기 전 반지름(28dp)을 그대로 둔다.
+    private val radius = if (shapes == KineticaShapes()) CORNER else shapes.radiusOr(shapes.sheet, CORNER)
+    private val steps = Array(CORNER_STEPS + 1) { shapeOf(style, radius * (it.toFloat() / CORNER_STEPS)) }
+
+    /** 그래버도 시트 모서리 모양을 따른다. 각진 디자인이면 각진 막대다. */
+    val grabber: Shape = shapeOf(style, Dp.Infinity)
+
+    fun at(level: Float): Shape = steps[(level.coerceIn(0f, 1f) * CORNER_STEPS).roundToInt()]
 }
 
 /** 뒤 화면을 물러나게 하는 값은 이 안에서만 읽어, 끄는 동안 패널 전체가 다시 구성되지 않게 한다. */
@@ -221,6 +242,7 @@ private fun ModalPushBack(level: () -> Float) {
 }
 
 private val CORNER = 28.dp
+private const val CORNER_STEPS = 32
 private val FLING = 1_000.dp
 private val GRABBER_WIDTH = 36.dp
 private val GRABBER_HEIGHT = 5.dp

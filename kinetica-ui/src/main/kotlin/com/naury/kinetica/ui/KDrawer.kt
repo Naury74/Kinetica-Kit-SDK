@@ -72,7 +72,9 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** [KDrawer]가 열릴 때 뒤 화면을 어떻게 다룰지 정한다. */
 public enum class KDrawerMode {
@@ -171,7 +173,8 @@ public fun KDrawer(
             events.collect { state.snapTo(1f - it.progress * BACK_PEEK) }
             state.close()
         } catch (cancelled: CancellationException) {
-            state.open()
+            // 제스처를 취소하면 이 코루틴도 취소되므로 되돌리는 애니메이션은 취소되지 않게 돌린다.
+            withContext(NonCancellable) { state.open() }
             throw cancelled
         }
     }

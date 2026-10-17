@@ -294,8 +294,8 @@ class UiKitDocExamplesTest {
     @Composable
     private fun Block13() {
         val unread = 3
-        KAvatar(KAvatar("민지"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
-        AvatarStack(listOf(KAvatar("민지"), KAvatar("준호"), KAvatar("서연")), max = 3)
+        KAvatar(KAvatarData("민지"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
+        AvatarStack(listOf(KAvatarData("민지"), KAvatarData("준호"), KAvatarData("서연")), max = 3)
         KIconButton(Icons.Rounded.Bell, "알림", onClick = ::openInbox, modifier = Modifier.kBadge(unread))
         KStatusBadge("배송 중", KStatus.Info)
     }
@@ -498,7 +498,7 @@ class UiKitDocExamplesTest {
         KChatBubble("2시 어때요?", KChatSide.Sent, time = "오후 2:14", status = KChatStatus.Read)
         KTypingIndicator()
         KChatInput(draft, { draft = it }, onSend = { draft = "" }, onAttach = ::pickFile, onVoice = ::record)
-        KStoryRing(seen = false, onClick = { story = true }) { KAvatar(KAvatar("민지"), size = KAvatarSize.Large) }
+        KStoryRing(seen = false, onClick = { story = true }) { KAvatar(KAvatarData("민지"), size = KAvatarSize.Large) }
         KAttachmentChip("견적서_최종.pdf", detail = "2.4MB", status = KAttachmentStatus.Uploading, progress = 0.4f, onRemove = {})
         KMapPin(label = "₩12,000", selected = true)
         // 같은 절 아래의 글자 수와 TalkBack 이름 예

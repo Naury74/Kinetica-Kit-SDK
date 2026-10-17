@@ -56,13 +56,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.ui.KButton
 import com.naury.kinetica.ui.KButtonSize
 import com.naury.kinetica.ui.KChipGroup
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KMapPin
 import com.naury.kinetica.ui.KMediaCard
 import com.naury.kinetica.ui.KProgressBar
@@ -86,6 +86,7 @@ import com.naury.kinetica.ui.PushNavigation
 import com.naury.kinetica.ui.RollingText
 import com.naury.kinetica.ui.SurfaceStyle
 import com.naury.kinetica.ui.jellyPress
+import com.naury.kinetica.ui.mapPinAnchor
 import kotlinx.coroutines.delay
 
 /**
@@ -123,9 +124,10 @@ private fun StoreList(onBack: () -> Unit, onOpen: (Int) -> Unit) {
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = {
             KTopAppBar("우리 집", onBack = onBack, subtitle = "하늘길 24 · 302호", actions = {
-                KIconButton(ShowcaseIcons.Bell, "알림", {}, variant = KVariant.Text, tone = KTone.Neutral)
+                KIconButton(KIcons.Bell, "알림", {}, variant = KVariant.Text, tone = KTone.Neutral)
             })
         },
     ) { padding ->
@@ -176,6 +178,7 @@ private fun StoreMenu(store: Store, cart: SnapshotStateMap<Int, Int>, onBack: ()
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar(store.name, onBack = onBack, subtitle = "${store.minutes} · 최소 주문 ${won(12_000)}") },
         bottomBar = {
             AnimatedVisibility(count > 0, enter = slideInVertically { it }, exit = slideOutVertically { it }) {
@@ -268,6 +271,7 @@ private fun TrackOrder(onBack: () -> Unit, onDone: () -> Unit) {
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar("주문 현황", onBack = onBack) },
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -354,7 +358,7 @@ private fun RiderCard() {
                 Label("라이더 박민호", 15, FontWeight.SemiBold)
                 Label("오토바이 · 12가 3456", 13, color = LocalKineticaContentColor.current.copy(alpha = 0.6f))
             }
-            KIconButton(ShowcaseIcons.Message, "라이더에게 메시지", {}, variant = KVariant.Tonal)
+            KIconButton(KIcons.Message, "라이더에게 메시지", {}, variant = KVariant.Tonal)
             Spacer(Modifier.size(8.dp))
             KIconButton(ShowcaseIcons.Phone, "라이더에게 전화", {}, variant = KVariant.Tonal)
         }
@@ -384,8 +388,6 @@ private fun RiderMap(stage: Int, modifier: Modifier) {
     val accent = KineticaTheme.colors.accent
     val dark = LocalKineticaContentColor.current.isLight()
     BoxWithConstraints(modifier.background(if (dark) Color(0xFF2A2522) else Color(0xFFF3EDE6), RoundedCornerShape(24.dp))) {
-        val w = maxWidth
-        val h = maxHeight
         Canvas(Modifier.fillMaxSize()) {
             val road = if (dark) Color(0xFF3D3632) else Color.White
             for (i in 1..4) {
@@ -403,19 +405,15 @@ private fun RiderMap(stage: Int, modifier: Modifier) {
             drawCircle(accent.copy(alpha = 0.18f), 34f, Offset(size.width * 0.85f, size.height * 0.2f))
             drawCircle(accent, 34f, Offset(size.width * 0.85f, size.height * 0.2f), style = Stroke(3f))
         }
+        val mapWidth = constraints.maxWidth.toFloat()
+        val mapHeight = constraints.maxHeight.toFloat()
         KMapPin(
-            Modifier.offset {
-                val x = (w * (0.15f + 0.7f * progress)).roundToPx()
-                val y = (h * (0.8f - 0.6f * progress)).roundToPx()
-                IntOffset(x - 22.dp.roundToPx(), y - 52.dp.roundToPx())
-            },
+            Modifier.mapPinAnchor { Offset(mapWidth * (0.15f + 0.7f * progress), mapHeight * (0.8f - 0.6f * progress)) },
             icon = AppIcons.Bike,
             contentDescription = "라이더 위치",
         )
         KMapPin(
-            Modifier.offset {
-                IntOffset((w * 0.15f).roundToPx() - 40.dp.roundToPx(), (h * 0.8f).roundToPx() - 44.dp.roundToPx())
-            },
+            Modifier.mapPinAnchor { Offset(mapWidth * 0.15f, mapHeight * 0.8f) },
             label = "가게",
             tone = KTone.Neutral,
             dropIn = false,

@@ -27,5 +27,10 @@
         <activity android:name=".recent.AdaptiveBoardActivity" android:exported="false" />
         <activity android:name=".recent.XmlAdaptiveBoardActivity" android:exported="false" />
         <activity android:name=".recent.EditorHostActivity" android:exported="false" />
+        <activity android:name=".recent.DesignTransitionActivity" android:exported="false" />
+        <activity android:name=".recent.DesignHostActivity" android:exported="false" />
+        <activity android:name=".recent.NavigationHostActivity" android:exported="false" />
+        <activity android:name=".recent.SceneBundleHostActivity" android:exported="false" />
+        <activity android:name=".recent.IslandKeypadHostActivity" android:exported="false" />
     </application>
 </manifest>

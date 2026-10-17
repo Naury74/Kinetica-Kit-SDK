@@ -55,6 +55,7 @@ import com.naury.kinetica.ui.AuroraBackground
 import com.naury.kinetica.ui.KAttachmentChip
 import com.naury.kinetica.ui.KAttachmentStatus
 import com.naury.kinetica.ui.KAvatar
+import com.naury.kinetica.ui.KAvatarData
 import com.naury.kinetica.ui.KAvatarSize
 import com.naury.kinetica.ui.KAvatarStatus
 import com.naury.kinetica.ui.KBreadcrumb
@@ -203,7 +204,7 @@ private fun ChatMessages(messages: List<ChatMessage>, typing: Boolean, stagger: 
 @Composable
 private fun ChatHeader(typing: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        KAvatar(KAvatar("서연"), size = KAvatarSize.Medium, status = KAvatarStatus.Online)
+        KAvatar(KAvatarData("서연"), size = KAvatarSize.Medium, status = KAvatarStatus.Online)
         Column {
             Label("서연", 16, FontWeight.SemiBold)
             Label(if (typing) "입력 중…" else "온라인", 12, color = LocalKineticaContentColor.current.copy(alpha = 0.6f))
@@ -231,7 +232,7 @@ private fun StoriesCard() {
             items(PEOPLE_STORIES.size) { i ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KStoryRing(i in seen, loading = loading == i, onClick = { loading = i }, onClickLabel = "스토리 보기") {
-                        KAvatar(KAvatar(PEOPLE_STORIES[i]), size = KAvatarSize.Large)
+                        KAvatar(KAvatarData(PEOPLE_STORIES[i]), size = KAvatarSize.Large)
                     }
                     Label(PEOPLE_STORIES[i], 12)
                 }
@@ -243,7 +244,7 @@ private fun StoriesCard() {
         open = -1
     }, story, header = { page ->
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KAvatar(KAvatar(PEOPLE_STORIES.getOrElse(open) { "" }), size = KAvatarSize.Small)
+            KAvatar(KAvatarData(PEOPLE_STORIES.getOrElse(open) { "" }), size = KAvatarSize.Small)
             Label("${PEOPLE_STORIES.getOrElse(open) { "" }}  ·  ${page + 1}시간 전", 14, FontWeight.SemiBold, color = Color.White)
         }
     }) { page ->
@@ -317,7 +318,7 @@ private fun ContactsCard() {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        KAvatar(KAvatar(contacts[i]), size = KAvatarSize.Small)
+                        KAvatar(KAvatarData(contacts[i]), size = KAvatarSize.Small)
                         Label(contacts[i], 15)
                     }
                 }

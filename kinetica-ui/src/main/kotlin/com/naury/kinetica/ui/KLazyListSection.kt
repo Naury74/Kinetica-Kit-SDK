@@ -35,8 +35,9 @@ import androidx.compose.ui.unit.dp
  * 행이 수백 개여도 화면에 보이는 행만 구성한다. 모양은 [KListSection]과 같다. [KListSectionStyle.InsetGrouped]면
  * 행마다 표면을 따로 그리지만, 위아래로 이어지는 가장자리는 그리지 않아 표면 하나처럼 보이고 첫 행 위와 끝 행 아래만 둥글다.
  *
- * 행 사이가 붙어 있어야 하므로 `LazyColumn`의 `verticalArrangement`에 간격을 주지 않는다. 섹션 사이 여백은 [header]의 위 여백이나
- * 별도 `item { Spacer(…) }`로 준다. 좌우 여백은 `contentPadding`이나 항목 바깥 여백으로 준다.
+ * 주의: 행 사이가 붙어 있어야 하므로 이 섹션을 담은 `LazyColumn`에는 `verticalArrangement = Arrangement.spacedBy(…)`를 주지 않는다.
+ * 간격을 주면 행마다 표면이 끊겨 사이로 바탕이 비치고, 구분선이 틈 위에 떠 보인다. 섹션 사이나 다른 항목 사이 여백은 [header]의 위 여백이나
+ * 별도 `item { Spacer(Modifier.height(…)) }`로 준다. 좌우 여백은 `contentPadding`이나 항목 바깥 여백으로 준다.
  *
  * ```kotlin
  * LazyColumn {

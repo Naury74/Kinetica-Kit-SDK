@@ -28,6 +28,7 @@ import com.naury.kinetica.ui.KAmountInput
 import com.naury.kinetica.ui.KAmountPreset
 import com.naury.kinetica.ui.KAreaChart
 import com.naury.kinetica.ui.KAvatar
+import com.naury.kinetica.ui.KAvatarData
 import com.naury.kinetica.ui.KBarMode
 import com.naury.kinetica.ui.KBillingPeriodToggle
 import com.naury.kinetica.ui.KButton
@@ -262,7 +263,7 @@ private fun ProfileHeaderScene() {
     DemoCard("프로필 머리", "커버 위에 아바타를 겹치고 숫자 칸과 버튼 줄을 놓습니다. 숫자 칸은 누를 수 있습니다.") {
         KProfileHeader(
             "김하늘",
-            avatar = KAvatar("김하늘"),
+            avatar = KAvatarData("김하늘"),
             subtitle = "@haneul · 사진 찍는 개발자",
             stats = listOf(
                 KProfileStat("128", "게시물"),

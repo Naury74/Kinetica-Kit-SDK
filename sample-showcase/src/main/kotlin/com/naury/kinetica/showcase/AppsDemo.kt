@@ -34,6 +34,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KIcons
+import com.naury.kinetica.ui.KSegmentedControl
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KineticaScaffold
 import com.naury.kinetica.ui.LocalKineticaContentColor
@@ -81,6 +83,7 @@ private fun AppsHome(onBack: () -> Unit, open: (String) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item(key = "surface", span = { GridItemSpan(maxLineSpan) }) { AppSurfaceRow() }
             CATEGORIES.forEach { (category, apps) ->
                 item(key = "c-$category", span = { GridItemSpan(maxLineSpan) }) {
                     Label(category, 15, FontWeight.Bold, Modifier.padding(start = 6.dp, top = 12.dp))
@@ -88,6 +91,30 @@ private fun AppsHome(onBack: () -> Unit, open: (String) -> Unit) {
                 items(apps, key = { it.id }) { app -> AppTile(app) { open(app.id) } }
             }
         }
+    }
+}
+
+/** 앱 화면 예의 표면을 설정에서 가져올지 앱 추천을 쓸지 고르는 줄. 형태는 어느 쪽이든 설정을 따른다. */
+@Composable
+private fun AppSurfaceRow() {
+    val look = LocalShowcaseLook.current
+    val ink = LocalKineticaContentColor.current
+    Column(Modifier.padding(horizontal = 6.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        KSegmentedControl(
+            AppSurface.entries.map { it.label },
+            look.appSurface.ordinal,
+            { look.appSurface = AppSurface.entries[it] },
+            Modifier.fillMaxWidth(),
+        )
+        Label(
+            if (look.appSurface == AppSurface.FollowLook) {
+                "모든 앱이 모양 설정의 표면(${look.family.label})과 형태(${look.designName})를 따릅니다. 칸 오른쪽 위는 앱마다 추천하는 표면입니다."
+            } else {
+                "앱마다 어울리는 표면을 씁니다. 형태(${look.designName})와 밝기는 모양 설정을 따릅니다."
+            },
+            13,
+            color = ink.copy(alpha = 0.72f),
+        )
     }
 }
 
@@ -102,7 +129,7 @@ private fun AppTile(app: AppInfo, onClick: () -> Unit) {
                     ShowcaseIcon(app.icon, 24.dp, Color.White)
                 }
                 Spacer(Modifier.weight(1f))
-                Label(app.style, 11, FontWeight.SemiBold, color = ink.copy(alpha = 0.6f))
+                Label(app.surfaceLabel(), 11, FontWeight.SemiBold, color = ink.copy(alpha = 0.6f))
             }
             Label(app.title, 17, FontWeight.Bold)
             Label(app.summary, 13, color = ink.copy(alpha = 0.72f))
@@ -110,7 +137,13 @@ private fun AppTile(app: AppInfo, onClick: () -> Unit) {
     }
 }
 
-private class AppInfo(val id: String, val title: String, val summary: String, val icon: ImageVector, val color: Color, val style: String)
+private class AppInfo(val id: String, val title: String, val summary: String, val icon: ImageVector, val color: Color)
+
+/** 칸 오른쪽 위에 보여 줄 표면 안내. 추천 표면이 없는 앱은 설정을 따르고, 표면을 고정한 앱은 그렇게 적는다. */
+private fun AppInfo.surfaceLabel(): String {
+    val app = appLookOf(id) ?: return "설정 따름"
+    return if (app.fixed) "${app.family.label} 고정" else "추천: ${app.family.label}"
+}
 
 private const val APPS_HOME = "apps"
 
@@ -134,26 +167,26 @@ private val APP_SCREENS: Map<String, @Composable (() -> Unit) -> Unit> = mapOf(
 private val DARK_SCREENS = setOf(APPS_HOME, "music", "health")
 private val CATEGORIES = listOf(
     "소통" to listOf(
-        AppInfo("chat", "메신저", "보내면 상대가 입력 중 표시 뒤에 답하고, 사진과 파일을 올릴 수 있습니다.", ShowcaseIcons.Message, Color(0xFF6E56CF), "글래스"),
-        AppInfo("call", "전화", "걸려 오는 전화, 음성 통화와 아일랜드, 그룹 영상 통화까지 이어집니다.", ShowcaseIcons.Phone, Color(0xFF30C85E), "글래스"),
-        AppInfo("mail", "메일", "밀어서 보관하고 길게 눌러 순서를 바꿉니다. 넓은 화면에서는 두 칸입니다.", ShowcaseIcons.Mail, Color(0xFF0A84FF), "설정 따름"),
-        AppInfo("feed", "소셜 피드", "스토리 링, 두 번 눌러 좋아요, 댓글 바텀 시트와 프로필이 있습니다.", AppIcons.Heart, Color(0xFFFF4D6D), "단색"),
+        AppInfo("chat", "메신저", "보내면 상대가 입력 중 표시 뒤에 답하고, 사진과 파일을 올릴 수 있습니다.", KIcons.Message, Color(0xFF6E56CF)),
+        AppInfo("call", "전화", "걸려 오는 전화, 음성 통화와 아일랜드, 그룹 영상 통화까지 이어집니다.", ShowcaseIcons.Phone, Color(0xFF30C85E)),
+        AppInfo("mail", "메일", "밀어서 보관하고 길게 눌러 순서를 바꿉니다. 넓은 화면에서는 두 칸입니다.", KIcons.Mail, Color(0xFF0A84FF)),
+        AppInfo("feed", "소셜 피드", "스토리 링, 두 번 눌러 좋아요, 댓글 바텀 시트와 프로필이 있습니다.", KIcons.Heart, Color(0xFFFF4D6D)),
     ),
     "쇼핑·생활" to listOf(
-        AppInfo("shop", "쇼핑", "담으면 상품이 장바구니로 날아가고, 결제 단계를 거쳐 주문을 마칩니다.", AppIcons.Bag, Color(0xFF1F1F1F), "단색"),
-        AppInfo("delivery", "음식 배달", "메뉴를 담아 주문하면 타임라인과 라이더 핀이 단계마다 움직입니다.", AppIcons.Bike, Color(0xFFF46A00), "톤"),
-        AppInfo("travel", "여행 예약", "날짜와 항공편, 좌석을 고르면 뒤집히는 탑승권이 나옵니다.", AppIcons.Plane, Color(0xFF2F6BFF), "글래스"),
-        AppInfo("bank", "송금", "키패드로 금액을 넣고 비밀번호를 누르면 잔액과 내역이 바뀝니다.", AppIcons.Card, Color(0xFF0F9D84), "톤"),
-        AppInfo("map", "지도", "여러 높이에 멈추는 바텀 시트와 검색, 상단 탭이 있습니다.", ShowcaseIcons.Location, Color(0xFF34C759), "설정 따름"),
+        AppInfo("shop", "쇼핑", "담으면 상품이 장바구니로 날아가고, 결제 단계를 거쳐 주문을 마칩니다.", KIcons.Bag, Color(0xFF1F1F1F)),
+        AppInfo("delivery", "음식 배달", "메뉴를 담아 주문하면 타임라인과 라이더 핀이 단계마다 움직입니다.", AppIcons.Bike, Color(0xFFF46A00)),
+        AppInfo("travel", "여행 예약", "날짜와 항공편, 좌석을 고르면 뒤집히는 탑승권이 나옵니다.", AppIcons.Plane, Color(0xFF2F6BFF)),
+        AppInfo("bank", "송금", "키패드로 금액을 넣고 비밀번호를 누르면 잔액과 내역이 바뀝니다.", KIcons.Card, Color(0xFF0F9D84)),
+        AppInfo("map", "지도", "여러 높이에 멈추는 바텀 시트와 검색, 상단 탭이 있습니다.", KIcons.Location, Color(0xFF34C759)),
     ),
     "미디어·건강" to listOf(
-        AppInfo("music", "음악", "미니 플레이어를 위로 끌면 전체 화면 플레이어로 펼쳐집니다.", ShowcaseIcons.Wave, Color(0xFFFF2D55), "설정 따름"),
-        AppInfo("health", "건강", "활동 링과 그려지며 나타나는 차트, 달력, 카운트다운이 있습니다.", AppIcons.Heart, Color(0xFFFF6B3D), "설정 따름"),
+        AppInfo("music", "음악", "미니 플레이어를 위로 끌면 전체 화면 플레이어로 펼쳐집니다.", ShowcaseIcons.Wave, Color(0xFFFF2D55)),
+        AppInfo("health", "건강", "활동 링과 그려지며 나타나는 차트, 달력, 카운트다운이 있습니다.", KIcons.Heart, Color(0xFFFF6B3D)),
     ),
     "업무·도구" to listOf(
-        AppInfo("tasks", "할 일", "체크하면 진행 링이 차오르고, 밀어서 지운 일은 되돌릴 수 있습니다.", AppIcons.Check, Color(0xFF6750A4), "단색"),
-        AppInfo("smarthome", "스마트 홈", "장면을 누르면 기기가 한꺼번에 바뀌고, 조명과 냉난방을 조절합니다.", AppIcons.Bulb, Color(0xFFE08A1E), "글래스"),
-        AppInfo("settings", "설정", "스위치, 라디오, 슬라이더와 Wi-Fi 연결 다이얼로그가 있습니다.", AppIcons.Gear, Color(0xFF8E8E93), "단색"),
+        AppInfo("tasks", "할 일", "체크하면 진행 링이 차오르고, 밀어서 지운 일은 되돌릴 수 있습니다.", KIcons.Check, Color(0xFF6750A4)),
+        AppInfo("smarthome", "스마트 홈", "장면을 누르면 기기가 한꺼번에 바뀌고, 조명과 냉난방을 조절합니다.", AppIcons.Bulb, Color(0xFFE08A1E)),
+        AppInfo("settings", "설정", "스위치, 라디오, 슬라이더와 Wi-Fi 연결 다이얼로그가 있습니다.", KIcons.Settings, Color(0xFF8E8E93)),
     ),
 )
 

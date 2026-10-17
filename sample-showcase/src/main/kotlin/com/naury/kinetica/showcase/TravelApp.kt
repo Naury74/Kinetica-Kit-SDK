@@ -61,6 +61,7 @@ import com.naury.kinetica.ui.KChipGroup
 import com.naury.kinetica.ui.KDateRangeDialog
 import com.naury.kinetica.ui.KDateRangePreset
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KPriceSize
 import com.naury.kinetica.ui.KPriceTag
 import com.naury.kinetica.ui.KQuantityStepper
@@ -166,7 +167,7 @@ private fun TripSearch(query: TripQuery, onBack: () -> Unit, onChange: (TripQuer
             RouteCard(query, onChange)
             DatesCard(query) { dates = true }
             PassengerCard(query, onChange)
-            KButton("항공편 검색", onSearch, size = KButtonSize.Large, fullWidth = true, icon = AppIcons.Search)
+            KButton("항공편 검색", onSearch, size = KButtonSize.Large, fullWidth = true, icon = KIcons.Search)
             Label("최근 검색", 14, FontWeight.SemiBold, Modifier.padding(top = 8.dp, start = 4.dp))
             KChipGroup(listOf("김포 → 제주", "인천 → 오사카", "김해 → 방콕"), emptySet(), {}, wrap = true, tone = KTone.Neutral)
         }
@@ -213,7 +214,7 @@ private fun RouteCard(query: TripQuery, onChange: (TripQuery) -> Unit) {
 private fun DatesCard(query: TripQuery, onClick: () -> Unit) {
     KSurface(onClick, Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), onClickLabel = "날짜 고르기") {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-            ShowcaseIcon(AppIcons.Calendar, 22.dp)
+            ShowcaseIcon(KIcons.Calendar, 22.dp)
             Column(Modifier.weight(1f).padding(start = 14.dp)) {
                 Label("가는 날 – 오는 날", 12, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))
                 Label("${TRAVEL_DAY.format(query.depart)} – ${TRAVEL_DAY.format(query.back)}", 17, FontWeight.SemiBold)
@@ -229,7 +230,7 @@ private fun PassengerCard(query: TripQuery, onChange: (TripQuery) -> Unit) {
     KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ShowcaseIcon(AppIcons.Users, 22.dp)
+                ShowcaseIcon(KIcons.Users, 22.dp)
                 Label("승객", 16, FontWeight.SemiBold, Modifier.weight(1f).padding(start = 14.dp))
                 KQuantityStepper(query.people, { onChange(query.copy(people = it)) }, range = 1..9, label = "승객 수")
             }

@@ -60,6 +60,7 @@ public enum class KShapeSize {
  */
 @Immutable
 public data class KShapeToken(val size: KShapeSize, val corner: KCornerStyle? = null) {
+    /** 크기 단계마다 하나씩 둔 토큰. 모서리 모양은 [KineticaShapes.corner]를 따른다. */
     public companion object {
         @JvmField public val None: KShapeToken = KShapeToken(KShapeSize.None)
 

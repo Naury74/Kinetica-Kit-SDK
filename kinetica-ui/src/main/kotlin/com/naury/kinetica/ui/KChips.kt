@@ -95,7 +95,7 @@ public fun KFilterChip(
  * [avatar]를 주면 앞에 원형으로 잘라 놓는다. TalkBack에서는 × 버튼이 '○○ 지우기'로 읽히고, 칩에도 같은 사용자 지정 동작이 붙는다.
  *
  * ```kotlin
- * KInputChip("민지", onRemove = { remove(it) }, avatar = { KAvatar(KAvatar("민지"), size = KAvatarSize.ExtraSmall) })
+ * KInputChip("민지", onRemove = { remove(it) }, avatar = { KAvatar(KAvatarData("민지"), size = KAvatarSize.ExtraSmall) })
  * ```
  *
  * @param onClick 칩 본문을 눌렀을 때. null이면 본문은 누를 수 없다.
@@ -291,7 +291,10 @@ internal fun FilterChipBody(spec: ChipSpec, modifier: Modifier, icon: ImageVecto
     val neutral = KTone.Neutral.colors(spec.surface)
     val ink = buttonInk(variant, KTone.Neutral, neutral, spec.surface)
     val accent = spec.accent
-    val accentInk = readableOn(accent, accent.copy(alpha = SELECTED_FILL).compositeOn(spec.surface))
+    // 글래스 위에서는 칩 뒤로 무엇이 비칠지 알 수 없어 옅은 강조색 바탕으로는 대비를 보장할 수 없다. 강조색으로 꽉 채우고 그 위에 흰 글자나 검은 글자를 쓴다.
+    val solid = spec.surface is SurfaceStyle.Glass
+    val fillAlpha = if (solid) 1f else SELECTED_FILL
+    val accentInk = if (solid) onFill(accent) else readableOn(accent, accent.copy(alpha = SELECTED_FILL).compositeOn(spec.surface))
     val shape = chipShape
     Row(
         modifier
@@ -301,7 +304,7 @@ internal fun FilterChipBody(spec: ChipSpec, modifier: Modifier, icon: ImageVecto
             .drawBehind {
                 val level = shown.value.coerceIn(0f, 1f)
                 if (level > 0f) {
-                    drawShape(shape, accent.copy(alpha = SELECTED_FILL * level), Offset.Zero, size)
+                    drawShape(shape, accent.copy(alpha = accent.alpha * fillAlpha * level), Offset.Zero, size)
                     val stroke = BORDER.toPx()
                     drawShape(
                         shape,
@@ -397,6 +400,11 @@ private fun Modifier.checkSlot(level: () -> Float): Modifier = layout { measurab
 internal fun KVariant.chipVariant(): KVariant = if (this == KVariant.Filled) KVariant.Tonal else this
 
 private fun Color.compositeOn(surface: SurfaceStyle): Color = compositeOver(surface.inkBackground())
+
+/** 강조색으로 꽉 채운 칩 위의 글자 색. 흰 글자가 읽히면 흰색, 아니면 검은색이다. */
+private fun onFill(fill: Color): Color = if (contrast(Color.White, fill.copy(alpha = 1f)) >= READABLE_ON_FILL) Color.White else Color.Black
+
+private const val READABLE_ON_FILL = 3f
 
 internal val ChipRowGap = 8.dp
 private val CHIP_HEIGHT = 34.dp

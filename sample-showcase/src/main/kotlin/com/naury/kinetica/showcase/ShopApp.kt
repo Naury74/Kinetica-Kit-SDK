@@ -67,6 +67,7 @@ import com.naury.kinetica.ui.KExpandable
 import com.naury.kinetica.ui.KFlyToHost
 import com.naury.kinetica.ui.KFlyToState
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KPageIndicator
 import com.naury.kinetica.ui.KPriceSize
 import com.naury.kinetica.ui.KPriceTag
@@ -122,7 +123,7 @@ internal fun ShopApp(onBack: () -> Unit) {
             PushNavigation(stack, onBack = pop) { screen ->
                 val cartButton: @Composable () -> Unit = {
                     KIconButton(
-                        AppIcons.Bag,
+                        KIcons.Bag,
                         "장바구니, ${cart.values.sum()}개",
                         { open("cart") },
                         Modifier.flyToTarget(fly).kBadge(cart.values.sum().takeIf { it > 0 }),
@@ -169,6 +170,7 @@ private fun ShopHome(onBack: () -> Unit, cartButton: @Composable () -> Unit, lik
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar("오늘의 발견", onBack = onBack, actions = { cartButton() }) },
     ) { padding ->
         LazyVerticalGrid(
@@ -248,7 +250,7 @@ private fun ProductTile(product: Product, liked: Boolean, onLike: (Boolean) -> U
             size = KPriceSize.Small,
         )
         Row(Modifier.padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-            ShowcaseIcon(AppIcons.Star, 13.dp, Color(0xFFFFB800))
+            ShowcaseIcon(KIcons.Star, 13.dp, Color(0xFFFFB800))
             Label("${product.rating} (${product.reviews})", 12, modifier = Modifier.padding(start = 3.dp), color = ink.copy(alpha = 0.6f))
         }
     }
@@ -267,6 +269,7 @@ private fun ProductDetail(
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar(product.brand, onBack = onBack, actions = { cartButton() }) },
         bottomBar = {
             BuyBar(product.price * choice.count) {
@@ -403,7 +406,7 @@ private fun BuyBar(total: Int, onAdd: () -> Unit) {
                 Label("총 금액", 12, color = LocalKineticaContentColor.current.copy(alpha = 0.6f))
                 Label(won(total), 19, FontWeight.Bold)
             }
-            KButton("장바구니 담기", onAdd, icon = AppIcons.Bag, size = KButtonSize.Large)
+            KButton("장바구니 담기", onAdd, icon = KIcons.Bag, size = KButtonSize.Large)
         }
     }
 }
@@ -418,6 +421,7 @@ private fun CartScreen(cart: SnapshotStateMap<Int, Int>, onBack: () -> Unit, onC
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar("장바구니", onBack = onBack) },
         bottomBar = {
             if (lines.isNotEmpty()) {
@@ -520,6 +524,7 @@ private fun CheckoutScreen(cart: SnapshotStateMap<Int, Int>, onBack: () -> Unit,
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar("주문하기", onBack = { if (step > 0) step-- else onBack() }) },
     ) { padding ->
         Column(
@@ -587,7 +592,7 @@ private fun PaymentStep(selected: Int, onSelect: (Int) -> Unit, onNext: () -> Un
             onSelect(index)
         }, Modifier.fillMaxWidth(), role = Role.RadioButton, variant = KVariant.Outlined) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ShowcaseIcon(if (index == 0) AppIcons.Card else AppIcons.Gift, 22.dp)
+                ShowcaseIcon(if (index == 0) KIcons.Card else AppIcons.Gift, 22.dp)
                 Column(Modifier.padding(start = 12.dp)) {
                     Label(title, 15, FontWeight.SemiBold)
                     Label(sub, 13, color = LocalKineticaContentColor.current.copy(alpha = 0.6f))

@@ -52,8 +52,8 @@ public enum class KAvatarStatus {
  * [status]를 주면 바깥 테두리를 [ringColor]로 두른 상태 점을 모서리에 찍는다. TalkBack은 '민지, 온라인'처럼 이름과 상태를 읽는다.
  *
  * ```kotlin
- * KAvatar(KAvatar("김민지"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
- * KAvatar(KAvatar("Ana", image = { Image(photo, null, contentScale = ContentScale.Crop) }), shape = RoundedCornerShape(12.dp))
+ * KAvatar(KAvatarData("김민지"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
+ * KAvatar(KAvatarData("Ana", image = { Image(photo, null, contentScale = ContentScale.Crop) }), shape = RoundedCornerShape(12.dp))
  * ```
  *
  * @param avatar 그릴 사람. [AvatarStack]에 넣는 값과 같다.
@@ -62,7 +62,7 @@ public enum class KAvatarStatus {
  */
 @Composable
 public fun KAvatar(
-    avatar: KAvatar,
+    avatar: KAvatarData,
     modifier: Modifier = Modifier,
     size: KAvatarSize = KAvatarSize.Medium,
     shape: Shape = shapeFor { this.avatar },

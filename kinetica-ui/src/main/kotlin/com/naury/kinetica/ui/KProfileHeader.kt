@@ -59,7 +59,7 @@ public data class KProfileStat(val value: String, val label: String, val onClick
  * TalkBack은 이름을 제목으로, 숫자 칸을 '팔로워 1.2만'처럼 한 덩어리로 읽는다.
  *
  * ```kotlin
- * KProfileHeader("김민지", avatar = KAvatar("김민지"), subtitle = "@minji · 서울", stats = listOf(KProfileStat("128", "게시물")),
+ * KProfileHeader("김민지", avatar = KAvatarData("김민지"), subtitle = "@minji · 서울", stats = listOf(KProfileStat("128", "게시물")),
  *     actions = { KButton("팔로우", ::follow, Modifier.weight(1f)) })
  * ```
  *
@@ -73,7 +73,7 @@ public data class KProfileStat(val value: String, val label: String, val onClick
 public fun KProfileHeader(
     name: String,
     modifier: Modifier = Modifier,
-    avatar: KAvatar? = null,
+    avatar: KAvatarData? = null,
     subtitle: String? = null,
     cover: (@Composable BoxScope.() -> Unit)? = null,
     coverHeight: Dp = 132.dp,

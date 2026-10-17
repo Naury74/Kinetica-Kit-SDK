@@ -54,6 +54,7 @@ import com.naury.kinetica.ui.KEmptyIcon
 import com.naury.kinetica.ui.KEmptyIconKind
 import com.naury.kinetica.ui.KEmptyState
 import com.naury.kinetica.ui.KExtendedFab
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KProgressRing
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KSnackbarHost
@@ -117,6 +118,7 @@ private fun TaskList(tasks: SnapshotStateList<String>, onBack: () -> Unit, onOpe
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar("할 일", variant = KTopAppBarVariant.Medium, state = bar, onBack = onBack) },
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
@@ -149,7 +151,7 @@ private fun TaskList(tasks: SnapshotStateList<String>, onBack: () -> Unit, onOpe
             }
             KExtendedFab(
                 "할 일 추가",
-                ShowcaseIcons.Plus,
+                KIcons.Plus,
                 { adding = true },
                 Modifier.align(Alignment.BottomEnd).windowInsetsPadding(WindowInsets.navigationBars).padding(20.dp),
                 expanded = !listState.canScrollBackward,
@@ -288,6 +290,7 @@ private fun TaskDetail(task: Task, tasks: SnapshotStateList<String>, onBack: () 
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar(LISTS[task.list], onBack = onBack) },
     ) { padding ->
         Column(

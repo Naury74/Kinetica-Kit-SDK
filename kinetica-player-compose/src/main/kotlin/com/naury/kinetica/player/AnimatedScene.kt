@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -85,6 +86,12 @@ public fun AnimatedScene(
     // 바로 바꾸는 경우에는 효과가 상태를 바꾸기를 기다리지 않고 이번 프레임부터 새 장면을 그린다.
     val immediate = sceneKey == switch.current.key || animatedSpec(transition ?: document.transition, reducedMotion) == null
     val current = if (immediate) KeyedScene(sceneKey, document) else switch.current
+    // 같은 키로 문서만 바뀌면(서버에서 다시 받음, 번들 재생기가 키보다 한 프레임 늦게 넘긴 문서) 기억한 장면도 바꾼다.
+    // 그러지 않으면 다음 전환에서 나가는 장면을 옛 문서로 그린다.
+    SideEffect {
+        val remembered = switch.current
+        if (remembered.key == sceneKey && remembered.document !== document) switch.current = KeyedScene(sceneKey, document)
+    }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(modifier) {
         val previous = switch.previous?.takeIf { it.key != current.key && current.key == switch.current.key }

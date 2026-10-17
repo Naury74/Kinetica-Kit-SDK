@@ -252,12 +252,19 @@ public class KIslandState {
         }
     }
 
-    /** 보여 주는 중인 알림의 내용을 바꾼다. 타이머처럼 계속 바뀌는 값을 갱신할 때 쓴다. 보여 주는 알림이 없으면 아무 일도 하지 않는다. */
-    public fun update(content: KIslandContent) {
-        if (this.content != null) {
-            this.content = content
-            current?.content = content
-        }
+    /**
+     * 지금 보이는 알림의 내용만 바꾼다. 코루틴 없이 부를 수 있어 통화 시간이나 타이머처럼 계속 바뀌는 값을 갱신할 때 쓴다.
+     * 표시 시간은 다시 재지 않고, compact와 expanded 모드도 그대로 둔다(새 내용에 [KIslandContent.compactText]가 없으면 펼친다).
+     * 기다리는 알림은 바꾸지 않는다. 메인 스레드에서 부른다.
+     *
+     * @return 바꿨으면 `true`, 보이는 알림이 없거나 닫히는 중이면 `false`
+     */
+    public fun update(content: KIslandContent): Boolean {
+        val showing = current?.takeIf { this.content != null && !it.result.isCompleted } ?: return false
+        showing.content = content
+        this.content = content
+        if (content.compactText == null) expanded = true
+        return true
     }
 
     /** 보여 주는 중인 알림을 닫는다. [show]는 [KIslandResult.Dismissed]를 돌려준다. */
@@ -283,6 +290,7 @@ private class IslandEntry(var content: KIslandContent, var durationMs: Long?, va
     var restart: CompletableDeferred<Unit>? = null
 }
 
+/** 화면이 다시 구성되어도 같은 [KIslandState]를 돌려준다. 설정 변경(회전 등)에서는 보여 주던 알림을 지키지 않는다. */
 @Composable
 public fun rememberKIslandState(): KIslandState = remember { KIslandState() }
 

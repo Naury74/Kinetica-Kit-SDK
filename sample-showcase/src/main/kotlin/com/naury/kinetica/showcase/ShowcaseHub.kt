@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KineticaScaffold
 import com.naury.kinetica.ui.LocalKineticaContentColor
@@ -129,22 +130,22 @@ internal fun kitSections(): List<HubSection> = listOf(
     HubSection(
         "motion",
         "모션과 화면 전환",
-        "효과 수정자와 화면 사이를 잇는 전환입니다.",
+        "효과 수정자, 화면 이동 전환 22가지와 컨테이너 변환, 서버 장면 전환 14가지입니다.",
         featured = false,
         entries = listOf(Demo.Motion.entry(), Demo.Navigation.entry(), Demo.Transition.entry()),
     ),
 )
 
 private val COMPONENT_TAB_INFO = mapOf(
-    "기본" to ("버튼, 검색, 휠 피커, 캐러셀, 카드 더미, 알림" to ShowcaseIcons.Home),
-    "입력" to ("입력란 모양, 인증번호, 태그, 색 선택, 서명, 비밀번호" to ShowcaseIcons.Pen),
-    "미디어" to ("사진 뷰어, 전후 비교, 온보딩, 빈 화면" to ShowcaseIcons.Download),
+    "기본" to ("버튼, 검색, 휠 피커, 캐러셀, 카드 더미, 알림" to KIcons.Home),
+    "입력" to ("입력란 모양, 인증번호, 태그, 색 선택, 서명, 비밀번호" to KIcons.Edit),
+    "미디어" to ("사진 뷰어, 전후 비교, 온보딩, 빈 화면" to KIcons.Download),
     "효과" to ("물결 왜곡, 파티클, 뒤집는 카드, 액체 버튼, 홀로그램" to ShowcaseIcons.Sparkle),
-    "버튼·칩·카드" to ("버튼 변형과 색 역할, 칩, 카드, 배지와 아바타" to ShowcaseIcons.Plus),
+    "버튼·칩·카드" to ("버튼 변형과 색 역할, 칩, 카드, 배지와 아바타" to KIcons.Plus),
     "내비게이션·오버레이" to ("앱 바, 탭, 메뉴, 다이얼로그와 시트, 검색 화면, 서랍" to ShowcaseIcons.Layers),
-    "피드백·로딩" to ("토스트, 스낵바, 배너, 스켈레톤, 진행 막대, 햅틱" to ShowcaseIcons.Bell),
-    "데이터·도메인" to ("대시보드, 배송 추적, 결제 단계, 요금제, 송금, 히트맵" to ShowcaseIcons.Grid),
-    "소셜·모션" to ("채팅, 스토리, 연락처 색인, 지도 핀, 마이크로 인터랙션" to ShowcaseIcons.Message),
+    "피드백·로딩" to ("토스트, 스낵바, 배너, 스켈레톤, 진행 막대, 햅틱" to KIcons.Bell),
+    "데이터·도메인" to ("대시보드, 배송 추적, 결제 단계, 요금제, 송금, 히트맵" to KIcons.Grid),
+    "소셜·모션" to ("채팅, 스토리, 연락처 색인, 지도 핀, 마이크로 인터랙션" to KIcons.Message),
 )
 
 private val TILE_ACCENTS = listOf(
@@ -198,7 +199,7 @@ private fun FeatureEntry(entry: HubEntry, modifier: Modifier, onClick: () -> Uni
                 Label(entry.title, 19, FontWeight.Bold)
                 Label(entry.summary, 13, color = LocalKineticaContentColor.current.copy(alpha = 0.75f))
             }
-            ShowcaseIcon(ShowcaseIcons.Chevron, 20.dp, LocalKineticaContentColor.current.copy(alpha = 0.6f))
+            ShowcaseIcon(KIcons.ChevronForward, 20.dp, LocalKineticaContentColor.current.copy(alpha = 0.6f))
         }
     }
 }

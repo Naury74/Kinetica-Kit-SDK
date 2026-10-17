@@ -69,6 +69,7 @@ import com.naury.kinetica.serialization.FileSceneRepository
 import com.naury.kinetica.serialization.LoadResult
 import com.naury.kinetica.serialization.SaveResult
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KToastHost
 import com.naury.kinetica.ui.SurfaceStyles
@@ -131,10 +132,10 @@ internal fun StudioDemo(onBack: () -> Unit, model: StudioDemoModel = viewModel()
                         StudioToolbarButton("미리보기", { previewing = true }, icon = ShowcaseIcons.Expand)
                         StudioToolbarButton("사진", {
                             photo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        }, icon = ShowcaseIcons.Plus)
-                        StudioToolbarButton("저장", model::save, icon = ShowcaseIcons.Download)
+                        }, icon = KIcons.Plus)
+                        StudioToolbarButton("저장", model::save, icon = KIcons.Download)
                     }
-                    StudioToolbarButton("더 보기", { more = true }, icon = ShowcaseIcons.Grid)
+                    StudioToolbarButton("더 보기", { more = true }, icon = KIcons.Grid)
                 },
             )
         }
@@ -192,7 +193,7 @@ private fun PreviewBack(color: Color, onClick: () -> Unit) {
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ShowcaseIcon(ShowcaseIcons.Back, 18.dp, color, Modifier.padding(end = 6.dp))
+        ShowcaseIcon(KIcons.ChevronBack, 18.dp, color, Modifier.padding(end = 6.dp))
         Text("편집으로 돌아가기", color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
@@ -219,8 +220,8 @@ private fun MoreRow(label: String, icon: ImageVector, onClick: () -> Unit) {
 private fun studioMoreActions(model: StudioDemoModel, export: (mockup: Boolean) -> Unit): List<Triple<String, ImageVector, () -> Unit>> =
     listOf(
         Triple("예제 장면 열기", ShowcaseIcons.Sparkle) { model.open(DemoScene.create(), "예제 장면을 열었어요") },
-        Triple("대시보드 예제 열기", ShowcaseIcons.Grid) { model.open(DashboardScene.create(), "대시보드 예제를 열었어요") },
-        Triple("PNG로 내보내기", ShowcaseIcons.Download) { export(false) },
+        Triple("대시보드 예제 열기", KIcons.Grid) { model.open(DashboardScene.create(), "대시보드 예제를 열었어요") },
+        Triple("PNG로 내보내기", KIcons.Download) { export(false) },
         Triple("휴대폰 목업으로 내보내기", ShowcaseIcons.Phone) { export(true) },
     )
 

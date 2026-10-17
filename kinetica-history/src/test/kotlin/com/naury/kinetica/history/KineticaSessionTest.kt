@@ -5,6 +5,7 @@ import com.naury.kinetica.core.command.CommandError
 import com.naury.kinetica.core.command.CommandResult
 import com.naury.kinetica.core.command.SceneCommand
 import com.naury.kinetica.core.geometry.Transform2D
+import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.NodeStyle
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.ViolationCode
@@ -103,6 +104,21 @@ class KineticaSessionTest {
 
         assertThat(session.history.state.value.canRedo).isFalse()
         assertThat(session.history.redo()).isFalse()
+    }
+
+    @Test
+    fun `토큰 색 바꾸기도 실행 취소와 다시 실행이 된다`() {
+        val session = open()
+        val before = session.document.value
+
+        session.commands.execute(SceneCommand.SetToken("brand", ArgbColor(0xFF3B6CF6.toInt())))
+        val after = session.document.value
+        assertThat(after.tokens).containsKey("brand")
+
+        assertThat(session.history.undo()).isTrue()
+        assertThat(session.document.value).isEqualTo(before)
+        assertThat(session.history.redo()).isTrue()
+        assertThat(session.document.value).isEqualTo(after)
     }
 
     @Test

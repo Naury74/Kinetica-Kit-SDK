@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KIndication
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KTone
@@ -100,7 +101,7 @@ internal fun DemoTopBar(
                 Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (onBack != null) {
                         KIconButton(
-                            ShowcaseIcons.Back,
+                            KIcons.ChevronBack,
                             "뒤로",
                             onBack,
                             variant = KVariant.Text,

@@ -43,6 +43,7 @@ import com.naury.kinetica.ui.KChipGroup
 import com.naury.kinetica.ui.KEmptyIcon
 import com.naury.kinetica.ui.KEmptyIconKind
 import com.naury.kinetica.ui.KEmptyState
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KImageViewer
 import com.naury.kinetica.ui.KImageViewerState
 import com.naury.kinetica.ui.KOnboarding
@@ -129,9 +130,9 @@ internal fun OnboardingAgain(onFinish: () -> Unit) {
     StatusBarIcons(darkBackground = true)
     KOnboarding(
         listOf(
-            OnboardingPage("사진을 한곳에", "기기와 클라우드에 흩어진 사진을 모아 봅니다.", Color(0xFF3B4BD8), art = { OnboardingArt(ShowcaseIcons.Grid) }),
+            OnboardingPage("사진을 한곳에", "기기와 클라우드에 흩어진 사진을 모아 봅니다.", Color(0xFF3B4BD8), art = { OnboardingArt(KIcons.Grid) }),
             OnboardingPage("함께 보기", "앨범을 가족, 친구와 나누고 같이 꾸밉니다.", Color(0xFFD8456B), art = { OnboardingArt(ShowcaseIcons.Cloud) }),
-            OnboardingPage("추억 알림", "작년 오늘 찍은 사진을 아침마다 알려 드려요.", Color(0xFF16896B), art = { OnboardingArt(ShowcaseIcons.Bell) }),
+            OnboardingPage("추억 알림", "작년 오늘 찍은 사진을 아침마다 알려 드려요.", Color(0xFF16896B), art = { OnboardingArt(KIcons.Bell) }),
         ),
         onFinish = onFinish,
         modifier = Modifier.fillMaxSize(),
@@ -171,7 +172,7 @@ private fun DrawScope.drawRidge(peaks: List<Float>, color: Color) {
 }
 
 /** 그라디언트로 그린 가짜 사진. 세로로 긴 3:4 비율이라 뷰어에서 위아래 여백 없이 찬다. */
-private class GradientPhoto(private val colors: List<Color>) : Painter() {
+internal class GradientPhoto(private val colors: List<Color>) : Painter() {
     override val intrinsicSize: Size = Size(1200f, 1600f)
 
     override fun DrawScope.onDraw() {

@@ -159,6 +159,27 @@ Box(Modifier.fillMaxWidth().height(240.dp)) {
 | 탭 바와 레일 아이콘 | 22~24dp, 이름과 간격 2~4dp |
 | 안쪽 모서리 | 바깥 반지름에서 안쪽 여백을 뺀 값(최소 4dp). 예: 22dp 메뉴 안에 6dp 여백으로 놓인 항목은 16dp |
 
+### 아이콘 `KIcons`
+
+앱 화면에서 자주 쓰는 선 아이콘 63개를 `ImageVector`로 제공한다. 24 격자에 1.8 굵기 선으로 그렸고 기본 크기는 24dp다. 색은 쓰는 쪽의 글자 색이나 `tint`를 따르므로 `KIconButton`, `KButton`의 `icon`, `KListLeading.Icon`, `Icon`에 그대로 넘긴다. 방향이 있는 `ChevronBack`, `ChevronForward`, `ArrowBack`, `ArrowForward`, `Send`는 RTL에서 좌우가 뒤집힌다. 아이콘은 처음 읽을 때 한 번만 만든다. Material Icons를 함께 써도 된다.
+
+| 묶음 | 아이콘 |
+| --- | --- |
+| 기본 동작 | `Home`, `Search`, `Settings`, `Plus`, `Minus`, `Close`, `Check`, `More`, `MoreVertical`, `Menu`, `Refresh`, `Filter` |
+| 방향 | `ChevronBack`, `ChevronForward`, `ChevronUp`, `ChevronDown`, `ArrowBack`, `ArrowForward`, `ArrowUp`, `ArrowDown` |
+| 편집과 공유 | `Share`, `Edit`, `Trash`, `Copy`, `Link`, `Download`, `Upload`, `Send`, `Bookmark`, `Heart`, `Star` |
+| 상태 | `Eye`, `EyeOff`, `Lock`, `Bell`, `Info`, `Sun`, `Moon` |
+| 소통 | `Mail`, `Message`, `Inbox`, `Archive`, `Call`, `CallEnd`, `Dialpad`, `Mic`, `MicOff`, `Video`, `VideoOff`, `Speaker` |
+| 미디어와 일정 | `Camera`, `Image`, `File`, `Calendar`, `Clock`, `Location` |
+| 사람과 쇼핑 | `Person`, `Users`, `Cart`, `Bag`, `Card`, `Grid`, `Chart` |
+
+```kotlin
+KIconButton(KIcons.Share, "공유", onClick = ::share)
+KButton("장바구니에 담기", onClick = ::add, icon = KIcons.Cart)
+```
+
+이름과 아이콘 짝 목록은 `KIcons.all`에 있다. 아이콘 고르기 화면을 만들 때 쓴다.
+
 ## 변형과 톤
 
 버튼, 아이콘 버튼, 칩, 카드, 누를 수 있는 `KSurface`는 모양(`variant: KVariant`)과 색 역할(`tone: KTone`)을 따로 고른다. 둘 다 표면 스타일과 독립이라 글래스 표면에서 `Outlined` 버튼을 쓰거나 단색 표면에서 `Glass` 카드를 써도 된다.
@@ -339,7 +360,7 @@ KQuantityStepper(count, { count = it }, style = KQuantityStyle.Collapsible)
 | `KTagInput` | 쉼표나 완료 키로 칩을 만든다. 같은 태그는 다시 넣지 않고 그 칩을 흔든다. 빈 입력란에서 지우기를 두 번 누르면 마지막 칩이 지워진다. 추천 목록은 아래 내용을 밀어내지 않고 겹쳐 뜨며, 아래 공간이 모자라면 입력란 위로 뜬다 | `suggestions`, `imeAction`, `keyboardActions`, `fieldModifier` |
 | `KPasswordField` | 눈 아이콘으로 보이거나 숨긴다. 강도 막대가 약함, 보통, 강함 색으로 차오르고 조건 체크리스트를 보여 줄 수 있다. 강도만 필요하면 `passwordStrength(password)` | `showStrength`, `showChecklist`, `imeAction`, `fieldModifier` |
 | `KAmountInput` | 키패드로만 입력하는 금액 입력. 통화 형식(천 단위, 기호 위치, 소수 자릿수)을 따르고 빠른 금액 칩(`KAmountPreset`)을 둔다. 값은 숫자 문자열이고 `KAmountDefaults.toBigDecimal`로 바꾼다 | `currency`, `presets`, `maxDigits` |
-| `KKeypad`, `KPinDots` | 숫자 키패드(`KKeypadMode.Pin`, `Numeric`, `Decimal`)와 PIN 자리 점. 지우기 키를 길게 누르면 `onClear`가 불리고, PIN 모드 아래 줄 시작 칸은 생체 인증 버튼 자리(`extraKey`)다 | `mode`, `onClear`, `extraKey` |
+| `KKeypad`, `KPinDots` | 숫자 키패드(`KKeypadMode.Pin`, `Numeric`, `Decimal`, `Phone`)와 PIN 자리 점. 지우기 키를 길게 누르면 `onClear`가 불리고, PIN 모드 아래 줄 시작 칸은 생체 인증 버튼 자리(`extraKey`)다. `Phone`은 `*`, `0`, `#` 줄 아래 가운데에 통화 버튼 자리(`extraKey`)를 두고, 0을 길게 누르면 `+`를 넘긴다 | `mode`, `onClear`, `extraKey` |
 | `KColorPicker` | 색조 고리와 채도·명도 사각형, 투명도 슬라이더, HEX 입력란, 최근 색과 프리셋 칩이 있는 색 선택기. 색 바퀴는 최대 320dp다. 키보드로는 Tab으로 고리, 사각형, 슬라이더를 오가며 방향키로 조절한다 | `presets`, `showAlpha`, `showHexInput` |
 | `KSignaturePad` | 속도에 따라 굵기가 바뀌는 서명란. 되돌리기와 지우기 버튼이 있고 `state.toImageBitmap()`이나 `state.toSvg()`로 내보낸다 | `state = rememberSignaturePadState()`, `inkColor`, `showControls` |
 
@@ -392,7 +413,7 @@ XML 화면의 `NestedScrollView`, `ViewPager2`, `RecyclerView` 안에 `ComposeVi
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `KListItem` | 1~3줄 목록 행. 끝쪽이 스위치, 체크박스, 라디오면 행 전체가 그 컨트롤 하나가 된다 | `supporting`, `overline`, `leading`(`KListLeading.Icon`, `Avatar`, `Thumbnail`, `Custom`), `trailing`(`KListTrailing.Value`, `Switch`, `Checkbox`, `Radio`, `Disclosure`, `Custom`), `onClick` |
+| `KListItem` | 1~3줄 목록 행. 끝쪽이 스위치, 체크박스, 라디오면 행 전체가 그 컨트롤 하나가 된다 | `supporting`, `overline`, `leading`(`KListLeading.Icon`, `Avatar`, `Thumbnail`, `Custom`), `trailing`(`KListTrailing.Value`(글자 색 `color`), `Switch`, `Checkbox`, `Radio`, `Disclosure`, `Custom`), `onClick` |
 | `KListSection` | 행 묶음. `InsetGrouped`는 표면 하나에 행을 담아 첫 행 위와 끝 행 아래만 둥글게 하고 터치 피드백도 그 모서리로 자른다. `Plain`은 표면 없이 놓는다. 행 사이 구분선은 행 글자가 시작하는 곳부터 긋는다 | `header`, `footer`, `style` |
 | `LazyListScope.kListSection` | 행이 많을 때 `LazyColumn` 안에서 쓰는 섹션. 머리글, 행, 꼬리글이 각각 지연 항목이 된다 | `items`, `key`, `sectionKey` |
 | `KSwitchRow`, `KCheckboxRow`, `KRadioRow`, `KValueRow`, `KDisclosureRow` | 설정 화면 행 프리셋. `KListItem` 위에 얹은 것이라 섹션 안에서 구분선과 모서리가 맞는다 | `subtitle`, `leading` |
@@ -421,7 +442,15 @@ LazyColumn(state = listState) {
 }
 ```
 
-`kListSection`은 행마다 표면을 따로 그리되 이어지는 위아래 가장자리를 잘라 `KListSection`과 같은 모양을 만든다. 행 사이가 붙어야 하므로 그 `LazyColumn`에는 `verticalArrangement` 간격을 주지 않는다.
+`kListSection`은 행마다 표면을 따로 그리되 이어지는 위아래 가장자리를 잘라 `KListSection`과 같은 모양을 만든다. 행 사이가 붙어야 하므로 그 `LazyColumn`에는 `verticalArrangement` 간격을 주지 않는다. `Arrangement.spacedBy(12.dp)`처럼 간격을 주면 행마다 표면이 끊겨 사이로 바탕이 비친다. 섹션 사이나 다른 카드 사이 여백이 필요하면 그 자리에 `item { Spacer(Modifier.height(12.dp)) }`를 넣는다.
+
+```kotlin
+LazyColumn(contentPadding = PaddingValues(16.dp)) { // verticalArrangement 간격은 주지 않는다
+    item { SummaryCard() }
+    item { Spacer(Modifier.height(16.dp)) }
+    kListSection(mails, key = { it.id }, header = "받은편지함") { mail -> KListItem(mail.from) }
+}
+```
 `KListSection`은 안의 행을 한꺼번에 구성하므로 행이 수십 개를 넘으면 `kListSection`을 쓴다.
 
 ### 카드
@@ -448,15 +477,15 @@ KPageIndicator(pager)
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `KAvatar` | 사람 한 명의 아바타. 데이터는 `KAvatar(name, color, image)` 값으로 넘긴다 | `size`(`KAvatarSize`, 5단계), `shape`, `status`(`KAvatarStatus.Online` 등) |
+| `KAvatar` | 사람 한 명의 아바타. 데이터는 `KAvatarData(name, color, image)` 값으로 넘긴다 | `size`(`KAvatarSize`, 5단계), `shape`, `status`(`KAvatarStatus.Online` 등) |
 | `AvatarStack` | 겹친 아바타와 "+N" | `max`, `size` |
 | `Modifier.kBadge` | 다른 요소의 오른쪽 위(RTL이면 왼쪽 위)에 겹치는 배지. 숫자가 바뀌면 톡 튀고, 99를 넘으면 `99+` | `count`, `dot`, `max` |
 | `KBadge` | 줄 안에 놓는 배지. `KBadge(count)`는 숫자, `KBadge("NEW")`는 글자 배지다 | `tone`, `variant` |
 | `KStatusBadge` | 상태 배지 | `status`(`KStatus`), `dot` |
 
 ```kotlin
-KAvatar(KAvatar("민지"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
-AvatarStack(listOf(KAvatar("민지"), KAvatar("준호"), KAvatar("서연")), max = 3)
+KAvatar(KAvatarData("민지"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
+AvatarStack(listOf(KAvatarData("민지"), KAvatarData("준호"), KAvatarData("서연")), max = 3)
 KIconButton(Icons.Rounded.Bell, "알림", onClick = ::openInbox, modifier = Modifier.kBadge(unread))
 KStatusBadge("배송 중", KStatus.Info)
 ```
@@ -497,7 +526,7 @@ KTopTabs(listOf(KTab("추천"), KTab("인기"), KTab("새 글", badge = 3)), pag
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
 | `PushNavigation` | 화면 스택. 기본은 iOS식 push 전환이라 새 화면이 옆에서 들어오고 아래 화면은 조금 물러나며 어두워진다. `transition`으로 [화면 이동 전환](#화면-이동-전환)을 고른다. 왼쪽 가장자리에서 끌거나 예측 뒤로 가기 제스처를 하면 손가락을 따라 전환이 되감긴다 | `stack`, `onBack`, `swipeBack`, `transition`, `paneTitle` |
-| `KExpandHost` + `Modifier.expandSource` | App Store 투데이 탭처럼 카드가 제자리에서 화면 가득 커지며 상세 화면이 된다. 배경은 흐려지고, 상세를 아래로 끌거나 예측 뒤로 가기 제스처를 하면 작아지면서 둥글어지며, 놓으면 원래 카드 위치로 돌아간다. `transform`으로 목록 행이나 플로팅 버튼에서 여는 모습을 고른다 | `rememberKExpandState()`, `state.expand(key)`, `cornerRadius`, `transform` |
+| `KExpandHost` + `Modifier.expandSource` | App Store 투데이 탭처럼 카드가 제자리에서 화면 가득 커지며 상세 화면이 된다. 배경은 흐려지고, 상세를 아래로 끌거나 예측 뒤로 가기 제스처를 하면 작아지면서 둥글어지며, 놓으면 원래 카드 위치로 돌아간다. `transform`으로 목록 행이나 플로팅 버튼에서 여는 모습을 고른다 | `rememberKExpandState()`, `state.expand(key)`, `cornerRadius`(기본은 디자인 언어의 card 모서리), `transform` |
 | `KDrawer` | 가장자리에서 끌어 여는 서랍. `KDrawerMode.Push`(기본)는 뒤 화면을 밀어내며 작아지고 둥글어지게 하고, `Modal`은 뒤 화면을 그 자리에서 어둡게 덮는다 | `drawerContent`, `state = rememberKDrawerState()`, `mode` |
 | `KSearchView` | 누르면 캡슐이 커져 검색 화면이 된다. 좁은 창은 화면 전체, 600dp 이상은 캡슐 자리에서 펼쳐지는 판(최대 720dp)이다. 비어 있으면 최근 검색, 글자가 있으면 제안을 보여 준다. 제안 끝의 화살표는 검색어 칸에만 채운다 | `suggestions`, `recent`, `onRemoveRecent`, `onClearRecent` |
 | `KStepIndicator` | 단계 표시. `KStepStyle.Numbered`(번호 원과 이름), `Dots`(지금 단계 점이 캡슐로 늘어남), `Bar`(나눈 막대와 'n/전체') | `steps`, `current`, `onStepClick` |
@@ -577,9 +606,13 @@ PushNavigation(
 KTransitionContent(tab, transition = KTransitions.TabSlide, isForward = { from, to -> to > from }) { page -> TabPage(page) }
 ```
 
+전환도 디자인 언어를 따른다. `SheetStack`은 sheet 모서리, `CardStack`과 `KExpandHost`의 카드는 card 모서리, `KFullScreenModal`을 끌 때 둥글어지는
+모서리와 그래버는 sheet 모서리를 쓰고, 기본 스프링은 `KineticaMotion`에 맞춘다. 기본 디자인 언어(`Cupertino`)에서는 디자인 언어가 생기기 전과
+같은 모양(스택 전환 20dp, 전체 화면 모달 28dp)이다. 시간을 직접 정한 전환과 `KNavTransitions`는 디자인 언어와 상관없이 같다.
+
 직접 만들려면 `KScreenTransition`을 상속해 `enter(frame, progress)`와 `exit(frame, progress)`에서 `KTransitionFrame`의 이동, 배율, 회전,
 불투명도와 `dim`, `cornerRadius`, `blurRadius`를 정하거나 `clipTo`, `reveal`로 자른다. 진행률이 1일 때 들어온 화면이, 0일 때 가려질 화면이
-원래 모습이어야 하고, 가로 값에는 `frame.endSign`을 곱해야 RTL에서 뒤집힌다.
+원래 모습이어야 하고, 가로 값에는 `frame.endSign`을 곱해야 RTL에서 뒤집힌다. 디자인 언어의 모서리 크기는 `frame.shapes`에서 읽는다.
 
 Navigation Compose의 `NavHost`나 Compose `AnimatedContent`에는 `KNavTransitions`의 묶음을 쓴다. `Push`, `Slide`, `SlideUp`, `SheetStack`,
 `Zoom`, `Fade`, `FadeThrough`, `SharedAxisX`, `SharedAxisY`, `SharedAxisZ`, `None`이 있다. Compose 기본 전환으로 만들었으므로
@@ -692,7 +725,7 @@ KIconButton(Icons.Rounded.Info, "도움말", onClick = {}, modifier = Modifier.t
 | `KToastHost` + `rememberKToastState()` | 위에서 미끄러져 내려오는 토스트. `show`는 suspend 함수이고, `tone`을 주면 상태 아이콘을 단다(`Positive`는 성공, `Destructive`는 오류, `Accent`는 정보) | `state.show(text, durationMs, tone)` |
 | `KToaster` + `rememberKToasterState()` | 종류별 아이콘이 붙은 토스트를 위나 아래에 쌓는다. 새 토스트가 앞에 오고 뒤 토스트는 작아지며 끝만 비친다. 쌓인 토스트를 누르면 펼치고, 펼친 동안에는 사라지기 타이머가 멈춘다. 옆으로 쓸면 닫힌다 | `position`(`KToastPosition.Top`, `Bottom`), `maxVisible`(기본 3, 넘으면 앞의 것이 닫힐 때까지 기다림), `richColors`(바탕에 종류 색을 옅게) |
 | `KSnackbarHost` + `rememberKSnackbarState()` | 아래에서 떠오르는 스낵바. 동작 버튼과 남은 시간을 보여 주는 링(닫기 버튼)이 있고 옆으로 쓸어 닫는다. 문구는 두 줄까지, 버튼 글자가 길거나 문구 자리가 좁으면 버튼을 아래 줄 끝으로 내린다. 결과를 `KSnackbarResult.Action`이나 `Dismissed`로 돌려준다 | `state.show(message, actionLabel, durationMs, status)`, `bottomOffset` |
-| `KIslandHost` + `rememberKIslandState()` | 다이내믹 아일랜드식 알림. 작은 캡슐이 부풀어 알림이 되고, `compactText`가 있으면 좁은 캡슐(예: 타이머)로 시작해 누르면 펼쳐진다. 위로 쓸어 닫는다. 결과는 `KIslandResult.Clicked`, `Dismissed`, `TimedOut` | `state.show(KIslandContent(…))`, `alwaysVisible` |
+| `KIslandHost` + `rememberKIslandState()` | 다이내믹 아일랜드식 알림. 작은 캡슐이 부풀어 알림이 되고, `compactText`가 있으면 좁은 캡슐(예: 타이머)로 시작해 누르면 펼쳐진다. 위로 쓸어 닫는다. 결과는 `KIslandResult.Clicked`, `Dismissed`, `TimedOut`. 통화 시간처럼 보이는 알림의 내용만 바꿀 때는 코루틴 없이 `state.update(…)`를 부른다(보여 주는 알림이 없으면 `false`) | `state.show(KIslandContent(…))`, `state.update(…)`, `alwaysVisible` |
 | `KBanner` | 화면 위쪽에 머무는 배너. 저절로 사라지지 않고 레이아웃 안에 자리를 차지하며, `visible`이 바뀌면 높이가 펼쳐지고 접힌다 | `status`, `title`, `actions: List<KBannerAction>`, `onDismiss` |
 | `KAlert` | 본문 안 알림 상자. 제목은 TalkBack에서 제목으로, 아이콘은 상태 이름으로 읽힌다 | `variant`(`KVariant.Tonal` 기본, `Outlined`, `Filled`, `Glass`), `action` |
 | `KNoticeBar` | 한 줄 공지 막대. 글이 막대보다 길면 글의 방향으로 흘러가고 끝쪽 가장자리를 흐리게 지운다. 화면 밖에서는 멈춘다 | `scroll`(`false`거나 '애니메이션 삭제'면 줄을 바꿔 전부 보여 줌), `velocity` |
@@ -885,16 +918,16 @@ Box(Modifier.fillMaxSize()) {
 | `KStoryViewer` | 전체 화면 스토리 뷰어. 분할 진행 막대, 시작 쪽 3분의 1을 누르면 이전, 나머지는 다음(RTL은 반대), 길게 누르면 멈춤, 아래로 끌거나 예측 뒤로 가기로 닫기 | `rememberKStoryViewerState(pageCount)`, `durationMs`, `header`, `footer` |
 | `KAttachmentChip` | 첨부 파일 한 개. 올리는 중이면 바탕이 진행률만큼 차고 끝 취소 버튼 둘레에 진행 링이 돈다. 실패하면 다시 시도 버튼으로 바뀐다. 긴 이름은 가운데를 줄여 확장자를 남긴다 | `status`(`KAttachmentStatus.Ready`, `Uploading`, `Failed`), `progress`, `onRemove`, `onRetry` |
 | `KFileDropZone` | 점선 테두리의 파일 영역. 누르면 `onClick`(파일 선택기), `onDrop`을 주면 분할 화면이나 데스크톱 모드에서 다른 앱 파일을 끌어 놓을 수 있다. 끌어 온 파일이 위에 있으면 테두리가 강조색 실선이 된다 | `onDrop`, `mimeTypes` |
-| `KMapPin` | 지도 핀. `label`이면 가격 태그, `count`가 2 이상이면 묶음 핀, 그 밖은 물방울 핀. 처음 나타날 때 떨어지며 튀고 고르면 커진다. 아래 가운데가 지도 좌표다 | `label`, `count`, `selected`, `dropIn` |
+| `KMapPin` | 지도 핀. `label`이면 가격 태그, `count`가 2 이상이면 묶음 핀, 그 밖은 물방울 핀. 처음 나타날 때 떨어지며 튀고 고르면 커진다. 아래 가운데가 지도 좌표다. 지도와 같은 크기의 `Box` 안에서 `Modifier.mapPinAnchor { 좌표 }`를 붙이면 꼬리 끝이 그 좌표에 놓인다 | `label`, `count`, `selected`, `dropIn` |
 
 ```kotlin
 KChatBubble("내일 몇 시에 볼까요?", KChatSide.Received, position = chatGroupPosition(sameAsPrevious = false, sameAsNext = true))
 KChatBubble("2시 어때요?", KChatSide.Sent, time = "오후 2:14", status = KChatStatus.Read)
 KTypingIndicator()
 KChatInput(draft, { draft = it }, onSend = { draft = "" }, onAttach = ::pickFile, onVoice = ::record)
-KStoryRing(seen = false, onClick = { story = true }) { KAvatar(KAvatar("민지"), size = KAvatarSize.Large) }
+KStoryRing(seen = false, onClick = { story = true }) { KAvatar(KAvatarData("민지"), size = KAvatarSize.Large) }
 KAttachmentChip("견적서_최종.pdf", detail = "2.4MB", status = KAttachmentStatus.Uploading, progress = 0.4f, onRemove = {})
-KMapPin(label = "₩12,000", selected = true)
+KMapPin(label = "₩12,000", selected = true, modifier = Modifier.mapPinAnchor { projection.toScreen(store.latLng) })
 ```
 
 구글 지도처럼 SurfaceView로 그리는 지도 위에서는 글래스가 지도를 블러로 비추지 못하므로 `KMapPin`에 단색 표면을 쓴다.
@@ -1176,9 +1209,11 @@ bottomBar = {
 
 ## 쇼케이스에서 확인하기
 
-`sample-showcase` 첫 화면은 UI 키트를 가장 크게 두고, 그 아래에 고급 기능(대시보드 보드, 화면 만들기, 서버 화면, XML 화면)을 작게 둔다. 표면 종류와 프리셋, 밝기는 모든 화면 상단 바의 모양 버튼이 여는 시트 한 곳에서 고르고, 모든 데모가 그 값을 따른다. UI 키트를 누르면 분류별 허브가 열린다.
+`sample-showcase` 첫 화면은 UI 키트를 가장 크게 두고, 그 아래에 고급 기능(대시보드 보드, 화면 만들기, 서버 화면, XML 화면)을 작게 둔다. 표면 종류와 프리셋, 밝기, 형태(디자인 언어)는 모든 화면 상단 바의 모양 버튼이 여는 시트 한 곳에서 고르고, 모든 데모가 그 값을 따른다. UI 키트를 누르면 분류별 허브가 열린다.
 
-- **표면과 디자인**: 같은 컴포넌트를 글래스, 단색, 톤 프리셋마다 나란히 그려 비교한다. 프리셋을 누르면 앱 전체 모양이 그 프리셋으로 바뀐다. 아래에서 다이얼로그, 바텀 시트, 토스트, 탭 바, 컨트롤, 당겨서 새로 고침을 직접 눌러 본다.
-- **앱 화면 예**: 컴포넌트를 조합해 만든 실제 앱 같은 화면이다.
+- **표면과 디자인**: 같은 컴포넌트를 글래스, 단색, 톤 프리셋마다 나란히 그려 비교하고, '형태' 줄에서는 지금 표면 그대로 디자인 언어 6종을 나란히 그린다. 프리셋이나 형태의 적용 버튼을 누르면 앱 전체 모양이 그 값으로 바뀐다. 아래에서 다이얼로그, 바텀 시트, 토스트, 탭 바, 컨트롤, 당겨서 새로 고침을 직접 눌러 본다.
+- **앱 화면 예**: 컴포넌트를 조합해 만든 실제 앱 같은 화면 14개다. 형태는 늘 모양 설정을 따르고, 표면은 기본으로 설정을 따르되 목록 위의 '앱 추천'을 고르면 앱마다 추천하는 표면을 쓴다. 칸 오른쪽 위에 앱의 추천 표면을 적어 두었다. 사진이 주인공인 소셜 피드는 표면이 화면 설계의 일부라 단색으로 고정했다.
 - **컴포넌트**: 기본, 입력, 미디어, 효과, 버튼·칩·카드, 내비게이션·오버레이, 피드백·로딩, 데이터·도메인, 소셜·모션 탭에 이 문서의 컴포넌트가 모두 있다. 허브에서 종류를 누르면 그 탭으로 열린다.
-- **모션과 화면 전환**: 모션 효과(효과 수정자와 [33 모션 효과](33-effects.md)의 프리셋), 화면 이동(카드가 커지는 상세 화면, push 전환, 가장자리에서 끌어 뒤로 가기), 장면 전환.
+- **모션과 화면 전환**: 모션 효과(효과 수정자와 [33 모션 효과](33-effects.md)의 프리셋), 화면 이동, 장면 전환.
+  - 화면 이동: 전환 22종을 칩으로 골라 목록에서 상세, 더 깊은 화면까지 쌓아 본다. 쇼핑 상세(Push, Parallax), 설정 하위 화면(CardStack), 새 글(SheetStack 두 겹), 전체 화면 다이얼로그(`cover(Bottom)`), 온보딩에서 홈(Uncover), 앱 열기(Zoom), 스토리(Cube), 카드(Flip), 보정 전후(Wipe), 미디어(BlurDissolve), 누른 버튼에서 퍼지는 테마 전환(원 reveal)과 축하 화면(별 reveal) 예가 있다. 그 아래에서 `KTransitionContent` 탭 전환(TabSlide, SharedAxisX, FadeThrough)과 컨테이너 변환(Card, `listRow`, `fab`, 사진에서 `KImageViewer`)을 본다.
+  - 장면 전환: 홈, 상품, 결제 세 화면 번들을 `RemoteKineticaPlayer(bundle, sceneId)`로 재생하며 전환 14종과 방향을 고른다. 뒤로 가기는 `forward = false`다. 중간 프레임 탭에서는 `SceneTransition(from, to, spec, progress)`를 슬라이더로 멈춰 본다.

@@ -52,12 +52,14 @@ import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.KAdaptiveDefaults
 import com.naury.kinetica.ui.KAdaptiveNavigation
 import com.naury.kinetica.ui.KAvatar
+import com.naury.kinetica.ui.KAvatarData
 import com.naury.kinetica.ui.KAvatarSize
 import com.naury.kinetica.ui.KButton
 import com.naury.kinetica.ui.KButtonSize
 import com.naury.kinetica.ui.KChatInput
 import com.naury.kinetica.ui.KIconButton
 import com.naury.kinetica.ui.KIconToggleButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KProfileHeader
 import com.naury.kinetica.ui.KProfileStat
 import com.naury.kinetica.ui.KSearchBar
@@ -92,7 +94,7 @@ internal fun FeedApp(onBack: () -> Unit) {
                 FEED_TABS,
                 tab,
                 { tab = it },
-                railHeader = { KIconButton(ShowcaseIcons.Back, "뒤로", onBack, variant = KVariant.Text, tone = KTone.Neutral) },
+                railHeader = { KIconButton(KIcons.ChevronBack, "뒤로", onBack, variant = KVariant.Text, tone = KTone.Neutral) },
             ) { padding ->
                 when (tab) {
                     0 -> HomeFeed(padding, liked, saved, comments, onBack)
@@ -158,11 +160,11 @@ private fun FeedHeader(onBack: () -> Unit) {
     ) {
         // 넓은 화면에서는 레일 맨 위에 뒤로 버튼이 있으므로 여기서는 뺀다.
         if (LocalConfiguration.current.screenWidthDp.dp < KAdaptiveDefaults.TwoPaneMinWidth) {
-            KIconButton(ShowcaseIcons.Back, "뒤로", onBack, variant = KVariant.Text, tone = KTone.Neutral)
+            KIconButton(KIcons.ChevronBack, "뒤로", onBack, variant = KVariant.Text, tone = KTone.Neutral)
         }
         Label("모먼트", 24, FontWeight.Black, Modifier.weight(1f).padding(start = 4.dp))
-        KIconButton(AppIcons.Heart, "알림", {}, variant = KVariant.Text, tone = KTone.Neutral)
-        KIconButton(ShowcaseIcons.Send, "메시지", {}, variant = KVariant.Text, tone = KTone.Neutral)
+        KIconButton(KIcons.Heart, "알림", {}, variant = KVariant.Text, tone = KTone.Neutral)
+        KIconButton(KIcons.Send, "메시지", {}, variant = KVariant.Text, tone = KTone.Neutral)
     }
 }
 
@@ -172,7 +174,7 @@ private fun StoryRow(seen: SnapshotStateMap<Int, Int>, onOpen: (Int) -> Unit) {
         items(PEOPLE.size) { index ->
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp)) {
                 KStoryRing(seen[index] == 1, onClick = { onOpen(index) }, onClickLabel = "스토리 보기") {
-                    KAvatar(KAvatar(PEOPLE[index], artPalette(index + 1)[0]), size = KAvatarSize.Large)
+                    KAvatar(KAvatarData(PEOPLE[index], artPalette(index + 1)[0]), size = KAvatarSize.Large)
                 }
                 Label(if (index == 0) "내 스토리" else PEOPLE[index], 12, modifier = Modifier.padding(top = 6.dp))
             }
@@ -189,7 +191,7 @@ private fun Stories(open: Boolean, onClose: () -> Unit, story: com.naury.kinetic
         story,
         header = { page ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                KAvatar(KAvatar(PEOPLE[page], artPalette(page + 1)[0]), size = KAvatarSize.Small)
+                KAvatar(KAvatarData(PEOPLE[page], artPalette(page + 1)[0]), size = KAvatarSize.Small)
                 Label(PEOPLE[page], 14, FontWeight.SemiBold, Modifier.padding(start = 10.dp), color = Color.White)
                 Label("${page * 2 + 1}시간", 13, modifier = Modifier.padding(start = 8.dp), color = Color.White.copy(alpha = 0.7f))
             }
@@ -246,7 +248,7 @@ private fun PostCard(
         ) {
             ArtBox(artPalette(post.id * 3), post.id, Modifier.fillMaxSize())
             ShowcaseIcon(
-                AppIcons.Heart,
+                KIcons.Heart,
                 96.dp,
                 Color.White,
                 Modifier.graphicsLayer {
@@ -259,9 +261,9 @@ private fun PostCard(
         Row(Modifier.padding(horizontal = 6.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             LikeButton(liked, onLike, count = post.likes + if (liked) 1 else 0)
             KIconButton(AppIcons.Comment, "댓글 ${post.comments + added}개", onComments, variant = KVariant.Text, tone = KTone.Neutral)
-            KIconButton(ShowcaseIcons.Send, "공유", {}, variant = KVariant.Text, tone = KTone.Neutral)
+            KIconButton(KIcons.Send, "공유", {}, variant = KVariant.Text, tone = KTone.Neutral)
             Spacer(Modifier.weight(1f))
-            KIconToggleButton(saved, onSave, AppIcons.Bookmark, if (saved) "저장 취소" else "저장", variant = KVariant.Text, tone = KTone.Neutral)
+            KIconToggleButton(saved, onSave, KIcons.Bookmark, if (saved) "저장 취소" else "저장", variant = KVariant.Text, tone = KTone.Neutral)
         }
         Label("${post.author}  ${post.caption}", 14, modifier = Modifier.padding(horizontal = 14.dp))
         Label(
@@ -280,13 +282,13 @@ private fun PostCard(
 private fun PostHeader(post: Post) {
     Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         KStoryRing(seen = post.id % 2 == 0, ringWidth = 2.dp, gap = 2.dp) {
-            KAvatar(KAvatar(post.author, artPalette(post.id + 1)[0]), size = KAvatarSize.Small)
+            KAvatar(KAvatarData(post.author, artPalette(post.id + 1)[0]), size = KAvatarSize.Small)
         }
         Column(Modifier.weight(1f).padding(start = 10.dp)) {
             Label(post.author, 14, FontWeight.SemiBold)
             Label(post.place, 12, color = LocalKineticaContentColor.current.copy(alpha = 0.6f))
         }
-        KIconButton(AppIcons.More, "더 보기", {}, variant = KVariant.Text, tone = KTone.Neutral)
+        KIconButton(KIcons.More, "더 보기", {}, variant = KVariant.Text, tone = KTone.Neutral)
     }
 }
 
@@ -297,7 +299,7 @@ private fun CommentSheet(postId: Int, comments: SnapshotStateList<String>) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         (COMMENTS + mine).forEachIndexed { index, (who, text) ->
             Row(verticalAlignment = Alignment.Top) {
-                KAvatar(KAvatar(who, artPalette(index + postId)[0]), size = KAvatarSize.Small)
+                KAvatar(KAvatarData(who, artPalette(index + postId)[0]), size = KAvatarSize.Small)
                 Column(Modifier.weight(1f).padding(start = 10.dp)) {
                     Label(who, 13, FontWeight.SemiBold)
                     Label(text, 14)
@@ -361,7 +363,7 @@ private fun Profile(padding: PaddingValues, liked: SnapshotStateMap<Int, Int>) {
                 KProfileHeader(
                     "김하늘",
                     Modifier.widthIn(max = 600.dp).fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars).padding(12.dp),
-                    avatar = KAvatar("김하늘", Color(0xFFFF6B6B)),
+                    avatar = KAvatarData("김하늘", Color(0xFFFF6B6B)),
                     subtitle = "필름 카메라와 산책을 좋아해요 · 서울",
                     cover = { ArtBox(artPalette(8), 2, Modifier.fillMaxSize()) },
                     stats = listOf(
@@ -397,9 +399,9 @@ private class Post(
 )
 
 private val FEED_TABS = listOf(
-    KTab("홈", ShowcaseIcons.Home),
-    KTab("둘러보기", AppIcons.Search),
-    KTab("프로필", AppIcons.Person, dot = true),
+    KTab("홈", KIcons.Home),
+    KTab("둘러보기", KIcons.Search),
+    KTab("프로필", KIcons.Person, dot = true),
 )
 private val PEOPLE = listOf("하늘", "서준", "윤아", "도윤", "지민", "하은", "태오", "다인")
 private val STORY_TEXT = listOf("오늘의 하늘", "드디어 주말!", "새로 연 카페", "밤 산책", "첫 필름 현상")
@@ -420,4 +422,7 @@ internal val FEED_LOOK = AppLook(
     SurfaceStyle.Solid(Color(0xFF161616), Color(0xFFF2F2F2), Color.Black, border = Color.White.copy(alpha = 0.08f), borderWidth = 1.dp),
     defaultDark = true,
     accent = Color(0xFFFF4D6D),
+    // 사진이 주인공인 검은 바탕과 얇은 테두리가 이 앱의 설계다. 글래스로 바꾸면 비칠 색이 없어 바가 본문 글자 위에 겹쳐 읽기 어렵고,
+    // 오로라 배경을 깔면 사진과 색이 다툰다. 그래서 형태만 설정을 따르고 표면은 고정한다.
+    fixed = true,
 )

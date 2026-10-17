@@ -41,6 +41,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -50,7 +51,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KButton
+import com.naury.kinetica.ui.KButtonSize
+import com.naury.kinetica.ui.KCard
+import com.naury.kinetica.ui.KCheckbox
 import com.naury.kinetica.ui.KDialog
+import com.naury.kinetica.ui.KFilterChip
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KMenuItem
 import com.naury.kinetica.ui.KRefreshBox
 import com.naury.kinetica.ui.KSegmentedControl
@@ -62,6 +69,8 @@ import com.naury.kinetica.ui.KTab
 import com.naury.kinetica.ui.KTabBar
 import com.naury.kinetica.ui.KTextField
 import com.naury.kinetica.ui.KToastHost
+import com.naury.kinetica.ui.KineticaDesign
+import com.naury.kinetica.ui.KineticaDesigns
 import com.naury.kinetica.ui.KineticaScaffold
 import com.naury.kinetica.ui.KineticaTheme
 import com.naury.kinetica.ui.LocalKineticaContentColor
@@ -98,10 +107,10 @@ internal fun UiKitDemo(onBack: () -> Unit) {
         bottomBar = {
             KTabBar(
                 listOf(
-                    KTab("홈", ShowcaseIcons.Home),
+                    KTab("홈", KIcons.Home),
                     KTab("효과", ShowcaseIcons.Sparkle),
-                    KTab("보드", ShowcaseIcons.Grid),
-                    KTab("알림", ShowcaseIcons.Bell),
+                    KTab("보드", KIcons.Grid),
+                    KTab("알림", KIcons.Bell),
                 ),
                 tab,
                 { tab = it },
@@ -115,6 +124,7 @@ internal fun UiKitDemo(onBack: () -> Unit) {
                 SurfaceFamily.entries.forEach { family ->
                     item(span = StaggeredGridItemSpan.FullLine, key = family.name) { PresetRow(family, dark) }
                 }
+                item(span = StaggeredGridItemSpan.FullLine, key = "designs") { DesignRow(demoSurface(UI_KIT_LOOK)) }
                 item { PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } } }
                 item { ControlsCard() }
                 items(PHOTOS.size) { index -> Photo(PHOTOS[index], index) { scope.launch { toast.show(it) } } }
@@ -270,6 +280,7 @@ private fun PresetRow(family: SurfaceFamily, dark: Boolean) {
 /** 프리셋 하나로 그린 작은 화면. 글래스는 비칠 그라디언트를 깔고, 단색과 톤은 그 표면의 바탕색을 깐다. */
 @Composable
 private fun PresetTile(preset: SurfacePreset, dark: Boolean, selected: Boolean, onClick: () -> Unit) {
+    val look = LocalShowcaseLook.current
     val surface = preset.surface(dark)
     val backdrop = rememberGlassBackdrop()
     val ring = LocalKineticaContentColor.current
@@ -293,7 +304,7 @@ private fun PresetTile(preset: SurfacePreset, dark: Boolean, selected: Boolean, 
                 },
             ),
         )
-        KineticaTheme(surface = surface) {
+        KineticaTheme(surface = surface, design = look.selectedDesign) {
             Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // 바깥 24dp 모서리에서 여백 10dp를 빼 안쪽 카드가 같은 중심으로 굽는다.
                 KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), backdrop = backdrop) {
@@ -308,6 +319,84 @@ private fun PresetTile(preset: SurfacePreset, dark: Boolean, selected: Boolean, 
                 KSurface(Modifier.fillMaxWidth().height(36.dp), shape = CircleShape, backdrop = backdrop) {
                     Label(if (selected) "사용 중" else "적용", 13, FontWeight.SemiBold, modifier = Modifier.align(Alignment.Center))
                 }
+            }
+        }
+    }
+}
+
+/**
+ * 같은 컴포넌트를 디자인 언어 6종으로 나란히 그린 줄. 표면은 지금 설정 그대로 두고 형태만 바꿔, 모서리와 깊이, 밀도, 컨트롤 모양 차이를 비교한다.
+ * 칸을 누르면 그 형태가 앱 전체에 적용된다.
+ */
+@Composable
+private fun DesignRow(surface: SurfaceStyle) {
+    val look = LocalShowcaseLook.current
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Label("형태", 17, FontWeight.Bold)
+        Label(
+            "디자인 언어는 표면과 따로 고릅니다. 같은 표면에서 모서리, 깊이, 밀도, 탭 인디케이터, 스위치와 슬라이더 모양이 함께 바뀝니다.",
+            14,
+            color = LocalKineticaContentColor.current.copy(alpha = 0.75f),
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(KineticaDesigns.all.size, key = { KineticaDesigns.all[it].first }) { index ->
+                val (name, design) = KineticaDesigns.all[index]
+                DesignTile(name, design, surface, selected = look.design == index) { look.selectDesign(index) }
+            }
+        }
+    }
+}
+
+/** 디자인 언어 하나로 그린 작은 화면: 카드 안에 세그먼트, 체크박스, 스위치, 슬라이더, 그 아래 칩과 적용 버튼. 컨트롤은 직접 눌러 볼 수 있다. */
+@Composable
+private fun DesignTile(name: String, design: KineticaDesign, surface: SurfaceStyle, selected: Boolean, onClick: () -> Unit) {
+    val backdrop = rememberGlassBackdrop()
+    val ring = LocalKineticaContentColor.current
+    var segment by rememberSaveable { mutableIntStateOf(0) }
+    var checked by rememberSaveable { mutableStateOf(true) }
+    var on by rememberSaveable { mutableStateOf(true) }
+    var value by rememberSaveable { mutableFloatStateOf(0.6f) }
+    var chip by rememberSaveable { mutableStateOf(true) }
+    Box(
+        Modifier
+            .width(DESIGN_TILE_WIDTH)
+            .clip(PRESET_TILE_SHAPE)
+            .border(if (selected) 2.5.dp else 0.dp, if (selected) ring else Color.Transparent, PRESET_TILE_SHAPE),
+    ) {
+        Box(
+            Modifier.matchParentSize().glassBackdrop(backdrop).then(
+                if (surface is SurfaceStyle.Glass) {
+                    Modifier.background(Brush.linearGradient(if (surface.isDark) TILE_DARK else TILE_LIGHT))
+                } else {
+                    Modifier.background(surface.background)
+                },
+            ),
+        )
+        KineticaTheme(surface = surface, design = design) {
+            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                KCard(Modifier.fillMaxWidth(), contentPadding = 12.dp) {
+                    Label(name, 15, FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    KSegmentedControl(listOf("일", "주"), segment, { segment = it }, Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        KCheckbox(checked, { checked = it })
+                        Spacer(Modifier.weight(1f))
+                        KSwitch(on, { on = it })
+                    }
+                    KSlider(value, { value = it })
+                }
+                KFilterChip("필터", chip, { chip = it })
+                KButton(
+                    if (selected) "사용 중" else "적용",
+                    onClick,
+                    Modifier.semantics {
+                        this.selected = selected
+                        contentDescription = "$name 형태"
+                    },
+                    fullWidth = true,
+                    size = KButtonSize.Small,
+                )
             }
         }
     }
@@ -342,14 +431,15 @@ private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
 private val ROW_SHAPE = RoundedCornerShape(14.dp)
 private val UI_KIT_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = false)
 private val PRESET_TILE_WIDTH = 150.dp
+private val DESIGN_TILE_WIDTH = 172.dp
 private val PRESET_TILE_SHAPE = RoundedCornerShape(24.dp)
 private val TILE_LIGHT = listOf(Color(0xFF8EC5FF), Color(0xFFFFB3D9), Color(0xFFFFE29A))
 private val TILE_DARK = listOf(Color(0xFF1B2A6B), Color(0xFF5B2A86), Color(0xFF0E5E6F))
 private val SHARE_TARGETS = listOf(
-    "메시지" to ShowcaseIcons.Message,
-    "메일" to ShowcaseIcons.Mail,
-    "링크 복사" to ShowcaseIcons.Link,
-    "저장" to ShowcaseIcons.Download,
+    "메시지" to KIcons.Message,
+    "메일" to KIcons.Mail,
+    "링크 복사" to KIcons.Link,
+    "저장" to KIcons.Download,
 )
 private val TITLES = listOf("제주 바다", "노을", "숲길", "도시의 밤", "라벤더")
 private val PHOTOS = listOf(

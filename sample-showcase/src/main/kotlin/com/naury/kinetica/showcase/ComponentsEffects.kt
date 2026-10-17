@@ -46,6 +46,7 @@ import com.naury.kinetica.ui.FlipCard
 import com.naury.kinetica.ui.KBlobButton
 import com.naury.kinetica.ui.KBlobGroup
 import com.naury.kinetica.ui.KChipGroup
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KIndication
 import com.naury.kinetica.ui.KSwitch
 import com.naury.kinetica.ui.ParticleField
@@ -202,4 +203,4 @@ private fun HoloCard() {
 }
 
 private val PARTICLE_NAMES = listOf("눈", "불꽃놀이", "거품", "불꽃")
-private val BLOB_ICONS = listOf("공유" to ShowcaseIcons.Cloud, "메모" to ShowcaseIcons.Pen, "알림" to ShowcaseIcons.Bell)
+private val BLOB_ICONS = listOf("공유" to ShowcaseIcons.Cloud, "메모" to KIcons.Edit, "알림" to KIcons.Bell)

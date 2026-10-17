@@ -33,11 +33,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.KAvatar
+import com.naury.kinetica.ui.KAvatarData
 import com.naury.kinetica.ui.KAvatarSize
 import com.naury.kinetica.ui.KBarChart
 import com.naury.kinetica.ui.KButton
 import com.naury.kinetica.ui.KDialog
 import com.naury.kinetica.ui.KDisclosureRow
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KLargeTitleBar
 import com.naury.kinetica.ui.KListItem
 import com.naury.kinetica.ui.KListLeading
@@ -101,7 +103,7 @@ private fun LazyListScope.rootPage(state: SnapshotStateMap<Int, Int>, open: (Str
             KListItem(
                 "김하늘",
                 supporting = "계정, 백업, 연결된 기기",
-                leading = KListLeading.Custom { KAvatar(KAvatar("김하늘", Color(0xFF3E91FF)), size = KAvatarSize.Large) },
+                leading = KListLeading.Custom { KAvatar(KAvatarData("김하늘", Color(0xFF3E91FF)), size = KAvatarSize.Large) },
                 trailing = KListTrailing.Disclosure(),
                 onClick = {},
             )
@@ -113,7 +115,7 @@ private fun LazyListScope.rootPage(state: SnapshotStateMap<Int, Int>, open: (Str
         KListSection(header = "개인정보", footer = "앱이 위치나 카메라를 쓰면 상태 표시줄에 점이 보입니다.") {
             item { KDisclosureRow("보안 및 개인정보 보호", {}, leading = icon(AppIcons.Shield, Color(0xFF5E5CE6))) }
             item { KDisclosureRow("언어", {}, value = "한국어", leading = icon(AppIcons.Globe, Color(0xFF8E8E93))) }
-            item { KValueRow("소프트웨어 버전", "1.0.0-alpha01", leading = icon(AppIcons.Info, Color(0xFF8E8E93))) }
+            item { KValueRow("소프트웨어 버전", "1.0.0-alpha01", leading = icon(KIcons.Info, Color(0xFF8E8E93))) }
         }
     }
 }
@@ -159,7 +161,7 @@ private fun DeviceSection(state: SnapshotStateMap<Int, Int>, open: (String) -> U
                 state[DND] == 1,
                 { state[DND] = if (it) 1 else 0 },
                 subtitle = "밤 11시부터 아침 7시까지",
-                leading = icon(AppIcons.Moon, Color(0xFF7D5CFF)),
+                leading = icon(KIcons.Moon, Color(0xFF7D5CFF)),
             )
         }
     }
@@ -175,6 +177,7 @@ private fun SubPage(title: String, onBack: () -> Unit, content: LazyListScope.()
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KLargeTitleBar(bar, title, onBack = onBack, contentMaxWidth = 680.dp) },
     ) { padding ->
         LazyColumn(
@@ -252,9 +255,9 @@ private fun WifiNetworks(state: SnapshotStateMap<Int, Int>) {
 /** 연결 중이면 로딩 표시, 연결됐으면 체크, 보안 네트워크면 자물쇠, 공개 네트워크면 아무것도 두지 않는다. */
 private fun networkTrailing(joining: Boolean, connected: Boolean, open: Boolean): KListTrailing? = when {
     joining -> KListTrailing.Custom { KLoadingIndicator() }
-    connected -> KListTrailing.Custom { ShowcaseIcon(AppIcons.Check, 20.dp, KineticaTheme.colors.accent) }
+    connected -> KListTrailing.Custom { ShowcaseIcon(KIcons.Check, 20.dp, KineticaTheme.colors.accent) }
     open -> null
-    else -> KListTrailing.Custom { ShowcaseIcon(AppIcons.Lock, 18.dp, LocalKineticaContentColor.current.copy(alpha = 0.5f)) }
+    else -> KListTrailing.Custom { ShowcaseIcon(KIcons.Lock, 18.dp, LocalKineticaContentColor.current.copy(alpha = 0.5f)) }
 }
 
 /** 보안 네트워크 [index]의 암호를 묻는 다이얼로그. -1이면 닫혀 있다. */
@@ -295,9 +298,9 @@ private fun LazyListScope.displayPage(
             item {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        ShowcaseIcon(AppIcons.Sun, 18.dp)
+                        ShowcaseIcon(KIcons.Sun, 18.dp)
                         KSlider(brightness, onBrightness, Modifier.weight(1f).padding(horizontal = 12.dp))
-                        ShowcaseIcon(AppIcons.Sun, 24.dp)
+                        ShowcaseIcon(KIcons.Sun, 24.dp)
                     }
                 }
             }

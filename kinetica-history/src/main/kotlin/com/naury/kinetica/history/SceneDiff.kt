@@ -1,6 +1,7 @@
 package com.naury.kinetica.history
 
 import com.naury.kinetica.core.animation.Timeline
+import com.naury.kinetica.core.scene.ArgbColor
 import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
@@ -38,14 +39,20 @@ internal class SceneDiff private constructor(
             artboard = picked.artboard,
             timelines = timelines?.pick(forward) ?: document.timelines,
             extensions = picked.extensions,
+            tokens = picked.tokens,
             transition = picked.transition,
         )
     }
 
     /** 노드 밖에 있는 문서 값. 자주 바뀌지 않으므로 하나로 묶어 비교한다. */
-    private data class Header(val artboard: Artboard, val extensions: Map<String, String>, val transition: SceneTransitionSpec?) {
+    private data class Header(
+        val artboard: Artboard,
+        val extensions: Map<String, String>,
+        val tokens: Map<String, ArgbColor>,
+        val transition: SceneTransitionSpec?,
+    ) {
         companion object {
-            fun of(document: SceneDocument) = Header(document.artboard, document.extensions, document.transition)
+            fun of(document: SceneDocument) = Header(document.artboard, document.extensions, document.tokens, document.transition)
         }
     }
 

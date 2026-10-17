@@ -4,7 +4,9 @@ import android.os.Build
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -118,6 +120,13 @@ public class KTransitionFrame internal constructor() {
     /** 시작 쪽 가장자리에 드리우는 그림자의 진하기(0..1). 옆에서 밀려 들어오는 화면이 겹친 깊이를 보여 준다. */
     public var edgeShadow: Float = 0f
 
+    /**
+     * 전환을 그리는 곳의 디자인 언어 모양 토큰. 직접 만든 전환에서 [cornerRadius]를 디자인 언어에 맞출 때 읽는다.
+     * 예: `cornerRadius = shapes.radius(shapes.sheet).value * density`(캡슐 토큰이면 [androidx.compose.ui.unit.Dp.Infinity]이니 따로 처리한다).
+     */
+    public var shapes: KineticaShapes = KineticaShapes()
+        internal set
+
     internal var clipLeft = 0f
     internal var clipTop = 0f
     internal var clipRight = Float.NaN
@@ -217,6 +226,24 @@ internal enum class TransitionRole { Entering, Exiting }
 internal class TransitionHost {
     var endSign = 1f
     var screenOrigin = Offset.Zero
+    var shapes = KineticaShapes()
+}
+
+/**
+ * [transition]을 놓거나 이어 갈 때 쓸 애니메이션. 전환이 기본 스프링을 쓰면 디자인 언어의 모션 성격([KineticaMotion])에 맞추고,
+ * 전환이 직접 정한 애니메이션은 그대로 쓴다.
+ */
+@Composable
+@ReadOnlyComposable
+internal fun transitionSpecOf(transition: KScreenTransition): AnimationSpec<Float> {
+    val spec = transition.animationSpec
+    return if (spec ===
+        DefaultTransitionSpring
+    ) {
+        LocalKineticaDesign.current.motion.tuned(DEFAULT_DAMPING, Spring.StiffnessMediumLow)
+    } else {
+        spec
+    }
 }
 
 /**
@@ -257,6 +284,7 @@ private class TransitionLayer(val transition: KScreenTransition, val role: Trans
     fun update(size: Size, density: Float, progress: Float): KTransitionFrame {
         frame.reset(size, density, host.endSign)
         frame.screenOrigin = host.screenOrigin
+        frame.shapes = host.shapes
         val p = progress.coerceIn(0f, 1f)
         if (role == TransitionRole.Entering) transition.enter(frame, p) else transition.exit(frame, p)
         return frame
@@ -336,7 +364,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEdgeShadow(leve
     drawRect(brush, Offset(x, 0f), Size(edge, size.height))
 }
 
-internal val DefaultTransitionSpring: AnimationSpec<Float> = spring(dampingRatio = 0.92f, stiffness = Spring.StiffnessMediumLow)
+internal val DefaultTransitionSpring: AnimationSpec<Float> = spring(dampingRatio = DEFAULT_DAMPING, stiffness = Spring.StiffnessMediumLow)
+
+private const val DEFAULT_DAMPING = 0.92f
 
 private const val HALF = 0.5f
 private const val BLUR_EPSILON = 0.5f

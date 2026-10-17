@@ -49,6 +49,7 @@ import com.naury.kinetica.ui.KButtonSize
 import com.naury.kinetica.ui.KCarousel
 import com.naury.kinetica.ui.KChipGroup
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KKeypad
 import com.naury.kinetica.ui.KKeypadMode
 import com.naury.kinetica.ui.KListItem
@@ -113,9 +114,10 @@ private fun BankHome(balance: Long, sent: SnapshotStateList<String>, onBack: () 
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = {
             KTopAppBar("하늘뱅크", onBack = onBack, actions = {
-                KIconButton(ShowcaseIcons.Bell, "알림", {}, variant = KVariant.Text, tone = KTone.Neutral)
+                KIconButton(KIcons.Bell, "알림", {}, variant = KVariant.Text, tone = KTone.Neutral)
             })
         },
     ) { padding ->
@@ -130,10 +132,10 @@ private fun BankHome(balance: Long, sent: SnapshotStateList<String>, onBack: () 
                     Modifier.fillMaxWidth().padding(horizontal = appPadding(20.dp, BANK_WIDTH)),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    QuickAction("송금", AppIcons.ArrowUp, Modifier.weight(1f), onSend)
-                    QuickAction("채우기", AppIcons.ArrowDown, Modifier.weight(1f)) {}
+                    QuickAction("송금", KIcons.ArrowUp, Modifier.weight(1f), onSend)
+                    QuickAction("채우기", KIcons.ArrowDown, Modifier.weight(1f)) {}
                     QuickAction("내역", AppIcons.Receipt, Modifier.weight(1f), onHistory)
-                    QuickAction("카드", AppIcons.Card, Modifier.weight(1f)) {}
+                    QuickAction("카드", KIcons.Card, Modifier.weight(1f)) {}
                 }
             }
             item("budget") { BudgetCard(Modifier.padding(horizontal = appPadding(20.dp, BANK_WIDTH))) }
@@ -221,6 +223,7 @@ private fun SendFlow(balance: Long, onClose: () -> Unit, onSent: (String, Long) 
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = {
             Column {
                 KTopAppBar(
@@ -395,6 +398,7 @@ private fun HistoryScreen(sent: SnapshotStateList<String>, onBack: () -> Unit) {
     KineticaScaffold(
         Modifier.fillMaxSize(),
         systemBarIcons = false,
+        background = { DemoBackdrop() },
         topBar = { KTopAppBar("거래 내역", onBack = onBack) },
     ) { padding ->
         LazyColumn(
@@ -426,7 +430,7 @@ private fun TransactionRow(tx: Transaction) {
         tx.title,
         supporting = "${tx.day} ${tx.time} · ${tx.kind}",
         leading = KListLeading.Icon(
-            if (income) AppIcons.ArrowDown else AppIcons.ArrowUp,
+            if (income) KIcons.ArrowDown else KIcons.ArrowUp,
             tint = if (income) KineticaTheme.colors.accent else LocalKineticaContentColor.current.copy(alpha = 0.7f),
             container = if (income) {
                 KineticaTheme.colors.accent.copy(

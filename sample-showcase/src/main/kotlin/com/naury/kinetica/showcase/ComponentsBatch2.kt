@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.KAssistChip
 import com.naury.kinetica.ui.KAvatar
+import com.naury.kinetica.ui.KAvatarData
 import com.naury.kinetica.ui.KAvatarSize
 import com.naury.kinetica.ui.KAvatarStatus
 import com.naury.kinetica.ui.KBadge
@@ -157,7 +158,7 @@ private fun ProfileScene() {
     var tab by rememberSaveable { mutableStateOf(setOf(0)) }
     DemoCard("프로필 장면", "아바타의 상태 점, 상태 배지, 팔로우 토글과 분리된 버튼 묶음, 관심사 칩, 가로 카드로 마이페이지를 꾸몄습니다.") {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            KAvatar(KAvatar("김하늘"), size = KAvatarSize.ExtraLarge, status = KAvatarStatus.Online)
+            KAvatar(KAvatarData("김하늘"), size = KAvatarSize.ExtraLarge, status = KAvatarStatus.Online)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Label("김하늘", 20, FontWeight.Bold)
                 Label("@haneul · 서울", 13, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))
@@ -295,7 +296,7 @@ private fun ChipsCard() {
         KChipGroup(listOf("추천순", "가격 낮은순", "가격 높은순", "리뷰 많은순"), sort, { sort = it }, variant = KVariant.Outlined, wrap = false)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             people.forEach { name ->
-                KInputChip(name, { people = people - name }, avatar = { KAvatar(KAvatar(name), size = KAvatarSize.ExtraSmall) })
+                KInputChip(name, { people = people - name }, avatar = { KAvatar(KAvatarData(name), size = KAvatarSize.ExtraSmall) })
             }
             if (people.isEmpty()) KSuggestionChip("받는 사람 되돌리기", { people = listOf("민지", "Ana", "준호") })
         }
@@ -357,11 +358,11 @@ private fun BadgesCard() {
             KStatusBadge("품절", KStatus.Error, variant = KVariant.Filled, dot = false)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            KAvatar(KAvatar("민지"), size = KAvatarSize.ExtraSmall)
-            KAvatar(KAvatar("Ana Lee"), size = KAvatarSize.Small, status = KAvatarStatus.Busy)
-            KAvatar(KAvatar("준호"), status = KAvatarStatus.Away)
-            KAvatar(KAvatar("서연"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
-            KAvatar(KAvatar("팀"), size = KAvatarSize.Large, shape = RoundedCornerShape(16.dp), status = KAvatarStatus.Offline)
+            KAvatar(KAvatarData("민지"), size = KAvatarSize.ExtraSmall)
+            KAvatar(KAvatarData("Ana Lee"), size = KAvatarSize.Small, status = KAvatarStatus.Busy)
+            KAvatar(KAvatarData("준호"), status = KAvatarStatus.Away)
+            KAvatar(KAvatarData("서연"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
+            KAvatar(KAvatarData("팀"), size = KAvatarSize.Large, shape = RoundedCornerShape(16.dp), status = KAvatarStatus.Offline)
         }
     }
 }

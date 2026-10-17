@@ -50,6 +50,7 @@ import com.naury.kinetica.ui.KActionSheet
 import com.naury.kinetica.ui.KAttachmentChip
 import com.naury.kinetica.ui.KAttachmentStatus
 import com.naury.kinetica.ui.KAvatar
+import com.naury.kinetica.ui.KAvatarData
 import com.naury.kinetica.ui.KAvatarSize
 import com.naury.kinetica.ui.KAvatarStatus
 import com.naury.kinetica.ui.KChatBubble
@@ -62,6 +63,7 @@ import com.naury.kinetica.ui.KEmptyIcon
 import com.naury.kinetica.ui.KEmptyIconKind
 import com.naury.kinetica.ui.KEmptyState
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KListDetail
 import com.naury.kinetica.ui.KSearchBar
 import com.naury.kinetica.ui.KSurface
@@ -162,7 +164,7 @@ private fun ChatList(
         background = { ChatBackdrop() },
         topBar = {
             KTopAppBar("채팅", onBack = onBack, actions = {
-                KIconButton(AppIcons.Edit, "새 대화", {}, variant = KVariant.Text, tone = KTone.Neutral)
+                KIconButton(KIcons.Edit, "새 대화", {}, variant = KVariant.Text, tone = KTone.Neutral)
             })
         },
     ) { padding ->
@@ -281,7 +283,7 @@ private fun Conversation(chat: Chat, sent: SnapshotStateList<String>, onClose: (
                 },
                 actions = {
                     KIconButton(ShowcaseIcons.Phone, "음성 통화", {}, variant = KVariant.Text, tone = KTone.Neutral)
-                    KIconButton(AppIcons.Video, "영상 통화", {}, variant = KVariant.Text, tone = KTone.Neutral)
+                    KIconButton(KIcons.Video, "영상 통화", {}, variant = KVariant.Text, tone = KTone.Neutral)
                 },
             )
         },
@@ -296,8 +298,8 @@ private fun Conversation(chat: Chat, sent: SnapshotStateList<String>, onClose: (
         attachOpen,
         { attachOpen = false },
         listOf(
-            KDialogAction("사진", icon = AppIcons.Image) { upload.start(scope, "IMG_2048.jpg", 'p') { send('p', "사진") } },
-            KDialogAction("파일", icon = AppIcons.File) { upload.start(scope, "회의록_10월.pdf", 'f') { send('f', "회의록_10월.pdf") } },
+            KDialogAction("사진", icon = KIcons.Image) { upload.start(scope, "IMG_2048.jpg", 'p') { send('p', "사진") } },
+            KDialogAction("파일", icon = KIcons.File) { upload.start(scope, "회의록_10월.pdf", 'f') { send('f', "회의록_10월.pdf") } },
             KDialogAction("취소", KDialogActionStyle.Preferred) {},
         ),
         title = "첨부",
@@ -458,7 +460,7 @@ private class Chat(
     val online: Boolean,
     history: List<Pair<Boolean, String>>,
 ) {
-    val avatar = KAvatar(name, artPalette(id + 5)[0])
+    val avatar = KAvatarData(name, artPalette(id + 5)[0])
     val history = history.mapIndexed { i, (mine, text) ->
         Message("h$id-$i", if (mine) KChatSide.Sent else KChatSide.Received, 't', text, "오후 2:${10 + i * 3}")
     }

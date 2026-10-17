@@ -72,12 +72,13 @@ class KNotifyTest {
         compose.waitForIdle()
         compose.onNodeWithText("남은 시간", useUnmergedTree = true).assertExists()
 
-        state.update(KIslandContent("타이머", "남은 시간 00:41", compactText = "00:41"))
+        assertThat(state.update(KIslandContent("타이머", "남은 시간 00:41", compactText = "00:41"))).isTrue()
         compose.waitForIdle()
         compose.onNodeWithText("남은 시간 00:41", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         assertThat(result).isEqualTo(KIslandResult.Clicked)
         assertThat(state.isShowing).isFalse()
+        assertThat(state.update(KIslandContent("늦은 갱신"))).isFalse()
     }
 
     @Test

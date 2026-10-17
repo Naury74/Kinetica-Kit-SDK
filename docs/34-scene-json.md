@@ -183,6 +183,10 @@ RemoteKineticaPlayer(bundle, current, transition = transition, onAction = { raw 
 })
 ```
 
+번들 하나에 화면 여러 개를 넣고 `sceneId`만 바꾸면 화면 문서의 `transition`대로 전환한다. 문서가 화면 id보다 한 프레임 늦게 도착해도 전환은 새 문서로 그린다.
+`sample-showcase`의 장면 전환 데모가 이 방식으로 홈, 상품, 결제 세 화면을 재생하고, 진행도 슬라이더로 `SceneTransition(from, to, spec, progress)`의 중간 프레임을 보여 준다.
+호스트 앱에서 쓰는 모습은 `consumer-check`의 `SceneBundleHostScreen`에 있다.
+
 ## 타임라인 `animations`
 
 | 키 | 필수 | 내용 |

@@ -171,7 +171,7 @@ class KSocialTest {
     @Test
     fun `스토리 링은 본 상태를 읽고 누를 수 있다`() {
         var opened = 0
-        compose.setContent { KStoryRing(seen = false, Modifier.testTag("ring"), onClick = { opened++ }) { KAvatar(KAvatar("민지")) } }
+        compose.setContent { KStoryRing(seen = false, Modifier.testTag("ring"), onClick = { opened++ }) { KAvatar(KAvatarData("민지")) } }
         compose.onNodeWithTag("ring").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "New story")).performClick()
         assertThat(opened).isEqualTo(1)
     }

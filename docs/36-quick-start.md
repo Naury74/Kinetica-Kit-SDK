@@ -43,6 +43,31 @@ KineticaScaffold(background = { Image(painterResource(R.drawable.photo), null, M
 }
 ```
 
+### 형태 고르기
+
+표면 스타일이 색과 블러를 정한다면 디자인 언어(`design`)는 모서리, 깊이, 밀도, 컨트롤 모양 같은 형태를 정합니다. 둘은 따로 고릅니다.
+주지 않으면 `KineticaDesigns.Cupertino`이고 지금까지의 모양과 같습니다.
+
+```kotlin
+KineticaTheme(surface = SurfaceStyles.CleanLight, design = KineticaDesigns.Fluent) { App() }
+```
+
+프리셋은 `Cupertino`, `Material`, `OneUi`, `Fluent`, `Brutal`, `Soft` 여섯 가지이고, `KineticaDesigns.Cupertino.copy(…)`로 일부만 바꿀 수 있습니다.
+컴포넌트에 `shape`를 직접 넘기면 그 값이 디자인 언어보다 우선합니다. 자세한 내용은 [35 UI 키트의 디자인 언어와 형태](35-ui-kit.md#디자인-언어와-형태)에 있습니다.
+
+### 화면 전환 고르기
+
+| 쓰는 곳 | 넣는 값 |
+| --- | --- |
+| `PushNavigation`으로 화면을 쌓을 때 | `transition = KTransitions.Push`(기본), `CardStack`, `SheetStack`, `Zoom`, `cover(KTransitionEdge.Bottom)` 등 |
+| 탭이나 단계처럼 내용만 바꿀 때 | `KTransitionContent(tab, transition = KTransitions.TabSlide, isForward = { a, b -> b > a })` |
+| Navigation Compose `NavHost` | `rememberKNavTransition(KNavTransitions.Push)`의 `enter`, `exit`, `popEnter`, `popExit` |
+| 카드가 상세 화면으로 커질 때 | `KExpandHost(transform = KContainerTransform.Card)` |
+| 서버 장면 사이 | 장면 JSON의 `transition`, 또는 `RemoteKineticaPlayer(bundle, sceneId, transition = …, forward = …)` |
+
+모든 전환은 뒤로 가기에서 되감기고 예측 뒤로 가기 제스처를 따라가며, '애니메이션 삭제' 설정이면 바로 바뀝니다. 전체 목록은
+[35 UI 키트의 화면 이동 전환](35-ui-kit.md#화면-이동-전환)과 [34 장면 JSON의 장면 전환](34-scene-json.md#장면-전환-transition)에 있습니다.
+
 ## 3. 자주 쓰는 10가지
 
 **효과 붙이기.** 아무 Composable에 수정자 한 줄로 붙습니다. 클릭과 스크롤은 그대로 동작합니다.

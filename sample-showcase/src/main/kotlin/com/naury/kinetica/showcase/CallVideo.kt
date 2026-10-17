@@ -68,6 +68,7 @@ import com.naury.kinetica.ui.KDialogAction
 import com.naury.kinetica.ui.KDialogActionStyle
 import com.naury.kinetica.ui.KIconButton
 import com.naury.kinetica.ui.KIconToggleButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KIndexBar
 import com.naury.kinetica.ui.KIndexBarDefaults
 import com.naury.kinetica.ui.KIslandContent
@@ -119,7 +120,7 @@ internal fun VideoCall(startedAt: Long, island: com.naury.kinetica.ui.KIslandSta
     val accent = KineticaTheme.colors.accent
     LaunchedEffect(Unit) {
         delay(4_000)
-        island.show(KIslandContent("윤아", "화면 잘 보여요! 자료 공유해 주세요", ShowcaseIcons.Message, accent), durationMs = 3_500)
+        island.show(KIslandContent("윤아", "화면 잘 보여요! 자료 공유해 주세요", KIcons.Message, accent), durationMs = 3_500)
     }
     LaunchedEffect(meeting.hand) {
         if (meeting.hand) {
@@ -187,7 +188,7 @@ private fun MeetingBar(meeting: Meeting, startedAt: Long) {
             }
             KSurface({ meeting.roster = true }, shape = CircleShape, onClickLabel = "참가자 보기") {
                 Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ShowcaseIcon(AppIcons.Users, 18.dp)
+                    ShowcaseIcon(KIcons.Users, 18.dp)
                     RollingText(
                         "${meeting.people}",
                         Modifier.padding(start = 6.dp),
@@ -206,19 +207,19 @@ private fun MeetingDock(meeting: Meeting, onEnd: () -> Unit) {
             Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 KIconToggleButton(meeting.muted, {
                     meeting.muted = it
-                }, AppIcons.Mic, "음소거", checkedIcon = AppIcons.MicOff, size = 52.dp, tone = KTone.Neutral)
+                }, KIcons.Mic, "음소거", checkedIcon = KIcons.MicOff, size = 52.dp, tone = KTone.Neutral)
                 KIconToggleButton(
                     !meeting.camera,
                     { meeting.camera = !it },
-                    AppIcons.Video,
+                    KIcons.Video,
                     "카메라 끄기",
-                    checkedIcon = AppIcons.VideoOff,
+                    checkedIcon = KIcons.VideoOff,
                     size = 52.dp,
                     tone = KTone.Neutral,
                 )
                 KIconToggleButton(meeting.hand, { meeting.hand = it }, AppIcons.Hand, "손 들기", size = 52.dp)
-                KIconButton(AppIcons.Users, "참가자", { meeting.roster = true }, size = 52.dp, tone = KTone.Neutral)
-                KIconButton(AppIcons.PhoneDown, "나가기", onEnd, variant = KVariant.Filled, tone = KTone.Destructive, size = 52.dp)
+                KIconButton(KIcons.Users, "참가자", { meeting.roster = true }, size = 52.dp, tone = KTone.Neutral)
+                KIconButton(KIcons.CallEnd, "나가기", onEnd, variant = KVariant.Filled, tone = KTone.Destructive, size = 52.dp)
             }
         }
     }
@@ -261,7 +262,7 @@ private fun Roster(tiles: List<Int>, meeting: Meeting) {
                 else -> null
             },
             leading = KListLeading.Custom { KAvatar(if (i == 0) CALL_ME else CALL_CONTACTS[i].avatar, size = KAvatarSize.Small) },
-            trailing = KListTrailing.Custom { ShowcaseIcon(if (mutedMe) AppIcons.MicOff else AppIcons.Mic, 20.dp) },
+            trailing = KListTrailing.Custom { ShowcaseIcon(if (mutedMe) KIcons.MicOff else KIcons.Mic, 20.dp) },
         )
     }
     Spacer(Modifier.height(8.dp))
@@ -271,7 +272,7 @@ private fun Roster(tiles: List<Int>, meeting: Meeting) {
         fullWidth = true,
         enabled = meeting.people < 6,
         variant = KVariant.Tonal,
-        icon = ShowcaseIcons.Plus,
+        icon = KIcons.Plus,
     )
 }
 

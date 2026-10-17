@@ -1,6 +1,7 @@
 package com.naury.kinetica.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,7 +48,9 @@ public fun <T> KTransitionContent(
     val still = reducedMotion()
     val host = remember { TransitionHost() }
     host.endSign = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
-    LaunchedEffect(targetState) { state.switchTo(targetState, forward, transition, still) }
+    host.shapes = currentShapes
+    val spec = transitionSpecOf(transition)
+    LaunchedEffect(targetState) { state.switchTo(targetState, forward, spec, still) }
     Box(modifier.onGloballyPositioned { host.screenOrigin = it.positionOnScreen() }, contentAlignment = contentAlignment) {
         val below = state.below
         val visible = if (below != null) listOf(below, state.top) else listOf(state.top)
@@ -79,7 +82,7 @@ private class SwitchState<T>(initial: T) {
     val progress = Animatable(1f)
     private var target: T = initial
 
-    suspend fun switchTo(next: T, isForward: (T, T) -> Boolean, transition: KScreenTransition, still: Boolean) {
+    suspend fun switchTo(next: T, isForward: (T, T) -> Boolean, spec: AnimationSpec<Float>, still: Boolean) {
         val previous = target
         if (next == previous && below == null) return
         target = next
@@ -96,10 +99,10 @@ private class SwitchState<T>(initial: T) {
             below = previous
             top = next
             progress.snapTo(0f)
-            progress.animateTo(1f, transition.animationSpec)
+            progress.animateTo(1f, spec)
         } else {
             below = next
-            progress.animateTo(0f, transition.animationSpec)
+            progress.animateTo(0f, spec)
             top = next
             progress.snapTo(1f)
         }

@@ -46,6 +46,7 @@ import com.naury.kinetica.ui.KDrawerMode
 import com.naury.kinetica.ui.KDropdownMenu
 import com.naury.kinetica.ui.KFloatingToolbar
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KMenuEntry
 import com.naury.kinetica.ui.KSearchView
 import com.naury.kinetica.ui.KSegment
@@ -97,27 +98,27 @@ private fun AppBarsCard() {
                 state = bar,
                 onBack = {},
                 subtitle = if (variant == 2) "16개" else null,
-                actions = { KIconButton(ShowcaseIcons.Pen, "편집", {}, variant = KVariant.Text, tone = KTone.Neutral) },
+                actions = { KIconButton(KIcons.Edit, "편집", {}, variant = KVariant.Text, tone = KTone.Neutral) },
                 windowInsets = WindowInsets(0),
             )
             KFloatingToolbar(
                 Modifier.align(Alignment.BottomCenter),
                 expanded = toolbar.expanded,
-                floatingActionButton = { KIconButton(ShowcaseIcons.Plus, "새 메모", {}, variant = KVariant.Filled) },
+                floatingActionButton = { KIconButton(KIcons.Plus, "새 메모", {}, variant = KVariant.Filled) },
                 windowInsets = WindowInsets(0),
             ) {
-                KIconButton(ShowcaseIcons.Pen, "쓰기", {}, variant = KVariant.Text, tone = KTone.Neutral)
-                KIconButton(ShowcaseIcons.Archive, "보관", {}, variant = KVariant.Text, tone = KTone.Neutral)
-                KIconButton(ShowcaseIcons.Trash, "삭제", {}, variant = KVariant.Text, tone = KTone.Neutral)
+                KIconButton(KIcons.Edit, "쓰기", {}, variant = KVariant.Text, tone = KTone.Neutral)
+                KIconButton(KIcons.Archive, "보관", {}, variant = KVariant.Text, tone = KTone.Neutral)
+                KIconButton(KIcons.Trash, "삭제", {}, variant = KVariant.Text, tone = KTone.Neutral)
             }
         }
         KBottomAppBar(
             Modifier.clip(INNER_SHAPE),
-            floatingActionButton = { KIconButton(ShowcaseIcons.Send, "보내기", {}, variant = KVariant.Filled) },
+            floatingActionButton = { KIconButton(KIcons.Send, "보내기", {}, variant = KVariant.Filled) },
             windowInsets = WindowInsets(0),
         ) {
-            KIconButton(ShowcaseIcons.Link, "링크", {}, variant = KVariant.Text, tone = KTone.Neutral)
-            KIconButton(ShowcaseIcons.Download, "받기", {}, variant = KVariant.Text, tone = KTone.Neutral)
+            KIconButton(KIcons.Link, "링크", {}, variant = KVariant.Text, tone = KTone.Neutral)
+            KIconButton(KIcons.Download, "받기", {}, variant = KVariant.Text, tone = KTone.Neutral)
         }
     }
 }
@@ -137,9 +138,9 @@ private fun TabsCard() {
         }
         KSegmentedControl(
             listOf(
-                KSegment("목록", ShowcaseIcons.Inbox),
-                KSegment("격자", ShowcaseIcons.Grid),
-                KSegment(icon = ShowcaseIcons.Location, contentDescription = "지도"),
+                KSegment("목록", KIcons.Inbox),
+                KSegment("격자", KIcons.Grid),
+                KSegment(icon = KIcons.Location, contentDescription = "지도"),
             ),
             view,
             { view = it },
@@ -167,8 +168,8 @@ private fun MenusCard() {
                     KMenuEntry.Check("숨긴 메모 보기", hidden) { hidden = it },
                     KMenuEntry.Divider,
                     KMenuEntry.Submenu("정렬 기준", listOf("이름", "날짜", "크기").map { KMenuEntry.Action(it) { sort = it } }),
-                    KMenuEntry.Action("복사", ShowcaseIcons.Link, trailing = "Ctrl+C") {},
-                    KMenuEntry.Action("삭제", ShowcaseIcons.Trash, destructive = true) {},
+                    KMenuEntry.Action("복사", KIcons.Link, trailing = "Ctrl+C") {},
+                    KMenuEntry.Action("삭제", KIcons.Trash, destructive = true) {},
                 ),
             )
         }
@@ -200,9 +201,9 @@ private fun DialogsCard() {
                     sheet,
                     { sheet = false },
                     listOf(
-                        KDialogAction("링크 복사", icon = ShowcaseIcons.Link) {},
-                        KDialogAction("앨범에 추가", KDialogActionStyle.Preferred, icon = ShowcaseIcons.Plus) {},
-                        KDialogAction("삭제", KDialogActionStyle.Destructive, icon = ShowcaseIcons.Trash) {},
+                        KDialogAction("링크 복사", icon = KIcons.Link) {},
+                        KDialogAction("앨범에 추가", KDialogActionStyle.Preferred, icon = KIcons.Plus) {},
+                        KDialogAction("삭제", KDialogActionStyle.Destructive, icon = KIcons.Trash) {},
                     ),
                     title = "사진 3장",
                     message = "선택한 사진으로 할 일을 고르세요.",
@@ -227,7 +228,7 @@ private fun DialogsCard() {
             )
         },
         message = if (alert == 1) "휴지통에서 30일 뒤 완전히 지워집니다." else "저장하지 않으면 지금까지 쓴 내용이 사라집니다.",
-        icon = if (alert == 1) ShowcaseIcons.Trash else null,
+        icon = if (alert == 1) KIcons.Trash else null,
     )
 }
 

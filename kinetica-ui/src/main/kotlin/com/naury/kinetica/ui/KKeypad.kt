@@ -28,7 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -51,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import kotlin.math.cos
+import kotlin.math.sin
 
 /** [KKeypad]의 아래 줄 시작 쪽 키 */
 public enum class KKeypadMode {
@@ -62,6 +66,12 @@ public enum class KKeypadMode {
 
     /** 소수 입력. 아래 줄 시작 쪽이 기기 언어의 소수점 키다. */
     Decimal,
+
+    /**
+     * 전화 다이얼. 둥근 키에 숫자와 알파벳을 쓰고, 넷째 줄은 `*`, 0, `#`이다. 0을 길게 누르면 `+`를 넘긴다.
+     * 다섯째 줄 가운데는 [KKeypad]의 `extraKey`(통화 버튼 자리), 끝 쪽은 지우기 키다.
+     */
+    Phone,
 }
 
 /**
@@ -76,9 +86,11 @@ public enum class KKeypadMode {
  * KKeypad(onDigit = { pin += it }, onBackspace = { pin = pin.dropLast(1) }, mode = KKeypadMode.Pin)
  * ```
  *
- * @param onDigit 누른 키 글자. '0'~'9', "00" 키는 '0'을 두 번, 소수점 키는 '.'을 넘긴다.
- * @param extraKey [KKeypadMode.Pin]에서 아래 줄 시작 칸에 놓을 내용(생체 인증 버튼 등). `null`이면 비운다.
- * @param letters 숫자 아래 알파벳(ABC, DEF …)을 쓸지. 기본값은 PIN 모드에서만 쓴다.
+ * @param onDigit 누른 키 글자. '0'~'9', "00" 키는 '0'을 두 번, 소수점 키는 '.'을 넘긴다. [KKeypadMode.Phone]에서는 '*', '#',
+ *   0을 길게 누른 '+'도 넘긴다.
+ * @param extraKey [KKeypadMode.Pin]에서는 아래 줄 시작 칸(생체 인증 버튼 등), [KKeypadMode.Phone]에서는 다섯째 줄 가운데 칸(통화 버튼)에
+ *   놓을 내용. `null`이면 비운다.
+ * @param letters 숫자 아래 알파벳(ABC, DEF …)을 쓸지. 기본값은 PIN과 전화 모드에서만 쓴다.
  */
 @Composable
 public fun KKeypad(
@@ -88,7 +100,7 @@ public fun KKeypad(
     mode: KKeypadMode = KKeypadMode.Numeric,
     onClear: (() -> Unit)? = null,
     enabled: Boolean = true,
-    letters: Boolean = mode == KKeypadMode.Pin,
+    letters: Boolean = mode == KKeypadMode.Pin || mode == KKeypadMode.Phone,
     maxWidth: Dp = 360.dp,
     extraKey: (@Composable () -> Unit)? = null,
     surface: SurfaceStyle = KineticaTheme.surface,
@@ -101,8 +113,8 @@ public fun KKeypad(
     }
     val locale = LocalConfiguration.current.locales.get(0) ?: Locale.ROOT
     val decimal = remember(locale) { DecimalFormatSymbols.getInstance(locale).decimalSeparator }
-    val pin = mode == KKeypadMode.Pin
-    // PIN 키는 버튼처럼, 숫자 입력 키는 입력란 칸처럼 깎는다.
+    val pin = mode == KKeypadMode.Pin || mode == KKeypadMode.Phone
+    // PIN과 전화 키는 버튼처럼, 숫자 입력 키는 입력란 칸처럼 깎는다.
     val shape: Shape = if (pin) shapeFor { button } else shapeFor { this.field }
     val spec = KeySpec(shape, pin, letters, enabled, surface)
     val outer = LocalLayoutDirection.current
@@ -111,10 +123,14 @@ public fun KKeypad(
             DIGIT_ROWS.forEach { row ->
                 KeyRow(pin) { row.forEach { d -> DigitKey(d, spec, Modifier.weight(1f)) { press(d) } } }
             }
+            if (mode == KKeypadMode.Phone) {
+                PhoneRows(spec, press, onBackspace, onClear, extraKey, outer)
+                return@Column
+            }
             KeyRow(pin) {
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     when (mode) {
-                        KKeypadMode.Pin -> extraKey?.invoke()
+                        KKeypadMode.Pin, KKeypadMode.Phone -> extraKey?.invoke()
 
                         KKeypadMode.Numeric -> TextKey("00", "00", spec, Modifier) {
                             press('0')
@@ -140,6 +156,69 @@ public fun KKeypad(
     }
 }
 
+/** 전화 모드의 넷째 줄(`*`, 0, `#`)과 다섯째 줄(통화 버튼 자리, 지우기). */
+@Composable
+private fun PhoneRows(
+    spec: KeySpec,
+    press: (Char) -> Unit,
+    onBackspace: () -> Unit,
+    onClear: (() -> Unit)?,
+    extraKey: (@Composable () -> Unit)?,
+    outer: LayoutDirection,
+) {
+    val haptic = LocalHapticFeedback.current
+    val plusLabel = stringResource(R.string.kinetica_ui_keypad_plus)
+    KeyRow(true) {
+        SymbolKey('*', stringResource(R.string.kinetica_ui_keypad_star), spec, Modifier.weight(1f)) { press('*') }
+        DigitKey(
+            '0',
+            spec,
+            Modifier.weight(1f),
+            longPress = KeyLongPress(plusLabel) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                press('+')
+            },
+        ) { press('0') }
+        SymbolKey('#', stringResource(R.string.kinetica_ui_keypad_pound), spec, Modifier.weight(1f)) { press('#') }
+    }
+    KeyRow(true) {
+        Box(Modifier.weight(1f))
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { extraKey?.invoke() }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            CompositionLocalProvider(LocalLayoutDirection provides outer) { BackspaceKey(spec, onBackspace, onClear) }
+        }
+    }
+}
+
+/** 길게 누를 때의 동작과 TalkBack이 읽을 그 동작 이름 */
+private class KeyLongPress(val label: String, val action: () -> Unit)
+
+@Composable
+private fun SymbolKey(symbol: Char, label: String, spec: KeySpec, modifier: Modifier, onClick: () -> Unit) {
+    val ink = spec.surface.contentColor
+    Box(modifier, contentAlignment = Alignment.Center) {
+        KeySurface(spec, label, onClick) {
+            if (symbol == '*') {
+                // 글꼴의 *는 위로 치우치고 작아 숫자와 어울리지 않으므로 키 가운데에 직접 그린다.
+                Box(
+                    Modifier.size(ASTERISK).drawBehind {
+                        val r = size.minDimension / 2
+                        val stroke = ASTERISK_STROKE.toPx()
+                        repeat(ASTERISK_SPOKES) { i ->
+                            val a = Math.toRadians(i * HALF_TURN / ASTERISK_SPOKES + QUARTER_TURN)
+                            val dx = (cos(a) * r).toFloat()
+                            val dy = (sin(a) * r).toFloat()
+                            drawLine(ink, center + Offset(dx, dy), center - Offset(dx, dy), stroke, StrokeCap.Round)
+                        }
+                    },
+                )
+            } else {
+                ThemedText(symbol.toString(), style = TextStyle(color = ink, fontSize = 30.sp, fontWeight = FontWeight.Normal))
+            }
+        }
+    }
+}
+
 private class KeySpec(val shape: Shape, val pin: Boolean, val letters: Boolean, val enabled: Boolean, val surface: SurfaceStyle)
 
 @Composable
@@ -148,18 +227,18 @@ private fun KeyRow(pin: Boolean, content: @Composable RowScope.() -> Unit) {
 }
 
 @Composable
-private fun DigitKey(digit: Char, spec: KeySpec, modifier: Modifier, onClick: () -> Unit) {
+private fun DigitKey(digit: Char, spec: KeySpec, modifier: Modifier, longPress: KeyLongPress? = null, onClick: () -> Unit) {
     val ink = spec.surface.contentColor
     Box(modifier, contentAlignment = Alignment.Center) {
-        KeySurface(spec, digit.toString(), onClick) {
+        KeySurface(spec, digit.toString(), onClick, onLongClick = longPress?.action, onLongClickLabel = longPress?.label) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 ThemedText(
                     digit.toString(),
                     style = TextStyle(color = ink, fontSize = if (spec.pin) 30.sp else 26.sp, fontWeight = FontWeight.Normal),
                 )
                 if (spec.letters) {
-                    // 1과 0은 알파벳이 없지만 빈 줄을 두어 숫자 높이를 다른 키와 맞춘다.
-                    val letters = LETTERS[digit - '0'].ifEmpty { " " }
+                    // 1과 0은 알파벳이 없지만 빈 줄을 두어 숫자 높이를 다른 키와 맞춘다. 길게 눌러 +를 넣는 0은 +를 적는다.
+                    val letters = if (longPress != null) "+" else LETTERS[digit - '0'].ifEmpty { " " }
                     ThemedText(
                         letters,
                         style = TextStyle(
@@ -213,6 +292,7 @@ private fun KeySurface(
     onClick: () -> Unit,
     plain: Boolean = false,
     onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
     content: @Composable () -> Unit,
 ) {
     val circle = spec.pin
@@ -235,6 +315,7 @@ private fun KeySurface(
                 indication = KIndication(spec.shape, pressedScale = KIndication.BUTTON_PRESSED_SCALE),
                 enabled = spec.enabled,
                 role = Role.Button,
+                onLongClickLabel = onLongClickLabel,
                 onLongClick = onLongClick,
                 onClick = onClick,
             ).clearAndSetSemantics { contentDescription = label },
@@ -308,3 +389,8 @@ private val PIN_GAP = 16.dp
 private val PIN_KEY = 76.dp
 private val PIN_DOT = 14.dp
 private val PIN_DOT_GAP = 16.dp
+private val ASTERISK = 18.dp
+private val ASTERISK_STROKE = 2.dp
+private const val ASTERISK_SPOKES = 3
+private const val HALF_TURN = 180.0
+private const val QUARTER_TURN = 90.0

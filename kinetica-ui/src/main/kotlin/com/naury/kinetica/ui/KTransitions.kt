@@ -5,6 +5,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -246,13 +247,13 @@ private object TabSlideTransition : KScreenTransition() {
 private object SheetStackTransition : KScreenTransition() {
     override fun enter(frame: KTransitionFrame, progress: Float) {
         frame.translationY = frame.height * (1f - progress)
-        frame.cornerRadius = STACK_CORNER_DP * frame.density * part(1f - progress, 0f, CORNER_SETTLE)
+        frame.cornerRadius = frame.sheetRadius() * part(1f - progress, 0f, CORNER_SETTLE)
     }
 
     override fun exit(frame: KTransitionFrame, progress: Float) {
         frame.scale(1f - SHEET_SHRINK * progress)
         frame.translationY = SHEET_DROP_DP * frame.density * progress
-        frame.cornerRadius = STACK_CORNER_DP * frame.density * part(progress, 0f, CORNER_SETTLE)
+        frame.cornerRadius = frame.sheetRadius() * part(progress, 0f, CORNER_SETTLE)
         frame.dim = SHEET_DIM * progress
     }
 }
@@ -260,14 +261,14 @@ private object SheetStackTransition : KScreenTransition() {
 private object CardStackTransition : KScreenTransition() {
     override fun enter(frame: KTransitionFrame, progress: Float) {
         frame.moveIn(KTransitionEdge.End, 1f - progress)
-        frame.cornerRadius = STACK_CORNER_DP * frame.density * part(1f - progress, 0f, CORNER_SETTLE)
+        frame.cornerRadius = frame.cardRadius() * part(1f - progress, 0f, CORNER_SETTLE)
         frame.shadowFrom(KTransitionEdge.End, progress)
     }
 
     override fun exit(frame: KTransitionFrame, progress: Float) {
         frame.scale(1f - CARD_SHRINK * progress)
         frame.translationX = -frame.endSign * frame.width * CARD_BACK * progress
-        frame.cornerRadius = STACK_CORNER_DP * frame.density * part(progress, 0f, CORNER_SETTLE)
+        frame.cornerRadius = frame.cardRadius() * part(progress, 0f, CORNER_SETTLE)
         frame.dim = CARD_DIM * progress
     }
 }
@@ -423,7 +424,7 @@ private const val TAB_MS = 280
 private const val TAB_SHIFT = 0.25f
 private const val TAB_FADE_START = 0.1f
 private const val TAB_FADE_END = 0.7f
-private const val STACK_CORNER_DP = 20f
+private val STACK_CORNER = 20.dp
 private const val CORNER_SETTLE = 0.25f
 private const val SHEET_SHRINK = 0.08f
 private const val SHEET_DROP_DP = 10f
@@ -447,3 +448,15 @@ private const val BLUR_DP = 24f
 private const val BLUR_ZOOM = 0.04f
 private const val WIPE_MS = 450
 private const val WIPE_PARALLAX = 0.2f
+
+/** 디자인 언어 sheet 토큰의 반지름(px). 캡슐 토큰이면 기본 반지름을 쓴다. */
+private fun KTransitionFrame.sheetRadius(): Float = stackRadius(shapes.sheet)
+
+/** 디자인 언어 card 토큰의 반지름(px). 캡슐 토큰이면 기본 반지름을 쓴다. */
+private fun KTransitionFrame.cardRadius(): Float = stackRadius(shapes.card)
+
+/** 기본 디자인 언어에서는 디자인 언어가 생기기 전 모양(20dp)을 그대로 두어 호스트 화면이 바뀌지 않게 한다. */
+private fun KTransitionFrame.stackRadius(token: KShapeToken): Float =
+    (if (shapes == DEFAULT_SHAPES) STACK_CORNER else shapes.radiusOr(token, STACK_CORNER)).value * density
+
+private val DEFAULT_SHAPES = KineticaShapes()

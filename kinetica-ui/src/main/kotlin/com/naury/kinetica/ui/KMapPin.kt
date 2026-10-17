@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.acos
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
@@ -59,14 +61,14 @@ import kotlin.math.sin
  * - [label]이 있음: 가격이나 이름을 쓴 캡슐 아래에 뾰족한 꼬리가 붙은 태그 핀. 고르면 강조색으로 채워진다.
  * - 그 밖: 물방울 모양 핀. [icon]이 있으면 가운데에 그리고, 없으면 흰 점을 찍는다.
  *
- * 핀의 아래 가운데(꼬리 끝, 묶음 핀은 원 아래)가 지도 좌표다. 호출한 쪽은 그 점이 좌표에 오도록 놓는다.
+ * 핀의 아래 가운데(꼬리 끝, 묶음 핀은 원 아래)가 지도 좌표다. [Modifier.mapPinAnchor]를 주면 그 점이 좌표에 오도록 놓인다.
  * [dropIn]이면 처음 나타날 때 위에서 떨어지며 통통 튀고, 고르면([selected]) 아래 가운데를 축으로 커진다.
  * '애니메이션 삭제' 설정에서는 떨어지지 않고 바로 놓인다.
  *
  * 구글 지도처럼 SurfaceView로 그리는 지도 위에서는 글래스 표면이 지도를 블러로 비추지 못한다. 그런 지도 위에는 단색 표면을 쓴다.
  *
  * ```kotlin
- * KMapPin(Modifier.offset { pinOffset(place) }, label = "₩82,000", selected = place == picked, onClick = { picked = place })
+ * KMapPin(Modifier.mapPinAnchor { place.toScreen() }, label = "₩82,000", selected = place == picked, onClick = { picked = place })
  * ```
  *
  * @param count 이 핀에 묶인 장소 수. 1보다 작으면 [IllegalArgumentException]을 던진다.
@@ -118,6 +120,30 @@ public fun KMapPin(
         count > 1 -> ClusterPin(count, colors, modifier.then(layer), onClick)
         label != null -> TagPin(label, selected, colors, surface, grow, modifier.then(layer), onClick)
         else -> DropPin(icon, colors, modifier.then(layer), onClick)
+    }
+}
+
+/**
+ * [KMapPin]의 꼬리 끝(묶음 핀은 원 아래 가운데)을 지도 위 [anchor]에 맞춘다. [anchor]는 지도 왼쪽 위를 원점으로 한 px 좌표이고,
+ * 레이아웃 단계에서 읽으므로 지도를 옮기거나 확대해 좌표가 바뀌어도 핀을 다시 구성하지 않는다.
+ *
+ * 핀을 지도와 같은 크기의 `Box` 안에 두고 핀의 `modifier` 맨 앞에 준다. 이 수정자는 받은 최대 크기를 차지하고 그 안에서 핀만 옮기므로,
+ * 부모의 정렬이나 RTL 배치와 상관없이 같은 자리에 놓인다. 지도 좌표에는 방향이 없어서 RTL에서도 좌우를 뒤집지 않는다.
+ * 부모가 크기를 정하지 않으면(무한 제약) 핀 크기만 차지하고, 그때 [anchor]는 핀이 놓인 자리 기준이다.
+ *
+ * ```kotlin
+ * Box(Modifier.fillMaxSize()) {
+ *     places.forEach { place -> KMapPin(Modifier.mapPinAnchor { projection.toScreen(place) }, label = place.price) }
+ * }
+ * ```
+ */
+public fun Modifier.mapPinAnchor(anchor: () -> Offset): Modifier = layout { measurable, constraints ->
+    val pin = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+    val width = if (constraints.hasBoundedWidth) constraints.maxWidth else pin.width
+    val height = if (constraints.hasBoundedHeight) constraints.maxHeight else pin.height
+    layout(width, height) {
+        val point = anchor()
+        pin.place((point.x - pin.width / 2f).roundToInt(), (point.y - pin.height).roundToInt())
     }
 }
 

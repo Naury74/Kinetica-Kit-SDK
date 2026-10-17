@@ -46,6 +46,7 @@ import com.naury.kinetica.ui.KGauge
 import com.naury.kinetica.ui.KGaugeSegment
 import com.naury.kinetica.ui.KGroupItem
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KSegmentedControl
 import com.naury.kinetica.ui.KSlider
 import com.naury.kinetica.ui.KSurface
@@ -143,7 +144,7 @@ private fun HomeDevices(on: SnapshotStateMap<Int, Int>, level: SnapshotStateMap<
         background = { RoomGlow() },
         topBar = {
             KTopAppBar("우리 집", onBack = onBack, subtitle = "실내 23℃ · 습도 45%", actions = {
-                KIconButton(ShowcaseIcons.Plus, "기기 추가", {}, variant = KVariant.Text, tone = KTone.Neutral)
+                KIconButton(KIcons.Plus, "기기 추가", {}, variant = KVariant.Text, tone = KTone.Neutral)
             })
         },
     ) { padding ->
@@ -290,14 +291,14 @@ private fun ClimateDetail(device: Device, on: SnapshotStateMap<Int, Int>, level:
                 valueFormatter = { "${it.roundToInt()}℃" },
             )
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                KIconButton(AppIcons.ArrowDown, "1도 내리기", {
+                KIconButton(KIcons.ArrowDown, "1도 내리기", {
                     level[device.id] = (target - 1).coerceAtLeast(16)
                 }, size = 56.dp, variant = KVariant.Tonal)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Label("지금 실내", 12, color = LocalKineticaContentColor.current.copy(alpha = 0.65f))
                     Label("26℃", 22, FontWeight.Bold)
                 }
-                KIconButton(AppIcons.ArrowUp, "1도 올리기", {
+                KIconButton(KIcons.ArrowUp, "1도 올리기", {
                     level[device.id] = (target + 1).coerceAtMost(30)
                 }, size = 56.dp, variant = KVariant.Tonal)
             }
@@ -308,7 +309,7 @@ private fun ClimateDetail(device: Device, on: SnapshotStateMap<Int, Int>, level:
                         KSwitch(on[device.id] == 1, { on[device.id] = if (it) 1 else 0 })
                     }
                     KToggleGroup(
-                        listOf(KGroupItem("냉방", AppIcons.Fan), KGroupItem("난방", AppIcons.Sun), KGroupItem("자동", AppIcons.Thermo)),
+                        listOf(KGroupItem("냉방", AppIcons.Fan), KGroupItem("난방", KIcons.Sun), KGroupItem("자동", AppIcons.Thermo)),
                         setOf(mode),
                         { mode = it.firstOrNull() ?: mode },
                         Modifier.fillMaxWidth(),
@@ -365,13 +366,13 @@ private val DEVICES = listOf(
     Device(6, "보일러", 2, Kind.Climate, AppIcons.Thermo, Color(0xFFFF9F6B), false, 22),
     Device(7, "커피 머신", 3, Kind.Plug, AppIcons.Plug, Color(0xFF9BE58B), false, 0),
     Device(8, "주방 조명", 3, Kind.Light, AppIcons.Bulb, Color(0xFFFFC56B), true, 100),
-    Device(9, "현관 도어록", 0, Kind.Plug, AppIcons.Lock, Color(0xFF9BE58B), true, 0),
+    Device(9, "현관 도어록", 0, Kind.Plug, KIcons.Lock, Color(0xFF9BE58B), true, 0),
 )
 private val SCENES = listOf(
-    Scene("아침", AppIcons.Sun, setOf(1, 7, 8, 9)),
+    Scene("아침", KIcons.Sun, setOf(1, 7, 8, 9)),
     Scene("영화", AppIcons.Tv, setOf(2, 3, 4, 9)),
-    Scene("잘 자요", AppIcons.Moon, setOf(6, 9)),
-    Scene("외출", AppIcons.Lock, setOf(9)),
+    Scene("잘 자요", KIcons.Moon, setOf(6, 9)),
+    Scene("외출", KIcons.Lock, setOf(9)),
 )
 private val WARMTH = listOf("따뜻하게" to Color(0xFFFFB45C), "자연광" to Color(0xFFFFE7B8), "차갑게" to Color(0xFFCFE6FF))
 

@@ -32,6 +32,8 @@ import com.naury.kinetica.ui.KSegmentedControl
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KTone
 import com.naury.kinetica.ui.KVariant
+import com.naury.kinetica.ui.KineticaDesign
+import com.naury.kinetica.ui.KineticaDesigns
 import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.LocalKineticaSurface
 import com.naury.kinetica.ui.MeshGradientBackground
@@ -44,6 +46,15 @@ internal enum class SurfaceFamily(val label: String) {
     Glass("글래스"),
     Solid("단색"),
     Tonal("톤"),
+}
+
+/** 앱 화면 예의 표면을 정하는 방식. */
+internal enum class AppSurface(val label: String) {
+    /** 모양 설정의 표면 종류와 프리셋을 따른다. 표면 종류가 앱 추천과 같으면 앱이 고른 스타일을 그대로 쓴다. */
+    FollowLook("설정 따름"),
+
+    /** 앱마다 추천하는 표면을 쓴다. 밝기와 형태는 여전히 설정을 따른다. */
+    Recommended("앱 추천"),
 }
 
 /** 밝기. [Auto]면 데모마다 처음 디자인한 밝기를 쓴다. */
@@ -62,6 +73,8 @@ internal class ShowcaseLook(
     family: SurfaceFamily = SurfaceFamily.Glass,
     brightness: Brightness = Brightness.Auto,
     preset: Int = DEFAULT_PRESET,
+    design: Int = 0,
+    appSurface: AppSurface = AppSurface.FollowLook,
 ) {
     var family by mutableStateOf(family)
         private set
@@ -69,8 +82,23 @@ internal class ShowcaseLook(
     var preset by mutableIntStateOf(preset)
         private set
 
-    // 디자인 언어(형태) 고르기 자리: kinetica-ui에 KineticaDesigns가 들어오면 여기에 design 값을 더하고,
-    // Saver와 LookPicker, Showcase의 KineticaTheme(design = …)에 같이 잇는다.
+    /** 고른 디자인 언어(형태)의 [KineticaDesigns.all] 순서. 표면과 따로 고르며 모든 화면이 따른다. */
+    var design by mutableIntStateOf(design.coerceIn(0, KineticaDesigns.all.lastIndex))
+        private set
+
+    /** 앱 화면 예가 표면을 이 설정에서 가져올지, 앱마다 추천 표면을 쓸지. 형태는 어느 쪽이든 이 설정을 따른다. */
+    var appSurface by mutableStateOf(appSurface)
+
+    /** 디자인 언어를 바꾼다. 범위 밖이면 가장 가까운 끝 값으로 맞춘다. */
+    fun selectDesign(index: Int) {
+        design = index.coerceIn(0, KineticaDesigns.all.lastIndex)
+    }
+
+    /** 고른 디자인 언어 */
+    val selectedDesign: KineticaDesign get() = KineticaDesigns.all[design].second
+
+    /** 고른 디자인 언어 이름. 예: "Cupertino" */
+    val designName: String get() = KineticaDesigns.all[design].first
 
     /** 표면 종류와 그 종류의 프리셋을 함께 바꾼다. 종류만 바꾸면 프리셋은 화면 기본으로 돌아간다. */
     fun select(family: SurfaceFamily, preset: Int = DEFAULT_PRESET) {
@@ -91,10 +119,11 @@ internal class ShowcaseLook(
     /** [isDark]와 같되, 한 가지 밝기만 있는 프리셋(Obsidian 등)을 골랐으면 그 프리셋의 밝기를 따른다. 상태 표시줄 아이콘 색에 쓴다. */
     fun resolvedDark(defaultDark: Boolean): Boolean = selectedPreset?.surface(isDark(defaultDark))?.isDark ?: isDark(defaultDark)
 
-    /** 첫 화면에 한 줄로 보여 줄 지금 모양. 예: "글래스", "글래스 · Mica · 어둡게" */
+    /** 첫 화면에 한 줄로 보여 줄 지금 모양. 예: "글래스 · Cupertino", "글래스 · Mica · Fluent · 어둡게" */
     fun summary(): String = listOfNotNull(
         family.label,
         selectedPreset?.name,
+        designName,
         brightness.takeIf { it != Brightness.Auto }?.label,
     ).joinToString(" · ")
 
@@ -103,8 +132,16 @@ internal class ShowcaseLook(
         const val DEFAULT_PRESET = -1
 
         val Saver: Saver<ShowcaseLook, IntArray> = Saver(
-            save = { intArrayOf(it.family.ordinal, it.brightness.ordinal, it.preset) },
-            restore = { ShowcaseLook(SurfaceFamily.entries[it[0]], Brightness.entries[it[1]], it.getOrElse(2) { DEFAULT_PRESET }) },
+            save = { intArrayOf(it.family.ordinal, it.brightness.ordinal, it.preset, it.design, it.appSurface.ordinal) },
+            restore = {
+                ShowcaseLook(
+                    SurfaceFamily.entries[it[0]],
+                    Brightness.entries[it[1]],
+                    it.getOrElse(2) { DEFAULT_PRESET },
+                    it.getOrElse(3) { 0 },
+                    AppSurface.entries[it.getOrElse(4) { 0 }],
+                )
+            },
         )
     }
 }
@@ -156,7 +193,7 @@ internal fun BoxScope.MeshBackdrop(light: MeshPalette, dark: MeshPalette) {
     MeshGradientBackground(Modifier.fillMaxSize(), palette = if (LocalKineticaSurface.current.isDark) dark else light)
 }
 
-/** 모양 시트의 내용: 표면 종류, 프리셋, 밝기. 앱 전체에서 모양을 고르는 곳은 이 한 곳이다. */
+/** 모양 시트의 내용: 표면 종류, 프리셋, 밝기, 형태. 앱 전체에서 모양을 고르는 곳은 이 한 곳이다. */
 @Composable
 internal fun LookPicker(modifier: Modifier = Modifier) {
     val look = LocalShowcaseLook.current
@@ -184,7 +221,12 @@ internal fun LookPicker(modifier: Modifier = Modifier) {
             { look.brightness = Brightness.entries[it] },
             Modifier.fillMaxWidth(),
         )
-        // 디자인 언어(형태) 고르기 자리: KineticaDesigns가 들어오면 "형태" 제목과 세그먼트를 여기에 더한다.
+        Label("형태", 13, FontWeight.SemiBold, color = faint, modifier = Modifier.padding(top = 8.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            KineticaDesigns.all.forEachIndexed { index, (name, _) ->
+                Pill(name, filled = look.design == index) { look.selectDesign(index) }
+            }
+        }
     }
 }
 
@@ -195,8 +237,8 @@ internal fun LookSheet(visible: Boolean, onDismiss: () -> Unit) {
         Column(Modifier.verticalScroll(rememberScrollState())) {
             Label("모양", SHEET_TITLE_SP, FontWeight.Bold)
             Label(
-                "여기서 고른 표면과 밝기를 모든 화면이 따릅니다. 화면 기본은 화면마다 처음 디자인한 스타일입니다. " +
-                    "단색과 톤은 배경을 기록하지 않아 블러 비용이 없습니다.",
+                "여기서 고른 표면, 밝기, 형태를 모든 화면이 따릅니다. 화면 기본은 화면마다 처음 디자인한 스타일입니다. " +
+                    "단색과 톤은 배경을 기록하지 않아 블러 비용이 없습니다. 형태는 모서리, 깊이, 밀도, 컨트롤 모양을 함께 바꿉니다.",
                 SHEET_BODY_SP,
                 color = LocalKineticaContentColor.current.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = 6.dp, bottom = 16.dp),

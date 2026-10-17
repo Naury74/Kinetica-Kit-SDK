@@ -42,6 +42,7 @@ import com.naury.kinetica.ui.Detent
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.KDetentSheet
 import com.naury.kinetica.ui.KIconButton
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KSearchBar
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KTab
@@ -68,13 +69,13 @@ internal fun MapApp(onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                KIconButton(ShowcaseIcons.Back, "뒤로", onBack)
+                KIconButton(KIcons.ChevronBack, "뒤로", onBack)
                 KSurface(Modifier.heightIn(min = 44.dp).tooltipOnLongPress("길게 눌러 도움말을 보여 줍니다"), shape = CircleShape) {
                     Row(
                         Modifier.align(Alignment.Center).padding(start = 12.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        ShowcaseIcon(ShowcaseIcons.Location, 18.dp)
+                        ShowcaseIcon(KIcons.Location, 18.dp)
                         Label("내 위치", 14, FontWeight.SemiBold, Modifier.padding(start = 6.dp))
                     }
                 }

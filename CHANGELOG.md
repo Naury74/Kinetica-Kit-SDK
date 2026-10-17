@@ -33,6 +33,11 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - 화면 이동 전환: `PushNavigation(transition = …)`과 방향을 아는 내용 전환 `KTransitionContent`에 넣는 `KTransitions` 프리셋 20종(밀기, 패럴랙스, 슬라이드, 덮기, 드러내기, 확대, 페이드, fade through, shared axis X/Y/Z, 탭 슬라이드, 시트 스택, 카드 스택, 큐브, 뒤집기, 원·마름모·별 모양 드러내기, 블러 디졸브, 와이프 등)과 직접 만드는 `KScreenTransition`. 모두 예측 뒤로 가기 제스처를 따라 되감기고 RTL에서 방향이 뒤집히며 '애니메이션 삭제' 설정이면 바로 바뀝니다. `PushNavigation`의 `paneTitle`로 화면이 바뀔 때 TalkBack이 새 화면 이름을 읽습니다
 - Navigation Compose `NavHost`와 `AnimatedContent`용 전환 묶음 `KNavTransitions`(`Push`, `Slide`, `SlideUp`, `SheetStack`, `Zoom`, `Fade`, `FadeThrough`, `SharedAxisX/Y/Z`), `kTransform`, `rememberKNavTransition`
 - `KExpandHost`의 컨테이너 변환 모양 `KContainerTransform`(`Card`, `listRow(color)`, `fab(color)`)과 예측 뒤로 가기 제스처 대응
+- 화면 전환이 디자인 언어를 따릅니다. `SheetStack`과 `KFullScreenModal`은 sheet 모서리, `CardStack`과 `KExpandHost`의 카드는 card 모서리를 쓰고 기본 스프링은 `KineticaMotion`에 맞춥니다. 기본 디자인 언어에서는 지금까지의 모양 그대로입니다. 직접 만든 전환은 `KTransitionFrame.shapes`로 모서리 크기를 읽습니다
+- 선 아이콘 63종 `KIcons`(홈, 검색, 설정, 더하기, 닫기, 방향, 공유, 휴지통, 하트, 별, 메일, 전화와 통화 끊기, 마이크, 영상, 카메라, 사진, 달력, 사람, 장바구니 등). 뒤로와 앞으로, 보내기 화살표는 RTL에서 뒤집힙니다. 목록은 `KIcons.all`에 있습니다
+- `KKeypadMode.Phone`: `*`, `0`, `#` 줄과 통화 버튼 자리(`extraKey`)가 있는 전화 키패드. 0을 길게 누르면 `+`를 넘깁니다
+- `KIslandState.update(content)`: 보여 주는 알림의 내용만 코루틴 없이 바꾸고, 바꿨는지를 돌려줍니다
+- `KListTrailing.Value`의 글자 색 `color`, 지도 핀의 꼬리 끝을 좌표에 맞추는 `Modifier.mapPinAnchor`
 - 넓은 화면과 폴더블: `KListDetail`(힌지 맞춤), `KNavigationRail`, `KAdaptiveNavigation`, `KTabletopLayout`, `rememberKWindowLayout`, `kReadableWidth`. `androidx.window` 의존성이 함께 들어갑니다
 - 호스트 앱 연동: `KineticaScaffold` 밖에서 부르면 별도 창(Dialog, Popup)으로 띄우기, 시스템 창 블러와 불투명 판 fallback, `contentWindowInsets`, 모달 포커스 가두기, 닫을 때 키보드 내리기, 스낵바 `bottomOffset`, `KGlassLayer`, `KSystemBarIcons`, 화면 밖과 백그라운드에서 반복 효과 멈춤
 - XML 진입점(`com.naury.kinetica.ui.view`): `KSheets`, `KDialogs`, `KToasts`, `KSurfaceView`. RecyclerView, ViewPager2, CoordinatorLayout, Fragment 안에서 쓸 수 있고, 테마 속성 `kinetica_surfaceViewStyle`로 기본 스타일을 정합니다
@@ -82,8 +87,8 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 - `kinetica-java`: Java 호스트용 정적 진입점
 - `kinetica-export-android`: 화면과 같은 그리기 코드로 만드는 PNG 내보내기
-- 샘플 앱은 `sample-showcase` 하나입니다. 첫 화면에서 표면 스타일과 밝기를 고르고, UI 키트, 모션 효과, 대시보드 보드, 앱 화면 예, 컴포넌트, 화면 이동, 장면 전환, 서버 화면, 화면 만들기, XML 화면 예를 엽니다
-- 배포 artifact만으로 호스트 시나리오를 빌드하고 계측 테스트를 돌리는 `consumer-check`
+- 샘플 앱은 `sample-showcase` 하나입니다. 모양 시트 한 곳에서 표면 종류와 프리셋, 밝기, 형태(디자인 언어)를 고르고, UI 키트 허브(표면과 디자인, 앱 화면 예 14개, 컴포넌트, 모션 효과, 화면 이동 전환 22종, 장면 전환 14종)와 고급 기능(대시보드 보드, 화면 만들기, 서버 화면, XML 화면)을 엽니다
+- 배포 artifact만으로 호스트 시나리오를 빌드하고 계측 테스트를 돌리는 `consumer-check`. Material 3 앱 안의 디자인 언어, `PushNavigation` 전환과 예측 뒤로 가기 취소, Navigation Compose `NavHost`와 `KNavTransitions`, 서버 번들 장면 전환, `KIcons`, 전화 키패드, 아일랜드 갱신 시나리오가 들어 있습니다
 
 ### 바뀐 것
 
@@ -98,6 +103,10 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - `KSegmentedControl`(한 칸 고르기)의 TalkBack 역할 기본값이 `Role.Tab`에서 `Role.RadioButton`으로 바뀌었습니다. 아래 내용을 통째로 바꾸는 탭처럼 쓰면 `role = Role.Tab`을 넘깁니다. 이름은 기본 2줄까지 줄을 바꾸므로 한 줄로 두려면 `maxLines = 1`을 넘깁니다
 - `KSwitch`의 `accent` 기본값이 `Color.Unspecified`가 되었습니다. `Capsule` 모양에서는 전처럼 `positive` 색을 쓰고, `onCheckedChange`는 `null`을 받아 표시만 할 수 있습니다
 - `KChipGroup`의 칩을 `KFilterChip`과 같은 모양으로 그립니다
+- `KChipGroup`의 기본값(글래스 표면, `Accent` 톤)에서 고른 칩을 강조색으로 채우고 글자를 대비에 맞춰 흰색이나 검은색으로 씁니다. 전에는 글래스 위에서 고른 칩 글자가 잘 보이지 않았습니다
+- `KToggleGroup`의 이름이 큰 글자에서 말줄임 대신 두 줄까지 넘어가고, 모든 칸이 가장 높은 칸에 맞춰 높아집니다
+- `KExpandHost`의 `cornerRadius` 기본값이 `24.dp`에서 `Dp.Unspecified`(디자인 언어의 card 모서리)가 되었습니다. 기본 디자인 언어에서는 그대로 24dp입니다
+- `KIslandState.update`가 `Unit` 대신 `Boolean`을 돌려주고, `compactText`가 없는 내용으로 바꾸면 알림을 펼칩니다
 - `KMiniPlayer`의 `collapsed`, `expanded` 슬롯이 진행도를 `() -> Float`로 받습니다
 - `KineticaScaffold`의 `indication` 기본값이 `KineticaTheme`을 따릅니다. 테마에서 `indication = null`로 끄면 스캐폴드도 호스트 값을 그대로 둡니다
 - `KineticaBoardState.activeColumns`가 Compose 상태가 되어, 컴포지션에서 읽으면 열 수가 바뀔 때 다시 그려집니다
@@ -109,7 +118,9 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 고친 것
 
-- 예측 뒤로 가기 제스처를 취소하면 `PushNavigation`, `KCircularReveal`, `KFullScreenModal`, `KSharedTransitionHost`가 반쯤 되감긴 채 멈추던 문제(취소와 함께 되돌리는 애니메이션도 취소되었습니다)
+- 예측 뒤로 가기 제스처를 취소하면 `PushNavigation`, `KCircularReveal`, `KFullScreenModal`, `KSharedTransitionHost`, `KDrawer`, `KStoryViewer`가 반쯤 되감긴 채 멈추던 문제(취소와 함께 되돌리는 애니메이션도 취소되었습니다)
+- 디자인 토큰을 바꾸는 `SceneCommand.SetToken`이 실행 취소되지 않던 문제(`SceneDiff`가 `tokens`를 비교하지 않았습니다)
+- `RemoteKineticaPlayer(bundle, sceneId)`에서 화면 id가 바뀐 뒤 문서가 한 프레임 늦게 오면 `AnimatedScene`이 옛 문서를 기억해, 다음 전환(뒤로 가기)에서 나가는 화면을 잘못 그리던 문제
 - 글래스 블러를 반경에 맞춘 낮은 해상도로 기록해 실기기 컴포넌트 화면 스크롤 끊김을 5.15%에서 0.1% 안팎으로, 그림자와 테두리 붓을 다시 써서 모션 화면 끊김을 2.8%에서 0.3%로 줄였습니다
 - 페이저, 지연 목록, 이동 애니메이션에서 다시 그리지 않고 옮겨진 글래스가 옛 위치의 배경을 비추던 문제
 - 시스템 바 아이콘: 요청이 걸려 있는 동안 호스트가 창의 아이콘 설정을 직접 바꾸면, 요청이 빠질 때 처음 기억한 값으로 덮어쓰던 문제. 시트가 콘텐츠를 절반 넘게 밀어내는 동안에는 상태 표시줄 아이콘을 `backdropColor` 밝기에 맞춥니다
@@ -153,3 +164,4 @@ UI 키트를 글래스 전용에서 표면을 고르는 키트로 바꾸면서 �
 | `KCalendar`의 `onSelect` | `onSelectionChange` |
 | `animateNumberAsState`의 `target` | `targetValue` |
 | `MiniPlayerState`, `DetentSheetState`, `TooltipState`, `TooltipPlacement`, `SlideToConfirmState`, `rememberLargeTitleState`와 그 `remember*` 함수 | 앞에 `K`를 붙인 이름(`KMiniPlayerState`, `KDetentSheetState`, `KTooltipState`, `KTooltipPlacement`, `KSlideToConfirmState`, `rememberKLargeTitleState` 등) |
+| 아바타 데이터 클래스 `KAvatar` | `KAvatarData`. 컴포저블과 이름이 겹쳐 바꿨고, 컴포저블은 `KAvatar(KAvatarData("민지"))`처럼 그대로 씁니다 |

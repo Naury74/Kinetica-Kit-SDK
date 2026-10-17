@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
@@ -43,6 +44,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -302,13 +304,16 @@ private fun GroupLayout(motion: GroupMotion, style: KGroupStyle, pad: Dp, modifi
         }
         yieldToPressed(widths, motion, GROW_MAX.toPx())
         var edge = 0f
-        val placeables = measurables.mapIndexed { i, m ->
-            // 칸마다 따로 반올림하면 합이 1px씩 흔들리므로 누적 경계를 반올림해 전체 폭을 고정한다.
+        // 칸마다 따로 반올림하면 합이 1px씩 흔들리므로 누적 경계를 반올림해 전체 폭을 고정한다.
+        val cellWidths = IntArray(n) { i ->
             val start = edge.roundToInt()
             edge += widths[i]
-            val w = (edge.roundToInt() - start).coerceAtLeast(0)
-            m.measure(Constraints(w, w, 0, constraints.maxHeight))
+            (edge.roundToInt() - start).coerceAtLeast(0)
         }
+        // 큰 글자에서 한 칸만 두 줄이 되어도 모든 칸이 같은 높이여야 하므로, 가장 높은 칸에 맞춰 측정한다.
+        val rowHeight = measurables.indices.maxOf { measurables[it].minIntrinsicHeight(cellWidths[it]) }
+            .coerceAtMost(constraints.maxHeight)
+        val placeables = measurables.mapIndexed { i, m -> m.measure(Constraints(cellWidths[i], cellWidths[i], rowHeight, rowHeight)) }
         val height = placeables.maxOf { it.height }
         val total = placeables.sumOf { it.width } + gapPx * (n - 1)
         layout(total.coerceIn(constraints.minWidth, constraints.maxWidth), height) {
@@ -348,7 +353,8 @@ private fun yieldToPressed(widths: FloatArray, motion: GroupMotion, maxGrow: Flo
 private fun GroupCell(item: KGroupItem, size: KButtonSize, ink: () -> Color, modifier: Modifier) {
     Row(
         modifier
-            .height(KineticaTheme.design.density.height(size.height))
+            .heightIn(min = KineticaTheme.design.density.height(size.height))
+            .padding(vertical = WRAP_PADDING)
             .then(if (item.contentDescription != null) Modifier.semantics { contentDescription = item.contentDescription } else Modifier)
             .graphicsLayer { alpha = if (item.enabled) 1f else DISABLED },
         horizontalArrangement = Arrangement.spacedBy(size.gap, Alignment.CenterHorizontally),
@@ -365,8 +371,13 @@ private fun GroupCell(item: KGroupItem, size: KButtonSize, ink: () -> Color, mod
         item.label?.let {
             ThemedText(
                 it,
-                style = TextStyle(fontSize = size.font, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
-                maxLines = 1,
+                style = TextStyle(
+                    fontSize = size.font,
+                    fontWeight = KineticaTheme.design.label(FontWeight.SemiBold),
+                    textAlign = TextAlign.Center,
+                ),
+                // 큰 글자에서 폭이 모자라면 말줄임 대신 두 줄로 넘기고 칸이 높아진다. 세 줄부터만 줄인다.
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 color = { ink() },
             )
@@ -451,3 +462,6 @@ private const val GROW_DAMPING = 0.6f
 private const val GROW_STIFFNESS = 600f
 private const val PICK_DAMPING = 0.75f
 private const val PICK_STIFFNESS = 500f
+
+/** 두 줄로 넘어간 칸에서 글자가 칸 위아래에 붙지 않게 하는 여백. 한 줄일 때는 최소 높이 안에 들어간다. */
+private val WRAP_PADDING = 4.dp

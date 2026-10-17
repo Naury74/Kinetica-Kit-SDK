@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
@@ -72,8 +73,11 @@ public sealed interface KListLeading {
  */
 @Immutable
 public sealed interface KListTrailing {
-    /** 옅은 글자로 쓰는 현재 값. 예: "켜짐", "1.2GB" */
-    public data class Value(val text: String) : KListTrailing
+    /**
+     * 현재 값. 예: "켜짐", "1.2GB", "−12,000원". [color]가 [Color.Unspecified]면 행 글자 색을 옅게 쓰고, 지정하면 그 색을 그대로 쓴다.
+     * 금액의 들어옴과 나감, 상태 강조처럼 값 자체에 색이 필요할 때 지정한다.
+     */
+    public data class Value(val text: String, val color: Color = Color.Unspecified) : KListTrailing
 
     /**
      * 스위치. 행 전체가 [Role.Switch]가 된다. [variant]가 기본값 [KSwitchVariant.Capsule]이면
@@ -256,7 +260,13 @@ private fun ListAvatar(avatar: KListLeading.Avatar) {
 @Composable
 private fun ListTrailing(trailing: KListTrailing, ink: Color, enabled: Boolean, surface: SurfaceStyle) {
     when (trailing) {
-        is KListTrailing.Value -> ListText(trailing.text, ink.copy(alpha = ink.alpha * VALUE_ALPHA), VALUE_SIZE, FontWeight.Normal, 1)
+        is KListTrailing.Value -> ListText(
+            trailing.text,
+            trailing.color.takeOrElse { ink.copy(alpha = ink.alpha * VALUE_ALPHA) },
+            VALUE_SIZE,
+            FontWeight.Normal,
+            1,
+        )
 
         is KListTrailing.Switch -> KSwitch(
             trailing.checked,

@@ -51,7 +51,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.naury.kinetica.ui.AvatarStack
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.KAvatar
+import com.naury.kinetica.ui.KAvatarData
 import com.naury.kinetica.ui.KFloatingTabBar
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KIndication
 import com.naury.kinetica.ui.KMiniPlayerBar
 import com.naury.kinetica.ui.KMiniPlayerFullScreen
@@ -227,7 +229,7 @@ private fun PlayButton(playing: Boolean, size: Int, toggle: () -> Unit) {
 }
 
 private val MUSIC_TABS =
-    listOf(KTab("홈", ShowcaseIcons.Home), KTab("둘러보기", ShowcaseIcons.Sparkle), KTab("보관함", ShowcaseIcons.Grid))
+    listOf(KTab("홈", KIcons.Home), KTab("둘러보기", ShowcaseIcons.Sparkle), KTab("보관함", KIcons.Grid))
 private val MUSIC_HEADERS = listOf("지금 많이 듣는 곡", "새로 나온 곡", "좋아요한 곡")
 
 /** 펼친 플레이어가 큰 아트 양옆에 두는 여백. 글자 시작선을 아트에 맞춘다. */
@@ -243,7 +245,7 @@ private val TRACKS = listOf(
     Song("도시의 밤", "네온", listOf(Color(0xFFFF5C8A), Color(0xFF8E54E9))),
     Song("첫눈", "윈터", listOf(Color(0xFFB993D6), Color(0xFF8CA6DB))),
 )
-private val FRIENDS = listOf("민지", "서준", "하은", "도윤", "지우", "Ana").map { KAvatar(it) }
+private val FRIENDS = listOf("민지", "서준", "하은", "도윤", "지우", "Ana").map { KAvatarData(it) }
 
 /**
  * 음악 데모 상태. 화면보다 오래 살아 있어 음악 화면을 나갔다 들어오거나 회전해도 고른 곡, 재생 여부,

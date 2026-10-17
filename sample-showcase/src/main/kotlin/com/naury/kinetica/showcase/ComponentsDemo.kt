@@ -67,6 +67,7 @@ import com.naury.kinetica.ui.KCarousel
 import com.naury.kinetica.ui.KChipGroup
 import com.naury.kinetica.ui.KChipSelection
 import com.naury.kinetica.ui.KDatePicker
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KIslandContent
 import com.naury.kinetica.ui.KIslandHost
 import com.naury.kinetica.ui.KIslandState
@@ -208,7 +209,7 @@ private fun BasicTab(padding: PaddingValues, connection: NestedScrollConnection,
             NotifyCard(
                 onIsland = {
                     scope.launch {
-                        island.show(KIslandContent("새 메시지", "민지: 오늘 저녁 어때?", icon = ShowcaseIcons.Bell, accent = Color(0xFF34C759)))
+                        island.show(KIslandContent("새 메시지", "민지: 오늘 저녁 어때?", icon = KIcons.Bell, accent = Color(0xFF34C759)))
                     }
                 },
                 onTimer = {
@@ -244,7 +245,7 @@ private fun DemoDial(open: Boolean, onOpenChange: (Boolean) -> Unit, notify: (St
             onOpenChange,
             listOf(
                 KMenuItem("사진 찍기", ShowcaseIcons.Sparkle) { notify("카메라를 열어요") },
-                KMenuItem("메모", ShowcaseIcons.Pen) { notify("새 메모") },
+                KMenuItem("메모", KIcons.Edit) { notify("새 메모") },
                 KMenuItem("공유", ShowcaseIcons.Cloud) { notify("공유할 곳을 골라요") },
             ),
             Modifier.navigationBarsPadding().padding(24.dp),
@@ -285,7 +286,7 @@ private fun StepperCard() {
                     .background(Brush.linearGradient(listOf(Color(0xFF7C8CFF), Color(0xFF4A5AE8))), RoundedCornerShape(12.dp))
                     .kBadge(count.takeIf { it > 0 }),
                 contentAlignment = Alignment.Center,
-            ) { ShowcaseIcon(ShowcaseIcons.Bell, 22.dp, Color.White) }
+            ) { ShowcaseIcon(KIcons.Bell, 22.dp, Color.White) }
         }
         KChipGroup(listOf("전체", "사진", "동영상", "스크린샷", "즐겨찾기"), chips, { chips = it }, selection = KChipSelection.Multiple)
     }
@@ -324,7 +325,7 @@ private fun InputCard() {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
             placeholder = "name@example.com",
             supportingText = "영수증을 받을 주소입니다",
-            leadingIcon = { ShowcaseIcon(ShowcaseIcons.Mail, 20.dp, LocalKineticaContentColor.current.copy(alpha = 0.6f)) },
+            leadingIcon = { ShowcaseIcon(KIcons.Mail, 20.dp, LocalKineticaContentColor.current.copy(alpha = 0.6f)) },
         )
         Pill("확인") {
             if ("@" !in email) {

@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
  * @property image 사진처럼 원 안에 대신 그릴 콘텐츠. 원 모양으로 잘린다.
  */
 @Immutable
-public data class KAvatar(val name: String, val color: Color = Color.Unspecified, val image: (@Composable () -> Unit)? = null)
+public data class KAvatarData(val name: String, val color: Color = Color.Unspecified, val image: (@Composable () -> Unit)? = null)
 
 /**
  * 아바타를 겹쳐 늘어놓는다. 모양은 아바타 모양 토큰을 따르고 기본 디자인에서는 원이다. [max]명을 넘으면 마지막에 "+3"처럼 남은 사람 수를 같은 모양으로 보여 준다.
@@ -51,7 +51,7 @@ public data class KAvatar(val name: String, val color: Color = Color.Unspecified
  * TalkBack은 보이는 사람들의 이름과 남은 인원을 한 번에 읽는다.
  *
  * ```kotlin
- * AvatarStack(listOf(KAvatar("Ana"), KAvatar("Ben"), KAvatar("김민수")), max = 3)
+ * AvatarStack(listOf(KAvatarData("Ana"), KAvatarData("Ben"), KAvatarData("김민수")), max = 3)
  * ```
  *
  * @param max 원으로 보일 최대 인원. 1 미만이면 [IllegalArgumentException]을 던진다.
@@ -60,7 +60,7 @@ public data class KAvatar(val name: String, val color: Color = Color.Unspecified
  */
 @Composable
 public fun AvatarStack(
-    avatars: List<KAvatar>,
+    avatars: List<KAvatarData>,
     modifier: Modifier = Modifier,
     max: Int = 4,
     size: Dp = 36.dp,
@@ -182,7 +182,7 @@ internal fun initialsOf(name: String): String {
 
 private fun firstGlyph(word: String): String = word.substring(0, word.offsetByCodePoints(0, 1))
 
-internal fun KAvatar.backgroundColor(): Color =
+internal fun KAvatarData.backgroundColor(): Color =
     if (color != Color.Unspecified) color else AVATAR_COLORS[name.hashCode().absoluteValue % AVATAR_COLORS.size]
 
 private const val LTR_ISOLATE = '\u2066'

@@ -10,9 +10,12 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
+import com.naury.kinetica.ui.KineticaDesigns
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -67,9 +70,10 @@ class ShowcaseNavigationTest {
         val restoration = StateRestorationTester(compose)
         restoration.setContent { Showcase() }
         compose.waitForIdle()
-        compose.onNodeWithText("글래스").performClick()
+        compose.onNodeWithText("글래스 · Cupertino").performClick()
         compose.waitForIdle()
         compose.onAllNodesWithText("단색")[0].performClick()
+        compose.onNodeWithText("Fluent").performScrollTo().performClick()
         compose.waitForIdle()
         pressBack()
         openKit()
@@ -78,7 +82,7 @@ class ShowcaseNavigationTest {
         compose.waitForIdle()
         compose.onNodeWithText("분류를 골라 데모로 들어갑니다").assertExists()
         pressBack()
-        compose.onNodeWithText("단색").assertExists()
+        compose.onNodeWithText("단색 · Fluent").assertExists()
     }
 
     @Test
@@ -97,6 +101,22 @@ class ShowcaseNavigationTest {
         assertThat(look.family).isEqualTo(SurfaceFamily.Glass)
         assertThat(look.selectedPreset?.name).isEqualTo("Acrylic")
         compose.onNodeWithContentDescription("모양").assertExists()
+    }
+
+    @Test
+    fun `형태 비교에서 적용을 누르면 전역 형태가 바뀌고 요약에 이름이 보인다`() {
+        val look = ShowcaseLook()
+        compose.setContent { Showcase(look) }
+        compose.waitForIdle()
+        openKit()
+        compose.onNodeWithText(Demo.Surfaces.summary).performClick()
+        compose.waitForIdle()
+        list().performScrollToKey("designs")
+        compose.onNodeWithContentDescription("Material 형태").performClick()
+        compose.waitForIdle()
+        assertThat(look.designName).isEqualTo("Material")
+        assertThat(look.selectedDesign).isEqualTo(KineticaDesigns.Material)
+        compose.onNodeWithText("글래스 · Material").assertExists()
     }
 
     @Test

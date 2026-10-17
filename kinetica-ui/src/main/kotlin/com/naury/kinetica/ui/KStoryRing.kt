@@ -46,7 +46,7 @@ public object KStoryRingDefaults {
  * TalkBack은 내용 이름에 '새 스토리' 또는 '봄'을 상태로 덧붙인다.
  *
  * ```kotlin
- * KStoryRing(seen = story.seen, onClick = { open(story) }) { KAvatar(KAvatar(story.name), size = KAvatarSize.Large) }
+ * KStoryRing(seen = story.seen, onClick = { open(story) }) { KAvatar(KAvatarData(story.name), size = KAvatarSize.Large) }
  * ```
  *
  * @param colors 안 본 스토리 링 색. 비어 있으면 [IllegalArgumentException]을 던진다. 하나면 단색 링이다.

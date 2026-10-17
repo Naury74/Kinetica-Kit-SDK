@@ -72,9 +72,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.naury.kinetica.render.ContentTransitions
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KineticaScaffold
 import com.naury.kinetica.ui.LocalKineticaContentColor
+import com.naury.kinetica.ui.LocalKineticaDesign
 import com.naury.kinetica.ui.TypewriterText
 import com.naury.kinetica.ui.jellyPress
 import com.naury.kinetica.ui.kClickable
@@ -143,14 +145,14 @@ internal enum class Demo(val title: String, val summary: String, val icon: Image
     ),
     Navigation(
         "화면 이동",
-        "카드가 제자리에서 커지며 열리고, 목록은 옆에서 밀려 들어옵니다. 가장자리를 밀면 뒤로 갑니다.",
-        ShowcaseIcons.Forward,
+        "Push, CardStack, SheetStack, Cube, 별 모양 Reveal까지 22가지 전환과 실제 앱에서 어울리는 짝, 탭 전환, 컨테이너 변환입니다. 가장자리를 밀면 전환이 되감깁니다.",
+        KIcons.ArrowForward,
         Color(0xFFA0F08C),
         DemoGroup.Kit,
     ),
     Transition(
         "장면 전환",
-        "카드가 자연스럽게 상세 화면으로 이어지고, 아래로 끌면 닫힙니다.",
+        "서버 번들의 홈, 상품, 결제 화면을 14가지 전환으로 오가고, 슬라이더로 전환 중간 프레임을 멈춰 봅니다.",
         ShowcaseIcons.Expand,
         Color(0xFF7AE0FF),
         DemoGroup.Kit,
@@ -158,11 +160,11 @@ internal enum class Demo(val title: String, val summary: String, val icon: Image
     Board(
         "대시보드 보드",
         "사용자가 위젯을 직접 옮기고 크기를 바꾸는 홈 화면입니다.",
-        ShowcaseIcons.Grid,
+        KIcons.Grid,
         Color(0xFF5EF0C8),
         DemoGroup.Advanced,
     ),
-    Studio("화면 만들기", "운영자가 앱 안에서 화면을 디자인하는 편집기입니다.", ShowcaseIcons.Pen, Color(0xFFB98CFF), DemoGroup.Advanced),
+    Studio("화면 만들기", "운영자가 앱 안에서 화면을 디자인하는 편집기입니다.", KIcons.Edit, Color(0xFFB98CFF), DemoGroup.Advanced),
     Server("서버 화면", "앱을 업데이트하지 않고 서버 JSON으로 화면을 바꿉니다.", ShowcaseIcons.Cloud, Color(0xFFFFC56E), DemoGroup.Advanced),
 }
 
@@ -215,7 +217,8 @@ internal fun Showcase(look: ShowcaseLook = rememberShowcaseLook()) {
         val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkScreen
     }
-    CompositionLocalProvider(LocalShowcaseLook provides look) {
+    // 형태는 표면과 달리 화면마다 다르게 디자인한 값이 없어서 루트에서 한 번 깔면 모든 화면과 그 안의 KineticaTheme이 물려받는다.
+    CompositionLocalProvider(LocalShowcaseLook provides look, LocalKineticaDesign provides look.selectedDesign) {
         AnimatedContent(
             top,
             transitionSpec = {
@@ -334,7 +337,7 @@ private fun LookRow(onClick: () -> Unit) {
                 color = ink.copy(alpha = 0.7f),
                 modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
             )
-            ShowcaseIcon(ShowcaseIcons.Chevron, 18.dp, ink.copy(alpha = 0.6f))
+            ShowcaseIcon(KIcons.ChevronForward, 18.dp, ink.copy(alpha = 0.6f))
         }
     }
 }
@@ -370,7 +373,7 @@ private fun KitCard(onClick: () -> Unit) {
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Label("둘러보기", 16, FontWeight.Bold)
-                ShowcaseIcon(ShowcaseIcons.Chevron, 18.dp, modifier = Modifier.padding(start = 4.dp))
+                ShowcaseIcon(KIcons.ChevronForward, 18.dp, modifier = Modifier.padding(start = 4.dp))
             }
         }
     }
@@ -410,7 +413,7 @@ private fun LazyListScope.advancedEntries(columns: Int, open: (String) -> Unit) 
                         AdvancedEntry.Xml -> CompactEntry(
                             "XML 화면",
                             "Compose 없이 XML 레이아웃과 View로 만든 화면입니다.",
-                            ShowcaseIcons.Inbox,
+                            KIcons.Inbox,
                             Color(0xFFB0C4DE),
                             modifier,
                         ) { context.startActivity(Intent(context, XmlActivity::class.java)) }

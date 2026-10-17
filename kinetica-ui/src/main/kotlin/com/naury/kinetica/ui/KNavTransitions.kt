@@ -31,6 +31,11 @@ import androidx.compose.ui.unit.IntOffset
  * NavHost(controller, "home", enterTransition = nav.enter, exitTransition = nav.exit,
  *     popEnterTransition = nav.popEnter, popExitTransition = nav.popExit) { … }
  * ```
+ *
+ * @property enter 새 화면이 들어올 때
+ * @property exit 새 화면에 가려지는 화면이 나갈 때
+ * @property popEnter 뒤로 가서 아래 화면이 다시 들어올 때. 주지 않으면 [enter]
+ * @property popExit 뒤로 가서 위 화면이 나갈 때. 주지 않으면 [exit]
  */
 @Immutable
 public class KNavTransitionSpec(
