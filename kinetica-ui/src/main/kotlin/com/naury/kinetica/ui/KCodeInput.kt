@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -34,6 +33,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -219,6 +219,7 @@ private fun RowScope.CodeCell(char: Char?, state: CodeCellState, error: Boolean,
     LaunchedEffect(error) { errorLevel.animateTo(if (error) 1f else 0f) }
     val grow = LocalDensity.current.fontScale.coerceAtLeast(1f)
     val ink = look.surface.contentColor
+    val shape = roundedShapeFor(CELL_CORNER) { this.field }
     Box(
         Modifier
             // fill = true면 weight가 폭을 몫만큼 고정해 아래 최대 폭이 먹지 않는다. 넓은 화면에서 칸이 가로로 길쭉해진다.
@@ -226,8 +227,8 @@ private fun RowScope.CodeCell(char: Char?, state: CodeCellState, error: Boolean,
             .widthIn(max = CELL_MAX_WIDTH * grow)
             .fillMaxWidth()
             .heightIn(min = CELL_HEIGHT)
-            .kSurface(look.surface, CELL_SHAPE)
-            .cellChrome(state, look, CellAnim(active, errorLevel, clock)),
+            .kSurface(look.surface, shape)
+            .cellChrome(state, look, shape, CellAnim(active, errorLevel, clock)),
         contentAlignment = Alignment.Center,
     ) {
         if (char != null) {
@@ -245,7 +246,7 @@ private fun RowScope.CodeCell(char: Char?, state: CodeCellState, error: Boolean,
                 style = TextStyle(
                     color = ink,
                     fontSize = if (look.mask) MASK_FONT_SIZE else CELL_FONT_SIZE,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = KineticaTheme.design.label(FontWeight.SemiBold),
                     textAlign = TextAlign.Center,
                 ),
                 maxLines = 1,
@@ -257,10 +258,9 @@ private fun RowScope.CodeCell(char: Char?, state: CodeCellState, error: Boolean,
 private class CellAnim(val active: Animatable<Float, *>, val error: Animatable<Float, *>, val clock: LoopClock)
 
 /** 칸 테두리와 깜빡이는 커서. 애니메이션 값은 그리기 단계에서 읽는다. */
-private fun Modifier.cellChrome(state: CodeCellState, look: CodeLook, anim: CellAnim): Modifier = drawWithCache {
+private fun Modifier.cellChrome(state: CodeCellState, look: CodeLook, shape: Shape, anim: CellAnim): Modifier = drawWithCache {
     val width = CELL_BORDER.toPx()
     val stroke = Stroke(width)
-    val corner = CornerRadius(CELL_CORNER.toPx() - width / 2)
     val inset = Offset(width / 2, width / 2)
     val box = Size(size.width - width, size.height - width)
     val caretWidth = CARET_WIDTH.toPx()
@@ -270,7 +270,7 @@ private fun Modifier.cellChrome(state: CodeCellState, look: CodeLook, anim: Cell
         drawContent()
         val active = anim.active.value
         val color = lerp(lerp(idle, look.accent, active), look.errorColor, anim.error.value)
-        drawRoundRect(color, inset, box, corner, style = stroke)
+        drawShape(shape, color, inset, box, stroke)
         if (state == CodeCellState.Active) {
             val blink = if (look.still) 1f else (cos(anim.clock.seconds * 2f * PI.toFloat() / BLINK_SECONDS) + 1f) / 2f
             val alpha = active * (CARET_MIN_ALPHA + (1f - CARET_MIN_ALPHA) * blink)
@@ -286,7 +286,6 @@ private fun Modifier.cellChrome(state: CodeCellState, look: CodeLook, anim: Cell
 
 private const val MAX_LENGTH = 12
 private const val MASK_DOT = "●"
-private val CELL_SHAPE = RoundedCornerShape(14.dp)
 private val CELL_CORNER = 14.dp
 private val CELL_GAP = 8.dp
 private val CELL_MAX_WIDTH = 52.dp

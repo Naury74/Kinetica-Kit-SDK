@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -104,7 +102,8 @@ public fun KKeypad(
     val locale = LocalConfiguration.current.locales.get(0) ?: Locale.ROOT
     val decimal = remember(locale) { DecimalFormatSymbols.getInstance(locale).decimalSeparator }
     val pin = mode == KKeypadMode.Pin
-    val shape: Shape = if (pin) CircleShape else RoundedCornerShape(KEY_RADIUS)
+    // PIN 키는 버튼처럼, 숫자 입력 키는 입력란 칸처럼 깎는다.
+    val shape: Shape = if (pin) shapeFor { button } else shapeFor { this.field }
     val spec = KeySpec(shape, pin, letters, enabled, surface)
     val outer = LocalLayoutDirection.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -303,7 +302,6 @@ private const val KEY_ASPECT = 1.9f
 private const val DOT_IDLE = 0.86f
 private const val DOT_DAMPING = 0.45f
 private const val EMPTY_ALPHA = 0.45f
-private val KEY_RADIUS = 14.dp
 private val KEY_HEIGHT = 52.dp
 private val KEY_GAP = 6.dp
 private val PIN_GAP = 16.dp

@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -124,20 +122,24 @@ private fun OutlinedQuantity(
     change: (Int) -> Unit,
 ) {
     val ink = surface.contentColor
-    val shape = RoundedCornerShape(OUTLINE_RADIUS)
+    val shapes = currentShapes
+    val corner = shapes.cornerOf(shapes.button)
+    val radius = shapes.radiusOr(shapes.button, OUTLINE_RADIUS)
+    val shape = shapeOf(corner, radius)
+    val weight = KineticaTheme.design.label(FontWeight.SemiBold)
     Row(
         modifier
-            .height(OUTLINE_HEIGHT)
+            .height(KineticaTheme.design.density.height(OUTLINE_HEIGHT))
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED }
             .border(1.dp, ink.copy(alpha = BORDER_ALPHA), shape)
             .clip(shape),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val inner = RoundedCornerShape(KMetrics.concentric(OUTLINE_RADIUS, 1.dp))
+        val inner = shapeOf(corner, if (radius > 0.dp) KMetrics.concentric(radius, 1.dp) else radius)
         QuantityButton(KDataGlyphs.Minus, enabled && value > range.first, ink, inner) { change(value - 1) }
         Divider(ink)
         Box(Modifier.widthIn(min = VALUE_MIN).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
-            RollingText(value.toString(), style = themed(TextStyle(color = ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)))
+            RollingText(value.toString(), style = themed(TextStyle(color = ink, fontSize = 16.sp, fontWeight = weight)))
         }
         Divider(ink)
         QuantityButton(KDataGlyphs.Plus, enabled && value < range.last, ink, inner) { change(value + 1) }
@@ -164,11 +166,13 @@ private fun CollapsibleQuantity(
     val still = reducedMotion()
     val add = stringResource(R.string.kinetica_ui_quantity_add)
     val grow = spring<IntSize>(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium)
+    val shape = shapeFor { button }
+    val weight = KineticaTheme.design.label(FontWeight.SemiBold)
     Row(
         modifier
             .height(COLLAPSED)
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED }
-            .background(if (open) colors.accent.copy(alpha = TONAL) else Color.Transparent, CircleShape)
+            .background(if (open) colors.accent.copy(alpha = TONAL) else Color.Transparent, shape)
             .then(if (open) Modifier.quantitySemantics(a11y, change) else Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -179,13 +183,13 @@ private fun CollapsibleQuantity(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val removes = value == range.first + 1
-                QuantityButton(if (removes) KDataGlyphs.Trash else KDataGlyphs.Minus, enabled, colors.accent, CircleShape) {
+                QuantityButton(if (removes) KDataGlyphs.Trash else KDataGlyphs.Minus, enabled, colors.accent, shape) {
                     change(value - 1)
                 }
                 Box(Modifier.widthIn(min = VALUE_MIN_SMALL).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
                     RollingText(
                         value.coerceAtLeast(range.first + 1).toString(),
-                        style = themed(TextStyle(color = surface.contentColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)),
+                        style = themed(TextStyle(color = surface.contentColor, fontSize = 16.sp, fontWeight = weight)),
                     )
                 }
             }
@@ -195,13 +199,13 @@ private fun CollapsibleQuantity(
             Modifier
                 .size(COLLAPSED)
                 .graphicsLayer { alpha = if (canAdd || !open) 1f else EDGE }
-                .background(colors.accent, CircleShape)
-                .clip(CircleShape)
+                .background(colors.accent, shape)
+                .clip(shape)
                 .then(
                     if (open) {
-                        Modifier.kClickable(CircleShape, enabled = canAdd, role = null) { change(value + 1) }
+                        Modifier.kClickable(shape, enabled = canAdd, role = null) { change(value + 1) }
                     } else {
-                        Modifier.kClickable(CircleShape, enabled = enabled, onClickLabel = add) { change(value + 1) }
+                        Modifier.kClickable(shape, enabled = enabled, onClickLabel = add) { change(value + 1) }
                             .clearAndSetSemantics {
                                 contentDescription = "$add, ${a11y.label}"
                                 if (!enabled) disabled()

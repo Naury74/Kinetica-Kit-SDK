@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActionScope
@@ -41,11 +40,11 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -136,14 +135,15 @@ public fun KTagInput(
     val matches = remember(suggestions, tags, model.text) { matchSuggestions(suggestions, tags, model.text, MAX_SUGGESTIONS) }
     val accent = KineticaTheme.colors.accent
     val anchor = remember { SuggestionAnchor() }
+    val boxShape = roundedShapeFor(BOX_CORNER) { this.field }
     Box(modifier.keepVisibleWhileFocused(model.focused)) {
         FlowRow(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = BOX_MIN_HEIGHT)
                 .onGloballyPositioned { anchor.bounds = it.boundsOnScreen() }
-                .kSurface(surface.forField(), BOX_SHAPE)
-                .focusRing(accent) { focus.value }
+                .kSurface(surface.forField(), boxShape)
+                .focusRing(accent, boxShape) { focus.value }
                 .pointerInput(Unit) { detectTapGestures { requester.requestFocus() } }
                 .padding(BOX_PADDING),
             horizontalArrangement = Arrangement.spacedBy(CHIP_GAP),
@@ -331,6 +331,7 @@ private fun TagChip(tag: String, look: TagLook, bump: Int, onRemove: () -> Unit)
     val accent = look.accent
     val onAccent = KineticaTheme.colors.onAccent
     val ink = look.surface.contentColor
+    val shape = chipShape
     Row(
         Modifier
             .shake(bump, distance = 5.dp)
@@ -339,12 +340,9 @@ private fun TagChip(tag: String, look: TagLook, bump: Int, onRemove: () -> Unit)
                 scaleY = scaleX
                 alpha = enter.value.coerceIn(0f, 1f)
             }
-            .heightIn(min = CHIP_HEIGHT)
-            .kSurface(look.surface, CircleShape)
-            .drawBehind {
-                val radius = CornerRadius(size.height / 2)
-                drawRoundRect(lerpAlpha(accent, CHIP_FILL, 1f, armedLevel.value), cornerRadius = radius)
-            }
+            .heightIn(min = KineticaTheme.design.density.height(CHIP_HEIGHT))
+            .kSurface(look.surface, shape)
+            .drawBehind { drawShape(shape, lerpAlpha(accent, CHIP_FILL, 1f, armedLevel.value), Offset.Zero, size) }
             .semantics(mergeDescendants = true) {
                 contentDescription = tag
                 if (look.armed) {
@@ -363,7 +361,7 @@ private fun TagChip(tag: String, look: TagLook, bump: Int, onRemove: () -> Unit)
     ) {
         ThemedText(
             tag,
-            style = TextStyle(fontSize = CHIP_FONT_SIZE, fontWeight = FontWeight.Medium),
+            style = TextStyle(fontSize = CHIP_FONT_SIZE, fontWeight = KineticaTheme.design.label(FontWeight.Medium)),
             color = { lerp(ink, onAccent, armedLevel.value) },
             maxLines = 1,
         )
@@ -471,6 +469,7 @@ private fun SuggestionPanel(content: SuggestionContent, modifier: Modifier, prog
     val title = stringResource(R.string.kinetica_ui_tag_suggestions)
     val accent = KineticaTheme.colors.accent
     val surface = content.surface
+    val press = KIndication(currentShapes.inner(currentShapes.menu, LIST_PADDING))
     Column(
         modifier
             .graphicsLayer {
@@ -478,7 +477,7 @@ private fun SuggestionPanel(content: SuggestionContent, modifier: Modifier, prog
                 alpha = p.coerceIn(0f, 1f)
                 translationY = -LIST_SLIDE.toPx() * (1f - p)
             }
-            .kSurface(surface.forPopup(), LIST_SHAPE)
+            .kSurface(surface.forPopup(), shapeFor { menu })
             .semantics { contentDescription = title }
             .padding(vertical = LIST_PADDING),
     ) {
@@ -488,7 +487,7 @@ private fun SuggestionPanel(content: SuggestionContent, modifier: Modifier, prog
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = LIST_PADDING)
-                    .clickable(null, SuggestionPress, role = Role.Button) { onPick(item) }
+                    .clickable(null, press, role = Role.Button) { onPick(item) }
                     .heightIn(min = ROW_HEIGHT)
                     .padding(horizontal = ROW_PADDING, vertical = ROW_VERTICAL_PADDING),
                 style = themed(TextStyle(color = surface.contentColor, fontSize = FIELD_FONT_SIZE)),
@@ -512,21 +511,19 @@ private fun highlight(text: String, query: String, accent: Color): AnnotatedStri
 }
 
 /** 포커스를 받으면 강조색 테두리를 그린다. 값은 그리기 단계에서 읽는다. */
-private fun Modifier.focusRing(accent: Color, level: () -> Float): Modifier = drawWithCache {
+private fun Modifier.focusRing(accent: Color, shape: Shape, level: () -> Float): Modifier = drawWithCache {
     val width = RING_WIDTH.toPx()
     val stroke = Stroke(width)
-    val corner = CornerRadius(BOX_CORNER.toPx() - width / 2)
     val inset = Offset(width / 2, width / 2)
     val box = Size(size.width - width, size.height - width)
     onDrawWithContent {
         drawContent()
         val alpha = level()
-        if (alpha > 0f) drawRoundRect(accent.copy(alpha = alpha), inset, box, corner, style = stroke)
+        if (alpha > 0f) drawShape(shape, accent.copy(alpha = alpha), inset, box, stroke)
     }
 }
 
 private const val MAX_SUGGESTIONS = 5
-private val BOX_SHAPE = RoundedCornerShape(18.dp)
 private val BOX_CORNER = 18.dp
 private val BOX_MIN_HEIGHT = 56.dp
 private val BOX_PADDING = 10.dp
@@ -542,10 +539,6 @@ private val FIELD_PADDING = 6.dp
 private val REMOVE_TOUCH = 32.dp
 private val REMOVE_SIZE = 18.dp
 private val CROSS_WIDTH = 1.6.dp
-private val LIST_SHAPE = RoundedCornerShape(16.dp)
-
-// 목록 모서리와 같은 중심을 갖도록 바깥 반지름에서 안쪽 여백을 뺀다.
-private val SuggestionPress = KIndication(RoundedCornerShape(10.dp))
 private val LIST_GAP = 6.dp
 private val LIST_PADDING = 6.dp
 private val LIST_SLIDE = 6.dp

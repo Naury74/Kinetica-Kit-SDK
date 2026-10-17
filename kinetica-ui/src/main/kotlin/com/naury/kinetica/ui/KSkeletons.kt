@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,14 +43,14 @@ public enum class KSkeletonLeading {
  * 아바타 자리 스켈레톤. 불러오는 동안 [KAvatar] 대신 둔다.
  *
  * @param size 지름
- * @param shape 모양. 기본값은 원이다.
+ * @param shape 모양. 기본값은 아바타 모양 토큰이고, 기본 디자인에서는 원이다.
  * @param style 움직임. [Modifier.skeleton] 참고
  */
 @Composable
 public fun KSkeletonAvatar(
     modifier: Modifier = Modifier,
     size: Dp = 40.dp,
-    shape: Shape = CircleShape,
+    shape: Shape = shapeFor { this.avatar },
     style: KSkeletonStyle = KSkeletonStyle.Shimmer,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
@@ -98,8 +97,8 @@ public fun KSkeletonListItem(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         when (leading) {
-            KSkeletonLeading.Avatar -> Spacer(Modifier.size(LEADING).skeleton(true, CircleShape, color, style))
-            KSkeletonLeading.Thumbnail -> Spacer(Modifier.size(LEADING).skeleton(true, RoundedCornerShape(10.dp), color, style))
+            KSkeletonLeading.Avatar -> Spacer(Modifier.size(LEADING).skeleton(true, shapeFor { avatar }, color, style))
+            KSkeletonLeading.Thumbnail -> Spacer(Modifier.size(LEADING).skeleton(true, shapeFor { image }, color, style))
             KSkeletonLeading.None -> Unit
         }
         // 막대마다 실제 글 한 줄 높이의 칸을 잡아, 글자 크기를 키워도 불러온 뒤의 행 높이와 같게 한다.
@@ -133,17 +132,17 @@ public fun KSkeletonCard(
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val color = blockColor(surface)
+    val shapes = currentShapes
     Column(
         modifier
             .fillMaxWidth()
-            .kSurface(surface, RoundedCornerShape(CARD_CORNER))
+            .kSurface(surface, shapes.shape(shapes.card))
             .loadingSemantics()
             .padding(CARD_PADDING),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (media) {
-            val inner = KMetrics.concentric(CARD_CORNER, CARD_PADDING)
-            Spacer(Modifier.fillMaxWidth().aspectRatio(MEDIA_RATIO).skeleton(true, RoundedCornerShape(inner), color, style))
+            Spacer(Modifier.fillMaxWidth().aspectRatio(MEDIA_RATIO).skeleton(true, shapes.inner(shapes.card, CARD_PADDING), color, style))
             Spacer(Modifier.height(2.dp))
         }
         Spacer(Modifier.fillMaxWidth(TITLE_WIDTH).height(TITLE).skeleton(true, RoundedCornerShape(TITLE / 2), color, style))
@@ -156,7 +155,7 @@ public fun KSkeletonCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Spacer(Modifier.size(FOOTER_AVATAR).skeleton(true, CircleShape, color, style))
+            Spacer(Modifier.size(FOOTER_AVATAR).skeleton(true, shapes.shape(shapes.avatar), color, style))
             Spacer(Modifier.size(FOOTER_WIDTH, SUPPORTING).skeleton(true, RoundedCornerShape(SUPPORTING / 2), color, style))
         }
     }
@@ -189,7 +188,6 @@ private val TEXT_GAP = 2.dp
 private val HEADLINE_TEXT = 16.sp
 private val SUPPORTING_TEXT = 14.sp
 private const val LINE_BOX = 1.4f
-private val CARD_CORNER = 24.dp
 private val CARD_PADDING = 12.dp
 private val FOOTER_AVATAR = 28.dp
 private val FOOTER_WIDTH = 96.dp

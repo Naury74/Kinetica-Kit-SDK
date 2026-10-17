@@ -19,11 +19,19 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
@@ -62,6 +70,7 @@ public fun KRadio(
         }
     }
     val idle = surface.contentColor.copy(alpha = CHOICE_IDLE_ALPHA)
+    val shape = shapeFor { radio }
     Box(
         modifier
             .size(if (onClick != null) KMetrics.Touch else CHOICE_BOX + CHOICE_PAD)
@@ -80,13 +89,22 @@ public fun KRadio(
                 },
             )
             .graphicsLayer { alpha = if (enabled) 1f else CHOICE_DISABLED_ALPHA }
-            .drawBehind {
-                val t = level.value
-                val radius = CHOICE_BOX.toPx() / 2
+            .drawWithCache {
+                val box = CHOICE_BOX.toPx()
                 val border = CHOICE_BORDER.toPx()
-                val color = lerp(idle, colors.color, t.coerceIn(0f, 1f))
-                drawCircle(color, radius - border / 2, style = Stroke(border))
-                if (t > 0f) drawCircle(colors.color, DOT_RADIUS.toPx() * t)
+                val dot = DOT_RADIUS.toPx() * 2
+                val ring = shape.createOutline(Size(box - border, box - border), layoutDirection, this)
+                val fill = shape.createOutline(Size(dot, dot), layoutDirection, this)
+                val stroke = Stroke(border)
+                val center = Offset(size.width / 2, size.height / 2)
+                onDrawBehind {
+                    val t = level.value
+                    val color = lerp(idle, colors.color, t.coerceIn(0f, 1f))
+                    translate(center.x - (box - border) / 2, center.y - (box - border) / 2) { drawOutline(ring, color, style = stroke) }
+                    if (t > 0f) {
+                        scale(t, center) { translate(center.x - dot / 2, center.y - dot / 2) { drawOutline(fill, colors.color) } }
+                    }
+                }
             },
     )
 }
@@ -148,7 +166,10 @@ private val DOT_RADIUS = 5.dp
 private const val DOT_DAMPING = 0.45f
 private const val DOT_STIFFNESS = 900f
 private const val DOT_OUT_MS = 120
-private val GROUP_ROW_SHAPE = RoundedCornerShape(12.dp)
+private val GROUP_ROW_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = currentShapes.shape(KShapeToken.Medium)
 private val GROUP_ROW_PADDING = 8.dp
 private val GROUP_GAP = 8.dp
 private val GROUP_TEXT_PADDING = 10.dp

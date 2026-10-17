@@ -12,12 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -101,10 +102,10 @@ public fun KSelect(
             Modifier
                 .fillMaxWidth()
                 .onSizeChanged { width = it.width }
-                .heightIn(min = SELECT_HEIGHT)
+                .heightIn(min = KineticaTheme.design.density.height(SELECT_HEIGHT))
                 .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
                 .kSurface(surface.forField(), SelectShape)
-                .fieldFocusFrame(SELECT_CORNER, levels, accent, accent)
+                .fieldFocusFrame(SelectShape, levels, accent, accent)
                 .clip(SelectShape)
                 .clickable(null, KIndication(SelectShape), enabled, openLabel, Role.DropdownList) { open = true }
                 .semantics { stateDescription = selected ?: none }
@@ -307,8 +308,10 @@ internal fun emphasize(text: String, query: String): AnnotatedString {
     }
 }
 
-private val SELECT_CORNER = 14.dp
-private val SelectShape = RoundedCornerShape(SELECT_CORNER)
+private val SelectShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = fieldShape
 private val SELECT_HEIGHT = 52.dp
 private val SUGGESTIONS_MAX_HEIGHT = 280.dp
 private const val LABEL_ALPHA = 0.6f

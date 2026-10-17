@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -144,7 +143,9 @@ private fun ToastStack(state: KToasterState, rendered: List<ToastEntry>, look: S
         if (still) expand.snapTo(target) else expand.animateTo(target, spring(EXPAND_DAMPING, Spring.StiffnessMediumLow))
     }
     val density = LocalDensity.current
-    val metrics = remember(density) { StackMetrics(density) }
+    // 겹친 토스트를 자르는 모서리도 토스트 모양 토큰 반지름을 따른다. 캡슐이면 높이의 절반으로 줄여 쓴다.
+    val toastCorner = currentShapes.let { it.radius(it.toast) }
+    val metrics = remember(density, toastCorner) { StackMetrics(density, toastCorner) }
     val currentRendered by rememberUpdatedState(rendered)
     Layout(
         content = {
@@ -187,10 +188,10 @@ private fun ToastStack(state: KToasterState, rendered: List<ToastEntry>, look: S
 }
 
 /** 쌓기에 쓰는 px 치수 */
-private class StackMetrics(density: Density) {
+private class StackMetrics(density: Density, radius: Dp) {
     val peek = with(density) { STACK_PEEK.toPx() }
     val gap = with(density) { STACK_GAP.toPx() }
-    val corner = with(density) { TOAST_CORNER.toPx() }
+    val corner = if (radius == Dp.Infinity) Float.POSITIVE_INFINITY else with(density) { radius.toPx() }
 }
 
 /** 토스트 하나의 자리. [y]는 쌓는 가장자리에서 보이는 부분 시작까지 거리, [clip]은 보이는 높이다. */
@@ -236,7 +237,7 @@ private class TopClipShape(private val height: Float, private val corner: Float)
 private fun ToastCard(entry: ToastEntry, state: KToasterState, look: StackLook, still: Boolean, contentAlpha: () -> Float) {
     ToastEffects(entry, state, still)
     val travel = with(LocalDensity.current) { TOAST_TRAVEL.toPx() }
-    val shape = remember { CapsuleShape(TOAST_CORNER) }
+    val shape = shapeFor { toast }
     Row(
         Modifier
             .swipeAway(entry, state) { p, swipe ->
@@ -333,7 +334,7 @@ private fun Modifier.toastSemantics(entry: ToastEntry, state: KToasterState): Mo
     return this
         .then(
             if (several) {
-                Modifier.clickable(null, KIndication(CapsuleShape(TOAST_CORNER)), onClickLabel = toggleLabel, role = Role.Button) {
+                Modifier.clickable(null, KIndication(shapeFor { toast }), onClickLabel = toggleLabel, role = Role.Button) {
                     state.expanded = !state.expanded
                 }
             } else {
@@ -369,18 +370,19 @@ private fun RowScope.ToastBody(entry: ToastEntry, state: KToasterState, look: St
         }
     }
     entry.action?.let { action ->
+        val actionShape = shapeFor { button }
         ThemedText(
             action.label,
             Modifier
                 .padding(start = 10.dp)
                 .graphicsLayer { alpha = contentAlpha() }
-                .background(ink.copy(alpha = ACTION_BACK_ALPHA), CircleShape)
-                .clickable(null, KIndication(CircleShape), role = Role.Button) {
+                .background(ink.copy(alpha = ACTION_BACK_ALPHA), actionShape)
+                .clickable(null, KIndication(actionShape), role = Role.Button) {
                     action.onClick()
                     state.dismiss(entry.id)
                 }
                 .padding(horizontal = 14.dp, vertical = 8.dp),
-            style = TextStyle(color = ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+            style = TextStyle(color = ink, fontSize = 13.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
             maxLines = 1,
         )
     }
@@ -392,7 +394,6 @@ private val STACK_EDGE = 8.dp
 private val STACK_MAX_WIDTH = 440.dp
 private val STACK_PEEK = 10.dp
 private val STACK_GAP = 8.dp
-private val TOAST_CORNER = 24.dp
 private val TOAST_MIN_HEIGHT = 48.dp
 private val TOAST_ICON = 20.dp
 private val TOAST_TRAVEL = 28.dp

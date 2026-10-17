@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
@@ -242,9 +243,70 @@ public fun Modifier.kSurface(
     shape: Shape = RectangleShape,
     backdrop: GlassBackdrop? = LocalGlassBackdrop.current,
     intensity: Float = 1f,
-): Modifier = when (surface) {
-    is SurfaceStyle.Glass -> glass(surface.style, shape, backdrop, intensity)
-    else -> filledSurface(surface, shape, intensity, LocalGlassLayered.current && backdrop === LocalGlassBackdrop.current)
+): Modifier {
+    val design = LocalKineticaDesign.current
+    val nested = LocalGlassLayered.current && backdrop === LocalGlassBackdrop.current
+    val styled = surface.withDepth(design)
+    val offset = if (design.depth == KDepth.Offset && !nested) {
+        hardShadow(shape, surface.contentColor, design.offsetDistance(surface.floating), intensity)
+    } else {
+        Modifier
+    }
+    return this.then(offset).then(
+        when (styled) {
+            is SurfaceStyle.Glass -> Modifier.glass(styled.style, shape, backdrop, intensity)
+            else -> Modifier.filledSurface(styled, shape, intensity, nested)
+        },
+    )
+}
+
+/**
+ * 떠 있는 판(다이얼로그, 시트, [KVariant.Elevated])인지. 그림자가 [FLOATING_ELEVATION] 이상이면 떠 있다고 본다.
+ * 글래스 스타일은 기본 그림자가 커서 이 값으로 가리지 않는다.
+ */
+internal val SurfaceStyle.floating: Boolean
+    get() = when (this) {
+        is SurfaceStyle.Glass -> false
+        is SurfaceStyle.Solid -> elevation >= FLOATING_ELEVATION
+        is SurfaceStyle.Tonal -> elevation >= FLOATING_ELEVATION
+    }
+
+/**
+ * [design]의 깊이 표현에 맞춰 그림자와 테두리를 바꾼 표면. [KDepth.Shadow]면 그대로다.
+ * 톤 표면은 테두리를 바꿔야 하므로 같은 색의 단색 표면이 된다.
+ */
+internal fun SurfaceStyle.withDepth(design: KineticaDesign): SurfaceStyle {
+    if (design.depth == KDepth.Shadow) return this
+    val float = floating
+    val ink = contentColor
+    val (elevation, border, width) = when (design.depth) {
+        KDepth.Shadow -> return this
+        KDepth.Border -> Triple(if (float) POPUP_BORDER_SHADOW else 0.dp, borderInk(ink, isDark), design.borderWidth)
+        KDepth.Flat -> Triple(if (float) POPUP_ELEVATION else 0.dp, Color.Transparent, 0.dp)
+        KDepth.Offset -> Triple(0.dp, ink, design.borderWidth)
+    }
+    return when (this) {
+        // 글래스는 팝업도 같은 그림자를 쓰므로 떠 있는지 가릴 수 없다. 그래서 0으로 없애지 않고 줄여서 판 사이 위계를 남긴다.
+        is SurfaceStyle.Glass -> SurfaceStyle.Glass(
+            style.copy(
+                shadow = if (design.depth == KDepth.Offset) 0.dp else style.shadow * GLASS_FLAT_SHADOW,
+                edgeLight = if (border.alpha > 0f) border else style.edgeLight,
+                edgeWidth = if (border.alpha > 0f) width else style.edgeWidth,
+            ),
+        )
+
+        is SurfaceStyle.Solid -> copy(elevation = elevation, border = border, borderWidth = width)
+
+        is SurfaceStyle.Tonal -> SurfaceStyle.Solid(color, contentColor, background, border, width, elevation)
+    }
+}
+
+/** 오른쪽 아래로 [distance]만큼 비낀 단단한 그림자. RTL에서는 왼쪽 아래로 비낀다. */
+internal fun hardShadow(shape: Shape, color: Color, distance: Dp, intensity: Float = 1f): Modifier = Modifier.drawBehind {
+    val d = distance.toPx()
+    val outline = shape.createOutline(size, layoutDirection, this)
+    val dx = if (layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl) -d else d
+    translate(dx, d) { drawOutline(outline, color.copy(alpha = color.alpha * intensity.coerceIn(0f, 1f))) }
 }
 
 /** 단색이나 톤 표면. 그림자 Paint와 Path는 모양이 바뀔 때만 새로 만든다. */
@@ -338,6 +400,8 @@ private const val DARK_SHADOW_ALPHA = 0.45f
 private const val NESTED_FILL = 0.06f
 private const val POPUP_DARK_LIFT = 0.06f
 private val POPUP_ELEVATION = 18.dp
+private val POPUP_BORDER_SHADOW = 10.dp
+private const val GLASS_FLAT_SHADOW = 0.4f
 private val NESTED_SHADOW = 2.dp
 private const val INK = 0xFF15161A
 private const val DEFAULT_TONAL_ACCENT = 0xFF0A84FF

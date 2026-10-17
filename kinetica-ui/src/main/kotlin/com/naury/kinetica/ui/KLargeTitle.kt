@@ -341,7 +341,7 @@ private fun SmallBar(
                 }
                 // 큰 제목과 같은 글이므로 TalkBack이 두 번 읽지 않게 한다.
                 .clearAndSetSemantics {},
-            style = TextStyle(color = surface.contentColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+            style = TextStyle(color = surface.contentColor, fontSize = 17.sp, fontWeight = KineticaTheme.design.title(FontWeight.SemiBold)),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -387,7 +387,7 @@ private fun LargeTitle(state: KLargeTitleState, title: String, surface: SurfaceS
                     transformOrigin = TransformOrigin(if (rtl) 1f else 0f, CENTER)
                 }
                 .semantics { heading() },
-            style = TextStyle(color = surface.contentColor, fontSize = 34.sp, fontWeight = FontWeight.Bold),
+            style = TextStyle(color = surface.contentColor, fontSize = 34.sp, fontWeight = KineticaTheme.design.title(FontWeight.Bold)),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

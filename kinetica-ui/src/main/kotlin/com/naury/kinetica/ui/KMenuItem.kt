@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +39,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -148,6 +150,8 @@ private fun ContextMenuLayer(
     // 오버레이는 다른 창(대화 상자)이거나 화면 (0,0)에 있지 않을 수 있으므로 화면 좌표를 이 상자 좌표로 옮긴다.
     var origin by remember { mutableStateOf(Offset.Zero) }
     var menuHeight by remember { mutableIntStateOf(0) }
+    val panel = shapeFor { menu }
+    val liftShape = shapeFor { card }
     val bounds = rootBounds.translate(-origin)
     BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionOnScreen() }) {
         Scrim(level, close)
@@ -161,7 +165,7 @@ private fun ContextMenuLayer(
                     scaleX = scale
                     scaleY = scale
                     shadowElevation = LIFT_ELEVATION.toPx() * level
-                    shape = RoundedCornerShape(LIFT_CORNER)
+                    shape = liftShape
                     clip = false
                 },
             onDraw = drawTarget,
@@ -182,7 +186,7 @@ private fun ContextMenuLayer(
                     alpha = level
                     transformOrigin = TransformOrigin(if (rtl) 1f - MENU_ORIGIN_X else MENU_ORIGIN_X, if (place.below) 0f else 1f)
                 }
-                .kSurface(surface.forPopup(), RoundedCornerShape(MENU_CORNER))
+                .kSurface(surface.forPopup(), panel)
                 .verticalScroll(rememberScrollState())
                 .padding(vertical = MENU_PADDING),
         ) {
@@ -254,16 +258,17 @@ private const val MENU_STIFFNESS = 500f
 private const val CLOSE_MS = 160
 private const val LIFT_SCALE = 0.04f
 private val LIFT_ELEVATION = 24.dp
-private val LIFT_CORNER = 20.dp
 private val MENU_WIDTH = 240.dp
 private val MENU_GAP = 12.dp
 private val MENU_PADDING = 6.dp
-private val MENU_CORNER = 22.dp
 private val ITEM_HEIGHT = 46.dp
 private val ITEM_PADDING = 12.dp
 
 // 항목 눌림 표시는 메뉴 모서리와 같은 중심을 쓰도록 메뉴 안쪽 여백만큼 작은 반지름을 쓴다.
-private val ITEM_SHAPE = RoundedCornerShape(KMetrics.concentric(MENU_CORNER, MENU_PADDING))
+private val ITEM_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = currentShapes.inner(currentShapes.menu, MENU_PADDING)
 private val EDGE = 16.dp
 private const val MENU_START_SCALE = 0.7f
 private const val MENU_ORIGIN_X = 0.1f

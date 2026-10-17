@@ -72,11 +72,14 @@ import kotlinx.coroutines.launch
 public val LocalKineticaContentColor: androidx.compose.runtime.ProvidableCompositionLocal<Color> =
     staticCompositionLocalOf { Color(0xFF15161A) }
 
-/** 글래스 표면. [backdrop]을 비춰 보이고, 기본값은 감싸고 있는 화면의 배경이다. 안쪽 콘텐츠는 [LocalKineticaContentColor]로 색을 받는다. */
+/**
+ * 글래스 표면. [backdrop]을 비춰 보이고, 기본값은 감싸고 있는 화면의 배경이다. 안쪽 콘텐츠는 [LocalKineticaContentColor]로 색을 받는다.
+ * 기본 모양은 [KineticaShapes.card]다.
+ */
 @Composable
 public fun KSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(24.dp),
+    shape: Shape = shapeFor { card },
     surface: SurfaceStyle = KineticaTheme.surface,
     backdrop: GlassBackdrop? = LocalGlassBackdrop.current,
     content: @Composable BoxScope.() -> Unit,
@@ -109,15 +112,16 @@ public fun KDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     surface: SurfaceStyle = KineticaTheme.surface,
-    shape: Shape = RoundedCornerShape(32.dp),
+    shape: Shape = shapeFor { dialog },
     origin: Offset? = null,
     title: String? = null,
     contentWindowInsets: @Composable () -> WindowInsets = { WindowInsets.safeDrawing },
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val design = KineticaTheme.design
     KOverlay(visible) { transition ->
         val progress by transition.animateFloat(
-            transitionSpec = { if (targetState) spring(dampingRatio = DIALOG_DAMPING, stiffness = DIALOG_STIFFNESS) else tween(CLOSE_MS) },
+            transitionSpec = { if (targetState) design.motion.tuned(DIALOG_DAMPING, DIALOG_STIFFNESS) else tween(CLOSE_MS) },
             label = "glass-dialog",
         ) { if (it) 1f else 0f }
         BackHandler(enabled = visible, onBack = onDismissRequest)
@@ -155,7 +159,7 @@ public fun KDialog(
                             }
                         }
                         .blockTouches()
-                        .padding(24.dp),
+                        .padding(design.density.padding(24.dp)),
                 ) {
                     CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) {
                         KGlassLayer { content() }
@@ -257,13 +261,14 @@ private fun SheetPanel(
 ) {
     val surface = frame.surface
     val scope = rememberCoroutineScope()
+    val design = KineticaTheme.design
     val connection = remember(drag) { SheetDismissConnection(drag, height, { frame.onDismiss() }) }
     Column(
         modifier
             // 태블릿이나 펼친 폴더블에서는 화면 끝까지 늘이지 않고 가운데에 읽기 좋은 폭으로 둔다.
             .widthIn(max = KSheetDefaults.MaxWidth)
             .fillMaxWidth()
-            .kSurface(surface.forPopup(), RoundedCornerShape(topStart = SHEET_CORNER, topEnd = SHEET_CORNER))
+            .kSurface(surface.forPopup(), design.shapes.topShape(design.shapes.sheet))
             .semantics {
                 frame.title?.let { paneTitle = it }
                 dismiss {
@@ -278,7 +283,7 @@ private fun SheetPanel(
             }
             .blockTouches()
             .windowInsetsPadding(frame.insets)
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = design.density.padding(24.dp)),
     ) {
         Box(
             Modifier
@@ -382,7 +387,6 @@ private const val DIALOG_START_SCALE = 0.6f
 private val DIALOG_MIN_WIDTH = 280.dp
 private val DIALOG_MAX_WIDTH = 420.dp
 private const val SHEET_DAMPING = 0.85f
-private val SHEET_CORNER = 32.dp
 private const val SHEET_DISMISS_FRACTION = 0.3f
 private const val SHEET_FLING = 1800f
 private const val SCRIM_ALPHA = 0.22f

@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -121,7 +118,7 @@ private fun PaginationRow(current: Int, pageCount: Int, onPageChange: (Int) -> U
                 ThemedText(
                     "${current + 1} / $pageCount",
                     Modifier.padding(horizontal = 12.dp).clearAndSetSemantics { contentDescription = label },
-                    style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                    style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
                 )
             }
         }
@@ -156,6 +153,8 @@ private fun PageCell(index: Int, selected: Boolean, ink: Color, onClick: () -> U
             label = "page",
         )
     val label = stringResource(R.string.kinetica_ui_page_number, index + 1)
+    val shape = shapeFor { indicator }
+    val weight = KineticaTheme.design.label(FontWeight.Medium)
     Box(
         Modifier
             .heightIn(min = KMetrics.MinTouch)
@@ -165,15 +164,11 @@ private fun PageCell(index: Int, selected: Boolean, ink: Color, onClick: () -> U
                 if (p <= 0f) return@drawBehind
                 val h = minOf(size.height, PILL.toPx()) * (PILL_START + (1f - PILL_START) * p)
                 val w = maxOf(h, size.width - PILL_INSET.toPx() * 2) * (PILL_START + (1f - PILL_START) * p)
-                drawRoundRect(
-                    colors.accent.copy(alpha = p.coerceIn(0f, 1f)),
-                    Offset((size.width - w) / 2, (size.height - h) / 2),
-                    Size(w, h),
-                    CornerRadius(h / 2),
-                )
+                val topLeft = Offset((size.width - w) / 2, (size.height - h) / 2)
+                drawShape(shape, colors.accent.copy(alpha = p.coerceIn(0f, 1f)), topLeft, Size(w, h))
             }
-            .clip(CircleShape)
-            .kClickable(CircleShape, enabled = !selected, role = null, onClick = onClick)
+            .clip(shape)
+            .kClickable(shape, enabled = !selected, role = null, onClick = onClick)
             .semantics {
                 contentDescription = label
                 role = Role.Button
@@ -187,7 +182,7 @@ private fun PageCell(index: Int, selected: Boolean, ink: Color, onClick: () -> U
             style = TextStyle(
                 color = if (selected) colors.onAccent else ink,
                 fontSize = 15.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                fontWeight = if (selected) FontWeight.Bold else weight,
                 textAlign = TextAlign.Center,
             ),
             maxLines = 1,
@@ -204,12 +199,13 @@ private fun Ellipsis(ink: Color) {
 
 @Composable
 private fun PageArrow(icon: ImageVector, label: String, enabled: Boolean, ink: Color, onClick: () -> Unit) {
+    val shape = shapeFor { button }
     Box(
         Modifier
             .size(KMetrics.MinTouch)
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED }
-            .clip(CircleShape)
-            .kClickable(CircleShape, enabled = enabled, onClick = onClick)
+            .clip(shape)
+            .kClickable(shape, enabled = enabled, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
@@ -271,12 +267,13 @@ public fun KBreadcrumb(
 private fun CrumbItem(text: String, label: String?, current: Boolean, ink: Color, onClick: () -> Unit) {
     val accent = KineticaTheme.colors.accent
     val here = stringResource(R.string.kinetica_ui_breadcrumb_current)
+    val shape = roundedShapeFor(CRUMB_CORNER) { button }
     ThemedText(
         text,
         Modifier
             .heightIn(min = KMetrics.MinTouch)
-            .clip(CRUMB_SHAPE)
-            .then(if (current) Modifier else Modifier.kClickable(CRUMB_SHAPE, onClick = onClick))
+            .clip(shape)
+            .then(if (current) Modifier else Modifier.kClickable(shape, onClick = onClick))
             .semantics {
                 if (current) stateDescription = here
                 label?.let { contentDescription = it }
@@ -285,7 +282,7 @@ private fun CrumbItem(text: String, label: String?, current: Boolean, ink: Color
         style = TextStyle(
             color = if (current) ink else accent,
             fontSize = 15.sp,
-            fontWeight = if (current) FontWeight.SemiBold else FontWeight.Medium,
+            fontWeight = KineticaTheme.design.label(if (current) FontWeight.SemiBold else FontWeight.Medium),
         ),
         maxLines = 1,
     )
@@ -296,7 +293,7 @@ private val GAP = 2.dp
 private val PILL = 36.dp
 private val PILL_INSET = 2.dp
 private val SEPARATOR = 14.dp
-private val CRUMB_SHAPE = RoundedCornerShape(10.dp)
+private val CRUMB_CORNER = 10.dp
 private const val EDGE_SLOTS = 5
 private const val MIN_VISIBLE = 3
 private const val PILL_START = 0.6f

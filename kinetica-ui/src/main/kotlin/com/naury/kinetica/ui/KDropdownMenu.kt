@@ -31,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -463,7 +465,10 @@ internal fun Glyph(
 }
 
 /** 메뉴 항목 눌림 표시 모양. 판 모서리와 같은 중심으로 굽도록 판 안쪽 여백만큼 작은 반지름을 쓴다. */
-internal val MenuItemShape = RoundedCornerShape(KMetrics.concentric(PopupPanelCorner, PopupPanelPadding))
+internal val MenuItemShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = currentShapes.inner(currentShapes.menu, PopupPanelPadding)
 
 private val ROW_INSET = PopupPanelPadding
 private val ROW_PADDING = 12.dp

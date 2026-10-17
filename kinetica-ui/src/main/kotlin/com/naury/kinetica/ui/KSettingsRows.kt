@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
  *
  * @param subtitle 제목 아래 설명. 두 줄까지 보인다.
  * @param leading 앞쪽 아이콘이나 아바타
- * @param variant 스위치 모양
+ * @param variant 스위치 모양. 기본값은 [KineticaDesign.controls]의 스위치 모양이다.
  */
 @Composable
 public fun KSwitchRow(
@@ -25,7 +25,7 @@ public fun KSwitchRow(
     subtitle: String? = null,
     leading: KListLeading? = null,
     enabled: Boolean = true,
-    variant: KSwitchVariant = KSwitchVariant.Capsule,
+    variant: KSwitchVariant = KineticaTheme.design.controls.switch,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     KListItem(

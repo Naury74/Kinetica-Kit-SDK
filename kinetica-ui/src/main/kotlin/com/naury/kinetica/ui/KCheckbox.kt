@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.triStateToggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,11 +26,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
@@ -41,7 +45,7 @@ import kotlinx.coroutines.launch
 
 /** [KCheckbox]의 모양. */
 public enum class KCheckboxShape {
-    /** 모서리가 둥근 사각형. 가장 흔한 체크박스 모양이다. */
+    /** 상자. 모서리는 [KineticaShapes.checkbox]를 따른다(기본 6dp). 가장 흔한 체크박스 모양이다. */
     Square,
 
     /** 원. 목록의 선택 표시나 할 일 앱의 완료 표시에 어울린다. */
@@ -105,6 +109,11 @@ public fun KTriStateCheckbox(
     val colors = tone.colors(surface)
     val motion = rememberCheckMotion(state)
     val interactive = onClick != null
+    val design = KineticaTheme.design
+    val border = if (design.depth == KDepth.Offset) design.borderWidth.coerceAtLeast(CHOICE_BORDER) else CHOICE_BORDER
+    val box = if (shape == KCheckboxShape.Circle) CircleShape else design.shapes.shape(design.shapes.checkbox)
+    // 테두리는 선 두께 절반만큼 안쪽에 그리므로 모서리도 그만큼 줄여야 채운 상자와 같은 곡선이 된다.
+    val ringShape = if (shape == KCheckboxShape.Circle) CircleShape else design.shapes.inner(design.shapes.checkbox, border / 2)
     Box(
         modifier
             .size(if (interactive) KMetrics.Touch else CHOICE_BOX + CHOICE_PAD)
@@ -123,16 +132,21 @@ public fun KTriStateCheckbox(
                 },
             )
             .graphicsLayer { alpha = if (enabled) 1f else CHOICE_DISABLED_ALPHA }
-            .checkDrawing(motion, shape, colors, surface.contentColor),
+            .checkDrawing(motion, CheckLook(box, ringShape, colors, surface.contentColor, border)),
     )
 }
 
+/** 체크박스를 그리는 고정 값. [shape]은 상자 모양, [border]는 꺼진 상자 테두리 두께다. */
+private class CheckLook(val shape: Shape, val ring: Shape, val colors: ToneColors, val ink: Color, val border: Dp)
+
 /** 상자 채움과 표시 획 진행을 그리기 단계에서 읽어 그린다. Path는 크기가 바뀔 때만 새로 만든다. */
-private fun Modifier.checkDrawing(motion: CheckMotion, shape: KCheckboxShape, colors: ToneColors, ink: Color): Modifier = drawWithCache {
+private fun Modifier.checkDrawing(motion: CheckMotion, look: CheckLook): Modifier = drawWithCache {
+    val colors = look.colors
     val box = CHOICE_BOX.toPx()
     val origin = Offset((size.width - box) / 2, (size.height - box) / 2)
-    val corner = if (shape == KCheckboxShape.Circle) box / 2 else CHECK_CORNER.toPx()
-    val border = CHOICE_BORDER.toPx()
+    val border = look.border.toPx()
+    val fillOutline = look.shape.createOutline(Size(box, box), layoutDirection, this)
+    val ringOutline = look.ring.createOutline(Size(box - border, box - border), layoutDirection, this)
     val check = Path().apply {
         moveTo(origin.x + box * CHECK_A_X, origin.y + box * CHECK_A_Y)
         lineTo(origin.x + box * CHECK_B_X, origin.y + box * CHECK_B_Y)
@@ -144,21 +158,18 @@ private fun Modifier.checkDrawing(motion: CheckMotion, shape: KCheckboxShape, co
     }
     val paths = MarkPaths(check, dash)
     val mark = Stroke(MARK_WIDTH.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-    val idle = ink.copy(alpha = CHOICE_IDLE_ALPHA)
+    val idle = look.ink.copy(alpha = CHOICE_IDLE_ALPHA)
+    val ring = Stroke(border)
     onDrawBehind {
         val fill = motion.fill.value
         if (fill < 1f) {
-            drawRoundRect(
-                lerp(idle, colors.color, fill),
-                origin + Offset(border / 2, border / 2),
-                Size(box - border, box - border),
-                CornerRadius(corner - border / 2),
-                style = Stroke(border),
-            )
+            translate(origin.x + border / 2, origin.y + border / 2) {
+                drawOutline(ringOutline, lerp(idle, colors.color, fill), style = ring)
+            }
         }
         if (fill > 0f) {
             scale(FILL_FROM + (1 - FILL_FROM) * fill, origin + Offset(box / 2, box / 2)) {
-                drawRoundRect(colors.color.copy(alpha = fill.coerceIn(0f, 1f)), origin, Size(box, box), CornerRadius(corner))
+                translate(origin.x, origin.y) { drawOutline(fillOutline, colors.color.copy(alpha = fill.coerceIn(0f, 1f))) }
             }
         }
         drawMark(motion, paths, mark, colors.onColor)
@@ -225,7 +236,6 @@ internal const val CHOICE_HALO_ALPHA: Float = 0.12f
 internal const val CHOICE_IDLE_ALPHA: Float = 0.42f
 internal const val CHOICE_DISABLED_ALPHA: Float = 0.38f
 
-private val CHECK_CORNER = 6.dp
 private val MARK_WIDTH = 2.2.dp
 private const val CHECK_A_X = 0.26f
 private const val CHECK_A_Y = 0.52f

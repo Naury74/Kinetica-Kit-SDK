@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * 주 동작 버튼과 꺾쇠 버튼을 붙여 놓은 분할 버튼. 앞쪽을 누르면 [onClick], 꺾쇠를 누르면 [onMenuClick]이 불린다.
- * 바깥 모서리는 캡슐처럼 둥글고 맞붙은 안쪽 모서리는 작게 깎는다. [menuExpanded]가 `true`면 꺾쇠 버튼이 원으로 바뀌고 꺾쇠가 위를 향한다.
+ * 바깥 모서리는 버튼 모양 토큰 반지름으로 둥글고 맞붙은 안쪽 모서리는 작게 깎는다. [menuExpanded]가 `true`면 꺾쇠 버튼의 안쪽 모서리도 둥글어지고 꺾쇠가 위를 향한다.
  * 메뉴 자체는 호출한 쪽이 띄운다. TalkBack은 꺾쇠 버튼을 '옵션 더 보기'와 펼침 상태로 읽는다. RTL에서는 꺾쇠가 왼쪽에 놓인다.
  *
  * ```kotlin
@@ -72,9 +72,12 @@ public fun KSplitButton(
         spring(dampingRatio = OPEN_DAMPING, stiffness = OPEN_STIFFNESS),
         label = "split-open",
     )
-    val leading = SideRoundShape(ROUND, INNER)
-    // 열리면 꺾쇠 버튼의 안쪽 모서리도 둥글어져 원이 된다. 짧은 순간이라 모양은 재구성으로 바꾼다.
-    val trailing = SideRoundShape(INNER + (ROUND - INNER) * open, ROUND)
+    val height = KineticaTheme.design.density.height(size.height)
+    val round = buttonRoundFraction(height)
+    val inner = minOf(INNER, round)
+    val leading = SideRoundShape(round, inner)
+    // 열리면 꺾쇠 버튼의 안쪽 모서리도 둥글어져 바깥 모서리와 같아진다. 짧은 순간이라 모양은 재구성으로 바꾼다.
+    val trailing = SideRoundShape(inner + (round - inner) * open, round)
     val press = if (variant.bare) PLAIN_PRESS_ALPHA else PRESS_ALPHA
     Row(
         modifier.graphicsLayer { alpha = if (enabled) 1f else DISABLED },
@@ -84,7 +87,7 @@ public fun KSplitButton(
         Row(
             Modifier
                 .jellyPress(JELLY)
-                .height(size.height)
+                .height(height)
                 .variantBackground(variant, colors, surface, leading)
                 .clip(leading)
                 .clickable(null, KIndication(leading, ink, press), enabled, role = Role.Button) {
@@ -98,7 +101,7 @@ public fun KSplitButton(
             icon?.let { Image(rememberVectorPainter(it), null, Modifier.size(size.icon), colorFilter = ColorFilter.tint(ink)) }
             ThemedText(
                 text,
-                style = TextStyle(color = ink, fontSize = size.font, fontWeight = FontWeight.SemiBold),
+                style = TextStyle(color = ink, fontSize = size.font, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -131,12 +134,13 @@ private fun MenuSegment(
 ) {
     val name = label ?: stringResource(R.string.kinetica_ui_more_options)
     val state = stringResource(if (expanded) R.string.kinetica_ui_expanded else R.string.kinetica_ui_collapsed)
+    val height = KineticaTheme.design.density.height(size.height)
     Box(
         Modifier
             .jellyPress(JELLY)
-            .height(size.height)
-            .defaultMinSize(minWidth = size.height)
-            .width(size.height + MENU_EXTRA)
+            .height(height)
+            .defaultMinSize(minWidth = height)
+            .width(height + MENU_EXTRA)
             .variantBackground(look.variant, look.colors, look.surface, look.shape)
             .clip(look.shape)
             .clickable(null, KIndication(look.shape, look.ink, look.press), enabled, role = Role.Button, onClick = onClick)
@@ -167,7 +171,6 @@ private val SEGMENT_GAP = 2.dp
 private val MENU_EXTRA = 4.dp
 private val ICON_TRIM = 4.dp
 private val INNER_TRIM = 2.dp
-private const val ROUND = 0.5f
 private const val INNER = 0.16f
 private const val JELLY = 0.05f
 private const val DISABLED = 0.4f

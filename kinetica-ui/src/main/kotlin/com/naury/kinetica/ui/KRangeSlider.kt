@@ -84,6 +84,7 @@ import kotlinx.coroutines.launch
  * @param onRangeChangeFinished 손을 떼거나 키보드, TalkBack으로 값을 바꾼 뒤 한 번 호출된다.
  * @param valueLabel 말풍선과 TalkBack이 읽는 값 문구. 기본값은 기기 언어 형식에 소수 둘째 자리까지다.
  * @param accent 채워진 구간과 말풍선의 색. 기본값은 [KineticaTheme]의 `accent`다.
+ * @param thumb 손잡이 모양. 기본값은 [KineticaDesign.controls]의 [KineticaControls.sliderThumb]다. 트랙은 기본 모양을 쓴다.
  */
 @Composable
 public fun KRangeSlider(
@@ -97,6 +98,7 @@ public fun KRangeSlider(
     valueLabel: (Float) -> String = DefaultValueLabel,
     accent: Color = KineticaTheme.colors.accent,
     surface: SurfaceStyle = KineticaTheme.surface,
+    thumb: KSliderThumb = KineticaTheme.design.controls.sliderThumb,
 ) {
     require(steps >= 0) { "steps는 0 이상이어야 합니다." }
     require(valueRange.endInclusive > valueRange.start) { "valueRange의 끝이 시작보다 커야 합니다." }
@@ -125,7 +127,8 @@ public fun KRangeSlider(
     val track = surface.contentColor.copy(alpha = TRACK_ALPHA)
     val startFraction = model.fraction(start)
     val endFraction = model.fraction(end)
-    val thumbSpec = ThumbShared(model, enabled, rtl, fill, valueLabel)
+    val paint = sliderPaint(fill, surface)
+    val thumbSpec = ThumbShared(model, enabled, rtl, valueLabel, thumb, paint)
     // 제스처 입력은 다시 시작하지 않고, 누를 때마다 지금의 범위, 눈금, 방향을 읽는다.
     val gesture = rememberUpdatedState(RangeGesture(rtl, { latestRange }, model, move, finish))
     Layout(
@@ -204,8 +207,9 @@ private class ThumbShared(
     val model: RangeModel,
     val enabled: Boolean,
     val rtl: Boolean,
-    val fill: Color,
     val valueLabel: (Float) -> String,
+    val style: KSliderThumb,
+    val paint: ThumbPaint,
 )
 
 @Composable
@@ -252,21 +256,11 @@ private fun RangeThumb(
                 )
                 onDrawBehind {
                     val amount = grab.value
-                    drawThumb(amount)
-                    if (amount > 0f) drawBubble(amount, shared.fill, text)
+                    drawSliderThumb(shared.style, Offset(size.width / 2, size.height / 2), amount, shared.paint)
+                    if (amount > 0f) drawBubble(amount, shared.paint.accent, text)
                 }
             },
     )
-}
-
-private fun DrawScope.drawThumb(grab: Float) {
-    val thumbWidth = THUMB_WIDTH.toPx() * (1f + THUMB_GROW * grab)
-    val thumbHeight = THUMB_HEIGHT.toPx() * (1f + THUMB_GROW * grab)
-    val topLeft = Offset((size.width - thumbWidth) / 2, (size.height - thumbHeight) / 2)
-    val radius = CornerRadius(thumbHeight / 2)
-    drawRoundRect(Color.Black.copy(alpha = THUMB_SHADOW), topLeft + Offset(0f, THUMB_DROP.toPx()), Size(thumbWidth, thumbHeight), radius)
-    // 잡은 동안에는 손잡이를 반투명하게 해 뒤의 트랙이 비쳐 보이게 한다.
-    drawRoundRect(Color.White.copy(alpha = 1f - THUMB_CLEAR * grab), topLeft, Size(thumbWidth, thumbHeight), radius)
 }
 
 /** 손잡이 위에 값 말풍선을 그린다. 잡은 정도만큼 손잡이 쪽에서 커지며 나타난다. */
@@ -384,10 +378,7 @@ private const val TRACK_ALPHA = 0.16f
 private val THUMB_WIDTH = 36.dp
 private val THUMB_HEIGHT = 24.dp
 private val THUMB_TOUCH = 48.dp
-private val THUMB_DROP = 1.dp
 private const val THUMB_GROW = 0.25f
-private const val THUMB_SHADOW = 0.14f
-private const val THUMB_CLEAR = 0.35f
 private val BUBBLE_TEXT = 13.sp
 private val BUBBLE_PAD_X = 10.dp
 private val BUBBLE_PAD_Y = 4.dp

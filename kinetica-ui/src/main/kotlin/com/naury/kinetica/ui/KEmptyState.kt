@@ -61,7 +61,7 @@ public fun KEmptyState(
             style = TextStyle(
                 color = ink,
                 fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = KineticaTheme.design.title(FontWeight.SemiBold),
                 textAlign = TextAlign.Center,
                 lineBreak = PhraseBreak,
             ),

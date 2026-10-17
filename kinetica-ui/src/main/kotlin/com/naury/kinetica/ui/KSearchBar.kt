@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -103,7 +102,7 @@ public fun KSearchBar(
                         scaleX = 1f + STRETCH_X * stretch.value
                         scaleY = 1f - STRETCH_Y * stretch.value
                     }
-                    .kSurface(surface.forField(), CircleShape)
+                    .kSurface(surface.forField(), shapeFor { search })
                     .fieldFocusFrame(SEARCH_HEIGHT / 2, levels, accent, accent)
                     .onFocusChanged { focused = it.isFocused }
                     .fieldName(placeholder),
@@ -172,7 +171,7 @@ private fun CancelButton(visible: Boolean, onCancel: () -> Unit) {
             stringResource(R.string.kinetica_ui_search_cancel),
             Modifier
                 .padding(start = CANCEL_GAP)
-                .clickable(null, KIndication(CircleShape), role = Role.Button, onClick = onCancel)
+                .clickable(null, KIndication(shapeFor { button }), role = Role.Button, onClick = onCancel)
                 .padding(horizontal = CANCEL_PADDING, vertical = CANCEL_VERTICAL),
             style = TextStyle(color = KineticaTheme.colors.accent, fontSize = SEARCH_FONT_SIZE),
             maxLines = 1,

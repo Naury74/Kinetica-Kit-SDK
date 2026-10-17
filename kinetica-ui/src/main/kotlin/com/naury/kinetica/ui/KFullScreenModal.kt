@@ -41,7 +41,9 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * 아래에서 올라와 화면을 덮는 화면. 열리는 동안 [KineticaScaffold]의 콘텐츠는 살짝 작아지며 뒤로 물러난다.
@@ -79,7 +81,8 @@ public fun KFullScreenModal(
                 events.collect { gesture.back.snapTo(it.progress) }
                 dismiss.value()
             } catch (cancelled: CancellationException) {
-                gesture.back.animateTo(0f)
+                // 제스처를 취소하면 이 코루틴도 취소되므로 되돌리는 애니메이션은 취소되지 않게 돌린다.
+                withContext(NonCancellable) { gesture.back.animateTo(0f) }
                 throw cancelled
             }
         }

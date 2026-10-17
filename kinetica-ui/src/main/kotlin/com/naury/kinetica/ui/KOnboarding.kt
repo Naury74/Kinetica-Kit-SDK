@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
@@ -192,20 +191,21 @@ private fun PageContent(page: OnboardingPage, contentColor: Color, offset: () ->
 
 @Composable
 private fun BoxScope.SkipButton(color: Color, enabled: Boolean, alpha: () -> Float, onClick: () -> Unit) {
+    val shape = shapeFor { button }
     Box(
         Modifier
             .align(Alignment.TopEnd)
             .padding(SKIP_MARGIN)
             .graphicsLayer { this.alpha = alpha() }
-            .clip(CircleShape)
-            .clickable(null, KIndication(CircleShape, color), enabled, role = Role.Button, onClick = onClick)
+            .clip(shape)
+            .clickable(null, KIndication(shape, color), enabled, role = Role.Button, onClick = onClick)
             .heightIn(min = KMetrics.MinTouch)
             .padding(horizontal = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
         ThemedText(
             stringResource(R.string.kinetica_ui_onboarding_skip),
-            style = TextStyle(color = color, fontSize = 16.sp, fontWeight = FontWeight.Medium),
+            style = TextStyle(color = color, fontSize = 16.sp, fontWeight = KineticaTheme.design.label(FontWeight.Medium)),
         )
     }
 }
@@ -216,6 +216,8 @@ private fun BoxScope.NextButton(last: Boolean, color: Color, textColor: () -> Co
     val next = stringResource(R.string.kinetica_ui_onboarding_next)
     val start = stringResource(R.string.kinetica_ui_onboarding_start)
     val pressInk = if (color.luminance() > HALF) Color.Black else Color.White
+    val shape = shapeFor { button }
+    val height = KineticaTheme.design.density.height(BUTTON_HEIGHT)
     Box(
         Modifier
             .align(Alignment.BottomEnd)
@@ -223,16 +225,16 @@ private fun BoxScope.NextButton(last: Boolean, color: Color, textColor: () -> Co
             .layout { measurable, constraints ->
                 val narrow = BUTTON_MIN_WIDTH.roundToPx().coerceAtMost(constraints.maxWidth)
                 val w = (narrow + (constraints.maxWidth - narrow) * finishing()).roundToInt()
-                val placeable = measurable.measure(Constraints.fixed(w, BUTTON_HEIGHT.roundToPx()))
+                val placeable = measurable.measure(Constraints.fixed(w, height.roundToPx()))
                 layout(placeable.width, placeable.height) { placeable.place(0, 0) }
             }
-            .clip(CircleShape)
+            .clip(shape)
             .background(color)
-            .clickable(null, KIndication(CircleShape, pressInk), role = Role.Button, onClick = onClick)
+            .clickable(null, KIndication(shape, pressInk), role = Role.Button, onClick = onClick)
             .semantics { contentDescription = if (last) start else next },
         contentAlignment = Alignment.Center,
     ) {
-        val label = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        val label = TextStyle(fontSize = 17.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold))
         // 두 글자가 겹쳐 보이지 않도록 앞 절반에서 '다음'이 사라지고 뒤 절반에서 '시작하기'가 나타난다.
         ThemedText(
             next,

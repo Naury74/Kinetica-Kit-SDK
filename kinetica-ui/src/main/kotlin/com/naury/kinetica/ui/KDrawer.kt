@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -47,6 +48,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -376,7 +378,10 @@ private suspend fun AwaitPointerEventScope.awaitDrawerSlop(down: PointerInputCha
 }
 
 private val CornerShapes = Array(MAX_CORNER_DP + 1) { RoundedCornerShape(it.dp) }
-private val DrawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
+private val DrawerShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = currentShapes.endShape(currentShapes.sheet)
 private val LightBehind = Color(0xFFE4E7EE)
 private val DarkBehind = Color(0xFF0D0E12)
 private val DRAWER_MAX_WIDTH = 304.dp

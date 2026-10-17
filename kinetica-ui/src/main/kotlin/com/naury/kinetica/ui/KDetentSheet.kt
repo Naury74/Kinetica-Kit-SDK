@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -44,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -460,7 +462,10 @@ private class SheetScrollConnection(private val state: KDetentSheetState) : Nest
 }
 
 internal val DefaultDetents: List<Detent> = listOf(Detent.Peek(120.dp), Detent.Fraction(0.5f), Detent.Full)
-private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+private val SheetShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = currentShapes.topShape(currentShapes.sheet)
 private val FULL_GAP = 8.dp
 private val FLING_VELOCITY = 400.dp
 private val HANDLE_WIDTH = 36.dp

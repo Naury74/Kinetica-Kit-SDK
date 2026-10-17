@@ -1,5 +1,7 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
@@ -13,6 +15,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 
 /**
@@ -111,6 +114,30 @@ internal class SideRoundShape(private val start: Float, private val end: Float) 
 
     override fun hashCode(): Int = start.hashCode() * HASH + end.hashCode()
 }
+
+/** 버튼 토큰 반지름을 높이 [height]에 대한 비율(0..0.5)로 바꾼 값. 캡슐이면 0.5다. [SideRoundShape]에 넘긴다. */
+@Composable
+@ReadOnlyComposable
+internal fun buttonRoundFraction(height: Dp): Float {
+    val shapes = currentShapes
+    val radius = shapes.radius(shapes.button)
+    return if (radius == Dp.Infinity || height <= Dp(0f)) HALF else (radius / height).coerceIn(0f, HALF)
+}
+
+/**
+ * [token] 역할의 모양. 토큰이 캡슐이면 반지름 [capsule]로 깎은 둥근 사각형을 쓴다.
+ * 캡슐로는 어색한 넓은 판이나 정사각형 칸이 기본 디자인에서 원래 모양을 지키고, 다른 디자인 언어에서는 그 반지름을 따르게 한다.
+ */
+@Composable
+@ReadOnlyComposable
+internal fun roundedShapeFor(capsule: Dp, token: KineticaShapes.() -> KShapeToken): Shape {
+    val shapes = currentShapes
+    val picked = shapes.token()
+    return shapeOf(shapes.cornerOf(picked), shapes.radiusOr(picked, capsule))
+}
+
+/** [token]의 반지름. 캡슐이면 [capsule]이다. */
+internal fun KineticaShapes.radiusOr(token: KShapeToken, capsule: Dp): Dp = radius(token).let { if (it == Dp.Infinity) capsule else it }
 
 private const val HASH = 31
 private const val HALF = 0.5f

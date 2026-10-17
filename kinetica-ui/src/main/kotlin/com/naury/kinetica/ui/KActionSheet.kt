@@ -33,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -248,7 +250,7 @@ private fun ActionGroup(actions: List<KDialogAction>, header: ActionHeader, surf
                         style = TextStyle(
                             color = ink.copy(alpha = HEADER_ALPHA),
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = KineticaTheme.design.title(FontWeight.SemiBold),
                             textAlign = TextAlign.Center,
                         ),
                     )
@@ -364,7 +366,10 @@ private fun ActionPopover(
     }
 }
 
-private val GroupShape = RoundedCornerShape(22.dp)
+private val GroupShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = shapeFor { menu }
 private val SHEET_MARGIN = 8.dp
 private val SHEET_MAX_WIDTH = 480.dp
 private val GROUP_MAX_HEIGHT = 520.dp

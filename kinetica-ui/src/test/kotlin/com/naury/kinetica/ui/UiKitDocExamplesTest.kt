@@ -2,6 +2,7 @@
 
 package com.naury.kinetica.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,7 +82,7 @@ class UiKitDocExamplesTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val blocks: List<@Composable () -> Unit> = listOf({ Block01() }, { Block02() }, { Block03() }, { Block04() }, { Block05() }, { Block06() }, { Block07() }, { Block08() }, { Block09() }, { Block10() }, { Block11() }, { Block12() }, { Block13() }, { Block14() }, { Block15() }, { Block16() }, { Block17() }, { Block18() }, { Block19() }, { Block20() }, { Block21() }, { Block22() }, { Block23() }, { Block24() }, { Block25() }, { Block26() }, { Block27() }, { Block28() })
+    private val blocks: List<@Composable () -> Unit> = listOf({ Block01() }, { Block02() }, { Block03() }, { Block04() }, { Block05() }, { Block06() }, { Block07() }, { Block08() }, { Block09() }, { Block10() }, { Block11() }, { Block12() }, { Block13() }, { Block14() }, { Block15() }, { Block15Transitions() }, { Block15NavHost() }, { Block16() }, { Block17() }, { Block18() }, { Block19() }, { Block20() }, { Block21() }, { Block22() }, { Block23() }, { Block24() }, { Block25() }, { Block26() }, { Block27() }, { BlockDesign() }, { Block28() })
 
     @Test
     fun `UI 키트 문서의 예가 모두 그려진다`() {
@@ -332,6 +333,31 @@ class UiKitDocExamplesTest {
     }
 
     @Composable
+    private fun Block15Transitions() {
+        var stack by rememberSaveable { mutableStateOf(listOf("home")) }
+        val tab = 0
+        fun screenTitle(screen: String) = screen
+        var buttonCenter by remember { mutableStateOf<Offset?>(null) }
+        PushNavigation(
+            stack,
+            onBack = { stack = stack.dropLast(1) },
+            transition = KTransitions.reveal(KRevealShape.Circle) { buttonCenter },
+            paneTitle = { screen -> screenTitle(screen) },
+        ) { screen -> Text(screen) }
+
+        KTransitionContent(tab, transition = KTransitions.TabSlide, isForward = { from, to -> to > from }) { page -> Text("탭 $page") }
+    }
+
+    // NavHost 예는 navigation-compose 의존이 필요해 AnimatedContent 예만 옮겼다.
+    @Composable
+    private fun Block15NavHost() {
+        val step = 0
+        val nav = rememberKNavTransition(KNavTransitions.Push)
+        AnimatedContent(step, transitionSpec = { kTransform(KNavTransitions.SharedAxisX, forward = targetState > initialState) }) { Text("$it") }
+        check(nav === KNavTransitions.Push || nav === KNavTransitions.None)
+    }
+
+    @Composable
     private fun Block16() {
         var confirm by remember { mutableStateOf(false) }
         var asking by remember { mutableStateOf(false) }
@@ -575,6 +601,25 @@ private fun docIcon(name: String): ImageVector = ImageVector.Builder(name, 24.dp
     }.build()
 
 private fun pay() = Unit
+/** 디자인 언어와 형태 */
+@Composable
+private fun BlockDesign() {
+    @Composable fun App() = KButton("저장", {})
+
+    @Composable fun PromoBanner() = KCard { KButton("보기", {}) }
+    KineticaTheme(surface = SurfaceStyles.CleanLight, design = KineticaDesigns.Material) { App() }
+
+    // 한 부분만 다른 형태로
+    KineticaTheme(design = KineticaDesigns.Brutal) { PromoBanner() }
+
+    // 프리셋을 고쳐 쓰기
+    val design = KineticaDesigns.Cupertino.copy(
+        shapes = KineticaShapes(corner = KCornerStyle.Squircle, button = KShapeToken.Medium),
+        indicator = KTabIndicator.Underline,
+    )
+    KineticaTheme(design = design) { App() }
+}
+
 private fun delete() = Unit
 private fun delete(mail: DocMail) = Unit
 private fun share() = Unit

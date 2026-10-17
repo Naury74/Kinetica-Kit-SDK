@@ -1,9 +1,10 @@
 package com.naury.kinetica.ui
 
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -30,6 +31,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -50,6 +52,9 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 /**
  * App Store의 투데이 탭 카드처럼 카드가 커지며 상세 화면으로 이어지는 전환의 상태. [Modifier.expandSource]로 카드 위치를 등록하고
@@ -145,13 +150,16 @@ private class ExpandSourceNode(var state: KExpandState, var key: Any) :
 /**
  * 열린 카드의 상세 화면을 그린다. 카드 위치에서 화면 전체로 커지면서 모서리가 펴지고, 배경은 흐려진다.
  * 스크롤이 맨 위일 때 상세 화면을 아래로 끌면 작아지며 모서리가 둥글어지고, 충분히 끌거나 뒤로 가기를 하면 카드 위치로 돌아간다.
+ * 예측형 뒤로 가기 제스처를 하는 동안에도 손가락을 따라 작아지고, 취소하면 다시 커진다. '애니메이션 삭제' 설정이 켜져 있으면 바로 열고 닫는다.
  *
- * [content]는 화면 크기로 그린 뒤 카드 너비에 맞게 축소해 보여 준다. 상세 화면 위쪽을 카드와 똑같이 구성하면 전환이 자연스럽게 이어진다.
+ * 기본 모습([KContainerTransform.Card])에서는 [content]를 화면 크기로 그린 뒤 카드 너비에 맞게 축소해 보여 준다.
+ * 상세 화면 위쪽을 카드와 똑같이 구성하면 전환이 자연스럽게 이어진다. 목록 행이나 플로팅 액션 버튼에서 열 때는 [transform]을 바꾼다.
  * [KineticaScaffold] 안에 두면 오버레이 레이어에 그린다. 상세 화면의 배경색은 호스트가 정하므로 시스템 바 아이콘은 바꾸지 않는다.
  * 어두운 상세 화면이면 [content] 안에 [KSystemBarIcons]를 둔다.
  *
- * @param cornerRadius 카드의 모서리 반경. 상세 화면이 커지면서 0이 된다.
+ * @param cornerRadius 카드의 모서리 반경. 상세 화면이 커지면서 0이 된다. [KContainerTransform.fab]이면 무시하고 원에서 시작한다.
  * @param title 열린 상세 화면의 이름. TalkBack이 창 제목으로 읽는다.
+ * @param transform 원래 요소에서 상세 화면으로 커지는 모습
  */
 @Composable
 public fun KExpandHost(
@@ -159,19 +167,22 @@ public fun KExpandHost(
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 24.dp,
     title: String? = null,
+    transform: KContainerTransform = KContainerTransform.Card,
     content: @Composable (key: Any) -> Unit,
 ) {
     val active = state.activeKey ?: return
     val open = state.expandedKey != null
     val progress = remember(active) { Animatable(if (state.restoredOpen) 1f else 0f).also { state.restoredOpen = false } }
     val drag = remember(active) { SettleOffset() }
+    val back = remember(active) { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    val still = reducedMotion()
     LaunchedEffect(active, open) {
-        val damping = if (open) EXPAND_DAMPING else COLLAPSE_DAMPING
-        progress.animateTo(if (open) 1f else 0f, spring(dampingRatio = damping, stiffness = Spring.StiffnessMediumLow))
+        progress.expandTo(open, still)
         if (!open) state.activeKey = null
     }
     val dismissDistance = with(LocalDensity.current) { DISMISS_DISTANCE.toPx() }
+    val cornerPx = with(LocalDensity.current) { cornerRadius.toPx() }
     fun release() {
         if (drag.value > dismissDistance * DISMISS_FRACTION) {
             state.collapse()
@@ -181,34 +192,22 @@ public fun KExpandHost(
     }
     val connection = remember(active) { dismissConnection(drag, ::release) }
     KOverlay(visible = true) { _ ->
-        // KineticaScaffold 밖에서는 오버레이가 Dialog 창에 뜨고, 그 창의 뒤로 가기는 창 안의 BackHandler만 받으므로 오버레이 안에 둔다.
-        BackHandler(enabled = open) { state.collapse() }
+        // KineticaScaffold 밖에서는 오버레이가 Dialog 창에 뜨고, 그 창의 뒤로 가기는 창 안의 핸들러만 받으므로 오버레이 안에 둔다.
+        ExpandBackHandler(open, back, state)
         // 크기는 제약에서 바로 얻어 처음 여는 프레임부터 그린다(측정 뒤에 알게 되면 첫 프레임에 카드만 사라져 깜빡인다).
         BoxWithConstraints(modifier.fillMaxSize().onGloballyPositioned { state.hostOrigin = it.positionOnScreen() }) {
             val bounds = Rect(Offset.Zero, Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat()))
-            val origin = state.hostOrigin
-            val level = progress.value.coerceIn(0f, 1f)
-            val dragged = (drag.value / dismissDistance).coerceIn(0f, 1f)
-            Scrim(level * (1f - dragged * SCRIM_DRAG)) { state.collapse() }
+            val dragged = maxOf((drag.value / dismissDistance).coerceIn(0f, 1f), back.value * BACK_SHRINK_LEVEL)
+            Scrim(progress.value.coerceIn(0f, 1f) * (1f - dragged * SCRIM_DRAG)) { state.collapse() }
             if (bounds.width <= 0f) return@BoxWithConstraints
-            val from = state.sources[active]?.translate(-origin) ?: bounds.deflate(bounds.minDimension * FALLBACK_INSET)
-            // 많이 끌수록 화면이 작아지며 가운데로 모인다.
-            val full = bounds.scaleAround(1f - dragged * DRAG_SHRINK)
-            val frame = lerp(from, full, progress.value)
-            val radius = lerp(cornerRadius.value, cornerRadius.value * dragged, level).dp
-            val fullWidth = bounds.width.roundToInt()
-            val fullHeight = bounds.height.roundToInt()
+            val from = state.sources[active]?.translate(-state.hostOrigin) ?: bounds.deflate(bounds.minDimension * FALLBACK_INSET)
+            val shape = ExpandShape(from, bounds, progress.value, dragged, cornerPx, transform)
             Box(
                 Modifier
-                    .placeAt(frame, fullWidth, fullHeight)
-                    .clip(RoundedCornerShape(radius))
-                    .semantics {
-                        title?.let { paneTitle = it }
-                        dismiss {
-                            state.collapse()
-                            true
-                        }
-                    }
+                    .placeAt(shape.frame, bounds.width.roundToInt(), bounds.height.roundToInt())
+                    .clip(RoundedCornerShape(shape.radius))
+                    .then(if (transform.containerColor.isSpecified) Modifier.background(transform.containerColor) else Modifier)
+                    .expandSemantics(title, state)
                     .draggable(
                         rememberDraggableState { delta -> drag.drag(delta * DRAG_RATE) },
                         Orientation.Vertical,
@@ -217,10 +216,78 @@ public fun KExpandHost(
                     .nestedScroll(connection)
                     .returnAfterRelease(drag, open, ::release),
             ) {
-                ScaledToFrame(frame.width / bounds.width.coerceAtLeast(1f), fullWidth, fullHeight) { content(active) }
+                ExpandedContent(shape, bounds, transform, progress::value) { content(active) }
             }
         }
     }
+}
+
+/** 열거나 닫는 애니메이션. '애니메이션 삭제' 설정이면 바로 옮긴다. */
+private suspend fun Animatable<Float, *>.expandTo(open: Boolean, still: Boolean) {
+    val target = if (open) 1f else 0f
+    if (still) {
+        snapTo(target)
+    } else {
+        animateTo(target, spring(dampingRatio = if (open) EXPAND_DAMPING else COLLAPSE_DAMPING, stiffness = Spring.StiffnessMediumLow))
+    }
+}
+
+private fun Modifier.expandSemantics(title: String?, state: KExpandState): Modifier = semantics {
+    title?.let { paneTitle = it }
+    dismiss {
+        state.collapse()
+        true
+    }
+}
+
+/** 예측형 뒤로 가기 제스처의 진행률을 [back]에 담고, 끝까지 하면 닫는다. 취소하면 [back]을 0으로 되돌린다. */
+@Composable
+private fun ExpandBackHandler(open: Boolean, back: Animatable<Float, *>, state: KExpandState) {
+    PredictiveBackHandler(enabled = open) { events ->
+        try {
+            events.collect { back.snapTo(it.progress) }
+            state.collapse()
+        } catch (cancelled: CancellationException) {
+            // 제스처를 취소하면 이 코루틴도 취소되므로 되돌리는 애니메이션은 취소되지 않게 돌린다.
+            withContext(NonCancellable) { back.animateTo(0f) }
+            throw cancelled
+        }
+    }
+}
+
+/** 진행률 [progress]와 끌어 내린 정도 [dragged]에서 상세 화면이 놓일 자리([frame])와 모서리 반경([radius], px) */
+private class ExpandShape(from: Rect, bounds: Rect, progress: Float, dragged: Float, cornerPx: Float, transform: KContainerTransform) {
+    // 많이 끌수록 화면이 작아지며 가운데로 모인다.
+    val frame = lerp(from, bounds.scaleAround(1f - dragged * DRAG_SHRINK), progress)
+    val radius: Float =
+        lerp(if (transform.circularSource) from.minDimension / 2f else cornerPx, cornerPx * dragged, progress.coerceIn(0f, 1f))
+}
+
+/** 상세 내용을 [transform]에 맞게 그린다. 카드 모양이면 너비에 맞게 줄이고, 아니면 원래 크기로 위에 붙여 뒤늦게 나타나게 한다. */
+@Composable
+private fun ExpandedContent(
+    shape: ExpandShape,
+    bounds: Rect,
+    transform: KContainerTransform,
+    progress: () -> Float,
+    content: @Composable () -> Unit,
+) {
+    val fullWidth = bounds.width.roundToInt()
+    val fullHeight = bounds.height.roundToInt()
+    if (transform.scaleContent) {
+        ScaledToFrame(shape.frame.width / bounds.width.coerceAtLeast(1f), fullWidth, fullHeight, content)
+        return
+    }
+    Box(
+        Modifier
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(Constraints.fixed(fullWidth, fullHeight))
+                layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
+            }
+            .graphicsLayer {
+                alpha = ((progress() - transform.fadeStart) / (transform.fadeEnd - transform.fadeStart)).coerceIn(0f, 1f)
+            },
+    ) { content() }
 }
 
 /** 끌어 내린 채 플링 없이 손을 뗐으면 [release]로 닫을지 되돌릴지 정한다. */
@@ -288,3 +355,6 @@ private const val DISMISS_FRACTION = 0.45f
 private const val DRAG_RATE = 0.6f
 private const val DRAG_SHRINK = 0.18f
 private const val SCRIM_DRAG = 0.5f
+
+// 뒤로 가기 제스처를 끝까지 해도 끌어 내려 닫을 때만큼만 작아진다.
+private const val BACK_SHRINK_LEVEL = 0.6f

@@ -107,7 +107,7 @@ public fun KAlertDialog(
                 style = TextStyle(
                     color = surface.contentColor,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = KineticaTheme.design.title(FontWeight.SemiBold),
                     textAlign = TextAlign.Center,
                 ),
             )

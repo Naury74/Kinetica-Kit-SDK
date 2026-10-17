@@ -73,7 +73,7 @@ public fun KIconToggleButton(
     tone: KTone = KTone.Accent,
     size: Dp = KMetrics.IconButton,
     enabled: Boolean = true,
-    shape: Shape = CircleShape,
+    shape: Shape = shapeFor { button },
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val diameter = size.coerceAtLeast(MIN_TOGGLE)

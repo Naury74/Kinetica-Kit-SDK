@@ -5,6 +5,7 @@ package com.naury.kinetica.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
@@ -13,9 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.translate
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -78,13 +82,23 @@ private fun LazySectionRow(first: Boolean, last: Boolean, grouped: Boolean, surf
     val shape = if (grouped) listSegmentShape(first, last) else RectangleShape
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val row = remember(shape, rtl) { KListRowContext(shape, rtl) }
-    val panel = remember(first, last) { ContinuedPanelShape(first, last) }
+    val separator = KineticaTheme.design.listSeparator
+    val gap = grouped && separator == KListSeparator.Gap
+    val base = shapeFor { listSection }
+    val panel = remember(first, last, base) { ContinuedPanelShape(first, last, base) }
     Box(
         Modifier
+            .then(if (gap && !last) Modifier.padding(bottom = LIST_ROW_GAP) else Modifier)
             .fillMaxWidth()
-            .then(if (grouped) Modifier.clipContinuedEdges(first, last).kSurface(surface, panel) else Modifier)
+            .then(
+                when {
+                    gap -> Modifier.kSurface(surface, shape)
+                    grouped -> Modifier.clipContinuedEdges(first, last).kSurface(surface, panel)
+                    else -> Modifier
+                },
+            )
             .onPlaced { row.box = it }
-            .then(if (last) Modifier else Modifier.listRowDivider(row, surface.contentColor.copy(alpha = LIST_DIVIDER_ALPHA))),
+            .then(if (last) Modifier else Modifier.listRowDivider(row, surface.contentColor.copy(alpha = LIST_DIVIDER_ALPHA), separator)),
     ) {
         CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor, LocalKListRow provides row, content = content)
     }
@@ -102,25 +116,33 @@ private fun Modifier.clipContinuedEdges(first: Boolean, last: Boolean): Modifier
 }
 
 /**
- * 행 표면 모양. 이어지는 쪽으로 [CONTINUE]만큼 늘린 둥근 사각형이라, 늘어난 쪽의 모서리와 테두리는 행 밖에 놓여 잘린다.
+ * 행 표면 모양. 이어지는 쪽으로 [CONTINUE]만큼 늘린 [base] 모양이라, 늘어난 쪽의 모서리와 테두리는 행 밖에 놓여 잘린다.
  * 그래서 행마다 따로 그려도 행 사이에 이음매나 가로 테두리가 생기지 않는다.
  */
-private class ContinuedPanelShape(private val first: Boolean, private val last: Boolean) : Shape {
+private class ContinuedPanelShape(private val first: Boolean, private val last: Boolean, private val base: Shape) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
         val extend = with(density) { CONTINUE.toPx() }
-        val radius = with(density) { LIST_SECTION_CORNER.toPx() }
         val top = if (first) 0f else -extend
         val bottom = if (last) size.height else size.height + extend
-        return Outline.Rounded(RoundRect(0f, top, size.width, bottom, CornerRadius(radius)))
+        val inner = base.createOutline(Size(size.width, bottom - top), layoutDirection, density)
+        val offset = Offset(0f, top)
+        return when (inner) {
+            is Outline.Rectangle -> Outline.Rectangle(inner.rect.translate(offset))
+            is Outline.Rounded -> Outline.Rounded(inner.roundRect.translate(offset))
+            is Outline.Generic -> Outline.Generic(Path().apply { addPath(inner.path, offset) })
+        }
     }
 
-    override fun equals(other: Any?): Boolean = other is ContinuedPanelShape && first == other.first && last == other.last
+    override fun equals(other: Any?): Boolean =
+        other is ContinuedPanelShape && first == other.first && last == other.last && base == other.base
 
-    override fun hashCode(): Int = first.hashCode() * HASH + last.hashCode()
+    override fun hashCode(): Int = (first.hashCode() * HASH + last.hashCode()) * HASH + base.hashCode()
 }
 
 // 지연 목록 key는 Bundle에 저장할 수 있어야 하므로 문자열로 만든다. 행 key와 겹치지 않게 앞에 붙인다.
 private const val KEY_PREFIX = "kListSection:"
 private const val HASH = 31
-private val CONTINUE: Dp = LIST_SECTION_CORNER + 8.dp
+
+// 가장 큰 모서리(캡슐 토큰이면 행 높이의 절반)도 행 밖으로 밀어낼 만큼 늘린다.
+private val CONTINUE: Dp = 120.dp
 private val OVERFLOW = 64.dp

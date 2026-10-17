@@ -19,6 +19,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +29,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -46,6 +48,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
@@ -80,7 +83,7 @@ public fun KFilterChip(
         modifier,
         leadingIcon,
     ) {
-        Modifier.toggleable(selected, null, KIndication(CircleShape), enabled, Role.Checkbox) {
+        Modifier.toggleable(selected, null, KIndication(chipShape), enabled, Role.Checkbox) {
             haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
             onSelectedChange(it)
         }
@@ -116,14 +119,14 @@ public fun KInputChip(
     Row(
         modifier
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
-            .heightIn(min = CHIP_HEIGHT)
-            .variantBackground(variant.chipVariant(), neutral, surface, CircleShape)
-            .clip(CircleShape)
+            .heightIn(min = chipHeight)
+            .variantBackground(variant.chipVariant(), neutral, surface, chipShape)
+            .clip(chipShape)
             .then(
                 if (onClick !=
                     null
                 ) {
-                    Modifier.clickable(null, KIndication(CircleShape, ink), enabled, role = Role.Button, onClick = onClick)
+                    Modifier.clickable(null, KIndication(chipShape, ink), enabled, role = Role.Button, onClick = onClick)
                 } else {
                     Modifier
                 },
@@ -289,22 +292,22 @@ internal fun FilterChipBody(spec: ChipSpec, modifier: Modifier, icon: ImageVecto
     val ink = buttonInk(variant, KTone.Neutral, neutral, spec.surface)
     val accent = spec.accent
     val accentInk = readableOn(accent, accent.copy(alpha = SELECTED_FILL).compositeOn(spec.surface))
+    val shape = chipShape
     Row(
         modifier
             .graphicsLayer { alpha = if (spec.enabled) 1f else DISABLED_ALPHA }
-            .heightIn(min = CHIP_HEIGHT)
-            .variantBackground(variant, neutral, spec.surface, CircleShape)
+            .heightIn(min = chipHeight)
+            .variantBackground(variant, neutral, spec.surface, chipShape)
             .drawBehind {
                 val level = shown.value.coerceIn(0f, 1f)
                 if (level > 0f) {
-                    val radius = CornerRadius(size.height / 2)
-                    drawRoundRect(accent.copy(alpha = SELECTED_FILL * level), cornerRadius = radius)
+                    drawShape(shape, accent.copy(alpha = SELECTED_FILL * level), Offset.Zero, size)
                     val stroke = BORDER.toPx()
-                    drawRoundRect(
+                    drawShape(
+                        shape,
                         accent.copy(alpha = SELECTED_BORDER * level),
                         Offset(stroke / 2, stroke / 2),
                         size.copy(size.width - stroke, size.height - stroke),
-                        radius,
                         Stroke(stroke),
                     )
                 }
@@ -316,7 +319,7 @@ internal fun FilterChipBody(spec: ChipSpec, modifier: Modifier, icon: ImageVecto
         CheckSlot(icon, ink, accentInk) { shown.value }
         ThemedText(
             spec.label,
-            style = TextStyle(fontSize = CHIP_FONT, fontWeight = FontWeight.Medium),
+            style = TextStyle(fontSize = CHIP_FONT, fontWeight = KineticaTheme.design.label(FontWeight.Medium)),
             color = { lerp(ink, accentInk, shown.value.coerceIn(0f, 1f)) },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -332,10 +335,10 @@ private fun ActionChip(label: String, onClick: () -> Unit, modifier: Modifier, l
     Row(
         modifier
             .graphicsLayer { alpha = if (look.enabled) 1f else DISABLED_ALPHA }
-            .heightIn(min = CHIP_HEIGHT)
-            .variantBackground(variant, KTone.Neutral.colors(look.surface), look.surface, CircleShape)
-            .clip(CircleShape)
-            .clickable(null, KIndication(CircleShape, look.ink), look.enabled, role = Role.Button, onClick = onClick)
+            .heightIn(min = chipHeight)
+            .variantBackground(variant, KTone.Neutral.colors(look.surface), look.surface, chipShape)
+            .clip(chipShape)
+            .clickable(null, KIndication(chipShape, look.ink), look.enabled, role = Role.Button, onClick = onClick)
             .padding(start = if (icon != null) ICON_START else CHIP_PADDING, end = CHIP_PADDING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -357,7 +360,7 @@ private fun ChipLabel(label: String, ink: Color, modifier: Modifier = Modifier) 
     ThemedText(
         label,
         modifier,
-        style = TextStyle(color = ink, fontSize = CHIP_FONT, fontWeight = FontWeight.Medium),
+        style = TextStyle(color = ink, fontSize = CHIP_FONT, fontWeight = KineticaTheme.design.label(FontWeight.Medium)),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )
@@ -397,6 +400,18 @@ private fun Color.compositeOn(surface: SurfaceStyle): Color = compositeOver(surf
 
 internal val ChipRowGap = 8.dp
 private val CHIP_HEIGHT = 34.dp
+
+/** 디자인 언어의 칩 모양 */
+internal val chipShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = shapeFor { chip }
+
+/** 밀도에 맞춘 칩 높이 */
+private val chipHeight: Dp
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalKineticaDesign.current.density.height(CHIP_HEIGHT)
 private val SHADOW_ROOM = 6.dp
 private val CHIP_PADDING = 14.dp
 private val ICON_START = 10.dp

@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
@@ -70,6 +68,7 @@ public data class KProfileStat(val value: String, val label: String, val onClick
  * @param stats 숫자 칸. 비어 있으면 줄을 숨긴다.
  * @param actions 아래 버튼 줄. `Modifier.weight(1f)`로 나눠 쓴다.
  */
+@Suppress("LongMethod") // 디자인 언어 토큰(모양, 밀도, 굵기)을 읽는 줄이 더해졌을 뿐 한 덩어리 배치라 나누면 오히려 읽기 어렵다.
 @Composable
 public fun KProfileHeader(
     name: String,
@@ -81,11 +80,14 @@ public fun KProfileHeader(
     stats: List<KProfileStat> = emptyList(),
     actions: (@Composable RowScope.() -> Unit)? = null,
     collapse: () -> Float = { 0f },
-    shape: Shape = RoundedCornerShape(28.dp),
+    shape: Shape = shapeFor { card },
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val ink = surface.contentColor
     val accent = KineticaTheme.colors.accent
+    val shapes = currentShapes
+    // 테두리 고리가 아바타와 같은 중심으로 굽도록 반지름에 고리 두께를 더한다.
+    val ringShape = shapes.radius(shapes.avatar).let { r -> shapeOf(shapes.cornerOf(shapes.avatar), if (r == Dp.Infinity) r else r + RING) }
     Column(modifier.kSurface(surface, shape).clip(shape)) {
         Box(
             Modifier
@@ -113,7 +115,7 @@ public fun KProfileHeader(
                             alpha = 1f - t * AVATAR_FADE
                             transformOrigin = TransformOrigin(CENTER, 1f)
                         }.size(AVATAR + RING * 2)
-                        .background(surface.ringColor(), CircleShape)
+                        .background(surface.ringColor(), ringShape)
                         .padding(RING),
                 ) { KAvatar(avatar, Modifier.fillMaxSize(), size = KAvatarSize.ExtraLarge, surface = surface) }
             }
@@ -125,7 +127,12 @@ public fun KProfileHeader(
                 ThemedText(
                     name,
                     Modifier.semantics { heading() },
-                    style = TextStyle(color = ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
+                    style = TextStyle(
+                        color = ink,
+                        fontSize = 22.sp,
+                        fontWeight = KineticaTheme.design.title(FontWeight.SemiBold),
+                        textAlign = TextAlign.Center,
+                    ),
                 )
                 subtitle?.let {
                     ThemedText(it, style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = 14.sp, textAlign = TextAlign.Center))
@@ -153,7 +160,8 @@ private fun Modifier.pullUp(by: Dp): Modifier = layout { measurable, constraints
 @Composable
 private fun ProfileStats(stats: List<KProfileStat>, surface: SurfaceStyle, modifier: Modifier) {
     val ink = surface.contentColor
-    val shape = RoundedCornerShape(STAT_RADIUS)
+    val shape = roundedShapeFor(STAT_RADIUS) { button }
+    val weight = KineticaTheme.design.label(FontWeight.SemiBold)
     Row(modifier.fillMaxWidth()) {
         stats.forEach { stat ->
             val description = "${stat.label} ${stat.value}"
@@ -167,7 +175,7 @@ private fun ProfileStats(stats: List<KProfileStat>, surface: SurfaceStyle, modif
                     .clearAndSetSemantics { contentDescription = description },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                ThemedText(stat.value, style = TextStyle(color = ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold), maxLines = 1)
+                ThemedText(stat.value, style = TextStyle(color = ink, fontSize = 18.sp, fontWeight = weight), maxLines = 1)
                 ThemedText(
                     stat.label,
                     style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = 12.sp, textAlign = TextAlign.Center),

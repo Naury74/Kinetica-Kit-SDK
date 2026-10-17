@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -41,10 +40,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -93,6 +92,8 @@ public fun KNavigationRail(
     LaunchedEffect(target, still) { target?.let { indicator.moveTo(it, animate = !still) } }
     // 큰 글꼴에서 탭 이름이 글자 중간에서 잘리지 않게 레일도 함께 넓힌다.
     val railWidth = RAIL_WIDTH * LocalDensity.current.fontScale.coerceIn(1f, RAIL_MAX_GROW)
+    val shapes = currentShapes
+    val cell = shapes.inner(shapes.tabBar, RAIL_INSET)
     Column(
         modifier
             .fillMaxHeight()
@@ -105,18 +106,14 @@ public fun KNavigationRail(
         Column(
             Modifier
                 .width(railWidth)
-                .kSurface(surface, RoundedCornerShape(railWidth / 2))
+                .kSurface(surface, shapes.shape(shapes.tabBar))
                 .padding(RAIL_INSET)
                 .drawBehind {
                     val top = indicator.top.value
                     val bottom = indicator.bottom.value
                     if (target != null && bottom > top) {
-                        drawRoundRect(
-                            surface.contentColor.copy(alpha = RAIL_INDICATOR_ALPHA),
-                            topLeft = Offset(0f, top),
-                            size = Size(size.width, bottom - top),
-                            cornerRadius = CornerRadius(minOf(size.width, bottom - top) / 2f),
-                        )
+                        val color = surface.contentColor.copy(alpha = RAIL_INDICATOR_ALPHA)
+                        drawShape(cell, color, Offset(0f, top), Size(size.width, bottom - top))
                     }
                 }
                 .selectableGroup(),
@@ -127,6 +124,7 @@ public fun KNavigationRail(
                     item,
                     index == selectedIndex,
                     surface,
+                    cell,
                     Modifier.onPlaced {
                         val y = it.positionInParent().y
                         bounds[index] = y..(y + it.size.height)
@@ -139,7 +137,7 @@ public fun KNavigationRail(
 }
 
 @Composable
-private fun RailItem(item: KTab, selected: Boolean, surface: SurfaceStyle, modifier: Modifier, onClick: () -> Unit) {
+private fun RailItem(item: KTab, selected: Boolean, surface: SurfaceStyle, cell: Shape, modifier: Modifier, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -156,7 +154,7 @@ private fun RailItem(item: KTab, selected: Boolean, surface: SurfaceStyle, modif
                 scaleX = scale
                 scaleY = scale
             }
-            .selectable(selected, interaction, KIndication(CircleShape), role = Role.Tab, onClick = onClick)
+            .selectable(selected, interaction, KIndication(cell), role = Role.Tab, onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

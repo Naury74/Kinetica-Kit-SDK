@@ -65,7 +65,7 @@ public fun KAvatar(
     avatar: KAvatar,
     modifier: Modifier = Modifier,
     size: KAvatarSize = KAvatarSize.Medium,
-    shape: Shape = CircleShape,
+    shape: Shape = shapeFor { this.avatar },
     status: KAvatarStatus? = null,
     ringColor: Color = KineticaTheme.surface.ringColor(),
     surface: SurfaceStyle = KineticaTheme.surface,
@@ -73,7 +73,7 @@ public fun KAvatar(
     val name = avatar.name
     val description = status?.let { stringResource(R.string.kinetica_ui_avatar_status, name, it.label()) } ?: name
     val dotColor = status?.color()
-    val round = shape == CircleShape
+    val round = shape == CircleShape || shape == RoundedCornerShape(CIRCLE_PERCENT)
     Box(
         modifier
             .size(size.size)
@@ -140,3 +140,5 @@ private const val SQUARE_INSET = 0.9f
 private const val PLACEHOLDER = 0.1f
 private const val AWAY = 0xFFFF9F0A
 private const val OFFLINE = 0xFF8E8E93
+
+private const val CIRCLE_PERCENT = 50

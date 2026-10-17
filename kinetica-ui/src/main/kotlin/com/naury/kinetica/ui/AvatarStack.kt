@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,7 +46,7 @@ import kotlinx.coroutines.launch
 public data class KAvatar(val name: String, val color: Color = Color.Unspecified, val image: (@Composable () -> Unit)? = null)
 
 /**
- * 원형 아바타를 겹쳐 늘어놓는다. [max]명을 넘으면 마지막에 "+3"처럼 남은 사람 수를 원으로 보여 준다.
+ * 아바타를 겹쳐 늘어놓는다. 모양은 아바타 모양 토큰을 따르고 기본 디자인에서는 원이다. [max]명을 넘으면 마지막에 "+3"처럼 남은 사람 수를 같은 모양으로 보여 준다.
  * 처음 나타날 때 앞에서부터 차례로 미끄러져 들어온다. RTL에서는 오른쪽부터 쌓인다.
  * TalkBack은 보이는 사람들의 이름과 남은 인원을 한 번에 읽는다.
  *
@@ -81,11 +80,16 @@ public fun AvatarStack(
         horizontalArrangement = Arrangement.spacedBy(-size * OVERLAP),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val shapes = currentShapes
+        val ring = size * RING
+        // 고리는 아바타보다 고리 두께만큼 큰 반지름으로 깎아 같은 중심으로 굽게 한다.
+        val outer = shapes.radius(shapes.avatar).let { r -> shapeOf(shapes.cornerOf(shapes.avatar), if (r == Dp.Infinity) r else r + ring) }
+        val inner = shapes.shape(shapes.avatar)
         val circle = Modifier
             .size(size)
-            .background(ringColor, CircleShape)
-            .padding(size * RING)
-            .clip(CircleShape)
+            .background(ringColor, outer)
+            .padding(ring)
+            .clip(inner)
         shown.forEachIndexed { i, avatar ->
             Box(
                 Modifier.zIndex(
@@ -102,7 +106,7 @@ public fun AvatarStack(
         }
         if (extra > 0) {
             Box(
-                Modifier.appearing(appear[shown.size], sign * travel).then(circle).kSurface(surface, CircleShape),
+                Modifier.appearing(appear[shown.size], sign * travel).then(circle).kSurface(surface, inner),
                 contentAlignment = Alignment.Center,
             ) {
                 // RTL에서도 "+3" 순서가 뒤집히지 않도록 LTR로 격리한다.

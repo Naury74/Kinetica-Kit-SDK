@@ -4,6 +4,7 @@
 package com.naury.kinetica.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -64,7 +66,8 @@ public interface KListSectionScope {
 /**
  * 목록 섹션. 머리글과 꼬리글, 그 사이 행들을 묶는다. 행 사이에는 행의 글자 시작 위치부터 구분선을 자동으로 긋는다.
  *
- * [KListSectionStyle.InsetGrouped]면 행들을 [surface] 표면 하나(모서리 20dp)에 담는다. 글래스, 단색, 톤 어느 표면이든
+ * [KListSectionStyle.InsetGrouped]면 행들을 [surface] 표면 하나(모서리는 [KineticaShapes.listSection])에 담는다.
+ * [KineticaDesign.listSeparator]가 [KListSeparator.Gap]이면 행마다 따로 판을 두고 2dp 틈을 둔다. 글래스, 단색, 톤 어느 표면이든
  * 판이 하나이므로 행 사이에 이음매가 없고, 행 눌림 표시는 첫 행 위 모서리와 끝 행 아래 모서리를 판과 같게 둥글린다.
  * 좌우 바깥 여백은 넣지 않으므로 `Modifier.padding(horizontal = 16.dp)`처럼 호출한 쪽이 준다.
  *
@@ -92,10 +95,13 @@ public fun KListSection(
     val items = SectionScope().apply(content).items
     val grouped = style == KListSectionStyle.InsetGrouped
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val separator = KineticaTheme.design.listSeparator
+    val gap = grouped && separator == KListSeparator.Gap
     Column(modifier) {
         header?.let { ListSectionHeader(it, grouped, surface) }
         Column(
-            if (grouped) Modifier.fillMaxWidth().kSurface(surface, RoundedCornerShape(LIST_SECTION_CORNER)) else Modifier.fillMaxWidth(),
+            if (grouped && !gap) Modifier.fillMaxWidth().kSurface(surface, shapeFor { listSection }) else Modifier.fillMaxWidth(),
+            verticalArrangement = if (gap) Arrangement.spacedBy(LIST_ROW_GAP) else Arrangement.Top,
         ) {
             CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) {
                 val divider = surface.contentColor.copy(alpha = LIST_DIVIDER_ALPHA)
@@ -106,8 +112,9 @@ public fun KListSection(
                         Box(
                             Modifier
                                 .fillMaxWidth()
+                                .then(if (gap) Modifier.kSurface(surface, shape) else Modifier)
                                 .onPlaced { row.box = it }
-                                .then(if (index < items.lastIndex) Modifier.listRowDivider(row, divider) else Modifier),
+                                .then(if (index < items.lastIndex) Modifier.listRowDivider(row, divider, separator) else Modifier),
                         ) { CompositionLocalProvider(LocalKListRow provides row) { item.content() } }
                     }
                 }
@@ -117,18 +124,33 @@ public fun KListSection(
     }
 }
 
-/** 첫 행은 위, 끝 행은 아래 모서리만 판과 같게 둥글린 모양. 행이 하나면 네 모서리 모두 둥글다. */
-internal fun listSegmentShape(first: Boolean, last: Boolean): Shape = RoundedCornerShape(
-    topStart = if (first) LIST_SECTION_CORNER else 0.dp,
-    topEnd = if (first) LIST_SECTION_CORNER else 0.dp,
-    bottomStart = if (last) LIST_SECTION_CORNER else 0.dp,
-    bottomEnd = if (last) LIST_SECTION_CORNER else 0.dp,
-)
+/**
+ * 첫 행은 위, 끝 행은 아래 모서리만 판과 같게 둥글린 모양. 행이 하나면 네 모서리 모두 둥글다.
+ * [KListSeparator.Gap]이면 행 사이 모서리도 작게 둥글린다.
+ */
+@Composable
+@ReadOnlyComposable
+internal fun listSegmentShape(first: Boolean, last: Boolean): Shape {
+    val design = LocalKineticaDesign.current
+    val shapes = design.shapes
+    val rest = if (design.listSeparator == KListSeparator.Gap) shapes.radius(KShapeToken.ExtraSmall) else 0.dp
+    return shapes.segmentShape(shapes.listSection, first, last, rest)
+}
 
-/** 행 아래 구분선. 행 글자가 시작하는 위치는 그리기 단계에서 읽어, 행을 다시 구성하지 않고 맞춘다. */
-internal fun Modifier.listRowDivider(row: KListRowContext, color: Color): Modifier = drawWithContent {
+/**
+ * 행 아래 구분선. 행 글자가 시작하는 위치는 그리기 단계에서 읽어, 행을 다시 구성하지 않고 맞춘다.
+ * [separator]가 [KListSeparator.Full]이면 행 끝에서 끝까지, [KListSeparator.None]과 [KListSeparator.Gap]이면 긋지 않는다.
+ */
+internal fun Modifier.listRowDivider(row: KListRowContext, color: Color, separator: KListSeparator = KListSeparator.Inset): Modifier =
+    if (separator == KListSeparator.None || separator == KListSeparator.Gap) this else listRowDividerLine(row, color, separator)
+
+private fun Modifier.listRowDividerLine(row: KListRowContext, color: Color, separator: KListSeparator): Modifier = drawWithContent {
     drawContent()
-    val inset = if (row.textStart >= 0f) row.textStart else DEFAULT_DIVIDER_INSET.toPx()
+    val inset = when {
+        separator == KListSeparator.Full -> 0f
+        row.textStart >= 0f -> row.textStart
+        else -> DEFAULT_DIVIDER_INSET.toPx()
+    }
     val stroke = HAIRLINE.toPx().coerceAtLeast(1f)
     val y = size.height - stroke / 2
     val from = if (row.rtl) 0f else inset
@@ -242,7 +264,7 @@ internal fun DisclosureChevron(color: Color, modifier: Modifier) {
     )
 }
 
-internal val LIST_SECTION_CORNER = 20.dp
+internal val LIST_ROW_GAP = 2.dp
 private val SECTION_TEXT_INSET = 16.dp
 private val HEADER_TOP = 8.dp
 private val HEADER_BOTTOM = 6.dp

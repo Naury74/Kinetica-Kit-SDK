@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -364,7 +366,10 @@ private fun MorphGlyphLayer(
     )
 }
 
-private val FIELD_SHAPE = RoundedCornerShape(22.dp)
+private val FIELD_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = shapeFor { search }
 private const val PLACEHOLDER_ALPHA = 0.45f
 private const val COUNTER_ALPHA = 0.55f
 private val SEND_KEYBOARD = KeyboardOptions(imeAction = ImeAction.Send)

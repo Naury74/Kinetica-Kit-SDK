@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -23,10 +22,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -62,7 +61,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 빼기와 더하기 버튼이 붙은 캡슐 모양 스테퍼. 가운데 값은 [RollingText]처럼 자릿수가 위아래로 굴러가며 바뀐다.
+ * 빼기와 더하기 버튼이 붙은 버튼 모양 토큰의 스테퍼. 가운데 값은 [RollingText]처럼 자릿수가 위아래로 굴러가며 바뀐다.
  *
  * 버튼을 눌렀다 떼면 한 칸 바뀐다. 길게 누르고 있으면 길게 누름이 확정될 때부터 값이 계속 바뀌고, 오래 누를수록 빨라진다.
  * 누른 채 터치 슬롭 넘게 움직이면 바꾸지 않으므로 스크롤 목록 안에서도 스크롤을 막지 않는다. 값이 [range] 끝에 닿으면 그쪽 버튼이 흐려지고 눌러도 바뀌지 않는다.
@@ -112,11 +111,13 @@ public fun KStepper(
         return next
     }
 
+    val shapes = currentShapes
+    val pressShape = shapes.inner(shapes.button, PRESS_INSET)
     Row(
         modifier
             .height(STEPPER_HEIGHT)
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
-            .kSurface(surface, CircleShape)
+            .kSurface(surface, shapes.shape(shapes.button))
             .stepperSemantics(StepperA11y(shown, range, step, enabled, increase, decrease)) { latestChange(it) }
             .focusable(enabled)
             .onKeyEvent { event ->
@@ -126,12 +127,17 @@ public fun KStepper(
             },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StepButton(plus = false, canDecrease, surface.contentColor) { change(it ?: latestValue, -step) }
+        StepButton(plus = false, canDecrease, surface.contentColor, pressShape) { change(it ?: latestValue, -step) }
         if (showValue) {
             RollingText(
                 shown.toString(),
                 Modifier.widthIn(min = VALUE_MIN_WIDTH).padding(horizontal = VALUE_PADDING),
-                TextStyle(color = surface.contentColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
+                TextStyle(
+                    color = surface.contentColor,
+                    fontSize = 17.sp,
+                    fontWeight = KineticaTheme.design.label(FontWeight.SemiBold),
+                    textAlign = TextAlign.Center,
+                ),
             )
         } else {
             Box(
@@ -142,7 +148,7 @@ public fun KStepper(
                     .drawBehind { drawRect(surface.contentColor.copy(alpha = DIVIDER_ALPHA)) },
             )
         }
-        StepButton(plus = true, canIncrease, surface.contentColor) { change(it ?: latestValue, step) }
+        StepButton(plus = true, canIncrease, surface.contentColor, pressShape) { change(it ?: latestValue, step) }
     }
 }
 
@@ -151,7 +157,7 @@ public fun KStepper(
  * [onStep]은 직전 결과 값(첫 번째는 `null`)을 받아 새 값을 돌려준다. 재구성을 기다리지 않고 이어서 셀 수 있게 하려는 것이다.
  */
 @Composable
-private fun StepButton(plus: Boolean, enabled: Boolean, color: Color, onStep: (Int?) -> Int) {
+private fun StepButton(plus: Boolean, enabled: Boolean, color: Color, pressShape: Shape, onStep: (Int?) -> Int) {
     val latestStep by rememberUpdatedState(onStep)
     val latestEnabled by rememberUpdatedState(enabled)
     val press = remember { Animatable(0f) }
@@ -183,10 +189,10 @@ private fun StepButton(plus: Boolean, enabled: Boolean, color: Color, onStep: (I
             .drawBehind {
                 val pressAlpha = press.value * PRESS_ALPHA
                 if (pressAlpha > 0f) {
-                    // 스테퍼 캡슐과 같은 중심으로 굽도록, 안쪽 여백만큼 작은 캡슐을 칸 가운데에 깐다.
+                    // 스테퍼 바깥 모서리와 같은 중심으로 굽도록, 안쪽 여백만큼 작은 판을 칸 가운데에 깐다.
                     val inset = PRESS_INSET.toPx()
                     val pill = Size(size.width - inset * 2, size.height - inset * 2)
-                    drawRoundRect(color.copy(alpha = pressAlpha), Offset(inset, inset), pill, CornerRadius(pill.height / 2))
+                    drawShape(pressShape, color.copy(alpha = pressAlpha), Offset(inset, inset), pill)
                 }
                 val half = size.height * GLYPH_HALF
                 val stroke = GLYPH_STROKE.toPx()

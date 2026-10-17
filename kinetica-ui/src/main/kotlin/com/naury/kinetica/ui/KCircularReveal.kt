@@ -23,6 +23,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import kotlin.math.hypot
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 /**
  * 요소를 [center]에서 퍼지는 원으로 잘라 그린다. [progress]가 0이면 아무것도 보이지 않고 1이면 가장 먼 모서리까지 덮는다.
@@ -94,7 +96,8 @@ public fun KCircularReveal(
             events.collect { back.snapTo(it.progress) }
             latestBack.value?.invoke()
         } catch (cancelled: CancellationException) {
-            back.animateTo(0f)
+            // 제스처를 취소하면 이 코루틴도 취소되므로 되돌리는 애니메이션은 취소되지 않게 돌린다.
+            withContext(NonCancellable) { back.animateTo(0f) }
             throw cancelled
         }
     }

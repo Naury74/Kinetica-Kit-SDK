@@ -123,8 +123,8 @@ public fun KPasswordField(
                 Modifier
                     .fillMaxWidth()
                     .shake(rememberErrorTrigger(error != null))
-                    .kSurface(surface.forField(), FIELD_SHAPE)
-                    .fieldFocusFrame(FIELD_CORNER, levels, colors.accent, colors.destructive)
+                    .kSurface(surface.forField(), fieldShape)
+                    .fieldFocusFrame(fieldShape, levels, colors.accent, colors.destructive)
                     .onFocusChanged { focused = it.isFocused }
                     .semantics {
                         contentType = if (newPassword) ContentType.NewPassword else ContentType.Password
@@ -167,7 +167,9 @@ private fun PasswordDecoration(
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val grow = LocalDensity.current.fontScale.coerceAtLeast(1f)
     Row(
-        Modifier.heightIn(min = FIELD_HEIGHT * grow).padding(start = FIELD_PADDING, end = TRAILING_PADDING),
+        Modifier.heightIn(
+            min = KineticaTheme.design.density.height(FIELD_HEIGHT) * grow,
+        ).padding(start = fieldStartPadding, end = TRAILING_PADDING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val centering = remember { LabelCentering() }
@@ -364,8 +366,6 @@ private fun RuleItem(label: String, met: Boolean, surface: SurfaceStyle) {
     }
 }
 
-private val FIELD_SHAPE = RoundedCornerShape(14.dp)
-private val FIELD_CORNER = 14.dp
 private val FIELD_HEIGHT = 52.dp
 private val FIELD_PADDING = 16.dp
 private val TRAILING_PADDING = 4.dp

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -121,21 +120,24 @@ private fun StatHeader(title: String, icon: ImageVector?, ink: Color) {
                 Glyph(icon, accent, size = 16.dp)
             }
         }
+        val weight = KineticaTheme.design.label(FontWeight.Medium)
         ThemedText(
             title,
-            style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = 14.sp, fontWeight = FontWeight.Medium),
+            style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = 14.sp, fontWeight = weight),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-/** 화살표와 변화율을 옅은 색 캡슐에 담는다. 글자는 바탕 위 대비를 맞춘 같은 색이다. */
+/** 화살표와 변화율을 배지 모양의 옅은 색 판에 담는다. 글자는 바탕 위 대비를 맞춘 같은 색이다. */
 @Composable
 private fun ChangePill(change: Float, text: String, color: Color, surface: SurfaceStyle) {
     val ink = readableOn(color, surface.inkBackground())
     Row(
-        Modifier.background(color.copy(alpha = PILL_FILL), RoundedCornerShape(PILL_RADIUS)).padding(horizontal = 8.dp, vertical = 3.dp),
+        Modifier
+            .background(color.copy(alpha = PILL_FILL), roundedShapeFor(PILL_RADIUS) { badge })
+            .padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -159,7 +161,7 @@ private fun ChangePill(change: Float, text: String, color: Color, surface: Surfa
                 },
             )
         }
-        ThemedText(text, style = TextStyle(color = ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+        ThemedText(text, style = TextStyle(color = ink, fontSize = 13.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)))
     }
 }
 

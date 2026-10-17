@@ -59,14 +59,14 @@ public enum class KSkeletonStyle {
  * Text(title, Modifier.skeleton(visible = loading))
  * ```
  *
- * @param shape 블록 모양
+ * @param shape 블록 모양. 기본값은 이미지 모양 토큰이다.
  * @param color 블록 색. 기본값은 텍스트 색을 옅게 쓴 것이다.
  * @param style 움직임. [KSkeletonStyle.Shimmer](기본값)는 빛이 흐르고, [KSkeletonStyle.Pulse]는 블록이 옅어졌다 짙어진다.
  */
 @Composable
 public fun Modifier.skeleton(
     visible: Boolean,
-    shape: Shape = RoundedCornerShape(8.dp),
+    shape: Shape = shapeFor { image },
     color: Color = LocalKineticaContentColor.current.copy(alpha = BLOCK_ALPHA),
     style: KSkeletonStyle = KSkeletonStyle.Shimmer,
 ): Modifier {

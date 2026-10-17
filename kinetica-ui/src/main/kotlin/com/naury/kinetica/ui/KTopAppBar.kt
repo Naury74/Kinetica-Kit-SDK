@@ -218,6 +218,7 @@ private class BarRowSpec(val title: String, val subtitle: String?, val variant: 
  * 시작 버튼, 제목, 끝 버튼을 한 줄에 놓는다. 가운데 정렬이면 제목을 바 가운데에 두되 양쪽 버튼과 겹치지 않게 폭을 줄인다.
  * [titleAlpha]는 그리기 단계에서 읽는다.
  */
+@Suppress("LongMethod") // 디자인 언어 토큰(모양, 밀도, 굵기)을 읽는 줄이 더해졌을 뿐 한 덩어리 배치라 나누면 오히려 읽기 어렵다.
 @Composable
 private fun BarRow(
     spec: BarRowSpec,
@@ -241,7 +242,11 @@ private fun BarRow(
             ) {
                 ThemedText(
                     spec.title,
-                    style = TextStyle(color = spec.surface.contentColor, fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
+                    style = TextStyle(
+                        color = spec.surface.contentColor,
+                        fontSize = 18.sp,
+                        fontWeight = KineticaTheme.design.title(FontWeight.SemiBold),
+                    ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -307,7 +312,7 @@ private fun MediumTitle(title: String, subtitle: String?, surface: SurfaceStyle,
         ThemedText(
             title,
             Modifier.semantics { heading() },
-            style = TextStyle(color = surface.contentColor, fontSize = 26.sp, fontWeight = FontWeight.SemiBold),
+            style = TextStyle(color = surface.contentColor, fontSize = 26.sp, fontWeight = KineticaTheme.design.title(FontWeight.SemiBold)),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )

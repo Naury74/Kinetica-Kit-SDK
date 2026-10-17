@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -225,7 +227,10 @@ private object TopLeftOfWindow : PopupPositionProvider {
     ): IntOffset = IntOffset.Zero
 }
 
-private val RichBubbleShape = RoundedCornerShape(16.dp)
+private val RichBubbleShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = shapeFor { menu }
 private val EDGE_MARGIN = 12.dp
 private val MAX_WIDTH = 320.dp
 private val GAP = 8.dp

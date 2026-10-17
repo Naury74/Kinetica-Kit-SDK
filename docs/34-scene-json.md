@@ -13,6 +13,7 @@
   "schemaVersion": 1,
   "documentId": "promo",
   "canvas": { "width": 1080, "height": 1920, "background": "#F3F4F8" },
+  "transition": { "kind": "push" },
   "nodes": [
     {
       "id": "card", "type": "frame",
@@ -88,6 +89,7 @@ RemoteKineticaPlayer(
 | `animations` | | 타임라인 목록 |
 | `tokens` | | 색 토큰(이름 → 색). 노드의 `style.fillToken`이 참조한다 |
 | `extensions` | | 호스트가 따로 보관할 값(이름 → JSON). SDK는 읽지 않는다 |
+| `transition` | | 다른 화면에서 이 화면으로 바뀔 때의 전환. [장면 전환](#장면-전환-transition) 참고 |
 
 ## 노드 공통
 
@@ -127,6 +129,60 @@ RemoteKineticaPlayer(
 | `appear` | `kind`: `fade` `slideUp` `slideDown` `slideLeft` `slideRight` `pop` `zoom` `flip` `blur`, `durationMs`, `delayMs` |
 | `loop` | `kind`: `pulse` `breathe` `float` `bounce` `shake` `shimmer` `glow` `spin` `heartbeat` `wiggle` `ping`, `periodMs`(100 이상), `amount`, `color` |
 
+## 장면 전환 `transition`
+
+문서 최상위의 `transition`은 다른 화면에서 이 화면으로 바뀔 때 쓰는 전환이다. 없으면 바로 바뀐다.
+재생기 `AnimatedScene`과 번들을 재생하는 `RemoteKineticaPlayer(bundle, sceneId)`가 이 값을 읽어, 화면이 바뀔 때 이전 화면에서 이 화면으로 전환한다.
+시스템의 '애니메이션 삭제' 설정이 켜져 있으면 전환 없이 바로 바뀐다.
+
+| 키 | 필수 | 내용 |
+| --- | --- | --- |
+| `kind` | ○ | 아래 표의 전환 종류 |
+| `from` | | 들어오는 화면이 나오는 가장자리. `end`(기본) `start` `top` `bottom`. `start`와 `end`는 RTL 언어에서 좌우가 바뀐다. 방향이 없는 전환은 무시한다 |
+| `durationMs` | | 전환 시간(ms). `0..10000`, 기본값 400 |
+| `easing` | | keyframe의 `easing`과 같은 형식. 기본값은 `cubicBezier`(0.42, 0, 0.58, 1)이다 |
+| `originX`, `originY` | | `iris`가 퍼지기 시작하는 점과 `zoom` 계열의 중심. 화면 크기에 대한 비율(0..1)이고 기본값은 0.5다 |
+
+| `kind` | 모습 | `from` |
+| --- | --- | --- |
+| `none` | 바로 바뀐다 | |
+| `fade` | 두 화면이 겹치며 서서히 바뀐다 | |
+| `morph` | 두 화면에서 `metadata.morphKey`나 id가 같은 노드의 위치, 크기, 색을 이어 준다. 짝이 없는 노드는 페이드된다. 짝을 지을 수 없으면 `fade`로 그린다 | |
+| `dissolve` | 새 화면이 노이즈 무늬로 조금씩 드러난다 | |
+| `slide` | 두 화면이 함께 밀려 바뀐다 | ○ |
+| `push` | 새 화면이 밀고 들어오고, 이전 화면은 조금만 물러나며 어두워진다 | ○ |
+| `cover` | 새 화면이 멈춰 있는 이전 화면을 덮는다 | ○ |
+| `uncover` | 이전 화면이 밀려 나가며 아래에 있던 새 화면을 드러낸다 | ○ |
+| `wipe` | 경계선이 가장자리에서 반대쪽으로 쓸고 지나가며 새 화면을 드러낸다 | ○ |
+| `iris` | `originX`, `originY`에서 원이 퍼지며 새 화면을 드러낸다 | |
+| `zoom` | 새 화면이 조금 작은 크기에서 커지며 나타나고, 이전 화면은 커지며 사라진다 | |
+| `zoomBlur` | `zoom`에 블러를 더한다. Android 12 미만에서는 `zoom`과 같다 | |
+| `rotate` | 이전 화면이 돌며 사라지고 새 화면이 반대로 돌며 나타난다 | ○ |
+| `flip` | 카드를 뒤집듯 3D로 돈다. 절반을 지나면 새 화면이 보인다 | ○ |
+| `cube` | 정육면체의 옆면으로 넘어가듯 3D로 돈다 | ○ |
+
+뒤로 가기로 이전 화면에 돌아갈 때는 재생기에 `forward = false`를 넘긴다. 같은 전환을 거꾸로 재생하므로 `push`면 위에 있던 화면이 원래 나왔던 쪽으로 빠지고,
+`cover`면 덮었던 화면이 걷힌다.
+
+```json
+"transition": { "kind": "iris", "durationMs": 500, "originX": 0.85, "originY": 0.9 }
+```
+
+동작 문자열에 `transition` 파라미터를 붙이면 문서의 전환 대신 쓸 수 있다. 예를 들어 `go?scene=promo&transition=wipe&from=bottom&durationMs=300`이다.
+호스트는 `SceneTransitionSpec.fromAction(SceneAction.parse(raw), 다음 화면.transition)`으로 전환을 얻어 재생기에 넘긴다. 알 수 없는 값은 무시한다.
+
+```kotlin
+var current by rememberSaveable { mutableStateOf("home") }
+var transition by remember { mutableStateOf<SceneTransitionSpec?>(null) }
+RemoteKineticaPlayer(bundle, current, transition = transition, onAction = { raw ->
+    val action = SceneAction.parse(raw)
+    action["scene"]?.let { next ->
+        transition = SceneTransitionSpec.fromAction(action)   // 파라미터가 없으면 null이라 다음 화면 문서의 transition을 쓴다
+        current = next
+    }
+})
+```
+
 ## 타임라인 `animations`
 
 | 키 | 필수 | 내용 |
@@ -161,4 +217,6 @@ keyframe의 키는 다음과 같다. 시각은 겹치지 않고 커지는 순서
 - 크기 상한(기본 10 MiB), JSON 문법, 스키마 버전, 필드 형식과 유한한 숫자, 문서 검증 순서로 확인한다. 하나라도 실패하면 문서 전체를 쓰지 않는다.
   서버 화면은 이때 지금 보이는 문서를 그대로 두고, 실패 이유를 `RemoteSceneState.Ready.lastError`에 남긴다. 실패 정보에는 위치(`nodes[3].bounds`)와 코드가 들어 있다.
 - 모르는 키와 모르는 `accessibility.role`은 무시한다. 하지만 모르는 `type`, 효과 `kind`, `rotationDirection` 값이 있으면 실패로 처리한다.
+- `transition.kind`와 `transition.from`은 예외다. 전환은 화면 내용에 영향을 주지 않으므로, 이 버전이 모르는 값이면 실패로 처리하지 않고 `fade`와 `end`로 읽는다.
+  `transition`이 없는 예전 문서는 그대로 읽힌다.
 - 동작, 데이터 키, 호스트 뷰 키는 이름일 뿐이고 어떤 코드도 실행하지 않는다.

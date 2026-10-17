@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,16 +30,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -150,6 +150,9 @@ internal fun VariantTextField(source: FieldSource, config: FieldConfig, input: F
     val geometry = remember { LabelGeometry() }
     val colors = KineticaTheme.colors
     val metrics = metricsOf(config.variant)
+    val shapes = currentShapes
+    // 캡슐 입력란 토큰이면 테두리 모양 변형에 어울리지 않으므로 원래 반지름을 쓴다.
+    val chrome = shapeOf(shapes.cornerOf(shapes.field), shapes.radiusOr(shapes.field, VARIANT_CORNER))
     val basics = FieldBasics(
         enabled = config.flags.enabled,
         readOnly = config.flags.readOnly,
@@ -170,7 +173,7 @@ internal fun VariantTextField(source: FieldSource, config: FieldConfig, input: F
                         translationX = motion.shake.value * density
                         alpha = if (config.flags.enabled) 1f else VARIANT_DISABLED_ALPHA
                     }
-                    .variantChrome(config.variant, motion, geometry, surface.contentColor)
+                    .variantChrome(config.variant, motion, geometry, surface.contentColor, chrome)
                     .onFocusChanged { focused = it.isFocused }
                     .semantics { texts.error?.let { error(it) } },
                 basics,
@@ -203,52 +206,48 @@ private fun rememberVariantMotion(filled: Boolean, focused: Boolean, inline: Boo
 }
 
 /** 모양에 맞는 테두리, 바탕, 아래 선. 포커스와 오류 정도는 그리기 단계에서 읽는다. */
-private fun Modifier.variantChrome(variant: KTextFieldVariant, motion: FieldMotion, geometry: LabelGeometry, ink: Color): Modifier =
-    drawWithCache {
-        val corner = VARIANT_CORNER.toPx()
-        val filled = Path().apply {
-            addRoundRect(
-                RoundRect(Rect(Offset.Zero, size), CornerRadius(corner), CornerRadius(corner), CornerRadius.Zero, CornerRadius.Zero),
-            )
-        }
-        val thin = THIN_LINE.toPx()
-        val thick = THICK_LINE.toPx()
-        val notchPad = NOTCH_PAD.toPx()
-        val labelX = OUTLINED_LABEL_X.toPx()
-        onDrawBehind {
-            val focus = motion.levels.focus.value.coerceIn(0f, 1f)
-            val error = motion.levels.error.value.coerceIn(0f, 1f)
-            val idle = ink.copy(alpha = if (variant == KTextFieldVariant.Outlined) OUTLINE_IDLE_ALPHA else LINE_IDLE_ALPHA)
-            val color = lerp(lerp(idle, motion.accent, focus), motion.errorColor, error)
-            val width = thin + (thick - thin) * maxOf(focus, error)
-            when (variant) {
-                KTextFieldVariant.Outlined -> {
-                    val float = motion.float.value.coerceIn(0f, 1f)
-                    val gap = if (float > 0f) (geometry.labelWidth * VARIANT_LABEL_SCALE + notchPad * 2) * float else 0f
-                    val start = labelX - notchPad
-                    val left = if (layoutDirection == LayoutDirection.Rtl) size.width - start - gap else start
-                    clipRect(left, -width, left + gap, width * 2, ClipOp.Difference) {
-                        drawRoundRect(
-                            color,
-                            Offset(width / 2, width / 2),
-                            Size(size.width - width, size.height - width),
-                            CornerRadius(corner - width / 2),
-                            style = Stroke(width),
-                        )
-                    }
+private fun Modifier.variantChrome(
+    variant: KTextFieldVariant,
+    motion: FieldMotion,
+    geometry: LabelGeometry,
+    ink: Color,
+    shape: Shape,
+): Modifier = drawWithCache {
+    // 채운 모양은 위 모서리만 깎고 아래는 선을 긋는다.
+    val top = (shape as? CornerBasedShape)?.copy(bottomEnd = CornerSize(0), bottomStart = CornerSize(0)) ?: shape
+    val filled = top.createOutline(size, layoutDirection, this)
+    val thin = THIN_LINE.toPx()
+    val thick = THICK_LINE.toPx()
+    val notchPad = NOTCH_PAD.toPx()
+    val labelX = OUTLINED_LABEL_X.toPx()
+    onDrawBehind {
+        val focus = motion.levels.focus.value.coerceIn(0f, 1f)
+        val error = motion.levels.error.value.coerceIn(0f, 1f)
+        val idle = ink.copy(alpha = if (variant == KTextFieldVariant.Outlined) OUTLINE_IDLE_ALPHA else LINE_IDLE_ALPHA)
+        val color = lerp(lerp(idle, motion.accent, focus), motion.errorColor, error)
+        val width = thin + (thick - thin) * maxOf(focus, error)
+        when (variant) {
+            KTextFieldVariant.Outlined -> {
+                val float = motion.float.value.coerceIn(0f, 1f)
+                val gap = if (float > 0f) (geometry.labelWidth * VARIANT_LABEL_SCALE + notchPad * 2) * float else 0f
+                val start = labelX - notchPad
+                val left = if (layoutDirection == LayoutDirection.Rtl) size.width - start - gap else start
+                clipRect(left, -width, left + gap, width * 2, ClipOp.Difference) {
+                    drawShape(shape, color, Offset(width / 2, width / 2), Size(size.width - width, size.height - width), Stroke(width))
                 }
-
-                KTextFieldVariant.Filled -> {
-                    drawPath(filled, ink.copy(alpha = FILLED_ALPHA + FILLED_FOCUS_ALPHA * focus))
-                    drawRect(color, Offset(0f, size.height - width), Size(size.width, width))
-                }
-
-                KTextFieldVariant.Underline -> drawRect(color, Offset(0f, size.height - width), Size(size.width, width))
-
-                else -> Unit
             }
+
+            KTextFieldVariant.Filled -> {
+                drawOutline(filled, ink.copy(alpha = FILLED_ALPHA + FILLED_FOCUS_ALPHA * focus))
+                drawRect(color, Offset(0f, size.height - width), Size(size.width, width))
+            }
+
+            KTextFieldVariant.Underline -> drawRect(color, Offset(0f, size.height - width), Size(size.width, width))
+
+            else -> Unit
         }
     }
+}
 
 @Composable
 private fun VariantDecoration(

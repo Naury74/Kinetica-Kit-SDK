@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
@@ -119,8 +118,8 @@ public fun rememberKFloatingToolbarState(initiallyExpanded: Boolean = true): KFl
     rememberSaveable(saver = KFloatingToolbarState.Saver) { KFloatingToolbarState(initiallyExpanded) }
 
 /**
- * 화면 아래 가운데에 떠 있는 캡슐 도구 막대. [content] 버튼들을 캡슐에 담고,
- * [floatingActionButton]은 캡슐 옆에 따로 둔다. [expanded]가 false가 되면 캡슐이 오므라들며 사라지고 [floatingActionButton]만 남는다.
+ * 화면 아래 가운데에 떠 있는 도구 막대. [content] 버튼들을 탭 바 모양 토큰(기본 디자인에서는 캡슐)의 판에 담고,
+ * [floatingActionButton]은 판 옆에 따로 둔다. [expanded]가 false가 되면 판이 오므라들며 사라지고 [floatingActionButton]만 남는다.
  * '애니메이션 삭제' 설정에서는 바로 숨는다.
  *
  * 놓을 자리는 호스트가 정한다(보통 `Box` 안에서 `Modifier.align(Alignment.BottomCenter)`). 내비게이션 바와 키보드 위로 올라온다.
@@ -158,8 +157,8 @@ public fun KFloatingToolbar(
         ) {
             Row(
                 Modifier
-                    .kSurface(surface.elevated(), CircleShape)
-                    .heightIn(min = TOOLBAR_HEIGHT)
+                    .kSurface(surface.elevated(), shapeFor { tabBar })
+                    .heightIn(min = KineticaTheme.design.density.height(TOOLBAR_HEIGHT))
                     .padding(horizontal = TOOLBAR_INSET)
                     .selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),

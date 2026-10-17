@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
@@ -106,18 +105,19 @@ public fun KAttachmentChip(
     val ink = surface.contentColor
     val line = attachmentLine(status, progress, detail)
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val shape = roundedShapeFor(CHIP_RADIUS) { chip }
     Row(
         modifier
             .widthIn(min = MIN_WIDTH)
             .heightIn(min = HEIGHT)
-            .kSurface(surface, CHIP_SHAPE)
-            .clip(CHIP_SHAPE)
+            .kSurface(surface, shape)
+            .clip(shape)
             .drawBehind {
                 if (!uploading) return@drawBehind
                 val w = size.width * level.value
                 drawRect(colors.accent.copy(alpha = FILL_ALPHA), Offset(if (rtl) size.width - w else 0f, 0f), Size(w, size.height))
             }
-            .then(if (onClick != null) Modifier.kClickable(CHIP_SHAPE, onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.kClickable(shape, onClick = onClick) else Modifier)
             .semantics(mergeDescendants = true) {
                 stateDescription = line
                 if (uploading) {
@@ -146,7 +146,7 @@ private fun AttachmentTexts(name: String, line: String, failed: Boolean, ink: Co
     Column(modifier) {
         ThemedText(
             name,
-            style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+            style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
             maxLines = 1,
             overflow = TextOverflow.MiddleEllipsis,
         )
@@ -177,7 +177,10 @@ private fun attachmentLine(status: KAttachmentStatus, progress: Float?, detail: 
 
 @Composable
 private fun AttachmentThumb(thumbnail: (@Composable () -> Unit)?, accent: Color) {
-    val shape = RoundedCornerShape(KMetrics.concentric(CHIP_RADIUS, INSET))
+    // 칩 모서리와 같은 중심으로 굽게 한다.
+    val shapes = currentShapes
+    val outer = shapes.radiusOr(shapes.chip, CHIP_RADIUS)
+    val shape = shapeOf(shapes.cornerOf(shapes.chip), if (outer > 0.dp) KMetrics.concentric(outer, INSET) else outer)
     Box(
         Modifier.size(THUMB).clip(shape).then(if (thumbnail == null) Modifier.background(accent.copy(alpha = TILE_ALPHA)) else Modifier),
         contentAlignment = Alignment.Center,
@@ -278,7 +281,6 @@ public fun KFileDropZone(
 }
 
 private val CHIP_RADIUS = 16.dp
-private val CHIP_SHAPE = RoundedCornerShape(CHIP_RADIUS)
 private val INSET = 8.dp
 private val THUMB = 40.dp
 private val HEIGHT = 56.dp

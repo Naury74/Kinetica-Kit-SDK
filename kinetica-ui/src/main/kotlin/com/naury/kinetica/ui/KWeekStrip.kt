@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -129,7 +128,7 @@ private fun DayCell(date: LocalDate, enabled: Boolean, look: WeekLook, modifier:
         if (dots.isNotEmpty()) pluralStringResource(R.plurals.kinetica_ui_week_events, dots.size, dots.size) else null,
     )
     val description = joinChartParts(parts)
-    val shape = RoundedCornerShape(CELL_RADIUS)
+    val shape = roundedShapeFor(CELL_RADIUS) { indicator }
     Column(
         modifier
             .padding(horizontal = 2.dp)
@@ -167,10 +166,11 @@ private fun dayInk(selected: Boolean, today: Boolean, enabled: Boolean, ink: Col
 
 @Composable
 private fun DayNumber(day: Int, fill: Color, color: Color, bold: Boolean) {
-    Box(Modifier.size(DAY_CIRCLE).background(fill, CircleShape), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(DAY_CIRCLE).background(fill, shapeFor { indicator }), contentAlignment = Alignment.Center) {
+        val weight = if (bold) KineticaTheme.design.label(FontWeight.SemiBold) else FontWeight.Normal
         ThemedText(
             day.toString(),
-            style = TextStyle(color = color, fontSize = 16.sp, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal),
+            style = TextStyle(color = color, fontSize = 16.sp, fontWeight = weight),
         )
     }
 }

@@ -108,6 +108,7 @@ public enum class KButtonSize(
  * @param enabled `false`면 누를 수 없고 흐리게 그린다.
  * @param fullWidth `true`면 받은 폭을 모두 채운다. 내용은 가운데에 놓는다. 시트나 폼 아래의 주 동작에 쓴다.
  * @param success `true`면 원으로 줄어 체크 표시를 보여 준다. [loading]보다 우선한다.
+ * @param shape 버튼 모양. 기본값은 [KineticaTheme.design]의 [KineticaShapes.button]이다. 높이와 좌우 여백은 [KineticaDesign.density]를 따른다.
  */
 @Composable
 public fun KButton(
@@ -124,8 +125,11 @@ public fun KButton(
     enabled: Boolean = true,
     fullWidth: Boolean = false,
     surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { button },
 ) {
     val haptic = LocalHapticFeedback.current
+    val design = KineticaTheme.design
+    val height = design.density.height(size.height)
     val active = enabled && !loading && !success
     val busyLabel = stringResource(if (success) R.string.kinetica_ui_done else R.string.kinetica_ui_loading)
     val loadingLevel by animateFloatAsState(if (loading && !success) 1f else 0f, tween(LOADING_FADE_MS), label = "button-loading")
@@ -135,18 +139,18 @@ public fun KButton(
     val positive = KineticaTheme.colors
     Box(
         modifier
-            .then(if (active) Modifier.jellyPress(JELLY_AMOUNT) else Modifier)
+            .then(if (active) Modifier.jellyPress(design.motion.press) else Modifier)
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
             .successMorph(morph, positive.positive, positive.onPositive)
             .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier)
-            .defaultMinSize(minWidth = size.height)
-            .height(size.height)
-            .variantBackground(variant, colors, surface, CircleShape)
-            .clip(CircleShape)
+            .defaultMinSize(minWidth = height)
+            .height(height)
+            .variantBackground(variant, colors, surface, shape)
+            .clip(shape)
             .clickable(
                 interactionSource = null,
                 // Text와 Outlined는 채운 배경이 없으므로 누르는 동안 깔리는 옅은 배경이 눌린 걸 알리는 유일한 표시다.
-                indication = KIndication(CircleShape, content, if (variant.bare) PLAIN_PRESS_ALPHA else PRESS_ALPHA),
+                indication = KIndication(shape, content, if (variant.bare) PLAIN_PRESS_ALPHA else PRESS_ALPHA),
                 enabled = active,
                 role = Role.Button,
             ) {
@@ -155,10 +159,13 @@ public fun KButton(
             }
             .semantics { if (loading || success) stateDescription = busyLabel }
             // 앞 아이콘은 글자보다 시각적 무게가 가벼워, 그쪽 여백을 조금 줄여야 내용이 가운데로 보인다.
-            .padding(start = size.sidePadding(icon != null), end = size.sidePadding(trailingIcon != null)),
+            .padding(
+                start = design.density.padding(size.sidePadding(icon != null)),
+                end = design.density.padding(size.sidePadding(trailingIcon != null)),
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        ButtonLabel(text, icon, trailingIcon, size, content) { 1f - maxOf(loadingLevel, morph.value) }
+        ButtonLabel(text, icon, trailingIcon, size, content, design.labelWeight) { 1f - maxOf(loadingLevel, morph.value) }
         if (loadingLevel > 0f) LoadingRing(content, loadingLevel, Modifier.size(size.icon))
     }
 }
@@ -168,7 +175,16 @@ private fun KButtonSize.sidePadding(hasIcon: Boolean): Dp = if (hasIcon) padding
 
 /** 버튼 글자와 앞뒤 아이콘. [alpha]는 그리기 단계에서 읽는다. */
 @Composable
-private fun ButtonLabel(text: String, icon: ImageVector?, trailing: ImageVector?, size: KButtonSize, ink: Color, alpha: () -> Float) {
+@Suppress("LongParameterList") // 글자, 두 아이콘, 크기, 색, 굵기는 모두 버튼이 정해 넘기는 값이다.
+private fun ButtonLabel(
+    text: String,
+    icon: ImageVector?,
+    trailing: ImageVector?,
+    size: KButtonSize,
+    ink: Color,
+    weight: FontWeight,
+    alpha: () -> Float,
+) {
     Row(
         Modifier.graphicsLayer { this.alpha = alpha().coerceIn(0f, 1f) },
         horizontalArrangement = Arrangement.spacedBy(size.gap),
@@ -178,7 +194,7 @@ private fun ButtonLabel(text: String, icon: ImageVector?, trailing: ImageVector?
         ThemedText(
             text,
             Modifier.weight(1f, fill = false),
-            style = TextStyle(color = ink, fontSize = size.font, fontWeight = FontWeight.SemiBold),
+            style = TextStyle(color = ink, fontSize = size.font, fontWeight = weight),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -285,7 +301,6 @@ private const val FILL_SPEED = 2.2f
 private const val CHECK_START = 0.45f
 private const val CHECK_BOX = 0.46f
 private const val CHECK_STROKE = 0.06f
-private const val JELLY_AMOUNT = 0.07f
 private const val DISABLED_ALPHA = 0.4f
 private const val PRESS_ALPHA = 0.12f
 private const val PLAIN_PRESS_ALPHA = 0.1f

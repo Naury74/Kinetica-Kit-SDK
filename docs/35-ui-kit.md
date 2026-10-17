@@ -11,6 +11,7 @@
 - [시작하기](#시작하기)
 - [테마와 표면 스타일](#테마와-표면-스타일)
 - [변형과 톤](#변형과-톤)
+- [디자인 언어와 형태](#디자인-언어와-형태)
 - [터치 피드백](#터치-피드백)
 - [버튼, 입력, 선택](#버튼-입력-선택)
 - [목록과 카드](#목록과-카드)
@@ -183,6 +184,71 @@ KChipGroup(listOf("전체", "사진", "동영상"), filter, { filter = it }, var
 KSurface(onClick = ::open, variant = KVariant.Elevated) { Text("열기", Modifier.padding(16.dp)) }
 KButton("저장", onClick = { scope.launch { toast.show("저장했어요", tone = KTone.Positive) } }) // 글자 앞에 성공 아이콘
 ```
+
+## 디자인 언어와 형태
+
+표면 스타일이 색과 블러, 그림자를 정한다면 디자인 언어(`KineticaDesign`)는 컴포넌트의 형태를 정한다. 모서리 모양과 크기, 표면을 띄워 보이는 방식,
+테두리 두께, 높이와 여백, 글자 굵기, 탭 인디케이터, 스위치와 슬라이더 손잡이 모양, 모션 성격이 함께 바뀐다. 두 값은 따로 고르므로
+글래스 표면에 브루탈 형태를 얹거나 단색 표면에 One UI 형태를 쓸 수 있다.
+
+```kotlin
+KineticaTheme(surface = SurfaceStyles.CleanLight, design = KineticaDesigns.Material) { App() }
+
+// 한 부분만 다른 형태로
+KineticaTheme(design = KineticaDesigns.Brutal) { PromoBanner() }
+
+// 프리셋을 고쳐 쓰기
+val design = KineticaDesigns.Cupertino.copy(
+    shapes = KineticaShapes(corner = KCornerStyle.Squircle, button = KShapeToken.Medium),
+    indicator = KTabIndicator.Underline,
+)
+```
+
+기본값은 `KineticaDesigns.Cupertino`이고 지금까지의 모양과 같다. 컴포넌트의 `shape`, `variant`, `thumb`, `indicator` 같은 파라미터에 값을 넘기면 그 값이 우선한다.
+
+### 프리셋
+
+| 프리셋 | 모서리 | 깊이 | 밀도 | 탭 인디케이터 | 목록 | 컨트롤 | 모션 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Cupertino` | 캡슐 버튼과 칩, 24dp 카드, 32dp 시트 | 부드러운 그림자 | 보통 | 옅은 캡슐 | 판 하나, 글자 시작부터 구분선 | 캡슐 스위치, 가로 캡슐 손잡이 | 통통 튐 |
+| `Material` | 캡슐 버튼, 8dp 칩, 12dp 카드, 4dp 입력란, 28dp 다이얼로그 | 평면(떠 있는 판만 그림자) | 보통 | 강조색 채움 | 행마다 따로 놓인 판, 2dp 틈 | 체크 스위치, 세로 막대 손잡이 | 빠르고 살짝 튐 |
+| `OneUi` | 캡슐 버튼, 26dp 카드와 목록 판, 캡슐 입력란, 원 체크박스 | 평면 | 넉넉함 | 옅은 캡슐 | 판 하나 | 얇은 스위치, 원 손잡이 | 차분함 |
+| `Fluent` | 4dp 버튼과 칩, 8dp 카드와 다이얼로그 | 테두리 | 조밀함 | 밑줄 | 판 하나, 끝에서 끝까지 구분선 | 테두리 스위치, 링 손잡이 | 빠름 |
+| `Brutal` | 각진 모서리(아바타와 라디오만 원) | 글자 색 테두리와 단단한 오프셋 그림자 | 보통 | 강조색 채움 | 판 하나, 끝에서 끝까지 구분선 | 각진 스위치, 정사각형 손잡이 | 빠름 |
+| `Soft` | 스쿼클, 12dp 버튼, 8dp 칩, 32dp 카드, 40dp 시트 | 부드러운 그림자 | 넉넉함 | 밝은 칸이 미끄러지는 트랙 | 구분선 없는 판 | 캡슐 스위치, 원 손잡이 | 차분함 |
+
+`KineticaDesigns.all`은 이름과 프리셋 목록이라 고르기 화면에 그대로 늘어놓을 수 있다.
+
+### 모양 토큰 `KineticaShapes`
+
+모서리 체계(`corner`), 크기 단계(`extraSmall`, `small`, `medium`, `large`, `extraLarge`, `huge`), 그리고 컴포넌트 역할마다 쓸 단계(`KShapeToken`)로 이루어진다.
+역할은 `button`, `chip`, `card`, `sheet`, `dialog`, `field`, `search`, `menu`, `toast`, `tabBar`, `indicator`, `listSection`, `avatar`, `checkbox`, `radio`, `badge`, `image`가 있다.
+
+| `KCornerStyle` | 모양 |
+| --- | --- |
+| `Round` | 원호 모서리 |
+| `Squircle` | 직선에서 서서히 휘는 연속 곡률 모서리. `KSquircleShape`로 직접 쓸 수도 있다 |
+| `Cut` | 비스듬히 잘라 낸 모서리 |
+| `Square` | 각진 모서리. 반지름을 무시한다 |
+
+`KShapeSize.Full`은 짧은 변의 절반이라 버튼과 칩은 캡슐, 정사각형은 원이 된다. 역할 하나만 다른 모서리 모양을 쓰려면 `KShapeToken(KShapeSize.Full, KCornerStyle.Round)`처럼 준다.
+직접 만든 컴포넌트는 `KineticaTheme.shapes.shape(KineticaTheme.shapes.card)`로 같은 모양을 얻고, 안쪽 요소는 `shapes.inner(token, inset)`으로 동심원 반지름을 맞춘다.
+
+### 깊이, 밀도, 글자, 모션
+
+- `KDepth.Shadow`는 표면 스타일 그대로 그림자를 그린다. `Border`는 그림자 대신 `borderWidth` 두께의 옅은 테두리를 두르고, `Flat`은 색 차이로만 구분한다. 둘 다 다이얼로그와 시트처럼 떠 있는 판에는 그림자를 남긴다. 글래스는 팝업도 같은 그림자를 쓰므로 그림자를 없애지 않고 줄인다.
+- `KDepth.Offset`은 글자 색 테두리와 오른쪽 아래(RTL이면 왼쪽 아래)로 비낀 단단한 그림자를 그린다. `Filled`와 `Tonal` 버튼도 같은 테두리와 그림자를 둘러 카드와 형태가 맞는다.
+- `KDensity`는 버튼, 칩, 입력란, 세그먼트, 탭 바, 목록 행의 높이와 카드, 다이얼로그, 시트의 안쪽 여백을 바꾼다. `Compact`는 데스크톱 앱처럼 촘촘한 화면에 쓰고, 이때 버튼 높이가 44dp 밑으로 내려가므로 주변 터치 여백을 둔다.
+- `labelWeight`는 버튼, 칩, 탭 이름의 굵기, `titleWeight`는 다이얼로그와 앱 바 제목의 굵기다. 제목은 컴포넌트가 정한 굵기를 기본값(Bold)과의 차이만큼 옮긴다.
+- `KineticaMotion`은 인디케이터 이동, 스위치 손잡이, 다이얼로그 열림, 버튼 눌림 깊이에 쓰는 스프링이다. `Bouncy`면 컴포넌트마다 맞춰 둔 값을 그대로 쓴다. '애니메이션 삭제' 설정이면 어느 성격이든 바로 바뀐다.
+
+### 컨트롤과 인디케이터
+
+- `KineticaControls.switch`는 `KSwitch`와 스위치 행의 기본 모양이다. `KSwitchVariant`에 `Outline`(테두리 트랙)과 `Block`(각진 트랙과 손잡이)이 더해졌다. `KListTrailing.Switch`의 기본값 `Capsule`은 디자인 언어의 스위치를 따른다.
+- `KineticaControls.sliderThumb`는 `KSlider`와 `KRangeSlider`의 손잡이 모양이다(`Pill`, `Circle`, `Bar`, `Ring`, `Square`). `Bar`는 손잡이 양옆을 비운 두꺼운 트랙을, `Square`는 테두리 두른 각진 트랙을 함께 그린다.
+- 체크박스 상자는 `shapes.checkbox`, 라디오 테두리는 `shapes.radio`를 따른다. `KCheckboxShape.Square`는 '디자인 언어의 상자'라는 뜻이다.
+- `indicator`는 `KTopTabs`, `KTabBar`, `KFloatingTabBar`, `KSegmentedControl`의 선택 표시다. `KTabIndicator.Filled`가 더해졌다. 밑줄과 채움 모양에서는 고른 탭 글자를 강조색(채움은 강조색 위 글자 색)으로 쓴다.
+- `listSeparator`는 `KListSection`과 `kListSection` 행 사이를 나누는 방식이다(`Inset`, `Full`, `None`, `Gap`).
 
 ## 터치 피드백
 
@@ -430,8 +496,8 @@ KTopTabs(listOf(KTab("추천"), KTab("인기"), KTab("새 글", badge = 3)), pag
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `PushNavigation` | iOS식 push 전환. 새 화면이 옆에서 들어오고 아래 화면은 조금 물러나며 어두워진다. 왼쪽 가장자리에서 끌거나 예측 뒤로 가기 제스처를 하면 손가락을 따라 되돌아간다 | `stack`, `onBack`, `swipeBack` |
-| `KExpandHost` + `Modifier.expandSource` | App Store 투데이 탭처럼 카드가 제자리에서 화면 가득 커지며 상세 화면이 된다. 배경은 흐려지고, 상세를 아래로 끌면 작아지면서 둥글어지며, 놓으면 원래 카드 위치로 돌아간다 | `rememberKExpandState()`, `state.expand(key)`, `cornerRadius` |
+| `PushNavigation` | 화면 스택. 기본은 iOS식 push 전환이라 새 화면이 옆에서 들어오고 아래 화면은 조금 물러나며 어두워진다. `transition`으로 [화면 이동 전환](#화면-이동-전환)을 고른다. 왼쪽 가장자리에서 끌거나 예측 뒤로 가기 제스처를 하면 손가락을 따라 전환이 되감긴다 | `stack`, `onBack`, `swipeBack`, `transition`, `paneTitle` |
+| `KExpandHost` + `Modifier.expandSource` | App Store 투데이 탭처럼 카드가 제자리에서 화면 가득 커지며 상세 화면이 된다. 배경은 흐려지고, 상세를 아래로 끌거나 예측 뒤로 가기 제스처를 하면 작아지면서 둥글어지며, 놓으면 원래 카드 위치로 돌아간다. `transform`으로 목록 행이나 플로팅 버튼에서 여는 모습을 고른다 | `rememberKExpandState()`, `state.expand(key)`, `cornerRadius`, `transform` |
 | `KDrawer` | 가장자리에서 끌어 여는 서랍. `KDrawerMode.Push`(기본)는 뒤 화면을 밀어내며 작아지고 둥글어지게 하고, `Modal`은 뒤 화면을 그 자리에서 어둡게 덮는다 | `drawerContent`, `state = rememberKDrawerState()`, `mode` |
 | `KSearchView` | 누르면 캡슐이 커져 검색 화면이 된다. 좁은 창은 화면 전체, 600dp 이상은 캡슐 자리에서 펼쳐지는 판(최대 720dp)이다. 비어 있으면 최근 검색, 글자가 있으면 제안을 보여 준다. 제안 끝의 화살표는 검색어 칸에만 채운다 | `suggestions`, `recent`, `onRemoveRecent`, `onClearRecent` |
 | `KStepIndicator` | 단계 표시. `KStepStyle.Numbered`(번호 원과 이름), `Dots`(지금 단계 점이 캡슐로 늘어남), `Bar`(나눈 막대와 'n/전체') | `steps`, `current`, `onStepClick` |
@@ -461,6 +527,71 @@ KExpandHost(expand) { key -> Text("$key 상세", Modifier.statusBarsPadding()) }
 
 `KExpandHost`의 상세 화면은 상태 표시줄 뒤까지 그린다. 글자나 버튼이 상태 표시줄에 가리지 않게 상세 안의 해당 요소에 `Modifier.statusBarsPadding()`을 붙이고, 상세 배경이 어두우면 `KSystemBarIcons(light = true)`를 둔다.
 상세 화면 위쪽을 카드와 똑같이 꾸미면 카드에서 상세로 끊김 없이 이어진다.
+
+`KExpandHost`의 `transform`은 원래 요소에서 상세 화면으로 커지는 모습(Material container transform)을 정한다.
+
+| 값 | 모습 | 어울리는 곳 |
+| --- | --- | --- |
+| `KContainerTransform.Card`(기본) | 상세 화면을 카드 너비로 줄여 그린 채 커진다 | 상세 위쪽이 카드와 같은 투데이 카드, 큰 배너 |
+| `KContainerTransform.listRow(color)` | 행 자리에서 `color` 상자가 커지고, 상세 내용은 상자가 반쯤 커진 뒤 원래 크기로 나타난다 | 메일, 설정, 연락처 목록에서 상세로 |
+| `KContainerTransform.fab(color)` | 동그란 버튼이 버튼 색 화면으로 커지며 모서리가 펴지고, 내용은 뒤따라 나타난다 | 새 글 쓰기, 새 항목 만들기 |
+
+사진을 눌러 크게 보는 전환은 `KImageViewer`와 `Modifier.imageViewerSource`를 쓴다.
+
+### 화면 이동 전환
+
+`PushNavigation(transition = …)`과 `KTransitionContent(transition = …)`에 넣는 전환은 `KTransitions`에 있다. 모든 전환은 진행률 하나로
+두 화면의 모습을 정하므로 뒤로 가기는 같은 전환을 되감고, 예측 뒤로 가기 제스처를 하면 손가락을 따라 되감긴다. 가로 방향은 RTL에서 뒤집히고,
+'애니메이션 삭제' 설정이 켜져 있으면 전환 없이 바로 바뀐다. 진행률은 그리기 단계에서만 읽으므로 전환하는 동안 화면을 다시 구성하지 않는다.
+전환하는 동안 가려지는 화면은 터치를 받지 않고 TalkBack에도 드러나지 않는다.
+
+| 전환 | 모습 | 어울리는 곳 |
+| --- | --- | --- |
+| `Push`(기본), `push(parallax, dim, from)` | 새 화면이 옆에서 밀려 들어오고 아래 화면은 30% 물러나며 어두워진다 | iOS식 목록에서 상세 |
+| `Parallax` | 아래 화면이 절반쯤 물러나며 작아지는 깊은 패럴랙스 | 사진, 쇼핑 상세 |
+| `Slide`, `slide(from)` | 두 화면이 함께 밀린다 | 단계가 이어지는 가입 화면 |
+| `Cover`, `cover(from)` | 새 화면이 덮고 아래 화면은 제자리에서 어두워진다. `cover(KTransitionEdge.Bottom)`은 전체 화면 다이얼로그처럼 아래에서 올라온다 | 작성 화면, 전체 화면 다이얼로그 |
+| `Uncover`, `uncover(from)` | 기존 화면이 비켜나며 아래에 있던 새 화면을 드러낸다 | 온보딩을 마치고 홈으로 |
+| `Zoom` | 새 화면이 조금 작은 크기에서 커지며 나타난다 | Android 시스템 앱 느낌 |
+| `Fade`, `FadeThrough` | 크로스페이드, Material fade through | 서로 관련 없는 화면, 하단 탭 |
+| `SharedAxisX`, `SharedAxisY`, `SharedAxisZ` | Material shared axis. 가로나 세로로 조금 밀리거나 앞으로 다가오며 바뀐다 | 단계, 위아래 순서, 목록에서 상세 |
+| `TabSlide` | 너비의 4분의 1만 밀리며 겹쳐 바뀐다 | 상단 탭, 세그먼트 |
+| `SheetStack` | 새 화면이 아래에서 올라오고 아래 화면은 작아지며 모서리가 둥글어지고 어두워진다 | iOS 모달 시트를 겹쳐 여는 흐름 |
+| `CardStack` | 새 화면이 둥근 카드로 옆에서 들어오고 아래 화면은 작아지며 뒤로 물러난다 | 설정 하위 화면, 카드형 앱 |
+| `Cube`, `Flip` | 정육면체의 이웃한 면처럼 돌거나, 카드를 뒤집듯 돌다가 반쯤 지나 새 화면이 나타난다 | 스토리, 게임 메뉴, 앞뒷면 카드 |
+| `CircleReveal`, `reveal(shape, center)` | 원, 마름모, 별(`KRevealShape`) 모양이 퍼지며 새 화면을 드러낸다. `center`에 `Modifier.kOrigin`으로 얻은 위치를 주면 누른 자리에서 퍼진다 | 테마 전환, 검색, 축하 화면 |
+| `BlurDissolve` | 기존 화면이 블러로 흐려지며 사라지고 새 화면이 선명해진다. Android 12 미만은 페이드만 한다 | 미디어 앱, 잠금 해제 |
+| `Wipe`, `wipe(from)` | 가장자리에서 경계선이 쓸고 지나간다 | 비교 화면, 게임 |
+| `None` | 바로 바꾼다 | |
+
+```kotlin
+var buttonCenter by remember { mutableStateOf<Offset?>(null) }
+PushNavigation(
+    stack,
+    onBack = { stack = stack.dropLast(1) },
+    transition = KTransitions.reveal(KRevealShape.Circle) { buttonCenter },
+    paneTitle = { screen -> screenTitle(screen) },   // 화면이 바뀌면 TalkBack이 새 화면 이름을 읽는다
+) { screen -> … }
+
+// 탭: 오른쪽 탭으로 가면 끝 쪽에서, 왼쪽 탭으로 가면 시작 쪽에서 들어온다
+KTransitionContent(tab, transition = KTransitions.TabSlide, isForward = { from, to -> to > from }) { page -> TabPage(page) }
+```
+
+직접 만들려면 `KScreenTransition`을 상속해 `enter(frame, progress)`와 `exit(frame, progress)`에서 `KTransitionFrame`의 이동, 배율, 회전,
+불투명도와 `dim`, `cornerRadius`, `blurRadius`를 정하거나 `clipTo`, `reveal`로 자른다. 진행률이 1일 때 들어온 화면이, 0일 때 가려질 화면이
+원래 모습이어야 하고, 가로 값에는 `frame.endSign`을 곱해야 RTL에서 뒤집힌다.
+
+Navigation Compose의 `NavHost`나 Compose `AnimatedContent`에는 `KNavTransitions`의 묶음을 쓴다. `Push`, `Slide`, `SlideUp`, `SheetStack`,
+`Zoom`, `Fade`, `FadeThrough`, `SharedAxisX`, `SharedAxisY`, `SharedAxisZ`, `None`이 있다. Compose 기본 전환으로 만들었으므로
+navigation-compose의 예측 뒤로 가기 되감기를 그대로 따르지만, 화면을 어둡게 하거나 3D로 돌리거나 모양으로 드러내는 전환은 없다.
+
+```kotlin
+val nav = rememberKNavTransition(KNavTransitions.Push)   // '애니메이션 삭제'면 None
+NavHost(controller, "home", enterTransition = nav.enter, exitTransition = nav.exit,
+    popEnterTransition = nav.popEnter, popExitTransition = nav.popExit) { … }
+
+AnimatedContent(step, transitionSpec = { kTransform(KNavTransitions.SharedAxisX, forward = targetState > initialState) }) { … }
+```
 
 ## 오버레이
 
@@ -837,7 +968,7 @@ Box(Modifier.glowBorder({ level }, RoundedCornerShape(24.dp)))
 | `Modifier.scrollTransform(listState, index, effect)` | 지연 목록 가장자리 항목에 `KScrollEffect.ScaleFade`, `Wheel`, `TopStack` 효과를 준다 |
 | `KFlyToHost`, `Modifier.flyToSource`, `flyToTarget` | `rememberKFlyToState().launch(key) { 썸네일 }`로 상품이 포물선을 그리며 장바구니로 날아가고, 도착하면 장바구니가 튄다 |
 
-화면 전환은 모두 예측 뒤로 가기 제스처를 따라간다. `KFullScreenModal`, `PushNavigation`, `KExpandHost`는 [오버레이](#오버레이)와 [내비게이션과 앱 바](#내비게이션과-앱-바)에 있다.
+화면 전환은 모두 예측 뒤로 가기 제스처를 따라간다. `KFullScreenModal`, `PushNavigation`, `KExpandHost`는 [오버레이](#오버레이)와 [내비게이션과 앱 바](#내비게이션과-앱-바)에 있고, 전환 종류는 [화면 이동 전환](#화면-이동-전환)에 정리했다.
 
 ```kotlin
 KButton("구매", onClick = ::buy, modifier = Modifier.jellyPress().glowBorder(CircleShape))
@@ -1045,10 +1176,9 @@ bottomBar = {
 
 ## 쇼케이스에서 확인하기
 
-`sample-showcase` 첫 화면에서 표면 스타일(글래스, 단색, 톤)과 밝기를 고르면 모든 데모가 그 표면을 따른다.
+`sample-showcase` 첫 화면은 UI 키트를 가장 크게 두고, 그 아래에 고급 기능(대시보드 보드, 화면 만들기, 서버 화면, XML 화면)을 작게 둔다. 표면 종류와 프리셋, 밝기는 모든 화면 상단 바의 모양 버튼이 여는 시트 한 곳에서 고르고, 모든 데모가 그 값을 따른다. UI 키트를 누르면 분류별 허브가 열린다.
 
-- **UI 키트**: 표면 종류와 프리셋을 바꿔 가며 다이얼로그, 바텀 시트, 토스트, 탭 바, 컨트롤, 슬라이더, 당겨서 새로 고침을 본다.
-- **컴포넌트**: 기본, 입력, 미디어, 효과, 버튼·칩·카드, 내비게이션·오버레이, 피드백·로딩, 데이터·도메인, 소셜·모션 탭에 이 문서의 컴포넌트가 모두 있다.
-- **앱 화면 예**: 컴포넌트를 조합한 음악, 지도, 메일, 건강 앱 화면이다.
-- **화면 이동**: 카드가 커지는 상세 화면과 push 전환, 가장자리에서 끌어 뒤로 가기.
-- **모션 효과**: 효과 수정자와 [33 모션 효과](33-effects.md)의 프리셋.
+- **표면과 디자인**: 같은 컴포넌트를 글래스, 단색, 톤 프리셋마다 나란히 그려 비교한다. 프리셋을 누르면 앱 전체 모양이 그 프리셋으로 바뀐다. 아래에서 다이얼로그, 바텀 시트, 토스트, 탭 바, 컨트롤, 당겨서 새로 고침을 직접 눌러 본다.
+- **앱 화면 예**: 컴포넌트를 조합해 만든 실제 앱 같은 화면이다.
+- **컴포넌트**: 기본, 입력, 미디어, 효과, 버튼·칩·카드, 내비게이션·오버레이, 피드백·로딩, 데이터·도메인, 소셜·모션 탭에 이 문서의 컴포넌트가 모두 있다. 허브에서 종류를 누르면 그 탭으로 열린다.
+- **모션과 화면 전환**: 모션 효과(효과 수정자와 [33 모션 효과](33-effects.md)의 프리셋), 화면 이동(카드가 커지는 상세 화면, push 전환, 가장자리에서 끌어 뒤로 가기), 장면 전환.

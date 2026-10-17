@@ -29,6 +29,10 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - 데이터 표시: `KLineChart`, `KBarChart`, `KAreaChart`, `KMultiBarChart`, `KDonutChart`, `KPieChart`, `Sparkline`, `ActivityRings`, `KHeatmap`, `KCalendarHeatmap`, `KGauge`, `KStatCard`, `KChartPalettes`, `KTimeline`, `FlipDigits`, `FlipClock`, `KProfileHeader`, `KPriceTag`, `KPricingCard`, `KBillingPeriodToggle`
 - 미디어와 소셜: `KMiniPlayer`, `KMiniPlayerBar`, `KMiniPlayerFullScreen`, 모핑 아이콘, `KImageViewer`, `BeforeAfterSlider`, `KOnboarding`, `LikeButton`, `KChatBubble`, `KTypingIndicator`, `KChatInput`, `KStoryRing`, `KStoryViewer`, `KAttachmentChip`, `KFileDropZone`, `KMapPin`
 - 효과와 모션: `glowBorder`, `jellyPress`, `magnetic`, `motionTilt`, `tiltOnPress`, `holographic`, `shake`, `sparkle`, `parallaxScroll`, `spotlight`, `rippleDistortion`, `liquidMorph`, `KBlobButton`, `KBlobGroup`, `holdToConfirm`, `floatUp`, `RollingText`, `TypewriterText`, `ShimmerText`, `GradientText`, `ScrambleText`, `ConfettiHost`, `ParticleField`, `MeshGradientBackground`, `AuroraBackground`, `StarfieldBackground`, 이미지 대표색 배경, `FlipCard`, `MorphIcon`, `KCopyButton`, `KCircularReveal`, `KSharedTransitionHost`, `staggerIn`, `scrollTransform`, `KFlyToHost`
+- 디자인 언어 `KineticaDesign`과 프리셋 `KineticaDesigns`(`Cupertino`, `Material`, `OneUi`, `Fluent`, `Brutal`, `Soft`): 표면 스타일과 따로 컴포넌트 형태를 고릅니다. 모양 토큰 `KineticaShapes`(모서리 체계 `KCornerStyle`의 둥근, 스쿼클, 잘린, 각진 모서리와 크기 단계, 역할별 `KShapeToken`), `KSquircleShape`, 깊이 표현 `KDepth`(그림자, 테두리, 평면, 오프셋 그림자), 밀도 `KDensity`, 라벨과 제목 굵기, 탭 인디케이터, 목록 구분 `KListSeparator`, 컨트롤 모양 `KineticaControls`(스위치 `Outline`·`Block` 추가, 슬라이더 손잡이 `KSliderThumb` 5종), 모션 성격 `KineticaMotion`. `KineticaTheme(design = …)`로 적용하고 기본값은 지금까지의 모양입니다
+- 화면 이동 전환: `PushNavigation(transition = …)`과 방향을 아는 내용 전환 `KTransitionContent`에 넣는 `KTransitions` 프리셋 20종(밀기, 패럴랙스, 슬라이드, 덮기, 드러내기, 확대, 페이드, fade through, shared axis X/Y/Z, 탭 슬라이드, 시트 스택, 카드 스택, 큐브, 뒤집기, 원·마름모·별 모양 드러내기, 블러 디졸브, 와이프 등)과 직접 만드는 `KScreenTransition`. 모두 예측 뒤로 가기 제스처를 따라 되감기고 RTL에서 방향이 뒤집히며 '애니메이션 삭제' 설정이면 바로 바뀝니다. `PushNavigation`의 `paneTitle`로 화면이 바뀔 때 TalkBack이 새 화면 이름을 읽습니다
+- Navigation Compose `NavHost`와 `AnimatedContent`용 전환 묶음 `KNavTransitions`(`Push`, `Slide`, `SlideUp`, `SheetStack`, `Zoom`, `Fade`, `FadeThrough`, `SharedAxisX/Y/Z`), `kTransform`, `rememberKNavTransition`
+- `KExpandHost`의 컨테이너 변환 모양 `KContainerTransform`(`Card`, `listRow(color)`, `fab(color)`)과 예측 뒤로 가기 제스처 대응
 - 넓은 화면과 폴더블: `KListDetail`(힌지 맞춤), `KNavigationRail`, `KAdaptiveNavigation`, `KTabletopLayout`, `rememberKWindowLayout`, `kReadableWidth`. `androidx.window` 의존성이 함께 들어갑니다
 - 호스트 앱 연동: `KineticaScaffold` 밖에서 부르면 별도 창(Dialog, Popup)으로 띄우기, 시스템 창 블러와 불투명 판 fallback, `contentWindowInsets`, 모달 포커스 가두기, 닫을 때 키보드 내리기, 스낵바 `bottomOffset`, `KGlassLayer`, `KSystemBarIcons`, 화면 밖과 백그라운드에서 반복 효과 멈춤
 - XML 진입점(`com.naury.kinetica.ui.view`): `KSheets`, `KDialogs`, `KToasts`, `KSurfaceView`. RecyclerView, ViewPager2, CoordinatorLayout, Fragment 안에서 쓸 수 있고, 테마 속성 `kinetica_surfaceViewStyle`로 기본 스타일을 정합니다
@@ -61,6 +65,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - 계단 easing 점프 방식(`EasingSpec.Steps.jump`: `Start`, `End`, `None`, `Both`)과 키마다 정하는 회전 방향(`Keyframe.rotation`). JSON에는 선택 필드 `easing.jump`, `rotationDirection`이 추가되며 스키마 버전은 그대로 1입니다
 - 편집기 `KineticaEditor`: 선택, 이동, 크기 조절, 회전, 여러 노드를 함께 크기 조절하고 회전(`TransformOps.resizeMany`, `rotateMany`), 정렬과 분배, 속성과 레이어 패널, 효과 미리보기, 밝은 테마(`StudioTheme.light`, `system`), 도구 모음 `StudioToolbarButton`, `StudioToolbarGroup`과 `onExit`
 - 타임라인: 두 손가락, Ctrl+휠, 버튼으로 시간 축 확대와 맞춤, 재생 위치 따라가기, 여러 키 선택과 함께 끌기, 복사, 붙여넣기, 삭제, 단축키(Delete, Ctrl+C/V/A, Esc), easing 곡선 편집기(베지어 조절점, 스프링 감쇠와 강성, 계단 칸 수와 점프 방식)
+- 편집기 문서 패널의 '장면 전환' 섹션: 이 장면이 들어올 때의 전환 종류, 방향, 시간을 고르고 실행 취소할 수 있습니다(`SceneCommand.SetTransition`)
 
 #### 재생기와 서버 주도 화면 (`kinetica-player-compose`, `kinetica-serialization`)
 
@@ -69,6 +74,8 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - 서버 화면 `RemoteSceneLoader`, `RemoteKineticaPlayer`: 캐시(`RemoteSceneCache`), 앱에 넣어 둔 기본 문서, 앱을 다시 켜도 유지되는 etag, 서명 확인(`SceneVerifier.signature`, 키 교체용 `anyOf`), 거절 검사(`accept`)
 - 여러 화면 번들(`SceneBundleCodec`, `RemoteSceneBundleLoader`, `RemoteKineticaPlayer(bundle, id)`)
 - 숫자 데이터가 바뀌면 올라가며 바뀜(`numberAnimationMs`, `animateSceneNumbers`), 재생기의 '애니메이션 삭제' 대응
+- 장면 사이 전환 14종(`fade`, `morph`, `dissolve`, `slide`, `push`, `cover`, `uncover`, `wipe`, `iris`, `zoom`, `zoomBlur`, `rotate`, `flip`, `cube`). 장면 JSON 최상위 `transition`(종류, 방향, 시간, easing, 중심)으로 정하고 동작 문자열의 `transition=` 파라미터로 덮어쓸 수 있습니다. 스키마 버전은 1 그대로이고 옛 문서는 그대로 읽힙니다
+- 문서가 바뀌면 전환하는 `AnimatedScene`(`forward = false`면 되감기, RTL과 '애니메이션 삭제' 대응), 진행도를 직접 주는 `SceneTransition(from, to, spec, progress)`, Compose 화면에 붙이는 `Modifier.sceneTransitionLayer`. `RemoteKineticaPlayer(bundle, sceneId)`는 `sceneId`가 바뀌면 화면 문서의 전환을 재생합니다(`transition`, `forward` 파라미터)
 - 잘못된 문서는 `encode`가 쓰지 않고 위반 코드를 알림, 미리 검사하는 `SceneCodec.validate`
 
 #### 그 밖
@@ -102,6 +109,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 고친 것
 
+- 예측 뒤로 가기 제스처를 취소하면 `PushNavigation`, `KCircularReveal`, `KFullScreenModal`, `KSharedTransitionHost`가 반쯤 되감긴 채 멈추던 문제(취소와 함께 되돌리는 애니메이션도 취소되었습니다)
 - 글래스 블러를 반경에 맞춘 낮은 해상도로 기록해 실기기 컴포넌트 화면 스크롤 끊김을 5.15%에서 0.1% 안팎으로, 그림자와 테두리 붓을 다시 써서 모션 화면 끊김을 2.8%에서 0.3%로 줄였습니다
 - 페이저, 지연 목록, 이동 애니메이션에서 다시 그리지 않고 옮겨진 글래스가 옛 위치의 배경을 비추던 문제
 - 시스템 바 아이콘: 요청이 걸려 있는 동안 호스트가 창의 아이콘 설정을 직접 바꾸면, 요청이 빠질 때 처음 기억한 값으로 덮어쓰던 문제. 시트가 콘텐츠를 절반 넘게 밀어내는 동안에는 상태 표시줄 아이콘을 `backdropColor` 밝기에 맞춥니다

@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -359,7 +358,7 @@ private fun CoachCard(frame: CoachFrame, hole: State<Rect>) {
                     card.place(placed.x, y)
                 }
             }
-            .kSurface(surface.forCoachCard(), RoundedCornerShape(CARD_CORNER))
+            .kSurface(surface.forCoachCard(), shapeFor { card })
             .semantics { paneTitle = frame.step.title }
             .padding(20.dp),
     ) {
@@ -402,10 +401,11 @@ private fun CoachText(frame: CoachFrame) {
                     )
                 },
         ) {
+            val weight = KineticaTheme.design.title(FontWeight.SemiBold)
             ThemedText(
                 step.title,
                 Modifier.semantics { heading() },
-                style = TextStyle(color = frame.surface.contentColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+                style = TextStyle(color = frame.surface.contentColor, fontSize = 17.sp, fontWeight = weight),
             )
             Spacer(Modifier.height(6.dp))
             ThemedText(
@@ -451,11 +451,12 @@ private fun StepDots(count: Int, current: Int, color: Color) {
 private fun CoachButton(text: String, filled: Boolean, surface: SurfaceStyle, onClick: () -> Unit) {
     val ink = surface.contentColor
     val onInk = if (ink.luminance() > LIGHT_INK) Color.Black else Color.White
+    val shape = shapeFor { button }
     Box(
         Modifier
-            .heightIn(min = BUTTON_HEIGHT)
-            .then(if (filled) Modifier.background(ink, CircleShape) else Modifier)
-            .clickable(null, KIndication(CircleShape), role = Role.Button, onClick = onClick)
+            .heightIn(min = KineticaTheme.design.density.height(BUTTON_HEIGHT))
+            .then(if (filled) Modifier.background(ink, shape) else Modifier)
+            .clickable(null, KIndication(shape), role = Role.Button, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -464,7 +465,7 @@ private fun CoachButton(text: String, filled: Boolean, surface: SurfaceStyle, on
             style = TextStyle(
                 color = if (filled) onInk else ink.copy(alpha = BODY_ALPHA),
                 fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = KineticaTheme.design.label(FontWeight.SemiBold),
             ),
         )
     }
@@ -491,7 +492,6 @@ private val CARD_MARGIN = 16.dp
 private val CARD_GAP = 14.dp
 private val CARD_MAX_WIDTH = 360.dp
 private const val CARD_TINT_ALPHA = 0.88f
-private val CARD_CORNER = 24.dp
 private val DOT_SIZE = 6.dp
 private val DOT_ACTIVE = 16.dp
 private val BUTTON_HEIGHT = 40.dp

@@ -337,7 +337,7 @@ private fun BoxScope.CompareLabel(text: String, alignment: Alignment, surface: S
                 val needed = labelWidth + LABEL_MARGIN.toPx() * 2
                 alpha = ((room() - needed) / LABEL_FADE.toPx()).coerceIn(0f, 1f)
             }
-            .kSurface(surface, CircleShape, backdrop)
+            .kSurface(surface, shapeFor { badge }, backdrop)
             .clearAndSetSemantics { }
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {

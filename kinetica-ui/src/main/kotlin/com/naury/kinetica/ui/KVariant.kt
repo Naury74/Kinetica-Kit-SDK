@@ -93,14 +93,41 @@ private fun readableOnDark(color: Color, tone: KTone, surface: SurfaceStyle): Co
 
 /** [variant] 모양의 배경을 [shape]으로 그린다. 눌림 표시는 호출한 쪽이 붙인다. */
 @Composable
-internal fun Modifier.variantBackground(variant: KVariant, colors: ToneColors, surface: SurfaceStyle, shape: Shape): Modifier =
-    when (variant) {
-        KVariant.Filled -> background(colors.color, shape)
-        KVariant.Tonal -> background(colors.color.copy(alpha = TONAL_ALPHA), shape)
-        KVariant.Outlined -> border(OUTLINE_WIDTH, colors.color.copy(alpha = OUTLINE_ALPHA), shape)
+internal fun Modifier.variantBackground(variant: KVariant, colors: ToneColors, surface: SurfaceStyle, shape: Shape): Modifier {
+    val design = LocalKineticaDesign.current
+    return when (variant) {
+        KVariant.Filled -> solidFill(colors.color, surface, shape, design)
+
+        KVariant.Tonal -> solidFill(colors.color.copy(alpha = TONAL_ALPHA), surface, shape, design)
+
+        KVariant.Outlined -> border(
+            if (design.depth == KDepth.Offset) design.borderWidth else design.borderWidth.coerceAtMost(OUTLINE_WIDTH * 2),
+            colors.color.copy(alpha = if (design.depth == KDepth.Offset) 1f else OUTLINE_ALPHA),
+            shape,
+        )
+
         KVariant.Text -> this
+
         KVariant.Elevated -> kSurface(surface.elevated(), shape)
+
         KVariant.Glass -> kSurface(surface, shape)
+    }
+}
+
+/**
+ * 색으로 채운 배경. [KDepth.Offset]이면 표면 글자 색으로 테두리를 두르고 단단한 그림자를 깐다. 그래야 채운 버튼도
+ * 같은 화면의 카드와 같은 형태로 보인다.
+ */
+internal fun Modifier.solidFill(color: Color, surface: SurfaceStyle, shape: Shape, design: KineticaDesign): Modifier =
+    if (design.depth == KDepth.Offset) {
+        val ink = surface.contentColor
+        // 옅은 칠(Tonal)은 그림자가 비쳐 보이므로 표면 색을 먼저 깔아 막는다.
+        then(hardShadow(shape, ink, design.offsetDistance(false)))
+            .background(surface.fillColor.copy(alpha = 1f), shape)
+            .background(color, shape)
+            .border(design.borderWidth, ink, shape)
+    } else {
+        background(color, shape)
     }
 
 /** 그림자를 [ELEVATED_SHADOW] 이상으로 키운 표면 */

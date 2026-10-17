@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,6 +35,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.InputMode
@@ -310,9 +312,11 @@ internal fun PopupPanel(
     }
 }
 
-/** 팝업 판 모서리 */
-internal val PopupPanelCorner: Dp = 18.dp
-internal val PopupPanelShape = RoundedCornerShape(PopupPanelCorner)
+/** 팝업 판 모양. 디자인 언어의 [KineticaShapes.menu]다. */
+internal val PopupPanelShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = shapeFor { menu }
 
 /** 팝업 판 위아래 여백. 항목 눌림 표시 모서리는 이만큼 작은 반지름을 쓴다. */
 internal val PopupPanelPadding: Dp = 6.dp

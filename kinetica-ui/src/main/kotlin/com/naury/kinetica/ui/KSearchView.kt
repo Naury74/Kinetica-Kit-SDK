@@ -120,13 +120,14 @@ public fun KSearchView(
 ) {
     var bar by remember { mutableStateOf(Rect.Zero) }
     val ink = surface.contentColor
+    val searchShape = shapeFor { search }
     Row(
         modifier
             .heightIn(min = BAR_HEIGHT)
             .onGloballyPositioned { bar = it.boundsOnScreen() }
-            .kSurface(surface.forField(), CircleShape)
-            .clip(CircleShape)
-            .kClickable(CircleShape, onClickLabel = placeholder) { onExpandedChange(true) }
+            .kSurface(surface.forField(), searchShape)
+            .clip(searchShape)
+            .kClickable(searchShape, onClickLabel = placeholder) { onExpandedChange(true) }
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

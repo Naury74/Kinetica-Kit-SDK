@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -420,7 +419,8 @@ private fun CalendarHeader(state: KCalendarState, look: CalendarLook, onPage: (I
 private fun MonthTitle(month: YearMonth, look: CalendarLook, modifier: Modifier) {
     val locale = look.env.locale
     val formatter = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "yMMMM"), locale) }
-    val text = TextStyle(color = look.surface.contentColor, fontSize = TITLE_SIZE, fontWeight = FontWeight.SemiBold)
+    val weight = KineticaTheme.design.label(FontWeight.SemiBold)
+    val text = TextStyle(color = look.surface.contentColor, fontSize = TITLE_SIZE, fontWeight = weight)
     AnimatedContent(
         targetState = month,
         modifier = modifier
@@ -448,11 +448,13 @@ private fun ArrowButton(previous: Boolean, enabled: Boolean, look: CalendarLook,
     // 강조색 배경 위에 놓이면 강조색 화살표가 보이지 않으므로 글래스 글자 색으로 그린다.
     val fill = look.surface.contentColor
     val ink = fill
+    val shapes = currentShapes
+    val inner = shapes.inner(shapes.button, ARROW_INSET)
     Box(
         Modifier
             .size(ARROW_SIZE)
-            .clip(CircleShape)
-            .clickable(null, KIndication(CenteredCircleShape(ARROW_INSET)), enabled, role = Role.Button, onClick = onClick)
+            .clip(shapes.shape(shapes.button))
+            .clickable(null, KIndication(InsetShape(inner, ARROW_INSET, ARROW_INSET)), enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = if (previous) look.env.strings.previousMonth else look.env.strings.nextMonth }
             .drawWithCache {
                 val arm = CHEVRON_ARM.toPx()
@@ -465,7 +467,9 @@ private fun ArrowButton(previous: Boolean, enabled: Boolean, look: CalendarLook,
                 }
                 val stroke = Stroke(width = CHEVRON_WIDTH.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
                 onDrawBehind {
-                    drawCircle(fill.copy(alpha = ARROW_FILL_ALPHA), radius = size.minDimension / 2 - ARROW_INSET.toPx())
+                    val inset = ARROW_INSET.toPx()
+                    val box = Size(size.width - inset * 2, size.height - inset * 2)
+                    drawShape(inner, fill.copy(alpha = ARROW_FILL_ALPHA), Offset(inset, inset), box)
                     drawPath(path, if (enabled) ink else fill.copy(alpha = DISABLED_ALPHA), style = stroke)
                 }
             },

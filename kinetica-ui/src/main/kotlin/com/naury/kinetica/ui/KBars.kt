@@ -49,6 +49,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -61,6 +63,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,8 +102,10 @@ public fun KTabBar(
     var width by remember { mutableIntStateOf(0) }
     val indicator = remember { LiquidIndicator() }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    LaunchedEffect(selectedIndex, width, tabs.size, rtl) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl) }
+    val design = KineticaTheme.design
+    LaunchedEffect(selectedIndex, width, tabs.size, rtl) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl, design.motion) }
     val compact = compactHeight()
+    val look = tabBarLook(surface, TAB_INSET)
     Box(
         modifier
             .navigationBarsPadding()
@@ -108,8 +113,8 @@ public fun KTabBar(
             // 태블릿처럼 넓은 화면에서 탭 사이가 너무 벌어지지 않게 폭을 제한한다.
             .widthIn(max = TAB_BAR_MAX_WIDTH)
             .fillMaxWidth()
-            .height(if (compact) COMPACT_BAR_HEIGHT else TAB_BAR_HEIGHT)
-            .kSurface(surface, CircleShape)
+            .height(design.density.height(if (compact) COMPACT_BAR_HEIGHT else TAB_BAR_HEIGHT))
+            .kSurface(surface, look.bar)
             .padding(TAB_INSET),
     ) {
         Box(
@@ -119,24 +124,67 @@ public fun KTabBar(
                 .drawBehind {
                     val left = indicator.left.value
                     val right = indicator.right.value
-                    if (right > left) {
-                        drawRoundRect(
-                            surface.contentColor.copy(alpha = INDICATOR_ALPHA),
-                            topLeft = Offset(left, 0f),
-                            size = Size(right - left, size.height),
-                            cornerRadius = CornerRadius(size.height / 2),
-                        )
-                    }
+                    if (right > left) drawBarIndicator(look, left, right)
                 },
         )
         Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            tabs.forEachIndexed { index, tab -> TabItem(tab, index == selectedIndex, surface, Modifier.weight(1f)) { onSelect(index) } }
+            tabs.forEachIndexed { index, tab ->
+                TabItem(tab, index == selectedIndex, look, Modifier.weight(1f)) { onSelect(index) }
+            }
         }
     }
 }
 
+/**
+ * 탭 바 모양과 색. [bar]는 바 모양, [cell]은 인디케이터와 눌림 표시 모양, [idle]과 [active]는 고르지 않은 탭과 고른 탭 글자 색이다.
+ */
+internal class TabBarLook(val bar: Shape, val cell: Shape, val style: KTabIndicator, val idle: Color, val active: Color, val accent: Color)
+
+/** 디자인 언어에 맞춘 탭 바 모양과 색. [inset]은 바 안쪽 여백이다. */
 @Composable
-private fun TabItem(tab: KTab, selected: Boolean, surface: SurfaceStyle, modifier: Modifier, onClick: () -> Unit) {
+internal fun tabBarLook(surface: SurfaceStyle, inset: Dp): TabBarLook {
+    val design = KineticaTheme.design
+    val shapes = design.shapes
+    val accent = KineticaTheme.colors.accent
+    val active = when (design.indicator) {
+        KTabIndicator.Filled, KTabIndicator.Underline -> buttonInk(KVariant.Text, KTone.Accent, ToneColors(accent, accent), surface)
+        else -> surface.contentColor
+    }
+    return TabBarLook(
+        shapes.shape(shapes.tabBar),
+        shapes.inner(shapes.tabBar, inset),
+        design.indicator,
+        surface.contentColor,
+        active,
+        accent,
+    )
+}
+
+/** 탭 바 인디케이터. 채운 모양은 강조색을 옅게, 밑줄 모양은 칸 아래 가운데에 짧은 선을 긋는다. */
+internal fun DrawScope.drawBarIndicator(look: TabBarLook, left: Float, right: Float) {
+    when (look.style) {
+        KTabIndicator.Underline -> {
+            val w = BAR_UNDERLINE_WIDTH.toPx().coerceAtMost(right - left)
+            val h = BAR_UNDERLINE_HEIGHT.toPx()
+            drawRoundRect(look.accent, Offset((left + right - w) / 2, size.height - h), Size(w, h), CornerRadius(h / 2))
+        }
+
+        KTabIndicator.Filled -> drawShape(
+            look.cell,
+            look.accent.copy(alpha = FILLED_ALPHA),
+            Offset(left, 0f),
+            Size(right - left, size.height),
+        )
+
+        else -> drawShape(look.cell, look.idle.copy(alpha = INDICATOR_ALPHA), Offset(left, 0f), Size(right - left, size.height))
+    }
+}
+
+/** 탭 글자 색 */
+internal fun TabBarLook.tabColor(selected: Boolean, idleAlpha: Float): Color = if (selected) active else idle.copy(alpha = idleAlpha)
+
+@Composable
+private fun TabItem(tab: KTab, selected: Boolean, ink: TabBarLook, modifier: Modifier, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -144,7 +192,7 @@ private fun TabItem(tab: KTab, selected: Boolean, surface: SurfaceStyle, modifie
         spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "tab",
     )
-    val color = surface.contentColor.copy(alpha = if (selected) 1f else UNSELECTED_ALPHA)
+    val color = ink.tabColor(selected, UNSELECTED_ALPHA)
     Box(
         modifier
             .fillMaxSize()
@@ -152,7 +200,7 @@ private fun TabItem(tab: KTab, selected: Boolean, surface: SurfaceStyle, modifie
                 scaleX = scale
                 scaleY = scale
             }
-            .selectable(selected, interaction, KIndication(CircleShape), role = Role.Tab, onClick = onClick),
+            .selectable(selected, interaction, KIndication(ink.cell), role = Role.Tab, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { TabContent(tab, color, selected, compactHeight()) }
 }
@@ -165,7 +213,8 @@ internal fun compactHeight(): Boolean = LocalConfiguration.current.screenHeightD
 @Composable
 internal fun TabContent(tab: KTab, color: Color, selected: Boolean, compact: Boolean) {
     val icon = tab.icon
-    val weight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+    val design = KineticaTheme.design
+    val weight = if (selected) design.labelWeight else design.idleWeight
     if (compact && icon != null) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
@@ -263,7 +312,7 @@ public fun KToastHost(state: KToastState, modifier: Modifier = Modifier, surface
                     scaleX = TOAST_START_SCALE + (1f - TOAST_START_SCALE) * progress
                     alpha = progress.coerceIn(0f, 1f)
                 }
-                .kSurface(surface, CircleShape)
+                .kSurface(surface, shapeFor { toast })
                 .semantics(mergeDescendants = true) {
                     liveRegion = if (status == KStatus.Error) LiveRegionMode.Assertive else LiveRegionMode.Polite
                 }
@@ -289,6 +338,9 @@ internal val COMPACT_BAR_HEIGHT = 48.dp
 internal val COMPACT_BAR_MARGIN = 6.dp
 private const val COMPACT_HEIGHT_DP = 480
 private const val INDICATOR_ALPHA = 0.12f
+private const val FILLED_ALPHA = 0.18f
+private val BAR_UNDERLINE_WIDTH = 20.dp
+private val BAR_UNDERLINE_HEIGHT = 3.dp
 private const val UNSELECTED_ALPHA = 0.55f
 private const val PRESSED_SCALE = 0.9f
 private const val DEFAULT_TOAST_MS = 2_200L

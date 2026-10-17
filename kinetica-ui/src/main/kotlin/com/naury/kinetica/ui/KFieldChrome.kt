@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.runtime.Composable
@@ -32,8 +33,11 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -49,35 +53,29 @@ import kotlinx.coroutines.flow.drop
  * 입력란 둘레의 포커스와 오류 표시. 포커스를 받으면 안쪽이 살짝 밝아지고, 강조색 테두리와 그 바깥의 옅은 링이 부드럽게 나타난다.
  * 값은 그리기 단계에서 읽어 애니메이션 중에 재구성하지 않는다.
  */
-internal fun Modifier.fieldFocusFrame(corner: Dp, levels: FieldLevels, accent: Color, errorColor: Color): Modifier = drawWithCache {
+internal fun Modifier.fieldFocusFrame(corner: Dp, levels: FieldLevels, accent: Color, errorColor: Color): Modifier =
+    fieldFocusFrame(RoundedCornerShape(corner), levels, accent, errorColor)
+
+/** [shape] 모양 입력란의 포커스와 오류 표시. 디자인 언어의 입력란 모양을 따를 때 쓴다. */
+internal fun Modifier.fieldFocusFrame(shape: Shape, levels: FieldLevels, accent: Color, errorColor: Color): Modifier = drawWithCache {
     val width = FOCUS_BORDER.toPx()
     val ring = FOCUS_RING.toPx()
-    val radius = corner.toPx()
+    val fill = shape.createOutline(size, layoutDirection, this)
+    val outer = shape.createOutline(Size(size.width + ring, size.height + ring), layoutDirection, this)
+    val inner = shape.createOutline(Size(size.width - width, size.height - width), layoutDirection, this)
     val stroke = Stroke(width)
     val ringStroke = Stroke(ring)
     onDrawWithContent {
         val f = levels.focus.value.coerceIn(0f, 1f)
         val e = levels.error.value.coerceIn(0f, 1f)
-        if (f > 0f) drawRoundRect(Color.White, cornerRadius = CornerRadius(radius), alpha = FOCUS_FILL * f)
+        if (f > 0f) drawOutline(fill, Color.White, alpha = FOCUS_FILL * f)
         drawContent()
         val level = maxOf(f, e)
         if (level <= 0f) return@onDrawWithContent
         val color = lerp(accent, errorColor, e)
         // 바깥 링은 입력란 밖으로 번지게 그려 테두리가 단단한 선 하나로만 보이지 않게 한다.
-        drawRoundRect(
-            color.copy(alpha = RING_ALPHA * level),
-            Offset(-ring / 2, -ring / 2),
-            Size(size.width + ring, size.height + ring),
-            CornerRadius(radius + ring / 2),
-            style = ringStroke,
-        )
-        drawRoundRect(
-            color.copy(alpha = BORDER_ALPHA * level),
-            Offset(width / 2, width / 2),
-            Size(size.width - width, size.height - width),
-            CornerRadius(radius - width / 2),
-            style = stroke,
-        )
+        translate(-ring / 2, -ring / 2) { drawOutline(outer, color.copy(alpha = RING_ALPHA * level), style = ringStroke) }
+        translate(width / 2, width / 2) { drawOutline(inner, color.copy(alpha = BORDER_ALPHA * level), style = stroke) }
     }
 }
 
@@ -170,3 +168,15 @@ private const val CLEAR_IN_MS = 120
 private const val CLEAR_OUT_MS = 140
 private const val CLEAR_DAMPING = 0.6f
 private const val CLEAR_FROM = 0.4f
+
+/** 디자인 언어의 입력란 모양 */
+internal val fieldShape: Shape
+    @androidx.compose.runtime.Composable
+    @androidx.compose.runtime.ReadOnlyComposable
+    get() = shapeFor { this.field }
+
+/** 입력란 모양에 맞춘 시작 쪽 여백. 캡슐 입력란이면 글자가 반원 곡선에 붙어 보이지 않게 더 띄운다. */
+internal val fieldStartPadding: Dp
+    @androidx.compose.runtime.Composable
+    @androidx.compose.runtime.ReadOnlyComposable
+    get() = currentShapes.let { if (it.radius(it.field) == Dp.Infinity) KMetrics.CapsuleFieldPadding else KMetrics.FieldPadding }

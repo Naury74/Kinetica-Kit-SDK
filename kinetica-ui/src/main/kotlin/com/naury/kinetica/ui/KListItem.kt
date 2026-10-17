@@ -75,7 +75,10 @@ public sealed interface KListTrailing {
     /** 옅은 글자로 쓰는 현재 값. 예: "켜짐", "1.2GB" */
     public data class Value(val text: String) : KListTrailing
 
-    /** 스위치. 행 전체가 [Role.Switch]가 된다. */
+    /**
+     * 스위치. 행 전체가 [Role.Switch]가 된다. [variant]가 기본값 [KSwitchVariant.Capsule]이면
+     * [KineticaDesign.controls]의 스위치 모양을 따른다. 기본 디자인 언어에서는 그대로 캡슐이다.
+     */
     public data class Switch(
         val checked: Boolean,
         val onCheckedChange: (Boolean) -> Unit,
@@ -136,12 +139,13 @@ public fun KListItem(
     // 설명이 실제로 몇 줄이 될지는 그려 봐야 알므로, 최소 높이는 설명을 한 줄로 보고 정한다. 길어지면 행이 내용에 맞춰 커진다.
     val lines = 1 + (if (overline != null) 1 else 0) + (if (supporting != null) 1 else 0)
     val tall = lines >= THREE_LINES
+    val density = KineticaTheme.design.density
     Row(
         modifier
             .fillMaxWidth()
-            .heightIn(min = minHeightFor(lines))
+            .heightIn(min = density.height(minHeightFor(lines)))
             .rowInteraction(trailing, onClick, enabled, row)
-            .padding(horizontal = ROW_PADDING, vertical = if (lines == 1) ROW_VERTICAL_ONE else ROW_VERTICAL),
+            .padding(horizontal = ROW_PADDING, vertical = density.padding(if (lines == 1) ROW_VERTICAL_ONE else ROW_VERTICAL)),
         horizontalArrangement = Arrangement.spacedBy(ROW_GAP),
         verticalAlignment = if (tall) Alignment.Top else Alignment.CenterVertically,
     ) {
@@ -205,7 +209,7 @@ private fun ListLeading(leading: KListLeading, ink: Color) {
             }
             Box(
                 if (container != null) {
-                    Modifier.size(ICON_CONTAINER).background(container, RoundedCornerShape(ICON_CONTAINER_CORNER))
+                    Modifier.size(ICON_CONTAINER).background(container, shapeFor { image })
                 } else {
                     Modifier.size(KMetrics.ListIcon)
                 },
@@ -223,7 +227,7 @@ private fun ListLeading(leading: KListLeading, ink: Color) {
             null,
             Modifier
                 .size(if (leading.wide) THUMB_WIDE else THUMB_SIZE, THUMB_SIZE)
-                .clip(RoundedCornerShape(THUMB_CORNER)),
+                .clip(shapeFor { image }),
             contentScale = ContentScale.Crop,
         )
 
@@ -234,12 +238,13 @@ private fun ListLeading(leading: KListLeading, ink: Color) {
 @Composable
 private fun ListAvatar(avatar: KListLeading.Avatar) {
     val image = avatar.image
+    val shape = shapeFor { this.avatar }
     if (image != null) {
-        Image(image, null, Modifier.size(AVATAR_SIZE).clip(CircleShape), contentScale = ContentScale.Crop)
+        Image(image, null, Modifier.size(AVATAR_SIZE).clip(shape), contentScale = ContentScale.Crop)
         return
     }
     val color = if (avatar.color.isSpecified) avatar.color else KineticaTheme.colors.accent
-    Box(Modifier.size(AVATAR_SIZE).background(color, CircleShape), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(AVATAR_SIZE).background(color, shape), contentAlignment = Alignment.Center) {
         ThemedText(
             avatar.initials.take(2),
             style = TextStyle(color = Color.White, fontSize = AVATAR_FONT, fontWeight = FontWeight.SemiBold),
@@ -253,7 +258,13 @@ private fun ListTrailing(trailing: KListTrailing, ink: Color, enabled: Boolean, 
     when (trailing) {
         is KListTrailing.Value -> ListText(trailing.text, ink.copy(alpha = ink.alpha * VALUE_ALPHA), VALUE_SIZE, FontWeight.Normal, 1)
 
-        is KListTrailing.Switch -> KSwitch(trailing.checked, null, enabled = enabled, surface = surface, variant = trailing.variant)
+        is KListTrailing.Switch -> KSwitch(
+            trailing.checked,
+            null,
+            enabled = enabled,
+            surface = surface,
+            variant = if (trailing.variant == KSwitchVariant.Capsule) KineticaTheme.design.controls.switch else trailing.variant,
+        )
 
         is KListTrailing.Checkbox -> KCheckbox(trailing.checked, null, enabled = enabled, shape = trailing.shape, surface = surface)
 
@@ -291,12 +302,10 @@ private const val VALUE_ALPHA = 0.55f
 private const val ICON_ALPHA = 0.7f
 private const val CHEVRON_ALPHA = 0.35f
 private val ICON_CONTAINER = 30.dp
-private val ICON_CONTAINER_CORNER = 8.dp
 private val ICON_IN_CONTAINER = 19.dp
 private val AVATAR_SIZE = 40.dp
 private val AVATAR_FONT = 15.sp
 private val THUMB_SIZE = 56.dp
 private val THUMB_WIDE = 90.dp
-private val THUMB_CORNER = 8.dp
 private val CHEVRON_SIZE = 14.dp
 private val DISCLOSURE_GAP = 6.dp

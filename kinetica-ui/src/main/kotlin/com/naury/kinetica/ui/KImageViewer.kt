@@ -28,8 +28,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -488,13 +486,14 @@ private fun BoxScope.TopBar(parts: ViewerParts, surface: SurfaceStyle, backdrop:
             },
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val buttonShape = shapeFor { button }
         Box(
             Modifier
                 .size(BUTTON_SIZE)
-                .kSurface(surface, CircleShape, backdrop)
+                .kSurface(surface, buttonShape, backdrop)
                 .then(
                     if (shown) {
-                        Modifier.kClickable(CircleShape, onClickLabel = closeLabel) { parts.state.close() }
+                        Modifier.kClickable(buttonShape, onClickLabel = closeLabel) { parts.state.close() }
                             .semantics { contentDescription = closeLabel }
                     } else {
                         Modifier.clearAndSetSemantics { }
@@ -509,10 +508,11 @@ private fun BoxScope.TopBar(parts: ViewerParts, surface: SurfaceStyle, backdrop:
         )
         Spacer(Modifier.weight(1f))
         if (parts.pager.pageCount > 1) {
-            Box(Modifier.kSurface(surface, CircleShape, backdrop).clearAndSetSemantics { }.padding(horizontal = 14.dp, vertical = 8.dp)) {
+            val counter = Modifier.kSurface(surface, shapeFor { badge }, backdrop)
+            Box(counter.clearAndSetSemantics { }.padding(horizontal = 14.dp, vertical = 8.dp)) {
                 ThemedText(
                     "${parts.pager.currentPage + 1} / ${parts.pager.pageCount}",
-                    style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                    style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
                 )
             }
         }
@@ -537,11 +537,11 @@ private fun BoxScope.BottomBar(parts: ViewerParts, look: ViewerLook, backdrop: G
             },
     ) {
         if (caption != null) {
-            Box(Modifier.fillMaxWidth().kSurface(surface, RoundedCornerShape(CAPTION_CORNER), backdrop).padding(CAPTION_PADDING)) {
+            Box(Modifier.fillMaxWidth().kSurface(surface, shapeFor { card }, backdrop).padding(CAPTION_PADDING)) {
                 CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) { caption(parts.pager.currentPage) }
             }
         } else {
-            Box(Modifier.kSurface(surface, CircleShape, backdrop).padding(horizontal = 6.dp)) {
+            Box(Modifier.kSurface(surface, shapeFor { tabBar }, backdrop).padding(horizontal = 6.dp)) {
                 KPageIndicator(parts.pager, surface = surface)
             }
         }
@@ -566,5 +566,4 @@ private val BAR_SLIDE = 16.dp
 private val BUTTON_SIZE = KMetrics.IconButton
 private const val CLOSE_ARM = 0.17f
 private val CLOSE_STROKE = 2.dp
-private val CAPTION_CORNER = 20.dp
 private val CAPTION_PADDING = 16.dp

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -34,7 +33,6 @@ import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -124,40 +122,36 @@ internal fun DropZoneBody(
 ) {
     val accent = KineticaTheme.colors.accent
     val ink = surface.contentColor
+    val shape = shapeFor { card }
     Column(
         modifier
             .fillMaxWidth()
             .heightIn(min = MIN_HEIGHT)
             .then(dropModifier)
-            .kSurface(surface, ZONE_SHAPE)
+            .kSurface(surface, shape)
             .drawWithCache {
                 val width = BORDER.toPx()
                 val dash = DASH.toPx()
                 val dashed = Stroke(width, pathEffect = PathEffect.dashPathEffect(floatArrayOf(dash, dash * DASH_GAP)))
                 val solid = Stroke(width * 2)
-                val radius = CornerRadius(ZONE_RADIUS.toPx())
                 onDrawBehind {
                     val h = hover.value
-                    if (h > 0f) drawRoundRect(accent.copy(alpha = HOVER_FILL * h), cornerRadius = radius)
+                    if (h > 0f) drawShape(shape, accent.copy(alpha = HOVER_FILL * h), Offset.Zero, size)
                     val color = lerp(ink.copy(alpha = BORDER_ALPHA), accent, h)
                     val half = width / 2
-                    drawRoundRect(
-                        color,
-                        Offset(half, half),
-                        Size(size.width - width, size.height - width),
-                        radius,
-                        style = if (h > HALF) solid else dashed,
-                    )
+                    val box = Size(size.width - width, size.height - width)
+                    drawShape(shape, color, Offset(half, half), box, if (h > HALF) solid else dashed)
                 }
             }
-            .clip(ZONE_SHAPE)
-            .kClickable(ZONE_SHAPE, enabled = enabled, role = Role.Button, onClick = onClick)
+            .clip(shape)
+            .kClickable(shape, enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         DropIcon(hover, accent)
-        ThemedText(title, style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center))
+        val weight = KineticaTheme.design.label(FontWeight.SemiBold)
+        ThemedText(title, style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = weight, textAlign = TextAlign.Center))
         subtitle?.let {
             ThemedText(it, style = TextStyle(color = ink.copy(alpha = SUBTITLE_ALPHA), fontSize = 13.sp, textAlign = TextAlign.Center))
         }
@@ -188,8 +182,6 @@ private fun DropIcon(hover: State<Float>, accent: Color) {
     }
 }
 
-private val ZONE_RADIUS = 20.dp
-private val ZONE_SHAPE = RoundedCornerShape(ZONE_RADIUS)
 private val MIN_HEIGHT = 140.dp
 private val BORDER = 1.5.dp
 private val DASH = 6.dp

@@ -68,7 +68,7 @@ public fun KBadge(
 }
 
 /**
- * 상태 배지. 주문, 결제, 서버 상태처럼 목록 행이나 카드에 상태를 짧게 보여 준다. 기본 모양은 옅은 색 캡슐 앞에 같은 색 점을 둔 형태다.
+ * 상태 배지. 주문, 결제, 서버 상태처럼 목록 행이나 카드에 상태를 짧게 보여 준다. 기본 모양은 배지 모양 토큰의 옅은 색 판 앞에 같은 색 점을 둔 형태다.
  * 글자 색은 표면과 대비가 4.5:1 이상이 되도록 고쳐 쓴다. TalkBack은 [text]를 그대로 읽으므로 '배송 완료'처럼 상태를 글자로 다 쓴다.
  *
  * ```kotlin
@@ -124,15 +124,14 @@ private enum class PillSize(val font: TextUnit, val height: Dp, val padding: Dp)
 private fun Pill(text: String, look: PillLook, modifier: Modifier, dot: Boolean) {
     val back = look.surface.inkBackground()
     val (fill, ink) = pillColors(look.variant, look.color, look.onColor, back)
+    val shape = shapeFor { badge }
     Row(
         modifier
             .heightIn(min = look.size.height)
-            .background(fill, CircleShape)
+            .background(fill, shape)
             .then(
-                if (look.variant ==
-                    KVariant.Outlined
-                ) {
-                    Modifier.border(OUTLINE, look.color.copy(alpha = OUTLINE_ALPHA), CircleShape)
+                if (look.variant == KVariant.Outlined) {
+                    Modifier.border(OUTLINE, look.color.copy(alpha = OUTLINE_ALPHA), shape)
                 } else {
                     Modifier
                 },
@@ -144,7 +143,7 @@ private fun Pill(text: String, look: PillLook, modifier: Modifier, dot: Boolean)
         if (dot) Box(Modifier.size(DOT).background(if (look.variant == KVariant.Filled) ink else look.color, CircleShape))
         ThemedText(
             text,
-            style = TextStyle(color = ink, fontSize = look.size.font, fontWeight = FontWeight.SemiBold),
+            style = TextStyle(color = ink, fontSize = look.size.font, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

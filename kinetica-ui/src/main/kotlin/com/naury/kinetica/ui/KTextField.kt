@@ -257,8 +257,8 @@ private fun SurfaceTextField(source: FieldSource, config: FieldConfig, input: Fi
                         // 화면 밖 버퍼를 쓰면 그림자가 요소 경계에서 잘려 모서리가 각져 보인다.
                         compositingStrategy = CompositingStrategy.ModulateAlpha
                     }
-                    .kSurface(surface.forField(), FIELD_SHAPE)
-                    .fieldFocusFrame(FIELD_CORNER, motion.levels, colors.accent, colors.destructive)
+                    .kSurface(surface.forField(), fieldShape)
+                    .fieldFocusFrame(fieldShape, motion.levels, colors.accent, colors.destructive)
                     .onFocusChanged { focused = it.isFocused }
                     .semantics { if (error != null) error(error) },
                 basics,
@@ -304,13 +304,13 @@ private fun FieldDecoration(parts: FieldParts, surface: SurfaceStyle, motion: Fi
     // 글자 크기를 키우면 라벨 자리와 입력 줄 간격도 같이 늘려야 라벨이 입력한 글자와 겹치지 않는다.
     val grow = LocalDensity.current.fontScale.coerceAtLeast(1f)
     Row(
-        Modifier.heightIn(min = FIELD_HEIGHT * grow).padding(
+        Modifier.heightIn(min = KineticaTheme.design.density.height(FIELD_HEIGHT) * grow).padding(
             start = if (parts.slots.leading !=
                 null
             ) {
                 ICON_START
             } else {
-                FIELD_PADDING
+                fieldStartPadding
             },
             end = TRAILING_END,
         ),
@@ -418,8 +418,6 @@ internal class FieldMotion(filled: Boolean, initialError: String?) {
     }
 }
 
-private val FIELD_SHAPE = RoundedCornerShape(14.dp)
-private val FIELD_CORNER = 14.dp
 private val FIELD_HEIGHT = 52.dp
 private val FIELD_PADDING = 16.dp
 private val ICON_START = 14.dp

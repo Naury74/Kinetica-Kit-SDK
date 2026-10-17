@@ -96,7 +96,7 @@ public fun KBanner(
         },
         exit = if (still) ExitTransition.None else shrinkVertically(tween(BANNER_OUT_MS)) + fadeOut(tween(FADE_MS)),
     ) {
-        val shape = RoundedCornerShape(BANNER_CORNER)
+        val shape = currentShapes.shape(KShapeToken.Large)
         val tint = status.feedbackColor(surface)
         val ink = feedbackInk(FeedbackBox.Banner, status, KineticaTheme.colors, surface)
         Column(
@@ -165,7 +165,7 @@ public fun KAlert(
     action: (@Composable () -> Unit)? = null,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
-    val shape = RoundedCornerShape(ALERT_CORNER)
+    val shape = currentShapes.shape(KShapeToken.Medium)
     val tint = status.feedbackColor(surface)
     val look = feedbackInk(FeedbackBox.alert(variant), status, KineticaTheme.colors, surface)
     Row(
@@ -310,8 +310,6 @@ private fun RowScope.CloseButton(onClick: () -> Unit, surface: SurfaceStyle, ink
     }
 }
 
-private val BANNER_CORNER = 20.dp
-private val ALERT_CORNER = 16.dp
 private val LEADING_ICON = 20.dp
 private val CLOSE_ICON = 16.dp
 private val OUTLINE = 1.dp

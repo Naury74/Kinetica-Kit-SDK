@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -53,6 +55,7 @@ import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -143,9 +146,10 @@ public fun KSegmentedControl(
     require(maxLines >= 1) { "maxLines는 1 이상이어야 합니다." }
     var edges by remember { mutableStateOf(SegmentEdges.Empty) }
     val indicator = remember { LiquidIndicator() }
-    LaunchedEffect(selectedIndex, edges) { edges.of(selectedIndex)?.let { indicator.moveTo(it.first, it.second) } }
+    val motion = KineticaTheme.design.motion
+    LaunchedEffect(selectedIndex, edges, motion) { edges.of(selectedIndex)?.let { indicator.moveTo(it.first, it.second, motion) } }
     val paint = segmentInk(tone, surface)
-    Box(modifier.heightIn(min = SEGMENT_HEIGHT).kSurface(surface, SegmentShape).padding(SEGMENT_INSET)) {
+    Box(modifier.heightIn(min = segmentHeight).kSurface(surface, SegmentShape).padding(SEGMENT_INSET)) {
         Box(
             Modifier
                 .matchParentSize()
@@ -153,7 +157,7 @@ public fun KSegmentedControl(
                     val left = indicator.left.value
                     val right = indicator.right.value
                     if (right > left) {
-                        drawRoundRect(paint.indicator, Offset(left, 0f), Size(right - left, size.height), cellCorner())
+                        drawSegmentIndicator(paint, left, right, 1f)
                     }
                 },
         )
@@ -163,7 +167,7 @@ public fun KSegmentedControl(
                 val ink by animateColorAsState(paint.content(selected, enabled), tween(COLOR_MS), label = "segment-ink")
                 Box(
                     Modifier
-                        .selectable(selected, null, KIndication(CellShape), enabled, role) { onSelect(index) }
+                        .selectable(selected, null, KIndication(paint.cell), enabled, role) { onSelect(index) }
                         .describe(segment),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -194,6 +198,7 @@ private class SegmentEdges(private val left: FloatArray, private val right: Floa
  */
 @Composable
 private fun SegmentRow(sizing: KSegmentSizing, onEdges: (SegmentEdges) -> Unit, content: @Composable () -> Unit) {
+    val cellHeight = segmentHeight - SEGMENT_INSET * 2
     Layout(content, Modifier.selectableGroup()) { measurables, constraints ->
         val natural = IntArray(measurables.size) { measurables[it].maxIntrinsicWidth(Constraints.Infinity) }
         val total = if (constraints.hasBoundedWidth) {
@@ -203,7 +208,7 @@ private fun SegmentRow(sizing: KSegmentSizing, onEdges: (SegmentEdges) -> Unit, 
         }
         val words = IntArray(measurables.size) { measurables[it].minIntrinsicWidth(Constraints.Infinity) }
         val widths = segmentWidths(natural, total, sizing, words)
-        val minHeight = maxOf((SEGMENT_HEIGHT - SEGMENT_INSET * 2).roundToPx(), constraints.minHeight)
+        val minHeight = maxOf(cellHeight.roundToPx(), constraints.minHeight)
         val height = widths.indices.maxOf { measurables[it].maxIntrinsicHeight(widths[it]) }
             .coerceAtLeast(minHeight)
             .coerceAtMost(constraints.maxHeight)
@@ -266,9 +271,9 @@ private fun giveMinimum(widths: IntArray, minimum: IntArray) {
     }
 }
 
-/** 선택 인디케이터와 칸 글자 색. */
+/** 선택 인디케이터와 칸 글자 색. [style]은 디자인 언어의 인디케이터 모양, [cell]은 칸 모양이다. */
 @Immutable
-private class SegmentInk(val indicator: Color, val selected: Color, val unselected: Color) {
+private class SegmentInk(val indicator: Color, val selected: Color, val unselected: Color, val style: KTabIndicator, val cell: Shape) {
     fun content(selected: Boolean, enabled: Boolean): Color {
         val color = if (selected) this.selected else unselected
         return if (enabled) color else color.copy(alpha = color.alpha * DISABLED)
@@ -279,9 +284,31 @@ private class SegmentInk(val indicator: Color, val selected: Color, val unselect
 private fun segmentInk(tone: KTone, surface: SurfaceStyle): SegmentInk {
     val ink = surface.contentColor
     val unselected = ink.copy(alpha = UNSELECTED)
-    if (tone == KTone.Neutral) return SegmentInk(ink.copy(alpha = SEGMENT_ALPHA), ink, unselected)
-    val colors = tone.colors(surface)
-    return SegmentInk(colors.color, colors.onColor, unselected)
+    val style = KineticaTheme.design.indicator
+    val cell = CellShape
+    val colors = (if (tone == KTone.Neutral && style == KTabIndicator.Filled) KTone.Accent else tone).colors(surface)
+    return when {
+        style == KTabIndicator.Underline -> {
+            val line = if (tone == KTone.Neutral) KineticaTheme.colors.accent else colors.color
+            SegmentInk(line, buttonInk(KVariant.Text, KTone.Accent, ToneColors(line, line), surface), unselected, style, cell)
+        }
+
+        tone == KTone.Neutral && style != KTabIndicator.Filled -> SegmentInk(ink.copy(alpha = SEGMENT_ALPHA), ink, unselected, style, cell)
+
+        else -> SegmentInk(colors.color, colors.onColor, unselected, style, cell)
+    }
+}
+
+/** [left]..[right] 칸에 인디케이터를 [level](0..1) 진하기로 그린다. 밑줄 모양이면 칸 아래에 선을 긋는다. */
+private fun DrawScope.drawSegmentIndicator(paint: SegmentInk, left: Float, right: Float, level: Float) {
+    val color = paint.indicator.copy(alpha = paint.indicator.alpha * level)
+    if (paint.style == KTabIndicator.Underline) {
+        val h = UNDERLINE.toPx()
+        val inset = UNDERLINE_INSET.toPx().coerceAtMost((right - left) / UNDERLINE_MAX_INSET)
+        drawRoundRect(color, Offset(left + inset, size.height - h), Size(right - left - inset * 2, h), CornerRadius(h / 2))
+    } else {
+        drawShape(paint.cell, color, Offset(left, 0f), Size(right - left, size.height))
+    }
 }
 
 /**
@@ -317,7 +344,7 @@ public fun KSegmentedControl(
     val paint = segmentInk(tone, surface)
     Row(
         modifier
-            .heightIn(min = SEGMENT_HEIGHT)
+            .heightIn(min = segmentHeight)
             .kSurface(surface, SegmentShape)
             .padding(SEGMENT_INSET)
             // 큰 글꼴에서 한 칸만 두 줄이 되어도 모든 칸의 캡슐 높이를 맞춘다.
@@ -348,13 +375,9 @@ private fun RowScope.MultiSegment(segment: KSegment, state: MultiState, paint: S
         Modifier
             .weight(1f)
             .fillMaxHeight()
-            .heightIn(min = SEGMENT_HEIGHT - SEGMENT_INSET * 2)
-            .drawBehind {
-                if (fill > 0f) {
-                    drawRoundRect(paint.indicator.copy(alpha = paint.indicator.alpha * fill), cornerRadius = cellCorner())
-                }
-            }
-            .toggleable(on, null, KIndication(CellShape), state.clickable, Role.Checkbox) { onToggle() }
+            .heightIn(min = segmentHeight - SEGMENT_INSET * 2)
+            .drawBehind { if (fill > 0f) drawSegmentIndicator(paint, 0f, size.width, fill) }
+            .toggleable(on, null, KIndication(paint.cell), state.clickable, Role.Checkbox) { onToggle() }
             .graphicsLayer { alpha = if (state.enabled) 1f else DISABLED }
             .describe(segment)
             .padding(horizontal = 6.dp),
@@ -394,7 +417,7 @@ private fun SegmentContent(segment: KSegment, color: Color, selected: Boolean, m
                 style = TextStyle(
                     color = color,
                     fontSize = 14.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                    fontWeight = KineticaTheme.design.label(if (selected) FontWeight.SemiBold else FontWeight.Medium),
                     textAlign = TextAlign.Center,
                     // 두 줄로 바뀔 때 줄 길이를 고르게 맞추고, 한국어도 어절 단위로 끊는다.
                     lineBreak = LineBreak.Heading,
@@ -418,9 +441,35 @@ private const val COLOR_MS = 180
 private const val DEFAULT_MAX_LINES = 2
 private val LABEL_VERTICAL = 4.dp
 
-// 한 줄일 때는 캡슐이고, 큰 글꼴로 높아지면 모서리를 이 반지름에서 멈춰 큰 타원이 되지 않게 한다.
-private val SegmentShape = RoundedCornerShape(SEGMENT_HEIGHT / 2)
-private val CELL_CORNER = KMetrics.concentric(SEGMENT_HEIGHT / 2, SEGMENT_INSET)
-private val CellShape = RoundedCornerShape(CELL_CORNER)
+private val UNDERLINE = 3.dp
+private val UNDERLINE_INSET = 12.dp
+private const val UNDERLINE_MAX_INSET = 4f
 
-private fun DrawScope.cellCorner(): CornerRadius = CornerRadius(minOf(size.height / 2, CELL_CORNER.toPx()))
+/** 밀도에 맞춘 컨트롤 높이 */
+private val segmentHeight: Dp
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalKineticaDesign.current.density.height(SEGMENT_HEIGHT)
+
+// 캡슐 토큰이면 한 줄일 때는 캡슐이고, 큰 글꼴로 높아지면 모서리를 이 반지름에서 멈춰 큰 타원이 되지 않게 한다.
+private val SegmentShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() {
+        val shapes = currentShapes
+        val token = shapes.tabBar
+        return if (shapes.radius(token) == Dp.Infinity) shapeOf(shapes.cornerOf(token), segmentHeight / 2) else shapes.shape(token)
+    }
+
+private val CellShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() {
+        val shapes = currentShapes
+        val token = shapes.tabBar
+        return if (shapes.radius(token) == Dp.Infinity) {
+            shapeOf(shapes.cornerOf(token), KMetrics.concentric(segmentHeight / 2, SEGMENT_INSET))
+        } else {
+            shapes.inner(token, SEGMENT_INSET)
+        }
+    }

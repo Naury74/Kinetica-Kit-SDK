@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
  * @param enabled `false`면 터치·키보드·TalkBack으로 값을 바꿀 수 없고 채워진 구간을 흐리게 그린다.
  * @param onValueChangeFinished 손을 떼거나 키보드·TalkBack으로 값을 바꾼 뒤 한 번 호출된다.
  * @param accent 채워진 구간의 색. 기본값은 [KineticaTheme]의 `accent`다.
+ * @param thumb 손잡이 모양. 기본값은 [KineticaDesign.controls]의 [KineticaControls.sliderThumb]다.
  */
 @Composable
 public fun KSlider(
@@ -67,9 +68,11 @@ public fun KSlider(
     onValueChangeFinished: (() -> Unit)? = null,
     accent: Color = KineticaTheme.colors.accent,
     surface: SurfaceStyle = KineticaTheme.surface,
+    thumb: KSliderThumb = KineticaTheme.design.controls.sliderThumb,
 ) {
     require(steps >= 0) { "steps는 0 이상이어야 합니다." }
     require(valueRange.endInclusive > valueRange.start) { "valueRange의 끝이 시작보다 커야 합니다." }
+    val paint = sliderPaint(if (enabled) accent else surface.contentColor.copy(alpha = DISABLED_ALPHA), surface)
     val latestChange by rememberUpdatedState(onValueChange)
     val latestFinished by rememberUpdatedState(onValueChangeFinished)
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -125,10 +128,7 @@ public fun KSlider(
                     Modifier
                 },
             )
-            .drawBehind {
-                val active = if (enabled) accent else surface.contentColor.copy(alpha = DISABLED_ALPHA)
-                drawSlider(SliderLook(fraction, grab.value, stretch.value, rtl), active, surface.contentColor.copy(alpha = TRACK_ALPHA))
-            },
+            .drawBehind { drawSlider(SliderLook(fraction, grab.value, stretch.value, rtl, thumb), paint) },
     )
 }
 
@@ -186,6 +186,17 @@ private fun Modifier.sliderGesture(
     }
 }
 
+/** 슬라이더 색. [active]는 채워진 구간과 막대 손잡이 색이다. */
+@Composable
+internal fun sliderPaint(active: Color, surface: SurfaceStyle): ThumbPaint = ThumbPaint(
+    active,
+    surface.contentColor,
+    surface.fillColor.copy(alpha = 1f),
+    surface.isDark,
+    KineticaTheme.design.borderWidth,
+    surface.contentColor.copy(alpha = TRACK_ALPHA),
+)
+
 /** 방향키를 값 변화 방향(+1 증가, -1 감소)으로 바꾼다. RTL에서는 좌우가 뒤집힌다. 슬라이더 키가 아니면 `null`. */
 private fun keyStep(key: Key, rtl: Boolean): Int? = when (key) {
     Key.DirectionRight -> if (rtl) -1 else 1
@@ -196,44 +207,23 @@ private fun keyStep(key: Key, rtl: Boolean): Int? = when (key) {
 }
 
 /** 그리기에 쓰는 슬라이더 상태. 채운 비율, 잡은 정도(0..1), 끝을 넘어 늘어난 정도(음수면 시작 쪽), RTL 여부를 담는다. */
-private class SliderLook(val fraction: Float, val grab: Float, val stretch: Float, val rtl: Boolean)
+private class SliderLook(val fraction: Float, val grab: Float, val stretch: Float, val rtl: Boolean, val thumb: KSliderThumb)
 
-private fun DrawScope.drawSlider(look: SliderLook, active: Color, track: Color) {
+private fun DrawScope.drawSlider(look: SliderLook, paint: ThumbPaint) {
     val fraction = look.fraction
     val grab = look.grab
     val stretch = look.stretch
     val rtl = look.rtl
-    val thumbWidth = THUMB_WIDTH.toPx() * (1f + THUMB_GROW * grab)
-    val thumbHeight = THUMB_HEIGHT.toPx() * (1f + THUMB_GROW * grab)
     val inset = THUMB_WIDTH.toPx() / 2
     val trackHeight = TRACK_HEIGHT.toPx() * (1f + TRACK_GROW * grab)
-    val top = (size.height - trackHeight) / 2
     // 고무줄처럼 보이도록 넘친 쪽 반대편 끝을 고정점으로 가로로 늘리고 세로는 살짝 가늘게 한다.
     val pull = abs(stretch) * RUBBER_MAX
     val pivot = if ((stretch < 0f) != rtl) size.width else 0f
     scale(1f + pull, 1f - pull * RUBBER_THIN, Offset(pivot, size.height / 2)) {
-        val radius = CornerRadius(trackHeight / 2)
-        drawRoundRect(track, Offset(0f, top), Size(size.width, trackHeight), radius)
         val filled = inset + (size.width - inset * 2) * fraction
-        val start = if (rtl) size.width - filled else 0f
-        drawRoundRect(active, Offset(start, top), Size(filled, trackHeight), radius)
         val center = if (rtl) size.width - filled else filled
-        val thumbLeft = center - thumbWidth / 2
-        val thumbTop = (size.height - thumbHeight) / 2
-        val thumbRadius = CornerRadius(thumbHeight / 2)
-        drawRoundRect(
-            Color.Black.copy(alpha = THUMB_SHADOW),
-            Offset(thumbLeft, thumbTop + THUMB_DROP.toPx()),
-            Size(thumbWidth, thumbHeight),
-            thumbRadius,
-        )
-        // 잡은 동안에는 손잡이를 반투명하게 해 뒤의 트랙이 비쳐 보이게 한다.
-        drawRoundRect(
-            Color.White.copy(alpha = 1f - THUMB_CLEAR * grab),
-            Offset(thumbLeft, thumbTop),
-            Size(thumbWidth, thumbHeight),
-            thumbRadius,
-        )
+        drawSliderTrack(look.thumb, center, trackHeight, paint, rtl)
+        drawSliderThumb(look.thumb, Offset(center, size.height / 2), grab, paint)
     }
 }
 
@@ -242,11 +232,6 @@ private val TRACK_HEIGHT = 6.dp
 private const val TRACK_GROW = 1f
 private const val TRACK_ALPHA = 0.16f
 private val THUMB_WIDTH = 36.dp
-private val THUMB_HEIGHT = 24.dp
-private val THUMB_DROP = 1.dp
-private const val THUMB_GROW = 0.25f
-private const val THUMB_SHADOW = 0.14f
-private const val THUMB_CLEAR = 0.35f
 private const val RUBBER_SOFTNESS = 120f
 private const val RUBBER_MAX = 0.06f
 private const val RUBBER_THIN = 0.8f

@@ -3,6 +3,7 @@ package com.naury.kinetica.ui
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -134,7 +135,7 @@ public fun KBadge(
             }
             .semantics { description?.let { contentDescription = it } }
             .then(if (badge.drawn.isEmpty()) Modifier.size(DOT_SIZE) else Modifier.heightIn(min = BADGE_HEIGHT).widthIn(min = BADGE_HEIGHT))
-            .drawBehind { drawRoundRect(colors.color, cornerRadius = CornerRadius(size.height / 2)) }
+            .background(colors.color, shapeFor { this.badge })
             .then(if (badge.drawn.isEmpty()) Modifier else Modifier.padding(horizontal = BADGE_PADDING)),
         contentAlignment = Alignment.Center,
     ) {

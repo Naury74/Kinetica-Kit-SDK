@@ -70,10 +70,10 @@ public fun KChipGroup(
             FilterChipBody(ChipSpec(label, isSelected, enabled, accent, surface, variant), Modifier) {
                 when (selection) {
                     KChipSelection.Single ->
-                        Modifier.selectable(isSelected, null, KIndication(CircleShape), enabled, Role.RadioButton, onTap)
+                        Modifier.selectable(isSelected, null, KIndication(chipShape), enabled, Role.RadioButton, onTap)
 
                     KChipSelection.Multiple ->
-                        Modifier.toggleable(isSelected, null, KIndication(CircleShape), enabled, Role.Checkbox) { onTap() }
+                        Modifier.toggleable(isSelected, null, KIndication(chipShape), enabled, Role.Checkbox) { onTap() }
                 }
             }
         }

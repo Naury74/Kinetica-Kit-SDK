@@ -77,7 +77,7 @@ public fun KNoticeBar(
     onDismiss: (() -> Unit)? = null,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
-    val shape = RoundedCornerShape(NOTICE_CORNER)
+    val shape = currentShapes.shape(KShapeToken.Medium)
     val tint = status.feedbackColor(surface)
     val neutral = status == KStatus.Neutral
     val back = if (neutral) surface.inkBackground() else tint.copy(alpha = NOTICE_TINT).compositeOver(surface.inkBackground())
@@ -185,7 +185,6 @@ private fun NoticeClose(onClick: () -> Unit, ink: Color) {
 }
 
 private val NOTICE_HEIGHT = 44.dp
-private val NOTICE_CORNER = 12.dp
 private val NOTICE_ICON = 18.dp
 private val CLOSE_ICON = 14.dp
 private val FADE_WIDTH = 14.dp

@@ -5,7 +5,6 @@ package com.naury.kinetica.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -64,7 +63,7 @@ internal fun RefreshArrow(level: () -> Float, refreshing: Boolean, surface: Surf
             .size(ARROW_SIZE)
             .loopVisibility(clock)
             .appearByPull(level, refreshing)
-            .kSurface(surface, CircleShape)
+            .kSurface(surface, shapeFor { button })
             .semantics { if (refreshing) contentDescription = label }
             .drawWithCache {
                 val stroke = Stroke(ARROW_STROKE.toPx(), cap = StrokeCap.Round)
@@ -125,7 +124,7 @@ internal fun RefreshDots(level: () -> Float, refreshing: Boolean, surface: Surfa
             .size(DOTS_WIDTH, DOTS_HEIGHT)
             .loopVisibility(clock)
             .appearByPull(level, refreshing)
-            .kSurface(surface, CircleShape)
+            .kSurface(surface, shapeFor { button })
             .semantics { if (refreshing) contentDescription = label }
             .drawWithCache {
                 val r = DOT_RADIUS.toPx()

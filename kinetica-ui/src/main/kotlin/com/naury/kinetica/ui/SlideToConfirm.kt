@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -30,12 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -68,7 +67,8 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
 /**
- * '밀어서 결제' 같은 캡슐. 손잡이를 끝까지 밀면 햅틱과 함께 확정되고, 손잡이의 화살표가 체크로 바뀌며 캡슐이 [accent]로 채워진다.
+ * '밀어서 결제' 같은 트랙. 모양은 버튼 모양 토큰을 따르고 기본 디자인에서는 캡슐이다. 손잡이를 끝까지 밀면 햅틱과 함께 확정되고,
+ * 손잡이의 화살표가 체크로 바뀌며 트랙이 [accent]로 채워진다.
  * 끝까지 밀지 않고 놓으면 손잡이가 튕기며 처음 자리로 돌아온다. 가운데 글자는 빛이 지나가듯 반짝이고, 손잡이가 지나간 만큼 흐려진다.
  * RTL에서는 오른쪽에서 왼쪽으로 민다. 확정 상태는 화면 회전이나 프로세스 재생성 뒤에도 유지된다.
  *
@@ -84,7 +84,7 @@ import kotlinx.coroutines.launch
  *   돌아와 다시 밀 수 있다. 계속 `false`로 두면 한 번 확정한 뒤로는 확정된 모습을 유지한다. 바뀐 값이 한 번도 화면에 반영되지 않고
  *   제자리로 돌아오면(같은 프레임 안에서 `false`, `true`, `false`) 바뀐 것으로 보지 않으므로, 확정 직후 곧바로 되돌리려면
  *   [KSlideToConfirmState]를 받는 오버로드와 [KSlideToConfirmState.reset]을 쓴다.
- * @param accent 확정되었을 때 캡슐을 채우는 색. 기본값은 [KineticaTheme]의 `positive`다.
+ * @param accent 확정되었을 때 트랙을 채우는 색. 기본값은 [KineticaTheme]의 `positive`다.
  */
 @Composable
 public fun KSlideToConfirm(
@@ -117,8 +117,9 @@ public fun KSlideToConfirm(
  * ```
  *
  * @param onConfirm 사용자가 밀거나 TalkBack으로 확정하는 순간 한 번 부른다. 다시 확정하려면 먼저 [KSlideToConfirmState.reset]해야 한다.
- * @param accent 확정되었을 때 캡슐을 채우는 색. 기본값은 [KineticaTheme]의 `positive`다.
+ * @param accent 확정되었을 때 트랙을 채우는 색. 기본값은 [KineticaTheme]의 `positive`다.
  */
+@Suppress("LongMethod") // 디자인 언어 토큰을 읽는 줄이 더해졌을 뿐 한 덩어리 배치다.
 @Composable
 public fun KSlideToConfirm(
     text: String,
@@ -147,13 +148,15 @@ public fun KSlideToConfirm(
     }
     val base = with(LocalDensity.current) { (THUMB_INSET * 2 + THUMB_SIZE).toPx() }
     val confirmedLabel = stringResource(R.string.kinetica_ui_confirmed)
+    val shapes = currentShapes
+    val track = shapes.shape(shapes.button)
     Box(
         modifier
             .fillMaxWidth()
             .height(HEIGHT)
-            .kSurface(surface, CircleShape)
+            .kSurface(surface, track)
             .onSizeChanged { slide.travel = (it.width - base).coerceAtLeast(1f) }
-            .drawBehind { drawTrail(slide, accent, base, rtl) }
+            .drawBehind { drawTrail(slide, track, accent, base, rtl) }
             .slideSemantics(text, done, confirmedLabel, confirm)
             .draggable(
                 rememberDraggableState { delta ->
@@ -171,12 +174,13 @@ public fun KSlideToConfirm(
                 .align(Alignment.Center)
                 .padding(horizontal = HEIGHT)
                 .graphicsLayer { alpha = (1f - slide.position.value * TEXT_FADE).coerceIn(0f, 1f) },
-            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+            style = TextStyle(fontSize = 16.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
             color = surface.contentColor.copy(alpha = TEXT_ALPHA),
         )
         Thumb(
             accent,
             slide.check,
+            shapes.inner(shapes.button, THUMB_INSET),
             Modifier
                 .align(Alignment.CenterStart)
                 .padding(THUMB_INSET)
@@ -242,29 +246,24 @@ private fun Modifier.slideSemantics(text: String, done: Boolean, confirmedLabel:
         }
     }
 
-/** 손잡이가 지나간 자리를 [color]로 옅게 칠하고, 확정되면 캡슐 전체를 채운다. [base]는 손잡이와 양쪽 여백을 더한 너비(px)다. */
-private fun DrawScope.drawTrail(slide: KSlideToConfirmState, color: Color, base: Float, rtl: Boolean) {
+/** 손잡이가 지나간 자리를 [color]로 옅게 칠하고, 확정되면 트랙 전체를 채운다. [base]는 손잡이와 양쪽 여백을 더한 너비(px)다. */
+private fun DrawScope.drawTrail(slide: KSlideToConfirmState, shape: Shape, color: Color, base: Float, rtl: Boolean) {
     val progress = slide.position.value
     val level = slide.check.value
     val width = lerp(base + slide.travel * progress, size.width, level)
     val alpha = lerp(TRAIL_ALPHA * (progress * 2f).coerceAtMost(1f), 1f, level)
-    drawRoundRect(
-        color.copy(alpha = color.alpha * alpha),
-        topLeft = Offset(if (rtl) size.width - width else 0f, 0f),
-        size = Size(width, size.height),
-        cornerRadius = CornerRadius(size.height / 2),
-    )
+    drawShape(shape, color.copy(alpha = color.alpha * alpha), Offset(if (rtl) size.width - width else 0f, 0f), Size(width, size.height))
 }
 
 /** 흰 손잡이. 화살표가 [check] 진행률에 따라 작아지며 사라지고, 체크 표시가 그려지듯 나타난다. 경로는 크기가 바뀔 때만 만든다. */
 @Composable
-private fun Thumb(color: Color, check: Animatable<Float, *>, modifier: Modifier) {
+private fun Thumb(color: Color, check: Animatable<Float, *>, thumbShape: Shape, modifier: Modifier) {
     Box(
         modifier
             .size(THUMB_SIZE)
             .graphicsLayer {
                 shadowElevation = THUMB_SHADOW.toPx()
-                shape = CircleShape
+                shape = thumbShape
                 clip = true
             }
             .drawWithCache {

@@ -77,6 +77,8 @@ public val LocalKineticaTextStyle: ProvidableCompositionLocal<TextStyle> = stati
  * @param textStyle 컴포넌트 글자가 따를 글꼴. 글꼴 관련 값만 쓰인다([LocalKineticaTextStyle] 참고).
  * @param indication 이 안에서 쓴 일반 `clickable`의 눌림 표시(`LocalIndication`). 기본값은 사각 리플 대신 [KIndication]이고,
  * null이면 바깥(호스트) 값을 그대로 둔다.
+ * @param design 컴포넌트의 형태(모서리, 깊이, 밀도, 인디케이터, 컨트롤 모양, 모션). 기본값은 바깥 값이고, 가장 바깥이면
+ * [KineticaDesigns.Cupertino]다. 표면 스타일과 따로 고른다.
  */
 @Composable
 public fun KineticaTheme(
@@ -85,9 +87,11 @@ public fun KineticaTheme(
     colors: KineticaColors = LocalKineticaColors.current,
     textStyle: TextStyle = LocalKineticaTextStyle.current,
     indication: Indication? = KIndication(),
+    design: KineticaDesign = LocalKineticaDesign.current,
     content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
+        LocalKineticaDesign provides design,
         LocalKineticaSurface provides surface,
         LocalGlassStyle provides surface.glassStyle(),
         LocalKineticaContentColor provides surface.contentColor,
@@ -118,6 +122,18 @@ public object KineticaTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalKineticaColors.current
+
+    /** 지금 적용된 디자인 언어 */
+    public val design: KineticaDesign
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalKineticaDesign.current
+
+    /** 지금 적용된 모양 토큰. `KineticaTheme.shapes.shape(KineticaTheme.shapes.card)`처럼 직접 만든 컴포넌트의 모양을 맞출 때 읽는다. */
+    public val shapes: KineticaShapes
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalKineticaDesign.current.shapes
 
     /** 지금 적용된 글자 바탕 스타일 */
     public val textStyle: TextStyle

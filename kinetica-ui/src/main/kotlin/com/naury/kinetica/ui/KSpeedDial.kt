@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -59,7 +58,7 @@ import kotlin.math.roundToInt
 
 /**
  * 화면 구석에 떠 있는 둥근 버튼과, 누르면 위로 펼쳐지는 동작 목록. 펼치면 + 아이콘이 돌아 ×가 되고,
- * 버튼에 가까운 항목부터 차례로 튀어 오르며 배경이 블러 처리된다. 각 항목은 시작 쪽에 라벨 캡슐을, 버튼 위쪽 열에 아이콘 원을 둔다.
+ * 버튼에 가까운 항목부터 차례로 튀어 오르며 배경이 블러 처리된다. 각 항목은 시작 쪽에 라벨을, 버튼 위쪽 열에 아이콘을 둔다. 버튼과 라벨, 아이콘 판은 버튼 모양 토큰을 따른다.
  * 항목을 누르면 목록을 접은 뒤 그 항목의 동작을 실행하고, 바깥을 누르거나 뒤로 가기를 하면 접는다.
  *
  * 목록과 블러 배경은 [KineticaScaffold]의 오버레이 레이어에 그리므로 [KineticaScaffold] 안에서 쓴다. 버튼의 위치는 호출한 쪽이 정한다.
@@ -166,6 +165,8 @@ private fun DialItem(item: KMenuItem, surface: SurfaceStyle, fromButton: Int, co
     val color = if (item.destructive) KineticaTheme.colors.destructive else surface.contentColor
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val interaction = remember { MutableInteractionSource() }
+    val shape = shapeFor { button }
+    val press = KIndication(shape)
     Row(
         Modifier
             .graphicsLayer {
@@ -181,24 +182,25 @@ private fun DialItem(item: KMenuItem, surface: SurfaceStyle, fromButton: Int, co
                 scaleY = scale
                 transformOrigin = TransformOrigin(if (rtl) 1f - ITEM_ORIGIN_X else ITEM_ORIGIN_X, 1f)
             }
-            // 줄 전체를 누르게 하되, 눌림 표시는 글자 캡슐과 아이콘 원에 각각 그린다.
+            // 줄 전체를 누르게 하되, 눌림 표시는 글자 판과 아이콘 판에 각각 그린다.
             .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
             Modifier
-                .kSurface(surface, CircleShape)
-                .indication(interaction, DialIndication)
+                .kSurface(surface, shape)
+                .indication(interaction, press)
                 .heightIn(min = LABEL_HEIGHT)
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            ThemedText(item.label, style = TextStyle(color = color, fontSize = 15.sp, fontWeight = FontWeight.Medium))
+            val weight = KineticaTheme.design.label(FontWeight.Medium)
+            ThemedText(item.label, style = TextStyle(color = color, fontSize = 15.sp, fontWeight = weight))
         }
         item.icon?.let { icon ->
             Box(
-                Modifier.size(ICON_SIZE).kSurface(surface, CircleShape).indication(interaction, DialIndication),
+                Modifier.size(ICON_SIZE).kSurface(surface, shape).indication(interaction, press),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(rememberVectorPainter(icon), null, Modifier.size(KMetrics.ButtonIcon), colorFilter = ColorFilter.tint(color))
@@ -219,11 +221,18 @@ private fun DialButton(
 ) {
     val name = label ?: stringResource(R.string.kinetica_ui_speed_dial)
     val stateText = stringResource(if (expanded) R.string.kinetica_ui_speed_dial_expanded else R.string.kinetica_ui_speed_dial_collapsed)
+    val shape = shapeFor { button }
+    val action = if (hidden) {
+        Modifier.clearAndSetSemantics {
+        }
+    } else {
+        Modifier.dialAction(expanded, name, stateText, KIndication(shape), onClick)
+    }
     Box(
         modifier
             .size(BUTTON_SIZE)
-            .kSurface(surface, CircleShape)
-            .then(if (hidden) Modifier.clearAndSetSemantics {} else Modifier.dialAction(expanded, name, stateText, onClick)),
+            .kSurface(surface, shape)
+            .then(action),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.size(PLUS_SIZE).graphicsLayer { rotationZ = PLUS_TURN * turn() }) {
@@ -235,8 +244,8 @@ private fun DialButton(
     }
 }
 
-private fun Modifier.dialAction(expanded: Boolean, name: String, stateText: String, onClick: () -> Unit): Modifier =
-    clickable(interactionSource = null, indication = DialIndication, role = Role.Button, onClick = onClick)
+private fun Modifier.dialAction(expanded: Boolean, name: String, stateText: String, press: KIndication, onClick: () -> Unit): Modifier =
+    clickable(interactionSource = null, indication = press, role = Role.Button, onClick = onClick)
         .semantics {
             contentDescription = name
             stateDescription = stateText
@@ -256,7 +265,6 @@ private fun Modifier.dialAction(expanded: Boolean, name: String, stateText: Stri
 private val BUTTON_SIZE = 56.dp
 private val ICON_SIZE = KMetrics.IconButton
 private val LABEL_HEIGHT = 36.dp
-private val DialIndication = KIndication(CircleShape)
 private val PLUS_SIZE = 20.dp
 private val PLUS_STROKE = 2.4.dp
 private const val PLUS_TURN = 135f

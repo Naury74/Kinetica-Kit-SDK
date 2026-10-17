@@ -70,9 +70,9 @@ public fun KCard(
     onClick: (() -> Unit)? = null,
     variant: KVariant = KVariant.Glass,
     tone: KTone = KTone.Neutral,
-    shape: Shape = RoundedCornerShape(CARD_RADIUS),
+    shape: Shape = shapeFor { card },
     enabled: Boolean = true,
-    contentPadding: Dp = CARD_PADDING,
+    contentPadding: Dp = KineticaTheme.design.density.padding(CARD_PADDING),
     surface: SurfaceStyle = KineticaTheme.surface,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -118,10 +118,10 @@ public fun KSelectableCard(
     modifier: Modifier = Modifier,
     variant: KVariant = KVariant.Glass,
     tone: KTone = KTone.Accent,
-    shape: Shape = RoundedCornerShape(CARD_RADIUS),
+    shape: Shape = shapeFor { card },
     enabled: Boolean = true,
     role: Role = Role.Checkbox,
-    contentPadding: Dp = CARD_PADDING,
+    contentPadding: Dp = KineticaTheme.design.density.padding(CARD_PADDING),
     surface: SurfaceStyle = KineticaTheme.surface,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -170,7 +170,7 @@ public fun KMediaCard(
     eyebrow: String? = null,
     onClick: (() -> Unit)? = null,
     aspectRatio: Float = DEFAULT_RATIO,
-    shape: Shape = RoundedCornerShape(CARD_RADIUS),
+    shape: Shape = shapeFor { card },
     trailing: (@Composable () -> Unit)? = null,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
@@ -200,7 +200,7 @@ public fun KMediaCard(
             CompositionLocalProvider(LocalKineticaContentColor provides Color.White) {
                 Column(Modifier.weight(1f)) {
                     eyebrow?.let { CardText(it, EYEBROW_FONT, FontWeight.SemiBold, Color.White.copy(alpha = SOFT)) }
-                    CardText(title, MEDIA_TITLE_FONT, FontWeight.Bold, Color.White, maxLines = 2)
+                    CardText(title, MEDIA_TITLE_FONT, KineticaTheme.design.titleWeight, Color.White, maxLines = 2)
                     subtitle?.let { CardText(it, BODY_FONT, FontWeight.Normal, Color.White.copy(alpha = SOFT)) }
                 }
                 trailing?.invoke()
@@ -233,7 +233,9 @@ public fun KHorizontalCard(
     variant: KVariant = KVariant.Glass,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
-    val shape = RoundedCornerShape(ROW_RADIUS)
+    val shapes = KineticaTheme.shapes
+    val token = shapes.listSection
+    val shape = shapes.shape(token)
     val ink = cardInk(variant, KTone.Neutral, surface)
     Row(
         modifier
@@ -257,14 +259,14 @@ public fun KHorizontalCard(
                 Box(
                     Modifier
                         .size(thumbnailSize)
-                        .clip(RoundedCornerShape(KMetrics.concentric(ROW_RADIUS, ROW_PADDING)))
+                        .clip(shapes.inner(token, ROW_PADDING))
                         .background(ink.copy(alpha = PLACEHOLDER)),
                     contentAlignment = Alignment.Center,
                     content = it,
                 )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(TEXT_GAP)) {
-                CardText(title, TITLE_FONT, FontWeight.SemiBold, ink, maxLines = 2)
+                CardText(title, TITLE_FONT, KineticaTheme.design.labelWeight, ink, maxLines = 2)
                 subtitle?.let { CardText(it, BODY_FONT, FontWeight.Normal, ink.copy(alpha = SOFT)) }
             }
             trailing?.invoke()
@@ -304,7 +306,14 @@ private fun Modifier.cardBackground(variant: KVariant, tone: KTone, surface: Sur
 
     KVariant.Tonal -> background(tone.colors(surface).color.copy(alpha = if (tone == KTone.Neutral) FILLED_TINT else TONAL_TINT), shape)
 
-    KVariant.Outlined -> border(OUTLINE, surface.contentColor.copy(alpha = OUTLINE_ALPHA), shape)
+    KVariant.Outlined -> {
+        val design = LocalKineticaDesign.current
+        if (design.depth == KDepth.Offset) {
+            border(design.borderWidth, surface.contentColor, shape)
+        } else {
+            border(design.borderWidth.coerceAtMost(OUTLINE * 2), surface.contentColor.copy(alpha = OUTLINE_ALPHA), shape)
+        }
+    }
 
     KVariant.Text -> this
 }
@@ -355,10 +364,8 @@ private fun SelectionBadge(accent: ToneColors, level: () -> Float, modifier: Mod
 }
 
 private val Scrim = Brush.verticalGradient(0.35f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.68f))
-private val CARD_RADIUS = 24.dp
 private val CARD_PADDING = 16.dp
 private val CONTENT_GAP = 8.dp
-private val ROW_RADIUS = 20.dp
 private val ROW_PADDING = 10.dp
 private val ROW_GAP = 14.dp
 private val TEXT_GAP = 2.dp

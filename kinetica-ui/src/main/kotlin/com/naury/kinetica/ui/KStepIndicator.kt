@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,6 +100,7 @@ public fun KStepIndicator(
 
 @Composable
 private fun NumberedSteps(steps: List<String>, current: Int, modifier: Modifier, look: TimelineLook, onStepClick: ((Int) -> Unit)?) {
+    val press = shapeFor { button }
     Row(modifier.fillMaxWidth()) {
         steps.forEachIndexed { i, name ->
             val status = when {
@@ -113,7 +113,7 @@ private fun NumberedSteps(steps: List<String>, current: Int, modifier: Modifier,
             Column(
                 Modifier
                     .weight(1f)
-                    .then(if (clickable) Modifier.kClickable(CircleShape, onClickLabel = name) { onStepClick?.invoke(i) } else Modifier)
+                    .then(if (clickable) Modifier.kClickable(press, onClickLabel = name) { onStepClick?.invoke(i) } else Modifier)
                     .clearAndSetSemantics { contentDescription = label },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

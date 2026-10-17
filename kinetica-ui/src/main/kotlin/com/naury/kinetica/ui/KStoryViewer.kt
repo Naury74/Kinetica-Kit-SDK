@@ -26,8 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -66,6 +64,7 @@ import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
@@ -236,6 +235,8 @@ private fun StoryFrame(
     val position = stringResource(R.string.kinetica_ui_story_position, state.page + 1, state.pageCount)
     val actions = storyActions(state, onDismiss)
     val scope = rememberCoroutineScope()
+    val shapes = currentShapes
+    val corner = StoryCorner(shapes.cornerOf(shapes.sheet), shapes.radiusOr(shapes.sheet, CORNER))
     Box(
         Modifier
             .fillMaxSize()
@@ -245,7 +246,7 @@ private fun StoryFrame(
         Box(
             modifier
                 .fillMaxSize()
-                .storyLayer(gesture) { open }
+                .storyLayer(gesture, corner) { open }
                 .background(Color.Black)
                 .semantics {
                     paneTitle = position
@@ -262,8 +263,12 @@ private fun StoryFrame(
     }
 }
 
+/** 줄어든 페이지의 모서리. 바텀 시트 모양 토큰을 따른다. */
+private class StoryCorner(val style: KCornerStyle, val radius: Dp)
+
 /** 열림 정도와 끌기, 뒤로 가기에 따라 페이지를 키우고 줄이며 모서리를 둥글게 한다. */
-private fun Modifier.storyLayer(gesture: StoryGesture, open: () -> Float): Modifier = graphicsLayer {
+
+private fun Modifier.storyLayer(gesture: StoryGesture, corner: StoryCorner, open: () -> Float): Modifier = graphicsLayer {
     val o = open().coerceIn(0f, 1f)
     val drag = dragShare(gesture, size.height)
     val back = gesture.back.value
@@ -272,7 +277,7 @@ private fun Modifier.storyLayer(gesture: StoryGesture, open: () -> Float): Modif
     scaleY = scale
     translationY = gesture.drag.value * DRAG_FOLLOW
     val rounded = maxOf(back, drag * DRAG_ROUND, 1f - o)
-    shape = RoundedCornerShape((CORNER.toPx() * rounded.coerceIn(0f, 1f)))
+    shape = shapeOf(corner.style, corner.radius * rounded.coerceIn(0f, 1f))
     clip = rounded > 0f
 }
 
@@ -376,11 +381,12 @@ private fun StoryChrome(
 @Composable
 private fun StoryCloseButton(onDismiss: () -> Unit) {
     val label = stringResource(R.string.kinetica_ui_close)
+    val shape = shapeFor { button }
     Box(
         Modifier
             .size(KMetrics.IconButton)
-            .clip(CircleShape)
-            .kClickable(CircleShape, onClick = onDismiss)
+            .clip(shape)
+            .kClickable(shape, onClick = onDismiss)
             .semantics {
                 contentDescription = label
                 role = Role.Button

@@ -31,6 +31,17 @@
   ```kotlin
   AnimatedContent(tab, transitionSpec = { ContentTransitions.sharedAxisX(forward = targetState > initialState) }) { Page(it) }
   ```
+- 장면과 장면 사이의 전환은 `AnimatedScene`이 맡는다. 넘긴 문서의 `documentId`가 바뀌면 이전 장면에서 새 장면으로 전환하며, 전환 종류는
+  `transition` 파라미터나 새 문서의 `transition`([34 장면 JSON](34-scene-json.md#장면-전환-transition))에서 정한다. `fade`, `morph`, `dissolve`, `slide`, `push`,
+  `cover`, `uncover`, `wipe`, `iris`, `zoom`, `zoomBlur`, `rotate`, `flip`, `cube`가 있고, 뒤로 갈 때 `forward = false`를 주면 같은 전환을 거꾸로 재생한다.
+  번들 화면은 `RemoteKineticaPlayer(bundle, sceneId)`에서 `sceneId`만 바꾸면 같은 전환이 적용된다.
+
+  ```kotlin
+  AnimatedScene(scenes.getValue(current), forward = !goingBack) { scene -> KineticaPlayer(scene, onAction = ::handle) }
+  ```
+
+  예측형 뒤로 가기처럼 손가락을 따라가야 하면 `SceneTransition(from, to, spec, progress = { backProgress })`로 진행도를 직접 준다.
+  Compose 화면 두 개에 같은 전환을 쓰려면 `Modifier.sceneTransitionLayer(spec, role) { progress }`를 각각 붙이고, 그리는 순서는 `spec.incomingOnTop(forward)`를 따른다.
 - 장면이나 서버 화면 안의 숫자는 재생기가 알아서 올라가게 애니메이션한다(`KineticaPlayer(numberAnimationMs = …)`, [30 UI 조립](30-ui-composer.md#바인딩과-동작)).
 - `animateNumberAsState(targetValue)`는 값이 바뀌면 지금 보이는 숫자에서 새 값까지 올라가거나 내려간다. 대시보드 매출이나 카운터에 쓰면 된다. 큰 수도 Double로 계산한다.
 

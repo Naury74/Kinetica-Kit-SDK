@@ -27,6 +27,8 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 private val LocalKSharedScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
 private val LocalKAnimatedScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
@@ -75,7 +77,8 @@ public fun <T> KSharedTransitionHost(
             withFrameNanos { }
             if (latestTarget.value == before) seekable.animateTo(before)
         } catch (cancelled: CancellationException) {
-            seekable.animateTo(before)
+            // 제스처를 취소하면 이 코루틴도 취소되므로 되돌리는 애니메이션은 취소되지 않게 돌린다.
+            withContext(NonCancellable) { seekable.animateTo(before) }
             throw cancelled
         }
     }

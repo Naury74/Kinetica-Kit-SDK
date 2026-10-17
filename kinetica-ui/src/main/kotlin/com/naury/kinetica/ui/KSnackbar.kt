@@ -169,6 +169,7 @@ public fun KSnackbarHost(
     }
 }
 
+@Suppress("LongMethod") // 디자인 언어 토큰(모양, 밀도, 굵기)을 읽는 줄이 더해졌을 뿐 한 덩어리 배치라 나누면 오히려 읽기 어렵다.
 @Composable
 private fun SnackbarPill(data: SnackbarData, surface: SurfaceStyle, appear: State<Float>, modifier: Modifier) {
     val remaining = remember { Animatable(1f) }
@@ -191,7 +192,7 @@ private fun SnackbarPill(data: SnackbarData, surface: SurfaceStyle, appear: Stat
                 scaleY = scale
                 alpha = p.coerceIn(0f, 1f)
             }
-            .kSurface(surface, CapsuleShape(SNACKBAR_CORNER))
+            .kSurface(surface, shapeFor { toast })
             .semantics {
                 liveRegion = if (data.status == KStatus.Error) LiveRegionMode.Assertive else LiveRegionMode.Polite
                 dismiss(dismissLabel) {
@@ -214,13 +215,14 @@ private fun SnackbarPill(data: SnackbarData, surface: SurfaceStyle, appear: Stat
         },
         action = data.actionLabel?.let { label ->
             {
+                val actionShape = shapeFor { button }
                 ThemedText(
                     label,
                     Modifier
-                        .background(ink.copy(alpha = ACTION_BACK_ALPHA), CircleShape)
-                        .clickable(null, KIndication(CircleShape), role = Role.Button) { data.result.complete(KSnackbarResult.Action) }
+                        .background(ink.copy(alpha = ACTION_BACK_ALPHA), actionShape)
+                        .clickable(null, KIndication(actionShape), role = Role.Button) { data.result.complete(KSnackbarResult.Action) }
                         .padding(horizontal = 14.dp, vertical = 8.dp),
-                    style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+                    style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -344,7 +346,6 @@ private const val FULL_TURN = 360f
 private const val START_ANGLE = -90f
 private val SNACKBAR_TRAVEL = 32.dp
 private val SNACKBAR_MAX_WIDTH = 560.dp
-private val SNACKBAR_CORNER = 28.dp
 private val RING_TOUCH = 40.dp
 private val RING_INSET = 7.dp
 private val RING_STROKE = 2.dp

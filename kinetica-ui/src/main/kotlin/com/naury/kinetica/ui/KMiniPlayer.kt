@@ -215,6 +215,8 @@ public fun KMiniPlayerBar(
     val density = LocalDensity.current
     val fullTop = WindowInsets.statusBars.getTop(density) + with(density) { FULL_TOP_GAP.toPx() }
     val progress = remember(state) { { state.progress } }
+    val shapes = currentShapes
+    val artShape = shapeOf(shapes.cornerOf(shapes.image), shapes.radiusOr(shapes.image, ART_CORNER_SMALL))
     DisposableEffect(state) {
         onDispose {
             state.barBounds = Rect.Zero
@@ -225,7 +227,7 @@ public fun KMiniPlayerBar(
         modifier
             .fillMaxSize()
             .onGloballyPositioned { state.barBounds = it.windowRect() }
-            .kClickable(CircleShape, onClickLabel = stringResource(R.string.kinetica_ui_player_expand)) {
+            .kClickable(shapes.shape(shapes.tabBar), onClickLabel = stringResource(R.string.kinetica_ui_player_expand)) {
                 scope.launch { state.expand() }
             }
             .playerDrag(state) { state.barBounds.top - fullTop }
@@ -240,7 +242,7 @@ public fun KMiniPlayerBar(
                     .aspectRatio(1f, matchHeightConstraintsFirst = true)
                     .onGloballyPositioned { state.barArtBounds = it.windowRect() }
                     .graphicsLayer { alpha = if (state.progress > 0f) 0f else 1f }
-                    .clip(RoundedCornerShape(ART_CORNER_SMALL)),
+                    .clip(artShape),
             ) { artwork() }
         }
         Box(
@@ -476,8 +478,11 @@ private fun playerGeometry(
 @Composable
 private fun PlayerFrame(state: KMiniPlayerState, geometry: PlayerGeometry, surface: SurfaceStyle, slots: PlayerSlots) {
     val level = state.progress.coerceIn(0f, 1f)
-    val barCorner = with(LocalDensity.current) { (geometry.bar.height / 2f).toDp() }
-    val shape = RoundedCornerShape(lerp(barCorner, FULL_CORNER, level))
+    val shapes = currentShapes
+    val capsule = with(LocalDensity.current) { (geometry.bar.height / 2f).toDp() }
+    val barCorner = shapes.radiusOr(shapes.tabBar, capsule).coerceAtMost(capsule)
+    val fullCorner = shapes.radiusOr(shapes.sheet, FULL_CORNER)
+    val shape = shapeOf(shapes.cornerOf(shapes.tabBar), lerp(barCorner, fullCorner, level))
     // 이 함수는 모양 때문에 매 프레임 다시 구성되지만, 아래 슬롯은 인자가 그대로라 건너뛴다.
     val showCollapsed = level < COLLAPSED_GONE && slots.collapsed != null
     val showExpanded = level > 0f
@@ -567,7 +572,10 @@ private fun ExpandedPanel(state: KMiniPlayerState, geometry: PlayerGeometry, slo
 @Composable
 private fun Artwork(state: KMiniPlayerState, geometry: PlayerGeometry, artwork: @Composable () -> Unit) {
     val level = state.progress.coerceIn(0f, 1f)
-    val shape = RoundedCornerShape(lerp(ART_CORNER_SMALL, ART_CORNER_BIG, level))
+    val shapes = currentShapes
+    val small = shapes.radiusOr(shapes.image, ART_CORNER_SMALL)
+    val big = shapes.radiusOr(shapes.card, ART_CORNER_BIG)
+    val shape = shapeOf(shapes.cornerOf(shapes.image), lerp(small, big, level))
     Box(
         Modifier
             .placeAt(geometry.screen, relative = geometry.artRelative) { lerp(geometry.barArt, geometry.fullArt, state.progress) }

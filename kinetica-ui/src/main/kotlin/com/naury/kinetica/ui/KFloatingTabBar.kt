@@ -174,15 +174,16 @@ public fun KFloatingTabBar(
     val grow = density.fontScale.coerceIn(1f, MAX_GROW)
     val compact = compactHeight()
     val geometry = remember { FloatingGeometry() }
+    val bar = shapeFor { tabBar }
     Layout(
         content = {
-            Box(Modifier.layoutId(BAR_ID).kSurface(surface, CircleShape).clip(CircleShape)) {
+            Box(Modifier.layoutId(BAR_ID).kSurface(surface, bar).clip(bar)) {
                 ExpandedTabs(tabs, selectedIndex, onSelect, state, surface, geometry)
                 CollapsedCapsule(tabs, selectedIndex, onSelect, state, surface)
             }
             if (accessory != null) {
                 Box(
-                    Modifier.layoutId(ACCESSORY_ID).kSurface(surface, CircleShape).clip(CircleShape),
+                    Modifier.layoutId(ACCESSORY_ID).kSurface(surface, bar).clip(bar),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor, content = accessory)
@@ -238,7 +239,9 @@ private fun ExpandedTabs(
     var width by remember { mutableIntStateOf(0) }
     val indicator = remember { LiquidIndicator() }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    LaunchedEffect(selectedIndex, width, tabs.size, rtl) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl) }
+    val motion = KineticaTheme.design.motion
+    LaunchedEffect(selectedIndex, width, tabs.size, rtl) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl, motion) }
+    val look = tabBarLook(surface, TAB_INSET)
     Row(
         Modifier
             .layout { measurable, constraints ->
@@ -255,33 +258,19 @@ private fun ExpandedTabs(
             .drawBehind {
                 val left = indicator.left.value
                 val right = indicator.right.value
-                if (right > left) {
-                    drawRoundRect(
-                        surface.contentColor.copy(alpha = FLOATING_INDICATOR_ALPHA),
-                        topLeft = Offset(left, 0f),
-                        size = Size(right - left, size.height),
-                        cornerRadius = CornerRadius(size.height / 2),
-                    )
-                }
+                if (right > left) drawBarIndicator(look, left, right)
             }
             .then(if (state.isCollapsed) Modifier.clearAndSetSemantics { } else Modifier.selectableGroup()),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         tabs.forEachIndexed { index, tab ->
-            FloatingTabItem(tab, index == selectedIndex, surface, enabled = !state.isCollapsed, Modifier.weight(1f)) { onSelect(index) }
+            FloatingTabItem(tab, index == selectedIndex, look, enabled = !state.isCollapsed, Modifier.weight(1f)) { onSelect(index) }
         }
     }
 }
 
 @Composable
-private fun FloatingTabItem(
-    tab: KTab,
-    selected: Boolean,
-    surface: SurfaceStyle,
-    enabled: Boolean,
-    modifier: Modifier,
-    onClick: () -> Unit,
-) {
+private fun FloatingTabItem(tab: KTab, selected: Boolean, look: TabBarLook, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -289,7 +278,7 @@ private fun FloatingTabItem(
         spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "floating-tab",
     )
-    val color = surface.contentColor.copy(alpha = if (selected) 1f else FLOATING_UNSELECTED_ALPHA)
+    val color = look.tabColor(selected, FLOATING_UNSELECTED_ALPHA)
     Box(
         modifier
             .fillMaxSize()
@@ -300,7 +289,7 @@ private fun FloatingTabItem(
             .selectable(
                 selected,
                 interactionSource = interaction,
-                indication = KIndication(CircleShape),
+                indication = KIndication(look.cell),
                 enabled = enabled,
                 role = Role.Tab,
                 onClick = onClick,
@@ -386,6 +375,5 @@ private val COLLAPSE_DISTANCE = 32.dp
 private const val MAX_GROW = 1.35f
 private const val COLLAPSE_DAMPING = 0.82f
 private const val CAPSULE_START_SCALE = 0.6f
-private const val FLOATING_INDICATOR_ALPHA = 0.12f
 private const val FLOATING_UNSELECTED_ALPHA = 0.55f
 private const val FLOATING_PRESSED_SCALE = 0.9f

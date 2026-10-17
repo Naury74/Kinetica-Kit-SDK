@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +59,7 @@ public enum class KFabSize(internal val size: Dp, internal val icon: Dp, interna
 }
 
 /**
- * 화면 구석에 떠 있는 주 동작 버튼. 기본 모양은 둥근 사각형이고 `shape = CircleShape`로 원을 쓸 수 있다.
+ * 화면 구석에 떠 있는 주 동작 버튼. 기본 모양은 둥근 사각형(디자인 언어의 버튼 모양을 따른다)이고 `shape = CircleShape`로 원을 쓸 수 있다.
  * [KVariant.Filled]와 [KVariant.Tonal]은 떠 보이도록 그림자를 드리우고, [KVariant.Glass]와 [KVariant.Elevated]는 표면 그림자를 쓴다.
  * 누르면 젤리처럼 눌리고 햅틱을 준다. 위치는 호출한 쪽이 정하며, 내비게이션 바 위에 두려면 `navigationBarsPadding()`을 붙인다.
  * 펼쳐지는 동작 목록이 필요하면 [KSpeedDial]을 쓴다.
@@ -78,7 +79,7 @@ public fun KFab(
     size: KFabSize = KFabSize.Regular,
     variant: KVariant = KVariant.Filled,
     tone: KTone = KTone.Accent,
-    shape: Shape = RoundedCornerShape(size.radius),
+    shape: Shape = fabShape(size),
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val colors = tone.colors(surface)
@@ -120,7 +121,7 @@ public fun KExtendedFab(
     expanded: Boolean = true,
     variant: KVariant = KVariant.Filled,
     tone: KTone = KTone.Accent,
-    shape: Shape = RoundedCornerShape(KFabSize.Regular.radius),
+    shape: Shape = fabShape(KFabSize.Regular),
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val colors = tone.colors(surface)
@@ -251,3 +252,13 @@ private const val EXPAND_DAMPING = 0.85f
 private const val EXPAND_STIFFNESS = 420f
 private const val INDEX_SHIFT = 32
 private const val OFFSET_MASK = 0xFFFFFFFFL
+
+/** 디자인 언어에 맞춘 FAB 모양. 버튼 토큰이 캡슐이면 [size]의 반지름으로 둥근 사각형을, 아니면 버튼 토큰 모양을 쓴다. */
+@Composable
+@ReadOnlyComposable
+private fun fabShape(size: KFabSize): Shape {
+    val shapes = currentShapes
+    val token = shapes.button
+    val radius = shapes.radius(token)
+    return shapeOf(shapes.cornerOf(token), if (radius == Dp.Infinity) size.radius else radius)
+}

@@ -70,10 +70,10 @@ public data class KGroupItem(
 
 /** 버튼 묶음의 배치. */
 public enum class KGroupStyle {
-    /** 칸을 2dp 간격으로 맞붙이고, 바깥 모서리만 캡슐처럼 둥글게 깎는다. 선택된 칸은 네 모서리가 모두 둥글어진다. */
+    /** 칸을 2dp 간격으로 맞붙이고, 바깥 모서리만 버튼 모양 토큰 반지름으로 둥글게 깎는다. 선택된 칸은 네 모서리가 모두 둥글어진다. */
     Connected,
 
-    /** 캡슐 버튼을 8dp 간격으로 떨어뜨려 놓는다. */
+    /** 버튼 모양 토큰의 버튼을 8dp 간격으로 떨어뜨려 놓는다. */
     Separated,
 }
 
@@ -115,9 +115,10 @@ public fun KButtonGroup(
     val ink = buttonInk(variant, tone, colors, surface)
     val haptic = LocalHapticFeedback.current
     val motion = rememberGroupMotion(items.size, null)
+    val round = buttonRoundFraction(KineticaTheme.design.density.height(size.height))
     GroupLayout(motion, style, size.cellPadding, modifier) {
         items.forEachIndexed { index, item ->
-            val shape = segmentShape(style, index, items.size)
+            val shape = segmentShape(style, index, items.size, round)
             val source = motion.sources[index]
             GroupCell(
                 item,
@@ -136,7 +137,7 @@ public fun KButtonGroup(
 }
 
 /**
- * 고르는 버튼 묶음. 고른 칸은 [tone] 색으로 채워지고, [KGroupStyle.Connected]에서는 안쪽 모서리까지 둥글어져 캡슐이 된다.
+ * 고르는 버튼 묶음. 고른 칸은 [tone] 색으로 채워지고, [KGroupStyle.Connected]에서는 안쪽 모서리까지 둥글어져 버튼 하나의 모양이 된다.
  * 누르고 있는 칸은 [KButtonGroup]처럼 넓어지며 이웃이 비켜 준다. 정렬 기준, 보기 방식, 글자 정렬처럼 두세 개 중 고르는 곳에 쓴다.
  *
  * ```kotlin
@@ -148,6 +149,7 @@ public fun KButtonGroup(
  * @param style 칸 배치. 기본값은 [KGroupStyle.Connected]다.
  * @param variant 고르지 않은 칸의 모양. 기본값은 [KVariant.Tonal](옅은 회색 칸)이다.
  */
+@Suppress("LongMethod") // 디자인 언어 토큰(모양, 밀도, 굵기)을 읽는 줄이 더해졌을 뿐 한 덩어리 배치라 나누면 오히려 읽기 어렵다.
 @Composable
 public fun KToggleGroup(
     items: List<KGroupItem>,
@@ -167,9 +169,10 @@ public fun KToggleGroup(
     val haptic = LocalHapticFeedback.current
     val motion = rememberGroupMotion(items.size, selected)
     val single = selection == KGroupSelection.Single
+    val round = buttonRoundFraction(KineticaTheme.design.density.height(size.height))
     GroupLayout(motion, style, size.cellPadding, modifier.then(if (single) Modifier.selectableGroup() else Modifier)) {
         items.forEachIndexed { index, item ->
-            val shape = segmentShape(style, index, items.size)
+            val shape = segmentShape(style, index, items.size, round)
             val picked = index in selected
             val level = motion.selected[index]
             val change = {
@@ -203,6 +206,7 @@ public fun KToggleGroup(
                             index,
                             items.size,
                             on.color,
+                            round,
                             if (variant.surfaceDrawn) {
                                 null
                             } else {
@@ -344,7 +348,7 @@ private fun yieldToPressed(widths: FloatArray, motion: GroupMotion, maxGrow: Flo
 private fun GroupCell(item: KGroupItem, size: KButtonSize, ink: () -> Color, modifier: Modifier) {
     Row(
         modifier
-            .height(size.height)
+            .height(KineticaTheme.design.density.height(size.height))
             .then(if (item.contentDescription != null) Modifier.semantics { contentDescription = item.contentDescription } else Modifier)
             .graphicsLayer { alpha = if (item.enabled) 1f else DISABLED },
         horizontalArrangement = Arrangement.spacedBy(size.gap, Alignment.CenterHorizontally),
@@ -361,7 +365,7 @@ private fun GroupCell(item: KGroupItem, size: KButtonSize, ink: () -> Color, mod
         item.label?.let {
             ThemedText(
                 it,
-                style = TextStyle(fontSize = size.font, fontWeight = FontWeight.SemiBold),
+                style = TextStyle(fontSize = size.font, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 color = { ink() },
@@ -370,14 +374,24 @@ private fun GroupCell(item: KGroupItem, size: KButtonSize, ink: () -> Color, mod
     }
 }
 
-/** 이어 붙인 묶음에서 칸 위치에 맞는 모양. 첫 칸과 끝 칸의 바깥 모서리만 캡슐처럼 둥글다. */
-private fun segmentShape(style: KGroupStyle, index: Int, count: Int): SideRoundShape = when (style) {
-    KGroupStyle.Separated -> SideRoundShape(ROUND, ROUND)
-    KGroupStyle.Connected -> SideRoundShape(if (index == 0) ROUND else INNER, if (index == count - 1) ROUND else INNER)
+/** 이어 붙인 묶음에서 칸 위치에 맞는 모양. 첫 칸과 끝 칸의 바깥 모서리만 버튼 토큰 반지름([round], 높이 비율)으로 둥글다. */
+private fun segmentShape(style: KGroupStyle, index: Int, count: Int, round: Float): SideRoundShape {
+    val inner = minOf(INNER, round)
+    return when (style) {
+        KGroupStyle.Separated -> SideRoundShape(round, round)
+        KGroupStyle.Connected -> SideRoundShape(if (index == 0) round else inner, if (index == count - 1) round else inner)
+    }
 }
 
 /** 고르는 칸을 그리는 값. [base]가 있으면 고르지 않은 바탕(모양 변형과 색)도 같은 모양으로 그린다. */
-private class SegmentPaint(val style: KGroupStyle, val index: Int, val count: Int, val color: Color, val base: Pair<KVariant, Color>?)
+private class SegmentPaint(
+    val style: KGroupStyle,
+    val index: Int,
+    val count: Int,
+    val color: Color,
+    val round: Float,
+    val base: Pair<KVariant, Color>?,
+)
 
 /** 고르지 않은 칸 바탕을 [level]만큼 그린다. 고를수록 옅어져 채운 색 아래로 사라진다. */
 private fun DrawScope.drawSegmentBase(path: Path, variant: KVariant, ink: Color, level: Float) {
@@ -398,15 +412,17 @@ private val KVariant.surfaceDrawn: Boolean get() = this == KVariant.Glass || thi
 @Composable
 private fun Modifier.selectedFill(paint: SegmentPaint, level: () -> Float): Modifier {
     val path = remember { Path() }
-    val startBase = if (paint.style == KGroupStyle.Separated || paint.index == 0) ROUND else INNER
-    val endBase = if (paint.style == KGroupStyle.Separated || paint.index == paint.count - 1) ROUND else INNER
+    val round = paint.round
+    val inner = minOf(INNER, round)
+    val startBase = if (paint.style == KGroupStyle.Separated || paint.index == 0) round else inner
+    val endBase = if (paint.style == KGroupStyle.Separated || paint.index == paint.count - 1) round else inner
     return drawBehind {
         val v = level().coerceIn(0f, 1f)
         val base = paint.base
         if (v <= 0f && base == null) return@drawBehind
         val h = size.height
-        val start = CornerRadius(h * (startBase + (ROUND - startBase) * v))
-        val end = CornerRadius(h * (endBase + (ROUND - endBase) * v))
+        val start = CornerRadius(h * (startBase + (round - startBase) * v))
+        val end = CornerRadius(h * (endBase + (round - endBase) * v))
         val rtl = layoutDirection == LayoutDirection.Rtl
         val left = if (rtl) end else start
         val right = if (rtl) start else end
@@ -428,7 +444,6 @@ private val CELL_TRIM: Dp = 4.dp
 /** 칸 안 좌우 여백. 아이콘만 있는 칸은 정사각형에 가깝게 줄인다. */
 private val KButtonSize.cellPadding: Dp get() = padding - CELL_TRIM
 private const val GROW_RATIO = 0.15f
-private const val ROUND = 0.5f
 private const val INNER = 0.16f
 private const val DISABLED = 0.4f
 private const val PRESS_ALPHA = 0.12f
