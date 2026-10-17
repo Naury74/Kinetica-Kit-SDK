@@ -28,7 +28,7 @@ class KCallLayoutTest {
         )
 
     @Test
-    fun `열 수는 칸 안 정사각형이 가장 커지는 값을 고른다`() {
+    fun `열 수는 영상이 가장 크게 보이는 값을 고른다`() {
         assertThat(gridColumns(1, 400f, 800f)).isEqualTo(1)
         // 세로 폰 2명은 위아래, 가로 화면 2명은 좌우
         assertThat(gridColumns(2, 400f, 800f)).isEqualTo(1)
@@ -37,6 +37,43 @@ class KCallLayoutTest {
         assertThat(gridColumns(6, 400f, 700f)).isEqualTo(2)
         assertThat(gridColumns(6, 800f, 360f)).isEqualTo(3)
         assertThat(gridColumns(9, 800f, 1100f)).isEqualTo(3)
+    }
+
+    @Test
+    fun `막대가 숨은 긴 세로 폰도 납작한 1열로 쌓지 않는다`() {
+        // 1080×2400 폰에서 조작 막대가 숨은 무대(약 411×914dp, 간격 8dp)
+        val w = 411f
+        val h = 914f
+        assertThat(gridColumns(2, w, h, 8f)).isEqualTo(1)
+        assertThat(gridColumns(3, w, h, 8f)).isEqualTo(2)
+        assertThat(gridColumns(4, w, h, 8f)).isEqualTo(2)
+        assertThat(gridColumns(6, w, h, 8f)).isEqualTo(2)
+        assertThat(gridColumns(9, w, h, 8f)).isEqualTo(3)
+        // 가로로 돌리면 2명 좌우, 6명 3×2
+        assertThat(gridColumns(2, h, w, 8f)).isEqualTo(2)
+        assertThat(gridColumns(6, h, w, 8f)).isEqualTo(3)
+    }
+
+    @Test
+    fun `호스트가 정한 열 수를 쓰고 범위를 넘으면 맞춘다`() {
+        val three = GridInput(
+            keys = (0 until 4).map { "p$it" },
+            focus = null,
+            self = null,
+            area = phone,
+            full = phone,
+            gap = 0f,
+            strip = 100f,
+            floatingWidth = 90f,
+            margin = 10f,
+            corner = KCorner.BottomEnd,
+            pageSize = 9,
+            columns = { count, _, _ -> if (count == 4) 4 else 99 },
+        )
+        assertThat(planGrid(three).spots.map { it.rect.top }.toSet()).containsExactly(0f)
+        val tooMany =
+            GridInput(three.keys.take(3), null, null, phone, phone, 0f, 100f, 90f, 10f, KCorner.BottomEnd, 9, columns = { _, _, _ -> 99 })
+        assertThat(planGrid(tooMany).spots.map { it.rect.top }.toSet()).containsExactly(0f)
     }
 
     @Test

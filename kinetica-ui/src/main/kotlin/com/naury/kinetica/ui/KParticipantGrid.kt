@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
@@ -125,7 +126,9 @@ public fun <K : Any> rememberKStableSpeaker(speakingKey: K?, delayMillis: Long =
 /**
  * 참가자 수와 화면 비율에 맞춰 타일을 놓는 영상 무대. 참가자 데이터는 호스트 것을 그대로 받고, 타일은 [tile]이 그린다.
  *
- * - 1명은 화면 가득, 여럿은 칸이 가장 커지는 열 수로 격자를 짠다(세로 폰 2명은 위아래, 4명은 2×2, 가로 화면 6명은 3×2, 태블릿은 더 넓게).
+ * - 1명은 화면 가득, 여럿은 영상이 가장 크게 보이는 열 수로 격자를 짠다. 세로 화면은 3:4, 가로 화면은 16:9 영상을 칸에 맞춰 넣었을 때의
+ *   넓이를 비교하고, 차이가 25% 안쪽이면 행과 열이 고른 쪽을 고른다. 세로 폰은 2명 위아래, 3~4명 2×2, 5~6명 2×3, 가로 화면은 2명 좌우,
+ *   6명 3×2다. 다르게 짜려면 [columns]를 넘긴다.
  *   마지막 줄이 덜 차면 가운데로 모은다. [maxPerPage]명이 넘으면 쪽을 나누고 옆으로 넘긴다. 아래 점이 쪽 위치를 보여 준다.
  * - [selfKey]와 다른 한 명뿐이면 상대가 화면 전체를([KTileRole.Full]), 나는 모서리의 작은 창([KTileRole.Floating])이 된다.
  *   작은 창은 끌어서 놓으면 가까운 모서리에 붙는다.
@@ -146,6 +149,8 @@ public fun <K : Any> rememberKStableSpeaker(speakingKey: K?, delayMillis: Long =
  * @param contentPadding 무대 둘레 여백. 상단 바와 조작 막대 높이, 시스템 바 인셋을 넣는다. 1:1의 상대 화면은 이 여백을 무시하고 화면 끝까지 채운다.
  * @param spacing 타일 사이 간격
  * @param maxPerPage 갤러리 한 쪽의 최대 인원. 1 미만이면 [IllegalArgumentException]을 던진다.
+ * @param columns 격자 열 수를 직접 정한다. 한 쪽 인원과 무대 폭, 높이(여백을 뺀 값)를 받는다. 결과는 1..인원으로 맞춘다.
+ *   `null`이면 위 규칙을 쓴다. 고정 보기와 1:1 배치에는 쓰지 않는다.
  * @param layer 그릴 층. [KCallLayer.Overlay]는 같은 [state]의 [KCallLayer.Video]와 함께 써야 타일이 움직인다.
  * @param tile 타일 하나. 받은 상자를 꽉 채워 그린다.
  */
@@ -160,6 +165,7 @@ public fun <T> KParticipantGrid(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     spacing: Dp = 8.dp,
     maxPerPage: Int = 9,
+    columns: ((count: Int, width: Dp, height: Dp) -> Int)? = null,
     layer: KCallLayer = KCallLayer.All,
     tile: @Composable BoxScope.(participant: T, role: KTileRole) -> Unit,
 ) {
@@ -168,7 +174,16 @@ public fun <T> KParticipantGrid(
     val density = LocalDensity.current
     val byKey = participants.associateBy(key)
     BoxWithConstraints(modifier) {
-        val layout = GridLayout(participants.map(key), focusKey, selfKey, maxWidth >= WIDE_WINDOW, spacing, state.selfCorner, maxPerPage)
+        val layout = GridLayout(
+            participants.map(key),
+            focusKey,
+            selfKey,
+            maxWidth >= WIDE_WINDOW,
+            spacing,
+            state.selfCorner,
+            maxPerPage,
+            columns,
+        )
         val plan = with(density) { gridPlan(layout, constraints, contentPadding, direction) }
         state.pageWidth = plan.pageWidth
         val driver = layer != KCallLayer.Overlay
@@ -199,6 +214,7 @@ private class GridLayout(
     val spacing: Dp,
     val corner: KCorner,
     val pageSize: Int,
+    val columns: ((Int, Dp, Dp) -> Int)?,
 )
 
 /** 이 층이 움직임을 이끄는지([driver]), 터치를 받는지([touch]) */
@@ -233,6 +249,7 @@ private fun Density.gridPlan(
             corner = layout.corner,
             pageSize = layout.pageSize,
             pageDots = PAGE_DOTS.toPx(),
+            columns = layout.columns?.let { pick -> { count, width, height -> pick(count, width.toDp(), height.toDp()) } },
         ),
     )
 }
@@ -363,6 +380,7 @@ internal class GridInput(
     val corner: KCorner,
     val pageSize: Int,
     val pageDots: Float = 0f,
+    val columns: ((Int, Float, Float) -> Int)? = null,
 )
 
 /** 타일 하나의 자리 */
@@ -403,7 +421,7 @@ internal fun planGrid(input: GridInput): GridPlan {
         keys.isEmpty() -> GridPlan(emptyList(), input.full, area)
         focus != null -> focusPlan(input, focus)
         keys.size == 2 && input.self != null && input.self in keys -> oneOnOnePlan(input)
-        keys.size <= input.pageSize -> GridPlan(gridSpots(keys, area, input.gap, 0f), input.full, area)
+        keys.size <= input.pageSize -> GridPlan(gridSpots(keys, area, input, 0f), input.full, area)
         else -> pagedPlan(input)
     }
 }
@@ -413,25 +431,39 @@ private fun pagedPlan(input: GridInput): GridPlan {
     val area = input.area
     val paged = Rect(area.left, area.top, area.right, area.bottom - input.pageDots)
     val pages = input.keys.chunked(input.pageSize)
-    val spots = pages.flatMapIndexed { page, chunk -> gridSpots(chunk, paged, input.gap, page * input.full.width) }
+    val spots = pages.flatMapIndexed { page, chunk -> gridSpots(chunk, paged, input, page * input.full.width) }
     return GridPlan(spots, input.full, paged, pages = pages.size)
 }
 
-/** [count]명을 [width]×[height]에 놓을 때 칸 안에 들어가는 정사각형이 가장 큰 열 수 */
+/**
+ * [count]명을 [width]×[height]에 놓을 때 영상이 가장 크게 보이는 열 수. 세로 무대는 3:4, 가로 무대는 16:9, 정사각형에 가까우면 1:1 영상을 칸에 맞춰 넣은 넓이를 비교한다.
+ * 정사각형으로 비교하면 세로 폰 4명이 납작한 1열 4단이 되어 세로 영상이 거의 잘린다.
+ */
 internal fun gridColumns(count: Int, width: Float, height: Float, gap: Float = 0f): Int {
     if (count <= 1) return 1
-    val side = { columns: Int ->
-        val rows = ceil(count / columns.toFloat()).toInt()
-        val cellW = (width - gap * (columns - 1)) / columns
-        val cellH = (height - gap * (rows - 1)) / rows
-        (minOf(cellW, cellH) / TIE_STEP).roundToInt()
+    // 정사각형에 가까운 무대(태블릿 가로 분할 등)는 어느 쪽 영상이 올지 모르므로 정사각형으로 비교한다.
+    val aspect = when {
+        height > width * SQUARE_BAND -> PORTRAIT_TILE
+        width > height * SQUARE_BAND -> LANDSCAPE_TILE
+        else -> 1f
     }
-    // 정사각형 크기가 같으면 빈 칸이 적은 쪽, 그다음 열이 많은 쪽을 고른다. 세로 폰 4명은 한 줄로 쌓지 않고 2×2, 가로 화면 6명은 4×2가 아니라 3×2다.
-    return (1..count).maxWith(compareBy({ side(it) }, { -(it * ceil(count / it.toFloat()).toInt() - count) }, { it }))
+    val rowsOf = { columns: Int -> ceil(count / columns.toFloat()).toInt() }
+    val area = { columns: Int ->
+        val cellW = (width - gap * (columns - 1)) / columns
+        val cellH = (height - gap * (rowsOf(columns) - 1)) / rowsOf(columns)
+        val fitW = minOf(cellW, cellH * aspect)
+        fitW * (fitW / aspect)
+    }
+    val best = (1..count).maxOf(area)
+    // 넓이 차가 크지 않으면(긴 폰의 3명은 1열 3단이 2×2보다 약 20% 크다) 고른 격자가 덜 납작하고 보기 좋다. 그다음은 빈 칸이 적은 쪽, 열이 많은 쪽.
+    return (1..count).filter { area(it) >= best * TIE_RATIO }
+        .minWith(compareBy({ abs(rowsOf(it) - it) }, { it * rowsOf(it) - count }, { -it }))
 }
 
-private fun gridSpots(keys: List<Any>, area: Rect, gap: Float, offsetX: Float): List<Spot> {
-    val columns = gridColumns(keys.size, area.width, area.height, gap)
+private fun gridSpots(keys: List<Any>, area: Rect, input: GridInput, offsetX: Float): List<Spot> {
+    val gap = input.gap
+    val columns = input.columns?.invoke(keys.size, area.width, area.height)?.coerceIn(1, keys.size)
+        ?: gridColumns(keys.size, area.width, area.height, gap)
     val rows = ceil(keys.size / columns.toFloat()).toInt()
     val cellW = (area.width - gap * (columns - 1)) / columns
     val cellH = (area.height - gap * (rows - 1)) / rows
@@ -528,7 +560,10 @@ private val FLOATING_WIDE = 160.dp
 private val FLOATING_MARGIN = 8.dp
 private val PAGE_DOTS = 24.dp
 private const val SHORT_SIDE = 0.75f
-private const val TIE_STEP = 0.5f
+private const val TIE_RATIO = 0.75f
+private const val PORTRAIT_TILE = 3f / 4f
+private const val LANDSCAPE_TILE = 16f / 9f
+private const val SQUARE_BAND = 1.2f
 private const val MOVE_DAMPING = 0.82f
 private const val APPEAR_MS = 240
 private const val APPEAR_SCALE = 0.94f
