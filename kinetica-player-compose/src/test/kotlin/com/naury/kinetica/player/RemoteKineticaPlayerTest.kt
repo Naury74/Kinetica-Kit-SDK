@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -138,5 +139,43 @@ class RemoteKineticaPlayerTest {
         compose.mainClock.advanceTimeBy(48)
         compose.onNodeWithText("slot a").assertIsDisplayed()
         compose.onNodeWithText("slot b").assertDoesNotExist()
+    }
+
+    @Test
+    fun `번들 화면 id를 바꾼 첫 프레임에도 이전 화면 문서를 새 화면으로 그리지 않는다`() {
+        val bundleText = com.naury.kinetica.serialization.SceneBundleCodec().encode(mapOf("one" to scene("a"), "two" to scene("b")))
+        val bundle = com.naury.kinetica.serialization.RemoteSceneBundleLoader({ SceneFetch.Body(bundleText.toByteArray()) })
+        val id = androidx.compose.runtime.mutableStateOf("one")
+        var composedA = 0
+        val slots = mapOf<String, @androidx.compose.runtime.Composable () -> Unit>(
+            "a" to {
+                androidx.compose.runtime.SideEffect { composedA++ }
+                Text("slot a")
+            },
+            "b" to { Text("slot b") },
+        )
+        compose.setContent {
+            RemoteKineticaPlayer(
+                bundle,
+                id.value,
+                Modifier.size(100.dp),
+                slots = slots,
+                transition = SceneTransitionSpec(SceneTransitionKind.Wipe, durationMs = 400),
+            )
+        }
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        val before = composedA
+        id.value = "two"
+        repeat(FRAMES) {
+            compose.mainClock.advanceTimeByFrame()
+            compose.onAllNodesWithText("slot a").fetchSemanticsNodes().size.let { assertThat(it).isAtMost(1) }
+        }
+        // 들어오는 화면이 한 프레임이라도 이전 문서로 그려지면 a 자리가 새로 구성된다.
+        assertThat(composedA).isEqualTo(before)
+    }
+
+    private companion object {
+        const val FRAMES = 6
     }
 }

@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -73,8 +73,14 @@ public fun RemoteKineticaPlayer(
     placeholder: @Composable (RemoteSceneState) -> Unit = {},
 ) {
     LaunchedEffect(bundle, refreshKey) { bundle.refresh() }
-    val flow = remember(bundle, sceneId) { bundle.state(sceneId) }
-    val state by flow.collectAsState(RemoteSceneState.Loading)
+    // collectAsState는 키가 바뀌어도 이전 값을 한 프레임 돌려주므로, 바뀐 첫 프레임에 이전 화면 문서가 새 화면 키로 그려진다.
+    // 값에 어느 화면 것인지 붙여 두고 다르면 로더의 지금 값을 쓴다.
+    val collected by produceState<Pair<Any, RemoteSceneState>?>(null, bundle, sceneId) {
+        bundle.state(sceneId).collect { value = (bundle to sceneId) to it }
+    }
+    val state = collected?.takeIf { it.first == (bundle to sceneId) }?.second
+        ?: bundle.states.value[sceneId]
+        ?: RemoteSceneState.Loading
     RemoteContent(
         state,
         modifier,
