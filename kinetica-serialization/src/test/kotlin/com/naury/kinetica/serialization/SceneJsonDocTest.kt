@@ -6,6 +6,8 @@ import com.naury.kinetica.core.scene.DataValue
 import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneData
+import com.naury.kinetica.core.scene.SceneTransitionKind
+import com.naury.kinetica.core.scene.SceneTransitionSpec
 import java.io.File
 import org.junit.Test
 
@@ -24,5 +26,10 @@ class SceneJsonDocTest {
         assertThat((shown.node(NodeId("sales"))!!.content as NodeContent.Text).text).isEqualTo("1,284,000원")
         assertThat(document.node(NodeId("buy"))!!.action).isEqualTo("open_orders?filter=today")
         assertThat(document.node(NodeId("buy"))!!.transform.translationY).isGreaterThan(0.0)
+        assertThat(document.transition?.kind).isEqualTo(SceneTransitionKind.Push)
+        val iris = markdown.substringAfter("```json\n\"transition\": ").substringBefore("\n```")
+        val withIris = example.replace("\"transition\": { \"kind\": \"push\" }", "\"transition\": $iris")
+        assertThat((SceneCodec().decode(withIris) as DecodeResult.Success).document.transition)
+            .isEqualTo(SceneTransitionSpec(SceneTransitionKind.Iris, durationMs = 500, originX = 0.85, originY = 0.9))
     }
 }

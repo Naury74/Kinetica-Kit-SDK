@@ -44,6 +44,8 @@ constructor(
 
             is SceneCommand.SetArtboard -> CommandResult.Applied(document.copy(artboard = command.artboard))
 
+            is SceneCommand.SetTransition -> CommandResult.Applied(document.copy(transition = command.transition))
+
             is SceneCommand.SetToken -> applied(
                 document.copy(tokens = command.color?.let { document.tokens + (command.name to it) } ?: (document.tokens - command.name)),
             )

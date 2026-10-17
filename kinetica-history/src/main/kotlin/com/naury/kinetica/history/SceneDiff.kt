@@ -5,6 +5,7 @@ import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.SceneTransitionSpec
 
 /**
  * 두 문서 사이에서 바뀐 부분만 담는다. 바뀌지 않은 노드는 참조가 같아 비교가 빠르고, 기록 크기는 바뀐 노드 수에 비례한다.
@@ -15,14 +16,13 @@ internal class SceneDiff private constructor(
     private val nodesBefore: Map<NodeId, SceneNode?>,
     private val nodesAfter: Map<NodeId, SceneNode?>,
     private val rootOrder: Change<List<NodeId>>?,
-    private val artboard: Change<Artboard>?,
     private val timelines: Change<List<Timeline>>?,
-    private val extensions: Change<Map<String, String>>?,
+    private val header: Change<Header>?,
 ) {
     val changedNodeCount: Int get() = nodesAfter.size
 
     val isEmpty: Boolean
-        get() = nodesAfter.isEmpty() && rootOrder == null && artboard == null && timelines == null && extensions == null
+        get() = nodesAfter.isEmpty() && rootOrder == null && timelines == null && header == null
 
     fun redo(document: SceneDocument): SceneDocument = apply(document, nodesAfter, forward = true)
 
@@ -31,13 +31,22 @@ internal class SceneDiff private constructor(
     private fun apply(document: SceneDocument, nodes: Map<NodeId, SceneNode?>, forward: Boolean): SceneDocument {
         val merged = LinkedHashMap(document.nodes)
         nodes.forEach { (id, node) -> if (node == null) merged.remove(id) else merged[id] = node }
+        val picked = header?.pick(forward) ?: Header.of(document)
         return document.copy(
             nodes = merged,
             rootOrder = rootOrder?.pick(forward) ?: document.rootOrder,
-            artboard = artboard?.pick(forward) ?: document.artboard,
+            artboard = picked.artboard,
             timelines = timelines?.pick(forward) ?: document.timelines,
-            extensions = extensions?.pick(forward) ?: document.extensions,
+            extensions = picked.extensions,
+            transition = picked.transition,
         )
+    }
+
+    /** 노드 밖에 있는 문서 값. 자주 바뀌지 않으므로 하나로 묶어 비교한다. */
+    private data class Header(val artboard: Artboard, val extensions: Map<String, String>, val transition: SceneTransitionSpec?) {
+        companion object {
+            fun of(document: SceneDocument) = Header(document.artboard, document.extensions, document.transition)
+        }
     }
 
     private class Change<T>(val before: T, val after: T) {
@@ -60,9 +69,8 @@ internal class SceneDiff private constructor(
                 nodesBefore = nodesBefore,
                 nodesAfter = nodesAfter,
                 rootOrder = change(before.rootOrder, after.rootOrder),
-                artboard = change(before.artboard, after.artboard),
                 timelines = change(before.timelines, after.timelines),
-                extensions = change(before.extensions, after.extensions),
+                header = change(Header.of(before), Header.of(after)),
             )
         }
 

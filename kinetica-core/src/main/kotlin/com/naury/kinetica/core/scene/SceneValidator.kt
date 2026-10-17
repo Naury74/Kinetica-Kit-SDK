@@ -6,7 +6,7 @@ package com.naury.kinetica.core.scene
  * 확인하는 항목은 다음과 같다.
  * - id 형식과 중복, 부모와 자식 목록의 일치, 순환, 중첩 깊이, 노드 수
  * - 값이 유한한지와 범위, 텍스트 길이와 유니코드, 이미지 URI scheme
- * - keyframe 순서와 개수, 값 타입, easing 파라미터, 확장 데이터 크기
+ * - keyframe 순서와 개수, 값 타입, easing 파라미터(장면 전환 포함), 확장 데이터 크기
  */
 public class SceneValidator(private val limits: SceneLimits = SceneLimits.Default) {
     /** 찾은 문제 목록을 돌려준다. 비어 있으면 올바른 문서다. 문제는 최대 [MAX_REPORTED_VIOLATIONS]개까지 모은다. */
@@ -38,6 +38,9 @@ public class SceneValidator(private val limits: SceneLimits = SceneLimits.Defaul
         val dimensionOk = { value: Double -> value.isFinite() && value > 0.0 && value <= limits.maxCoordinateMagnitude }
         if (!dimensionOk(artboard.width) || !dimensionOk(artboard.height)) {
             sink.add(ViolationCode.InvalidArtboard, "artboard 크기는 0보다 크고 ${limits.maxCoordinateMagnitude} 이하여야 합니다.")
+        }
+        document.transition?.let { transition ->
+            if (!isEasingValid(transition.easing)) sink.add(ViolationCode.InvalidEasing, "transition easing 파라미터가 범위를 벗어났습니다.")
         }
     }
 

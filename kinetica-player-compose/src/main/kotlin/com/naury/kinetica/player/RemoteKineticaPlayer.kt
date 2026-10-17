@@ -1,5 +1,6 @@
 package com.naury.kinetica.player
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -11,6 +12,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.naury.kinetica.core.scene.SceneData
+import com.naury.kinetica.core.scene.SceneDocument
+import com.naury.kinetica.core.scene.SceneTransitionSpec
 import com.naury.kinetica.motion.PlaybackController
 import com.naury.kinetica.render.SceneSlots
 import com.naury.kinetica.serialization.RemoteSceneBundleLoader
@@ -47,6 +50,11 @@ public fun RemoteKineticaPlayer(
 /**
  * 서버가 여러 화면을 번들로 한 번에 내려줄 때 그중 [sceneId] 화면을 재생한다. 처음 보일 때와 [refreshKey]가 바뀔 때 번들을 새로 받으며,
  * 같은 번들을 쓰는 화면이 여러 개 열려 있어도 요청은 한 번만 보낸다. 나머지는 [RemoteKineticaPlayer]와 같다.
+ *
+ * [sceneId]를 바꾸면 [AnimatedScene]처럼 이전 화면에서 새 화면으로 전환한다. [transition]이 `null`이면 새 화면 문서의 `transition`을 쓰고,
+ * 그것도 없으면 바로 바뀐다. 새 화면을 아직 받지 못했으면 [placeholder]를 그린다.
+ *
+ * @param forward 앞으로 가는 이동이면 `true`. 뒤로 가기로 이전 화면에 돌아갈 때 `false`를 주면 같은 전환을 거꾸로 재생한다.
  */
 @Composable
 public fun RemoteKineticaPlayer(
@@ -60,12 +68,21 @@ public fun RemoteKineticaPlayer(
     fit: SceneFit = SceneFit.Contain,
     background: Color = Color.Transparent,
     autoplay: Boolean = false,
+    transition: SceneTransitionSpec? = null,
+    forward: Boolean = true,
     placeholder: @Composable (RemoteSceneState) -> Unit = {},
 ) {
     LaunchedEffect(bundle, refreshKey) { bundle.refresh() }
     val flow = remember(bundle, sceneId) { bundle.state(sceneId) }
     val state by flow.collectAsState(RemoteSceneState.Loading)
-    RemoteContent(state, modifier, RemoteOptions(data, slots, onAction, fit, background, autoplay), placeholder)
+    RemoteContent(
+        state,
+        modifier,
+        RemoteOptions(data, slots, onAction, fit, background, autoplay).apply {
+            navigation = RemoteNavigation(transition, forward, sceneId)
+        },
+        placeholder,
+    )
 }
 
 /** 재생기에 그대로 넘기는 값을 모은 객체. */
@@ -76,7 +93,12 @@ private class RemoteOptions(
     val fit: SceneFit,
     val background: Color,
     val autoplay: Boolean,
-)
+) {
+    var navigation: RemoteNavigation = RemoteNavigation()
+}
+
+/** 번들 화면을 바꿀 때의 전환. [sceneKey]가 `null`이면 문서 id로 화면을 구분한다. */
+private class RemoteNavigation(val transition: SceneTransitionSpec? = null, val forward: Boolean = true, val sceneKey: Any? = null)
 
 @Composable
 private fun RemoteContent(
@@ -90,12 +112,27 @@ private fun RemoteContent(
         placeholder(state)
         return
     }
-    val timeline = ready.document.timelines.firstOrNull()
+    val navigation = options.navigation
+    AnimatedScene(
+        ready.document,
+        modifier,
+        navigation.transition,
+        navigation.forward,
+        navigation.sceneKey ?: ready.document.documentId,
+    ) { document ->
+        RemoteScene(document, options)
+    }
+}
+
+// 장면마다 따로 재생기를 둔다. 전환하는 동안 두 화면이 함께 그려지므로 재생 위치도 각자 가진다.
+@Composable
+private fun RemoteScene(document: SceneDocument, options: RemoteOptions) {
+    val timeline = document.timelines.firstOrNull()
     val playback = if (options.autoplay && timeline != null) rememberPlaybackController(timeline) else null
     if (playback != null) AutoPlay(playback)
     KineticaPlayer(
-        ready.document,
-        modifier,
+        document,
+        Modifier.fillMaxSize(),
         playback = playback,
         background = options.background,
         data = options.data,

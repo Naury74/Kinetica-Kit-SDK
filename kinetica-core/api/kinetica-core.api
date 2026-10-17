@@ -588,6 +588,17 @@ public final class com/naury/kinetica/core/command/SceneCommand$SetToken : com/n
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/naury/kinetica/core/command/SceneCommand$SetTransition : com/naury/kinetica/core/command/SceneCommand {
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneTransitionSpec;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
+	public final fun copy (Lcom/naury/kinetica/core/scene/SceneTransitionSpec;)Lcom/naury/kinetica/core/command/SceneCommand$SetTransition;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/command/SceneCommand$SetTransition;Lcom/naury/kinetica/core/scene/SceneTransitionSpec;ILjava/lang/Object;)Lcom/naury/kinetica/core/command/SceneCommand$SetTransition;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTransition ()Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/naury/kinetica/core/command/SceneCommand$TransformNodes : com/naury/kinetica/core/command/SceneCommand {
 	public fun <init> (Ljava/util/Map;)V
 	public final fun component1 ()Ljava/util/Map;
@@ -1875,8 +1886,8 @@ public final class com/naury/kinetica/core/scene/SceneData$Companion {
 public final class com/naury/kinetica/core/scene/SceneDocument {
 	public static final field CURRENT_SCHEMA_VERSION I
 	public static final field Companion Lcom/naury/kinetica/core/scene/SceneDocument$Companion;
-	public fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/util/Map;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/util/Map;Lcom/naury/kinetica/core/scene/SceneTransitionSpec;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/util/Map;Lcom/naury/kinetica/core/scene/SceneTransitionSpec;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun childrenOf-FPeF7hQ (Ljava/lang/String;)Ljava/util/List;
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Lcom/naury/kinetica/core/scene/Artboard;
@@ -1886,8 +1897,9 @@ public final class com/naury/kinetica/core/scene/SceneDocument {
 	public final fun component6 ()Ljava/util/Map;
 	public final fun component7 ()I
 	public final fun component8 ()Ljava/util/Map;
-	public final fun copy (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/util/Map;)Lcom/naury/kinetica/core/scene/SceneDocument;
-	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/util/Map;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public final fun component9 ()Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
+	public final fun copy (Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/util/Map;Lcom/naury/kinetica/core/scene/SceneTransitionSpec;)Lcom/naury/kinetica/core/scene/SceneDocument;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/SceneDocument;Ljava/lang/String;Lcom/naury/kinetica/core/scene/Artboard;Ljava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;ILjava/util/Map;Lcom/naury/kinetica/core/scene/SceneTransitionSpec;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneDocument;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getArtboard ()Lcom/naury/kinetica/core/scene/Artboard;
 	public final fun getDocumentId ()Ljava/lang/String;
@@ -1897,6 +1909,7 @@ public final class com/naury/kinetica/core/scene/SceneDocument {
 	public final fun getSchemaVersion ()I
 	public final fun getTimelines ()Ljava/util/List;
 	public final fun getTokens ()Ljava/util/Map;
+	public final fun getTransition ()Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
 	public fun hashCode ()I
 	public final fun node-VNJttGw (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneNode;
 	public fun toString ()Ljava/lang/String;
@@ -2014,6 +2027,90 @@ public final class com/naury/kinetica/core/scene/SceneNode {
 	public final fun getVisible ()Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/SceneTransitionEdge : java/lang/Enum {
+	public static final field Bottom Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public static final field Companion Lcom/naury/kinetica/core/scene/SceneTransitionEdge$Companion;
+	public static final field End Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public static final field Start Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public static final field Top Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public static final fun fromJsonName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getJsonName ()Ljava/lang/String;
+	public final fun getOpposite ()Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+}
+
+public final class com/naury/kinetica/core/scene/SceneTransitionEdge$Companion {
+	public final fun fromJsonName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+}
+
+public final class com/naury/kinetica/core/scene/SceneTransitionKind : java/lang/Enum {
+	public static final field Companion Lcom/naury/kinetica/core/scene/SceneTransitionKind$Companion;
+	public static final field Cover Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Cube Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Dissolve Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Fade Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Flip Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Iris Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Morph Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field None Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Push Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Rotate Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Slide Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Uncover Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Wipe Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field Zoom Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final field ZoomBlur Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static final fun fromJsonName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getJsonName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public static fun values ()[Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+}
+
+public final class com/naury/kinetica/core/scene/SceneTransitionKind$Companion {
+	public final fun fromJsonName (Ljava/lang/String;)Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+}
+
+public final class com/naury/kinetica/core/scene/SceneTransitionSpec {
+	public static final field Companion Lcom/naury/kinetica/core/scene/SceneTransitionSpec$Companion;
+	public static final field DEFAULT_DURATION_MS I
+	public static final field MAX_DURATION_MS I
+	public static final field MIN_DURATION_MS I
+	public static final field PARAM_DURATION Ljava/lang/String;
+	public static final field PARAM_FROM Ljava/lang/String;
+	public static final field PARAM_KIND Ljava/lang/String;
+	public static final field PARAM_ORIGIN_X Ljava/lang/String;
+	public static final field PARAM_ORIGIN_Y Ljava/lang/String;
+	public fun <init> (Lcom/naury/kinetica/core/scene/SceneTransitionKind;Lcom/naury/kinetica/core/scene/SceneTransitionEdge;ILcom/naury/kinetica/core/animation/EasingSpec;DD)V
+	public synthetic fun <init> (Lcom/naury/kinetica/core/scene/SceneTransitionKind;Lcom/naury/kinetica/core/scene/SceneTransitionEdge;ILcom/naury/kinetica/core/animation/EasingSpec;DDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public final fun component2 ()Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public final fun component3 ()I
+	public final fun component4 ()Lcom/naury/kinetica/core/animation/EasingSpec;
+	public final fun component5 ()D
+	public final fun component6 ()D
+	public final fun copy (Lcom/naury/kinetica/core/scene/SceneTransitionKind;Lcom/naury/kinetica/core/scene/SceneTransitionEdge;ILcom/naury/kinetica/core/animation/EasingSpec;DD)Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
+	public static synthetic fun copy$default (Lcom/naury/kinetica/core/scene/SceneTransitionSpec;Lcom/naury/kinetica/core/scene/SceneTransitionKind;Lcom/naury/kinetica/core/scene/SceneTransitionEdge;ILcom/naury/kinetica/core/animation/EasingSpec;DDILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
+	public fun equals (Ljava/lang/Object;)Z
+	public static final fun fromAction (Lcom/naury/kinetica/core/scene/SceneAction;Lcom/naury/kinetica/core/scene/SceneTransitionSpec;)Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
+	public final fun getDurationMs ()I
+	public final fun getEasing ()Lcom/naury/kinetica/core/animation/EasingSpec;
+	public final fun getFrom ()Lcom/naury/kinetica/core/scene/SceneTransitionEdge;
+	public final fun getKind ()Lcom/naury/kinetica/core/scene/SceneTransitionKind;
+	public final fun getOriginX ()D
+	public final fun getOriginY ()D
+	public fun hashCode ()I
+	public final fun overriddenBy (Lcom/naury/kinetica/core/scene/SceneAction;)Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/naury/kinetica/core/scene/SceneTransitionSpec$Companion {
+	public final fun fromAction (Lcom/naury/kinetica/core/scene/SceneAction;Lcom/naury/kinetica/core/scene/SceneTransitionSpec;)Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
+	public static synthetic fun fromAction$default (Lcom/naury/kinetica/core/scene/SceneTransitionSpec$Companion;Lcom/naury/kinetica/core/scene/SceneAction;Lcom/naury/kinetica/core/scene/SceneTransitionSpec;ILjava/lang/Object;)Lcom/naury/kinetica/core/scene/SceneTransitionSpec;
 }
 
 public final class com/naury/kinetica/core/scene/SceneValidator {

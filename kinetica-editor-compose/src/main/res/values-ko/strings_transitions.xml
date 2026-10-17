@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_section_transition">장면 전환</string>
+    <string name="kinetica_transition_from">들어오는 방향</string>
+    <string name="kinetica_transition_fade">페이드</string>
+    <string name="kinetica_transition_morph">모핑</string>
+    <string name="kinetica_transition_dissolve">디졸브</string>
+    <string name="kinetica_transition_slide">슬라이드</string>
+    <string name="kinetica_transition_push">밀어내기</string>
+    <string name="kinetica_transition_cover">덮기</string>
+    <string name="kinetica_transition_uncover">걷어내기</string>
+    <string name="kinetica_transition_wipe">와이프</string>
+    <string name="kinetica_transition_iris">원형 열기</string>
+    <string name="kinetica_transition_zoom">줌</string>
+    <string name="kinetica_transition_zoom_blur">줌 블러</string>
+    <string name="kinetica_transition_rotate">회전</string>
+    <string name="kinetica_transition_flip">뒤집기</string>
+    <string name="kinetica_transition_cube">큐브</string>
+    <string name="kinetica_transition_from_end">끝 쪽</string>
+    <string name="kinetica_transition_from_start">시작 쪽</string>
+    <string name="kinetica_transition_from_top">위</string>
+    <string name="kinetica_transition_from_bottom">아래</string>
+</resources>

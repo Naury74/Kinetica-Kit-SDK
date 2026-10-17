@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_section_transition">Scene transition</string>
+    <string name="kinetica_transition_from">Comes in from</string>
+    <string name="kinetica_transition_fade">Fade</string>
+    <string name="kinetica_transition_morph">Morph</string>
+    <string name="kinetica_transition_dissolve">Dissolve</string>
+    <string name="kinetica_transition_slide">Slide</string>
+    <string name="kinetica_transition_push">Push</string>
+    <string name="kinetica_transition_cover">Cover</string>
+    <string name="kinetica_transition_uncover">Uncover</string>
+    <string name="kinetica_transition_wipe">Wipe</string>
+    <string name="kinetica_transition_iris">Iris</string>
+    <string name="kinetica_transition_zoom">Zoom</string>
+    <string name="kinetica_transition_zoom_blur">Zoom blur</string>
+    <string name="kinetica_transition_rotate">Rotate</string>
+    <string name="kinetica_transition_flip">Flip</string>
+    <string name="kinetica_transition_cube">Cube</string>
+    <string name="kinetica_transition_from_end">End</string>
+    <string name="kinetica_transition_from_start">Start</string>
+    <string name="kinetica_transition_from_top">Top</string>
+    <string name="kinetica_transition_from_bottom">Bottom</string>
+</resources>

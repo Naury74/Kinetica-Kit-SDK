@@ -15,6 +15,8 @@ import com.naury.kinetica.core.scene.NodeContent
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneDocument
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.SceneTransitionKind
+import com.naury.kinetica.core.scene.SceneTransitionSpec
 import com.naury.kinetica.serialization.RemoteSceneLoader
 import com.naury.kinetica.serialization.RemoteSceneState
 import com.naury.kinetica.serialization.SceneCodec
@@ -100,5 +102,41 @@ class RemoteKineticaPlayerTest {
         compose.onNodeWithText("slot a").assertIsDisplayed()
         compose.onNodeWithText("slot b").assertIsDisplayed()
         assertThat(calls.intValue).isEqualTo(1)
+    }
+
+    @Test
+    fun `번들 화면 id를 바꾸면 문서 id가 같아도 전환하고, 전환이 없으면 바로 바뀐다`() {
+        val bundleText = com.naury.kinetica.serialization.SceneBundleCodec().encode(mapOf("one" to scene("a"), "two" to scene("b")))
+        val bundle = com.naury.kinetica.serialization.RemoteSceneBundleLoader({ SceneFetch.Body(bundleText.toByteArray()) })
+        val id = androidx.compose.runtime.mutableStateOf("one")
+        val wipe = SceneTransitionSpec(SceneTransitionKind.Wipe, durationMs = 400)
+        val animated = androidx.compose.runtime.mutableStateOf(true)
+        val slots = mapOf<String, @androidx.compose.runtime.Composable () -> Unit>("a" to { Text("slot a") }, "b" to { Text("slot b") })
+        compose.setContent {
+            RemoteKineticaPlayer(
+                bundle,
+                id.value,
+                Modifier.size(100.dp),
+                slots = slots,
+                transition = if (animated.value) wipe else SceneTransitionSpec(SceneTransitionKind.None),
+            )
+        }
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        id.value = "two"
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(200)
+
+        compose.onNodeWithText("slot b").assertExists()
+        compose.onNodeWithText("slot a").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(400)
+
+        animated.value = false
+        id.value = "one"
+        compose.waitForIdle()
+        // 새로 구성한 재생기는 크기를 안 뒤 다음 프레임에 호스트 뷰를 놓는다.
+        compose.mainClock.advanceTimeBy(48)
+        compose.onNodeWithText("slot a").assertIsDisplayed()
+        compose.onNodeWithText("slot b").assertDoesNotExist()
     }
 }

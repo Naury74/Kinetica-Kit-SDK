@@ -53,6 +53,7 @@ internal class SceneJsonReader(private val limits: SceneLimits) {
             timelines = readTimelines(root.optional(K.ANIMATIONS)?.asArray(K.ANIMATIONS)),
             extensions = root.optional(K.EXTENSIONS)?.asObject(K.EXTENSIONS)?.mapValues { (_, value) -> value.toString() }.orEmpty(),
             tokens = ComponentJson.readTokens(root),
+            transition = root.optional(K.TRANSITION)?.let { TransitionJson.read(it.asObject(K.TRANSITION), K.TRANSITION, ::readEasing) },
             schemaVersion = SceneDocument.CURRENT_SCHEMA_VERSION,
         )
     }

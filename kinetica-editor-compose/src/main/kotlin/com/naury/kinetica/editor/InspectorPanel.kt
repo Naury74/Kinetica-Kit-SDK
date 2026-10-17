@@ -44,7 +44,7 @@ internal fun InspectorPanel(
     onInsert: (SceneNode) -> Unit = {},
 ) {
     if (node == null) {
-        DocumentPanel(document, edits.component, theme, onInsert, modifier)
+        DocumentPanel(document, edits.component, theme, onInsert, modifier) { TransitionSection(document, edits.transition, theme) }
         return
     }
     Column(modifier.verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

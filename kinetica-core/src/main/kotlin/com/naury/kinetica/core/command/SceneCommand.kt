@@ -10,6 +10,7 @@ import com.naury.kinetica.core.scene.Artboard
 import com.naury.kinetica.core.scene.AutoLayout
 import com.naury.kinetica.core.scene.NodeId
 import com.naury.kinetica.core.scene.SceneNode
+import com.naury.kinetica.core.scene.SceneTransitionSpec
 
 /**
  * 문서를 바꾸는 유일한 방법. [SceneReducer]가 명령을 적용하고 결과 문서 전체를 검증한다.
@@ -54,6 +55,9 @@ public sealed interface SceneCommand {
     public data class Ungroup(val groupId: NodeId) : SceneCommand
 
     public data class SetArtboard(val artboard: Artboard) : SceneCommand
+
+    /** 이 장면이 들어올 때 쓰는 기본 전환을 [transition]으로 정한다. `null`이면 지운다. */
+    public data class SetTransition(val transition: SceneTransitionSpec?) : SceneCommand
 
     /** 디자인 토큰 [name]의 색을 [color]로 정한다. `null`이면 토큰을 지우며, 연결돼 있던 노드는 현재 색을 그대로 유지한다. */
     public data class SetToken(val name: String, val color: ArgbColor?) : SceneCommand

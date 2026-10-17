@@ -14,6 +14,7 @@ import com.naury.kinetica.core.animation.Timeline
  * @property extensions 이 버전이 해석하지 않는 확장 데이터. 키별 JSON 문자열을 그대로 보존한다.
  * @property tokens 디자인 토큰 이름별 색. 노드는 [NodeStyle.fillToken]이나 [NodeStyle.strokeToken]에 이름을 적어 쓰며,
  *   토큰 값을 바꾸면 그 토큰을 쓰는 노드가 모두 바뀐다.
+ * @property transition 다른 장면에서 이 장면으로 바뀔 때 쓰는 기본 전환. `null`이면 바로 바뀐다.
  */
 public data class SceneDocument(
     val documentId: String,
@@ -24,6 +25,7 @@ public data class SceneDocument(
     val extensions: Map<String, String> = emptyMap(),
     val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
     val tokens: Map<String, ArgbColor> = emptyMap(),
+    val transition: SceneTransitionSpec? = null,
 ) {
     public fun node(id: NodeId): SceneNode? = nodes[id]
 

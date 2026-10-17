@@ -12,6 +12,10 @@ internal object JsonKeys {
     const val ROOT_ORDER = "rootOrder"
     const val ANIMATIONS = "animations"
     const val EXTENSIONS = "extensions"
+    const val TRANSITION = "transition"
+    const val FROM = "from"
+    const val ORIGIN_X = "originX"
+    const val ORIGIN_Y = "originY"
 
     const val ID = "id"
     const val TYPE = "type"

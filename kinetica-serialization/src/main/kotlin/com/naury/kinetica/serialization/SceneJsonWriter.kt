@@ -48,6 +48,7 @@ internal object SceneJsonWriter {
             putJsonObject(K.EXTENSIONS) { document.extensions.forEach { (key, raw) -> put(key, extensionValue(raw)) } }
         }
         if (document.tokens.isNotEmpty()) put(K.TOKENS, ComponentJson.tokens(document.tokens))
+        document.transition?.let { put(K.TRANSITION, TransitionJson.write(it, ::easing)) }
     }
 
     private fun node(node: SceneNode): JsonObject = buildJsonObject {

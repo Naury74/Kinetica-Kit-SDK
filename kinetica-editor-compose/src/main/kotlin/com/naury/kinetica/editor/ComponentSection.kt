@@ -36,9 +36,11 @@ internal fun DocumentPanel(
     theme: StudioTheme,
     onInsert: (SceneNode) -> Unit,
     modifier: Modifier = Modifier,
+    documentFields: @Composable () -> Unit = {},
 ) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.kinetica_properties_empty), color = theme.onPanel.copy(alpha = MUTED))
+        documentFields()
         Title(R.string.kinetica_section_tokens, theme)
         document.tokens.toSortedMap().forEach { (name, color) ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
