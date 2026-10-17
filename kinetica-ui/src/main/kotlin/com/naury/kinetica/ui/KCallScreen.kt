@@ -6,7 +6,9 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -46,12 +49,17 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 /**
@@ -66,6 +74,8 @@ import androidx.compose.ui.unit.dp
  *   발표자 보기로 바꿀 수 있고, 발표자는 1.5초 넘게 말해야 바뀐다.
  * - 조작 막대 자동 숨김: 영상 통화에서 4초 동안 만지지 않으면 상단 바와 막대를 숨긴다. 시트가 열렸거나 재연결 중, 경고가 있거나, 화면을 공유하거나,
  *   상대가 없거나, TalkBack이 켜져 있거나, [holdControls]가 true면 숨기지 않는다. 숨은 동안 타일을 누르면 막대가 먼저 나온다.
+ * - 가로 화면: 창이 가로로 길고 높이가 480dp 미만(compact height)이면 조작 막대를 끝 쪽(RTL이면 왼쪽) 세로 막대로 옮기고 원을 줄이며 이름표를 뺀다.
+ *   무대는 그 폭만큼 끝 쪽을 비우고, 숨을 때는 옆으로 빠진다. 세로 막대 높이가 모자라면 '더보기'로 접는다.
  * - 성능: 영상과 아바타는 [KineticaScaffold]의 `background`에, 이름표와 글로우 테두리, 말하기 물결은 `content`에 같은 자리로 그리고,
  *   바는 영상만 비춘다. 그래서 테두리가 돌아도 바 블러를 다시 하지 않는다. 소리 크기는 [audioLevel]을 그리기 단계에서 읽는다.
  *
@@ -84,10 +94,12 @@ import androidx.compose.ui.unit.dp
  * @param autoHideControls 영상 통화에서 조작 막대를 자동으로 숨길지
  * @param holdControls true인 동안 조작 막대를 숨기지 않는다. 호스트만 아는 조건(말풍선 표시 등)을 넣는다.
  * @param reactions 반응 층의 상태. 받은 반응은 [KReactionState.send]로 띄운다.
+ * @param confettiReactions 이 반응이 오면 색종이도 함께 터뜨린다. 기본값은 🎉 하나이고, 빈 집합이면 끈다. '애니메이션 삭제'면 터뜨리지 않는다.
  * @param island 입퇴장과 손 들기 알림을 띄울 아일랜드. null이면 알리지 않는다.
  * @param extraDockItems 기본 버튼 뒤(끊기 앞)에 덧붙일 버튼. 배경 효과, 품질 보기처럼 호스트 시트를 여는 버튼에 쓴다.
  * @param topBarActions 상단 바 버튼 앞에 덧붙일 버튼
- * @param dock 조작 막대를 바꿀 슬롯. 기본 버튼 목록을 받는다. null이면 [KCallDock]이다.
+ * @param dock 조작 막대를 바꿀 슬롯. 기본 버튼 목록과, 끝 쪽 세로 자리에 놓이는지(`vertical`)를 받는다. 세로면 끝 쪽 가운데에, 아니면 아래
+ *   가운데에 놓인다. null이면 [KCallDock]이다.
  * @param nameTag 타일 이름표를 바꿀 슬롯. null이면 [KParticipantNameTag]다.
  * @param surface 바와 시트의 표면. 기본값은 영상 위에 맞춘 테마 표면의 어두운 짝이다.
  */
@@ -102,10 +114,11 @@ public fun KCallScreen(
     autoHideControls: Boolean = true,
     holdControls: Boolean = false,
     reactions: KReactionState = rememberKReactionState(),
+    confettiReactions: Set<String> = setOf("🎉"),
     island: KIslandState? = rememberKIslandState(),
     extraDockItems: List<KCallDockItem> = emptyList(),
     topBarActions: @Composable RowScope.() -> Unit = {},
-    dock: (@Composable (items: List<KCallDockItem>) -> Unit)? = null,
+    dock: (@Composable (items: List<KCallDockItem>, vertical: Boolean) -> Unit)? = null,
     nameTag: (@Composable BoxScope.(KCallParticipant) -> Unit)? = null,
     surface: SurfaceStyle = KineticaTheme.surface.forMedia(),
 ) {
@@ -131,7 +144,7 @@ public fun KCallScreen(
 
                 ScreenKind.Call -> CallContent(
                     CallInputs(state, actions, video, audioLevel, nameTag, extraDockItems, surface),
-                    CallOptions(autoHideControls, holdControls, reactions, island, dock, topBarActions),
+                    CallOptions(autoHideControls, holdControls, reactions, confettiReactions, island, dock, topBarActions),
                     ui,
                     grid,
                 )
@@ -151,6 +164,7 @@ internal class CallUi {
     var swapped by mutableStateOf(false)
     var topHeight by mutableIntStateOf(0)
     var bottomHeight by mutableIntStateOf(0)
+    var sideWidth by mutableIntStateOf(0)
 
     // 버튼 동작을 담고 있어 저장하지 않는다. 다시 만들어져 비었으면 시트를 닫는다.
     var moreItems by mutableStateOf(emptyList<KCallDockItem>())
@@ -184,12 +198,14 @@ internal class CallInputs(
 )
 
 /** [KCallScreen]의 동작 옵션 */
+@Suppress("LongParameterList") // 공개 함수의 파라미터를 안쪽 함수에 한 덩어리로 넘기려고 묶는다.
 internal class CallOptions(
     val autoHide: Boolean,
     val hold: Boolean,
     val reactions: KReactionState,
+    val confetti: Set<String>,
     val island: KIslandState?,
-    val dock: (@Composable (List<KCallDockItem>) -> Unit)?,
+    val dock: (@Composable (List<KCallDockItem>, Boolean) -> Unit)?,
     val topBarActions: @Composable RowScope.() -> Unit,
 )
 
@@ -304,7 +320,8 @@ private fun CallContent(inputs: CallInputs, options: CallOptions, ui: CallUi, gr
     // 크게 보던 사람이 나가면 고정을 푼다.
     LaunchedEffect(state.participants, ui.pinnedId) { if (state.participants.none { it.id == ui.pinnedId }) ui.pinnedId = null }
     val speaker = rememberKStableSpeaker(state.remotes.firstOrNull { it.isSpeaking && !it.isScreenShare }?.id)
-    val stage = StageSpec(focusOf(state, ui, speaker), chrome, rememberStagePadding(ui, chrome))
+    val side = callWindowSize().let { sideDock(it.width, it.height) }
+    val stage = StageSpec(focusOf(state, ui, speaker), chrome, rememberStagePadding(ui, chrome, side))
     KineticaScaffold(
         Modifier.fillMaxSize().kCallChromeTouches(chrome),
         surface = inputs.surface,
@@ -316,7 +333,7 @@ private fun CallContent(inputs: CallInputs, options: CallOptions, ui: CallUi, gr
             }
         },
         topBar = { BarsSeeVideoOnly { TopChrome(inputs, options, ui, chrome) } },
-        bottomBar = { BarsSeeVideoOnly { BottomChrome(inputs, options, ui, chrome) } },
+        bottomBar = { if (!side) BarsSeeVideoOnly { BottomChrome(inputs, options, ui, chrome) } },
         edgeFade = false,
         systemBarIcons = true,
     ) {
@@ -327,7 +344,9 @@ private fun CallContent(inputs: CallInputs, options: CallOptions, ui: CallUi, gr
             } else {
                 VoiceStage(state, inputs.audioLevel, stage.padding, inputs.surface)
             }
-            CallOverlays(inputs, options, ui, chrome)
+            CallOverlays(inputs, options, ui, chrome, side)
+            // 스캐폴드 바 칸은 위아래에만 있으므로 세로 막대는 콘텐츠 맨 위에 둔다. 바와 같이 영상만 비춘다.
+            if (side) BarsSeeVideoOnly { SideChrome(inputs, options, ui, chrome) }
         }
         CallSheets(inputs, ui)
     }
@@ -436,48 +455,9 @@ private fun TopBarButtons(inputs: CallInputs, ui: CallUi) {
     }
 }
 
-@Composable
-private fun BottomChrome(inputs: CallInputs, options: CallOptions, ui: CallUi, chrome: KCallChromeState) {
-    val items = defaultDockItems(inputs.state, inputs.actions) { ui.sheet = it }.let { base ->
-        if (inputs.extraDockItems.isEmpty()) base else base.dropLast(1) + inputs.extraDockItems + base.last()
-    }
-    AnimatedVisibility(
-        chrome.isVisible,
-        enter = fadeIn() + slideInVertically {
-            it / 2
-        },
-        exit = fadeOut() + slideOutVertically { it / 2 },
-    ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .onSizeChanged { if (it.height > 0) ui.bottomHeight = it.height }
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-                .padding(12.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            // 가로로 눕힌 폰처럼 높이가 낮으면 원을 줄이고 이름표를 빼서 무대를 넓힌다.
-            val short =
-                with(LocalDensity.current) { androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.height.toDp() } <
-                    SHORT_SCREEN
-            options.dock?.invoke(items) ?: KCallDock(
-                items,
-                buttonSize = if (short) KCallControlDefaults.CompactSize else KCallControlDefaults.Size,
-                // 막대가 숨으면 막대 안에서 연 시트도 사라지므로 시트는 화면이 들고 있는다.
-                onMore = { overflow ->
-                    ui.moreItems = overflow
-                    ui.sheet = CallSheet.More
-                },
-                showLabels = !short,
-                surface = inputs.surface,
-            )
-        }
-    }
-}
-
 /** 손 든 캡슐, 입퇴장 알림, 반응 층 */
 @Composable
-private fun CallOverlays(inputs: CallInputs, options: CallOptions, ui: CallUi, chrome: KCallChromeState) {
+private fun CallOverlays(inputs: CallInputs, options: CallOptions, ui: CallUi, chrome: KCallChromeState, side: Boolean) {
     val state = inputs.state
     val density = LocalDensity.current
     val top by animateDpAsState(if (chrome.isVisible) with(density) { ui.topHeight.toDp() } else 0.dp, label = "notice-top")
@@ -495,7 +475,7 @@ private fun CallOverlays(inputs: CallInputs, options: CallOptions, ui: CallUi, c
         }
     }
     val bottom by animateDpAsState(
-        if (chrome.isVisible) {
+        if (chrome.isVisible && !side) {
             with(density) {
                 ui.bottomHeight.toDp()
             }
@@ -504,7 +484,9 @@ private fun CallOverlays(inputs: CallInputs, options: CallOptions, ui: CallUi, c
         },
         label = "reaction-bottom",
     )
-    KReactionOverlay(options.reactions, bottomPadding = bottom)
+    // 세로 막대 위로 반응이 지나가지 않게 막대 폭만큼 끝 쪽을 비운다.
+    val end by animateDpAsState(if (chrome.isVisible && side) with(density) { ui.sideWidth.toDp() } else 0.dp, label = "reaction-end")
+    KReactionOverlay(options.reactions, Modifier.padding(end = end), bottomPadding = bottom, confetti = options.confetti)
 }
 
 /** 참가자, 오디오 출력, 반응 시트. 닫히며 내려가는 동안에도 마지막 내용을 보여 준다. */
@@ -587,7 +569,6 @@ private fun SheetBody(sheet: CallSheet, title: String, inputs: CallInputs, ui: C
 }
 
 private const val FADE_MS = 280
-private val SHORT_SCREEN = 480.dp
 internal const val SPEAKER_MIN = 3
 private const val PREVIEW_DIM = 0.45f
 private val BOTTOM_HIDDEN = 32.dp

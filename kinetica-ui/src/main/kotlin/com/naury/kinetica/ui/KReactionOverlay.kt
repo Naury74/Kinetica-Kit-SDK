@@ -22,7 +22,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -34,6 +37,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
@@ -44,6 +48,9 @@ import kotlin.random.Random
 /** 떠오르는 반응 하나 */
 internal class FloatingReaction(val id: Long, val emoji: String, val lane: Float, val sway: Float) {
     val progress = Animatable(0f)
+
+    // '애니메이션 삭제'를 바꿔 효과가 다시 시작해도 색종이는 한 번만 터뜨린다.
+    var burst = false
 }
 
 /**
@@ -75,6 +82,9 @@ public class KReactionState internal constructor(private val random: Random) {
     public companion object {
         /** 한 번에 그리는 최대 개수 */
         public const val MAX_FLOATING: Int = 8
+
+        /** [KReactionOverlay]의 색종이가 이보다 많이 날리고 있으면 새 반응으로 더 터뜨리지 않는다. */
+        public const val CONFETTI_MAX_PIECES: Int = 160
     }
 }
 
@@ -93,10 +103,24 @@ public fun rememberKReactionState(): KReactionState = remember { KReactionState(
  * ```
  *
  * @param bottomPadding 떠오르기 시작하는 높이(아래 끝에서)
+ * @param confetti 이 이모지가 오면 떠오르는 자리에서 [ConfettiHost] 색종이도 함께 터뜨린다. 예: `setOf("🎉")`. 기본값은 빈 집합(끔)이다.
+ *   '애니메이션 삭제'면 터뜨리지 않는다. 이미 날리는 색종이가 [KReactionState.CONFETTI_MAX_PIECES]개를 넘으면 그 반응은 건너뛰어 연달아 와도 쌓이지 않는다.
  */
 @Composable
-public fun KReactionOverlay(state: KReactionState, modifier: Modifier = Modifier, bottomPadding: Dp = 120.dp) {
+public fun KReactionOverlay(
+    state: KReactionState,
+    modifier: Modifier = Modifier,
+    bottomPadding: Dp = 120.dp,
+    confetti: Set<String> = emptySet(),
+) {
+    ReactionOverlay(state, modifier, bottomPadding, confetti, if (confetti.isEmpty()) null else rememberConfettiState())
+}
+
+@Composable
+internal fun ReactionOverlay(state: KReactionState, modifier: Modifier, bottomPadding: Dp, confetti: Set<String>, burst: ConfettiState?) {
     val still = reducedMotion()
+    val density = LocalDensity.current
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     BoxWithConstraints(modifier.fillMaxSize()) {
         val travel = maxHeight * TRAVEL
         val width = maxWidth
@@ -104,6 +128,11 @@ public fun KReactionOverlay(state: KReactionState, modifier: Modifier = Modifier
         state.items.forEach { item ->
             key(item.id) {
                 LaunchedEffect(item, still) {
+                    if (burst != null && !still && item.emoji in confetti) {
+                        // 이모지 자리는 시작 쪽 기준으로 미러링되지만 색종이 층은 화면 좌표라 RTL에서 뒤집는다.
+                        val x = constraints.maxWidth * if (rtl) 1f - item.lane else item.lane
+                        burst.burstFor(item, Offset(x, constraints.maxHeight - with(density) { (bottomPadding + EMOJI / 2).toPx() }))
+                    }
                     item.progress.animateTo(1f, tween(if (still) STILL_MS else RISE_MS, easing = LinearEasing))
                     state.remove(item)
                 }
@@ -137,8 +166,16 @@ public fun KReactionOverlay(state: KReactionState, modifier: Modifier = Modifier
                 )
             }
         }
+        burst?.let { ConfettiHost(it) }
         ReactionAnnouncer(state)
     }
+}
+
+/** [item]의 색종이를 [origin]에서 한 번만 터뜨린다. 이미 상한만큼 날리고 있으면 건너뛴다. */
+private fun ConfettiState.burstFor(item: FloatingReaction, origin: Offset) {
+    if (item.burst || pieces.size >= KReactionState.CONFETTI_MAX_PIECES) return
+    item.burst = true
+    burst(origin, CONFETTI_COUNT)
 }
 
 /** 마지막 반응을 TalkBack에 조용히 읽어 주는 보이지 않는 요소 */
@@ -194,6 +231,7 @@ private val PICK = 52.dp
 private val PICK_RADIUS = 16.dp
 private val PICK_EMOJI = 28.sp
 private const val TRAVEL = 0.55f
+private const val CONFETTI_COUNT = 60
 private const val RISE_MS = 2_600
 private const val STILL_MS = 1_600
 private const val FADE_IN = 0.08f

@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -34,6 +35,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -68,7 +70,9 @@ public fun rememberKSelfViewState(initialCorner: KCorner = KCorner.BottomEnd): K
     rememberSaveable(saver = KSelfViewState.Saver) { KSelfViewState(initialCorner) }
 
 /**
- * 화면 모서리에 떠 있는 내 영상 작은 창. 끌어서 놓으면 창 가운데에서 가장 가까운 모서리로 스프링처럼 붙는다.
+ * 화면 모서리에 떠 있는 내 영상 작은 창. 끌어서 놓으면 던진 속도로 0.1초 더 미끄러진 자리에서 가장 가까운 모서리를 고르고, 그 속도를 이어받아
+ * 스프링처럼 붙는다. 그래서 살짝 튕겨도 던진 쪽 모서리로 간다. '애니메이션 삭제'면 미끄러지지 않고 바로 붙는다.
+ * 모서리는 [state]에 남으므로 화면을 돌리거나 접었다 펴서 크기가 바뀌어도 같은 모서리에 다시 붙는다.
  * 부모 상자를 꽉 채워 놓되 창 밖의 터치는 막지 않는다. RTL에서는 시작과 끝 모서리가 바뀐다.
  * TalkBack은 '내 화면'으로 읽고 사용자 지정 동작 '다른 모서리로 옮기기'로 시계 방향 다음 모서리로 옮긴다.
  *
@@ -114,43 +118,68 @@ public fun KSelfView(
         val still = reducedMotion()
         LaunchedEffect(target, still) {
             if (dragging) return@LaunchedEffect
-            if (still) {
-                position.snapTo(
-                    target,
-                )
-            } else {
-                position.animateTo(target, spring(dampingRatio = SNAP_DAMPING, stiffness = Spring.StiffnessMediumLow))
+            when {
+                still -> position.snapTo(target)
+
+                // 손을 뗄 때 던진 속도로 이미 이 모서리로 가고 있으면 그 움직임을 끊지 않는다.
+                position.isRunning && position.targetValue == target -> Unit
+
+                else -> position.animateTo(target, selfViewSpring())
             }
         }
         val scope = rememberCoroutineScope()
+        // 입력은 끄는 동안 다시 시작하지 않으므로 놓을 때 그때의 범위로 고르도록 최신 값을 읽는다.
+        val settle by rememberUpdatedState<(Offset) -> Unit> { velocity ->
+            dragging = false
+            val corner = flingCorner(position.value, velocity, bounds)
+            val to = cornerPoint(bounds, corner)
+            state.corner = corner
+            scope.launch {
+                if (still) position.snapTo(to) else position.animateTo(to, selfViewSpring(), initialVelocity = velocity)
+            }
+        }
         Box(
             Modifier
                 .offset { IntOffset(position.value.x.roundToInt(), position.value.y.roundToInt()) }
                 .size(size)
                 .clip(shape)
-                .pointerInput(bounds, rtl) {
-                    detectDragGestures(
-                        onDragStart = { dragging = true },
-                        onDragEnd = {
-                            dragging = false
-                            state.corner =
-                                nearestCorner(
-                                    position.value + Offset(size.width.toPx() / 2, size.height.toPx() / 2),
-                                    bounds.inflateToFull(size, this),
-                                )
-                            scope.launch { position.animateTo(cornerPoint(bounds, state.corner), spring(dampingRatio = SNAP_DAMPING)) }
-                        },
-                        onDragCancel = { dragging = false },
-                    ) { change, amount ->
-                        change.consume()
-                        scope.launch { position.snapTo(position.value + Offset(if (rtl) -amount.x else amount.x, amount.y)) }
-                    }
-                }
+                .selfViewDrag(
+                    rtl,
+                    onStart = { dragging = true },
+                    onMove = { delta -> scope.launch { position.snapTo(position.value + delta) } },
+                    onEnd = { settle(it) },
+                )
                 .selfViewActions(state, onClick),
             content = content,
         )
     }
 }
+
+/**
+ * 창 끌기. [onMove]에는 논리 이동량(시작 쪽이 x 음수)을, [onEnd]에는 놓을 때의 논리 속도(px/초)를 넘긴다. 취소되면 속도 0으로 끝낸다.
+ * 끄는 도중 창 크기가 바뀌어도 끌기가 끊기지 않도록 방향만 열쇠로 둔다.
+ */
+private fun Modifier.selfViewDrag(rtl: Boolean, onStart: () -> Unit, onMove: (Offset) -> Unit, onEnd: (Offset) -> Unit): Modifier =
+    pointerInput(rtl) {
+        val tracker = VelocityTracker()
+        // 창이 손가락을 따라 움직이므로 창 안 좌표 대신 끈 거리의 합(논리 좌표)으로 속도를 잰다.
+        var travelled = Offset.Zero
+        detectDragGestures(
+            onDragStart = {
+                onStart()
+                tracker.resetTracking()
+                travelled = Offset.Zero
+            },
+            onDragEnd = { tracker.calculateVelocity().let { onEnd(Offset(it.x, it.y)) } },
+            onDragCancel = { onEnd(Offset.Zero) },
+        ) { change, amount ->
+            change.consume()
+            val logical = Offset(if (rtl) -amount.x else amount.x, amount.y)
+            travelled += logical
+            tracker.addPosition(change.uptimeMillis, travelled)
+            onMove(logical)
+        }
+    }
 
 /** 누르기와 TalkBack 동작. '다른 모서리로 옮기기'는 시계 방향 다음 모서리로 옮긴다. */
 @Composable
@@ -191,8 +220,20 @@ internal fun KCorner.clockwise(): KCorner = when (this) {
     KCorner.BottomStart -> KCorner.TopStart
 }
 
-/** 창 왼쪽 위 범위를 창 크기만큼 넓혀, 창 가운데로 가까운 모서리를 잴 수 있는 영역으로 바꾼다. */
-private fun Rect.inflateToFull(size: DpSize, density: androidx.compose.ui.unit.Density): Rect =
-    with(density) { Rect(left, top, right + size.width.toPx(), bottom + size.height.toPx()) }
+/**
+ * 손을 뗀 창이 붙을 모서리. 창 왼쪽 위 [topLeft]를 던진 속도 [velocity](논리 px/초, 시작 쪽이 x 음수)로 [FLING_PROJECTION]초만큼
+ * 미끄러뜨린 자리에서 [bounds](창 왼쪽 위가 갈 수 있는 범위) 가운데를 기준으로 가까운 모서리를 고른다. 느리게 놓으면 놓은 자리에서 가까운 모서리다.
+ */
+internal fun flingCorner(topLeft: Offset, velocity: Offset, bounds: Rect): KCorner =
+    nearestCorner(topLeft + velocity * FLING_PROJECTION, bounds)
+
+private fun selfViewSpring() =
+    spring(dampingRatio = SNAP_DAMPING, stiffness = Spring.StiffnessMediumLow, visibilityThreshold = SNAP_THRESHOLD)
 
 private const val SNAP_DAMPING = 0.78f
+
+// 반 픽셀 안이면 다 붙은 것으로 본다.
+private val SNAP_THRESHOLD = Offset(0.5f, 0.5f)
+
+// 손가락을 떼고도 이만큼(초) 계속 미끄러진다고 보고 모서리를 고른다. iOS 화면 속 화면의 감속(0.99/ms)과 비슷한 거리다.
+private const val FLING_PROJECTION = 0.1f

@@ -17,9 +17,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -27,6 +29,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -295,6 +298,200 @@ class KCallTest {
         compose.setContent { Box(Modifier.size(300.dp)) { KSelfView(state = state) {} } }
         compose.onNodeWithContentDescription("내 화면").performCustomAccessibilityActionWithLabel("다른 모서리로 옮기기")
         assertThat(state.corner).isEqualTo(KCorner.BottomStart)
+    }
+
+    private val resolver get() = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().contentResolver
+
+    private fun reduced(block: () -> Unit) {
+        android.provider.Settings.Global.putFloat(resolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
+        try {
+            block()
+        } finally {
+            android.provider.Settings.Global.putFloat(resolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        }
+    }
+
+    /** 내 화면 창을 가로로 [stepDp]씩 여덟 번 끈다. [delayMs]가 짧으면 던지기, 길면 멈췄다 놓기다. */
+    private fun dragSelfView(stepDp: Float, delayMs: Long) {
+        compose.onNodeWithContentDescription("내 화면").performTouchInput {
+            down(center)
+            repeat(8) { moveBy(androidx.compose.ui.geometry.Offset(stepDp * density, 0f), delayMillis = delayMs) }
+            up()
+        }
+    }
+
+    private fun selfView(state: KSelfViewState, rtl: Boolean = false) {
+        compose.setContent {
+            CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalLayoutDirection provides
+                    if (rtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr,
+            ) {
+                Box(Modifier.size(400.dp, 800.dp)) { KSelfView(state = state) {} }
+            }
+        }
+    }
+
+    @Test
+    fun `내 작은 창은 던진 속도로 모서리를 고르고 천천히 놓으면 가까운 모서리에 남는다`() {
+        val state = KSelfViewState(KCorner.BottomEnd)
+        selfView(state)
+        // 100dp만 옮겨 창 가운데는 아직 끝 쪽 절반에 있지만 빠르게 던졌으므로 시작 쪽으로 간다.
+        dragSelfView(-12.5f, delayMs = 8)
+        compose.waitForIdle()
+        assertThat(state.corner).isEqualTo(KCorner.BottomStart)
+        compose.onNodeWithContentDescription("내 화면").assertLeftPositionInRootIsEqualTo(12.dp)
+
+        // 같은 거리라도 멈췄다 놓으면 놓은 자리에서 가까운 모서리(그대로 시작 쪽)다.
+        dragSelfView(12.5f, delayMs = 200)
+        compose.waitForIdle()
+        assertThat(state.corner).isEqualTo(KCorner.BottomStart)
+    }
+
+    @Test
+    fun `RTL에서는 오른쪽으로 던지면 시작 쪽 모서리다`() {
+        val state = KSelfViewState(KCorner.BottomEnd)
+        selfView(state, rtl = true)
+        // RTL의 끝 쪽은 왼쪽이다.
+        compose.onNodeWithContentDescription("내 화면").assertLeftPositionInRootIsEqualTo(12.dp)
+        dragSelfView(12.5f, delayMs = 8)
+        compose.waitForIdle()
+        assertThat(state.corner).isEqualTo(KCorner.BottomStart)
+        compose.onNodeWithContentDescription("내 화면").assertLeftPositionInRootIsEqualTo((400 - 12 - 104).dp)
+    }
+
+    @Test
+    fun `애니메이션 삭제면 내 작은 창은 미끄러지지 않고 바로 붙는다`() = reduced {
+        compose.mainClock.autoAdvance = false
+        val state = KSelfViewState(KCorner.BottomEnd)
+        selfView(state)
+        compose.mainClock.advanceTimeBy(100)
+        dragSelfView(-12.5f, delayMs = 8)
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        assertThat(state.corner).isEqualTo(KCorner.BottomStart)
+        compose.onNodeWithContentDescription("내 화면").assertLeftPositionInRootIsEqualTo(12.dp)
+    }
+
+    @Test
+    fun `내 작은 창은 창 크기가 바뀌어도 같은 모서리에 붙어 있다`() {
+        val state = KSelfViewState(KCorner.BottomEnd)
+        var width by mutableStateOf(250.dp)
+        compose.setContent { Box(Modifier.size(width, 800.dp)) { KSelfView(state = state) {} } }
+        compose.onNodeWithContentDescription("내 화면").assertLeftPositionInRootIsEqualTo((250 - 12 - 104).dp)
+        // 폴더블을 펴서 폭이 넓어진 경우
+        width = 400.dp
+        compose.waitForIdle()
+        assertThat(state.corner).isEqualTo(KCorner.BottomEnd)
+        compose.onNodeWithContentDescription("내 화면").assertLeftPositionInRootIsEqualTo((400 - 12 - 104).dp)
+    }
+
+    private fun sideCall(rtl: Boolean = false) {
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalLayoutDirection provides
+                    if (rtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr,
+            ) {
+                KCallScreen(call(4), KCallActions(onEnd = {}, onToggleMute = {}), island = null)
+            }
+        }
+        compose.mainClock.advanceTimeBy(1_000)
+    }
+
+    @Test
+    @Config(qualifiers = "ko-w860dp-h400dp")
+    fun `가로로 낮은 화면은 끝 쪽 세로 막대에 조작 버튼을 두고 무대는 그만큼 비우며 숨을 때 옆으로 빠진다`() {
+        sideCall()
+        val end = compose.onNodeWithContentDescription("종료").getUnclippedBoundsInRoot()
+        val mic = compose.onNodeWithContentDescription("마이크").getUnclippedBoundsInRoot()
+        assertThat(end.left).isGreaterThan(760.dp)
+        // 세로로 늘어선다.
+        assertThat(mic.left).isEqualTo(end.left)
+        assertThat(mic.top).isLessThan(end.top)
+        // 낮은 화면이라 이름표 없이 원만 둔다.
+        compose.onAllNodesWithText("종료").assertCountEquals(0)
+        val tile = compose.onNodeWithContentDescription("참가자3").getUnclippedBoundsInRoot()
+        assertThat(tile.right).isLessThan(end.left)
+
+        compose.mainClock.advanceTimeBy(5_000)
+        compose.onAllNodesWithContentDescription("종료").assertCountEquals(0)
+        // 막대가 숨으면 무대가 끝 쪽까지 넓어진다.
+        assertThat(compose.onNodeWithContentDescription("참가자3").getUnclippedBoundsInRoot().right).isGreaterThan(end.left)
+    }
+
+    @Test
+    @Config(qualifiers = "ko-w860dp-h400dp")
+    fun `RTL 가로 화면의 세로 막대는 왼쪽에 놓인다`() {
+        sideCall(rtl = true)
+        assertThat(compose.onNodeWithContentDescription("종료").getUnclippedBoundsInRoot().right).isLessThan(100.dp)
+    }
+
+    @Test
+    fun `세로 화면과 높이가 넉넉한 가로 화면은 아래 막대다`() {
+        assertThat(sideDock(400.dp, 860.dp)).isFalse()
+        assertThat(sideDock(860.dp, 400.dp)).isTrue()
+        assertThat(sideDock(1_200.dp, 800.dp)).isFalse()
+        sideCall()
+        assertThat(compose.onNodeWithContentDescription("종료").getUnclippedBoundsInRoot().top).isGreaterThan(700.dp)
+    }
+
+    @Test
+    fun `고른 반응이 오면 색종이를 함께 터뜨리고 다른 반응은 터뜨리지 않으며 연달아 와도 쌓지 않는다`() {
+        compose.mainClock.autoAdvance = false
+        val reactions = KReactionState(kotlin.random.Random(1))
+        val confetti = ConfettiState()
+        compose.setContent { ReactionOverlay(reactions, Modifier, 120.dp, setOf("🎉"), confetti) }
+        reactions.send("👍")
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        assertThat(confetti.pieces).isEmpty()
+        reactions.send("🎉")
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        assertThat(confetti.pieces).isNotEmpty()
+        // 연달아 와도 상한을 넘겨 쌓지 않는다.
+        repeat(6) { reactions.send("🎉") }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        assertThat(confetti.pieces.size).isAtMost(KReactionState.CONFETTI_MAX_PIECES + 60)
+    }
+
+    @Test
+    fun `애니메이션 삭제면 반응 색종이를 터뜨리지 않는다`() = reduced {
+        compose.mainClock.autoAdvance = false
+        val reactions = KReactionState(kotlin.random.Random(1))
+        val confetti = ConfettiState()
+        compose.setContent { ReactionOverlay(reactions, Modifier, 120.dp, setOf("🎉"), confetti) }
+        reactions.send("🎉")
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        assertThat(confetti.pieces).isEmpty()
+    }
+
+    @Test
+    fun `고정했을 때 아래 띠와 여러 쪽 격자를 손가락으로 끌어 넘긴다`() {
+        val pinned = KParticipantGridState(KCorner.BottomEnd)
+        val paged = KParticipantGridState(KCorner.BottomEnd)
+        val focus = androidx.compose.runtime.mutableStateOf<String?>("p0")
+        val people = (0 until 12).map { "p$it" }
+        compose.setContent {
+            Box(Modifier.size(400.dp, 800.dp)) {
+                val state = if (focus.value == null) paged else pinned
+                KParticipantGrid(people, key = { it }, state = state, focusKey = focus.value) { p, role ->
+                    Box(Modifier.fillMaxSize().testTag("$p-$role"))
+                }
+            }
+        }
+        compose.onNodeWithTag("p2-Strip").performTouchInput { swipeLeft(startX = right - 2f, endX = left - 200f, durationMillis = 400) }
+        compose.waitForIdle()
+        assertThat(pinned.scroll.value).isGreaterThan(0f)
+
+        focus.value = null
+        compose.waitForIdle()
+        // 둘째 쪽으로 넘기려면 첫 칸(왼쪽 위)이 아닌 곳에서 끌어도 되어야 한다.
+        compose.onNodeWithTag("p8-Grid").performTouchInput { swipeLeft(startX = right - 2f, endX = left - 250f, durationMillis = 300) }
+        compose.waitForIdle()
+        assertThat(paged.page).isEqualTo(1)
     }
 
     @Test

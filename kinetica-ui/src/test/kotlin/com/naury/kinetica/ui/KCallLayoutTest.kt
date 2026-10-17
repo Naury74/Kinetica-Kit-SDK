@@ -140,6 +140,19 @@ class KCallLayoutTest {
     }
 
     @Test
+    fun `던진 창은 속도로 미끄러진 자리에서 모서리를 고른다`() {
+        // 창 왼쪽 위가 갈 수 있는 범위
+        val bounds = Rect(10f, 10f, 290f, 650f)
+        val nearEnd = Offset(200f, 600f)
+        assertThat(flingCorner(nearEnd, Offset.Zero, bounds)).isEqualTo(KCorner.BottomEnd)
+        // 시작 쪽으로 빠르게 던지면 가운데를 넘지 않았어도 시작 쪽이다.
+        assertThat(flingCorner(nearEnd, Offset(-1_500f, 0f), bounds)).isEqualTo(KCorner.BottomStart)
+        // 살짝 위로 던져도 세로 가운데를 넘을 만큼이 아니면 아래에 남는다.
+        assertThat(flingCorner(nearEnd, Offset(0f, -1_000f), bounds)).isEqualTo(KCorner.BottomEnd)
+        assertThat(flingCorner(nearEnd, Offset(-2_000f, -4_000f), bounds)).isEqualTo(KCorner.TopStart)
+    }
+
+    @Test
     fun `통화 시간 문구`() {
         assertThat(formatCallDuration(0)).isEqualTo("0:00")
         assertThat(formatCallDuration(65_400)).isEqualTo("1:05")

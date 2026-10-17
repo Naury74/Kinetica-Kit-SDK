@@ -608,7 +608,7 @@ KTransitionContent(tab, transition = KTransitions.TabSlide, isForward = { from, 
 
 전환도 디자인 언어를 따른다. `SheetStack`은 sheet 모서리, `CardStack`과 `KExpandHost`의 카드는 card 모서리, `KFullScreenModal`을 끌 때 둥글어지는
 모서리와 그래버는 sheet 모서리를 쓰고, 기본 스프링은 `KineticaMotion`에 맞춘다. 기본 디자인 언어(`Cupertino`)에서는 디자인 언어가 생기기 전과
-같은 모양(스택 전환 20dp, 전체 화면 모달 28dp)이다. 시간을 직접 정한 전환과 `KNavTransitions`는 디자인 언어와 상관없이 같다.
+같은 모양(스택 전환 20dp, 전체 화면 모달 28dp)이다. 시간을 직접 정한 전환과 `KNavTransitions`의 미리 만든 값은 디자인 언어와 상관없이 같다.
 
 직접 만들려면 `KScreenTransition`을 상속해 `enter(frame, progress)`와 `exit(frame, progress)`에서 `KTransitionFrame`의 이동, 배율, 회전,
 불투명도와 `dim`, `cornerRadius`, `blurRadius`를 정하거나 `clipTo`, `reveal`로 자른다. 진행률이 1일 때 들어온 화면이, 0일 때 가려질 화면이
@@ -617,6 +617,8 @@ KTransitionContent(tab, transition = KTransitions.TabSlide, isForward = { from, 
 Navigation Compose의 `NavHost`나 Compose `AnimatedContent`에는 `KNavTransitions`의 묶음을 쓴다. `Push`, `Slide`, `SlideUp`, `SheetStack`,
 `Zoom`, `Fade`, `FadeThrough`, `SharedAxisX`, `SharedAxisY`, `SharedAxisZ`, `None`이 있다. Compose 기본 전환으로 만들었으므로
 navigation-compose의 예측 뒤로 가기 되감기를 그대로 따르지만, 화면을 어둡게 하거나 3D로 돌리거나 모양으로 드러내는 전환은 없다.
+밀기 전환을 디자인 언어의 빠르기에 맞추려면 `KNavTransitions.push(KineticaTheme.design.motion)`처럼 `push`, `slide`, `slideUp`에
+`KineticaMotion`을 넘긴다. 화면 가장자리가 넘쳐 틈이 보이지 않도록 빠르기(stiffness)만 따르고 튀지는 않는다.
 
 ```kotlin
 val nav = rememberKNavTransition(KNavTransitions.Push)   // '애니메이션 삭제'면 None
@@ -1221,12 +1223,12 @@ bottomBar = {
 | `KCallDock` | 버튼 막대. 폭이 모자라면 원을 48dp로 줄이고, 그래도 넘치면 필수가 아닌 버튼을 끊기 앞 '더보기'로 접는다. '더보기' 배지는 접힌 버튼 배지의 합이다 | `items: List<KCallDockItem>`, `onMore`(null이면 시트를 직접 연다), `onItemPositioned`(버튼 위치), `vertical`. 버튼을 직접 넣는 `KCallDock { }`도 있다 |
 | `KCallTopBar` | 제목, 연결 품질, 통화 시간, 인원, 녹화와 암호화 배지를 담은 상태 캡슐과 앞뒤 버튼. 글자가 커져도 끝 버튼은 밀려나지 않고, 부가 칩은 다 들어갈 때만 보인다 | `startedAtMillis`, `participantCount`, `quality`, `navigation`, `chips`, `actions` |
 | `KParticipantTile` | 영상 슬롯, 카메라가 꺼지면 아바타와 말하기 물결, 이름표, 마이크 꺼짐과 손 들기와 약한 연결 표시, 말하는 동안 글로우 테두리. 누르면 `onClick`, 길게 누르면 고정한다 | `video`, `speaking`, `audioLevel: () -> Float`, `mirror`, `screenShare`, `nameTag`, `layer` |
-| `KParticipantGrid` | 인원과 화면 비율에 맞춘 격자, 1:1 전체 화면과 내 작은 창, 크게 보기와 한 줄 띠, 9명이 넘으면 쪽 넘김. 보이는 칸 근처만 그린다 | `participants`와 `key`(호스트 목록 그대로), `focusKey`, `selfKey`, `contentPadding`, `layer`, `tile` |
-| `KSelfView` | 끌어서 놓으면 가까운 모서리에 붙는 내 영상 창 | `rememberKSelfViewState()`, `size`, `contentPadding` |
+| `KParticipantGrid` | 인원과 화면 비율에 맞춘 격자(세로 폰은 3~4명 2×2, 5~6명 2×3, 가로 화면은 6명 3×2), 1:1 전체 화면과 내 작은 창, 크게 보기와 한 줄 띠, 9명이 넘으면 쪽 넘김. 보이는 칸 근처만 그린다 | `participants`와 `key`(호스트 목록 그대로), `focusKey`, `selfKey`, `contentPadding`, `columns`(열 수를 직접 정할 때), `layer`, `tile` |
+| `KSelfView` | 끌어서 놓으면 붙는 내 영상 창. 던진 속도로 0.1초 더 미끄러진 자리에서 가까운 모서리를 고르고 그 속도를 이어받아 붙는다. '애니메이션 삭제'면 바로 붙고, 화면을 돌리거나 접었다 펴도 같은 모서리에 남는다 | `rememberKSelfViewState()`, `size`, `contentPadding` |
 | `KCallStatusView` | 연결 중, 호출 중, 대기, 재연결, 종료, 실패 화면. 펄스 링과 아바타, 문구(바뀌면 TalkBack이 읽는다), 단계에 맞는 버튼 | `status`, `title`, `message`, `detail`, `onCancel`, `onRetry`, `onClose`, `summary` |
 | `KIncomingCall`, `KIncomingCallScreen` | 걸려 온 전화. 버튼 방식과 밀어서 받기 방식, 영상 통화의 음성과 영상 받기, 빠른 답장 시트 | `onAccept`, `onDecline`, `onAcceptVideo`, `onMessage`, `quickReplies`, `style` |
 | `KCallBanner`, `KCallBubble`, `KRaisedHandPill` | 화면 공유 경고와 오류 배너, 버튼 위에 꼬리를 단 말풍선, 손 든 동안의 캡슐 | `liveRegion`, `anchor`(`onItemPositioned` 값), `durationMillis` |
-| `KReactionOverlay`, `KReactionPicker` | 아래에서 떠오르는 이모지 반응(최대 8개)과 반응 고르기 | `rememberKReactionState().send(emoji, from)` |
+| `KReactionOverlay`, `KReactionPicker` | 아래에서 떠오르는 이모지 반응(최대 8개)과 반응 고르기. `confetti`에 넣은 반응(예: 🎉)이 오면 그 자리에서 색종이(`ConfettiHost`)도 터뜨린다. 기본은 끔이고 '애니메이션 삭제'면 터뜨리지 않는다 | `rememberKReactionState().send(emoji, from)`, `confetti` |
 | `KParticipantRow`, `KAudioRouteList` | 참가자 목록 행(상태를 글자로도 쓴다)과 오디오 출력 고르기 | `onPin`, `onMute`, `onRemove`, `routes`, `selectedId` |
 | `KAudioLevelIndicator`, `KNetworkQualityIndicator`, `KCallTimer`, `KOngoingCallPill` | 소리 크기 막대와 고리, 연결 품질 막대, 굴러가는 통화 시간, 다른 화면 위 통화 캡슐 | `level: () -> Float`, `quality`, `startedAtMillis` |
 | `rememberKCallChromeState`, `Modifier.kCallChromeTouches` | 영상 통화의 바 자동 숨김. 마지막 터치 뒤 4초(접근성 권장 시간이 더 길면 그 값), TalkBack이 켜져 있으면 숨기지 않는다 | `autoHide`, `holdVisible`, `timeoutMillis` |
@@ -1247,7 +1249,7 @@ KCallScreen(
 )
 ```
 
-넘기지 않은 콜백의 버튼은 화면에 없다. `KCallState.isVideoCall`이 false면 음성 화면을, 참가자 수에 따라 1:1과 그룹 배치를 고른다. 참가자, 오디오 출력, 반응, 더보기 시트가 들어 있고, 입퇴장과 손 들기는 `island`로 알린다. 일부만 바꾸려면 `dock`(기본 버튼 목록을 받는 슬롯), `extraDockItems`, `topBarActions`, `nameTag`를 쓴다. 화면 속 화면 창에 있으면 `pictureInPicture = true`로 한 사람만 그린다. 소리 크기를 데이터 클래스에 넣지 않고 `audioLevel` 람다로 받는 것은, 초당 수십 번 바뀌는 값 때문에 화면 전체를 다시 구성하지 않기 위해서다.
+넘기지 않은 콜백의 버튼은 화면에 없다. `KCallState.isVideoCall`이 false면 음성 화면을, 참가자 수에 따라 1:1과 그룹 배치를 고른다. 참가자, 오디오 출력, 반응, 더보기 시트가 들어 있고, 입퇴장과 손 들기는 `island`로 알린다. 반응은 `confettiReactions`(기본 🎉)에 든 것이 오면 색종이도 함께 터진다. 가로로 눕혀 높이가 480dp보다 낮으면 조작 막대가 끝 쪽(RTL이면 왼쪽) 세로 막대로 옮겨 가고, 무대는 그 폭만큼 끝 쪽을 비우며, 숨을 때는 옆으로 빠진다. 일부만 바꾸려면 `dock`(기본 버튼 목록과 세로 자리인지를 받는 슬롯), `extraDockItems`, `topBarActions`, `nameTag`를 쓴다. 화면 속 화면 창에 있으면 `pictureInPicture = true`로 한 사람만 그린다. 소리 크기를 데이터 클래스에 넣지 않고 `audioLevel` 람다로 받는 것은, 초당 수십 번 바뀌는 값 때문에 화면 전체를 다시 구성하지 않기 위해서다.
 
 이 밖에 입장 전 화면 `KCallLobby`(미리보기 슬롯, 마이크 소리 크기, 마이크와 카메라 켜고 끄기, 이름, 참여 버튼)와 걸려 온 전화 화면 `KIncomingCallScreen`이 있다.
 

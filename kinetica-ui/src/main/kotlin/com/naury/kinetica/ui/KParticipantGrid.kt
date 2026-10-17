@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -193,7 +194,8 @@ public fun <T> KParticipantGrid(
         val visible by remember(plan, state) {
             derivedStateOf { plan.spots.filter { plan.isNearlyVisible(it, state.scroll.value) }.map { it.key }.toSet() }
         }
-        Box(if (touch) Modifier.gridScroll(state, plan) else Modifier) {
+        // 크기를 주지 않으면 상자가 가장 큰 자식(고정 시 큰 화면)만 해져서, 그 밖에 놓인 띠와 다음 쪽 위 끌기를 받지 못한다.
+        Box(Modifier.fillMaxSize().then(if (touch) Modifier.gridScroll(state, plan) else Modifier)) {
             plan.spots.forEach { spot ->
                 val item = byKey[spot.key] ?: return@forEach
                 if (spot.key !in visible) return@forEach

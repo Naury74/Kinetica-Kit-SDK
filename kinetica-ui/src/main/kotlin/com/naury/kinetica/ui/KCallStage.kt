@@ -60,11 +60,15 @@ import androidx.compose.ui.unit.dp
 /** 무대 배치에 쓰는 값 */
 internal class StageSpec(val focusKey: String?, val chrome: KCallChromeState, val padding: PaddingValues)
 
-/** 바 높이만큼 무대를 비운다. 바가 숨으면 시스템 바 인셋만 남기고 넓어진다. */
+/**
+ * 바 높이만큼 무대를 비운다. 바가 숨으면 시스템 바 인셋만 남기고 넓어진다. [side]면 조작 막대가 끝 쪽 세로 막대이므로
+ * 아래 대신 끝 쪽을 막대 폭만큼 비운다.
+ */
 @Composable
-internal fun rememberStagePadding(ui: CallUi, chrome: KCallChromeState): PaddingValues {
+internal fun rememberStagePadding(ui: CallUi, chrome: KCallChromeState, side: Boolean = false): PaddingValues {
     val density = LocalDensity.current
     val insets = WindowInsets.safeDrawing.asPaddingValues()
+    val direction = androidx.compose.ui.platform.LocalLayoutDirection.current
     val visible = chrome.isVisible
     val top by animateDpAsState(
         if (visible) {
@@ -76,7 +80,7 @@ internal fun rememberStagePadding(ui: CallUi, chrome: KCallChromeState): Padding
         label = "stage-top",
     )
     val bottom by animateDpAsState(
-        if (visible) {
+        if (visible && !side) {
             with(density) { ui.bottomHeight.toDp() }.coerceAtLeast(insets.calculateBottomPadding())
         } else {
             insets.calculateBottomPadding() +
@@ -84,11 +88,15 @@ internal fun rememberStagePadding(ui: CallUi, chrome: KCallChromeState): Padding
         },
         label = "stage-bottom",
     )
-    val direction = androidx.compose.ui.platform.LocalLayoutDirection.current
+    val endInset = insets.calculateEndPadding(direction)
+    val end by animateDpAsState(
+        if (visible && side) with(density) { ui.sideWidth.toDp() }.coerceAtLeast(endInset) else endInset + STAGE_GAP,
+        label = "stage-end",
+    )
     return PaddingValues(
         start = insets.calculateStartPadding(direction) + STAGE_GAP,
         top = top,
-        end = insets.calculateEndPadding(direction) + STAGE_GAP,
+        end = end,
         bottom = bottom,
     )
 }
