@@ -18,7 +18,7 @@ import kotlin.math.sin
  * ```
  */
 public object KTransitions {
-    /** iOS 내비게이션. 새 화면이 끝 쪽에서 밀려 들어오고, 아래 화면은 30% 물러나며 어두워진다. [PushNavigation]의 기본값이다. */
+    /** 옆으로 밀기. 새 화면이 끝 쪽에서 밀려 들어오고, 아래 화면은 30% 물러나며 어두워진다. [PushNavigation]의 기본값이다. */
     public val Push: KScreenTransition = PushTransition(KTransitionEdge.End, PUSH_PARALLAX, PUSH_DIM, 1f)
 
     /** 아래 화면이 절반쯤 물러나며 작아지는 깊은 패럴랙스 밀기 */
@@ -54,7 +54,7 @@ public object KTransitions {
     /** 좌우로 넘기는 탭 전환. 너비의 4분의 1만큼 밀리며 겹쳐 바뀐다. [KTransitionContent]의 `isForward`와 함께 쓴다. */
     public val TabSlide: KScreenTransition = TabSlideTransition
 
-    /** iOS 모달 시트 스택. 새 화면이 아래에서 올라오고 아래 화면은 작아지며 모서리가 둥글어지고 어두워진다. */
+    /** 시트 스택. 새 화면이 아래에서 올라오고 아래 화면은 작아지며 모서리가 둥글어지고 어두워진다. */
     public val SheetStack: KScreenTransition = SheetStackTransition
 
     /** 카드 스택. 새 화면이 둥근 카드로 옆에서 들어오고 아래 화면은 작아지며 뒤로 물러난다. */
@@ -79,7 +79,7 @@ public object KTransitions {
     public val None: KScreenTransition = NoTransition
 
     /**
-     * iOS식 밀기를 값을 바꿔 만든다.
+     * 옆으로 밀기([Push])를 값을 바꿔 만든다.
      *
      * @param parallax 아래 화면이 물러나는 거리. 화면 너비에 대한 비율(0..1)이다.
      * @param dim 아래 화면을 어둡게 하는 정도(0..1)

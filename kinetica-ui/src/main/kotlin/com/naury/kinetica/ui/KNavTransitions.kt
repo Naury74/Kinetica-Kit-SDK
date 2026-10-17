@@ -71,7 +71,7 @@ public fun rememberKNavTransition(spec: KNavTransitionSpec): KNavTransitionSpec 
  * [PushNavigation]과 [KTransitionContent]에 [KTransitions]로 넣는다.
  */
 public object KNavTransitions {
-    /** iOS식 밀기. 새 화면이 끝 쪽에서 들어오고 이전 화면은 30% 물러난다. */
+    /** 옆으로 밀기. 새 화면이 끝 쪽에서 들어오고 이전 화면은 30% 물러난다. */
     public val Push: KNavTransitionSpec = KNavTransitionSpec(
         enter = { slideIntoContainer(SlideDirection.Start, slideSpec()) },
         exit = { slideOutOfContainer(SlideDirection.Start, slideSpec()) { it * PARALLAX_PERCENT / PERCENT } },
@@ -95,7 +95,7 @@ public object KNavTransitions {
         popExit = { slideOutOfContainer(SlideDirection.Down, slideSpec()) },
     )
 
-    /** iOS 모달 시트 스택에 가깝게, 새 화면이 아래에서 올라오고 이전 화면은 작아지며 흐려진다. */
+    /** 시트 스택. 새 화면이 아래에서 올라오고 이전 화면은 작아지며 흐려진다. */
     public val SheetStack: KNavTransitionSpec = KNavTransitionSpec(
         enter = { slideIntoContainer(SlideDirection.Up, slideSpec()) },
         exit = { scaleOut(tween(MATERIAL_MS), SHEET_BACK) + fadeOut(tween(MATERIAL_MS), SHEET_ALPHA) },

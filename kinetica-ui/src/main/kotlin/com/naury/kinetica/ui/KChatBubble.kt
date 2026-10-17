@@ -341,7 +341,7 @@ internal class ChatBubbleShape(private val sent: Boolean, private val position: 
         )
     }
 
-    /** iOS 메시지처럼 몸통 아래 모서리에서 바깥으로 휘어 나가는 꼬리. 오른쪽 꼬리로 그린 뒤 왼쪽이면 x를 뒤집는다. */
+    /** 몸통 아래 모서리에서 바깥으로 휘어 나가는 꼬리. 오른쪽 꼬리로 그린 뒤 왼쪽이면 x를 뒤집는다. */
     private fun tailPath(size: Size, tailRight: Boolean, gutter: Float, density: Density): Path = with(density) {
         val h = size.height
         val bodyEdge = size.width - gutter

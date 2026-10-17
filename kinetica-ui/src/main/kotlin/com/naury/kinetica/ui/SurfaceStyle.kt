@@ -162,7 +162,7 @@ public object SurfaceStyles {
 
     @JvmField public val Pastel: SurfaceStyle = SurfaceStyle.Glass(GlassStyles.Pastel)
 
-    /** 흰 카드에 머리카락 두께 테두리와 옅은 그림자를 준 깔끔한 단색 표면. 바탕은 iOS 설정 화면 같은 연회색이다. */
+    /** 흰 카드에 머리카락 두께 테두리와 옅은 그림자를 준 깔끔한 단색 표면. 바탕은 설정 화면에 흔한 연회색이다. */
     @JvmField
     public val CleanLight: SurfaceStyle = SurfaceStyle.Solid(
         color = Color.White,
