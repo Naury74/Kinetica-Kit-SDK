@@ -124,6 +124,7 @@ internal fun VideoStage(inputs: CallInputs, ui: CallUi, grid: KParticipantGridSt
         selfKey = self,
         contentPadding = stage.padding,
         layer = layer,
+        columns = inputs.gridColumns,
     ) { p, role -> StageTile(inputs, ui, stage, p, role, layer, labels) }
 }
 

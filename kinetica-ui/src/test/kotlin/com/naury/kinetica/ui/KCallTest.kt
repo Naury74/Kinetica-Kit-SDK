@@ -385,6 +385,25 @@ class KCallTest {
         compose.onNodeWithContentDescription("내 화면").assertLeftPositionInRootIsEqualTo((400 - 12 - 104).dp)
     }
 
+    @Test
+    fun `완성 화면도 호스트가 정한 격자 열 수를 쓴다`() {
+        var single by mutableStateOf(false)
+        compose.setContent {
+            KCallScreen(
+                call(4),
+                KCallActions(onEnd = {}),
+                island = null,
+                gridColumns = if (single) { _, _, _ -> 1 } else null,
+            )
+        }
+        val left = { name: String -> compose.onNodeWithContentDescription(name, substring = true).getUnclippedBoundsInRoot().left }
+        assertThat(left("참가자1")).isNotEqualTo(left("참가자2"))
+
+        single = true
+        compose.waitForIdle()
+        assertThat(left("참가자1")).isEqualTo(left("참가자2"))
+    }
+
     private fun sideCall(rtl: Boolean = false) {
         compose.mainClock.autoAdvance = false
         compose.setContent {

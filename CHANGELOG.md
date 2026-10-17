@@ -39,6 +39,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 - 통화 컴포넌트: 부품 `KCallControlButton`, `KCallDock`(좁으면 '더보기'로 접고 배지를 합침, 버튼 위치 알림), `KCallTopBar`, `KParticipantTile`(영상 슬롯, 아바타, 이름표, 글로우 테두리, 고정), `KParticipantGrid`(인원과 화면 비율별 격자, 1:1 작은 창, 크게 보기와 한 줄 띠, 쪽 넘김), `KSelfView`, `KCallStatusView`, `KIncomingCall`, `KCallBanner`, `KCallBubble`, `KRaisedHandPill`, `KReactionOverlay`, `KReactionPicker`, `KParticipantRow`, `KAudioRouteList`, `KAudioLevelIndicator`, `KNetworkQualityIndicator`, `KCallTimer`, `KOngoingCallPill`, 바 자동 숨김 `rememberKCallChromeState`, 발표자 지연 `rememberKStableSpeaker`, 통화 아이콘 `KCallIcons`. 완성 화면 `KCallScreen`(상태 `KCallState`와 콜백 `KCallActions`, 넘기지 않은 콜백의 버튼은 감춤), `KIncomingCallScreen`, `KCallLobby`. 영상과 오디오는 다루지 않고 영상은 호스트가 슬롯으로 넣습니다. 영상 위 글래스 바가 장식 애니메이션 때문에 블러를 다시 하지 않도록 타일을 영상 층과 장식 층으로 나눠 그립니다
 - `KSelfView`는 던진 속도로 모서리를 고르고 그 속도를 이어받아 붙습니다('애니메이션 삭제'면 바로 붙음)
 - `KCallScreen`은 가로로 낮은 화면(높이 480dp 미만)에서 조작 막대를 끝 쪽 세로 막대로 옮깁니다. `dock` 슬롯이 `vertical`을 함께 받습니다
+- `KCallScreen(gridColumns)`: 완성 통화 화면에서도 영상 격자 열 수를 호스트가 정합니다
 - `KReactionOverlay(confetti)`와 `KCallScreen(confettiReactions)`: 고른 반응(기본 🎉, 부품은 끔)이 오면 색종이를 함께 터뜨립니다
 - `KKeypadMode.Phone`: `*`, `0`, `#` 줄과 통화 버튼 자리(`extraKey`)가 있는 전화 키패드. 0을 길게 누르면 `+`를 넘깁니다
 - `KIslandState.update(content)`: 보여 주는 알림의 내용만 코루틴 없이 바꾸고, 바꿨는지를 돌려줍니다

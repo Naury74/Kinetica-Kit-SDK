@@ -101,6 +101,7 @@ import androidx.compose.ui.unit.dp
  * @param dock 조작 막대를 바꿀 슬롯. 기본 버튼 목록과, 끝 쪽 세로 자리에 놓이는지(`vertical`)를 받는다. 세로면 끝 쪽 가운데에, 아니면 아래
  *   가운데에 놓인다. null이면 [KCallDock]이다.
  * @param nameTag 타일 이름표를 바꿀 슬롯. null이면 [KParticipantNameTag]다.
+ * @param gridColumns 영상 격자 열 수를 직접 정한다. [KParticipantGrid]의 `columns`로 그대로 넘긴다. null이면 영상 비율로 고른다.
  * @param surface 바와 시트의 표면. 기본값은 영상 위에 맞춘 테마 표면의 어두운 짝이다.
  */
 @Composable
@@ -120,6 +121,7 @@ public fun KCallScreen(
     topBarActions: @Composable RowScope.() -> Unit = {},
     dock: (@Composable (items: List<KCallDockItem>, vertical: Boolean) -> Unit)? = null,
     nameTag: (@Composable BoxScope.(KCallParticipant) -> Unit)? = null,
+    gridColumns: ((count: Int, width: Dp, height: Dp) -> Int)? = null,
     surface: SurfaceStyle = KineticaTheme.surface.forMedia(),
 ) {
     val inCall = state.phase == KCallPhase.Connected || state.phase == KCallPhase.Reconnecting
@@ -143,7 +145,7 @@ public fun KCallScreen(
                 ScreenKind.Status -> StatusContent(state, actions, video, surface)
 
                 ScreenKind.Call -> CallContent(
-                    CallInputs(state, actions, video, audioLevel, nameTag, extraDockItems, surface),
+                    CallInputs(state, actions, video, audioLevel, nameTag, extraDockItems, surface, gridColumns),
                     CallOptions(autoHideControls, holdControls, reactions, confettiReactions, island, dock, topBarActions),
                     ui,
                     grid,
@@ -195,6 +197,7 @@ internal class CallInputs(
     val nameTag: (@Composable BoxScope.(KCallParticipant) -> Unit)?,
     val extraDockItems: List<KCallDockItem>,
     val surface: SurfaceStyle,
+    val gridColumns: ((Int, Dp, Dp) -> Int)?,
 )
 
 /** [KCallScreen]의 동작 옵션 */

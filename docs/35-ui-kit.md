@@ -1249,7 +1249,7 @@ KCallScreen(
 )
 ```
 
-넘기지 않은 콜백의 버튼은 화면에 없다. `KCallState.isVideoCall`이 false면 음성 화면을, 참가자 수에 따라 1:1과 그룹 배치를 고른다. 참가자, 오디오 출력, 반응, 더보기 시트가 들어 있고, 입퇴장과 손 들기는 `island`로 알린다. 반응은 `confettiReactions`(기본 🎉)에 든 것이 오면 색종이도 함께 터진다. 가로로 눕혀 높이가 480dp보다 낮으면 조작 막대가 끝 쪽(RTL이면 왼쪽) 세로 막대로 옮겨 가고, 무대는 그 폭만큼 끝 쪽을 비우며, 숨을 때는 옆으로 빠진다. 일부만 바꾸려면 `dock`(기본 버튼 목록과 세로 자리인지를 받는 슬롯), `extraDockItems`, `topBarActions`, `nameTag`를 쓴다. 화면 속 화면 창에 있으면 `pictureInPicture = true`로 한 사람만 그린다. 소리 크기를 데이터 클래스에 넣지 않고 `audioLevel` 람다로 받는 것은, 초당 수십 번 바뀌는 값 때문에 화면 전체를 다시 구성하지 않기 위해서다.
+넘기지 않은 콜백의 버튼은 화면에 없다. `KCallState.isVideoCall`이 false면 음성 화면을, 참가자 수에 따라 1:1과 그룹 배치를 고른다. 참가자, 오디오 출력, 반응, 더보기 시트가 들어 있고, 입퇴장과 손 들기는 `island`로 알린다. 반응은 `confettiReactions`(기본 🎉)에 든 것이 오면 색종이도 함께 터진다. 가로로 눕혀 높이가 480dp보다 낮으면 조작 막대가 끝 쪽(RTL이면 왼쪽) 세로 막대로 옮겨 가고, 무대는 그 폭만큼 끝 쪽을 비우며, 숨을 때는 옆으로 빠진다. 일부만 바꾸려면 `dock`(기본 버튼 목록과 세로 자리인지를 받는 슬롯), `extraDockItems`, `topBarActions`, `nameTag`, `gridColumns`(영상 격자 열 수, `KParticipantGrid`의 `columns`와 같다)를 쓴다. 화면 속 화면 창에 있으면 `pictureInPicture = true`로 한 사람만 그린다. 소리 크기를 데이터 클래스에 넣지 않고 `audioLevel` 람다로 받는 것은, 초당 수십 번 바뀌는 값 때문에 화면 전체를 다시 구성하지 않기 위해서다.
 
 이 밖에 입장 전 화면 `KCallLobby`(미리보기 슬롯, 마이크 소리 크기, 마이크와 카메라 켜고 끄기, 이름, 참여 버튼)와 걸려 온 전화 화면 `KIncomingCallScreen`이 있다.
 
