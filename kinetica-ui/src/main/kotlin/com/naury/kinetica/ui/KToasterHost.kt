@@ -334,7 +334,8 @@ private fun Modifier.toastSemantics(entry: ToastEntry, state: KToasterState): Mo
     return this
         .then(
             if (several) {
-                Modifier.clickable(null, KIndication(shapeFor { toast }), onClickLabel = toggleLabel, role = Role.Button) {
+                // 같은 노드에 live region이 있으므로 역할을 두지 않는다. 있으면 TalkBack이 알림 앞에 "버튼"부터 읽는다.
+                Modifier.clickable(null, KIndication(shapeFor { toast }), onClickLabel = toggleLabel) {
                     state.expanded = !state.expanded
                 }
             } else {

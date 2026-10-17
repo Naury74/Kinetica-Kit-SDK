@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -54,6 +55,20 @@ class KNotifyTest {
     /** 시계를 멈춘 채 [ms]만큼 흘린다. 자동으로 흘리면 waitForIdle이 표시 시간까지 건너뛴다. */
     private fun step(ms: Long = 500) {
         compose.mainClock.advanceTimeBy(ms)
+    }
+
+    @Test
+    fun `아일랜드 알림 문장에는 역할 이름이 붙지 않는다`() {
+        val state = KIslandState()
+        setUp(island = state)
+        scope.launch { state.show(KIslandContent("Alex", "Loud and clear"), durationMs = null) }
+        compose.waitForIdle()
+
+        // TalkBack은 live region이 바뀌면 그 노드를 읽는데, 같은 노드에 역할이 있으면 "Button, Alex, ..."처럼 역할부터 읽는다.
+        val live = compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.LiveRegion)).fetchSemanticsNode()
+        assertThat(live.config.getOrNull(SemanticsProperties.Role)).isNull()
+        assertThat(live.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text }).containsExactly("Alex", "Loud and clear")
+        assertThat(live.config.contains(SemanticsActions.OnClick)).isTrue()
     }
 
     @Test

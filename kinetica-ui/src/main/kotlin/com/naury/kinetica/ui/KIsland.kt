@@ -63,7 +63,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
@@ -435,8 +434,8 @@ private fun Modifier.islandSemantics(state: KIslandState, content: KIslandConten
     val dismissLabel = stringResource(R.string.kinetica_ui_notify_dismiss)
     val clickLabel = stringResource(if (state.expanded) R.string.kinetica_ui_notify_open else R.string.kinetica_ui_notify_expand)
     return semantics(mergeDescendants = true) {
+        // live region 노드에 역할이 있으면 TalkBack이 알림 앞에 "버튼"부터 읽는다. 누르기는 onClick 이름("열기")으로 안내된다.
         liveRegion = LiveRegionMode.Polite
-        role = Role.Button
         // compact 모드에서는 제목이 화면에 없으므로 따로 알려 준다. 펼치면 제목과 부제 글자가 합쳐져 읽힌다.
         if (!state.expanded) contentDescription = content.title
         onClick(clickLabel) {

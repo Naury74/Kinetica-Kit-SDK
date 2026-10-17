@@ -35,6 +35,7 @@ import androidx.compose.ui.test.assertContentDescriptionContains
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -115,6 +116,10 @@ class KFeedbackTest {
             .assert(liveRegion(LiveRegionMode.Assertive))
             .assertContentDescriptionContains("Error")
         assertThat(state.messages).containsExactly("저장했어요", "결제하지 못했어요").inOrder()
+        // 둘이 쌓여 누를 수 있게 되어도 역할은 없다. 있으면 TalkBack이 알림 앞에 "버튼"부터 읽는다.
+        compose.onNodeWithText("저장했어요", substring = true)
+            .assert(hasClickAction())
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
     }
 
     @Test
