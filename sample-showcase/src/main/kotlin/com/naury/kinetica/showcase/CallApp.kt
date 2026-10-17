@@ -459,7 +459,7 @@ private fun VoiceCall(who: Int, startedAt: Long, onMinimize: () -> Unit, onVideo
                 style = TextStyle(color = Color.White.copy(alpha = 0.8f), fontSize = 18.sp, fontWeight = FontWeight.Medium),
             )
             Spacer(Modifier.weight(1f))
-            KSurface(Modifier.widthIn(max = 420.dp).fillMaxWidth(), shape = RoundedCornerShape(32.dp)) {
+            KSurface(Modifier.widthIn(max = 420.dp).fillMaxWidth(), shape = cardShape) {
                 Column(Modifier.padding(vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                         ToggleAction("음소거", KIcons.MicOff, muted) { muted = it }

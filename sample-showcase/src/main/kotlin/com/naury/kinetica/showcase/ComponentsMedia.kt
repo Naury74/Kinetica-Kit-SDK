@@ -85,8 +85,8 @@ private fun PhotoGridCard(viewer: KImageViewerState, photos: List<Painter>) {
                                 .weight(1f)
                                 .aspectRatio(1f)
                                 .imageViewerSource(viewer, index)
-                                .clip(INNER_SHAPE)
-                                .kClickable(INNER_SHAPE, role = Role.Image) { viewer.open(index) },
+                                .clip(innerShape)
+                                .kClickable(innerShape, role = Role.Image) { viewer.open(index) },
                             contentScale = ContentScale.Crop,
                         )
                     }
@@ -102,7 +102,7 @@ private fun CompareCard() {
         BeforeAfterSlider(
             before = { Landscape(vivid = false, Modifier.fillMaxSize()) },
             after = { Landscape(vivid = true, Modifier.fillMaxSize()) },
-            modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(INNER_SHAPE),
+            modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(innerShape),
         )
     }
 }

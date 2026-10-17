@@ -78,6 +78,7 @@ import com.naury.kinetica.ui.KResult
 import com.naury.kinetica.ui.KResultDialog
 import com.naury.kinetica.ui.KSearchBar
 import com.naury.kinetica.ui.KSelectableCard
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSlideToConfirm
 import com.naury.kinetica.ui.KStatus
 import com.naury.kinetica.ui.KStepIndicator
@@ -221,7 +222,7 @@ private fun SaleBanner() {
         listOf(Color(0xFF1F1F1F), Color(0xFF4A4A4A)),
         seed = 3,
         modifier = Modifier.fillMaxWidth().height(132.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = kitShape { KShapeToken.Large },
     ) {
         Column(Modifier.align(Alignment.CenterStart).padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Label("가을 신상 최대 40%", 20, FontWeight.Bold, color = Color.White)
@@ -234,11 +235,11 @@ private fun SaleBanner() {
 private fun ProductTile(product: Product, liked: Boolean, onLike: (Boolean) -> Unit, onClick: () -> Unit) {
     val ink = LocalKineticaContentColor.current
     Column(
-        Modifier.clip(RoundedCornerShape(18.dp)).kClickable(RoundedCornerShape(18.dp), onClickLabel = "상세 보기", onClick = onClick),
+        Modifier.clip(kitShape { KShapeToken.Large }).kClickable(kitShape { KShapeToken.Large }, onClickLabel = "상세 보기", onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box {
-            ArtBox(product.palette, product.id, Modifier.fillMaxWidth().aspectRatio(0.9f), RoundedCornerShape(18.dp))
+            ArtBox(product.palette, product.id, Modifier.fillMaxWidth().aspectRatio(0.9f), kitShape { KShapeToken.Large })
             LikeButton(liked, onLike, Modifier.align(Alignment.TopEnd).padding(4.dp), iconSize = 22.dp)
         }
         Label(product.brand, 12, FontWeight.SemiBold, Modifier.padding(top = 4.dp, start = 2.dp), color = ink.copy(alpha = 0.6f))
@@ -274,7 +275,7 @@ private fun ProductDetail(
         bottomBar = {
             BuyBar(product.price * choice.count) {
                 fly.launch(product.id, onArrive = { onAdd(choice.count) }) {
-                    ArtBox(product.palette, product.id, Modifier.size(64.dp), RoundedCornerShape(16.dp))
+                    ArtBox(product.palette, product.id, Modifier.size(64.dp), kitShape { KShapeToken.Medium })
                 }
             }
         },
@@ -328,7 +329,7 @@ private fun Gallery(product: Product, color: Int, fly: KFlyToState, peek: Dp, mo
                 if (page == 0) product.palette else artPalette(product.id + page + color),
                 product.id + page,
                 Modifier.fillMaxWidth().aspectRatio(1f).let { if (page == 0) it.flyToSource(fly, product.id) else it },
-                RoundedCornerShape(24.dp),
+                kitShape { card },
             )
         }
         KPageIndicator(pager, Modifier.align(Alignment.CenterHorizontally))
@@ -394,7 +395,7 @@ private fun Swatch(name: String, color: Color, selected: Boolean, onClick: () ->
 
 @Composable
 private fun BuyBar(total: Int, onAdd: () -> Unit) {
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitTopShape()) {
         // 큰 글자에서는 금액과 버튼이 한 줄에 들어가지 않으므로 버튼이 다음 줄로 내려간다.
         FlowRow(
             Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 20.dp, vertical = 12.dp).fillMaxWidth(),
@@ -456,7 +457,7 @@ private fun CartScreen(cart: SnapshotStateMap<Int, Int>, onBack: () -> Unit, onC
                     listOf(SwipeAction("삭제", destructive, removesRow = true) { cart.remove(product.id) }),
                     Modifier.animateItem(),
                     state = rememberSwipeActionsState(group),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = kitShape { KShapeToken.Large },
                 ) { CartLine(product, cart, onOpen) }
             }
             item("summary") { CartSummary(total, shipping) }
@@ -487,9 +488,9 @@ private fun EmptyCart(onBack: () -> Unit) {
 
 @Composable
 private fun CartLine(product: Product, cart: SnapshotStateMap<Int, Int>, onOpen: (Int) -> Unit) {
-    KCard(Modifier.fillMaxWidth(), onClick = { onOpen(product.id) }, shape = RoundedCornerShape(20.dp), contentPadding = 12.dp) {
+    KCard(Modifier.fillMaxWidth(), onClick = { onOpen(product.id) }, shape = kitShape { KShapeToken.Large }, contentPadding = 12.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            ArtBox(product.palette, product.id, Modifier.size(72.dp), RoundedCornerShape(12.dp))
+            ArtBox(product.palette, product.id, Modifier.size(72.dp), kitInnerShape(12.dp) { KShapeToken.Large })
             Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Label(product.brand, 12, color = LocalKineticaContentColor.current.copy(alpha = 0.6f))
                 Label(product.name, 14, FontWeight.SemiBold)
@@ -502,7 +503,7 @@ private fun CartLine(product: Product, cart: SnapshotStateMap<Int, Int>, onOpen:
 
 @Composable
 private fun CartSummary(total: Int, shipping: Int) {
-    KSurface(Modifier.fillMaxWidth().padding(top = 8.dp), shape = RoundedCornerShape(20.dp)) {
+    KSurface(Modifier.fillMaxWidth().padding(top = 8.dp), shape = kitShape { KShapeToken.Large }) {
         Column(Modifier.padding(vertical = 6.dp)) {
             KValueRow("상품 금액", won(total))
             KValueRow(
@@ -543,7 +544,7 @@ private fun CheckoutScreen(cart: SnapshotStateMap<Int, Int>, onBack: () -> Unit,
                 1 -> PaymentStep(payment, { payment = it }) { step = 2 }
 
                 else -> {
-                    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                    KSurface(Modifier.fillMaxWidth(), shape = kitShape { KShapeToken.Large }) {
                         Column(Modifier.padding(vertical = 6.dp)) {
                             KValueRow("배송", DELIVERY[delivery].first)
                             KValueRow("결제", PAYMENTS[payment].first)
@@ -568,7 +569,7 @@ private fun CheckoutScreen(cart: SnapshotStateMap<Int, Int>, onBack: () -> Unit,
 
 @Composable
 private fun DeliveryStep(selected: Int, onSelect: (Int) -> Unit, onNext: () -> Unit) {
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitShape { KShapeToken.Large }) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Label("집", 15, FontWeight.SemiBold)
             Label("서울시 마포구 하늘길 24, 302호", 14)
@@ -576,7 +577,7 @@ private fun DeliveryStep(selected: Int, onSelect: (Int) -> Unit, onNext: () -> U
         }
     }
     Label("배송 방법", 15, FontWeight.SemiBold)
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitShape { KShapeToken.Large }) {
         Column {
             DELIVERY.forEachIndexed { index, (title, sub) -> KRadioRow(title, selected == index, { onSelect(index) }, subtitle = sub) }
         }

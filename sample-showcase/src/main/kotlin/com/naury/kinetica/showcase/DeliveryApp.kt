@@ -70,6 +70,7 @@ import com.naury.kinetica.ui.KQuantityStepper
 import com.naury.kinetica.ui.KQuantityStyle
 import com.naury.kinetica.ui.KRating
 import com.naury.kinetica.ui.KSearchBar
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KStatus
 import com.naury.kinetica.ui.KStatusBadge
 import com.naury.kinetica.ui.KSurface
@@ -224,7 +225,7 @@ private fun StoreMenu(store: Store, cart: SnapshotStateMap<Int, Int>, onBack: ()
 
 @Composable
 private fun StoreHero(store: Store) {
-    ArtBox(store.palette, 5, Modifier.fillMaxWidth().height(150.dp), RoundedCornerShape(24.dp)) {
+    ArtBox(store.palette, 5, Modifier.fillMaxWidth().height(150.dp), kitShape { card }) {
         Row(Modifier.align(Alignment.BottomStart).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             KRating(store.rating, null, starSize = 16.dp, color = Color.White)
             Label("${store.rating} · 리뷰 ${store.reviews}", 13, FontWeight.SemiBold, Modifier.padding(start = 8.dp), color = Color.White)
@@ -234,7 +235,7 @@ private fun StoreHero(store: Store) {
 
 @Composable
 private fun MenuRow(menu: Menu, index: Int, count: Int, onCount: (Int) -> Unit) {
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).padding(start = 4.dp, end = 12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -245,7 +246,7 @@ private fun MenuRow(menu: Menu, index: Int, count: Int, onCount: (Int) -> Unit) 
                 Label(won(menu.price), 15, FontWeight.Bold)
             }
             Box(contentAlignment = Alignment.BottomEnd) {
-                ArtBox(artPalette(index + 3), index, Modifier.size(92.dp), RoundedCornerShape(14.dp))
+                ArtBox(artPalette(index + 3), index, Modifier.size(92.dp), kitShape { KShapeToken.Medium })
                 KQuantityStepper(
                     count,
                     onCount,
@@ -314,7 +315,7 @@ private fun TrackOrder(onBack: () -> Unit, onDone: () -> Unit) {
 private fun TrackInfo(stage: Int, onDone: () -> Unit, modifier: Modifier) {
     val faint = LocalKineticaContentColor.current.copy(alpha = 0.65f)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Label(if (stage == 3) "배달이 끝났어요" else "도착까지", 14, color = faint)
                 RollingText(
@@ -324,7 +325,7 @@ private fun TrackInfo(stage: Int, onDone: () -> Unit, modifier: Modifier) {
                 KProgressBar((stage + 1) / 4f, Modifier.fillMaxWidth())
             }
         }
-        KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
             KTimeline(
                 STAGES.mapIndexed { i, (title, sub) ->
                     KTimelineItem(
@@ -349,7 +350,7 @@ private fun TrackInfo(stage: Int, onDone: () -> Unit, modifier: Modifier) {
 @Composable
 private fun RiderCard() {
     val accent = KineticaTheme.colors.accent
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(44.dp).background(accent.copy(alpha = 0.16f), CircleShape), Alignment.Center) {
                 ShowcaseIcon(AppIcons.Bike, 24.dp, accent)
@@ -368,7 +369,7 @@ private fun RiderCard() {
 @Composable
 private fun RateCard(onDone: () -> Unit) {
     var stars by rememberSaveable { mutableFloatStateOf(0f) }
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
         Column(
             Modifier.fillMaxWidth().padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -387,7 +388,7 @@ private fun RiderMap(stage: Int, modifier: Modifier) {
     val progress by animateFloatAsState(listOf(0f, 0.1f, 0.65f, 1f)[stage], tween(1_200), label = "rider")
     val accent = KineticaTheme.colors.accent
     val dark = LocalKineticaContentColor.current.isLight()
-    BoxWithConstraints(modifier.background(if (dark) Color(0xFF2A2522) else Color(0xFFF3EDE6), RoundedCornerShape(24.dp))) {
+    BoxWithConstraints(modifier.background(if (dark) Color(0xFF2A2522) else Color(0xFFF3EDE6), kitShape { card })) {
         Canvas(Modifier.fillMaxSize()) {
             val road = if (dark) Color(0xFF3D3632) else Color.White
             for (i in 1..4) {

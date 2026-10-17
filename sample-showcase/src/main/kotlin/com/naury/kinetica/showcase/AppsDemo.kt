@@ -121,11 +121,11 @@ private fun AppSurfaceRow() {
 @Composable
 private fun AppTile(app: AppInfo, onClick: () -> Unit) {
     val ink = LocalKineticaContentColor.current
-    KSurface(onClick, Modifier.fillMaxWidth().jellyPress(0.04f), shape = RoundedCornerShape(28.dp), onClickLabel = "열기") {
+    KSurface(onClick, Modifier.fillMaxWidth().jellyPress(0.04f), shape = kitShape { card }, onClickLabel = "열기") {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 바깥 28dp 모서리에서 여백 16dp를 뺀 12dp로 아이콘 칸 모서리를 맞춘다.
-                Box(Modifier.size(44.dp).background(app.color, RoundedCornerShape(12.dp)), Alignment.Center) {
+                // 아이콘 칸은 칸 모서리에서 여백 16dp를 뺀 반지름으로 같은 중심으로 굽는다.
+                Box(Modifier.size(44.dp).background(app.color, kitInnerShape(16.dp)), Alignment.Center) {
                     ShowcaseIcon(app.icon, 24.dp, Color.White)
                 }
                 Spacer(Modifier.weight(1f))

@@ -398,11 +398,13 @@ private fun LargeTitle(state: KLargeTitleState, title: String, surface: SurfaceS
 private fun BackButton(surface: SurfaceStyle, onBack: () -> Unit) {
     val label = stringResource(R.string.kinetica_ui_large_title_back)
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    // 바의 다른 아이콘 버튼(KIconButton)과 같은 button 모양을 따른다. 기본 형태에서는 원이다.
+    val shape = shapeFor { button }
     Box(
         Modifier
             .size(BACK_SIZE)
-            .kSurface(surface.withoutShadow(), CircleShape)
-            .kClickable(CircleShape, onClick = onBack)
+            .kSurface(surface.withoutShadow(), shape)
+            .kClickable(shape, onClick = onBack)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {

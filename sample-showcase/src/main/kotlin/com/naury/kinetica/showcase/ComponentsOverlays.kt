@@ -86,7 +86,7 @@ private fun AppBarsCard() {
     val bar = rememberKTopAppBarState(scroll)
     DemoCard("앱 바", "맨 위에서는 배경 없이 화면과 이어지다가, 목록이 바 아래로 지나가면 배경이 나타납니다. 안쪽 목록을 스크롤해 보세요.") {
         KSegmentedControl(listOf("작게", "가운데", "중간"), variant, { variant = it }, Modifier.fillMaxWidth())
-        Box(Modifier.fillMaxWidth().height(320.dp).clip(INNER_SHAPE)) {
+        Box(Modifier.fillMaxWidth().height(320.dp).clip(innerShape)) {
             // 첫 줄이 바 바로 아래에서 시작하도록 바 높이(한 줄 바 56dp, 두 줄 바는 제목 줄까지 약 110dp)만큼 띄운다.
             val top = if (KTopAppBarVariant.entries[variant] == KTopAppBarVariant.Medium) 128.dp else 64.dp
             Column(Modifier.fillMaxSize().nestedScroll(toolbar.connection).verticalScroll(scroll).padding(top = top, bottom = 96.dp)) {
@@ -113,7 +113,7 @@ private fun AppBarsCard() {
             }
         }
         KBottomAppBar(
-            Modifier.clip(INNER_SHAPE),
+            Modifier.clip(innerShape),
             floatingActionButton = { KIconButton(KIcons.Send, "보내기", {}, variant = KVariant.Filled) },
             windowInsets = WindowInsets(0),
         ) {
@@ -262,7 +262,7 @@ private fun DrawerCard() {
     val drawer = rememberKDrawerState()
     val scope = rememberCoroutineScope()
     DemoCard("모달 서랍", "기본 서랍은 뒤 화면을 밀어내고, 모달 서랍은 뒤 화면을 그 자리에서 어둡게 덮습니다. 가장자리에서 끌어도 열립니다.") {
-        Box(Modifier.fillMaxWidth().height(260.dp).clip(RoundedCornerShape(12.dp))) {
+        Box(Modifier.fillMaxWidth().height(260.dp).clip(innerShape)) {
             KDrawer(
                 drawerContent = {
                     Label("메뉴", 18, FontWeight.Bold, Modifier.padding(20.dp))

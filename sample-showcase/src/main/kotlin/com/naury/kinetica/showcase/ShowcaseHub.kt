@@ -190,7 +190,7 @@ private fun LazyListScope.hubRows(section: HubSection, columns: Int, open: (Stri
 /** 큰 칸: 색 원 안 아이콘, 제목, 두세 줄 설명 */
 @Composable
 private fun FeatureEntry(entry: HubEntry, modifier: Modifier, onClick: () -> Unit) {
-    KSurface(onClick, modifier.jellyPress(0.03f), shape = RoundedCornerShape(28.dp)) {
+    KSurface(onClick, modifier.jellyPress(0.03f), shape = kitShape { card }) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).background(entry.accent.copy(alpha = 0.9f), CircleShape), contentAlignment = Alignment.Center) {
                 ShowcaseIcon(entry.icon, 24.dp, Color(0xFF15161A))
@@ -213,7 +213,7 @@ private const val MAX_COLUMNS = 4
 /** 작은 칸: 위에 색 원 아이콘, 아래에 제목과 설명. 폰에서도 두 열로 놓인다. */
 @Composable
 private fun TileEntry(entry: HubEntry, modifier: Modifier, onClick: () -> Unit) {
-    KSurface(onClick, modifier.jellyPress(0.04f), shape = RoundedCornerShape(24.dp)) {
+    KSurface(onClick, modifier.jellyPress(0.04f), shape = kitShape { card }) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Box(Modifier.size(40.dp).background(entry.accent.copy(alpha = 0.9f), CircleShape), contentAlignment = Alignment.Center) {
                 ShowcaseIcon(entry.icon, 20.dp, Color(0xFF15161A))

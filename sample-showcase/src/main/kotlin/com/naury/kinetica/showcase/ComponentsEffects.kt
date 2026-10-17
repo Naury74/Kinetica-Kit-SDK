@@ -48,6 +48,7 @@ import com.naury.kinetica.ui.KBlobGroup
 import com.naury.kinetica.ui.KChipGroup
 import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KIndication
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSwitch
 import com.naury.kinetica.ui.ParticleField
 import com.naury.kinetica.ui.ParticlePreset
@@ -61,7 +62,7 @@ internal fun EffectsTab(padding: PaddingValues, connection: NestedScrollConnecti
     ComponentTabList(padding, connection) {
         item {
             DemoCard("물결 왜곡", "그림을 누르면 그 자리에서 물결이 퍼지며 그림이 일렁입니다. 여러 번 누르면 물결이 겹칩니다. Android 13보다 낮으면 빛 고리로 대신합니다.") {
-                Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).clip(INNER_SHAPE).rippleDistortion()) {
+                Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).clip(innerShape).rippleDistortion()) {
                     Landscape(vivid = true, Modifier.fillMaxSize())
                 }
             }
@@ -85,7 +86,7 @@ private fun ParticleCard() {
             Modifier
                 .fillMaxWidth()
                 .height(220.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(kitShape { KShapeToken.Large })
                 .background(Brush.verticalGradient(listOf(Color(0xFF0B1026), Color(0xFF2B2F77)))),
         ) { ParticleField(preset, Modifier.fillMaxSize(), state = particles) }
         Pill("불꽃놀이 터뜨리기", filled = true) {
@@ -116,7 +117,7 @@ private fun PaymentCardFront() {
     Column(
         Modifier
             .fillMaxSize()
-            .clip(INNER_SHAPE)
+            .clip(innerShape)
             .background(Brush.linearGradient(listOf(Color(0xFF232526), Color(0xFF414345))))
             .padding(22.dp),
     ) {
@@ -132,12 +133,13 @@ private fun PaymentCardBack() {
     Column(
         Modifier
             .fillMaxSize()
-            .clip(INNER_SHAPE)
+            .clip(innerShape)
             .background(Brush.linearGradient(listOf(Color(0xFF414345), Color(0xFF232526)))),
     ) {
         Spacer(Modifier.height(28.dp))
         Box(Modifier.fillMaxWidth().height(44.dp).background(Color.Black))
         Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) {
+            // 실물 카드의 서명란을 흉내 낸 것이라 형태 설정을 따르지 않는다.
             Box(Modifier.weight(1f).height(36.dp).background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(6.dp)))
             Label("CVC 123", 15, FontWeight.Bold, Modifier.padding(start = 12.dp), Color.White)
         }
@@ -179,6 +181,7 @@ private fun HoloCard() {
             KSwitch(sensor, { sensor = it })
         }
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            // 실물 수집 카드를 흉내 낸 것이라 형태 설정과 상관없이 둥근 모서리로 둔다.
             Column(
                 Modifier
                     .width(220.dp)

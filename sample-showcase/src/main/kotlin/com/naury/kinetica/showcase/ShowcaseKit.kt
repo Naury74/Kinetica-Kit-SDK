@@ -30,11 +30,14 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -47,6 +50,8 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalConfiguration
@@ -64,12 +69,17 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import com.naury.kinetica.ui.KCornerStyle
 import com.naury.kinetica.ui.KIconButton
 import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KIndication
+import com.naury.kinetica.ui.KShapeToken
+import com.naury.kinetica.ui.KSquircleShape
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KTone
 import com.naury.kinetica.ui.KVariant
+import com.naury.kinetica.ui.KineticaShapes
+import com.naury.kinetica.ui.KineticaTheme
 import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.jellyPress
 
@@ -93,10 +103,10 @@ internal fun DemoTopBar(
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
             contentAlignment = Alignment.TopCenter,
         ) {
-            // 바깥 28dp 캡슐 안에 6dp 여백으로 44dp 원형 버튼을 넣어 모서리가 같은 중심으로 굽게 한다.
+            // 떠 있는 탭 바와 같은 역할이라 tabBar 모양을 따른다. 기본(캡슐)에서는 6dp 여백 안 원형 버튼과 같은 중심으로 굽는다.
             KSurface(
                 Modifier.padding(horizontal = 16.dp, vertical = 8.dp).widthIn(max = maxWidth).fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
+                shape = kitShape { tabBar },
             ) {
                 Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (onBack != null) {
@@ -208,7 +218,7 @@ internal fun navigationBarBottom(): Dp = WindowInsets.navigationBars.asPaddingVa
 /** 제목과 설명이 있는 데모 카드. 시연할 내용은 [content]에 넣는다. */
 @Composable
 internal fun DemoCard(title: String, description: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    KSurface(modifier.fillMaxWidth(), shape = CARD_SHAPE) {
+    KSurface(modifier.fillMaxWidth(), shape = cardShape) {
         // 폭을 채워야 넓은 화면에서 폭을 묶은 내용을 align(CenterHorizontally)로 카드 가운데에 놓을 수 있다.
         Column(Modifier.fillMaxWidth().padding(CARD_PADDING), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Label(title, 18, FontWeight.Bold)
@@ -218,35 +228,79 @@ internal fun DemoCard(title: String, description: String, modifier: Modifier = M
     }
 }
 
-/** 데모 카드 바깥 모서리 */
-internal val CARD_SHAPE = RoundedCornerShape(32.dp)
+/**
+ * 데모 카드 바깥 모서리. 화면 폭을 채우는 큰 판이라 기본(Cupertino)에서 32dp인 sheet 단계를 따른다.
+ * card 단계(24dp)를 쓰면 기본 모양에서 판 안의 카드와 크기 차이가 사라진다.
+ */
+internal val cardShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { sheet }
+
+/** 지금 디자인 언어의 [token] 역할 모양. 쇼케이스 틀이 키트 컴포넌트와 같은 모서리 체계를 따르게 한다. */
+@Composable
+@ReadOnlyComposable
+internal fun kitShape(token: KineticaShapes.() -> KShapeToken): Shape {
+    val shapes = KineticaTheme.shapes
+    return shapes.shape(shapes.token())
+}
+
+/** [token] 역할 표면 안에 [inset]만큼 들어간 요소의 모양. 안쪽 반지름이 바깥과 같은 중심으로 굽는다. */
+@Composable
+@ReadOnlyComposable
+internal fun kitInnerShape(inset: Dp, token: KineticaShapes.() -> KShapeToken = { card }): Shape {
+    val shapes = KineticaTheme.shapes
+    return shapes.inner(shapes.token(), inset)
+}
+
+/** 위 두 모서리만 [token] 역할 모양으로 깎은 모양. 화면 아래에 붙는 판에 쓴다. */
+@Composable
+@ReadOnlyComposable
+internal fun kitTopShape(token: KineticaShapes.() -> KShapeToken = { sheet }): Shape {
+    val shapes = KineticaTheme.shapes
+    val t = shapes.token()
+    val radius = shapes.radius(t)
+    if (radius <= 0.dp || radius == Dp.Infinity) return if (radius <= 0.dp) RectangleShape else RoundedCornerShape(50)
+    val r = CornerSize(radius)
+    val none = CornerSize(0.dp)
+    return when (shapes.cornerOf(t)) {
+        KCornerStyle.Round -> RoundedCornerShape(r, r, none, none)
+        KCornerStyle.Squircle -> KSquircleShape(r, r, none, none)
+        KCornerStyle.Cut -> CutCornerShape(r, r, none, none)
+        KCornerStyle.Square -> RectangleShape
+    }
+}
 
 /** 데모 카드 안쪽 여백 */
 internal val CARD_PADDING = 20.dp
 
-/** 데모 카드 안에 꽉 차게 넣는 이미지나 상자의 모서리. 바깥 32dp에서 여백 20dp를 뺀 값이라 카드 모서리와 같은 중심으로 굽는다. */
-internal val INNER_SHAPE = RoundedCornerShape(12.dp)
+/** 데모 카드 안에 꽉 차게 넣는 이미지나 상자의 모서리. 바깥 반지름에서 여백 [CARD_PADDING]을 뺀 값이라 카드 모서리와 같은 중심으로 굽는다. */
+internal val innerShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitInnerShape(CARD_PADDING) { sheet }
 
-/** 캡슐 모양 버튼. [filled]면 배경을 채워 그리고, 누르면 젤리처럼 눌리며 캡슐 모양으로 어두워진다. */
+/** 버튼 모양(기본은 캡슐)을 따르는 글자 버튼. [filled]면 배경을 채워 그리고, 누르면 젤리처럼 눌리며 캡슐 모양으로 어두워진다. */
 @Composable
 internal fun Pill(text: String, modifier: Modifier = Modifier, filled: Boolean = false, onClick: () -> Unit) {
     val ink = LocalKineticaContentColor.current
+    val shape = kitShape { button }
     if (filled) {
         val onInk = if (ink.isLight()) Color.Black else Color.White
         Box(
             modifier
                 .jellyPress()
                 .defaultMinSize(minHeight = 40.dp)
-                .background(ink, CircleShape)
-                .clip(CircleShape)
-                .clickable(null, KIndication(CircleShape, onInk), role = Role.Button, onClick = onClick)
+                .background(ink, shape)
+                .clip(shape)
+                .clickable(null, KIndication(shape, onInk), role = Role.Button, onClick = onClick)
                 .padding(horizontal = 18.dp, vertical = 10.dp),
             contentAlignment = Alignment.Center,
         ) {
             BasicText(text, style = TextStyle(color = onInk, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
         }
     } else {
-        KSurface(onClick, modifier.jellyPress().defaultMinSize(minHeight = 40.dp), shape = CircleShape) {
+        KSurface(onClick, modifier.jellyPress().defaultMinSize(minHeight = 40.dp), shape = shape) {
             Box(Modifier.align(Alignment.Center).padding(horizontal = 18.dp, vertical = 10.dp)) { Label(text, 14, FontWeight.SemiBold) }
         }
     }

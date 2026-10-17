@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.GlassStyles
@@ -66,6 +68,7 @@ import com.naury.kinetica.ui.KIconButton
 import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KListDetail
 import com.naury.kinetica.ui.KSearchBar
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KTone
 import com.naury.kinetica.ui.KTopAppBar
@@ -132,7 +135,7 @@ private fun ChatBackdrop() {
 @Composable
 private fun NoChatSelected() {
     Box(Modifier.fillMaxSize(), Alignment.Center) {
-        KSurface(Modifier.padding(24.dp).widthIn(max = 360.dp), shape = RoundedCornerShape(28.dp)) {
+        KSurface(Modifier.padding(24.dp).widthIn(max = 360.dp), shape = kitShape { card }) {
             KEmptyState(
                 "대화를 골라 주세요",
                 Modifier.padding(24.dp),
@@ -207,7 +210,7 @@ private fun OnlineRow(onOpen: (Int) -> Unit) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(vertical = 6.dp)) {
         items(CHATS.filter { it.online }, key = { it.id }) { chat ->
             Column(
-                Modifier.kClickable(RoundedCornerShape(12.dp)) { onOpen(chat.id) }.padding(4.dp),
+                Modifier.kClickable(kitShape { KShapeToken.Medium }) { onOpen(chat.id) }.padding(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 KAvatar(chat.avatar, size = KAvatarSize.Large, status = KAvatarStatus.Online)
@@ -357,7 +360,7 @@ private fun Composer(chat: Chat, draft: String, onDraft: (String) -> Unit, uploa
                 detail = if (photo) "사진 · 2.4MB" else "PDF · 860KB",
                 status = KAttachmentStatus.Uploading,
                 progress = upload.progress.value,
-                thumbnail = if (photo) ({ ArtBox(artPalette(chat.id + 2), 1, Modifier.size(40.dp), RoundedCornerShape(8.dp)) }) else null,
+                thumbnail = if (photo) ({ ArtBox(artPalette(chat.id + 2), 1, Modifier.size(40.dp), kitShape { image }) }) else null,
                 onRemove = { upload.file = null },
             )
         }
@@ -401,7 +404,7 @@ private fun MessageList(chatId: Int, messages: List<Message>, typing: Boolean, p
         }
         item("day") {
             Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), Alignment.Center) {
-                KSurface(shape = RoundedCornerShape(50)) {
+                KSurface(shape = kitShape { chip }) {
                     Label("오늘", 12, FontWeight.SemiBold, Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
                 }
             }
@@ -426,7 +429,7 @@ private fun MessageBubble(
     }
     when (message.kind) {
         'p' -> KChatBubble(message.side, position = position, time = time, status = status, onLongClick = onLongClick) {
-            ArtBox(artPalette(chatId + 2), message.key.hashCode(), Modifier.size(200.dp, 150.dp), RoundedCornerShape(14.dp))
+            ArtBox(artPalette(chatId + 2), message.key.hashCode(), Modifier.size(200.dp, 150.dp), kitShape { KShapeToken.Medium })
         }
 
         'f' -> KChatBubble(message.side, position = position, time = time, status = status, onLongClick = onLongClick) {
@@ -539,7 +542,10 @@ private val CHATS = listOf(
 )
 private val REPLIES = listOf("오 좋다 ㅎㅎ", "알겠어, 이따 다시 얘기하자", "잠깐만 확인해 볼게!", "고마워", "그래 그렇게 하자")
 
-private val ROW_SHAPE = RoundedCornerShape(22.dp)
+private val ROW_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { KShapeToken.Large }
 internal val CHAT_LOOK = AppLook(
     SurfaceStyle.Glass(GlassStyles.Acrylic),
     SurfaceStyle.Glass(GlassStyles.AcrylicDark),

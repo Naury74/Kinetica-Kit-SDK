@@ -126,6 +126,7 @@ private fun PassFront(ticket: Ticket) {
     val to = ticket.to
     val flight = ticket.flight
     val ink = Color(0xFF1B2333)
+    // 종이 탑승권을 흉내 낸 앱 고유 디자인이라 형태 설정과 상관없이 둥근 모서리로 둔다.
     Column(Modifier.fillMaxSize().background(Color.White, RoundedCornerShape(28.dp))) {
         Box(
             Modifier.fillMaxWidth().background(
@@ -208,6 +209,7 @@ private const val CODE_CELLS = 21
 @Composable
 private fun PassBack() {
     val ink = Color(0xFF1B2333)
+    // 탑승권 뒷면도 앞면과 같은 종이 모양을 쓴다.
     Column(
         Modifier.fillMaxSize().background(Color.White, RoundedCornerShape(28.dp)).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),

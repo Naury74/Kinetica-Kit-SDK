@@ -188,7 +188,7 @@ private fun HomeDevices(on: SnapshotStateMap<Int, Int>, level: SnapshotStateMap<
 @Composable
 private fun EnergyCard(on: SnapshotStateMap<Int, Int>) {
     val active = on.values.count { it == 1 }
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Label("켜진 기기 ${active}개", 15, FontWeight.SemiBold)
@@ -208,7 +208,7 @@ private fun DeviceTile(device: Device, isOn: Boolean, level: Int, onToggle: (Boo
     val accent = device.color
     val ink = LocalKineticaContentColor.current
     val iconBg by animateColorAsState(if (isOn) accent else ink.copy(alpha = 0.12f), label = "tile")
-    KSurface(onOpen, Modifier.fillMaxWidth().jellyPress(0.04f), shape = RoundedCornerShape(26.dp), onClickLabel = "${device.name} 자세히") {
+    KSurface(onOpen, Modifier.fillMaxWidth().jellyPress(0.04f), shape = kitShape { card }, onClickLabel = "${device.name} 자세히") {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(44.dp).background(iconBg, CircleShape), Alignment.Center) {
@@ -252,7 +252,7 @@ private fun LightDetail(device: Device, on: SnapshotStateMap<Int, Int>, level: S
                 }
             }
             Label(if (isOn) "$brightness%" else "꺼짐", 34, FontWeight.Bold)
-            KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+            KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Label("전원", 16, FontWeight.SemiBold, Modifier.weight(1f))
@@ -302,7 +302,7 @@ private fun ClimateDetail(device: Device, on: SnapshotStateMap<Int, Int>, level:
                     level[device.id] = (target + 1).coerceAtMost(30)
                 }, size = 56.dp, variant = KVariant.Tonal)
             }
-            KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+            KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Label("전원", 16, FontWeight.SemiBold, Modifier.weight(1f))

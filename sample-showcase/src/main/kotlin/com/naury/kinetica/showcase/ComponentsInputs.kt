@@ -105,7 +105,7 @@ private fun ColorCard() {
     var color by rememberSaveable(saver = colorStateSaver) { mutableStateOf(Color(0xFF5B6CFF)) }
     val shown by animateColorAsState(color, label = "preview")
     DemoCard("색 선택", "고리에서 색조를, 가운데 사각형에서 채도와 명도를 고릅니다. 고른 색이 위 카드에 바로 반영됩니다.") {
-        Box(Modifier.fillMaxWidth().heightIn(min = 96.dp).background(shown, INNER_SHAPE).padding(18.dp)) {
+        Box(Modifier.fillMaxWidth().heightIn(min = 96.dp).background(shown, innerShape).padding(18.dp)) {
             val ink = if (shown.isLight() || shown.alpha < 0.4f) Color(0xFF15161A) else Color.White
             Column {
                 Label("미리보기 카드", 18, FontWeight.Bold, color = ink)
@@ -132,8 +132,8 @@ private fun SignatureCard() {
                 Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .background(Color.White, INNER_SHAPE)
-                    .border(1.dp, LocalKineticaContentColor.current.copy(alpha = 0.2f), INNER_SHAPE),
+                    .background(Color.White, innerShape)
+                    .border(1.dp, LocalKineticaContentColor.current.copy(alpha = 0.2f), innerShape),
                 contentScale = ContentScale.Fit,
             )
         }

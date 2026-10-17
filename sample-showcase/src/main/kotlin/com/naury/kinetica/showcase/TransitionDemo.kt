@@ -330,6 +330,7 @@ private fun SceneGrid(shared: SharedTransitionScope, visibility: AnimatedVisibil
                     modifier = Modifier
                         .padding(6.dp)
                         .aspectRatio(1080f / 1920f)
+                        // 장면 문서가 그리는 휴대폰 화면 모양이라 형태 설정과 상관없이 둥글게 둔다.
                         .clip(RoundedCornerShape(20.dp))
                         .kClickable(RoundedCornerShape(20.dp)) { onOpen(item) }
                         .semantics { contentDescription = "${item.title} 열기" },
@@ -386,6 +387,8 @@ private val DIRECTIONAL = setOf(
 // 3D로 도는 전환은 기본 시간이면 너무 빨라 무슨 일이 일어났는지 보기 어렵다.
 private val SLOW = setOf(SceneTransitionKind.Rotate, SceneTransitionKind.Flip, SceneTransitionKind.Cube, SceneTransitionKind.Dissolve)
 private const val SLOW_MS = 650
+
+// 휴대폰 화면을 흉내 낸 틀이라 형태 설정과 상관없이 실제 화면처럼 둥글게 둔다.
 private val PHONE_SHAPE = RoundedCornerShape(28.dp)
 
 // 장면 바탕색과 같게 둬서 화면 비율이 달라도 위아래에 띠가 보이지 않게 한다.

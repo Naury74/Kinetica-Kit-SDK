@@ -99,7 +99,7 @@ private fun LazyListScope.rootPage(state: SnapshotStateMap<Int, Int>, open: (Str
         KSearchBar(query, { query = it }, {}, placeholder = "설정 검색")
     }
     item("account") {
-        KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+        KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
             KListItem(
                 "김하늘",
                 supporting = "계정, 백업, 연결된 기기",
@@ -197,7 +197,7 @@ private fun SubPage(title: String, onBack: () -> Unit, content: LazyListScope.()
 
 private fun LazyListScope.wifiPage(state: SnapshotStateMap<Int, Int>) {
     item("switch") {
-        KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+        KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
             KSwitchRow("Wi-Fi", state[WIFI] == 1, { state[WIFI] = if (it) 1 else 0 })
         }
     }
@@ -325,7 +325,7 @@ private fun LazyListScope.displayPage(
 
 private fun LazyListScope.batteryPage(state: SnapshotStateMap<Int, Int>) {
     item("level") {
-        KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+        KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Label("78%", 34, FontWeight.Bold)
@@ -346,12 +346,12 @@ private fun LazyListScope.batteryPage(state: SnapshotStateMap<Int, Int>) {
         }
     }
     item("saver") {
-        KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+        KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
             KSwitchRow("절전 모드", state[SAVER] == 1, { state[SAVER] = if (it) 1 else 0 }, subtitle = "백그라운드 작업과 화면 주사율을 줄입니다")
         }
     }
     item("usage") {
-        KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp)) {
+        KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Label("지난 7일 사용 시간", 15, FontWeight.SemiBold)
                 KBarChart(

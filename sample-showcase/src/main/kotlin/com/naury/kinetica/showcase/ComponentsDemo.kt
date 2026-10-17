@@ -77,6 +77,7 @@ import com.naury.kinetica.ui.KPageIndicator
 import com.naury.kinetica.ui.KProgressBar
 import com.naury.kinetica.ui.KProgressRing
 import com.naury.kinetica.ui.KSearchBar
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSnackbarHost
 import com.naury.kinetica.ui.KSnackbarResult
 import com.naury.kinetica.ui.KSnackbarState
@@ -283,7 +284,7 @@ private fun StepperCard() {
             Box(
                 Modifier
                     .size(44.dp)
-                    .background(Brush.linearGradient(listOf(Color(0xFF7C8CFF), Color(0xFF4A5AE8))), RoundedCornerShape(12.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF7C8CFF), Color(0xFF4A5AE8))), kitShape { KShapeToken.Medium })
                     .kBadge(count.takeIf { it > 0 }),
                 contentAlignment = Alignment.Center,
             ) { ShowcaseIcon(KIcons.Bell, 22.dp, Color.White) }
@@ -355,7 +356,7 @@ private fun CarouselCard() {
     val pager = rememberPagerState { PHOTO_COLORS.size }
     DemoCard("캐러셀", "옆 카드가 살짝 보이고, 멀어질수록 작아지며 기웁니다. 아래 인디케이터가 액체처럼 이어집니다.") {
         KCarousel(PHOTO_COLORS.size, Modifier.fillMaxWidth().height(180.dp), state = pager) { page ->
-            Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)).background(Brush.linearGradient(PHOTO_COLORS[page])))
+            Box(Modifier.fillMaxSize().clip(kitShape { card }).background(Brush.linearGradient(PHOTO_COLORS[page])))
         }
         KPageIndicator(pager, Modifier.align(Alignment.CenterHorizontally))
     }
@@ -377,7 +378,7 @@ private fun CardStackCard(notify: (String) -> Unit) {
             },
         ) { name ->
             Box(
-                Modifier.fillMaxSize().clip(INNER_SHAPE).background(
+                Modifier.fillMaxSize().clip(innerShape).background(
                     Brush.linearGradient(
                         PHOTO_COLORS[
                             PEOPLE.indexOf(name) %
@@ -396,7 +397,7 @@ private fun CardStackCard(notify: (String) -> Unit) {
 private fun TextEffectsCard() {
     var round by remember { mutableIntStateOf(0) }
     DemoCard("글자 효과", "빛이 흐르는 글자, 색이 흐르는 글자, 뒤섞였다 맞춰지는 글자. 카드에 손가락을 대고 움직여 보세요.") {
-        KSurface(Modifier.fillMaxWidth().spotlight(shape = INNER_SHAPE).sparkle(), shape = INNER_SHAPE) {
+        KSurface(Modifier.fillMaxWidth().spotlight(shape = innerShape).sparkle(), shape = innerShape) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ShimmerText("밀어서 잠금 해제", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold))
                 GradientText("Kinetica", style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Black))

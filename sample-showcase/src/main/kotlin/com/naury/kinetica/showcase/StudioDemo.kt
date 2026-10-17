@@ -70,6 +70,7 @@ import com.naury.kinetica.serialization.LoadResult
 import com.naury.kinetica.serialization.SaveResult
 import com.naury.kinetica.ui.GlassStyles
 import com.naury.kinetica.ui.KIcons
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KToastHost
 import com.naury.kinetica.ui.SurfaceStyles
@@ -198,10 +199,10 @@ private fun PreviewBack(color: Color, onClick: () -> Unit) {
     }
 }
 
-/** 더 보기 시트의 한 줄. 높이 52dp, 앞 아이콘 22dp, 모서리 14dp의 눌림 표시를 쓴다. */
+/** 더 보기 시트의 한 줄. 높이 52dp, 앞 아이콘 22dp, 중간 단계 모서리(기본 14dp)의 눌림 표시를 쓴다. */
 @Composable
 private fun MoreRow(label: String, icon: ImageVector, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = kitShape { KShapeToken.Medium }
     Row(
         Modifier
             .fillMaxWidth()

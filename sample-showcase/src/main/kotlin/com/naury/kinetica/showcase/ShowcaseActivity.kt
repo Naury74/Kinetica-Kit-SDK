@@ -327,7 +327,7 @@ private fun Hero() {
 private fun LookRow(onClick: () -> Unit) {
     val look = LocalShowcaseLook.current
     val ink = LocalKineticaContentColor.current
-    KSurface(onClick, Modifier.fillMaxWidth(), shape = CircleShape, onClickLabel = "모양 바꾸기") {
+    KSurface(onClick, Modifier.fillMaxWidth(), shape = kitShape { button }, onClickLabel = "모양 바꾸기") {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             ShowcaseIcon(ShowcaseIcons.Contrast, 20.dp)
             Label("모양", 15, FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp))
@@ -346,7 +346,7 @@ private fun LookRow(onClick: () -> Unit) {
 @Composable
 private fun KitCard(onClick: () -> Unit) {
     val ink = LocalKineticaContentColor.current
-    KSurface(onClick, Modifier.fillMaxWidth().jellyPress(0.03f), shape = RoundedCornerShape(32.dp)) {
+    KSurface(onClick, Modifier.fillMaxWidth().jellyPress(0.03f), shape = cardShape) {
         Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
                 KIT_PREVIEW.forEach { demo ->
@@ -366,7 +366,7 @@ private fun KitCard(onClick: () -> Unit) {
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 KIT_TOPICS.forEach { topic ->
-                    Box(Modifier.background(ink.copy(alpha = 0.1f), CircleShape).padding(horizontal = 12.dp, vertical = 6.dp)) {
+                    Box(Modifier.background(ink.copy(alpha = 0.1f), kitShape { chip }).padding(horizontal = 12.dp, vertical = 6.dp)) {
                         Label(topic, 13, FontWeight.Medium)
                     }
                 }
@@ -458,7 +458,7 @@ internal fun CompactEntry(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    KSurface(onClick, modifier.jellyPress(0.04f), shape = RoundedCornerShape(24.dp)) {
+    KSurface(onClick, modifier.jellyPress(0.04f), shape = kitShape { card }) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(40.dp).background(accent.copy(alpha = 0.9f), CircleShape), contentAlignment = Alignment.Center) {
                 ShowcaseIcon(icon, 20.dp, Color(0xFF15161A))

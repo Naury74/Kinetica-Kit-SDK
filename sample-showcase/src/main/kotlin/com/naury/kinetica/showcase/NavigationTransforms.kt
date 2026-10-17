@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
@@ -36,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
@@ -139,8 +141,8 @@ private fun MailRowsCard(expand: KExpandState) {
                 Modifier
                     .fillMaxWidth()
                     .expandSource(expand, index)
-                    .clip(INNER_SHAPE)
-                    .kClickable(INNER_SHAPE, onClickLabel = "열기") { expand.expand(index) }
+                    .clip(innerShape)
+                    .kClickable(innerShape, onClickLabel = "열기") { expand.expand(index) }
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -170,8 +172,8 @@ private fun FabAndPhotosCard(demo: TransformDemo) {
                         .weight(1f)
                         .aspectRatio(1f)
                         .imageViewerSource(demo.viewer, index)
-                        .clip(INNER_SHAPE)
-                        .kClickable(INNER_SHAPE, role = Role.Image) { demo.viewer.open(index) },
+                        .clip(innerShape)
+                        .kClickable(innerShape, role = Role.Image) { demo.viewer.open(index) },
                     contentScale = ContentScale.Crop,
                 )
             }
@@ -286,7 +288,10 @@ private fun CloseButton(modifier: Modifier, onClick: () -> Unit) {
 internal class NavStory(val kicker: String, val title: String, val colors: List<Color>, val body: String)
 
 private const val PHOTO_COUNT = 4
-private val STORY_SHAPE = RoundedCornerShape(28.dp)
+private val STORY_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { card }
 private val MAILS = listOf(
     "김하늘" to "다음 주 회의 자료 공유드립니다",
     "여행 앱" to "예약하신 숙소 확인 안내",

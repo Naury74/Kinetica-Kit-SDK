@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -221,8 +223,8 @@ internal fun MenuRows(items: List<String>, nav: NavDemoState, modifier: Modifier
                 Modifier
                     .fillMaxWidth()
                     .kOrigin { centers[item] = it }
-                    .clip(INNER_SHAPE)
-                    .kClickable(INNER_SHAPE) { nav.push(item, centers[item]) }
+                    .clip(innerShape)
+                    .kClickable(innerShape) { nav.push(item, centers[item]) }
                     .padding(horizontal = 12.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -258,12 +260,12 @@ private fun TabContentCard() {
         KSegmentedControl(TAB_PAGES.map { it.first }, tab, { tab = it }, Modifier.fillMaxWidth())
         KTransitionContent(
             tab,
-            Modifier.fillMaxWidth().height(150.dp).clip(INNER_SHAPE),
+            Modifier.fillMaxWidth().height(150.dp).clip(innerShape),
             transition = transition,
             isForward = { from, to -> to > from },
         ) { page ->
             val (title, colors) = TAB_PAGES[page]
-            Box(Modifier.fillMaxSize().clip(INNER_SHAPE).paintGradient(colors), contentAlignment = Alignment.BottomStart) {
+            Box(Modifier.fillMaxSize().clip(innerShape).paintGradient(colors), contentAlignment = Alignment.BottomStart) {
                 Column(Modifier.padding(16.dp)) {
                     Label("${page + 1} / ${TAB_PAGES.size}", 13, color = Color.White.copy(alpha = 0.8f))
                     Label(title, 24, FontWeight.Bold, color = Color.White)
@@ -346,10 +348,16 @@ private fun titleOf(screen: String): String = when {
 internal const val ROOT = "home"
 internal const val MENU_PREFIX = "menu/"
 private val MENU = listOf("알림", "화면 표시", "개인정보", "배터리")
-private val TILE_SHAPE = RoundedCornerShape(24.dp)
+private val TILE_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { card }
 
-// 바깥 24dp 모서리 안에 8dp 여백이라 16dp로 같은 중심을 맞춘다.
-private val TILE_INNER_SHAPE = RoundedCornerShape(16.dp)
+// 바깥 모서리 안에 8dp 여백이라 그만큼 뺀 반지름으로 같은 중심을 맞춘다.
+private val TILE_INNER_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitInnerShape(8.dp)
 private val TAB_TRANSITIONS = listOf(
     "TabSlide" to KTransitions.TabSlide,
     "SharedAxisX" to KTransitions.SharedAxisX,

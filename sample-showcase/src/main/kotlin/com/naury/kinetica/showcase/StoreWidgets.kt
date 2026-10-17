@@ -105,6 +105,7 @@ fun StoreWidget(key: String, id: String, data: StoreData) {
 
 @Composable
 private fun Card(background: Color = Color.White, content: @Composable ColumnScope.() -> Unit) {
+    // 런처 홈 화면 위젯의 모양을 흉내 낸 것이라 형태 설정과 상관없이 둥근 모서리로 둔다.
     Column(
         Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).background(background).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -237,6 +238,7 @@ private fun Clock() {
         }
     }
     val time = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault())
+    // 런처 홈 화면 위젯 모양이라 형태 설정을 따르지 않는다.
     Column(
         Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).background(ink).padding(16.dp),
         verticalArrangement = Arrangement.Center,

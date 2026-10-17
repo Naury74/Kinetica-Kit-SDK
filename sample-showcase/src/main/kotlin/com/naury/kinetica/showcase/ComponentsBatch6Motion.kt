@@ -49,6 +49,7 @@ import com.naury.kinetica.ui.KMorphGlyph
 import com.naury.kinetica.ui.KMorphIcons
 import com.naury.kinetica.ui.KScrollEffect
 import com.naury.kinetica.ui.KSegmentedControl
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSharedTransitionHost
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KVariant
@@ -82,7 +83,7 @@ internal fun TransitionsCard() {
                 dark = !dark
             }, Modifier.kOrigin { origin = it }, variant = KVariant.Tonal, size = KButtonSize.Small)
         }
-        Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFF2F2F7))) {
+        Box(Modifier.fillMaxWidth().height(120.dp).clip(kitShape { KShapeToken.Medium }).background(Color(0xFFF2F2F7))) {
             Label("밝은 패널", 15, FontWeight.SemiBold, Modifier.align(Alignment.Center), color = Color(0xFF15161A))
             KCircularReveal(dark, Modifier.fillMaxSize(), origin = origin, onBack = { dark = false }) {
                 Box(Modifier.fillMaxSize().background(Color(0xFF15161A)), contentAlignment = Alignment.Center) {
@@ -107,7 +108,7 @@ private fun ComposeSheet(onClose: () -> Unit) {
         }
         Label("아래로 끌거나 뒤로 가기 제스처를 하면 닫힙니다. 목록이 맨 위에 있을 때는 목록을 끌어도 이어서 닫힙니다.", 14)
         repeat(8) { i ->
-            KSurface(Modifier.fillMaxWidth().height(72.dp), shape = RoundedCornerShape(16.dp)) {
+            KSurface(Modifier.fillMaxWidth().height(72.dp), shape = kitShape { KShapeToken.Medium }) {
                 Label("초안 ${i + 1}", 15, modifier = Modifier.align(Alignment.CenterStart).padding(16.dp))
             }
         }
@@ -118,7 +119,7 @@ private fun ComposeSheet(onClose: () -> Unit) {
 @Composable
 private fun SharedPhotos() {
     var selected by rememberSaveable { mutableStateOf<Int?>(null) }
-    Box(Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(16.dp))) {
+    Box(Modifier.fillMaxWidth().height(220.dp).clip(kitShape { KShapeToken.Medium })) {
         KSharedTransitionHost(selected, onBack = if (selected != null) ({ selected = null }) else null, backTarget = null) { photo ->
             if (photo == null) {
                 Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -129,9 +130,9 @@ private fun SharedPhotos() {
                                 .weight(1f)
                                 .fillMaxHeight()
                                 .kSharedElement("photo-$i")
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(kitShape { KShapeToken.Medium })
                                 .background(Brush.linearGradient(colors))
-                                .kClickable(RoundedCornerShape(12.dp), onClickLabel = "사진 ${i + 1} 열기") { selected = i },
+                                .kClickable(kitShape { KShapeToken.Medium }, onClickLabel = "사진 ${i + 1} 열기") { selected = i },
                         )
                     }
                 }
@@ -162,7 +163,7 @@ internal fun ListMotionCard() {
             val stagger = rememberKStaggerState()
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 repeat(4) { i ->
-                    KSurface(Modifier.fillMaxWidth().height(44.dp).staggerIn(i, stagger), shape = RoundedCornerShape(12.dp)) {
+                    KSurface(Modifier.fillMaxWidth().height(44.dp).staggerIn(i, stagger), shape = kitShape { KShapeToken.Medium }) {
                         Label("알림 ${i + 1}", 14, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))
                     }
                 }
@@ -181,7 +182,7 @@ internal fun ListMotionCard() {
             items(40) { i ->
                 KSurface(
                     Modifier.fillMaxWidth().height(48.dp).scrollTransform(list, i, kind, edge = 90.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = kitShape { KShapeToken.Medium },
                 ) {
                     Label("항목 ${i + 1}", 14, modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp))
                 }
@@ -214,7 +215,11 @@ internal fun MicroCard() {
                     Box(
                         Modifier.size(
                             64.dp,
-                        ).flyToSource(fly, "shoe").clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(PHOTO_GRADIENTS[0])),
+                        ).flyToSource(fly, "shoe").clip(
+                            kitShape {
+                                KShapeToken.Medium
+                            },
+                        ).background(Brush.linearGradient(PHOTO_GRADIENTS[0])),
                     )
                     KButton("담기", { fly.launch("shoe", onArrive = { cart++ }) { ShoeThumb() } }, size = KButtonSize.Small)
                 }
@@ -242,7 +247,7 @@ internal fun MicroCard() {
 
 @Composable
 private fun ShoeThumb() {
-    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(PHOTO_GRADIENTS[0])))
+    Box(Modifier.fillMaxSize().clip(kitShape { KShapeToken.Medium }).background(Brush.linearGradient(PHOTO_GRADIENTS[0])))
 }
 
 @Composable
@@ -269,10 +274,14 @@ internal fun MorphCard() {
             MORPH_PAIRS.forEachIndexed { i, (name, pair) ->
                 val active = i in on
                 KSurface(
-                    Modifier.size(64.dp).clip(RoundedCornerShape(18.dp)).kClickable(RoundedCornerShape(18.dp), onClickLabel = name) {
+                    Modifier.size(64.dp).clip(
+                        kitShape {
+                            KShapeToken.Large
+                        },
+                    ).kClickable(kitShape { KShapeToken.Large }, onClickLabel = name) {
                         on = if (active) on - i else on + i
                     },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = kitShape { KShapeToken.Large },
                 ) {
                     MorphIcon(
                         pair.first,

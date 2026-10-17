@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -304,7 +305,7 @@ private fun PlainScreen(page: ExamplePage, nav: NavDemoState) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             item {
-                KSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth(), shape = CARD_SHAPE) {
+                KSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth(), shape = cardShape) {
                     Label(page.body, 15, modifier = Modifier.padding(CARD_PADDING))
                 }
             }
@@ -320,7 +321,7 @@ private fun PlainScreen(page: ExamplePage, nav: NavDemoState) {
 private fun ArtTiles(tiles: List<PageAction>, nav: NavDemoState) {
     Row(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         tiles.forEach { tile ->
-            KSurface({ go(tile, nav, null) }, Modifier.weight(1f), shape = CARD_SHAPE, onClickLabel = "${tile.label} 보기") {
+            KSurface({ go(tile, nav, null) }, Modifier.weight(1f), shape = cardShape, onClickLabel = "${tile.label} 보기") {
                 Column(Modifier.padding(8.dp)) {
                     Box(Modifier.fillMaxWidth().aspectRatio(0.9f).clip(SHOP_IMAGE_SHAPE).paintGradient(tile.colors.orEmpty()))
                     Label(tile.label, 15, FontWeight.SemiBold, Modifier.padding(start = 8.dp, top = 10.dp, bottom = 6.dp))
@@ -333,7 +334,7 @@ private fun ArtTiles(tiles: List<PageAction>, nav: NavDemoState) {
 @Composable
 private fun ActionRows(rows: List<PageAction>, nav: NavDemoState) {
     val centers = remember { HashMap<String, Offset>() }
-    KSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth(), shape = CARD_SHAPE) {
+    KSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth(), shape = cardShape) {
         Column(Modifier.padding(6.dp)) {
             rows.forEach { action ->
                 Row(
@@ -376,7 +377,7 @@ internal fun MenuScreen(screen: String, nav: NavDemoState) {
         ) {
             item {
                 Box(
-                    Modifier.widthIn(max = READING_WIDTH).fillMaxWidth().aspectRatio(2.2f).clip(CARD_SHAPE)
+                    Modifier.widthIn(max = READING_WIDTH).fillMaxWidth().aspectRatio(2.2f).clip(cardShape)
                         .paintGradient(DEPTH_COLORS[(depth - 1) % DEPTH_COLORS.size]),
                     contentAlignment = Alignment.BottomStart,
                 ) {
@@ -385,7 +386,7 @@ internal fun MenuScreen(screen: String, nav: NavDemoState) {
             }
             if (depth < MAX_DEPTH) {
                 item {
-                    KSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth(), shape = CARD_SHAPE) {
+                    KSurface(Modifier.widthIn(max = READING_WIDTH).fillMaxWidth(), shape = cardShape) {
                         MenuRows(SUB_MENU.map { "$screen/$it" }, nav, Modifier.padding(6.dp))
                     }
                 }
@@ -447,7 +448,7 @@ private fun ThemeBack(ink: Color, nav: NavDemoState) {
 @Composable
 private fun ThemeRows(dark: Boolean) {
     val card = if (dark) Color(0xFF1C1F26) else Color.White
-    Column(Modifier.fillMaxWidth().clip(CARD_SHAPE).background(card).padding(vertical = 6.dp)) {
+    Column(Modifier.fillMaxWidth().clip(cardShape).background(card).padding(vertical = 6.dp)) {
         listOf("Wi-Fi" to "집", "블루투스" to "켜짐", "화면 모드" to if (dark) "어둡게" else "밝게").forEach { (name, value) ->
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp)) {
                 Label(name, 16, modifier = Modifier.weight(1f))
@@ -465,7 +466,15 @@ private val DEPTH_COLORS = listOf(
     listOf(Color(0xFF11998E), Color(0xFF38EF7D)),
     listOf(Color(0xFFFC466B), Color(0xFF3F5EFB)),
 )
-private val ROW_SHAPE = androidx.compose.foundation.shape.RoundedCornerShape(26.dp)
 
-// 카드 32dp 모서리 안에 8dp 여백이라 24dp로 같은 중심을 맞춘다.
-private val SHOP_IMAGE_SHAPE = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+// 카드 안 6dp 여백에 놓인 행이라 그만큼 뺀 반지름으로 같은 중심을 맞춘다.
+private val ROW_SHAPE: androidx.compose.ui.graphics.Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitInnerShape(6.dp) { sheet }
+
+// 카드 안에 8dp 여백이라 그만큼 뺀 반지름으로 같은 중심을 맞춘다.
+private val SHOP_IMAGE_SHAPE: androidx.compose.ui.graphics.Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitInnerShape(8.dp) { sheet }

@@ -131,7 +131,7 @@ private fun GlowCard(on: Boolean, toggle: () -> Unit) {
         Box(
             Modifier.fillMaxWidth().height(
                 90.dp,
-            ).glowBorder(INNER_SHAPE).background(LocalKineticaSurface.current.background.copy(alpha = 0.6f), INNER_SHAPE),
+            ).glowBorder(innerShape).background(LocalKineticaSurface.current.background.copy(alpha = 0.6f), innerShape),
             contentAlignment = Alignment.Center,
         ) { Label("AI가 답변을 쓰고 있어요…", 15, FontWeight.Medium) }
         Pill(if (on) "화면 글로우 끄기" else "화면 전체에 켜기", filled = on, onClick = toggle)
@@ -175,10 +175,10 @@ private fun PresetsCard() {
                         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(
                                 Modifier.fillMaxWidth().height(56.dp)
-                                    .kineticaEffects(EffectPresets.all.getValue(name), INNER_SHAPE)
-                                    .clip(INNER_SHAPE)
+                                    .kineticaEffects(EffectPresets.all.getValue(name), innerShape)
+                                    .clip(innerShape)
                                     .background(color)
-                                    .kClickable(INNER_SHAPE) { taps++ },
+                                    .kClickable(innerShape) { taps++ },
                             )
                             Label(label, 12, modifier = Modifier.padding(top = 6.dp))
                         }
@@ -211,7 +211,7 @@ private fun TiltCard() {
                 .fillMaxWidth()
                 .aspectRatio(1.586f)
                 .motionTilt(12f, 0.35f)
-                .clip(INNER_SHAPE)
+                .clip(innerShape)
                 .background(Brush.linearGradient(listOf(Color(0xFF8E54E9), Color(0xFF4776E6), Color(0xFF00C6FF))))
                 .padding(20.dp),
         ) {
@@ -219,7 +219,7 @@ private fun TiltCard() {
                 Label("Kinetica", 18, FontWeight.Bold, color = Color.White, modifier = Modifier.weight(1f))
                 ShowcaseIcon(ShowcaseIcons.Wave, 22.dp, Color.White.copy(alpha = 0.85f))
             }
-            // IC 칩 자리
+            // IC 칩 자리. 실물 카드 칩을 흉내 낸 것이라 형태 설정을 따르지 않는다.
             Box(
                 Modifier
                     .padding(top = 18.dp)

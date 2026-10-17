@@ -133,7 +133,7 @@ private fun tabTracks(tab: Int): List<Int> = when (tab) {
 private fun TrackRow(song: Song, loading: Boolean, current: Boolean, onClick: () -> Unit) {
     KSurface(onClick, Modifier.fillMaxWidth()) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(52.dp).skeleton(loading).clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(song.colors)))
+            Box(Modifier.size(52.dp).skeleton(loading).clip(kitInnerShape(12.dp)).background(Brush.linearGradient(song.colors)))
             Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
                 if (loading) {
                     KSkeletonText(2)

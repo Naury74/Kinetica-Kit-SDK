@@ -38,6 +38,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -80,6 +82,7 @@ import com.naury.kinetica.ui.KListItem
 import com.naury.kinetica.ui.KListLeading
 import com.naury.kinetica.ui.KListSection
 import com.naury.kinetica.ui.KListTrailing
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KSlideToConfirm
 import com.naury.kinetica.ui.KSurface
@@ -180,7 +183,7 @@ private class Meeting(people: Int = 4, muted: Boolean = false, camera: Boolean =
 @Composable
 private fun MeetingBar(meeting: Meeting, startedAt: Long) {
     val ink = LocalKineticaContentColor.current
-    KSurface(Modifier.windowInsetsPadding(WindowInsets.statusBars).padding(12.dp).fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+    KSurface(Modifier.windowInsetsPadding(WindowInsets.statusBars).padding(12.dp).fillMaxWidth(), shape = kitShape { card }) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Label("주간 디자인 싱크", 15, FontWeight.SemiBold)
@@ -203,7 +206,7 @@ private fun MeetingBar(meeting: Meeting, startedAt: Long) {
 @Composable
 private fun MeetingDock(meeting: Meeting, onEnd: () -> Unit) {
     Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars).padding(16.dp), Alignment.Center) {
-        KSurface(shape = RoundedCornerShape(36.dp)) {
+        KSurface(shape = kitShape { tabBar }) {
             Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 KIconToggleButton(meeting.muted, {
                     meeting.muted = it
@@ -240,7 +243,7 @@ private fun SpeakerOverlay(tiles: List<Int>, meeting: Meeting) {
                 Modifier
                     .align(Alignment.BottomStart)
                     .padding(10.dp)
-                    .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                    .background(Color.Black.copy(alpha = 0.35f), kitShape { KShapeToken.Small })
                     .padding(horizontal = 8.dp, vertical = 3.dp),
                 color = Color.White,
             )
@@ -332,5 +335,8 @@ private fun VideoTile(index: Int, seed: Int?, modifier: Modifier) {
     }
 }
 
-private val TILE_SHAPE = RoundedCornerShape(24.dp)
+private val TILE_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { card }
 private val SPEAKER_GLOW = listOf(Color(0xFF34C759), Color(0xFF7CFFB2), Color(0xFF34C759))

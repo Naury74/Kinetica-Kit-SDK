@@ -62,6 +62,7 @@ import com.naury.kinetica.ui.KProgressBar
 import com.naury.kinetica.ui.KResult
 import com.naury.kinetica.ui.KResultMark
 import com.naury.kinetica.ui.KSearchBar
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KStepProgressBar
 import com.naury.kinetica.ui.KSurface
@@ -159,6 +160,7 @@ private fun AccountCards(balance: Long) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             KCarousel(ACCOUNTS.size, Modifier.widthIn(max = 520.dp).fillMaxWidth(), peek = 28.dp, state = pager) { page ->
                 val account = ACCOUNTS[page]
+                // 실물 카드 모양이라 형태 설정과 상관없이 둥근 모서리로 둔다.
                 ArtBox(account.colors, page + 4, Modifier.fillMaxWidth().aspectRatio(1.7f), RoundedCornerShape(24.dp)) {
                     Column(Modifier.fillMaxSize().padding(20.dp)) {
                         Label(account.name, 14, FontWeight.SemiBold, color = Color.White.copy(alpha = 0.85f))
@@ -178,7 +180,7 @@ private fun AccountCards(balance: Long) {
 
 @Composable
 private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier, onClick: () -> Unit) {
-    KSurface(onClick, modifier.jellyPress(0.05f), shape = RoundedCornerShape(20.dp)) {
+    KSurface(onClick, modifier.jellyPress(0.05f), shape = kitShape { KShapeToken.Large }) {
         Column(
             Modifier.fillMaxWidth().padding(vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -194,7 +196,7 @@ private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector
 
 @Composable
 private fun BudgetCard(modifier: Modifier) {
-    KSurface(modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+    KSurface(modifier.fillMaxWidth(), shape = kitShape { card }) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Label("10월 예산", 15, FontWeight.SemiBold, Modifier.weight(1f))

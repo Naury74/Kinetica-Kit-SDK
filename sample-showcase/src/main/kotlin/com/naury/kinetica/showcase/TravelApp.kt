@@ -189,7 +189,7 @@ private fun TripSearch(query: TripQuery, onBack: () -> Unit, onChange: (TripQuer
 private fun RouteCard(query: TripQuery, onChange: (TripQuery) -> Unit) {
     var swaps by rememberSaveable { mutableIntStateOf(0) }
     val turn by animateFloatAsState(swaps * 180f, label = "swap")
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
         Box {
             Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 AirportLine("출발", TRAVEL_AIRPORTS[query.from])
@@ -212,7 +212,7 @@ private fun RouteCard(query: TripQuery, onChange: (TripQuery) -> Unit) {
 
 @Composable
 private fun DatesCard(query: TripQuery, onClick: () -> Unit) {
-    KSurface(onClick, Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), onClickLabel = "날짜 고르기") {
+    KSurface(onClick, Modifier.fillMaxWidth(), shape = kitShape { card }, onClickLabel = "날짜 고르기") {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             ShowcaseIcon(KIcons.Calendar, 22.dp)
             Column(Modifier.weight(1f).padding(start = 14.dp)) {
@@ -227,7 +227,7 @@ private fun DatesCard(query: TripQuery, onClick: () -> Unit) {
 @Composable
 private fun PassengerCard(query: TripQuery, onChange: (TripQuery) -> Unit) {
     var cabin by rememberSaveable { mutableIntStateOf(0) }
-    KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+    KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ShowcaseIcon(KIcons.Users, 22.dp)
@@ -289,7 +289,7 @@ private fun FlightList(from: Int, to: Int, day: LocalDate, onDay: (LocalDate) ->
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item("week") {
-                KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+                KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
                     KWeekStrip(day, onDay, Modifier.padding(vertical = 8.dp), range = LocalDate.now()..LocalDate.now().plusYears(1))
                 }
             }
@@ -307,7 +307,7 @@ private fun FlightList(from: Int, to: Int, day: LocalDate, onDay: (LocalDate) ->
 
 @Composable
 private fun FlightCard(f: Flight, from: Int, to: Int, modifier: Modifier, onClick: () -> Unit) {
-    KSurface(onClick, modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), onClickLabel = "좌석 고르기") {
+    KSurface(onClick, modifier.fillMaxWidth(), shape = kitShape { card }, onClickLabel = "좌석 고르기") {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Label(f.airline, 13, FontWeight.SemiBold, Modifier.weight(1f))
@@ -369,7 +369,7 @@ private fun SeatMap(seat: String, onSeat: (String) -> Unit, onBack: () -> Unit, 
         background = { TravelSky() },
         topBar = { KTopAppBar("좌석 선택", onBack = onBack, subtitle = "일반석 · 3-3 배열") },
         bottomBar = {
-            KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
+            KSurface(Modifier.fillMaxWidth(), shape = kitTopShape()) {
                 Row(
                     Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 20.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -434,6 +434,7 @@ private fun Legend(label: String, state: SeatState) {
 @Composable
 private fun SeatShape(state: SeatState, modifier: Modifier) {
     val ink = LocalKineticaContentColor.current
+    // 좌석 등받이를 흉내 낸 모양이라 형태 설정을 따르지 않는다.
     val shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp, bottomStart = 6.dp, bottomEnd = 6.dp)
     Box(
         modifier
@@ -479,6 +480,7 @@ private fun SeatBox(row: Int, col: Char, picked: String, onSeat: (String) -> Uni
     Box(
         Modifier
             .size(40.dp, 44.dp)
+            // 눌림 표시는 좌석 등받이 모양과 맞춘다.
             .kClickable(RoundedCornerShape(10.dp), enabled = !taken, role = Role.RadioButton) { onSeat(id) }
             .semantics {
                 contentDescription = "$id 좌석, " + if (taken) {

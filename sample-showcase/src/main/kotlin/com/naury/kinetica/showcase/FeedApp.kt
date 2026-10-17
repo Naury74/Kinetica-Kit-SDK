@@ -63,6 +63,7 @@ import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KProfileHeader
 import com.naury.kinetica.ui.KProfileStat
 import com.naury.kinetica.ui.KSearchBar
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KStoryRing
 import com.naury.kinetica.ui.KStoryViewer
@@ -272,7 +273,7 @@ private fun PostCard(
             modifier = Modifier.padding(
                 horizontal = 14.dp,
                 vertical = 4.dp,
-            ).kCombinedClickable(RoundedCornerShape(6.dp), onClick = onComments),
+            ).kCombinedClickable(kitShape { KShapeToken.ExtraSmall }, onClick = onComments),
             color = ink.copy(alpha = 0.55f),
         )
     }

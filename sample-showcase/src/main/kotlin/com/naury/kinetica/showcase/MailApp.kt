@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -45,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -63,6 +65,7 @@ import com.naury.kinetica.ui.KEmptyState
 import com.naury.kinetica.ui.KExpandable
 import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KListDetail
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSnackbarHost
 import com.naury.kinetica.ui.KSnackbarResult
 import com.naury.kinetica.ui.KSurface
@@ -344,8 +347,14 @@ private fun MailFolders(onBack: () -> Unit, close: () -> Unit) {
     }
 }
 
-private val MAIL_ROW_SHAPE = RoundedCornerShape(16.dp)
-private val FOLDER_SHAPE = RoundedCornerShape(14.dp)
+private val MAIL_ROW_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { KShapeToken.Medium }
+private val FOLDER_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { KShapeToken.Medium }
 private val FOLDERS = listOf(
     "받은편지함" to KIcons.Inbox,
     "보낸편지함" to KIcons.Send,

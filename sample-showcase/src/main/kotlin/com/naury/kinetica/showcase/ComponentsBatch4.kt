@@ -191,10 +191,11 @@ private fun LoadingCard() {
             KLoadingIndicator(contained = true, size = 56.dp)
             Label("원판 위에 올린 모핑 로딩", 14, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))
         }
+        val cardShape = kitShape { card }
         KCard(
-            Modifier.fillMaxWidth().borderSpinner(syncing, RoundedCornerShape(24.dp)),
+            Modifier.fillMaxWidth().borderSpinner(syncing, cardShape),
             onClick = { syncing = !syncing },
-            shape = RoundedCornerShape(24.dp),
+            shape = cardShape,
         ) {
             Label(if (syncing) "동기화 중" else "동기화 완료", 16, FontWeight.SemiBold)
             Label("카드를 누르면 테두리 로딩을 켜고 끕니다", 13, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))

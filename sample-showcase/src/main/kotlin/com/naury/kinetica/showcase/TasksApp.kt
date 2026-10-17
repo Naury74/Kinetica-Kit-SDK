@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +39,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -56,6 +58,7 @@ import com.naury.kinetica.ui.KEmptyState
 import com.naury.kinetica.ui.KExtendedFab
 import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KProgressRing
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KSnackbarHost
 import com.naury.kinetica.ui.KSnackbarResult
@@ -230,7 +233,7 @@ private fun LazyListScope.taskGroup(listIndex: Int, rows: List<Task>, row: @Comp
 
 @Composable
 private fun ProgressCard(done: Int, total: Int) {
-    KSurface(Modifier.fillMaxWidth().padding(top = 4.dp), shape = RoundedCornerShape(28.dp)) {
+    KSurface(Modifier.fillMaxWidth().padding(top = 4.dp), shape = kitShape { card }) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             KProgressRing(if (total == 0) 1f else done / total.toFloat(), Modifier.size(64.dp), thickness = 7.dp) {
                 Label("$done/$total", 14, FontWeight.Bold, Modifier.align(Alignment.Center))
@@ -303,7 +306,7 @@ private fun TaskDetail(task: Task, tasks: SnapshotStateList<String>, onBack: () 
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             KTextField(task.title, { update(tasks, task.copy(title = it.replace("|", ""))) }, "제목", clearable = false)
-            KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+            KSurface(Modifier.fillMaxWidth(), shape = kitShape { card }) {
                 Column(Modifier.padding(vertical = 4.dp)) {
                     KSwitchRow("완료", task.done, { update(tasks, task.copy(done = it)) })
                     KSwitchRow("오후 6시에 알림", task.time.isNotEmpty(), { update(tasks, task.copy(time = if (it) "오후 6:00" else "")) })
@@ -358,7 +361,10 @@ private val SEED_TASKS = listOf(
     Task(6, "우유, 달걀", 2, "", false, ""),
     Task(7, "세제 리필", 2, "", true, ""),
 )
-private val TASK_SHAPE = RoundedCornerShape(20.dp)
+private val TASK_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { KShapeToken.Large }
 
 internal val TASKS_LOOK = AppLook(
     SurfaceStyles.Material,

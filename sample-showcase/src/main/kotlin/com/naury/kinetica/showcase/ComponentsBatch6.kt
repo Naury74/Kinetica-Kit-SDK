@@ -73,6 +73,7 @@ import com.naury.kinetica.ui.KMapPin
 import com.naury.kinetica.ui.KPagination
 import com.naury.kinetica.ui.KPaginationStyle
 import com.naury.kinetica.ui.KSegmentedControl
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KStoryRing
 import com.naury.kinetica.ui.KStoryViewer
 import com.naury.kinetica.ui.KTypingIndicator
@@ -310,7 +311,7 @@ private fun ContactsCard() {
         androidx.compose.runtime.derivedStateOf { labels.indexOf(KIndexBarDefaults.keyOf(contacts[list.firstVisibleItemIndex])) }
     }
     DemoCard("연락처 색인", "오른쪽 막대를 위아래로 끌면 큰 글자 말풍선이 따라오고 그 초성으로 이동합니다.") {
-        Box(Modifier.fillMaxWidth().height(320.dp).clip(RoundedCornerShape(16.dp))) {
+        Box(Modifier.fillMaxWidth().height(320.dp).clip(kitShape { KShapeToken.Medium })) {
             LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(end = 28.dp)) {
                 items(contacts.size) { i ->
                     Row(
@@ -355,7 +356,7 @@ private fun MapCard() {
     var picked by rememberSaveable { mutableIntStateOf(1) }
     var round by remember { mutableIntStateOf(0) }
     DemoCard("지도 핀", "가격 핀을 누르면 강조색으로 바뀌며 커집니다. 다시 놓기를 누르면 핀이 위에서 떨어지며 튑니다.") {
-        Box(Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(16.dp)).drawBehind { drawFakeMap() }) {
+        Box(Modifier.fillMaxWidth().height(240.dp).clip(kitShape { KShapeToken.Medium }).drawBehind { drawFakeMap() }) {
             androidx.compose.runtime.key(round) {
                 PIN_SPOTS.forEachIndexed { i, (x, y) ->
                     KMapPin(
@@ -413,7 +414,7 @@ private fun SkyCard() {
     val palette = rememberImagePalette(image)
     DemoCard("배경 효과", "화면 밖으로 스크롤하거나 앱을 내리면 움직임을 멈춥니다. 대표색 배경은 표지를 바꾸면 색이 부드럽게 넘어갑니다.") {
         KSegmentedControl(listOf("오로라", "별빛", "대표색"), kind, { kind = it }, Modifier.fillMaxWidth())
-        Box(Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(16.dp))) {
+        Box(Modifier.fillMaxWidth().height(220.dp).clip(kitShape { KShapeToken.Medium })) {
             when (kind) {
                 0 -> AuroraBackground()
 
@@ -426,9 +427,9 @@ private fun SkyCard() {
                             Box(
                                 Modifier
                                     .size(if (i == cover) 56.dp else 44.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(kitShape { KShapeToken.Small })
                                     .background(Brush.linearGradient(colors))
-                                    .kClickable(RoundedCornerShape(10.dp), onClickLabel = "표지 ${i + 1}") { cover = i },
+                                    .kClickable(kitShape { KShapeToken.Small }, onClickLabel = "표지 ${i + 1}") { cover = i },
                             )
                         }
                     }

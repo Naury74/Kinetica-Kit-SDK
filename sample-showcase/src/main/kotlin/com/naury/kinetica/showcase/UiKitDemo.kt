@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -40,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -61,6 +63,7 @@ import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KMenuItem
 import com.naury.kinetica.ui.KRefreshBox
 import com.naury.kinetica.ui.KSegmentedControl
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KSlider
 import com.naury.kinetica.ui.KSurface
@@ -306,8 +309,8 @@ private fun PresetTile(preset: SurfacePreset, dark: Boolean, selected: Boolean, 
         )
         KineticaTheme(surface = surface, design = look.selectedDesign) {
             Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // 바깥 24dp 모서리에서 여백 10dp를 빼 안쪽 카드가 같은 중심으로 굽는다.
-                KSurface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), backdrop = backdrop) {
+                // 바깥 모서리에서 여백 10dp를 빼 안쪽 카드가 같은 중심으로 굽는다.
+                KSurface(Modifier.fillMaxWidth(), shape = kitInnerShape(10.dp), backdrop = backdrop) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Label(preset.name, 15, FontWeight.Bold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -357,11 +360,13 @@ private fun DesignTile(name: String, design: KineticaDesign, surface: SurfaceSty
     var on by rememberSaveable { mutableStateOf(true) }
     var value by rememberSaveable { mutableFloatStateOf(0.6f) }
     var chip by rememberSaveable { mutableStateOf(true) }
+    // 칸 테두리도 미리 보는 형태의 카드 모양을 따라야 형태끼리 비교가 된다.
+    val tileShape = design.shapes.shape(design.shapes.card)
     Box(
         Modifier
             .width(DESIGN_TILE_WIDTH)
-            .clip(PRESET_TILE_SHAPE)
-            .border(if (selected) 2.5.dp else 0.dp, if (selected) ring else Color.Transparent, PRESET_TILE_SHAPE),
+            .clip(tileShape)
+            .border(if (selected) 2.5.dp else 0.dp, if (selected) ring else Color.Transparent, tileShape),
     ) {
         Box(
             Modifier.matchParentSize().glassBackdrop(backdrop).then(
@@ -415,11 +420,11 @@ private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
     )
     // 길게 누르면 사진이 떠오르고 배경이 흐려지며 메뉴가 열린다.
     Box(
-        Modifier.fillMaxWidth().aspectRatio(1.6f).kContextMenu(menu).clip(RoundedCornerShape(28.dp)),
+        Modifier.fillMaxWidth().aspectRatio(1.6f).kContextMenu(menu).clip(kitShape { card }),
         contentAlignment = Alignment.BottomStart,
     ) {
         Box(Modifier.matchParentSize().glassBackdrop(photo).background(Brush.linearGradient(colors)))
-        KSurface(Modifier.padding(14.dp), shape = RoundedCornerShape(14.dp), backdrop = photo) {
+        KSurface(Modifier.padding(14.dp), shape = kitInnerShape(14.dp), backdrop = photo) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                 Label(TITLES[index % TITLES.size], 16, FontWeight.SemiBold)
                 Label("길게 누르면 메뉴가 열려요", 13)
@@ -428,11 +433,17 @@ private fun Photo(colors: List<Color>, index: Int, notify: (String) -> Unit) {
     }
 }
 
-private val ROW_SHAPE = RoundedCornerShape(14.dp)
+private val ROW_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { KShapeToken.Medium }
 private val UI_KIT_LOOK = DemoLook(GlassStyles.Liquid, GlassStyles.LiquidDark, defaultDark = false)
 private val PRESET_TILE_WIDTH = 150.dp
 private val DESIGN_TILE_WIDTH = 172.dp
-private val PRESET_TILE_SHAPE = RoundedCornerShape(24.dp)
+private val PRESET_TILE_SHAPE: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = kitShape { card }
 private val TILE_LIGHT = listOf(Color(0xFF8EC5FF), Color(0xFFFFB3D9), Color(0xFFFFE29A))
 private val TILE_DARK = listOf(Color(0xFF1B2A6B), Color(0xFF5B2A86), Color(0xFF0E5E6F))
 private val SHARE_TARGETS = listOf(

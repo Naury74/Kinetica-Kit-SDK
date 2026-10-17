@@ -62,6 +62,7 @@ import com.naury.kinetica.ui.KIconToggleButton
 import com.naury.kinetica.ui.KInputChip
 import com.naury.kinetica.ui.KMediaCard
 import com.naury.kinetica.ui.KSelectableCard
+import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSplitButton
 import com.naury.kinetica.ui.KStatus
 import com.naury.kinetica.ui.KStatusBadge
@@ -101,7 +102,7 @@ private fun ShoppingScene() {
                 subtitle = "₩89,000  ·  리뷰 1,204",
                 eyebrow = "오늘만 20% 할인",
                 aspectRatio = 16f / 10f,
-                shape = RoundedCornerShape(16.dp),
+                shape = kitShape { KShapeToken.Medium },
                 trailing = {
                     KIconToggleButton(liked, {
                         liked = it
@@ -230,6 +231,7 @@ private fun IconButtonsCard() {
             KIconToggleButton(bookmarked, { bookmarked = it }, Batch2Icons.Bookmark, "북마크", checkedIcon = Batch2Icons.BookmarkFilled)
             KIconToggleButton(muted, { muted = it }, Batch2Icons.Bell, "알림 끄기", variant = KVariant.Outlined, tone = KTone.Neutral)
             KIconButton(Batch2Icons.Share, "공유", {}, size = KIconButtonSizes.Small, variant = KVariant.Tonal)
+            // shape 파라미터로 하나만 모양을 바꾸는 예라 형태 설정과 상관없이 12dp로 둔다.
             KIconButton(Batch2Icons.Share, "공유", {}, variant = KVariant.Outlined, shape = RoundedCornerShape(12.dp))
             KIconButton(Batch2Icons.Share, "공유", {}, size = KIconButtonSizes.Large, variant = KVariant.Filled)
         }
@@ -362,6 +364,7 @@ private fun BadgesCard() {
             KAvatar(KAvatarData("Ana Lee"), size = KAvatarSize.Small, status = KAvatarStatus.Busy)
             KAvatar(KAvatarData("준호"), status = KAvatarStatus.Away)
             KAvatar(KAvatarData("서연"), size = KAvatarSize.Large, status = KAvatarStatus.Online)
+            // 팀 아바타를 둥근 사각으로 바꾸는 예라 형태 설정과 상관없이 16dp로 둔다.
             KAvatar(KAvatarData("팀"), size = KAvatarSize.Large, shape = RoundedCornerShape(16.dp), status = KAvatarStatus.Offline)
         }
     }
