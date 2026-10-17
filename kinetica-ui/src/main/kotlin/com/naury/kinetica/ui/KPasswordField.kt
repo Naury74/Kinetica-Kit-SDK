@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.error
@@ -290,7 +291,8 @@ private fun StrengthMeter(value: String, surface: SurfaceStyle) {
                     }
                 },
         )
-        Box(Modifier.padding(start = METER_LABEL_GAP).graphicsLayer { alpha = (level.value).coerceIn(0f, 1f) }) {
+        // 강도는 stateDescription으로 읽으므로 글자는 다시 읽지 않게 지운다.
+        Box(Modifier.padding(start = METER_LABEL_GAP).graphicsLayer { alpha = (level.value).coerceIn(0f, 1f) }.clearAndSetSemantics {}) {
             ThemedText(
                 name,
                 style = TextStyle(fontSize = SMALL_FONT_SIZE, fontWeight = FontWeight.SemiBold),

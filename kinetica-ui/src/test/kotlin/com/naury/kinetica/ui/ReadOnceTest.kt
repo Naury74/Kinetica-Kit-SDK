@@ -1,0 +1,55 @@
+package com.naury.kinetica.ui
+
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import com.google.common.truth.Truth.assertThat
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/**
+ * 이름을 직접 정한 노드가 안쪽 글자를 다시 읽지 않는지. TalkBack은 이름과 함께 묶인 글자도 읽어서,
+ * 통화 시간 "1:47" 뒤에 콜론을 한 번 더 읽었다(호스트 앱 TalkBack 16 피드백).
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], qualifiers = "ko")
+class ReadOnceTest {
+    @get:Rule
+    val compose = createComposeRule()
+
+    private fun SemanticsNodeInteraction.mergedText() =
+        fetchSemanticsNode().config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text }
+
+    @Test
+    fun `굴러가는 숫자는 전체 값만 읽고 콜론을 따로 읽지 않는다`() {
+        compose.setContent { RollingText("1:47") }
+        assertThat(compose.onNodeWithContentDescription("1:47").mergedText()).isEmpty()
+    }
+
+    @Test
+    fun `타자 효과는 전체 문장만 읽고 치는 중인 글자를 읽지 않는다`() {
+        compose.mainClock.autoAdvance = false
+        compose.setContent { TypewriterText("안녕하세요") }
+        compose.mainClock.advanceTimeBy(100)
+        assertThat(compose.onNodeWithContentDescription("안녕하세요").mergedText()).isEmpty()
+    }
+
+    @Test
+    fun `비밀번호 강도는 이름과 상태만 읽고 강도 글자를 또 읽지 않는다`() {
+        compose.setContent { KPasswordField("Abcdef12!@#xyz", {}, "비밀번호") }
+        val meter = compose.onNodeWithContentDescription("비밀번호 강도")
+        assertThat(meter.fetchSemanticsNode().config[SemanticsProperties.StateDescription]).isNotEmpty()
+        assertThat(meter.mergedText()).isEmpty()
+    }
+
+    @Test
+    fun `태그 칩은 태그 이름을 한 번만 읽는다`() {
+        compose.setContent { KTagInput(listOf("디자인"), {}) }
+        assertThat(compose.onNodeWithContentDescription("디자인").mergedText()).isEmpty()
+    }
+}

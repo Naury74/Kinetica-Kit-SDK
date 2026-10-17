@@ -124,6 +124,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 고친 것
 
+- TalkBack이 이름 뒤에 안쪽 글자를 또 읽던 문제: `RollingText`(통화 시간 "1:47" 뒤 콜론), `TypewriterText`(치는 중인 글자와 커서), 비밀번호 강도 글자, 태그 칩 이름
 - 묶음 재생기(`RemoteKineticaPlayer(bundle, sceneId)`)에서 화면 id를 바꾼 첫 프레임에 이전 화면 문서가 새 화면으로 넘어가던 문제(새 화면 문서에 적힌 전환 대신 이전 문서의 전환을 읽을 수 있었습니다)
 - 예측 뒤로 가기 제스처를 취소하면 `PushNavigation`, `KCircularReveal`, `KFullScreenModal`, `KSharedTransitionHost`, `KDrawer`, `KStoryViewer`가 반쯤 되감긴 채 멈추던 문제(취소와 함께 되돌리는 애니메이션도 취소되었습니다)
 - 디자인 토큰을 바꾸는 `SceneCommand.SetToken`이 실행 취소되지 않던 문제(`SceneDiff`가 `tokens`를 비교하지 않았습니다)

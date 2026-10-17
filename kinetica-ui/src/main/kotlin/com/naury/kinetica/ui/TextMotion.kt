@@ -25,8 +25,8 @@ import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -60,9 +60,8 @@ public fun RollingText(text: String, modifier: Modifier = Modifier, style: TextS
     // 굴러가는 숫자의 위아래는 자리마다 drawDigits가 자른다.
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(
-            modifier.semantics(mergeDescendants = true) {
-                contentDescription = text
-            },
+            // 숫자가 아닌 글자는 Text로 그리므로, 묶기만 하면 TalkBack이 "1:47" 뒤에 콜론을 또 읽는다.
+            modifier.clearAndSetSemantics { contentDescription = text },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // 자릿수가 늘어도 끝자리끼리 맞춰 비교하도록 오른쪽부터 센다.
@@ -204,7 +203,7 @@ public fun TypewriterText(
         }
     }
     val caret = if (cursor && (blink || shown < text.length)) "▍" else " "
-    ThemedText(text.take(shown) + if (cursor) caret else "", modifier.semantics { contentDescription = text }, style = style)
+    ThemedText(text.take(shown) + if (cursor) caret else "", modifier.clearAndSetSemantics { contentDescription = text }, style = style)
 }
 
 private const val BLINK_MS = 530L

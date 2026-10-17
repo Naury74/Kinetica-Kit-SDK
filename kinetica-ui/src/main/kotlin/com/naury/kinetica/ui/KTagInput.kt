@@ -64,6 +64,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.liveRegion
@@ -361,6 +362,7 @@ private fun TagChip(tag: String, look: TagLook, bump: Int, onRemove: () -> Unit)
     ) {
         ThemedText(
             tag,
+            Modifier.clearAndSetSemantics {},
             style = TextStyle(fontSize = CHIP_FONT_SIZE, fontWeight = KineticaTheme.design.label(FontWeight.Medium)),
             color = { lerp(ink, onAccent, armedLevel.value) },
             maxLines = 1,
