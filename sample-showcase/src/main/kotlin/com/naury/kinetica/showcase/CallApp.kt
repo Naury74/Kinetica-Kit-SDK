@@ -4,6 +4,7 @@
 
 package com.naury.kinetica.showcase
 
+import android.os.SystemClock
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -66,11 +67,19 @@ import com.naury.kinetica.ui.KAvatar
 import com.naury.kinetica.ui.KAvatarData
 import com.naury.kinetica.ui.KAvatarSize
 import com.naury.kinetica.ui.KButton
+import com.naury.kinetica.ui.KCallActions
+import com.naury.kinetica.ui.KCallDockItem
+import com.naury.kinetica.ui.KCallParticipant
+import com.naury.kinetica.ui.KCallPhase
+import com.naury.kinetica.ui.KCallScreen
+import com.naury.kinetica.ui.KCallState
 import com.naury.kinetica.ui.KDialogAction
 import com.naury.kinetica.ui.KDialogActionStyle
 import com.naury.kinetica.ui.KIconButton
 import com.naury.kinetica.ui.KIconToggleButton
 import com.naury.kinetica.ui.KIcons
+import com.naury.kinetica.ui.KIncomingCallScreen
+import com.naury.kinetica.ui.KIncomingCallStyle
 import com.naury.kinetica.ui.KIndexBar
 import com.naury.kinetica.ui.KIndexBarDefaults
 import com.naury.kinetica.ui.KIslandContent
@@ -120,7 +129,7 @@ internal fun CallApp(onBack: () -> Unit) {
     val pop = { stack = stack.dropLast(1) }
     val startCall = { who: Int, video: Boolean ->
         peer = who
-        startedAt = System.currentTimeMillis()
+        startedAt = SystemClock.elapsedRealtime()
         stack = listOf("main", if (video) "video" else "voice")
     }
     val endCall = {
@@ -175,21 +184,8 @@ internal fun CallApp(onBack: () -> Unit) {
 }
 
 private fun elapsed(startedAt: Long): String {
-    val seconds = ((System.currentTimeMillis() - startedAt) / 1_000).coerceAtLeast(0)
+    val seconds = ((SystemClock.elapsedRealtime() - startedAt) / 1_000).coerceAtLeast(0)
     return "%02d:%02d".format(seconds / 60, seconds % 60)
-}
-
-/** 1초마다 바뀌는 통화 시간 글자. */
-@Composable
-internal fun rememberCallElapsed(startedAt: Long): String {
-    var text by remember { mutableStateOf(elapsed(startedAt)) }
-    LaunchedEffect(startedAt) {
-        while (true) {
-            text = elapsed(startedAt)
-            delay(1_000)
-        }
-    }
-    return text
 }
 
 @Composable
@@ -376,131 +372,62 @@ private fun formatPhone(digits: String): String = when {
     else -> "${digits.take(3)}-${digits.substring(3, 7)}-${digits.drop(7)}"
 }
 
+/** 걸려 오는 전화. 완성 컴포넌트 `KIncomingCallScreen` 하나로 그린다. 주머니 속 잘못 누름을 막으려고 밀어서 받는다. */
 @Composable
 private fun IncomingCall(onAnswer: () -> Unit, onDecline: () -> Unit, onMessage: (String) -> Unit) {
-    var replies by remember { mutableStateOf(false) }
-    val pulse = rememberInfiniteTransition(label = "ring")
-    val ring by pulse.animateFloat(0f, 1f, infiniteRepeatable(tween(1_600, easing = LinearEasing)), label = "ring")
     val caller = CALL_CONTACTS[0]
-    KineticaScaffold(Modifier.fillMaxSize(), systemBarIcons = false, edgeFade = false, background = {
-        CallerBackdrop(caller.avatar.color)
-    }) { _ ->
-        Column(
-            Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(Modifier.height(48.dp))
-            Label("휴대전화", 15, color = Color.White.copy(alpha = 0.75f))
-            Label(caller.name, 34, FontWeight.Bold, Modifier.padding(top = 4.dp), color = Color.White)
-            Spacer(Modifier.height(40.dp))
-            Box(contentAlignment = Alignment.Center) {
-                Canvas(Modifier.size(200.dp)) {
-                    drawCircle(Color.White.copy(alpha = 0.25f * (1 - ring)), size.minDimension / 2 * (0.55f + 0.45f * ring))
-                }
-                KAvatar(caller.avatar, size = KAvatarSize.ExtraLarge)
-            }
-            Spacer(Modifier.weight(1f))
-            Row(Modifier.widthIn(max = 420.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                RoundAction("거절", KIcons.CallEnd, Color(0xFFFF3B30), onDecline)
-                RoundAction("메시지", KIcons.Message, Color.White.copy(alpha = 0.22f)) { replies = true }
-            }
-            Spacer(Modifier.height(24.dp))
-            KSlideToConfirm("밀어서 받기", onAnswer, Modifier.widthIn(max = 420.dp).fillMaxWidth())
-        }
-    }
-    KActionSheet(
-        replies,
-        { replies = false },
-        QUICK_REPLIES.map { text -> KDialogAction(text) { onMessage(text) } } + KDialogAction("취소", KDialogActionStyle.Preferred) {},
-        title = "메시지로 답하기",
+    KIncomingCallScreen(
+        caller.name,
+        onAccept = onAnswer,
+        onDecline = onDecline,
+        avatar = caller.avatar,
+        subtitle = "휴대전화 ${caller.number}",
+        onMessage = onMessage,
+        quickReplies = QUICK_REPLIES,
+        style = KIncomingCallStyle.Slide,
     )
 }
 
-@Composable
-private fun CallerBackdrop(color: Color) {
-    Canvas(Modifier.fillMaxSize()) {
-        drawRect(Brush.verticalGradient(listOf(color.copy(alpha = 0.9f), Color(0xFF14121C))))
-    }
-}
-
-@Composable
-private fun RoundAction(label: String, icon: ImageVector, color: Color, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        KSurface(onClick, Modifier.size(64.dp).jellyPress(), shape = CircleShape) {
-            Box(Modifier.fillMaxSize().background(color, CircleShape), Alignment.Center) { ShowcaseIcon(icon, 28.dp, Color.White) }
-        }
-        Label(label, 13, modifier = Modifier.padding(top = 6.dp), color = Color.White)
-    }
-}
-
+/**
+ * 음성 통화. 완성 컴포넌트 `KCallScreen`에 음성 통화 상태를 넘긴다. 처음 1.5초는 연결 중 화면을 보여 주고, 음소거, 스피커, 영상 전환,
+ * 대기를 도크에 둔다. '대기'처럼 키트에 없는 버튼은 `extraDockItems`로 덧붙인다.
+ */
 @Composable
 private fun VoiceCall(who: Int, startedAt: Long, onMinimize: () -> Unit, onVideo: () -> Unit, onEnd: () -> Unit) {
     var muted by rememberSaveable { mutableStateOf(false) }
     var speaker by rememberSaveable { mutableStateOf(false) }
     var held by rememberSaveable { mutableStateOf(false) }
-    val time = rememberCallElapsed(startedAt)
+    var connected by rememberSaveable { mutableStateOf(SystemClock.elapsedRealtime() - startedAt > 1_500) }
+    LaunchedEffect(Unit) {
+        delay(1_500)
+        connected = true
+    }
     val contact = CALL_CONTACTS[who]
-    KineticaScaffold(Modifier.fillMaxSize(), systemBarIcons = false, edgeFade = false, background = {
-        CallerBackdrop(contact.avatar.color)
-    }) { _ ->
-        Column(
-            Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Row(Modifier.fillMaxWidth()) {
-                KIconButton(KIcons.ArrowDown, "작게 보기", onMinimize, variant = KVariant.Glass)
-            }
-            Spacer(Modifier.height(24.dp))
-            KAvatar(contact.avatar, size = KAvatarSize.ExtraLarge)
-            Label(contact.name, 30, FontWeight.Bold, Modifier.padding(top = 16.dp), color = Color.White)
-            RollingText(
-                if (held) "대기 중" else time,
-                Modifier.padding(top = 6.dp),
-                style = TextStyle(color = Color.White.copy(alpha = 0.8f), fontSize = 18.sp, fontWeight = FontWeight.Medium),
-            )
-            Spacer(Modifier.weight(1f))
-            KSurface(Modifier.widthIn(max = 420.dp).fillMaxWidth(), shape = cardShape) {
-                Column(Modifier.padding(vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        ToggleAction("음소거", KIcons.MicOff, muted) { muted = it }
-                        ToggleAction("키패드", KIcons.Dialpad, false) {}
-                        ToggleAction("스피커", KIcons.Speaker, speaker) { speaker = it }
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        ToggleAction("통화 추가", KIcons.Plus, false) {}
-                        ToggleAction("영상", KIcons.Video, false) { onVideo() }
-                        ToggleAction("대기", KIcons.Clock, held) { held = it }
-                    }
-                }
-            }
-            Spacer(Modifier.height(28.dp))
-            KIconButton(
-                KIcons.CallEnd,
-                "통화 끊기",
-                onEnd,
-                Modifier.jellyPress(),
-                variant = KVariant.Filled,
-                tone = KTone.Destructive,
-                size = 72.dp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ToggleAction(label: String, icon: ImageVector, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(min = 72.dp)) {
-        KIconToggleButton(
-            checked,
-            onChange,
-            icon,
-            label,
-            size = 60.dp,
-            variant = if (checked) KVariant.Filled else KVariant.Tonal,
-            tone = KTone.Neutral,
-        )
-        Label(label, 12, modifier = Modifier.padding(top = 6.dp))
-    }
+    val state = KCallState(
+        phase = if (connected) KCallPhase.Connected else KCallPhase.Connecting,
+        participants = listOf(
+            KCallParticipant("me", CALL_ME.name, CALL_ME, isLocal = true, isMuted = muted, isVideoOn = false),
+            KCallParticipant("peer", contact.name, contact.avatar, isVideoOn = false, isSpeaking = connected && !held),
+        ),
+        isVideoCall = false,
+        startedAtMillis = startedAt,
+        isSpeakerOn = speaker,
+        statusText = if (held) "대기 중" else "휴대전화",
+    )
+    KCallScreen(
+        state = state,
+        actions = KCallActions(
+            onEnd = onEnd,
+            onToggleMute = { muted = !muted },
+            onToggleSpeaker = { speaker = !speaker },
+            onMinimize = onMinimize,
+        ),
+        audioLevel = { if (it == "peer") 0.5f else 0f },
+        extraDockItems = listOf(
+            KCallDockItem("video", KIcons.Video, "영상", onVideo),
+            KCallDockItem("hold", KIcons.Clock, "대기", { held = !held }, checked = held),
+        ),
+    )
 }
 
 internal class Contact(val name: String, val number: String, color: Color) {

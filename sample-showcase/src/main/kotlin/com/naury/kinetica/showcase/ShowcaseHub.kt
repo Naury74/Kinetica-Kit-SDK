@@ -146,6 +146,7 @@ private val COMPONENT_TAB_INFO = mapOf(
     "피드백·로딩" to ("토스트, 스낵바, 배너, 스켈레톤, 진행 막대, 햅틱" to KIcons.Bell),
     "데이터·도메인" to ("대시보드, 배송 추적, 결제 단계, 요금제, 송금, 히트맵" to KIcons.Grid),
     "소셜·모션" to ("채팅, 스토리, 연락처 색인, 지도 핀, 마이크로 인터랙션" to KIcons.Message),
+    "통화" to ("조작 도크, 참가자 타일과 격자, 상태 화면, 수신 화면, 입장 화면" to KIcons.Call),
 )
 
 private val TILE_ACCENTS = listOf(
