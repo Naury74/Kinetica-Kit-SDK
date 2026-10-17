@@ -68,6 +68,20 @@ class KCallTest {
     }
 
     @Test
+    fun `배지 문구를 따로 주면 배지 수를 두 번 읽지 않는다`() {
+        compose.setContent {
+            KCallDock(
+                listOf(
+                    KCallDockItem("chat", KIcons.Message, "채팅", {}, badge = 1, stateDescription = "읽지 않은 메시지 1개", badgeDescription = ""),
+                    KCallDockItem("people", KIcons.Person, "참가자", {}, badge = 2, badgeDescription = "새 참가자 2명"),
+                ),
+            )
+        }
+        compose.onNodeWithContentDescription("채팅").assert(hasState("읽지 않은 메시지 1개"))
+        compose.onNodeWithContentDescription("참가자").assert(hasState("새 참가자 2명"))
+    }
+
+    @Test
     fun `좁은 도크는 더보기로 접고 배지를 합치며 기본 시트에서 접힌 버튼을 누를 수 있다`() {
         var shared = false
         compose.setContent {

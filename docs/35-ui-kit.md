@@ -1217,7 +1217,7 @@ bottomBar = {
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `KCallControlButton` | 원 안 아이콘과 아래 이름표. 켜짐은 원을 채우고, 진행 중은 둘레가 맥박처럼 뛰고, 끊기와 받기는 늘 그 색으로 채운다. TalkBack은 '마이크, 꺼짐, 새 항목 2개'처럼 한 번에 읽는다 | `checked`(null이면 상태 없는 버튼), `checkedIcon`, `tone`, `pending`, `badge`, `size`, `showLabel` |
+| `KCallControlButton` | 원 안 아이콘과 아래 이름표. 켜짐은 원을 채우고, 진행 중은 둘레가 맥박처럼 뛰고, 끊기와 받기는 늘 그 색으로 채운다. TalkBack은 '마이크, 꺼짐, 새 항목 2개'처럼 한 번에 읽는다. 상태 문구에 개수를 이미 넣었다면 `badgeDescription = ""`로 배지를 따로 읽지 않게 한다 | `checked`(null이면 상태 없는 버튼), `checkedIcon`, `tone`, `pending`, `badge`, `badgeDescription`, `size`, `showLabel` |
 | `KCallDock` | 버튼 막대. 폭이 모자라면 원을 48dp로 줄이고, 그래도 넘치면 필수가 아닌 버튼을 끊기 앞 '더보기'로 접는다. '더보기' 배지는 접힌 버튼 배지의 합이다 | `items: List<KCallDockItem>`, `onMore`(null이면 시트를 직접 연다), `onItemPositioned`(버튼 위치), `vertical`. 버튼을 직접 넣는 `KCallDock { }`도 있다 |
 | `KCallTopBar` | 제목, 연결 품질, 통화 시간, 인원, 녹화와 암호화 배지를 담은 상태 캡슐과 앞뒤 버튼. 글자가 커져도 끝 버튼은 밀려나지 않고, 부가 칩은 다 들어갈 때만 보인다 | `startedAtMillis`, `participantCount`, `quality`, `navigation`, `chips`, `actions` |
 | `KParticipantTile` | 영상 슬롯, 카메라가 꺼지면 아바타와 말하기 물결, 이름표, 마이크 꺼짐과 손 들기와 약한 연결 표시, 말하는 동안 글로우 테두리. 누르면 `onClick`, 길게 누르면 고정한다 | `video`, `speaking`, `audioLevel: () -> Float`, `mirror`, `screenShare`, `nameTag`, `layer` |

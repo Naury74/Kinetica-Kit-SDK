@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
  * @property key 버튼을 구분하는 값. [KCallDock]의 `onItemPositioned`가 이 값으로 위치를 알린다.
  * @property essential true면 도크가 좁아도 막대에 남는다. false인 버튼은 넘치면 앞에서부터 남고 뒤쪽이 '더보기'로 옮겨 간다.
  * @property stateDescription TalkBack이 읽을 상태와 '더보기' 시트 행 끝에 쓸 상태. null이면 [checked]로 고른다.
+ * @property badgeDescription TalkBack이 [badge] 대신 읽을 문구. 뜻은 [KCallControlButton]의 같은 인자와 같다.
  */
 @Immutable
 public data class KCallDockItem(
@@ -48,6 +49,7 @@ public data class KCallDockItem(
     val enabled: Boolean = true,
     val essential: Boolean = false,
     val stateDescription: String? = null,
+    val badgeDescription: String? = null,
 )
 
 /**
@@ -146,6 +148,7 @@ private fun DockButton(item: KCallDockItem, size: Dp, showLabel: Boolean, surfac
         size = size,
         showLabel = showLabel,
         stateDescription = item.stateDescription,
+        badgeDescription = item.badgeDescription,
         surface = surface,
     )
 }

@@ -91,6 +91,8 @@ public object KCallControlDefaults {
  * @param size 원 지름. 48dp보다 작으면 48dp로 맞춘다.
  * @param showLabel false면 이름표를 그리지 않는다. TalkBack 이름은 그대로 [label]이다.
  * @param stateDescription TalkBack이 읽을 상태. null이면 [checked]와 [pending]으로 '켜짐', '꺼짐', '바꾸는 중'을 고른다.
+ * @param badgeDescription TalkBack이 [badge] 대신 읽을 문구. null이면 '새 항목 3개'처럼 읽고, 빈 문자열이면 배지를 읽지 않는다
+ *   ([stateDescription]에 이미 개수를 넣었을 때).
  */
 @Composable
 public fun KCallControlButton(
@@ -107,6 +109,7 @@ public fun KCallControlButton(
     size: Dp = KCallControlDefaults.Size,
     showLabel: Boolean = true,
     stateDescription: String? = null,
+    badgeDescription: String? = null,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -114,7 +117,11 @@ public fun KCallControlButton(
     val shape = shapeFor { button }
     val interaction = remember { MutableInteractionSource() }
     val state = stateDescription ?: callStateLabel(checked, pending)
-    val badgeLabel = if (badge > 0) pluralStringResource(R.plurals.kinetica_ui_call_badge, badge, badge) else null
+    val badgeLabel = when {
+        badge <= 0 -> null
+        badgeDescription != null -> badgeDescription.takeIf { it.isNotEmpty() }
+        else -> pluralStringResource(R.plurals.kinetica_ui_call_badge, badge, badge)
+    }
     val click = {
         haptic.performHapticFeedback(if (tone == KTone.Destructive) HapticFeedbackType.LongPress else HapticFeedbackType.ContextClick)
         onClick()
