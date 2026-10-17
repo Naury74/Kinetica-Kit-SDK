@@ -72,28 +72,13 @@ public fun rememberKNavTransition(spec: KNavTransitionSpec): KNavTransitionSpec 
  */
 public object KNavTransitions {
     /** 옆으로 밀기. 새 화면이 끝 쪽에서 들어오고 이전 화면은 30% 물러난다. */
-    public val Push: KNavTransitionSpec = KNavTransitionSpec(
-        enter = { slideIntoContainer(SlideDirection.Start, slideSpec()) },
-        exit = { slideOutOfContainer(SlideDirection.Start, slideSpec()) { it * PARALLAX_PERCENT / PERCENT } },
-        popEnter = { slideIntoContainer(SlideDirection.End, slideSpec()) { it * PARALLAX_PERCENT / PERCENT } },
-        popExit = { slideOutOfContainer(SlideDirection.End, slideSpec()) },
-    )
+    public val Push: KNavTransitionSpec = push(DEFAULT_STIFFNESS)
 
     /** 두 화면이 함께 밀린다. */
-    public val Slide: KNavTransitionSpec = KNavTransitionSpec(
-        enter = { slideIntoContainer(SlideDirection.Start, slideSpec()) },
-        exit = { slideOutOfContainer(SlideDirection.Start, slideSpec()) },
-        popEnter = { slideIntoContainer(SlideDirection.End, slideSpec()) },
-        popExit = { slideOutOfContainer(SlideDirection.End, slideSpec()) },
-    )
+    public val Slide: KNavTransitionSpec = slide(DEFAULT_STIFFNESS)
 
     /** 새 화면이 아래에서 올라와 덮고, 뒤로 가면 아래로 내려간다. 전체 화면 다이얼로그에 쓴다. */
-    public val SlideUp: KNavTransitionSpec = KNavTransitionSpec(
-        enter = { slideIntoContainer(SlideDirection.Up, slideSpec()) },
-        exit = { ExitTransition.KeepUntilTransitionsFinished },
-        popEnter = { EnterTransition.None },
-        popExit = { slideOutOfContainer(SlideDirection.Down, slideSpec()) },
-    )
+    public val SlideUp: KNavTransitionSpec = slideUp(DEFAULT_STIFFNESS)
 
     /** 시트 스택. 새 화면이 아래에서 올라오고 이전 화면은 작아지며 흐려진다. */
     public val SheetStack: KNavTransitionSpec = KNavTransitionSpec(
@@ -150,8 +135,43 @@ public object KNavTransitions {
     /** 전환 없이 바로 바꾼다. */
     public val None: KNavTransitionSpec = KNavTransitionSpec(enter = { EnterTransition.None }, exit = { ExitTransition.None })
 
-    private fun slideSpec(): FiniteAnimationSpec<IntOffset> =
-        spring(dampingRatio = 1f, stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold)
+    /**
+     * [Push]를 [motion]의 빠르기로 만든다. 디자인 언어의 모션을 따르려면 `KNavTransitions.push(KineticaTheme.design.motion)`.
+     * 화면 가장자리가 넘쳐 틈이 보이지 않도록 [KineticaMotion.damping]은 쓰지 않고 넘치지 않는 스프링으로 [KineticaMotion.stiffness]만 따른다.
+     */
+    public fun push(motion: KineticaMotion): KNavTransitionSpec = push(motion.stiffness)
+
+    /** [Slide]를 [motion]의 빠르기로 만든다. 감쇠는 [push]처럼 따르지 않는다. */
+    public fun slide(motion: KineticaMotion): KNavTransitionSpec = slide(motion.stiffness)
+
+    /** [SlideUp]을 [motion]의 빠르기로 만든다. 감쇠는 [push]처럼 따르지 않는다. */
+    public fun slideUp(motion: KineticaMotion): KNavTransitionSpec = slideUp(motion.stiffness)
+
+    private fun push(stiffness: Float) = KNavTransitionSpec(
+        enter = { slideIntoContainer(SlideDirection.Start, slideSpec(stiffness)) },
+        exit = { slideOutOfContainer(SlideDirection.Start, slideSpec(stiffness)) { it * PARALLAX_PERCENT / PERCENT } },
+        popEnter = { slideIntoContainer(SlideDirection.End, slideSpec(stiffness)) { it * PARALLAX_PERCENT / PERCENT } },
+        popExit = { slideOutOfContainer(SlideDirection.End, slideSpec(stiffness)) },
+    )
+
+    private fun slide(stiffness: Float) = KNavTransitionSpec(
+        enter = { slideIntoContainer(SlideDirection.Start, slideSpec(stiffness)) },
+        exit = { slideOutOfContainer(SlideDirection.Start, slideSpec(stiffness)) },
+        popEnter = { slideIntoContainer(SlideDirection.End, slideSpec(stiffness)) },
+        popExit = { slideOutOfContainer(SlideDirection.End, slideSpec(stiffness)) },
+    )
+
+    private fun slideUp(stiffness: Float) = KNavTransitionSpec(
+        enter = { slideIntoContainer(SlideDirection.Up, slideSpec(stiffness)) },
+        exit = { ExitTransition.KeepUntilTransitionsFinished },
+        popEnter = { EnterTransition.None },
+        popExit = { slideOutOfContainer(SlideDirection.Down, slideSpec(stiffness)) },
+    )
+
+    private fun slideSpec(stiffness: Float = DEFAULT_STIFFNESS): FiniteAnimationSpec<IntOffset> =
+        spring(dampingRatio = 1f, stiffness = stiffness, visibilityThreshold = IntOffset.VisibilityThreshold)
+
+    private const val DEFAULT_STIFFNESS = Spring.StiffnessMediumLow
 
     private fun axisSpec(): FiniteAnimationSpec<IntOffset> = tween(MATERIAL_MS, easing = FastOutSlowInEasing)
 
