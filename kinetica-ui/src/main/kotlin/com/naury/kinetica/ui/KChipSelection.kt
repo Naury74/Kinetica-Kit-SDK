@@ -47,6 +47,7 @@ public enum class KChipSelection {
  * @param colors 선택과 미선택 칩의 색을 직접 정한다. 기본값은 [tone]과 [variant] 규칙을 따른다.
  * @param scrollState [wrap]이 `false`일 때 줄의 스크롤 상태. 선택한 칩으로 스크롤하거나 끝에 닿았는지 볼 때 넘긴다.
  * @param fadeEdges [wrap]이 `false`일 때 화면 밖에 칩이 더 있는 쪽 끝을 흐리게 한다.
+ * @param minTouchTarget true면 칩마다 위아래 여유를 두어 차지하는 높이를 48dp 이상으로 만든다. 칩 모양은 그대로다.
  */
 @Composable
 public fun KChipGroup(
@@ -64,6 +65,7 @@ public fun KChipGroup(
     colors: KChipColors = KChipColors(),
     scrollState: ScrollState = rememberScrollState(),
     fadeEdges: Boolean = false,
+    minTouchTarget: Boolean = false,
 ) {
     val accent = tone.colors(surface).color
     val haptic = kHapticFeedback()
@@ -72,12 +74,13 @@ public fun KChipGroup(
         chips.forEachIndexed { index, label ->
             val isSelected = index in selected
             val onTap = {
-                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                // 하나만 고르는 묶음에서 이미 고른 칩을 다시 누르면 바뀌는 게 없으므로 진동하지 않는다.
+                if (!(selection == KChipSelection.Single && isSelected)) haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
                 onSelectedChange(nextSelection(selection, selected, index, chips.size))
             }
             FilterChipBody(
-                ChipSpec(label, isSelected, enabled, accent, surface, variant),
-                Modifier,
+                ChipSpec(label, isSelected, enabled, accent, surface, variant, colors),
+                if (minTouchTarget) Modifier.minTouchHeight() else Modifier,
                 reserveCheck =
                     wrap && selection == KChipSelection.Multiple,
             ) {
@@ -100,6 +103,30 @@ public fun KChipGroup(
     } else {
         KChipRow(group, contentPadding, scrollState, fadeEdges) { chipsContent() }
     }
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KChipGroup(
+    chips: List<String>,
+    selected: Set<Int>,
+    onSelectedChange: (Set<Int>) -> Unit,
+    modifier: Modifier = Modifier,
+    selection: KChipSelection = KChipSelection.Single,
+    enabled: Boolean = true,
+    variant: KVariant = KVariant.Glass,
+    tone: KTone = KTone.Accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    wrap: Boolean = true,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    colors: KChipColors = KChipColors(),
+    scrollState: ScrollState = rememberScrollState(),
+    fadeEdges: Boolean = false,
+) {
+    KChipGroup(
+        chips, selected, onSelectedChange, modifier, selection, enabled, variant, tone, surface, wrap, contentPadding, colors, scrollState,
+        fadeEdges, false,
+    )
 }
 
 @Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)

@@ -13,6 +13,25 @@
 - `KTopAppBar`에 제목 자리를 컴포저블로 받는 오버로드(`KTopAppBarTitleScope`)와 눌러서 목록을 펴는 제목 `KTopAppBarDropdownTitle`을 더했습니다. 슬롯도 TalkBack 제목으로 읽히고, `Medium`에서는 접힘에 따라 큰 제목 줄과 위 줄 가운데 한쪽만 터치와 TalkBack에 남습니다.
 - `KImageViewer`에 `closeIcon`(`KImageViewerCloseIcon.Close`, `Back`), 위 바 끝 쪽 슬롯 `topActions`, 아래 전폭 슬롯 `bottomBar`, 슬롯 안 버튼용 `KImageViewerChromeScope.viewerChrome`을 더했습니다. 슬롯은 바를 숨기거나 끌어서 닫을 때 함께 옅어지고 숨는 동안 터치와 TalkBack에서 빠집니다. Painter 목록 판에서는 새 파라미터가 `caption` 앞에, `pageCount` 판에서는 `content` 앞에 들어가며, 옛 시그니처는 바이너리 호환을 위해 숨긴 오버로드로 남깁니다. 기본값이면 전과 같습니다.
 - `KSelectionBadge`: 사진 썸네일 위에 놓는 원형 선택 표시. 고른 순서 번호(`order`)나 체크(`selected`)를 그리고, 밝고 어두운 사진 위 모두에서 보이며, TalkBack은 '선택됨, 3번째'처럼 읽습니다.
+- `KSlider`에 TalkBack 이름 `label`과 상태 글자 `stateDescription`(값을 받아 글자를 돌려주며, null이면 전처럼 퍼센트), 트랙 줄 최소 높이 `minHeight`(기본 44dp), 트랙 굵기 `trackThickness`(기본 6dp)를 더했습니다. `KSliderBadgePosition.Top`이면 트랙 위 한 줄에 시작 쪽 `label`과 끝 쪽 값 배지를 둡니다. 옛 시그니처는 바이너리 호환을 위해 숨긴 오버로드로 남기고, 기본값이면 전과 같습니다.
+- `KDialSlider`에 `changedThreshold`(기준값에서 이만큼 벗어나야 강조색으로 칠함, 기본 0이면 전과 같음)와 값 글자 스타일 `valueTextStyle`을 더했습니다. 옛 시그니처는 숨긴 오버로드로 남깁니다.
+- `KAlertDialog`, `KDialog`, `KSheet`에 `onDismissed`: 닫힘 애니메이션이 끝나 화면에서 사라진 뒤 한 번 부릅니다. 버튼, 바깥 누름, 뒤로 가기, 끌어 내리기 모두, 카드와 시트 모두, '애니메이션 삭제'에서도 불립니다. 새 파라미터는 `content` 바로 앞에 들어가고, 옛 시그니처는 바이너리 호환을 위해 숨긴 오버로드로 남깁니다.
+- `KDialogActionStyle.DestructiveTonal`(옅은 빨강 바탕에 빨간 글자, 권장 동작 곁의 위험 동작)과 `KDialogActionStyle.Text`(바탕 없는 보조 글자색 동작). `KActionSheet`에서는 각각 빨간 글자, 보조 글자색으로 씁니다.
+- `KAlertDialog`의 `keepActionOrder`: true면 취소를 옮기지 않고 넘긴 순서대로 버튼을 놓습니다. 기본값 false면 전과 같습니다.
+- `KButton`, `KIconButton`의 `contentColor`: 글자와 아이콘 색을 직접 정합니다. 회색 보조 동작이라면 `surface.contentMuted`를 넘깁니다.
+- `KFilterChip`, `KChipGroup`의 `minTouchTarget`: 칩 위아래에 여유를 두어 차지하는 높이를 48dp 이상으로 만듭니다. 칩 모양은 그대로이고 누르는 영역이 넓어집니다.
+
+### 바뀐 것
+
+- 하나만 고르는 `KChipGroup`에서 이미 고른 칩을 다시 누르면 진동하지 않습니다.
+- `KSlider`와 `KDialSlider`가 빈 범위, 유한하지 않은 범위, 범위 밖 기준값(`KDialSlider`의 `resetValue`)을 받으면 `IllegalArgumentException`을 던지는 대신 흐리게 그리고 입력을 받지 않습니다. `steps`, `spacing`, `tickEvery`, `majorEvery`, `snapThreshold`처럼 상수로 주는 값이 잘못되면 전처럼 던집니다.
+- `KSliderBadgePosition`에 `Top`을 더했습니다. 이 enum을 `else` 없이 `when`으로 나누던 코드는 `Top` 가지를 더해야 컴파일됩니다.
+- `KDialogActionStyle`에 `DestructiveTonal`과 `Text`를 더했습니다. 이 enum을 `else` 없이 `when`으로 나누던 코드는 두 가지를 더해야 컴파일됩니다.
+- `KAlertDialog`가 버튼 1~3개가 아니면 `IllegalArgumentException`을 던지던 것을 없앴습니다. 버튼이 없으면 버튼 줄 없이 그리고(바깥 누름과 뒤로 가기로만 닫힘), 넷 이상이면 `stacked`와 상관없이 세로로 쌓습니다.
+
+### 고친 것
+
+- `KChipGroup`이 `colors`(`KChipColors`)를 무시하던 문제. alpha03의 `KFilterChip`에는 적용되었지만 묶음에는 빠져 있었습니다.
 
 ## 1.0.0-alpha03
 

@@ -83,12 +83,12 @@ import kotlinx.coroutines.launch
  * @param value 현재 값. [valueRange] 밖이면 가까운 끝 값으로 그린다.
  * @param onValueChange 끌거나 미끄러지는 동안 값이 바뀔 때마다 받는다. 항상 [valueRange] 안의 값이다.
  * @param label TalkBack이 읽는 이름. [showLabel]이 true면 값 위에도 보여 준다.
- * @param valueRange 값 범위. 끝이 시작보다 크지 않거나 유한하지 않으면 [IllegalArgumentException]을 던진다.
+ * @param valueRange 값 범위. 끝이 시작보다 크지 않거나 유한하지 않으면 예외 없이 `enabled = false`처럼 입력을 받지 않고 흐리게 그린다.
  * @param formatValue 위에 크게 보여 주고 TalkBack이 읽을 값 글자. 기본값은 반올림한 정수다.
  * @param onValueChangeFinished 손을 떼고 관성으로 미끄러지는 것까지 끝난 뒤 한 번 호출된다. 미끄러지는 중에 다시 잡으면
  * 그때 한 번, 두 번 탭 초기화, 방향키, TalkBack으로 바꾼 뒤에도 한 번 호출된다.
  * @param resetValue 기준값. 이 값부터 현재 값까지를 강조색으로 칠하고, 두 번 탭하면 이 값으로 돌아간다.
- * [valueRange] 밖이면 [IllegalArgumentException]을 던진다.
+ * [valueRange] 밖이면 가까운 끝으로 맞춰 그리고, 예외 없이 입력을 받지 않고 흐리게 그린다.
  * @param spacing 값 1만큼의 눈금 간격(dp). 클수록 세밀하게 조절된다. 0보다 크지 않으면 [IllegalArgumentException]을 던진다.
  * @param tickEvery 작은 눈금을 그리는 값 간격. 0에서부터 이 간격의 배수 자리에 그린다. 방향키 한 번에 이만큼 움직인다.
  * 0보다 크지 않으면 [IllegalArgumentException]을 던진다.
@@ -99,6 +99,11 @@ import kotlinx.coroutines.launch
  * @param showLabel `true`면 [label]을 값 위에 작게 보여 준다.
  * @param accent 기준값부터 현재 값까지의 눈금과 바뀐 값 글자의 색. 기본값은 [KineticaTheme]의 `accent`다.
  * @param surface 글자와 흐린 눈금 색을 정하는 표면. 다이얼은 배경을 그리지 않는다.
+ * @param changedThreshold 값이 바뀐 것으로 보는 거리로, 값과 같은 단위다. |값 - [resetValue]|가 이 값 이상일 때만 눈금, 기준점, 값 글자를
+ *   [accent]로 칠한다. 0이면 값이 [resetValue]와 다르기만 하면 칠한다. 보이는 글자가 반올림돼 기준값과 같아 보일 때 칠하지 않으려면
+ *   반올림 폭(정수면 0.5)을 준다. 음수거나 NaN이면 [IllegalArgumentException]을 던진다.
+ * @param valueTextStyle 값 글자 스타일. 기본 스타일(16sp, 굵게, 고정폭 숫자, 가운데 정렬) 위에 덮어쓴다. 색을 정하지 않으면
+ *   바뀜 여부에 따라 [accent]나 표면 글자색을 쓰고, 색을 정하면 늘 그 색이다. null이면 기본 스타일 그대로다.
  */
 @Composable
 public fun KDialSlider(
@@ -118,10 +123,19 @@ public fun KDialSlider(
     showLabel: Boolean = false,
     accent: Color = KineticaTheme.colors.accent,
     surface: SurfaceStyle = KineticaTheme.surface,
+    changedThreshold: Float = 0f,
+    valueTextStyle: TextStyle? = null,
 ) {
+    require(changedThreshold >= 0f) { "changedThreshold는 0 이상이어야 합니다." }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val dial = TickDialSpec(valueRange, resetValue, spacing, tickEvery, majorEvery, snapThreshold, rtl)
-    val shown = value.coerceIn(valueRange)
+    // 범위와 기준값은 데이터에서 오는 일이 많아, 잘못돼도 화면 전체를 죽이지 않고 입력만 막는다.
+    val usableRange = isUsableRange(valueRange)
+    val range = if (usableRange) valueRange else fallbackRange(valueRange)
+    val usable = usableRange && resetValue in range
+    val reset = if (resetValue.isFinite()) resetValue.coerceIn(range) else range.start
+    val active = enabled && usable
+    val dial = TickDialSpec(range, reset, spacing, tickEvery, majorEvery, snapThreshold, rtl, changedThreshold)
+    val shown = value.coerceIn(range)
     val shownState = rememberUpdatedState(shown)
     val haptic = kHapticFeedback()
     val ticker = remember(dial, haptic) { TickDialTicker(dial, haptic) }
@@ -132,17 +146,17 @@ public fun KDialSlider(
     control.onFinished = onValueChangeFinished
     control.value = shown
     control.reducedMotion = isReducedMotion()
-    val changed = shown != resetValue
+    val changed = dial.isChanged(shown)
     val text = formatValue(shown)
     Column(
         modifier
             .fillMaxWidth()
-            .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
+            .graphicsLayer { alpha = if (active) 1f else DISABLED_ALPHA }
             // focusable을 clearAndSetSemantics 뒤에 두면 포커스 요청 동작까지 지워진다.
-            .focusable(enabled)
-            .dialSemantics(TickDialA11y(label, text, shown, valueRange, enabled), control)
+            .focusable(active)
+            .dialSemantics(TickDialA11y(label, text, shown, range, active), control)
             .onKeyEvent { event ->
-                val direction = if (enabled && event.type == KeyEventType.KeyDown) dialKey(event.key, rtl) else null
+                val direction = if (active && event.type == KeyEventType.KeyDown) dialKey(event.key, rtl) else null
                 if (direction != null) control.stepBy(direction)
                 direction != null
             },
@@ -152,16 +166,14 @@ public fun KDialSlider(
         if (showLabel) {
             ThemedText(label, style = TextStyle(color = surface.muted(MUTED_ALPHA), fontSize = 13.sp, textAlign = TextAlign.Center))
         }
-        ThemedText(
-            text,
-            style = TextStyle(
-                color = if (changed) accent else surface.contentColor,
-                fontSize = 16.sp,
-                fontWeight = weight,
-                fontFeatureSettings = "tnum",
-                textAlign = TextAlign.Center,
-            ),
+        val baseStyle = TextStyle(
+            color = if (changed) accent else surface.contentColor,
+            fontSize = 16.sp,
+            fontWeight = weight,
+            fontFeatureSettings = "tnum",
+            textAlign = TextAlign.Center,
         )
+        ThemedText(text, style = if (valueTextStyle == null) baseStyle else baseStyle.merge(valueTextStyle))
         val ink = TickDialInk(accent, surface.muted(MUTED_ALPHA), surface.contentColor)
         Spacer(
             Modifier
@@ -170,13 +182,40 @@ public fun KDialSlider(
                 .height(DIAL_HEIGHT)
                 // 화면 가장자리에서 시작한 끌기가 시스템 뒤로 가기로 처리되지 않게 한다.
                 .systemGestureExclusion()
-                .then(if (enabled) Modifier.dialGestures(control) else Modifier)
+                .then(if (active) Modifier.dialGestures(control) else Modifier)
                 .drawBehind { drawDial(dial, shownState, ink) },
         )
     }
 }
 
-/** 다이얼의 범위와 눈금 설정. 모양과 손맛을 함께 정한다. */
+/** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KDialSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    valueRange: ClosedFloatingPointRange<Float> = DEFAULT_RANGE,
+    formatValue: (Float) -> String = { it.roundToInt().toString() },
+    onValueChangeFinished: (() -> Unit)? = null,
+    resetValue: Float = 0f,
+    spacing: Dp = 4.dp,
+    tickEvery: Float = 2f,
+    majorEvery: Float = 10f,
+    snapThreshold: Float = 1.5f,
+    enabled: Boolean = true,
+    showLabel: Boolean = false,
+    accent: Color = KineticaTheme.colors.accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+) {
+    KDialSlider(
+        value, onValueChange, label, modifier, valueRange, formatValue, onValueChangeFinished, resetValue, spacing, tickEvery,
+        majorEvery, snapThreshold, enabled, showLabel, accent, surface, changedThreshold = 0f,
+    )
+}
+
+/** 다이얼의 범위와 눈금 설정. 모양과 손맛을 함께 정한다. 범위와 기준값은 부르는 쪽에서 쓸 수 있는 값으로 맞춰 넘긴다. */
 private data class TickDialSpec(
     val range: ClosedFloatingPointRange<Float>,
     val resetValue: Float,
@@ -185,11 +224,10 @@ private data class TickDialSpec(
     val majorEvery: Float,
     val snapThreshold: Float,
     val rtl: Boolean,
+    val changedThreshold: Float,
 ) {
     init {
-        require(range.start.isFinite() && range.endInclusive.isFinite()) { "valueRange는 유한한 값이어야 합니다." }
-        require(range.endInclusive > range.start) { "valueRange의 끝이 시작보다 커야 합니다." }
-        require(resetValue in range) { "resetValue는 valueRange 안에 있어야 합니다." }
+        // 아래 셋은 보통 상수로 주는 값이라 잘못되면 개발 중에 바로 드러나도록 던진다. 0이면 눈금 계산이 0으로 나뉜다.
         require(spacing.value > 0f) { "spacing은 0보다 커야 합니다." }
         require(tickEvery > 0f && majorEvery > 0f) { "tickEvery와 majorEvery는 0보다 커야 합니다." }
         require(snapThreshold >= 0f) { "snapThreshold는 0 이상이어야 합니다." }
@@ -205,6 +243,8 @@ private data class TickDialSpec(
     fun isMajor(v: Float): Boolean = abs(v / majorEvery - (v / majorEvery).roundToInt()) < EPSILON
 
     fun isEdge(v: Float): Boolean = v == range.start || v == range.endInclusive
+
+    fun isChanged(v: Float): Boolean = v != resetValue && abs(v - resetValue) >= changedThreshold
 
     fun tickOf(v: Float): Int = floor(v / tickEvery + EPSILON).toInt()
 }
@@ -366,7 +406,7 @@ private fun DrawScope.drawDial(dial: TickDialSpec, valueState: State<Float>, ink
     val last = floor(minOf(range.endInclusive, value + reach) / dial.tickEvery + EPSILON).toInt()
     val low = minOf(dial.resetValue, value)
     val high = maxOf(dial.resetValue, value)
-    val changed = value != dial.resetValue
+    val changed = dial.isChanged(value)
     val minor = TICK_WIDTH.toPx()
     for (index in first..last) {
         val v = index * dial.tickEvery

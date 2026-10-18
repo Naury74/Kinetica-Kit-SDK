@@ -82,7 +82,9 @@ public enum class KSheetPresentation {
  * 동작을 누르면 [onDismissRequest]를 부른 뒤 그 동작을 실행한다. 고르면 끝나는 메뉴이므로 [KDialogAction.dismissOnClick]은 보지 않고 늘 닫는다.
  *
  * [KDialogActionStyle.Cancel] 동작이 있으면 그것을 취소 판에 쓰고, 없으면 '취소' 버튼을 만들어 [onDismissRequest]에 잇는다.
- * [KDialogActionStyle.Preferred]는 굵게, [KDialogActionStyle.Destructive]는 빨갛게 쓴다.
+ * [KDialogActionStyle.Preferred]는 굵게, [KDialogActionStyle.Destructive]와 [KDialogActionStyle.DestructiveTonal]은 빨갛게 쓴다.
+ * 동작 시트의 줄에는 바탕이 없으므로 옅은 위험도 [KDialogActionStyle.Destructive]와 같은 빨간 글자다.
+ * [KDialogActionStyle.Text]는 보조 글자 색(표면의 [SurfaceStyle.contentMuted], 없으면 옅게 쓴 글자 색)으로 쓴다.
  *
  * [presentation]이 팝오버로 정해지면(넓은 화면의 [KSheetPresentation.Auto] 포함) 이 함수를 부른 자리의 부모 레이아웃 옆에 메뉴처럼 띄운다.
  * 그래서 시트를 여는 버튼과 함께 `Box`로 감싸 부르는 것이 좋다. [KineticaScaffold] 밖에서는 시트는 대화 상자 창에, 팝오버는 팝업 창에 띄운다.
@@ -274,8 +276,9 @@ private fun ActionGroup(actions: List<KDialogAction>, header: ActionHeader, surf
 @Composable
 private fun ActionRow(action: KDialogAction, surface: SurfaceStyle, onClick: () -> Unit) {
     val color = when (action.style) {
-        KDialogActionStyle.Destructive -> KineticaTheme.colors.destructive
+        KDialogActionStyle.Destructive, KDialogActionStyle.DestructiveTonal -> KineticaTheme.colors.destructive
         KDialogActionStyle.Cancel -> surface.contentColor
+        KDialogActionStyle.Text -> surface.muted(TEXT_ACTION_ALPHA)
         else -> KineticaTheme.colors.accent
     }
     val bold = action.style == KDialogActionStyle.Preferred || action.style == KDialogActionStyle.Cancel
@@ -341,12 +344,10 @@ private fun ActionPopover(
                     )
                 }
                 actions.forEach { action ->
-                    val color = if (action.style ==
-                        KDialogActionStyle.Destructive
-                    ) {
-                        KineticaTheme.colors.destructive
-                    } else {
-                        surface.contentColor
+                    val color = when {
+                        action.style.destructive -> KineticaTheme.colors.destructive
+                        action.style == KDialogActionStyle.Text -> surface.muted(TEXT_ACTION_ALPHA)
+                        else -> surface.contentColor
                     }
                     MenuRow(
                         MenuRowSpec(action.label, action.icon, null, checked = null),
@@ -377,6 +378,7 @@ private val HAIRLINE = 0.5.dp
 private val POPOVER_WIDTH = 280.dp
 private const val HAIRLINE_ALPHA = 0.14f
 private const val HEADER_ALPHA = 0.6f
+private const val TEXT_ACTION_ALPHA = 0.72f
 private const val DISABLED_ALPHA = 0.38f
 private const val SHEET_DAMPING = 0.86f
 private const val CLOSE_MS = 180

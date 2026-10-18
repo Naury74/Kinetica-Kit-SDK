@@ -363,9 +363,9 @@ KLabeledIconButton(KIcons.Trash, "삭제", onClick = ::delete, tint = KineticaTh
 | `KSegmentedControl` | 선택한 칸의 인디케이터가 늘어났다 줄어들며 이동한다. `KSegment`로 아이콘 칸을 만든다. `selected: Set<Int>`를 받는 오버로드는 여러 칸을 함께 켜고, 켠 칸에는 체크 표시가 밀려 들어온다 | `tone`(`Neutral`은 옅은 표면 글자 색, 나머지는 그 색으로 채움), `role`(기본 `Role.RadioButton`, 탭처럼 쓰면 `Role.Tab`), `maxLines`(기본 2), `sizing`(`KSegmentSizing.Proportional`이면 이름 길이에 비례), `requireSelection` |
 | `KFilterChip`, `KInputChip`, `KAssistChip`, `KSuggestionChip` | 필터 칩은 켜면 체크가 그려지고, 입력 칩은 아바타와 지우기 버튼이 있다. 동작 칩은 앞 아이콘을 강조색으로, 제안 칩은 글자만 쓴다 | `variant`, `tone`, `leadingIcon` |
 | `KChipRow`, `KChipGroup` | `KChipRow`는 칩을 한 줄에 놓고 가로로 스크롤한다. `KChipGroup`은 이름 목록으로 필터 칩 묶음을 만든다. 고르면 체크가 그려지며 폭이 부드럽게 늘어난다 | `selection`(`KChipSelection.Single`, `Multiple`), `wrap`(`false`면 한 줄), `variant`(`Glass`, `Tonal`, `Outlined`), `colors`(`KChipColors`로 선택과 미선택 칩 색을 직접 지정), `scrollState`와 `fadeEdges`(한 줄일 때 스크롤 상태와 끝 흐림) |
-| `KSlider` | 잡으면 트랙이 굵어지고 손잡이가 투명하게 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다. 가로로 움직여야 드래그로 보므로 세로 목록 스크롤을 막지 않는다. 방향키와 TalkBack으로도 조절한다. `snap = KSliderSnap(기준값, 거리)`를 주면 손으로 끈 값이 거리 안에서 기준값에 붙고 붙는 순간 햅틱이 한 번 난다. 두 번 탭하거나 TalkBack의 '초기화' 동작을 고르면 `resetValue`(없으면 스냅 기준값)로 돌아간다 | `valueRange`, `steps`, `enabled`, `onValueChangeFinished`, `accent`, `snap`, `resetValue`, `valueBadge`와 `badgePosition`(`AboveThumb`, `End`), `inactiveTrackColor`, `excludeSystemGestures`(가장자리 뒤로 가기와 겹치지 않게), `rubberBand`(`false`면 끝에서 늘어나지 않음) |
+| `KSlider` | 잡으면 트랙이 굵어지고 손잡이가 투명하게 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다. 가로로 움직여야 드래그로 보므로 세로 목록 스크롤을 막지 않는다. 방향키와 TalkBack으로도 조절한다. `snap = KSliderSnap(기준값, 거리)`를 주면 손으로 끈 값이 거리 안에서 기준값에 붙고 붙는 순간 햅틱이 한 번 난다. 두 번 탭하거나 TalkBack의 '초기화' 동작을 고르면 `resetValue`(없으면 스냅 기준값)로 돌아간다. `label`은 TalkBack 이름이고, `stateDescription`을 주면 퍼센트 대신 그 글자를 읽는다. 범위가 비었거나 유한하지 않으면 예외 없이 흐리게 그리고 입력을 받지 않는다 | `valueRange`, `steps`, `enabled`, `onValueChangeFinished`, `accent`, `snap`, `resetValue`, `valueBadge`와 `badgePosition`(`AboveThumb`, `End`, `Top`은 트랙 위 한 줄에 시작 쪽 `label`과 끝 쪽 배지), `inactiveTrackColor`, `excludeSystemGestures`(가장자리 뒤로 가기와 겹치지 않게), `rubberBand`(`false`면 끝에서 늘어나지 않음), `label`, `stateDescription`, `minHeight`(기본 44dp), `trackThickness`(기본 6dp) |
 | `KRangeSlider` | 손잡이 두 개짜리 범위 슬라이더. 잡으면 값 말풍선이 뜬다 | `valueRange`, `steps`, `valueLabel` |
-| `KDialSlider` | 사진 앱 보정처럼 가운데 기준선은 고정되고 눈금이 손가락을 따라 움직인다. 기준값부터 현재 값까지 강조색으로 칠하고, 세게 밀면 관성으로 미끄러진다. 눈금마다 톱니 햅틱이 나고, 기준값 근처에서 놓으면 붙고, 두 번 탭하면 기준값으로 돌아간다. `onValueChangeFinished`는 미끄러짐까지 끝난 뒤 한 번 불린다 | `label`, `resetValue`, `spacing`(값 1당 눈금 간격), `tickEvery`, `majorEvery`, `snapThreshold`, `formatValue` |
+| `KDialSlider` | 사진 앱 보정처럼 가운데 기준선은 고정되고 눈금이 손가락을 따라 움직인다. 기준값부터 현재 값까지 강조색으로 칠하고, 세게 밀면 관성으로 미끄러진다. 눈금마다 톱니 햅틱이 나고, 기준값 근처에서 놓으면 붙고, 두 번 탭하면 기준값으로 돌아간다. `onValueChangeFinished`는 미끄러짐까지 끝난 뒤 한 번 불린다. 범위가 비었거나 유한하지 않거나 기준값이 범위 밖이면 예외 없이 흐리게 그리고 입력을 받지 않는다 | `label`, `resetValue`, `spacing`(값 1당 눈금 간격), `tickEvery`, `majorEvery`, `snapThreshold`, `formatValue`, `changedThreshold`(기준값에서 이만큼 벗어나야 강조색, 반올림해 보여 주면 0.5), `valueTextStyle` |
 | `KStepper` | −/+ 캡슐. 숫자가 굴러가며 바뀌고, 길게 누르면 점점 빨라진다. 끝에 닿으면 그쪽 버튼이 흐려진다 | `range`, `step` |
 | `KQuantityStepper` | 쇼핑 수량. `KQuantityStyle.Outlined`(테두리 칸)와 `Collapsible`(0이면 + 하나만, 1에서 빼기가 휴지통) | `style`, `range` |
 | `KRating` | 별점. `onRatingChange`가 `null`이면 표시만 | `max`, `allowHalf` |
@@ -378,6 +378,10 @@ KChipRow(contentPadding = PaddingValues(horizontal = 20.dp), fadeEdges = true) {
     tags.forEach { tag -> KFilterChip(tag, tag in picked, { on -> picked = if (on) picked + tag else picked - tag }) }
 }
 KSlider(volume, { volume = it }, Modifier.fillMaxWidth())
+KSlider(
+    exposure, { exposure = it }, valueRange = -1f..1f, label = "노출", stateDescription = { "%+.1f".format(it) },
+    valueBadge = { Text("%+.1f".format(it)) }, badgePosition = KSliderBadgePosition.Top, minHeight = 48.dp,
+)
 KRangeSlider(price, { price = it }, valueRange = 0f..100f)
 KDialSlider(exposure, { exposure = it }, label = "노출", onValueChangeFinished = ::commitExposure)
 KQuantityStepper(count, { count = it }, style = KQuantityStyle.Collapsible)
@@ -678,9 +682,9 @@ AnimatedContent(step, transitionSpec = { kTransform(KNavTransitions.SharedAxisX,
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `KDialog` | 누른 버튼에서 패널이 튀어나오듯 커지고, 배경은 서서히 흐려지며 어두워진다. 바깥을 누르거나 뒤로 가기로 닫는다. 너비는 280~420dp | `origin`(`Modifier.kOrigin { origin = it }`로 얻음), `title`(TalkBack이 읽는 창 이름), `contentWindowInsets` |
-| `KAlertDialog` | 제목, 본문, 아이콘, 버튼 1~3개. 짧은 두 버튼은 나란히 놓고(취소가 시작 쪽), 셋이거나 글자가 길면 세로로 쌓아 취소를 맨 아래에 둔다. 본문과 버튼 사이에 입력란 같은 내용을 넣을 수 있고, 아래에서 올라오는 시트로도 띄운다 | `actions: List<KDialogAction>`(`KDialogActionStyle.Default`, `Preferred`, `Destructive`, `Cancel`, `dismissOnClick`), `stacked`, `iconTint`, `presentation`(`KDialogPresentation.Card`, `Sheet`, `Auto`), `content` |
-| `KSheet` | iOS 시트처럼 아래에서 올라오고 뒤쪽 콘텐츠는 조금 물러나며 모서리가 둥글어진다. 아래로 끌어 닫고, 덜 끌고 놓으면 던진 속도를 이어받아 제자리로 돌아온다. 넓은 화면에서는 `KSheetDefaults.MaxWidth`(640dp)를 넘지 않고 가운데에 놓인다 | `title`(TalkBack이 읽는 창 이름), `contentWindowInsets` |
+| `KDialog` | 누른 버튼에서 패널이 튀어나오듯 커지고, 배경은 서서히 흐려지며 어두워진다. 바깥을 누르거나 뒤로 가기로 닫는다. 너비는 280~420dp | `origin`(`Modifier.kOrigin { origin = it }`로 얻음), `title`(TalkBack이 읽는 창 이름), `contentWindowInsets`, `onDismissed` |
+| `KAlertDialog` | 제목, 본문, 아이콘, 버튼. 짧은 두 버튼은 나란히 놓고(취소가 시작 쪽), 셋이거나 글자가 길면 세로로 쌓아 취소를 맨 아래에 둔다. 넷 이상이면 늘 쌓고, 버튼이 없으면 버튼 줄 없이 그린다. 본문과 버튼 사이에 입력란 같은 내용을 넣을 수 있고, 아래에서 올라오는 시트로도 띄운다 | `actions: List<KDialogAction>`(`KDialogActionStyle.Default`, `Preferred`, `Destructive`, `DestructiveTonal`, `Text`, `Cancel`, `dismissOnClick`), `stacked`, `keepActionOrder`, `iconTint`, `presentation`(`KDialogPresentation.Card`, `Sheet`, `Auto`), `onDismissed`, `content` |
+| `KSheet` | iOS 시트처럼 아래에서 올라오고 뒤쪽 콘텐츠는 조금 물러나며 모서리가 둥글어진다. 아래로 끌어 닫고, 덜 끌고 놓으면 던진 속도를 이어받아 제자리로 돌아온다. 넓은 화면에서는 `KSheetDefaults.MaxWidth`(640dp)를 넘지 않고 가운데에 놓인다 | `title`(TalkBack이 읽는 창 이름), `contentWindowInsets`, `onDismissed` |
 | `KActionSheet` | iOS 동작 시트. 동작 판과 떨어진 취소 판이 있고, 아래로 끌어 닫는다. `KSheetPresentation.Auto`면 600dp 이상 창에서 버튼 옆 팝오버로 바뀐다(취소는 바깥 누르기로 대신) | `actions`, `title`, `message`, `presentation` |
 | `KDetentSheet` | Apple 지도처럼 여러 높이(`Detent.Peek`, `Fraction`, `Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 이어지고, 손을 떼면 던진 속도를 보고 가까운 높이로 정착한다. 폴더블을 접고 펴도 같은 높이 단계를 유지한다 | `rememberKDetentSheetState(detents, initialDetent, dismissible)`, `title`, `header` |
 | `KFullScreenModal` | 아래에서 올라와 화면을 덮는 모달. 뒤 화면은 살짝 물러난다. 아래로 끌거나(안쪽 목록이 맨 위면 이어서) 던지면 닫히고, 덜 끌면 제자리로 정착한다 | `dragToDismiss`, `title` |
@@ -712,6 +716,26 @@ KDetentSheet(places, title = "주변 장소") { Text("카페 12곳") }
 
 `KAlertDialog`의 `presentation` 기본값은 `Card`(가운데 카드)다. `Auto`면 창 폭 600dp 미만에서는 `KSheet`처럼 아래에서 올라오고(손잡이와 내용을 끌어 닫기, 내비게이션 바와 키보드 피하기), 600dp 이상에서는 카드로 뜬다. 열린 채 폴더블을 접거나 펴면 그 자리에서 모양이 바뀌므로 `content`의 입력값은 호출한 쪽 상태에 둔다.
 `content`를 주면 본문 전체가 세로로 스크롤되어, 키보드가 올라와 높이가 모자라도 입력란과 버튼이 가려지지 않는다. `iconTint`를 주지 않으면 아이콘은 위험 동작이 있을 때 빨강, 없으면 강조색이다.
+
+버튼 모양은 `KDialogActionStyle`로 정한다. `Preferred`는 강조색, `Destructive`는 빨강으로 채우고, `Cancel`은 옅은 무채색이다. `DestructiveTonal`은 옅은 빨강 바탕에 빨간 글자로, "저장" 옆의 "버리기"처럼 권장 동작 곁에 놓는 위험 동작에 쓴다. `Text`는 바탕 없이 보조 글자색으로 쓰는 조용한 선택이다. `Default`가 혼자인지 셀 때 `Cancel`, `DestructiveTonal`, `Text`는 세지 않으므로, `Default` 하나와 `Text` 하나면 `Default`가 채운 버튼이 된다. `KActionSheet`에서는 `DestructiveTonal`도 `Destructive`처럼 빨간 글자, `Text`는 보조 글자색이다.
+
+`actions` 개수에는 제한이 없다. 비어 있으면 버튼 줄 없이 그리고 바깥을 누르거나 뒤로 가기로만 닫힌다. 넷 이상이면 `stacked`와 상관없이 세로로 쌓는다. `keepActionOrder = true`면 취소를 옮기지 않고 넘긴 순서대로 놓는다(쌓으면 위에서 아래로).
+
+`onDismissed`는 `visible`이 false가 되어 닫힘 애니메이션이 끝나고 창이 화면에서 사라진 뒤 한 번 불린다. 버튼, 바깥 누름, 뒤로 가기, 끌어 내리기 어느 쪽으로 닫아도 같고, 카드와 시트 모두, '애니메이션 삭제'가 켜져 있을 때도 불린다. 닫힌 뒤 다음 화면으로 넘어가거나 상태를 비울 때 쓴다. 열린 채 구성에서 빠지면 부르지 않는다. `KDialog`와 `KSheet`에도 같은 `onDismissed`가 있다.
+
+```kotlin
+KAlertDialog(
+    leaving, { leaving = false }, "변경 사항을 버릴까요?",
+    listOf(
+        KDialogAction("저장", KDialogActionStyle.Preferred) { save() },
+        KDialogAction("버리기", KDialogActionStyle.DestructiveTonal) { discard() },
+        KDialogAction("계속 편집", KDialogActionStyle.Text),
+    ),
+    stacked = true,
+    keepActionOrder = true,
+    onDismissed = { if (discarded) navigateBack() },
+)
+```
 
 ```kotlin
 var ratio by remember { mutableStateOf("") }

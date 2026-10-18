@@ -67,4 +67,24 @@ class ChipRowColorsTest {
         // 칩 가장자리 근처 바탕(글자와 체크를 피한 곳)이 지정한 색이다.
         assertThat(pixels.getPixel(pixels.width - 8, pixels.height / 2)).isEqualTo(picked.toArgb())
     }
+
+    @Test
+    fun `칩 묶음도 지정한 선택 색으로 칠한다`() {
+        val picked = Color(0xFF00AA55)
+        compose.setContent {
+            KineticaTheme(surface = SurfaceStyles.CleanLight) {
+                KChipGroup(
+                    listOf("원본"),
+                    setOf(0),
+                    {},
+                    Modifier.testTag("group").size(120.dp, 40.dp),
+                    colors = KChipColors(selected = picked, onSelected = Color.White),
+                )
+            }
+        }
+        compose.waitForIdle()
+        val pixels = compose.onNodeWithTag("group").captureToImage().asAndroidBitmap()
+        // 칩은 내용 폭만큼이라 가운데 줄 왼쪽 가장자리 근처를 본다.
+        assertThat(pixels.getPixel(6, pixels.height / 2)).isEqualTo(picked.toArgb())
+    }
 }

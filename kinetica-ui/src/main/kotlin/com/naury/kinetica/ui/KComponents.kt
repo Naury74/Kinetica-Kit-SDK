@@ -105,6 +105,9 @@ public fun KSurface(
  * @param title 다이얼로그 이름. TalkBack이 창 제목으로 읽는다.
  * @param contentWindowInsets 패널이 피할 시스템 영역. 기본값은 safeDrawing 전체(시스템 바, 컷아웃, 키보드)다.
  *   패널을 그리는 창 안에서 부르므로 [KineticaScaffold] 밖에서 대화 상자 창에 띄울 때도 그 창의 인셋을 읽는다.
+ * @param onDismissed [visible]이 false가 되어 닫힘 애니메이션이 끝나고 패널이 화면에서 사라진 뒤 한 번 부른다.
+ *   어떻게 닫았는지(바깥 누름, 뒤로 가기, 호출한 쪽)와 상관없고, '애니메이션 삭제'가 켜져 있으면 닫은 바로 다음 프레임에 부른다.
+ *   열린 채로 이 컴포저블이 구성에서 빠지면 부르지 않는다. 닫은 뒤 다음 화면으로 넘어가거나 상태를 비울 때 쓴다.
  */
 @Composable
 public fun KDialog(
@@ -116,11 +119,12 @@ public fun KDialog(
     origin: Offset? = null,
     title: String? = null,
     contentWindowInsets: @Composable () -> WindowInsets = { WindowInsets.safeDrawing },
+    onDismissed: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val design = KineticaTheme.design
     val still = reducedMotion()
-    KOverlay(visible) { transition ->
+    KOverlay(visible, onHidden = onDismissed) { transition ->
         val progress by transition.animateFloat(
             transitionSpec = {
                 when {
@@ -177,6 +181,23 @@ public fun KDialog(
     }
 }
 
+/** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("onDismissed를 더한 KDialog를 씁니다.", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KDialog(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { dialog },
+    origin: Offset? = null,
+    title: String? = null,
+    contentWindowInsets: @Composable () -> WindowInsets = { WindowInsets.safeDrawing },
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    KDialog(visible, onDismissRequest, modifier, surface, shape, origin, title, contentWindowInsets, onDismissed = null, content = content)
+}
+
 /** [KSheet]와 [KDialog]의 기본값. */
 public object KSheetDefaults {
     /**
@@ -208,6 +229,9 @@ public object KSheetDefaults {
  * @param title 시트 이름. TalkBack이 창 제목으로 읽는다.
  * @param contentWindowInsets 내용이 피할 시스템 영역. 직접 처리하려면 `{ WindowInsets(0) }`을 준다.
  *   시트를 그리는 창 안에서 부르므로 [KineticaScaffold] 밖에서 대화 상자 창에 띄울 때도 그 창의 인셋을 읽는다.
+ * @param onDismissed [visible]이 false가 되어 닫힘 애니메이션이 끝나고 시트가 화면에서 사라진 뒤 한 번 부른다.
+ *   어떻게 닫았는지(끌어 내림, 바깥 누름, 뒤로 가기, 호출한 쪽)와 상관없고, '애니메이션 삭제'가 켜져 있으면 닫은 바로 다음 프레임에 부른다.
+ *   열린 채로 이 컴포저블이 구성에서 빠지면 부르지 않는다.
  */
 @Composable
 public fun KSheet(
@@ -217,10 +241,11 @@ public fun KSheet(
     surface: SurfaceStyle = KineticaTheme.surface,
     title: String? = null,
     contentWindowInsets: @Composable () -> WindowInsets = { KSheetDefaults.windowInsets },
+    onDismissed: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val still = reducedMotion()
-    KOverlay(visible) { transition ->
+    KOverlay(visible, onHidden = onDismissed) { transition ->
         val progress by transition.animateFloat(
             transitionSpec = {
                 when {
@@ -258,6 +283,21 @@ public fun KSheet(
             }
         }
     }
+}
+
+/** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("onDismissed를 더한 KSheet를 씁니다.", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KSheet(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    title: String? = null,
+    contentWindowInsets: @Composable () -> WindowInsets = { KSheetDefaults.windowInsets },
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    KSheet(visible, onDismissRequest, modifier, surface, title, contentWindowInsets, onDismissed = null, content = content)
 }
 
 /** 시트 패널의 고정 설정. 파라미터 수를 줄이려고 묶었다. */

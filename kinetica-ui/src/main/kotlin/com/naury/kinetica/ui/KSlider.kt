@@ -10,10 +10,12 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.runtime.Composable
@@ -46,11 +48,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
@@ -88,6 +93,12 @@ public enum class KSliderBadgePosition {
 
     /** 트랙 끝 옆. RTL에서는 왼쪽이다. */
     End,
+
+    /**
+     * 트랙 위 한 줄. 시작 쪽에 [KSlider]의 `label` 글자를, 끝 쪽에 배지를 둔다. RTL에서는 좌우가 바뀐다.
+     * 둘 중 하나만 있어도 그 줄을 그린다.
+     */
+    Top,
 }
 
 /**
@@ -106,7 +117,7 @@ public enum class KSliderBadgePosition {
  * ```
  *
  * @param value [valueRange] 안의 값. 범위를 벗어나면 가까운 끝 값으로 그린다.
- * @param valueRange 값 범위. 끝이 시작보다 크지 않으면 [IllegalArgumentException]을 던진다.
+ * @param valueRange 값 범위. 끝이 시작보다 크지 않거나 유한한 수가 아니면 예외 없이 `enabled = false`처럼 입력을 받지 않고 흐리게 그린다.
  * @param steps 양 끝 사이의 눈금 수. 0이면 연속 값이고, 1 이상이면 눈금 위치에만 멈춘다. 음수면 [IllegalArgumentException]을 던진다.
  * @param enabled `false`면 터치·키보드·TalkBack으로 값을 바꿀 수 없고 채워진 구간을 흐리게 그린다.
  * @param onValueChangeFinished 손을 떼거나 키보드·TalkBack으로 값을 바꾼 뒤, 또는 초기화한 뒤 한 번 호출된다.
@@ -116,11 +127,18 @@ public enum class KSliderBadgePosition {
  * @param resetValue 두 번 탭하거나 TalkBack의 '초기화' 동작을 고르면 돌아갈 값으로, [valueRange] 밖이면 가까운 끝으로 맞춘다.
  *   null이면 [snap]의 기준값으로 돌아가고, 둘 다 null이면 초기화가 없다. [isReducedMotion]이 true면 손잡이가 미끄러지지 않고 바로 옮겨 간다.
  * @param valueBadge 값을 보여 줄 배지. 지금 값을 받는다. TalkBack은 배지를 읽지 않고 슬라이더의 값을 읽는다.
- * @param badgePosition [valueBadge]를 둘 자리.
+ * @param badgePosition [valueBadge]를 둘 자리. [KSliderBadgePosition.Top]이면 [label]도 함께 보인다.
  * @param inactiveTrackColor 채워지지 않은 트랙 색. [Color.Unspecified]면 [surface]에 맞춘 옅은 색이다.
  * @param excludeSystemGestures `true`면 슬라이더 영역을 시스템 제스처에서 빼서, 화면 가장자리에서 끌어도 뒤로 가기가 되지 않는다.
  *   Android 10(API 29) 미만에서는 아무 일도 하지 않는다.
  * @param rubberBand `false`면 끝을 넘어 끌어도 트랙이 늘어나지 않는다.
+ * @param label TalkBack이 읽는 슬라이더 이름(contentDescription). [badgePosition]이 [KSliderBadgePosition.Top]이면 트랙 위
+ *   시작 쪽에도 보여 준다. null이면 이름을 두지 않는다.
+ * @param stateDescription 지금 값(범위 안으로 맞춘 값)을 받아 TalkBack이 읽을 상태 글자를 돌려준다. null이거나 null을 돌려주면
+ *   시스템이 범위 안 비율을 퍼센트로 읽는다.
+ * @param minHeight 트랙 줄의 최소 높이로, 터치 영역이 된다. 배지와 라벨 줄은 따로 더한다. 음수면 [IllegalArgumentException]을 던진다.
+ * @param trackThickness 잡지 않았을 때 트랙 굵기. 잡으면 두 배가 된다. [KSliderThumb.Bar]는 자기 굵기를 쓰고,
+ *   [KSliderThumb.Square]는 이 값과 10dp 가운데 큰 쪽을 쓴다. 0 이하면 [IllegalArgumentException]을 던진다.
  */
 @Composable
 public fun KSlider(
@@ -141,19 +159,28 @@ public fun KSlider(
     inactiveTrackColor: Color = Color.Unspecified,
     excludeSystemGestures: Boolean = false,
     rubberBand: Boolean = true,
+    label: String? = null,
+    stateDescription: ((value: Float) -> String?)? = null,
+    minHeight: Dp = 44.dp,
+    trackThickness: Dp = 6.dp,
 ) {
     require(steps >= 0) { "steps는 0 이상이어야 합니다." }
-    require(valueRange.endInclusive > valueRange.start) { "valueRange의 끝이 시작보다 커야 합니다." }
-    val paint = sliderPaint(if (enabled) accent else surface.contentColor.copy(alpha = DISABLED_ALPHA), surface, inactiveTrackColor)
+    require(minHeight.value >= 0f) { "minHeight는 0 이상이어야 합니다." }
+    require(trackThickness.value > 0f) { "trackThickness는 0보다 커야 합니다." }
+    // 범위는 데이터에서 오는 일이 많아, 잘못된 범위로 화면 전체를 죽이지 않고 입력만 막는다.
+    val usable = isUsableRange(valueRange)
+    val range = if (usable) valueRange else fallbackRange(valueRange)
+    val active = enabled && usable
+    val paint = sliderPaint(if (active) accent else surface.contentColor.copy(alpha = DISABLED_ALPHA), surface, inactiveTrackColor)
     val scope = rememberCoroutineScope()
     val model = remember { SliderModel(scope) }
     model.value = value
-    model.range = valueRange
+    model.range = range
     model.steps = steps
     model.onChange = onValueChange
     model.onFinished = onValueChangeFinished
     model.snap = snap
-    model.resetTarget = (resetValue ?: snap?.value)?.coerceIn(valueRange)
+    model.resetTarget = (resetValue ?: snap?.value)?.coerceIn(range)
     model.rubberBand = rubberBand
     model.haptics = kHapticFeedback()
     model.reduced = isReducedMotion()
@@ -161,16 +188,54 @@ public fun KSlider(
     val grab = remember { Animatable(0f) }
     val stretch = remember { Animatable(0f) }
     val fraction = model.fractionOf(value)
+    val a11y = SliderA11y(
+        active,
+        stringResource(R.string.kinetica_ui_slider_reset),
+        label,
+        stateDescription?.invoke(value.coerceIn(range)),
+    )
     val core = Modifier
+        .heightIn(min = minHeight)
         .then(if (excludeSystemGestures) Modifier.systemGestureExclusion() else Modifier)
-        .sliderSemantics(model, enabled, stringResource(R.string.kinetica_ui_slider_reset))
+        .sliderSemantics(model, a11y)
         // onFocusChanged는 focusable보다 앞에 있어야 그 포커스 변화를 받는다.
         .onFocusChanged { focused -> scope.launch { grab.animateTo(if (focused.isFocused) 1f else 0f) } }
-        .focusable(enabled)
-        .onKeyEvent { event -> enabled && event.type == KeyEventType.KeyDown && model.key(event.key, rtl) }
-        .then(if (enabled) Modifier.sliderGesture(model, rtl, grab, stretch) else Modifier)
-        .drawBehind { drawSlider(SliderLook(model.glide.shown(fraction), grab.value, stretch.value, rtl, thumb), paint) }
-    SliderFrame(modifier, core, valueBadge, badgePosition, value) { model.glide.shown(fraction) }
+        .focusable(active)
+        .onKeyEvent { event -> active && event.type == KeyEventType.KeyDown && model.key(event.key, rtl) }
+        .then(if (active) Modifier.sliderGesture(model, rtl, grab, stretch) else Modifier)
+        .drawBehind {
+            drawSlider(SliderLook(model.glide.shown(fraction), grab.value, stretch.value, rtl, thumb, trackThickness), paint)
+        }
+    val header = if (badgePosition == KSliderBadgePosition.Top) label else null
+    SliderFrame(modifier, core, SliderDecor(valueBadge, badgePosition, header, surface), value) { model.glide.shown(fraction) }
+}
+
+/** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    steps: Int = 0,
+    enabled: Boolean = true,
+    onValueChangeFinished: (() -> Unit)? = null,
+    accent: Color = KineticaTheme.colors.accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    thumb: KSliderThumb = KineticaTheme.design.controls.sliderThumb,
+    snap: KSliderSnap? = null,
+    resetValue: Float? = null,
+    valueBadge: (@Composable (value: Float) -> Unit)? = null,
+    badgePosition: KSliderBadgePosition = KSliderBadgePosition.AboveThumb,
+    inactiveTrackColor: Color = Color.Unspecified,
+    excludeSystemGestures: Boolean = false,
+    rubberBand: Boolean = true,
+) {
+    KSlider(
+        value, onValueChange, modifier, valueRange, steps, enabled, onValueChangeFinished, accent, surface, thumb, snap, resetValue,
+        valueBadge, badgePosition, inactiveTrackColor, excludeSystemGestures, rubberBand, label = null,
+    )
 }
 
 /** 이전 시그니처를 컴파일된 호출자를 위해 남긴다. */
@@ -191,34 +256,59 @@ public fun KSlider(
     KSlider(value, onValueChange, modifier, valueRange, steps, enabled, onValueChangeFinished, accent, surface, thumb, snap = null)
 }
 
-/** 배지가 없으면 슬라이더만, 있으면 [position]에 맞춰 배지와 함께 놓는다. [shownFraction]은 지금 손잡이가 그려진 비율이다. */
+/** 트랙 둘레에 놓을 것. [header]는 [KSliderBadgePosition.Top]일 때 위 줄 시작 쪽에 보일 이름이다. */
+private class SliderDecor(
+    val badge: (@Composable (Float) -> Unit)?,
+    val position: KSliderBadgePosition,
+    val header: String?,
+    val surface: SurfaceStyle,
+)
+
+/** 배지가 없으면 슬라이더만, 있으면 배지 자리에 맞춰 함께 놓는다. [shownFraction]은 지금 손잡이가 그려진 비율이다. */
 @Composable
-private fun SliderFrame(
-    modifier: Modifier,
-    core: Modifier,
-    badge: (@Composable (Float) -> Unit)?,
-    position: KSliderBadgePosition,
-    value: Float,
-    shownFraction: () -> Float,
-) {
-    if (badge == null) {
-        Box(modifier.fillMaxWidth().height(SLIDER_HEIGHT).then(core))
+private fun SliderFrame(modifier: Modifier, core: Modifier, decor: SliderDecor, value: Float, shownFraction: () -> Float) {
+    val badge = decor.badge
+    // 이름과 값은 슬라이더 노드가 읽으므로 배지와 위 줄 이름은 TalkBack에서 숨겨 두 번 읽지 않게 한다.
+    val hidden = Modifier.clearAndSetSemantics {}
+    if (decor.position == KSliderBadgePosition.Top && (badge != null || decor.header != null)) {
+        Column(modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                val header = decor.header
+                if (header != null) {
+                    ThemedText(
+                        header,
+                        modifier = hidden.weight(1f),
+                        style = KineticaTheme.typography.label.copy(color = decor.surface.muted(HEADER_ALPHA)),
+                    )
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+                if (badge != null) {
+                    Spacer(Modifier.width(BADGE_GAP))
+                    Box(hidden) { badge(value) }
+                }
+            }
+            Spacer(Modifier.height(BADGE_GAP))
+            Box(Modifier.fillMaxWidth().then(core))
+        }
         return
     }
-    // 값은 슬라이더 노드가 읽으므로 배지는 TalkBack에서 숨겨 같은 값을 두 번 읽지 않게 한다.
-    val badgeBox = Modifier.clearAndSetSemantics {}
-    if (position == KSliderBadgePosition.End) {
+    if (badge == null) {
+        Box(modifier.fillMaxWidth().then(core))
+        return
+    }
+    if (decor.position == KSliderBadgePosition.End) {
         Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f).height(SLIDER_HEIGHT).then(core))
+            Box(Modifier.weight(1f).then(core))
             Spacer(Modifier.width(BADGE_GAP))
-            Box(badgeBox) { badge(value) }
+            Box(hidden) { badge(value) }
         }
         return
     }
     Layout(
         content = {
-            Box(badgeBox) { badge(value) }
-            Box(Modifier.fillMaxWidth().height(SLIDER_HEIGHT).then(core))
+            Box(hidden) { badge(value) }
+            Box(Modifier.fillMaxWidth().then(core))
         },
         modifier = modifier.fillMaxWidth(),
     ) { measurables, constraints ->
@@ -236,6 +326,14 @@ private fun SliderFrame(
         }
     }
 }
+
+/** 두 끝이 유한하고 끝이 시작보다 큰 범위인지. */
+internal fun isUsableRange(range: ClosedFloatingPointRange<Float>): Boolean =
+    range.start.isFinite() && range.endInclusive.isFinite() && range.endInclusive > range.start
+
+/** 쓸 수 없는 범위 대신 그릴 범위. 시작이 유한하면 시작부터 1만큼, 아니면 0..1이다. */
+internal fun fallbackRange(range: ClosedFloatingPointRange<Float>): ClosedFloatingPointRange<Float> =
+    if (range.start.isFinite()) range.start..(range.start + 1f) else 0f..1f
 
 /**
  * 스냅이나 초기화로 값이 건너뛸 때 손잡이를 [from]에서 [to]로 미끄러지게 그린다. 그리는 쪽이 받은 비율이 [to]일 때만 쓰므로,
@@ -344,14 +442,20 @@ private class SliderModel(val scope: CoroutineScope) {
     }
 }
 
-private fun Modifier.sliderSemantics(model: SliderModel, enabled: Boolean, resetLabel: String): Modifier {
+/** 슬라이더 노드가 TalkBack에 내보낼 것. [state]가 null이면 시스템이 퍼센트로 읽는다. */
+private class SliderA11y(val enabled: Boolean, val resetLabel: String, val label: String?, val state: String?)
+
+private fun Modifier.sliderSemantics(model: SliderModel, a11y: SliderA11y): Modifier {
     val info = ProgressBarRangeInfo(model.value.coerceIn(model.range), model.range, model.steps)
+    val enabled = a11y.enabled
     val canReset = enabled && model.resetTarget != null
     return semantics {
         progressBarRangeInfo = info
+        a11y.label?.let { contentDescription = it }
+        a11y.state?.let { stateDescription = it }
         if (!enabled) disabled()
         setProgress { target -> enabled && model.setProgress(target) }
-        if (canReset) customActions = listOf(CustomAccessibilityAction(resetLabel) { model.resetNow() })
+        if (canReset) customActions = listOf(CustomAccessibilityAction(a11y.resetLabel) { model.resetNow() })
     }
 }
 
@@ -432,8 +536,15 @@ private fun keyStep(key: Key, rtl: Boolean): Int? = when (key) {
     else -> null
 }
 
-/** 그리기에 쓰는 슬라이더 상태. 채운 비율, 잡은 정도(0..1), 끝을 넘어 늘어난 정도(음수면 시작 쪽), RTL 여부를 담는다. */
-private class SliderLook(val fraction: Float, val grab: Float, val stretch: Float, val rtl: Boolean, val thumb: KSliderThumb)
+/** 그리기에 쓰는 슬라이더 상태. 채운 비율, 잡은 정도(0..1), 끝을 넘어 늘어난 정도(음수면 시작 쪽), RTL 여부, 트랙 굵기를 담는다. */
+private class SliderLook(
+    val fraction: Float,
+    val grab: Float,
+    val stretch: Float,
+    val rtl: Boolean,
+    val thumb: KSliderThumb,
+    val thickness: Dp,
+)
 
 private fun DrawScope.drawSlider(look: SliderLook, paint: ThumbPaint) {
     val fraction = look.fraction
@@ -441,7 +552,7 @@ private fun DrawScope.drawSlider(look: SliderLook, paint: ThumbPaint) {
     val stretch = look.stretch
     val rtl = look.rtl
     val inset = THUMB_WIDTH.toPx() / 2
-    val trackHeight = TRACK_HEIGHT.toPx() * (1f + TRACK_GROW * grab)
+    val trackHeight = look.thickness.toPx() * (1f + TRACK_GROW * grab)
     // 고무줄처럼 보이도록 넘친 쪽 반대편 끝을 고정점으로 가로로 늘리고 세로는 살짝 가늘게 한다.
     val pull = abs(stretch) * RUBBER_MAX
     val pivot = if ((stretch < 0f) != rtl) size.width else 0f
@@ -453,8 +564,6 @@ private fun DrawScope.drawSlider(look: SliderLook, paint: ThumbPaint) {
     }
 }
 
-private val SLIDER_HEIGHT = 44.dp
-private val TRACK_HEIGHT = 6.dp
 private const val TRACK_GROW = 1f
 private const val TRACK_ALPHA = 0.16f
 private val THUMB_WIDTH = 36.dp
@@ -465,4 +574,5 @@ private const val KEY_FRACTION = 0.05f
 private const val DISABLED_ALPHA = 0.3f
 private val BADGE_GAP = 4.dp
 private val DOUBLE_TAP_SLOP = 48.dp
+private const val HEADER_ALPHA = 0.7f
 private const val GLIDE_MATCH = 1e-4f

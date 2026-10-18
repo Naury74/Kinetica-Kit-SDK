@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
  * @param tone 색 역할. 기본값은 [KTone.Accent]다.
  * @param shape 버튼 모양. 기본값은 [KineticaShapes.button]이고(캡슐 토큰이면 원), 다른 모양을 주면 눌림 표시도 같은 모양으로 잘린다.
  *   크기는 [KIconButtonSizes]에 모아 두었다.
+ * @param contentColor 아이콘 색. 지정하지 않으면 [variant]와 [tone]으로 정한다. 회색 보조 동작이라면 `surface.contentMuted`를 넘긴다.
  */
 @Composable
 public fun KIconButton(
@@ -54,8 +56,31 @@ public fun KIconButton(
     enabled: Boolean = true,
     surface: SurfaceStyle = KineticaTheme.surface,
     shape: Shape = shapeFor { button },
+    contentColor: Color = Color.Unspecified,
 ) {
-    KIconButton(rememberVectorPainter(icon), contentDescription, onClick, modifier, variant, tone, size, enabled, surface, shape)
+    KIconButton(
+        rememberVectorPainter(
+            icon,
+        ),
+        contentDescription, onClick, modifier, variant, tone, size, enabled, surface, shape, contentColor,
+    )
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KIconButton(
+    icon: ImageVector,
+    contentDescription: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    variant: KVariant = KVariant.Glass,
+    tone: KTone = KTone.Accent,
+    size: Dp = KMetrics.IconButton,
+    enabled: Boolean = true,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { button },
+) {
+    KIconButton(icon, contentDescription, onClick, modifier, variant, tone, size, enabled, surface, shape, Color.Unspecified)
 }
 
 /**
@@ -77,10 +102,11 @@ public fun KIconButton(
     enabled: Boolean = true,
     surface: SurfaceStyle = KineticaTheme.surface,
     shape: Shape = shapeFor { button },
+    contentColor: Color = Color.Unspecified,
 ) {
     val diameter = size.coerceAtLeast(MIN_ICON_BUTTON)
     val colors = tone.colors(surface)
-    val ink = buttonInk(variant, tone, colors, surface, INK_GRAPHIC_CONTRAST)
+    val ink = contentColor.takeIf { it.isSpecified } ?: buttonInk(variant, tone, colors, surface, INK_GRAPHIC_CONTRAST)
     Box(
         modifier
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
@@ -95,6 +121,23 @@ public fun KIconButton(
     ) {
         Image(icon, null, Modifier.size(diameter / 2), colorFilter = ColorFilter.tint(ink))
     }
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KIconButton(
+    icon: Painter,
+    contentDescription: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    variant: KVariant = KVariant.Glass,
+    tone: KTone = KTone.Accent,
+    size: Dp = KMetrics.IconButton,
+    enabled: Boolean = true,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { button },
+) {
+    KIconButton(icon, contentDescription, onClick, modifier, variant, tone, size, enabled, surface, shape, Color.Unspecified)
 }
 
 /**

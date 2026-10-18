@@ -6,10 +6,14 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -114,5 +118,35 @@ class HostControlsTest {
         val surface = SurfaceStyle.Solid(Color.White, Color(0xFF1B1E26), Color(0xFFF3F4F8), raised = raised)
         assertThat(surface.raisedFill(0.16f)).isEqualTo(raised)
         assertThat(SurfaceStyles.CleanLight.raisedFill(0.16f).alpha).isWithin(0.001f).of(0.16f)
+    }
+
+    @Test
+    fun `하나만 고르는 칩 묶음에서 이미 고른 칩을 다시 누르면 진동하지 않는다`() {
+        val recording = Recording()
+        compose.setContent {
+            CompositionLocalProvider(LocalHapticFeedback provides recording) {
+                KChipGroup(listOf("사진", "영상"), setOf(0), {})
+            }
+        }
+        compose.onNodeWithText("사진").performClick()
+        compose.waitForIdle()
+        assertThat(recording.count).isEqualTo(0)
+        compose.onNodeWithText("영상").performClick()
+        compose.waitForIdle()
+        assertThat(recording.count).isEqualTo(1)
+    }
+
+    @Test
+    fun `minTouchTarget이면 칩이 차지하는 높이가 48dp 이상이다`() {
+        compose.setContent {
+            androidx.compose.foundation.layout.Column {
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.testTag("small")) { KFilterChip("작게", false, {}) }
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.testTag("big")) {
+                    KFilterChip("크게", false, {}, minTouchTarget = true)
+                }
+            }
+        }
+        compose.onNodeWithTag("small").assertHeightIsAtLeast(30.dp)
+        compose.onNodeWithTag("big").assertHeightIsAtLeast(48.dp)
     }
 }

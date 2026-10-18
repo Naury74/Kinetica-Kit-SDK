@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -110,6 +111,7 @@ public enum class KButtonSize(
  * @param fullWidth `true`면 받은 폭을 모두 채운다. 내용은 가운데에 놓는다. 시트나 폼 아래의 주 동작에 쓴다.
  * @param success `true`면 원으로 줄어 체크 표시를 보여 준다. [loading]보다 우선한다.
  * @param shape 버튼 모양. 기본값은 [KineticaTheme.design]의 [KineticaShapes.button]이다. 높이와 좌우 여백은 [KineticaDesign.density]를 따른다.
+ * @param contentColor 글자와 아이콘 색. 지정하지 않으면 [variant]와 [tone]으로 정한다. 회색 보조 동작이라면 `surface.contentMuted`를 넘긴다.
  */
 @Composable
 public fun KButton(
@@ -127,13 +129,38 @@ public fun KButton(
     fullWidth: Boolean = false,
     surface: SurfaceStyle = KineticaTheme.surface,
     shape: Shape = shapeFor { button },
+    contentColor: Color = Color.Unspecified,
 ) {
     ButtonBody(
-        ButtonSpec(text, variant, tone, size, loading, success, enabled, fullWidth, surface, shape),
+        ButtonSpec(text, variant, tone, size, loading, success, enabled, fullWidth, surface, shape, contentColor),
         onClick,
         modifier,
         icon?.let { rememberVectorPainter(it) },
         trailingIcon?.let { rememberVectorPainter(it) },
+    )
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    variant: KVariant = KVariant.Filled,
+    tone: KTone = KTone.Accent,
+    size: KButtonSize = KButtonSize.Medium,
+    icon: ImageVector? = null,
+    trailingIcon: ImageVector? = null,
+    loading: Boolean = false,
+    success: Boolean = false,
+    enabled: Boolean = true,
+    fullWidth: Boolean = false,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { button },
+) {
+    KButton(
+        text, onClick, modifier, variant, tone, size, icon, trailingIcon, loading, success, enabled, fullWidth, surface, shape,
+        Color.Unspecified,
     )
 }
 
@@ -163,13 +190,38 @@ public fun KButton(
     fullWidth: Boolean = false,
     surface: SurfaceStyle = KineticaTheme.surface,
     shape: Shape = shapeFor { button },
+    contentColor: Color = Color.Unspecified,
 ) {
     ButtonBody(
-        ButtonSpec(text, variant, tone, size, loading, success, enabled, fullWidth, surface, shape),
+        ButtonSpec(text, variant, tone, size, loading, success, enabled, fullWidth, surface, shape, contentColor),
         onClick,
         modifier,
         icon,
         trailingIcon,
+    )
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KButton(
+    text: String,
+    onClick: () -> Unit,
+    icon: Painter,
+    modifier: Modifier = Modifier,
+    variant: KVariant = KVariant.Filled,
+    tone: KTone = KTone.Accent,
+    size: KButtonSize = KButtonSize.Medium,
+    trailingIcon: Painter? = null,
+    loading: Boolean = false,
+    success: Boolean = false,
+    enabled: Boolean = true,
+    fullWidth: Boolean = false,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { button },
+) {
+    KButton(
+        text, onClick, icon, modifier, variant, tone, size, trailingIcon, loading, success, enabled, fullWidth, surface, shape,
+        Color.Unspecified,
     )
 }
 
@@ -187,6 +239,7 @@ private class ButtonSpec(
     val fullWidth: Boolean,
     val surface: SurfaceStyle,
     val shape: Shape,
+    val contentColor: Color,
 )
 
 @Composable
@@ -209,7 +262,7 @@ private fun ButtonBody(spec: ButtonSpec, onClick: () -> Unit, modifier: Modifier
     val loadingLevel by animateFloatAsState(if (loading && !success) 1f else 0f, tween(LOADING_FADE_MS), label = "button-loading")
     val morph = rememberSuccessMorph(success)
     val colors = tone.colors(surface)
-    val content = buttonInk(variant, tone, colors, surface)
+    val content = spec.contentColor.takeIf { it.isSpecified } ?: buttonInk(variant, tone, colors, surface)
     val positive = KineticaTheme.colors
     Box(
         modifier

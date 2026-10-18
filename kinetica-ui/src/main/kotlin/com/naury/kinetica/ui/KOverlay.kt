@@ -61,17 +61,20 @@ import kotlin.math.roundToInt
  * 그래서 호스트가 `Column` 안에서 불러도 주변 배치에 끼어들지 않는다(팝업 창의 자리 표시로 크기 0인 요소 하나만 남는다).
  *
  * [edgeInsets]는 [OverlayKind.Top]과 [OverlayKind.Bottom]이 피할 시스템 영역이다. [content]는 이 여백을 직접 넣지 않는다.
+ * [onHidden]은 한 번 띄운 내용이 닫힘 애니메이션을 마치고 구성에서 빠진 뒤 한 번 부른다. 열린 채로 이 함수가 구성에서 빠지면 부르지 않는다.
  */
 @Composable
 internal fun KOverlay(
     visible: Boolean,
     kind: OverlayKind = OverlayKind.Modal,
     edgeInsets: WindowInsets = NoInsets,
+    onHidden: (() -> Unit)? = null,
     content: @Composable (Transition<Boolean>) -> Unit,
 ) {
     val state = remember { MutableTransitionState(false) }
     state.targetState = visible
     val shown = state.currentState || state.targetState
+    HiddenEffect(shown, onHidden)
     if (!shown) return
     val latest = rememberUpdatedState(content)
     val host = LocalKineticaHost.current
@@ -81,6 +84,22 @@ internal fun KOverlay(
         kind == OverlayKind.Modal -> ModalWindow { ModalFocus(null) { body() } }
         kind == OverlayKind.InPlace -> body()
         else -> EdgeWindow(kind == OverlayKind.Top, edgeInsets, body)
+    }
+}
+
+/** [shown]이 true였다가 false가 되면 다음 프레임에 [onHidden]을 한 번 부른다. 처음부터 false인 구성에서는 부르지 않는다. */
+@Composable
+private fun HiddenEffect(shown: Boolean, onHidden: (() -> Unit)?) {
+    val latest = rememberUpdatedState(onHidden)
+    val wasShown = remember { booleanArrayOf(false) }
+    if (shown) wasShown[0] = true
+    LaunchedEffect(shown) {
+        if (!shown && wasShown[0]) {
+            wasShown[0] = false
+            // 스캐폴드 레이어나 대화 상자 창이 마지막 내용을 걷어 낸 프레임 뒤에 알린다.
+            withFrameNanos { }
+            latest.value?.invoke()
+        }
     }
 }
 

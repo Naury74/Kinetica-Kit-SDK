@@ -204,9 +204,15 @@ class KDialSliderTest {
     }
 
     @Test
-    fun `잘못된 인자는 IllegalArgumentException으로 막는다`() {
+    fun `빈 범위는 예외 없이 비활성으로 그린다`() {
+        compose.setContent { KDialSlider(0f, {}, LABEL, valueRange = 1f..1f) }
+        dial().assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Disabled))
+    }
+
+    @Test
+    fun `눈금 간격이 0이면 IllegalArgumentException으로 막는다`() {
         assertThrows(IllegalArgumentException::class.java) {
-            compose.setContent { KDialSlider(0f, {}, LABEL, valueRange = 1f..1f) }
+            compose.setContent { KDialSlider(0f, {}, LABEL, spacing = 0.dp) }
         }
     }
 

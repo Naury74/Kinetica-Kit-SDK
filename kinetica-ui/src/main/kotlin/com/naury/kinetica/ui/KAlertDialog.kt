@@ -29,9 +29,15 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** [KDialogAction]의 역할. 버튼 색과 놓이는 순서가 여기서 정해진다. */
+/**
+ * [KDialogAction]의 역할. 버튼 색과 놓이는 순서가 여기서 정해진다.
+ * 1.0.0-alpha04에서 [DestructiveTonal]과 [Text]가 더해졌으므로, 이 값을 `when`으로 빠짐없이 나누는 코드는 두 항목을 처리해야 한다.
+ */
 public enum class KDialogActionStyle {
-    /** 일반 동작. 다른 강조 동작이 없고 혼자이면 채운 버튼, 그 밖에는 옅은 강조색 버튼이다. */
+    /**
+     * 일반 동작. 다른 강조 동작이 없고 혼자이면 채운 버튼, 그 밖에는 옅은 강조색 버튼이다.
+     * 혼자인지 셀 때 [Cancel], [DestructiveTonal], [Text]는 세지 않는다.
+     */
     Default,
 
     /** 권장 동작. 강조색으로 채운다. */
@@ -42,6 +48,19 @@ public enum class KDialogActionStyle {
 
     /** 취소. 옅은 무채색 버튼이고, 가로로 놓이면 시작 쪽, 세로로 쌓이면 맨 아래에 온다. */
     Cancel,
+
+    /**
+     * 옅은 위험 동작. [KineticaColors.destructive]를 옅게 깔고 글자를 그 색으로 쓴다. "저장" 옆의 "버리기"처럼 권장 동작 곁에 놓는
+     * 위험 동작에 쓴다. [KActionSheet]에서는 [Destructive]처럼 빨간 글자로 쓴다.
+     */
+    DestructiveTonal,
+
+    /**
+     * 바탕 없이 보조 글자 색으로만 쓰는 동작. "나중에", "계속 편집"처럼 조용한 선택에 쓴다. 글자 색은 표면의
+     * [SurfaceStyle.contentMuted]이고, 없으면 글자 색을 옅게 쓴다. [KActionSheet]에서도 같은 보조 글자 색으로 쓴다.
+     * [Cancel]과 달리 놓이는 자리를 옮기지 않는다.
+     */
+    Text,
 }
 
 /** [KAlertDialog]를 어떤 모양으로 띄울지 정한다. */
@@ -105,9 +124,10 @@ public data class KDialogAction(
 }
 
 /**
- * 제목, 본문, 버튼 1~3개로 된 알림 다이얼로그. [KDialog] 위에 버튼 배치를 정해 둔 프리셋이다.
+ * 제목, 본문, 버튼으로 된 알림 다이얼로그. [KDialog] 위에 버튼 배치를 정해 둔 프리셋이다.
  * 버튼이 둘이고 글자가 반 폭에 들어가면 나란히 놓고(취소는 시작 쪽), 셋이거나 글자가 길거나 [stacked]가 true면 세로로 쌓는다.
- * 세로로 쌓을 때는 권장 동작이 위, 취소가 맨 아래다. 큰 글자 설정에서도 버튼 글자가 잘리지 않도록 자동으로 쌓는다.
+ * 넷 이상이면 늘 세로로 쌓는다. 세로로 쌓을 때는 권장 동작이 위, 취소가 맨 아래다([keepActionOrder]가 true면 넘긴 순서대로).
+ * 큰 글자 설정에서도 버튼 글자가 잘리지 않도록 자동으로 쌓는다. 버튼이 없으면 버튼 줄 없이 그리고, 바깥을 누르거나 뒤로 가기로만 닫힌다.
  *
  * 버튼을 누르면 [onDismissRequest]를 부른 뒤 그 버튼의 동작을 실행한다. [KDialogAction.dismissOnClick]이 false인 버튼은
  * [onDismissRequest]를 부르지 않고 동작만 실행한다. 바깥을 누르거나 뒤로 가기를 해도 [onDismissRequest]를 부른다.
@@ -123,12 +143,17 @@ public data class KDialogAction(
  * )
  * ```
  *
- * @param actions 버튼. 1~3개가 아니면 [IllegalArgumentException]을 던진다.
+ * @param actions 버튼. 개수 제한은 없고 예외를 던지지 않는다. 비어 있으면 버튼 줄을 그리지 않는다.
  * @param icon 제목 위에 놓을 아이콘
- * @param stacked true면 늘 세로로 쌓고, false면 둘까지는 늘 나란히 놓는다. null이면 글자 길이를 보고 정한다.
+ * @param stacked true면 늘 세로로 쌓고, false면 셋까지는 늘 나란히 놓는다. null이면 글자 길이를 보고 정한다. 넷 이상이면 이 값과 상관없이 쌓는다.
  * @param origin 카드가 커지기 시작하는 화면 좌표(px). [Modifier.kOrigin]으로 얻는다. 시트로 뜰 때는 쓰지 않는다.
  * @param iconTint [icon]과 그 뒤 원의 색. [Color.Unspecified]면 위험 동작이 있을 때 [KineticaColors.destructive], 없으면 강조색이다.
  * @param presentation 가운데 카드로 띄울지, 아래에서 올라오는 시트로 띄울지. 기본값은 카드다.
+ * @param onDismissed [visible]이 false가 되어 닫힘 애니메이션이 끝나고 카드나 시트가 화면에서 사라진 뒤 한 번 부른다.
+ *   버튼, 바깥 누름, 뒤로 가기, 끌어 내리기 어느 쪽으로 닫아도 같고, '애니메이션 삭제'가 켜져 있으면 닫은 바로 다음 프레임에 부른다.
+ *   열린 채로 구성에서 빠지거나 [KDialogPresentation.Auto]가 열린 채 카드와 시트를 바꿀 때는 부르지 않는다.
+ * @param keepActionOrder true면 취소를 옮기지 않고 [actions]를 넘긴 순서대로 놓는다. 세로로 쌓으면 위에서 아래로, 나란히 놓으면
+ *   시작 쪽부터다. false면 취소를 나란히 놓을 때 시작 쪽, 쌓을 때 맨 아래로 옮긴다.
  * @param content 본문과 버튼 사이에 넣는 내용(입력란, 녹음 파형 등). 이 칸이 있으면 본문 전체가 세로로 스크롤되므로,
  *   키보드가 올라와 남은 높이가 모자라도 입력란과 버튼이 가려지지 않는다. 안에 세로 스크롤 목록을 넣으려면 높이를 정해 준다.
  */
@@ -146,25 +171,50 @@ public fun KAlertDialog(
     surface: SurfaceStyle = KineticaTheme.surface,
     iconTint: Color = Color.Unspecified,
     presentation: KDialogPresentation = KDialogPresentation.Card,
+    onDismissed: (() -> Unit)? = null,
+    keepActionOrder: Boolean = false,
     content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
-    require(actions.size in 1..MAX_ACTIONS) { "actions는 1~3개여야 합니다." }
     val sheet = when (presentation) {
         KDialogPresentation.Card -> false
         KDialogPresentation.Sheet -> true
         KDialogPresentation.Auto -> rememberKWindowLayout().isCompact
     }
-    val spec = AlertSpec(title, message, icon, iconTint, actions, stacked)
+    val spec = AlertSpec(title, message, icon, iconTint, AlertButtons(actions, stacked, keepActionOrder))
     if (sheet) {
-        KSheet(visible, onDismissRequest, modifier, surface, title = title) {
+        KSheet(visible, onDismissRequest, modifier, surface, title = title, onDismissed = onDismissed) {
             Spacer(Modifier.height(SHEET_TOP_GAP))
             AlertBody(spec, surface, onDismissRequest, content)
         }
     } else {
-        KDialog(visible, onDismissRequest, modifier, surface, origin = origin, title = title) {
+        KDialog(visible, onDismissRequest, modifier, surface, origin = origin, title = title, onDismissed = onDismissed) {
             AlertBody(spec, surface, onDismissRequest, content)
         }
     }
+}
+
+/** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("onDismissed, keepActionOrder를 더한 KAlertDialog를 씁니다.", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KAlertDialog(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    title: String,
+    actions: List<KDialogAction>,
+    modifier: Modifier = Modifier,
+    message: String? = null,
+    icon: ImageVector? = null,
+    stacked: Boolean? = null,
+    origin: Offset? = null,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    iconTint: Color = Color.Unspecified,
+    presentation: KDialogPresentation = KDialogPresentation.Card,
+    content: (@Composable ColumnScope.() -> Unit)? = null,
+) {
+    KAlertDialog(
+        visible, onDismissRequest, title, actions, modifier, message, icon, stacked, origin, surface, iconTint, presentation,
+        content = content,
+    )
 }
 
 /** 1.0.0-alpha02까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
@@ -186,14 +236,12 @@ public fun KAlertDialog(
 }
 
 /** 카드와 시트가 같이 쓰는 본문 값. 파라미터 수를 줄이려고 묶었다. */
-private class AlertSpec(
-    val title: String,
-    val message: String?,
-    val icon: ImageVector?,
-    val iconTint: Color,
-    val actions: List<KDialogAction>,
-    val stacked: Boolean?,
-)
+private class AlertSpec(val title: String, val message: String?, val icon: ImageVector?, val iconTint: Color, val buttons: AlertButtons) {
+    val actions: List<KDialogAction> get() = buttons.actions
+}
+
+/** 버튼 줄의 값. [keepOrder]면 취소를 옮기지 않는다. */
+private class AlertButtons(val actions: List<KDialogAction>, val stacked: Boolean?, val keepOrder: Boolean)
 
 @Composable
 private fun AlertBody(
@@ -208,7 +256,7 @@ private fun AlertBody(
         spec.icon?.let {
             val tint = when {
                 spec.iconTint.isSpecified -> spec.iconTint
-                spec.actions.any { action -> action.style == KDialogActionStyle.Destructive } -> KineticaTheme.colors.destructive
+                spec.actions.any { action -> action.style.destructive } -> KineticaTheme.colors.destructive
                 else -> KineticaTheme.colors.accent
             }
             Box(Modifier.size(ICON_CIRCLE).background(tint.copy(alpha = ICON_FILL), CircleShape), contentAlignment = Alignment.Center) {
@@ -242,36 +290,27 @@ private fun AlertBody(
             Spacer(Modifier.height(CONTENT_GAP))
             it()
         }
-        Spacer(Modifier.height(22.dp))
-        DialogButtons(spec.actions, spec.stacked, surface, onDismissRequest)
+        if (spec.actions.isNotEmpty()) {
+            Spacer(Modifier.height(22.dp))
+            DialogButtons(spec.buttons, surface, onDismissRequest)
+        }
     }
 }
 
-/** 버튼을 나란히 또는 세로로 놓는다. 글자가 반 폭을 넘거나 셋이면 쌓는다. */
+/** 버튼을 나란히 또는 세로로 놓는다. 글자가 반 폭을 넘거나 셋이면 쌓고, 넷 이상이면 늘 쌓는다. */
 @Composable
-private fun DialogButtons(actions: List<KDialogAction>, stacked: Boolean?, surface: SurfaceStyle, onDismiss: () -> Unit) {
+private fun DialogButtons(spec: AlertButtons, surface: SurfaceStyle, onDismiss: () -> Unit) {
+    val actions = spec.actions
+    val stacked = spec.stacked
     // 취소를 앞에 두고 한 번만 내보낸다. 세로로 쌓을 때는 취소를 맨 아래에 놓는다. TalkBack 순서는 놓인 위치를 따른다.
-    val ordered = actions.sortedBy { if (it.style == KDialogActionStyle.Cancel) 0 else 1 }
-    val cancels = actions.count { it.style == KDialogActionStyle.Cancel }
-    val primaryCount = actions.count { it.style != KDialogActionStyle.Cancel }
+    val ordered = if (spec.keepOrder) actions else actions.sortedBy { if (it.style == KDialogActionStyle.Cancel) 0 else 1 }
+    val cancels = if (spec.keepOrder) 0 else actions.count { it.style == KDialogActionStyle.Cancel }
+    // 옅은 위험과 글자 버튼은 곁에 놓이는 보조 동작이라, 일반 동작이 하나뿐이면 그 일반 동작을 채운다.
+    val primaryCount = actions.count { it.style in PrimaryStyles }
     val emphasized = actions.any { it.style == KDialogActionStyle.Preferred || it.style == KDialogActionStyle.Destructive }
-    val button: @Composable (KDialogAction) -> Unit = { action ->
-        val (variant, tone) = action.look(alone = primaryCount == 1 && !emphasized)
-        KButton(
-            action.label,
-            onClick = {
-                if (action.dismissOnClick) onDismiss()
-                action.onClick()
-            },
-            variant = variant,
-            tone = tone,
-            icon = action.icon,
-            enabled = action.enabled,
-            surface = surface,
-        )
-    }
+    val alone = primaryCount == 1 && !emphasized
     Layout(
-        content = { ordered.forEach { button(it) } },
+        content = { ordered.forEach { DialogButton(it, alone, surface, onDismiss) } },
         modifier = Modifier.fillMaxWidth(),
     ) { measurables, constraints ->
         val count = actions.size
@@ -279,7 +318,7 @@ private fun DialogButtons(actions: List<KDialogAction>, stacked: Boolean?, surfa
         val width = constraints.maxWidth
         val half = (width - gap * (count - 1)) / count
         val fits = count <= 2 && measurables.all { it.maxIntrinsicWidth(constraints.maxHeight) <= half }
-        val vertical = stacked ?: !fits
+        val vertical = count > MAX_ROW_ACTIONS || (stacked ?: !fits)
         if (!vertical) {
             val placeables = measurables.map { it.measure(Constraints.fixedWidth(half)) }
             val height = placeables.maxOf { it.height }
@@ -305,15 +344,42 @@ private fun DialogButtons(actions: List<KDialogAction>, stacked: Boolean?, surfa
     }
 }
 
+@Composable
+private fun DialogButton(action: KDialogAction, alone: Boolean, surface: SurfaceStyle, onDismiss: () -> Unit) {
+    val (variant, tone) = action.look(alone)
+    KButton(
+        action.label,
+        onClick = {
+            if (action.dismissOnClick) onDismiss()
+            action.onClick()
+        },
+        variant = variant,
+        tone = tone,
+        icon = action.icon,
+        enabled = action.enabled,
+        surface = surface,
+        contentColor = if (action.style == KDialogActionStyle.Text) surface.muted(MESSAGE_ALPHA) else Color.Unspecified,
+    )
+}
+
 /** 동작 역할에 맞는 버튼 모양과 색. [alone]이면 강조할 다른 동작이 없는 하나뿐인 일반 동작이다. */
 internal fun KDialogAction.look(alone: Boolean): Pair<KVariant, KTone> = when (style) {
     KDialogActionStyle.Preferred -> KVariant.Filled to KTone.Accent
     KDialogActionStyle.Destructive -> KVariant.Filled to KTone.Destructive
     KDialogActionStyle.Cancel -> KVariant.Tonal to KTone.Neutral
     KDialogActionStyle.Default -> (if (alone) KVariant.Filled else KVariant.Tonal) to KTone.Accent
+    KDialogActionStyle.DestructiveTonal -> KVariant.Tonal to KTone.Destructive
+    KDialogActionStyle.Text -> KVariant.Text to KTone.Neutral
 }
 
-private const val MAX_ACTIONS = 3
+/** 위험 동작인지. 아이콘 색과 동작 시트의 빨간 글자를 정한다. */
+internal val KDialogActionStyle.destructive: Boolean
+    get() = this == KDialogActionStyle.Destructive || this == KDialogActionStyle.DestructiveTonal
+
+private val PrimaryStyles = setOf(KDialogActionStyle.Default, KDialogActionStyle.Preferred, KDialogActionStyle.Destructive)
+
+// 이보다 많으면 stacked가 false여도 한 줄에 다 놓을 폭이 없으므로 쌓는다.
+private const val MAX_ROW_ACTIONS = 3
 private const val MESSAGE_ALPHA = 0.72f
 private const val ICON_FILL = 0.14f
 private val ICON_CIRCLE = 52.dp
