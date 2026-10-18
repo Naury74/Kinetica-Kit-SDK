@@ -31,10 +31,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -143,6 +145,19 @@ public class KIslandState {
     private var current: IslandEntry? = null
     private val waitingEntries = ArrayList<IslandEntry>()
     private val queue = Mutex()
+
+    // 이 상태를 그리는 호스트들. 마지막에 붙은 호스트 하나만 그린다.
+    private val hosts = mutableStateListOf<Any>()
+
+    internal fun attach(host: Any) {
+        hosts.add(host)
+    }
+
+    internal fun detach(host: Any) {
+        hosts.remove(host)
+    }
+
+    internal fun isDrawnBy(host: Any): Boolean = hosts.lastOrNull() === host
 
     /** 알림을 보여 주는 중이면 true. 줄어드는 애니메이션 중에는 false다. */
     public val isShowing: Boolean get() = content != null
@@ -312,6 +327,9 @@ public object KIslandDefaults {
  * 밖에서는 내용 크기의 팝업 창에 띄우므로 호출한 자리의 배치에 끼어들지 않고 뒤 화면의 터치도 막지 않는다.
  * TalkBack은 새 알림을 바로 읽어 준다.
  *
+ * 같은 [state]를 여러 호스트가 그리면 가장 나중에 화면에 들어온 호스트 하나만 그리고, 그 호스트가 사라지면 앞의 호스트가 다시 그린다.
+ * 그래서 앱 전체에 둔 호스트의 상태를 [KCallScreen]처럼 안에 호스트를 둔 화면에 넘겨도 알림이 두 번 뜨지 않는다.
+ *
  * @param alwaysVisible true면 알림이 없을 때도 빈 캡슐을 보여 준다.
  */
 @Composable
@@ -321,12 +339,18 @@ public fun KIslandHost(
     surface: SurfaceStyle = KIslandDefaults.Black,
     alwaysVisible: Boolean = false,
 ) {
+    val host = remember { Any() }
+    DisposableEffect(state, host) {
+        state.attach(host)
+        onDispose { state.detach(host) }
+    }
+    val drawing = state.isDrawnBy(host)
     val adjust = rememberAccessibleTimeout(withControls = true)
-    SideEffect { state.timeoutAdjust = adjust }
+    SideEffect { if (drawing) state.timeoutAdjust = adjust }
     // 상태 표시줄 영역의 터치는 시스템이 먼저 가져가므로, 눌러서 펼칠 수 있게 상태 표시줄 바로 아래에 놓는다.
     val insets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
     val gap = if (WindowInsets.statusBars.getTop(LocalDensity.current) > 0) ISLAND_GAP else MIN_TOP
-    KOverlay(state.visible || alwaysVisible, OverlayKind.Top, insets) { transition ->
+    KOverlay(drawing && (state.visible || alwaysVisible), OverlayKind.Top, insets) { transition ->
         val appear = transition.animateFloat(
             transitionSpec = { if (targetState) spring(ISLAND_DAMPING, Spring.StiffnessMedium) else tween(HIDE_MS.toInt()) },
             label = "glass-island",

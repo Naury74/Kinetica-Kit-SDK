@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -15,6 +18,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -195,5 +199,35 @@ class KNotifyTest {
         val bar = compose.onNodeWithTag("bar").fetchSemanticsNode().boundsInRoot
         val pill = compose.onNodeWithText("지웠어요", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertThat(pill.bottom).isAtMost(bar.top)
+    }
+
+    @Test
+    fun `같은 상태를 두 호스트가 그리면 나중에 들어온 호스트만 알림을 띄운다`() {
+        // 앱 전체 호스트의 상태를 통화 화면처럼 안에 호스트를 둔 화면에 넘겨도 알림은 한 번만 뜬다.
+        val state = KIslandState()
+        var inner by mutableStateOf(false)
+        compose.setContent {
+            scope = rememberCoroutineScope()
+            KineticaScaffold(Modifier.fillMaxSize()) {
+                if (inner) KIslandHost(state, Modifier.testTag("inner"))
+                KIslandHost(state, Modifier.testTag("outer"))
+            }
+        }
+        scope.launch { state.show(KIslandContent("윤아", "화면 잘 보여요"), durationMs = null) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("outer").assertExists()
+
+        inner = true
+        compose.waitForIdle()
+        assertThat(compose.onAllNodesWithText("윤아", useUnmergedTree = true).fetchSemanticsNodes()).hasSize(1)
+        compose.onNodeWithTag("inner").assertExists()
+        compose.onNodeWithTag("outer").assertDoesNotExist()
+
+        // 안쪽 화면이 닫히면 앞의 호스트가 이어서 그린다.
+        inner = false
+        compose.waitForIdle()
+        compose.onNodeWithTag("outer").assertExists()
+        state.dismiss()
+        compose.waitForIdle()
     }
 }
