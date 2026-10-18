@@ -59,6 +59,48 @@ Kinetica SDK 모듈 14개를 `com.naurylab:<모듈>:<버전>` 좌표로 Maven Ce
 
 올리지 않고 번들만 만들어 내용을 보려면 `./gradlew cleanCentralStaging centralBundle --no-configuration-cache`를 실행합니다.
 
+## 배포 전에 다른 프로젝트에서 시험하기
+
+공식 배포 없이 고친 판을 다른 프로젝트에서 바로 받아 보려면 개발 판을 씁니다. mavenLocal과 따로 두는 파일 저장소라서, 받는 쪽이 켰을 때만 쓰이고 올리는 즉시 반영됩니다.
+
+```bash
+./gradlew publishDev                    # 커밋한 상태에서만 올린다
+./gradlew publishDev -PallowDirty=true  # 커밋하지 않은 변경도 올린다
+```
+
+- 14개 모듈을 `gradle.properties`의 `KINETICA_DEV_VERSION`(예: `1.0.0-alpha02-SNAPSHOT`)으로 `~/.naurylab/dev-repo`에 서명 없이 올립니다. 위치는 `-PnaurylabDevRepo=<경로>`로 바꿉니다.
+- 어느 커밋에서 올렸는지 저장소 맨 위의 `kinetica-dev.txt`에 남습니다. 커밋하지 않은 변경을 올렸다면 커밋 뒤에 `-dirty`가 붙습니다.
+
+받는 쪽 프로젝트에는 한 번만 아래처럼 적어 둡니다. `-PnaurylabDev=true`를 줄 때만 개발 판 저장소를 보고, 그 저장소에서는 `com.naurylab` 묶음만 받습니다.
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        if (providers.gradleProperty("naurylabDev").orNull == "true") {
+            maven {
+                url = uri("${System.getProperty("user.home")}/.naurylab/dev-repo")
+                content { includeGroup("com.naurylab") }
+            }
+        }
+        google()
+        mavenCentral()
+    }
+}
+
+// app/build.gradle.kts
+val kineticaVersion = providers.gradleProperty("kineticaVersion").getOrElse("1.0.0-alpha01")
+dependencies {
+    implementation("com.naurylab:kinetica-ui:$kineticaVersion")
+}
+```
+
+```bash
+./gradlew :app:assembleDebug -PnaurylabDev=true -PkineticaVersion=1.0.0-alpha02-SNAPSHOT
+```
+
+플래그를 빼면 Maven Central의 정식 판으로 돌아갑니다. 파일 저장소는 Gradle이 캐시하지 않으므로 `--refresh-dependencies` 없이도 새로 올린 판을 받습니다.
+
 ## 버전 규칙
 
 [Semantic Versioning](https://semver.org/lang/ko/)을 따릅니다. 버전은 `주.부.수` 형식입니다.

@@ -28,12 +28,19 @@ val projectUrl = "https://github.com/Naury74/Kinetica-Kit-SDK"
 // Maven Central 업로드 묶음을 만들 임시 저장소. 서명·체크섬이 붙은 배포 파일이 모듈별로 모인다.
 val centralStaging = layout.buildDirectory.dir("central-staging")
 
+// 공식 배포 없이 다른 프로젝트가 받아 보는 개발 판 저장소. mavenLocal과 따로 둬서, 받는 쪽이 켰을 때만 쓰이게 한다.
+val devRepo = providers.gradleProperty("naurylabDevRepo").orNull
+    ?: "${System.getProperty("user.home")}/.naurylab/dev-repo"
+
+// publishDev를 실행할 때만 개발 판 버전으로 바꾸고 서명하지 않는다.
+val publishingDev = gradle.startParameter.taskNames.any { it == "publishDev" || it.endsWith(":publishDev") }
+
 subprojects {
     val summary = sdkModules[name] ?: return@subprojects
     apply(plugin = "maven-publish")
     apply(plugin = "signing")
     group = providers.gradleProperty("KINETICA_GROUP").get()
-    version = providers.gradleProperty("KINETICA_VERSION").get()
+    version = providers.gradleProperty(if (publishingDev) "KINETICA_DEV_VERSION" else "KINETICA_VERSION").get()
 
     plugins.withId("com.android.library") {
         extensions.configure<com.android.build.api.dsl.LibraryExtension> {
@@ -97,6 +104,10 @@ subprojects {
                     name = "CentralStaging"
                     url = uri(centralStaging)
                 }
+                maven {
+                    name = "NaurylabDev"
+                    url = uri(devRepo)
+                }
             }
         }
         configureSigning()
@@ -112,6 +123,7 @@ subprojects {
  * 키가 없으면 서명하지 않으므로 `publishToMavenLocal`은 그대로 동작한다. Central 묶음을 만들 때는 서명이 필수다.
  */
 fun Project.configureSigning() {
+    if (publishingDev) return
     val inMemoryKey = providers.gradleProperty("signingInMemoryKey").orNull?.trim()?.takeIf { it.isNotEmpty() }
     val useGpg = providers.gradleProperty("signing.gnupg.keyName").isPresent
     if (inMemoryKey == null && !useGpg) return
@@ -186,5 +198,36 @@ tasks.register("publishToCentral") {
         check(response.statusCode() in 200..299) { "업로드 실패(${response.statusCode()}): ${response.body()}" }
         logger.lifecycle("업로드 완료. 배포 ID: ${response.body()}")
         logger.lifecycle(if (auto) "검증이 끝나면 자동으로 공개됩니다." else "https://central.sonatype.com/publishing/deployments 에서 확인 후 Publish를 누르세요.")
+    }
+}
+
+/**
+ * 공식 배포 없이 다른 프로젝트에서 바로 시험할 개발 판을 올린다. 모든 SDK 모듈을 `KINETICA_DEV_VERSION`으로
+ * 개발 판 저장소(기본 `~/.naurylab/dev-repo`, `-PnaurylabDevRepo`로 바꿈)에 서명 없이 올리고,
+ * 어느 커밋에서 올렸는지 `kinetica-dev.txt`에 남긴다. 커밋하지 않은 변경이 있으면 멈추고, `-PallowDirty=true`면 그대로 올린다.
+ */
+tasks.register("publishDev") {
+    group = "publishing"
+    description = "개발 판(KINETICA_DEV_VERSION)을 개발 판 저장소에 올린다."
+    dependsOn(sdkProjects.map { "${it.path}:publishReleasePublicationToNaurylabDevRepository" })
+    val repo = devRepo
+    val devVersion = providers.gradleProperty("KINETICA_DEV_VERSION")
+    val allowDirty = providers.gradleProperty("allowDirty").orNull == "true"
+    val commit = providers.exec { commandLine("git", "rev-parse", "--short", "HEAD") }.standardOutput.asText.map { it.trim() }
+    val status = providers.exec { commandLine("git", "status", "--porcelain") }.standardOutput.asText.map { it.trim() }
+    doFirst {
+        check(allowDirty || status.get().isEmpty()) {
+            "커밋하지 않은 변경이 있습니다. 커밋한 뒤 올리거나 -PallowDirty=true를 붙이세요."
+        }
+    }
+    doLast {
+        val dirty = status.get().isNotEmpty()
+        val info = buildString {
+            appendLine("version=${devVersion.get()}")
+            appendLine("commit=${commit.get()}${if (dirty) "-dirty" else ""}")
+            appendLine("time=${java.time.OffsetDateTime.now().withNano(0)}")
+        }
+        java.io.File(repo, "kinetica-dev.txt").writeText(info)
+        logger.lifecycle("개발 판을 올렸습니다: $repo\n$info")
     }
 }
