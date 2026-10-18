@@ -1156,6 +1156,20 @@ CompositionLocalProvider(
 }
 ```
 
+### 언어
+
+kinetica-ui의 TalkBack 라벨과 화면 글자는 영어, 한국어, 일본어, 중국어(간체, 번체), 베트남어, 태국어, 인도네시아어, 러시아어, 스페인어, 포르투갈어(브라질), 프랑스어, 독일어로 나온다.
+앱이 이보다 적은 언어만 지원하면, 앱이 지원하지 않는 언어의 기기에서 앱 문구는 기본 언어로, Kinetica 문구는 기기 언어로 섞여 나온다. 앱이 지원하는 언어만 남기려면 앱 모듈에 `localeFilters`를 둔다.
+
+```kotlin
+// app/build.gradle.kts
+android {
+    androidResources {
+        localeFilters += listOf("en", "ko")
+    }
+}
+```
+
 ### `KineticaScaffold` 밖에서 부를 때
 
 `KineticaScaffold` 안에서 부르면 다이얼로그, 시트, 메뉴, 토스트가 스캐폴드 위층에 그려지고 뒤 화면 전체를 블러로 비춘다.
