@@ -1,10 +1,15 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -88,6 +93,26 @@ class ReadOnceTest {
     @Config(sdk = [36])
     fun `Android 16부터는 TalkBack이 펼침 동작에서 상태를 읽으므로 문구를 또 넣지 않는다`() {
         assertThat(expandableState()).isNull()
+    }
+
+    @Test
+    fun `전후 비교는 TalkBack이 멈추는 슬라이더 하나로 읽힌다`() {
+        lateinit var view: android.view.View
+        compose.setContent {
+            view = androidx.compose.ui.platform.LocalView.current
+            BeforeAfterSlider(
+                before = { Box(Modifier.fillMaxSize()) },
+                after = { Box(Modifier.fillMaxSize()) },
+                modifier = Modifier.size(200.dp),
+            )
+        }
+        val node = compose.onNodeWithContentDescription("전후 비교").fetchSemanticsNode()
+        val info = view.accessibilityNodeProvider.createAccessibilityNodeInfo(node.id)!!
+        // 자식이 남은 채 묶지 않으면 TalkBack이 쓸어 넘길 때 이 노드에 멈추지 않는다.
+        assertThat(info.isScreenReaderFocusable).isTrue()
+        assertThat(info.stateDescription.toString()).isEqualTo("전 50%, 후 50%")
+        // 안쪽 '전', '후' 표시는 상태 문구가 이미 말하므로 따로 읽지 않는다.
+        assertThat(node.config.getOrNull(SemanticsProperties.Text)).isNull()
     }
 
     @Test

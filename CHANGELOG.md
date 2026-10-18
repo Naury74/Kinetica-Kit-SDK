@@ -124,6 +124,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 고친 것
 
+- `BeforeAfterSlider`를 TalkBack이 쓸어 넘길 때 건너뛰던 문제(자식이 남은 채 묶지 않아 멈추는 노드가 아니었습니다. 이제 "전후 비교, 전 50%, 후 50%" 슬라이더 하나로 읽습니다)
 - `KSearchBar`, `KSearchView`, `KTagInput`에서 TalkBack이 입력란 이름 없이 "편집 상자"만 읽던 문제. 이름을 편집 노드의 contentDescription 대신 입력란 안 글자로 내보내고, 글을 쓰면 투명하게 남겨 계속 읽게 합니다. `KChatInput`도 같은 방식으로 바꿔 이름이 빠지거나 두 번 읽히지 않습니다. 테스트에서 이 입력란들을 contentDescription으로 찾았다면 `hasSetTextAction()`이나 글자로 찾아야 합니다
 - Android 16에서 `KExpandable`과 `KSpeedDial`의 펼침 상태를 TalkBack이 두 번 읽던 문제("collapsed, 접힘"). Android 16부터는 펼침 동작만 알리고, 그 전 버전은 상태 문구를 그대로 넣습니다
 - 채운 버튼과 배지, 칩, 세그먼트 선택, 지도 묶음 핀의 흰 글자가 기본 강조색(#0A84FF), 빨강, 초록 위에서 4.5:1이 안 되던 문제. 채우는 색만 기준을 막 넘는 만큼 진하게 합니다(#0975E2, #DF342A, #24883D). 글자, 테두리, 옅은 칠의 강조색은 그대로입니다

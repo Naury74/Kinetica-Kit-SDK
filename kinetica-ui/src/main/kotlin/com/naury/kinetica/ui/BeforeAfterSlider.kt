@@ -160,7 +160,11 @@ private fun CompareBox(
         modifier
             .clipToBounds()
             .onSizeChanged { compare.width = it.width }
-            .semantics {
+            .holdViewParentDrag(Orientation.Horizontal)
+            .compareInput(compare, interaction)
+            // 자식을 지우고 슬라이더 하나로 둔다. 자식이 남은 채 묶지 않으면 TalkBack이 쓸어 넘길 때 이 노드에 멈추지 않는다.
+            // 안쪽 '전', '후' 표시는 상태 문구가 이미 말한다.
+            .clearAndSetSemantics {
                 contentDescription = label
                 stateDescription = state
                 progressBarRangeInfo = ProgressBarRangeInfo(compare.split, 0f..1f)
@@ -168,9 +172,7 @@ private fun CompareBox(
                     compare.split = target.coerceIn(0f, 1f)
                     true
                 }
-            }
-            .holdViewParentDrag(Orientation.Horizontal)
-            .compareInput(compare, interaction),
+            },
     ) {
         Box(Modifier.glassBackdrop(backdrop)) {
             after()
