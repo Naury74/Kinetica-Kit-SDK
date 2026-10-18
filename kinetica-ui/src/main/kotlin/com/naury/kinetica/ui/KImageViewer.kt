@@ -18,12 +18,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -52,6 +55,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.lerp
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
@@ -381,11 +385,34 @@ private fun ViewerBody(parts: ViewerParts, look: ViewerLook, content: @Composabl
         ) {
             Spacer(Modifier.fillMaxSize().drawBehind { drawRect(Color.Black.copy(alpha = parts.frame.backgroundAlpha)) })
             ViewerPager(parts, values, onTap = { barsShown = !barsShown }, content)
+            StatusBarScrim { parts.frame.level * (1f - parts.frame.dragged * BAR_DRAG_FADE).coerceAtLeast(0f) }
         }
         val barLevel = { bars * parts.frame.level * (1f - parts.frame.dragged * BAR_DRAG_FADE).coerceAtLeast(0f) }
         TopBar(parts, look.surface, backdrop, barsShown, barLevel)
         BottomBar(parts, look, backdrop, barLevel)
     }
+}
+
+/**
+ * 상태 표시줄 뒤를 위에서 아래로 옅어지는 어두운 막으로 덮는다. 뷰어는 시스템 바 아이콘을 밝게 하는데, 사진이 화면 위까지 차면
+ * 흰 사진 위에서 시계와 배터리가 보이지 않는다. [level]은 막의 진하기(0..1)이며 그리기 단계에서 읽는다.
+ */
+@Composable
+private fun BoxScope.StatusBarScrim(level: () -> Float) {
+    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    if (top <= 0.dp) return
+    Spacer(
+        Modifier
+            .align(Alignment.TopCenter)
+            .fillMaxWidth()
+            .height(top + STATUS_SCRIM_FADE)
+            .drawBehind {
+                val alpha = STATUS_SCRIM_ALPHA * level().coerceIn(0f, 1f)
+                if (alpha > 0f) {
+                    drawRect(Brush.verticalGradient(0f to Color.Black.copy(alpha = alpha), 1f to Color.Transparent))
+                }
+            },
+    )
 }
 
 @Composable
@@ -586,6 +613,8 @@ private val BAR_SLIDE = 16.dp
 private val BUTTON_SIZE = KMetrics.IconButton
 private const val CLOSE_ARM = 0.17f
 private const val LIGHT_INK = 0.5f
+private const val STATUS_SCRIM_ALPHA = 0.45f
+private val STATUS_SCRIM_FADE = 24.dp
 private const val SCRIM_ALPHA = 0.32f
 private const val HALO_ALPHA = 0.35f
 private val HALO = 2.dp
