@@ -28,6 +28,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
@@ -511,6 +512,39 @@ class KCallTest {
         compose.onNodeWithTag("p8-Grid").performTouchInput { swipeLeft(startX = right - 2f, endX = left - 250f, durationMillis = 300) }
         compose.waitForIdle()
         assertThat(paged.page).isEqualTo(1)
+    }
+
+    @Test
+    fun `TalkBack도 띠와 다음 쪽을 넘길 수 있게 스크롤 범위와 동작을 알린다`() {
+        val pinned = KParticipantGridState(KCorner.BottomEnd)
+        val paged = KParticipantGridState(KCorner.BottomEnd)
+        val focus = androidx.compose.runtime.mutableStateOf<String?>("p0")
+        val people = (0 until 12).map { "p$it" }
+        compose.setContent {
+            Box(Modifier.size(400.dp, 800.dp)) {
+                val state = if (focus.value == null) paged else pinned
+                KParticipantGrid(people, key = { it }, state = state, focusKey = focus.value) { p, role ->
+                    Box(Modifier.fillMaxSize().testTag("$p-$role"))
+                }
+            }
+        }
+        // 화면 밖 띠 칸은 그리지 않으므로, TalkBack은 끝에서 띠를 앞으로 넘겨 다음 사람을 불러와야 한다.
+        compose.onNodeWithTag("p11-Strip").assertDoesNotExist()
+        val scroller = compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange))
+        assertThat(scroller.fetchSemanticsNode().config[SemanticsProperties.HorizontalScrollAxisRange].maxValue()).isGreaterThan(0f)
+        scroller.performSemanticsAction(SemanticsActions.ScrollBy) { it(10_000f, 0f) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("p11-Strip").assertExists()
+
+        focus.value = null
+        compose.waitForIdle()
+        compose.onNodeWithTag("p10-Grid").assertDoesNotExist()
+        compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange))
+            .performSemanticsAction(SemanticsActions.ScrollBy) { it(50f, 0f) }
+        compose.waitForIdle()
+        // 쪽 넘김은 조금만 넘겨도 다음 쪽에 붙는다.
+        assertThat(paged.page).isEqualTo(1)
+        compose.onNodeWithTag("p10-Grid").assertExists()
     }
 
     @Test

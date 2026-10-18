@@ -39,9 +39,14 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.horizontalScrollAxisRange
+import androidx.compose.ui.semantics.scrollBy
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.verticalScrollAxisRange
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -49,6 +54,7 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -64,7 +70,7 @@ internal fun Modifier.gridScroll(state: KParticipantGridState, plan: GridPlan): 
     val strip = plan.strip
     val horizontal = strip?.horizontal ?: true
     val zone = strip?.area ?: plan.area
-    pointerInput(plan.maxScroll, zone, rtl) {
+    scrollSemantics(state, plan, horizontal, rtl, scope).pointerInput(plan.maxScroll, zone, rtl) {
         val slop = viewConfiguration.touchSlop
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -88,6 +94,33 @@ internal fun Modifier.gridScroll(state: KParticipantGridState, plan: GridPlan): 
                 }
             }
         }
+    }
+}
+
+/**
+ * TalkBack이 띠와 쪽을 넘길 수 있게 스크롤 범위와 동작을 알린다. 화면 밖 칸은 그리지 않으므로, TalkBack은 보이는 끝 칸에서 앞으로 넘겨
+ * 다음 사람을 불러온다. 초점을 받은 칸을 화면에 보이게 하는 동작도 이 범위와 scrollBy로 처리된다. 쪽은 넘긴 방향의 다음 쪽에 붙는다.
+ */
+private fun Modifier.scrollSemantics(
+    state: KParticipantGridState,
+    plan: GridPlan,
+    horizontal: Boolean,
+    rtl: Boolean,
+    scope: CoroutineScope,
+): Modifier = semantics {
+    val range = ScrollAxisRange(value = { state.scroll.value }, maxValue = { plan.maxScroll })
+    if (horizontal) horizontalScrollAxisRange = range else verticalScrollAxisRange = range
+    scrollBy { x, y ->
+        val delta = if (horizontal) x.mirrored(rtl) else y
+        val target = if (plan.strip != null) {
+            state.scroll.value + delta
+        } else {
+            val page = state.scroll.value / plan.pageWidth
+            (if (delta > 0f) ceil(page + delta / plan.pageWidth) else floor(page + delta / plan.pageWidth)) * plan.pageWidth
+        }.coerceIn(0f, plan.maxScroll)
+        if (target == state.scroll.value) return@scrollBy false
+        scope.launch { state.scroll.snapTo(target) }
+        true
     }
 }
 

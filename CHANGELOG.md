@@ -124,6 +124,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 고친 것
 
+- `KParticipantGrid` 띠와 여러 쪽 격자에서 TalkBack이 화면 밖 참가자에게 닿지 못하던 문제(스크롤 범위와 scrollBy를 알려, TalkBack이 끝에서 넘기고 초점 받은 칸을 화면에 보이게 합니다)
 - `KIslandHost` 알림과 쌓인 `KToaster` 토스트가 나타날 때 TalkBack이 알림 문장 앞에 "버튼"을 먼저 읽던 문제(live region 노드의 역할을 뺐습니다)
 - TalkBack이 이름 뒤에 안쪽 글자를 또 읽던 문제: `RollingText`(통화 시간 "1:47" 뒤 콜론), `TypewriterText`(치는 중인 글자와 커서), 비밀번호 강도 글자, 태그 칩 이름
 - 묶음 재생기(`RemoteKineticaPlayer(bundle, sceneId)`)에서 화면 id를 바꾼 첫 프레임에 이전 화면 문서가 새 화면으로 넘어가던 문제(새 화면 문서에 적힌 전환 대신 이전 문서의 전환을 읽을 수 있었습니다)
