@@ -478,7 +478,7 @@ private fun ArrowButton(previous: Boolean, enabled: Boolean, look: CalendarLook,
 
 @Composable
 private fun WeekdayRow(look: CalendarLook) {
-    val normal = look.surface.contentColor.copy(alpha = WEEKDAY_ALPHA)
+    val normal = look.surface.muted(WEEKDAY_ALPHA)
     // 날짜마다 요일까지 읽으므로 요일 머리는 TalkBack에서 건너뛴다.
     Row(Modifier.fillMaxWidth().padding(vertical = WEEKDAY_PADDING).clearAndSetSemantics {}) {
         repeat(DAYS_PER_WEEK) { index ->

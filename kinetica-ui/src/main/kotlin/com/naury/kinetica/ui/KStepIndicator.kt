@@ -133,7 +133,7 @@ private fun NumberedSteps(steps: List<String>, current: Int, modifier: Modifier,
                     name,
                     Modifier.padding(top = 6.dp, start = 2.dp, end = 2.dp),
                     style = TextStyle(
-                        color = if (i <= current) look.ink else look.ink.copy(alpha = MUTED),
+                        color = if (i <= current) look.ink else look.surface.muted(MUTED),
                         fontSize = 12.sp,
                         fontWeight = if (i == current) FontWeight.SemiBold else FontWeight.Normal,
                         textAlign = TextAlign.Center,
@@ -151,7 +151,7 @@ private fun StepLine(visible: Boolean, solid: Boolean, look: TimelineLook, modif
     Box(
         modifier.height(LINE).drawBehind {
             if (!visible) return@drawBehind
-            val color = if (solid) look.accent else look.ink.copy(alpha = TRACK_ALPHA)
+            val color = if (solid) look.accent else look.surface.raisedFill(TRACK_ALPHA)
             drawRoundRect(color, cornerRadius = CornerRadius(size.height / 2))
         },
     )
@@ -176,7 +176,7 @@ private fun DrawScope.drawDots(count: Int, position: Float, look: TimelineLook, 
         // 지금 단계에 가까울수록 넓어진다. 두 점 사이를 옮겨 가는 동안 폭이 나뉘어 늘었다 줄어든다.
         val grow = (1f - abs(position - i)).coerceIn(0f, 1f)
         val w = dot + extra * grow
-        val color = lerp(look.ink.copy(alpha = TRACK_ALPHA), look.accent, grow.coerceAtLeast(if (i < position) 1f else 0f))
+        val color = lerp(look.surface.raisedFill(TRACK_ALPHA), look.accent, grow.coerceAtLeast(if (i < position) 1f else 0f))
         val left = if (rtl) size.width - x - w else x
         drawRoundRect(color, Offset(left, 0f), Size(w, dot), CornerRadius(dot / 2))
         x += w + gap
@@ -209,7 +209,7 @@ private fun BarSteps(steps: List<String>, current: Int, position: () -> Float, m
                 val filled = position() + 1f
                 for (i in 0 until count) {
                     val left = if (rtl) size.width - (w + gap) * i - w else (w + gap) * i
-                    drawRoundRect(look.ink.copy(alpha = TRACK_ALPHA), Offset(left, 0f), Size(w, size.height), radius)
+                    drawRoundRect(look.surface.raisedFill(TRACK_ALPHA), Offset(left, 0f), Size(w, size.height), radius)
                     val part = (filled - i).coerceIn(0f, 1f)
                     if (part > 0f) {
                         val fillLeft = if (rtl) left + w * (1f - part) else left

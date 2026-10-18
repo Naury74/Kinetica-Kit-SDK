@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_menu_back">Kembali</string>
+    <string name="kinetica_ui_menu_submenu">Submenu</string>
+    <string name="kinetica_ui_select_open">Tampilkan opsi</string>
+    <string name="kinetica_ui_select_none">Tidak dipilih</string>
+    <string name="kinetica_ui_suggestions">%1$d saran</string>
+    <string name="kinetica_ui_action_cancel">Batal</string>
+    <string name="kinetica_ui_search_recent">Penelusuran terbaru</string>
+    <string name="kinetica_ui_search_clear_recent">Hapus semua</string>
+    <string name="kinetica_ui_search_remove_recent">Hapus %1$s</string>
+    <string name="kinetica_ui_search_fill">Isi %1$s</string>
+    <string name="kinetica_ui_search_close">Tutup penelusuran</string>
+    <string name="kinetica_ui_toolbar_more">Lainnya</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_menu_back">Quay lại</string>
+    <string name="kinetica_ui_menu_submenu">Menu con</string>
+    <string name="kinetica_ui_select_open">Hiện tùy chọn</string>
+    <string name="kinetica_ui_select_none">Chưa chọn</string>
+    <string name="kinetica_ui_suggestions">%1$d gợi ý</string>
+    <string name="kinetica_ui_action_cancel">Hủy</string>
+    <string name="kinetica_ui_search_recent">Tìm kiếm gần đây</string>
+    <string name="kinetica_ui_search_clear_recent">Xóa tất cả</string>
+    <string name="kinetica_ui_search_remove_recent">Xóa %1$s</string>
+    <string name="kinetica_ui_search_fill">Điền %1$s</string>
+    <string name="kinetica_ui_search_close">Đóng tìm kiếm</string>
+    <string name="kinetica_ui_toolbar_more">Thêm</string>
+</resources>

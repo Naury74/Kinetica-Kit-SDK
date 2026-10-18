@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_data_series">Série %1$d</string>
+    <string name="kinetica_ui_data_pair">%1$s %2$s</string>
+    <plurals name="kinetica_ui_chart_area">
+        <item quantity="one">Gráfico de área, %2$d séries, %1$d ponto</item>
+        <item quantity="many">Gráfico de área, %2$d séries, %1$d pontos</item>
+        <item quantity="other">Gráfico de área, %2$d séries, %1$d pontos</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_stacked_bar">
+        <item quantity="one">Gráfico de barras empilhadas, %2$d séries, %1$d barra</item>
+        <item quantity="many">Gráfico de barras empilhadas, %2$d séries, %1$d barras</item>
+        <item quantity="other">Gráfico de barras empilhadas, %2$d séries, %1$d barras</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_grouped_bar">
+        <item quantity="one">Gráfico de barras agrupadas, %2$d séries, %1$d grupo</item>
+        <item quantity="many">Gráfico de barras agrupadas, %2$d séries, %1$d grupos</item>
+        <item quantity="other">Gráfico de barras agrupadas, %2$d séries, %1$d grupos</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_pie">
+        <item quantity="one">Gráfico de pizza, %1$d fatia, total %2$s</item>
+        <item quantity="many">Gráfico de pizza, %1$d fatias, total %2$s</item>
+        <item quantity="other">Gráfico de pizza, %1$d fatias, total %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_heatmap_cell">%1$s, %2$s</string>
+    <string name="kinetica_ui_heatmap_empty">Sem dados</string>
+    <string name="kinetica_ui_heatmap_less">Menos</string>
+    <string name="kinetica_ui_heatmap_more">Mais</string>
+    <string name="kinetica_ui_stat_up">Alta de %1$s</string>
+    <string name="kinetica_ui_stat_down">Queda de %1$s</string>
+    <string name="kinetica_ui_stat_flat">Sem alteração</string>
+    <string name="kinetica_ui_step_done">Concluída</string>
+    <string name="kinetica_ui_step_current">Em andamento</string>
+    <string name="kinetica_ui_step_upcoming">Não iniciada</string>
+    <string name="kinetica_ui_step_error">Problema</string>
+    <string name="kinetica_ui_step_of">Etapa %2$d de %1$d, %3$s</string>
+    <string name="kinetica_ui_step_name">Etapa %1$d, %2$s</string>
+    <string name="kinetica_ui_step_count">%1$d/%2$d</string>
+    <string name="kinetica_ui_wizard_next">Avançar</string>
+    <string name="kinetica_ui_wizard_back">Voltar</string>
+    <string name="kinetica_ui_wizard_finish">Concluir</string>
+    <string name="kinetica_ui_price_original">preço normal %1$s</string>
+    <string name="kinetica_ui_price_discount">%1$d%% de desconto</string>
+    <string name="kinetica_ui_billing_monthly">Mensal</string>
+    <string name="kinetica_ui_billing_yearly">Anual</string>
+    <string name="kinetica_ui_quantity">Quantidade</string>
+    <string name="kinetica_ui_quantity_add">Adicionar</string>
+    <string name="kinetica_ui_keypad_decimal">Separador decimal</string>
+    <string name="kinetica_ui_keypad_backspace">Excluir</string>
+    <string name="kinetica_ui_pin_state">%2$d de %1$d dígitos inseridos</string>
+    <string name="kinetica_ui_range_today">Hoje</string>
+    <string name="kinetica_ui_range_last_days">Últimos %1$d dias</string>
+    <string name="kinetica_ui_range_this_month">Este mês</string>
+    <string name="kinetica_ui_range_last_month">Mês passado</string>
+    <string name="kinetica_ui_range_morning">Manhã</string>
+    <string name="kinetica_ui_range_afternoon">Tarde</string>
+    <string name="kinetica_ui_range_work">Horário comercial</string>
+    <string name="kinetica_ui_range_date_title">Selecionar datas</string>
+    <string name="kinetica_ui_range_time_title">Selecionar intervalo de horário</string>
+    <string name="kinetica_ui_range_start">Início %1$s</string>
+    <string name="kinetica_ui_range_end">Término %1$s</string>
+    <string name="kinetica_ui_range_next_day">Termina no dia seguinte</string>
+    <string name="kinetica_ui_range_pick_start">Escolha uma data de início</string>
+    <string name="kinetica_ui_range_pick_end">%1$s ~ escolha uma data de término</string>
+    <string name="kinetica_ui_range_summary">%1$s ~ %2$s</string>
+    <string name="kinetica_ui_range_cancel">Cancelar</string>
+    <string name="kinetica_ui_range_apply">Aplicar</string>
+    <plurals name="kinetica_ui_range_days">
+        <item quantity="one">%1$d dia</item>
+        <item quantity="many">%1$d dias</item>
+        <item quantity="other">%1$d dias</item>
+    </plurals>
+    <string name="kinetica_ui_week_previous">Semana anterior</string>
+    <string name="kinetica_ui_week_next">Próxima semana</string>
+    <plurals name="kinetica_ui_week_events">
+        <item quantity="one">%1$d evento</item>
+        <item quantity="many">%1$d eventos</item>
+        <item quantity="other">%1$d eventos</item>
+    </plurals>
+</resources>

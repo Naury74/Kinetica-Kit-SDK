@@ -37,7 +37,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -95,7 +94,7 @@ public fun KStepper(
     val shown = value.coerceIn(range)
     val latestValue by rememberUpdatedState(shown)
     val latestChange by rememberUpdatedState(onValueChange)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val increase = stringResource(R.string.kinetica_ui_increase)
     val decrease = stringResource(R.string.kinetica_ui_decrease)

@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -112,7 +111,7 @@ public fun KCallControlButton(
     badgeDescription: String? = null,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val diameter = size.coerceAtLeast(KCallControlDefaults.CompactSize)
     val shape = shapeFor { button }
     val interaction = remember { MutableInteractionSource() }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">Avaliação</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="one">%1$s de %2$d estrela</item>
+        <item quantity="many">%1$s de %2$d estrelas</item>
+        <item quantity="other">%1$s de %2$d estrelas</item>
+    </plurals>
+    <string name="kinetica_ui_like">Curtir</string>
+    <string name="kinetica_ui_liked">Curtido</string>
+    <string name="kinetica_ui_not_liked">Não curtido</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="one">%1$s e mais %2$d pessoa</item>
+        <item quantity="many">%1$s e mais %2$d pessoas</item>
+        <item quantity="other">%1$s e mais %2$d pessoas</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">Tocando agora</string>
+    <string name="kinetica_ui_player_expand">Abrir player</string>
+    <string name="kinetica_ui_player_collapse">Minimizar player</string>
+</resources>

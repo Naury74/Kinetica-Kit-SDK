@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">分頁列已收合</string>
+    <string name="kinetica_ui_tabbar_expand">顯示所有分頁</string>
+    <string name="kinetica_ui_tabbar_go_to">前往%1$s</string>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_picker_next">Tiếp</string>
+    <string name="kinetica_ui_picker_previous">Trước</string>
+    <string name="kinetica_ui_picker_year">Năm</string>
+    <string name="kinetica_ui_picker_month">Tháng</string>
+    <string name="kinetica_ui_picker_day">Ngày</string>
+    <string name="kinetica_ui_picker_hour">Giờ</string>
+    <string name="kinetica_ui_picker_minute">Phút</string>
+    <string name="kinetica_ui_picker_am_pm">SA/CH</string>
+    <string name="kinetica_ui_search">Tìm kiếm</string>
+    <string name="kinetica_ui_search_cancel">Hủy</string>
+    <string name="kinetica_ui_clear_text">Xóa văn bản</string>
+</resources>

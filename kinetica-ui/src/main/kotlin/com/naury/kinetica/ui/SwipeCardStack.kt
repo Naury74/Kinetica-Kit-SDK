@@ -32,7 +32,6 @@ import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -292,7 +291,7 @@ private fun androidx.compose.ui.graphics.GraphicsLayerScope.stackTransform(state
 @Composable
 private fun Modifier.topCard(state: SwipeCardStackState, directions: Set<SwipeDirection>): Modifier {
     val scope = rememberCoroutineScope()
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val labels = mapOf(
         SwipeDirection.Left to stringResource(R.string.kinetica_ui_swipe_left),
         SwipeDirection.Right to stringResource(R.string.kinetica_ui_swipe_right),

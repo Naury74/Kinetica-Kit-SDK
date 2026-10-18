@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_move_up">Di chuyển lên</string>
+    <string name="kinetica_ui_move_down">Di chuyển xuống</string>
+    <string name="kinetica_ui_expanded">Đã mở rộng</string>
+    <string name="kinetica_ui_collapsed">Đã thu gọn</string>
+    <string name="kinetica_ui_confirmed">Đã xác nhận</string>
+</resources>

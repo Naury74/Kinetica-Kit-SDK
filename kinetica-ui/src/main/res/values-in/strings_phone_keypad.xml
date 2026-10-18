@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_keypad_star">Bintang</string>
+    <string name="kinetica_ui_keypad_pound">Pagar</string>
+    <string name="kinetica_ui_keypad_plus">Masukkan plus</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">Voltar</string>
+    <string name="kinetica_ui_page_state">Página %1$d de %2$d</string>
+    <string name="kinetica_ui_swipe_left">Deslizar para a esquerda</string>
+    <string name="kinetica_ui_swipe_right">Deslizar para a direita</string>
+    <string name="kinetica_ui_swipe_up">Deslizar para cima</string>
+    <string name="kinetica_ui_swipe_undo">Desfazer último deslize</string>
+    <string name="kinetica_ui_speed_dial">Ações rápidas</string>
+    <string name="kinetica_ui_speed_dial_expanded">Expandido</string>
+    <string name="kinetica_ui_speed_dial_collapsed">Recolhido</string>
+</resources>

@@ -89,6 +89,7 @@ public fun KSwitch(
             colors.accent
         },
         ink = surface.contentColor,
+        surface = surface,
         dark = surface.isDark,
         fill = surface.fillColor.copy(alpha = 1f),
         border = border,
@@ -127,7 +128,7 @@ public fun KSwitch(
 }
 
 /** 스위치 색. [on]은 켜진 트랙, [ink]는 표면 글자 색이다. */
-private class SwitchPaint(val on: Color, val ink: Color, val dark: Boolean, val fill: Color, val border: Dp)
+private class SwitchPaint(val on: Color, val ink: Color, val surface: SurfaceStyle, val dark: Boolean, val fill: Color, val border: Dp)
 
 /** 손잡이 위치(0..1, 출렁이면 범위를 조금 넘는다)와 눌림 정도(0..1) */
 private class SwitchMotion(checked: Boolean) {
@@ -173,7 +174,7 @@ private fun DrawScope.mirrored(x: Float): Float = if (layoutDirection == LayoutD
 
 private fun DrawScope.drawCapsuleSwitch(position: Float, press: Float, paint: SwitchPaint) {
     val t = position.coerceIn(0f, 1f)
-    drawRoundRect(lerp(paint.ink.copy(alpha = CAPSULE_OFF_ALPHA), paint.on, t), cornerRadius = CornerRadius(size.height / 2))
+    drawRoundRect(lerp(paint.surface.raisedFill(CAPSULE_OFF_ALPHA), paint.on, t), cornerRadius = CornerRadius(size.height / 2))
     val inset = CAPSULE_THUMB_INSET.toPx()
     val thumbHeight = size.height - inset * 2
     val thumbWidth = thumbHeight * (1f + CAPSULE_STRETCH * press)
@@ -188,7 +189,7 @@ private fun DrawScope.drawCapsuleSwitch(position: Float, press: Float, paint: Sw
 private fun DrawScope.drawCheckSwitch(position: Float, press: Float, paint: SwitchPaint) {
     val t = position.coerceIn(0f, 1f)
     val radius = size.height / 2
-    drawRoundRect(lerp(paint.ink.copy(alpha = MARK_OFF_FILL), paint.on, t), cornerRadius = CornerRadius(radius))
+    drawRoundRect(lerp(paint.surface.raisedFill(MARK_OFF_FILL), paint.on, t), cornerRadius = CornerRadius(radius))
     val border = MARK_BORDER.toPx()
     if (t < 1f) {
         drawRoundRect(
@@ -226,7 +227,7 @@ private fun DrawScope.drawSlimSwitch(position: Float, press: Float, paint: Switc
     val t = position.coerceIn(0f, 1f)
     val trackHeight = SLIM_TRACK.toPx()
     val inset = SLIM_TRACK_INSET.toPx()
-    val trackColor = lerp(paint.ink.copy(alpha = SLIM_OFF_TRACK), paint.on, t)
+    val trackColor = lerp(paint.surface.raisedFill(SLIM_OFF_TRACK), paint.on, t)
     drawRoundRect(
         trackColor,
         Offset(inset, (size.height - trackHeight) / 2),

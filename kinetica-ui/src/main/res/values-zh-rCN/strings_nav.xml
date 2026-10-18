@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">展开</string>
+    <string name="kinetica_ui_sheet_collapse">收起</string>
+    <string name="kinetica_ui_sheet_expanded">已展开</string>
+    <string name="kinetica_ui_sheet_partial">已部分展开</string>
+    <string name="kinetica_ui_sheet_collapsed">已收起</string>
+    <string name="kinetica_ui_tooltip_show">显示提示</string>
+    <string name="kinetica_ui_coach_next">下一步</string>
+    <string name="kinetica_ui_coach_done">完成</string>
+    <string name="kinetica_ui_coach_skip">跳过</string>
+    <string name="kinetica_ui_coach_step">第 %1$d 步，共 %2$d 步</string>
+    <string name="kinetica_ui_drawer_title">菜单</string>
+    <string name="kinetica_ui_drawer_close">关闭菜单</string>
+</resources>

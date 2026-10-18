@@ -48,7 +48,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -127,7 +126,7 @@ public fun KButton(
     surface: SurfaceStyle = KineticaTheme.surface,
     shape: Shape = shapeFor { button },
 ) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val design = KineticaTheme.design
     val height = design.density.height(size.height)
     val active = enabled && !loading && !success

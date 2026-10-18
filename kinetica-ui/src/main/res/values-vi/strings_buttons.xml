@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_done">Xong</string>
+    <string name="kinetica_ui_more_options">Tùy chọn khác</string>
+    <string name="kinetica_ui_status_online">Trực tuyến</string>
+    <string name="kinetica_ui_status_busy">Đang bận</string>
+    <string name="kinetica_ui_status_away">Vắng mặt</string>
+    <string name="kinetica_ui_status_offline">Ngoại tuyến</string>
+    <string name="kinetica_ui_avatar_status">%1$s, %2$s</string>
+    <string name="kinetica_ui_chip_remove">Xóa %s</string>
+</resources>

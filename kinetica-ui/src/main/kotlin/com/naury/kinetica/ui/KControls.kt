@@ -283,7 +283,7 @@ private class SegmentInk(val indicator: Color, val selected: Color, val unselect
 @Composable
 private fun segmentInk(tone: KTone, surface: SurfaceStyle): SegmentInk {
     val ink = surface.contentColor
-    val unselected = ink.copy(alpha = UNSELECTED)
+    val unselected = surface.muted(UNSELECTED)
     val style = KineticaTheme.design.indicator
     val cell = CellShape
     val colors = (if (tone == KTone.Neutral && style == KTabIndicator.Filled) KTone.Accent else tone).colors(surface)
@@ -293,7 +293,13 @@ private fun segmentInk(tone: KTone, surface: SurfaceStyle): SegmentInk {
             SegmentInk(line, buttonInk(KVariant.Text, KTone.Accent, ToneColors(line, line), surface), unselected, style, cell)
         }
 
-        tone == KTone.Neutral && style != KTabIndicator.Filled -> SegmentInk(ink.copy(alpha = SEGMENT_ALPHA), ink, unselected, style, cell)
+        tone == KTone.Neutral && style != KTabIndicator.Filled -> SegmentInk(
+            surface.raisedFill(SEGMENT_ALPHA),
+            ink,
+            unselected,
+            style,
+            cell,
+        )
 
         else -> SegmentInk(colors.fill, colors.onColor, unselected, style, cell)
     }

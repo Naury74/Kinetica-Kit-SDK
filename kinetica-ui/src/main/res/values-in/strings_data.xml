@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_data_series">Seri %1$d</string>
+    <string name="kinetica_ui_data_pair">%1$s %2$s</string>
+    <plurals name="kinetica_ui_chart_area">
+        <item quantity="other">Diagram area, %2$d seri, %1$d titik</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_stacked_bar">
+        <item quantity="other">Diagram batang bertumpuk, %2$d seri, %1$d batang</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_grouped_bar">
+        <item quantity="other">Diagram batang berkelompok, %2$d seri, %1$d kelompok</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_pie">
+        <item quantity="other">Diagram lingkaran, %1$d bagian, total %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_heatmap_cell">%1$s, %2$s</string>
+    <string name="kinetica_ui_heatmap_empty">Tidak ada data</string>
+    <string name="kinetica_ui_heatmap_less">Sedikit</string>
+    <string name="kinetica_ui_heatmap_more">Banyak</string>
+    <string name="kinetica_ui_stat_up">Naik %1$s</string>
+    <string name="kinetica_ui_stat_down">Turun %1$s</string>
+    <string name="kinetica_ui_stat_flat">Tidak berubah</string>
+    <string name="kinetica_ui_step_done">Selesai</string>
+    <string name="kinetica_ui_step_current">Sedang berlangsung</string>
+    <string name="kinetica_ui_step_upcoming">Belum dimulai</string>
+    <string name="kinetica_ui_step_error">Bermasalah</string>
+    <string name="kinetica_ui_step_of">Langkah %2$d dari %1$d, %3$s</string>
+    <string name="kinetica_ui_step_name">Langkah %1$d, %2$s</string>
+    <string name="kinetica_ui_step_count">%1$d/%2$d</string>
+    <string name="kinetica_ui_wizard_next">Berikutnya</string>
+    <string name="kinetica_ui_wizard_back">Kembali</string>
+    <string name="kinetica_ui_wizard_finish">Selesai</string>
+    <string name="kinetica_ui_price_original">harga normal %1$s</string>
+    <string name="kinetica_ui_price_discount">Diskon %1$d%%</string>
+    <string name="kinetica_ui_billing_monthly">Bulanan</string>
+    <string name="kinetica_ui_billing_yearly">Tahunan</string>
+    <string name="kinetica_ui_quantity">Jumlah</string>
+    <string name="kinetica_ui_quantity_add">Tambah</string>
+    <string name="kinetica_ui_keypad_decimal">Koma desimal</string>
+    <string name="kinetica_ui_keypad_backspace">Hapus</string>
+    <string name="kinetica_ui_pin_state">%2$d dari %1$d digit dimasukkan</string>
+    <string name="kinetica_ui_range_today">Hari ini</string>
+    <string name="kinetica_ui_range_last_days">%1$d hari terakhir</string>
+    <string name="kinetica_ui_range_this_month">Bulan ini</string>
+    <string name="kinetica_ui_range_last_month">Bulan lalu</string>
+    <string name="kinetica_ui_range_morning">Pagi</string>
+    <string name="kinetica_ui_range_afternoon">Siang</string>
+    <string name="kinetica_ui_range_work">Jam kerja</string>
+    <string name="kinetica_ui_range_date_title">Pilih tanggal</string>
+    <string name="kinetica_ui_range_time_title">Pilih rentang waktu</string>
+    <string name="kinetica_ui_range_start">Mulai %1$s</string>
+    <string name="kinetica_ui_range_end">Selesai %1$s</string>
+    <string name="kinetica_ui_range_next_day">Berakhir keesokan harinya</string>
+    <string name="kinetica_ui_range_pick_start">Pilih tanggal mulai</string>
+    <string name="kinetica_ui_range_pick_end">%1$s ~ pilih tanggal selesai</string>
+    <string name="kinetica_ui_range_summary">%1$s ~ %2$s</string>
+    <string name="kinetica_ui_range_cancel">Batal</string>
+    <string name="kinetica_ui_range_apply">Terapkan</string>
+    <plurals name="kinetica_ui_range_days">
+        <item quantity="other">%1$d hari</item>
+    </plurals>
+    <string name="kinetica_ui_week_previous">Minggu sebelumnya</string>
+    <string name="kinetica_ui_week_next">Minggu berikutnya</string>
+    <plurals name="kinetica_ui_week_events">
+        <item quantity="other">%1$d acara</item>
+    </plurals>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_feedback_info">信息</string>
+    <string name="kinetica_ui_feedback_success">成功</string>
+    <string name="kinetica_ui_feedback_warning">警告</string>
+    <string name="kinetica_ui_feedback_error">错误</string>
+    <string name="kinetica_ui_feedback_expand">显示所有通知</string>
+    <string name="kinetica_ui_feedback_collapse">叠放通知</string>
+    <string name="kinetica_ui_feedback_loading_text">正在加载…</string>
+    <string name="kinetica_ui_feedback_step">第 %1$d 步，共 %2$d 步</string>
+</resources>

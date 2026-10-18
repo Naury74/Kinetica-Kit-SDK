@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">Kembali</string>
+    <string name="kinetica_ui_page_state">Halaman %1$d dari %2$d</string>
+    <string name="kinetica_ui_swipe_left">Geser ke kiri</string>
+    <string name="kinetica_ui_swipe_right">Geser ke kanan</string>
+    <string name="kinetica_ui_swipe_up">Geser ke atas</string>
+    <string name="kinetica_ui_swipe_undo">Urungkan geseran terakhir</string>
+    <string name="kinetica_ui_speed_dial">Tindakan cepat</string>
+    <string name="kinetica_ui_speed_dial_expanded">Diluaskan</string>
+    <string name="kinetica_ui_speed_dial_collapsed">Diciutkan</string>
+</resources>

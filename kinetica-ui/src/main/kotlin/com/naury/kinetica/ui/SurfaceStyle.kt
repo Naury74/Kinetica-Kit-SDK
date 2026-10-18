@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
@@ -47,6 +48,18 @@ public sealed interface SurfaceStyle {
     public fun forPopup(): SurfaceStyle
 
     /**
+     * 부제, 안내 글, 보조 아이콘처럼 한 단계 낮춘 글자 색. 지정하지 않으면 [Color.Unspecified]이고,
+     * 그때 컴포넌트는 [contentColor]를 자리마다 알맞게 옅게 해 쓴다. 지금은 [Solid]만 지정할 수 있다.
+     */
+    public val contentMuted: Color get() = Color.Unspecified
+
+    /**
+     * 표면보다 한 단계 올라온 면의 색. 슬라이더와 진행 표시의 빈 트랙, 선택된 세그먼트, 표면 위 작은 버튼의 바탕에 쓴다.
+     * 지정하지 않으면 [Color.Unspecified]이고, 그때 컴포넌트는 [contentColor]를 옅게 깔아 쓴다. 지금은 [Solid]만 지정할 수 있다.
+     */
+    public val raised: Color get() = Color.Unspecified
+
+    /**
      * 글래스 표면. 블러 효과 자체는 [style]이 정한다.
      *
      * @property style 블러, 색, 테두리, 그림자를 정하는 글래스 스타일
@@ -69,6 +82,8 @@ public sealed interface SurfaceStyle {
      * @property border 테두리 색. 투명하면 그리지 않는다.
      * @property borderWidth 테두리 두께
      * @property elevation 그림자 반경. 0이면 그림자가 없다.
+     * @property contentMuted 한 단계 낮춘 글자 색. 호스트 팔레트에 보조 글자 색이 있으면 넘긴다. 기본값은 [contentColor]를 자리마다 옅게 쓴다.
+     * @property raised 한 단계 올라온 면의 색. 호스트 팔레트에 트랙이나 올라온 패널 색이 있으면 넘긴다. 기본값은 [contentColor]를 옅게 깐다.
      */
     @Immutable
     public data class Solid(
@@ -78,6 +93,8 @@ public sealed interface SurfaceStyle {
         val border: Color = Color.Transparent,
         val borderWidth: Dp = 0.dp,
         val elevation: Dp = 0.dp,
+        override val contentMuted: Color = Color.Unspecified,
+        override val raised: Color = Color.Unspecified,
     ) : SurfaceStyle {
         init {
             require(borderWidth >= 0.dp && elevation >= 0.dp) { "borderWidth와 elevation은 0 이상이어야 합니다." }
@@ -417,3 +434,9 @@ private val TONAL_BORDER_WIDTH = 1.dp
 private val TONAL_LIGHT_INK = Color(0xFF101318)
 private val TONAL_DARK_BASE = Color(0xFF18191D)
 private val TONAL_DARK_PAGE = Color(0xFF0C0D10)
+
+/** 한 단계 낮춘 글자 색. 호스트가 [SurfaceStyle.contentMuted]를 주었으면 그 색을, 아니면 [contentColor]를 [alpha]만큼 옅게 쓴다. */
+internal fun SurfaceStyle.muted(alpha: Float): Color = if (contentMuted.isSpecified) contentMuted else contentColor.copy(alpha = alpha)
+
+/** 한 단계 올라온 면의 색. 호스트가 [SurfaceStyle.raised]를 주었으면 그 색을, 아니면 [contentColor]를 [alpha]만큼 옅게 쓴다. */
+internal fun SurfaceStyle.raisedFill(alpha: Float): Color = if (raised.isSpecified) raised else contentColor.copy(alpha = alpha)

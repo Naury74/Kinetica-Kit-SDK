@@ -105,7 +105,7 @@ public fun KPriceTag(
                 ThemedText(
                     it,
                     Modifier.padding(start = 2.dp, bottom = 2.dp),
-                    style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = size.small),
+                    style = TextStyle(color = surface.muted(MUTED), fontSize = size.small),
                 )
             }
         }
@@ -113,7 +113,7 @@ public fun KPriceTag(
             ThemedText(
                 it,
                 Modifier.padding(bottom = 2.dp),
-                style = TextStyle(color = ink.copy(alpha = STRUCK), fontSize = size.small, textDecoration = TextDecoration.LineThrough),
+                style = TextStyle(color = surface.muted(STRUCK), fontSize = size.small, textDecoration = TextDecoration.LineThrough),
             )
         }
     }

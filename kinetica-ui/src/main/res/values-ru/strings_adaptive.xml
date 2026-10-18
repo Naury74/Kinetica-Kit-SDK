@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">Панель вкладок свёрнута</string>
+    <string name="kinetica_ui_tabbar_expand">Показать все вкладки</string>
+    <string name="kinetica_ui_tabbar_go_to">Перейти: %1$s</string>
+</resources>

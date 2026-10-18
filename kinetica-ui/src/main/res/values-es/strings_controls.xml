@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_loading">Cargando</string>
+    <string name="kinetica_ui_increase">Aumentar</string>
+    <string name="kinetica_ui_decrease">Reducir</string>
+    <string name="kinetica_ui_badge_new">Nuevo</string>
+    <plurals name="kinetica_ui_badge_count">
+        <item quantity="one">%d elemento nuevo</item>
+        <item quantity="many">%d elementos nuevos</item>
+        <item quantity="other">%d elementos nuevos</item>
+    </plurals>
+</resources>

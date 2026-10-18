@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">Оценка</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="one">%1$s из %2$d звезды</item>
+        <item quantity="few">%1$s из %2$d звёзд</item>
+        <item quantity="many">%1$s из %2$d звёзд</item>
+        <item quantity="other">%1$s из %2$d звезды</item>
+    </plurals>
+    <string name="kinetica_ui_like">Нравится</string>
+    <string name="kinetica_ui_liked">Отмечено «Нравится»</string>
+    <string name="kinetica_ui_not_liked">Не отмечено</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="one">%1$s и ещё %2$d человек</item>
+        <item quantity="few">%1$s и ещё %2$d человека</item>
+        <item quantity="many">%1$s и ещё %2$d человек</item>
+        <item quantity="other">%1$s и ещё %2$d человека</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">Сейчас играет</string>
+    <string name="kinetica_ui_player_expand">Открыть плеер</string>
+    <string name="kinetica_ui_player_collapse">Свернуть плеер</string>
+</resources>

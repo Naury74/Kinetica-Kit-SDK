@@ -49,7 +49,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -217,7 +216,7 @@ internal enum class HueWheelPart { Ring, Square }
 
 @Composable
 private fun HueWheel(model: PickerModel, onChange: (PickerHsv) -> Unit, onFinished: () -> Unit) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val view = LocalView.current
     val scope = rememberCoroutineScope()
     val ringGrab = remember { Animatable(0f) }

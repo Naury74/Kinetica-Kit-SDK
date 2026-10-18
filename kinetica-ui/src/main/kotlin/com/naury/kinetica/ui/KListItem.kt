@@ -160,15 +160,17 @@ public fun KListItem(
         verticalAlignment = if (tall) Alignment.Top else Alignment.CenterVertically,
     ) {
         val ink = surface.contentColor.copy(alpha = if (enabled) 1f else CHOICE_DISABLED_ALPHA)
-        leading?.let { Box(if (tall) Modifier.padding(top = LEADING_TOP) else Modifier) { ListLeading(it, ink) } }
+        leading?.let {
+            Box(if (tall) Modifier.padding(top = LEADING_TOP) else Modifier) { ListLeading(it, ink, surface.mutedLike(ink, ICON_ALPHA)) }
+        }
         Column(
             Modifier.weight(1f).then(if (row != null) Modifier.textStartIn(row) else Modifier),
             verticalArrangement = Arrangement.spacedBy(TEXT_GAP),
         ) {
-            overline?.let { ListText(it, ink.copy(alpha = ink.alpha * OVERLINE_ALPHA), OVERLINE_SIZE, FontWeight.Medium, 1) }
+            overline?.let { ListText(it, surface.mutedLike(ink, OVERLINE_ALPHA), OVERLINE_SIZE, FontWeight.Medium, 1) }
             ListText(headline, ink, HEADLINE_SIZE, FontWeight.Normal, 1)
             supporting?.let {
-                ListText(it, ink.copy(alpha = ink.alpha * SUPPORTING_ALPHA), SUPPORTING_SIZE, FontWeight.Normal, supportingMaxLines)
+                ListText(it, surface.mutedLike(ink, SUPPORTING_ALPHA), SUPPORTING_SIZE, FontWeight.Normal, supportingMaxLines)
             }
         }
         trailing?.let { Box(Modifier.align(Alignment.CenterVertically)) { ListTrailing(it, ink, enabled, surface) } }
@@ -197,6 +199,9 @@ private fun minHeightFor(lines: Int) = when (lines) {
     else -> THREE_LINE_HEIGHT
 }
 
+/** 보조 글자 색. 비활성 행이면 [ink]에 건 흐림을 그대로 얹는다. */
+private fun SurfaceStyle.mutedLike(ink: Color, alpha: Float): Color = muted(alpha).let { it.copy(alpha = it.alpha * ink.alpha) }
+
 @Composable
 private fun ListText(text: String, color: Color, size: TextUnit, weight: FontWeight, maxLines: Int) {
     ThemedText(
@@ -208,11 +213,11 @@ private fun ListText(text: String, color: Color, size: TextUnit, weight: FontWei
 }
 
 @Composable
-private fun LeadingIcon(painter: Painter, requestedTint: Color, container: Color?, ink: Color) {
+private fun LeadingIcon(painter: Painter, requestedTint: Color, container: Color?, iconInk: Color) {
     val tint = when {
         requestedTint.isSpecified -> requestedTint
         container != null -> Color.White
-        else -> ink.copy(alpha = ink.alpha * ICON_ALPHA)
+        else -> iconInk
     }
     Box(
         if (container != null) {
@@ -228,11 +233,11 @@ private fun LeadingIcon(painter: Painter, requestedTint: Color, container: Color
 }
 
 @Composable
-private fun ListLeading(leading: KListLeading, ink: Color) {
+private fun ListLeading(leading: KListLeading, ink: Color, iconInk: Color) {
     when (leading) {
-        is KListLeading.Icon -> LeadingIcon(rememberVectorPainter(leading.icon), leading.tint, leading.container, ink)
+        is KListLeading.Icon -> LeadingIcon(rememberVectorPainter(leading.icon), leading.tint, leading.container, iconInk)
 
-        is KListLeading.PainterIcon -> LeadingIcon(leading.painter, leading.tint, leading.container, ink)
+        is KListLeading.PainterIcon -> LeadingIcon(leading.painter, leading.tint, leading.container, iconInk)
 
         is KListLeading.Avatar -> ListAvatar(leading)
 
@@ -272,7 +277,7 @@ private fun ListTrailing(trailing: KListTrailing, ink: Color, enabled: Boolean, 
     when (trailing) {
         is KListTrailing.Value -> ListText(
             trailing.text,
-            trailing.color.takeOrElse { ink.copy(alpha = ink.alpha * VALUE_ALPHA) },
+            trailing.color.takeOrElse { surface.mutedLike(ink, VALUE_ALPHA) },
             VALUE_SIZE,
             FontWeight.Normal,
             1,
@@ -294,8 +299,8 @@ private fun ListTrailing(trailing: KListTrailing, ink: Color, enabled: Boolean, 
             horizontalArrangement = Arrangement.spacedBy(DISCLOSURE_GAP),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            trailing.value?.let { ListText(it, ink.copy(alpha = ink.alpha * VALUE_ALPHA), VALUE_SIZE, FontWeight.Normal, 1) }
-            DisclosureChevron(ink.copy(alpha = ink.alpha * CHEVRON_ALPHA), Modifier.size(CHEVRON_SIZE))
+            trailing.value?.let { ListText(it, surface.mutedLike(ink, VALUE_ALPHA), VALUE_SIZE, FontWeight.Normal, 1) }
+            DisclosureChevron(surface.mutedLike(ink, CHEVRON_ALPHA), Modifier.size(CHEVRON_SIZE))
         }
 
         is KListTrailing.Custom -> CompositionLocalProvider(LocalKineticaContentColor provides ink) { trailing.content() }

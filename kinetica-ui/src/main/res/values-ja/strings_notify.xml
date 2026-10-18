@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_notify_dismiss">閉じる</string>
+    <string name="kinetica_ui_notify_expand">展開</string>
+    <string name="kinetica_ui_notify_open">開く</string>
+</resources>

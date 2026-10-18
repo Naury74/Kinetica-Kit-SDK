@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_code_label">Bestätigungscode</string>
+    <plurals name="kinetica_ui_code_progress">
+        <item quantity="one">%2$d von %1$d Ziffer eingegeben</item>
+        <item quantity="other">%2$d von %1$d Ziffern eingegeben</item>
+    </plurals>
+    <string name="kinetica_ui_code_error">Falscher Code</string>
+    <string name="kinetica_ui_tag_remove">%s entfernen</string>
+    <string name="kinetica_ui_tag_armed">%s ausgewählt. Zum Entfernen erneut Löschen drücken</string>
+    <string name="kinetica_ui_tag_suggestions">Vorschläge</string>
+    <string name="kinetica_ui_color_picker">Farbauswahl</string>
+    <string name="kinetica_ui_color_opacity">Deckkraft</string>
+    <string name="kinetica_ui_color_hex">Hex-Farbcode</string>
+    <string name="kinetica_ui_color_hue_next">Nächster Farbton</string>
+    <string name="kinetica_ui_color_hue_previous">Vorheriger Farbton</string>
+    <string name="kinetica_ui_color_lighter">Heller</string>
+    <string name="kinetica_ui_color_darker">Dunkler</string>
+    <string name="kinetica_ui_color_more_vivid">Kräftiger</string>
+    <string name="kinetica_ui_color_more_muted">Gedämpfter</string>
+    <string name="kinetica_ui_color_state">%1$s, %2$s</string>
+    <string name="kinetica_ui_color_light">Hell (%s)</string>
+    <string name="kinetica_ui_color_dark">Dunkel (%s)</string>
+    <string name="kinetica_ui_color_red">rot</string>
+    <string name="kinetica_ui_color_orange">orange</string>
+    <string name="kinetica_ui_color_yellow">gelb</string>
+    <string name="kinetica_ui_color_green">grün</string>
+    <string name="kinetica_ui_color_teal">petrol</string>
+    <string name="kinetica_ui_color_blue">blau</string>
+    <string name="kinetica_ui_color_purple">lila</string>
+    <string name="kinetica_ui_color_pink">pink</string>
+    <string name="kinetica_ui_color_white">weiß</string>
+    <string name="kinetica_ui_color_gray">grau</string>
+    <string name="kinetica_ui_color_black">schwarz</string>
+    <string name="kinetica_ui_signature">Unterschriftenfeld</string>
+    <string name="kinetica_ui_signature_hint">Hier unterschreiben</string>
+    <string name="kinetica_ui_signature_empty">Leer</string>
+    <string name="kinetica_ui_signature_signed">Unterschrieben</string>
+    <string name="kinetica_ui_signature_undo">Rückgängig</string>
+    <string name="kinetica_ui_signature_clear">Löschen</string>
+    <string name="kinetica_ui_password_show">Passwort anzeigen</string>
+    <string name="kinetica_ui_password_hide">Passwort ausblenden</string>
+    <string name="kinetica_ui_password_strength">Passwortstärke</string>
+    <string name="kinetica_ui_password_weak">Schwach</string>
+    <string name="kinetica_ui_password_medium">Mittel</string>
+    <string name="kinetica_ui_password_strong">Stark</string>
+    <string name="kinetica_ui_password_rule_length">Mindestens 8 Zeichen</string>
+    <string name="kinetica_ui_password_rule_upper">Großbuchstabe</string>
+    <string name="kinetica_ui_password_rule_number">Zahl</string>
+    <string name="kinetica_ui_password_rule_symbol">Sonderzeichen</string>
+    <string name="kinetica_ui_password_rule_met">Erfüllt</string>
+    <string name="kinetica_ui_password_rule_unmet">Nicht erfüllt</string>
+</resources>

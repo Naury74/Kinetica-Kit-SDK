@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">Đang gửi</string>
+    <string name="kinetica_ui_chat_sent">Đã gửi</string>
+    <string name="kinetica_ui_chat_delivered">Đã nhận</string>
+    <string name="kinetica_ui_chat_read">Đã xem</string>
+    <string name="kinetica_ui_chat_failed">Chưa gửi được</string>
+    <string name="kinetica_ui_chat_typing">Đang nhập</string>
+    <string name="kinetica_ui_chat_hint">Tin nhắn</string>
+    <string name="kinetica_ui_chat_attach">Đính kèm</string>
+    <string name="kinetica_ui_chat_send">Gửi</string>
+    <string name="kinetica_ui_chat_voice">Tin nhắn thoại</string>
+    <string name="kinetica_ui_story_new">Tin mới</string>
+    <string name="kinetica_ui_story_seen">Đã xem</string>
+    <string name="kinetica_ui_story_position">Tin %1$d/%2$d</string>
+    <string name="kinetica_ui_story_next">Tin tiếp theo</string>
+    <string name="kinetica_ui_story_previous">Tin trước</string>
+    <string name="kinetica_ui_story_pause">Tạm dừng</string>
+    <string name="kinetica_ui_story_resume">Tiếp tục</string>
+    <string name="kinetica_ui_story_paused">Đã tạm dừng</string>
+    <string name="kinetica_ui_drop_title">Thêm tệp</string>
+    <string name="kinetica_ui_drop_release">Thả để thêm</string>
+    <string name="kinetica_ui_attach_uploading">Đang tải lên %d%%</string>
+    <string name="kinetica_ui_attach_uploading_plain">Đang tải lên</string>
+    <string name="kinetica_ui_attach_failed">Tải lên không thành công</string>
+    <string name="kinetica_ui_attach_cancel">Hủy tải lên</string>
+    <string name="kinetica_ui_attach_retry">Thử lại</string>
+    <string name="kinetica_ui_attach_remove">Xóa</string>
+    <string name="kinetica_ui_index_bar">Chỉ mục</string>
+    <string name="kinetica_ui_index_jump">Chuyển đến %s</string>
+    <string name="kinetica_ui_page_previous">Trang trước</string>
+    <string name="kinetica_ui_page_next">Trang sau</string>
+    <string name="kinetica_ui_page_number">Trang %d</string>
+    <string name="kinetica_ui_breadcrumb">Đường dẫn</string>
+    <string name="kinetica_ui_breadcrumb_current">Vị trí hiện tại</string>
+    <string name="kinetica_ui_breadcrumb_more">Hiện đường dẫn đầy đủ</string>
+    <string name="kinetica_ui_map_cluster">%d địa điểm</string>
+    <string name="kinetica_ui_pin_selected">Đã chọn</string>
+    <string name="kinetica_ui_hold_confirm">Nhấn giữ để xác nhận</string>
+    <string name="kinetica_ui_copy_action">Sao chép</string>
+    <string name="kinetica_ui_copy_done">Đã sao chép</string>
+</resources>

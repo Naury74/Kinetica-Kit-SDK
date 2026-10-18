@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_refresh">รีเฟรช</string>
+    <string name="kinetica_ui_refreshing">กำลังรีเฟรช</string>
+    <string name="kinetica_ui_close">ปิด</string>
+</resources>

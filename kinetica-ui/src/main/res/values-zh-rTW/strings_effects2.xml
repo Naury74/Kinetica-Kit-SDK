@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_flip_action">翻轉</string>
+    <string name="kinetica_ui_flip_front">正面</string>
+    <string name="kinetica_ui_flip_back">背面</string>
+</resources>

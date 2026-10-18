@@ -253,7 +253,7 @@ private fun BarRow(
                 spec.subtitle?.let {
                     ThemedText(
                         it,
-                        style = TextStyle(color = spec.surface.contentColor.copy(alpha = SUBTITLE_ALPHA), fontSize = 13.sp),
+                        style = TextStyle(color = spec.surface.muted(SUBTITLE_ALPHA), fontSize = 13.sp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -320,7 +320,7 @@ private fun MediumTitle(title: String, subtitle: String?, surface: SurfaceStyle,
             ThemedText(
                 it,
                 Modifier.padding(top = 2.dp),
-                style = TextStyle(color = surface.contentColor.copy(alpha = SUBTITLE_ALPHA), fontSize = 14.sp),
+                style = TextStyle(color = surface.muted(SUBTITLE_ALPHA), fontSize = 14.sp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

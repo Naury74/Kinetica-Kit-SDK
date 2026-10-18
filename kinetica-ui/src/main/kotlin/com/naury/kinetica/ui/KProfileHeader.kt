@@ -135,7 +135,7 @@ public fun KProfileHeader(
                     ),
                 )
                 subtitle?.let {
-                    ThemedText(it, style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = 14.sp, textAlign = TextAlign.Center))
+                    ThemedText(it, style = TextStyle(color = surface.muted(MUTED), fontSize = 14.sp, textAlign = TextAlign.Center))
                 }
                 if (stats.isNotEmpty()) ProfileStats(stats, surface, Modifier.padding(top = 12.dp))
                 if (actions != null) {
@@ -178,7 +178,7 @@ private fun ProfileStats(stats: List<KProfileStat>, surface: SurfaceStyle, modif
                 ThemedText(stat.value, style = TextStyle(color = ink, fontSize = 18.sp, fontWeight = weight), maxLines = 1)
                 ThemedText(
                     stat.label,
-                    style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = 12.sp, textAlign = TextAlign.Center),
+                    style = TextStyle(color = surface.muted(MUTED), fontSize = 12.sp, textAlign = TextAlign.Center),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

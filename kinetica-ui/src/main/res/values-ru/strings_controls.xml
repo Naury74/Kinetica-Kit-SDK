@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_loading">Загрузка</string>
+    <string name="kinetica_ui_increase">Увеличить</string>
+    <string name="kinetica_ui_decrease">Уменьшить</string>
+    <string name="kinetica_ui_badge_new">Новое</string>
+    <plurals name="kinetica_ui_badge_count">
+        <item quantity="one">%d новый элемент</item>
+        <item quantity="few">%d новых элемента</item>
+        <item quantity="many">%d новых элементов</item>
+        <item quantity="other">%d нового элемента</item>
+    </plurals>
+</resources>

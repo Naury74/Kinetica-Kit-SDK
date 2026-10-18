@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_move_up">Переместить вверх</string>
+    <string name="kinetica_ui_move_down">Переместить вниз</string>
+    <string name="kinetica_ui_expanded">Развёрнуто</string>
+    <string name="kinetica_ui_collapsed">Свёрнуто</string>
+    <string name="kinetica_ui_confirmed">Подтверждено</string>
+</resources>

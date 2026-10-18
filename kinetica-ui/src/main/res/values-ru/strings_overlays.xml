@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_menu_back">Назад</string>
+    <string name="kinetica_ui_menu_submenu">Подменю</string>
+    <string name="kinetica_ui_select_open">Показать варианты</string>
+    <string name="kinetica_ui_select_none">Не выбрано</string>
+    <string name="kinetica_ui_suggestions">Подсказок: %1$d</string>
+    <string name="kinetica_ui_action_cancel">Отмена</string>
+    <string name="kinetica_ui_search_recent">Недавние запросы</string>
+    <string name="kinetica_ui_search_clear_recent">Очистить все</string>
+    <string name="kinetica_ui_search_remove_recent">Удалить %1$s</string>
+    <string name="kinetica_ui_search_fill">Вставить «%1$s»</string>
+    <string name="kinetica_ui_search_close">Закрыть поиск</string>
+    <string name="kinetica_ui_toolbar_more">Ещё</string>
+</resources>

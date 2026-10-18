@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -149,7 +148,7 @@ private class RatingGrid(val max: Int, val step: Float, val rtl: Boolean, val ga
 private fun Modifier.ratingInput(rating: Float, onChange: (Float) -> Unit, grid: RatingGrid): Modifier {
     val latest by rememberUpdatedState(rating)
     val callback by rememberUpdatedState(onChange)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     return pointerInput(grid.max, grid.step, grid.rtl, grid.gap) {
         val gapPx = grid.gap.toPx()
         var picked = latest

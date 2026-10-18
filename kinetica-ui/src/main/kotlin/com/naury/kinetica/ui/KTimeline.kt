@@ -180,12 +180,12 @@ private fun VerticalEntry(
                     ThemedText(
                         it,
                         Modifier.padding(start = 8.dp, top = 2.dp),
-                        style = TextStyle(color = look.ink.copy(alpha = MUTED), fontSize = 12.sp),
+                        style = TextStyle(color = look.surface.muted(MUTED), fontSize = 12.sp),
                     )
                 }
             }
             item.subtitle?.let {
-                ThemedText(it, style = TextStyle(color = look.ink.copy(alpha = MUTED), fontSize = 13.sp, lineHeight = 18.sp))
+                ThemedText(it, style = TextStyle(color = look.surface.muted(MUTED), fontSize = 13.sp, lineHeight = 18.sp))
             }
             itemContent?.let { Box(Modifier.padding(top = 6.dp)) { it(index) } }
         }
@@ -214,7 +214,7 @@ private fun HorizontalEntry(item: KTimelineItem, index: Int, count: Int, look: T
             style = titleStyle(item.status, look).copy(fontSize = 13.sp, textAlign = TextAlign.Center),
         )
         item.time?.let {
-            ThemedText(it, style = TextStyle(color = look.ink.copy(alpha = MUTED), fontSize = 11.sp, textAlign = TextAlign.Center))
+            ThemedText(it, style = TextStyle(color = look.surface.muted(MUTED), fontSize = 11.sp, textAlign = TextAlign.Center))
         }
     }
 }
@@ -308,7 +308,7 @@ private fun DotContent(status: KTimelineStatus, icon: ImageVector?, number: Stri
         status == KTimelineStatus.Done -> Glyph(icon ?: KGlyphs.Check, onAccent, size = size * GLYPH)
 
         number != null -> {
-            val color = if (status == KTimelineStatus.Upcoming) look.ink.copy(alpha = MUTED) else look.accent
+            val color = if (status == KTimelineStatus.Upcoming) look.surface.muted(MUTED) else look.accent
             ThemedText(number, style = TextStyle(color = color, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
         }
 
@@ -318,7 +318,7 @@ private fun DotContent(status: KTimelineStatus, icon: ImageVector?, number: Stri
 
 private fun titleStyle(status: KTimelineStatus, look: TimelineLook): TextStyle = TextStyle(
     color = when (status) {
-        KTimelineStatus.Upcoming -> look.ink.copy(alpha = MUTED)
+        KTimelineStatus.Upcoming -> look.surface.muted(MUTED)
         KTimelineStatus.Error -> look.error
         else -> look.ink
     },

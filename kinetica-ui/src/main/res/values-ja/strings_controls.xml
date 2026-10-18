@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_loading">読み込み中</string>
+    <string name="kinetica_ui_increase">増やす</string>
+    <string name="kinetica_ui_decrease">減らす</string>
+    <string name="kinetica_ui_badge_new">新着</string>
+    <plurals name="kinetica_ui_badge_count">
+        <item quantity="other">新着 %d件</item>
+    </plurals>
+</resources>

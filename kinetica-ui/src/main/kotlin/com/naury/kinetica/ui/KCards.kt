@@ -260,14 +260,14 @@ public fun KHorizontalCard(
                     Modifier
                         .size(thumbnailSize)
                         .clip(shapes.inner(token, ROW_PADDING))
-                        .background(ink.copy(alpha = PLACEHOLDER)),
+                        .background(surface.raisedFill(PLACEHOLDER)),
                     contentAlignment = Alignment.Center,
                     content = it,
                 )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(TEXT_GAP)) {
                 CardText(title, TITLE_FONT, KineticaTheme.design.labelWeight, ink, maxLines = 2)
-                subtitle?.let { CardText(it, BODY_FONT, FontWeight.Normal, ink.copy(alpha = SOFT)) }
+                subtitle?.let { CardText(it, BODY_FONT, FontWeight.Normal, surface.muted(SOFT)) }
             }
             trailing?.invoke()
         }
@@ -299,7 +299,7 @@ private fun Modifier.cardBackground(variant: KVariant, tone: KTone, surface: Sur
     KVariant.Elevated -> kSurface(surface.elevated(), shape)
 
     KVariant.Filled -> if (tone == KTone.Neutral) {
-        background(surface.contentColor.copy(alpha = FILLED_TINT).compositeOver(surface.inkBackground()), shape)
+        background(surface.raisedFill(FILLED_TINT).compositeOver(surface.inkBackground()), shape)
     } else {
         background(tone.colors(surface).fill, shape)
     }

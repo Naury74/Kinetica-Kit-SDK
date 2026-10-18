@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">Назад</string>
+    <string name="kinetica_ui_page_state">Страница %1$d из %2$d</string>
+    <string name="kinetica_ui_swipe_left">Смахнуть влево</string>
+    <string name="kinetica_ui_swipe_right">Смахнуть вправо</string>
+    <string name="kinetica_ui_swipe_up">Смахнуть вверх</string>
+    <string name="kinetica_ui_swipe_undo">Отменить последнее смахивание</string>
+    <string name="kinetica_ui_speed_dial">Быстрые действия</string>
+    <string name="kinetica_ui_speed_dial_expanded">Развёрнуто</string>
+    <string name="kinetica_ui_speed_dial_collapsed">Свёрнуто</string>
+</resources>

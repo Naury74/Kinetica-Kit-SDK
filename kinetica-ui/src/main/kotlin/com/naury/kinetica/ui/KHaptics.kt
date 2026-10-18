@@ -8,6 +8,9 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 
 /** [KHaptics]가 내는 햅틱 종류. 기기가 지원하지 않는 종류는 가장 가까운 진동으로 바꿔 낸다. */
@@ -74,7 +77,7 @@ public class KHaptics internal constructor(private val view: View, private val e
 
 /**
  * kinetica-ui 햅틱을 켤지. 기본값은 true다. 앱 설정에 '진동 끄기'가 있으면 화면 루트에서 false를 넣는다.
- * 이 값은 [KHaptics]와 이 키트의 피드백 컴포넌트(토스트, 당겨서 새로 고침의 새 표시)가 따른다.
+ * false면 [KHaptics]와 이 키트의 모든 컴포넌트(버튼, 칩, 스테퍼, 휠 피커, 메뉴, 밀어서 동작, 토스트 등)가 진동을 내지 않는다.
  *
  * ```kotlin
  * CompositionLocalProvider(LocalKineticaHaptics provides settings.haptics) { App() }
@@ -117,4 +120,18 @@ internal fun hapticConstant(type: KHapticType, sdk: Int): Int = when (type) {
     } else {
         HapticFeedbackConstants.CLOCK_TICK
     }
+}
+
+/**
+ * 이 키트의 컴포넌트가 쓰는 [HapticFeedback]. [LocalKineticaHaptics]가 false면 아무 진동도 내지 않는다.
+ * 컴포넌트는 [LocalHapticFeedback]을 직접 읽지 않고 이것을 쓴다.
+ */
+@Composable
+internal fun kHapticFeedback(): HapticFeedback {
+    val system = LocalHapticFeedback.current
+    return if (LocalKineticaHaptics.current) system else SilentHaptics
+}
+
+private object SilentHaptics : HapticFeedback {
+    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
 }

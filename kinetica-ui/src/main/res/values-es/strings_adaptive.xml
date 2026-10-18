@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">Barra de pestañas contraída</string>
+    <string name="kinetica_ui_tabbar_expand">Mostrar todas las pestañas</string>
+    <string name="kinetica_ui_tabbar_go_to">Ir a %1$s</string>
+</resources>

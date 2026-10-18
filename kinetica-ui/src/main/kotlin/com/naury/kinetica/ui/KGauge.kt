@@ -132,7 +132,7 @@ public fun KGauge(
                 val stroke = Stroke(thickness.toPx(), cap = StrokeCap.Round)
                 val knob = KNOB_RING.toPx()
                 onDrawBehind {
-                    drawGaugeTrack(geometry, sorted, range, ink, stroke)
+                    drawGaugeTrack(geometry, sorted, range, surface.raisedFill(TRACK_ALPHA), stroke)
                     val sweep = geometry.sweep * progress.value
                     if (sweep > 0f) drawArc(fill, geometry.start, sweep, false, geometry.topLeft, geometry.box, style = stroke)
                     val tip = geometry.point(geometry.start + sweep)
@@ -152,7 +152,7 @@ public fun KGauge(
             ) {
                 center()
             } else {
-                GaugeCenter(valueFormatter(shown), joinChartParts(listOfNotNull(label, segment?.label), " · "), ink)
+                GaugeCenter(valueFormatter(shown), joinChartParts(listOfNotNull(label, segment?.label), " · "), ink, surface.muted(MUTED))
             }
         }
         if (showRange) GaugeEnds(range, valueFormatter, ink, shape, thickness)
@@ -161,14 +161,14 @@ public fun KGauge(
 
 /** 기본 가운데 내용. 큰 값과 그 아래 이름·구간 글자 */
 @Composable
-private fun GaugeCenter(value: String, caption: String, ink: Color) {
+private fun GaugeCenter(value: String, caption: String, ink: Color, muted: Color) {
     ThemedText(
         value,
         style = TextStyle(color = ink, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
         maxLines = 1,
     )
     if (caption.isNotEmpty()) {
-        ThemedText(caption, style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = 13.sp, textAlign = TextAlign.Center))
+        ThemedText(caption, style = TextStyle(color = muted, fontSize = 13.sp, textAlign = TextAlign.Center))
     }
 }
 
@@ -242,10 +242,10 @@ private fun DrawScope.drawGaugeTrack(
     geometry: GaugeGeometry,
     segments: List<KGaugeSegment>,
     range: ClosedFloatingPointRange<Float>,
-    ink: Color,
+    track: Color,
     stroke: Stroke,
 ) {
-    drawArc(ink.copy(alpha = TRACK_ALPHA), geometry.start, geometry.sweep, false, geometry.topLeft, geometry.box, style = stroke)
+    drawArc(track, geometry.start, geometry.sweep, false, geometry.topLeft, geometry.box, style = stroke)
     if (segments.isEmpty()) return
     val span = range.endInclusive - range.start
     var from = range.start

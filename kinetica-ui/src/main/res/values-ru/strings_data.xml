@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_data_series">Ряд %1$d</string>
+    <string name="kinetica_ui_data_pair">%1$s %2$s</string>
+    <plurals name="kinetica_ui_chart_area">
+        <item quantity="one">Диаграмма с областями, рядов: %2$d, %1$d точка</item>
+        <item quantity="few">Диаграмма с областями, рядов: %2$d, %1$d точки</item>
+        <item quantity="many">Диаграмма с областями, рядов: %2$d, %1$d точек</item>
+        <item quantity="other">Диаграмма с областями, рядов: %2$d, %1$d точки</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_stacked_bar">
+        <item quantity="one">Столбчатая диаграмма с накоплением, рядов: %2$d, %1$d столбец</item>
+        <item quantity="few">Столбчатая диаграмма с накоплением, рядов: %2$d, %1$d столбца</item>
+        <item quantity="many">Столбчатая диаграмма с накоплением, рядов: %2$d, %1$d столбцов</item>
+        <item quantity="other">Столбчатая диаграмма с накоплением, рядов: %2$d, %1$d столбца</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_grouped_bar">
+        <item quantity="one">Сгруппированная столбчатая диаграмма, рядов: %2$d, %1$d группа</item>
+        <item quantity="few">Сгруппированная столбчатая диаграмма, рядов: %2$d, %1$d группы</item>
+        <item quantity="many">Сгруппированная столбчатая диаграмма, рядов: %2$d, %1$d групп</item>
+        <item quantity="other">Сгруппированная столбчатая диаграмма, рядов: %2$d, %1$d группы</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_pie">
+        <item quantity="one">Круговая диаграмма, %1$d сектор, всего %2$s</item>
+        <item quantity="few">Круговая диаграмма, %1$d сектора, всего %2$s</item>
+        <item quantity="many">Круговая диаграмма, %1$d секторов, всего %2$s</item>
+        <item quantity="other">Круговая диаграмма, %1$d сектора, всего %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_heatmap_cell">%1$s, %2$s</string>
+    <string name="kinetica_ui_heatmap_empty">Нет данных</string>
+    <string name="kinetica_ui_heatmap_less">Меньше</string>
+    <string name="kinetica_ui_heatmap_more">Больше</string>
+    <string name="kinetica_ui_stat_up">Рост на %1$s</string>
+    <string name="kinetica_ui_stat_down">Снижение на %1$s</string>
+    <string name="kinetica_ui_stat_flat">Без изменений</string>
+    <string name="kinetica_ui_step_done">Выполнено</string>
+    <string name="kinetica_ui_step_current">Выполняется</string>
+    <string name="kinetica_ui_step_upcoming">Не начато</string>
+    <string name="kinetica_ui_step_error">Ошибка</string>
+    <string name="kinetica_ui_step_of">Шаг %2$d из %1$d, %3$s</string>
+    <string name="kinetica_ui_step_name">Шаг %1$d, %2$s</string>
+    <string name="kinetica_ui_step_count">%1$d/%2$d</string>
+    <string name="kinetica_ui_wizard_next">Далее</string>
+    <string name="kinetica_ui_wizard_back">Назад</string>
+    <string name="kinetica_ui_wizard_finish">Готово</string>
+    <string name="kinetica_ui_price_original">обычная цена %1$s</string>
+    <string name="kinetica_ui_price_discount">Скидка %1$d%%</string>
+    <string name="kinetica_ui_billing_monthly">Ежемесячно</string>
+    <string name="kinetica_ui_billing_yearly">Ежегодно</string>
+    <string name="kinetica_ui_quantity">Количество</string>
+    <string name="kinetica_ui_quantity_add">Добавить</string>
+    <string name="kinetica_ui_keypad_decimal">Десятичная запятая</string>
+    <string name="kinetica_ui_keypad_backspace">Удалить</string>
+    <string name="kinetica_ui_pin_state">Введено цифр: %2$d из %1$d</string>
+    <string name="kinetica_ui_range_today">Сегодня</string>
+    <string name="kinetica_ui_range_last_days">Последние дни: %1$d</string>
+    <string name="kinetica_ui_range_this_month">Этот месяц</string>
+    <string name="kinetica_ui_range_last_month">Прошлый месяц</string>
+    <string name="kinetica_ui_range_morning">Утро</string>
+    <string name="kinetica_ui_range_afternoon">День</string>
+    <string name="kinetica_ui_range_work">Рабочее время</string>
+    <string name="kinetica_ui_range_date_title">Выберите даты</string>
+    <string name="kinetica_ui_range_time_title">Выберите время</string>
+    <string name="kinetica_ui_range_start">Начало %1$s</string>
+    <string name="kinetica_ui_range_end">Конец %1$s</string>
+    <string name="kinetica_ui_range_next_day">Заканчивается на следующий день</string>
+    <string name="kinetica_ui_range_pick_start">Выберите дату начала</string>
+    <string name="kinetica_ui_range_pick_end">%1$s ~ выберите дату окончания</string>
+    <string name="kinetica_ui_range_summary">%1$s ~ %2$s</string>
+    <string name="kinetica_ui_range_cancel">Отмена</string>
+    <string name="kinetica_ui_range_apply">Применить</string>
+    <plurals name="kinetica_ui_range_days">
+        <item quantity="one">%1$d день</item>
+        <item quantity="few">%1$d дня</item>
+        <item quantity="many">%1$d дней</item>
+        <item quantity="other">%1$d дня</item>
+    </plurals>
+    <string name="kinetica_ui_week_previous">Предыдущая неделя</string>
+    <string name="kinetica_ui_week_next">Следующая неделя</string>
+    <plurals name="kinetica_ui_week_events">
+        <item quantity="one">%1$d событие</item>
+        <item quantity="few">%1$d события</item>
+        <item quantity="many">%1$d событий</item>
+        <item quantity="other">%1$d события</item>
+    </plurals>
+</resources>

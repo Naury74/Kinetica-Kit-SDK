@@ -42,7 +42,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -81,7 +80,7 @@ public fun Modifier.holdToConfirm(
     require(durationMs > 0) { "durationMs는 0보다 커야 합니다." }
     val progress = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latest = rememberUpdatedState(onConfirm)
     val actionLabel = label ?: stringResource(R.string.kinetica_ui_hold_confirm)
     return this

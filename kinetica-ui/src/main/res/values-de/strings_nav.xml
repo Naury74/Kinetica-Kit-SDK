@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">Maximieren</string>
+    <string name="kinetica_ui_sheet_collapse">Minimieren</string>
+    <string name="kinetica_ui_sheet_expanded">Maximiert</string>
+    <string name="kinetica_ui_sheet_partial">Teilweise maximiert</string>
+    <string name="kinetica_ui_sheet_collapsed">Minimiert</string>
+    <string name="kinetica_ui_tooltip_show">Tipp anzeigen</string>
+    <string name="kinetica_ui_coach_next">Weiter</string>
+    <string name="kinetica_ui_coach_done">Fertig</string>
+    <string name="kinetica_ui_coach_skip">Überspringen</string>
+    <string name="kinetica_ui_coach_step">Schritt %1$d von %2$d</string>
+    <string name="kinetica_ui_drawer_title">Menü</string>
+    <string name="kinetica_ui_drawer_close">Menü schließen</string>
+</resources>

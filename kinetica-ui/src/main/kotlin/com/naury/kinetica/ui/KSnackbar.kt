@@ -219,7 +219,7 @@ private fun SnackbarPill(data: SnackbarData, surface: SurfaceStyle, appear: Stat
                 ThemedText(
                     label,
                     Modifier
-                        .background(ink.copy(alpha = ACTION_BACK_ALPHA), actionShape)
+                        .background(surface.raisedFill(ACTION_BACK_ALPHA), actionShape)
                         .clickable(null, KIndication(actionShape), role = Role.Button) { data.result.complete(KSnackbarResult.Action) }
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                     style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
@@ -319,11 +319,11 @@ private fun CountdownRing(remaining: Animatable<Float, *>, surface: SurfaceStyle
                 val inset = RING_INSET.toPx()
                 val ringSize = Size(size.width - inset * 2, size.height - inset * 2)
                 val topLeft = Offset(inset, inset)
-                drawArc(surface.contentColor.copy(alpha = TRACK_ALPHA), 0f, FULL_TURN, false, topLeft, ringSize, style = stroke)
+                drawArc(surface.raisedFill(TRACK_ALPHA), 0f, FULL_TURN, false, topLeft, ringSize, style = stroke)
                 drawArc(surface.contentColor, START_ANGLE, FULL_TURN * remaining.value, false, topLeft, ringSize, style = stroke)
                 val cross = CROSS_HALF.toPx()
                 val c = center
-                val color = surface.contentColor.copy(alpha = CROSS_ALPHA)
+                val color = surface.muted(CROSS_ALPHA)
                 drawLine(color, c + Offset(-cross, -cross), c + Offset(cross, cross), stroke.width, StrokeCap.Round)
                 drawLine(color, c + Offset(-cross, cross), c + Offset(cross, -cross), stroke.width, StrokeCap.Round)
             },

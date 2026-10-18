@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_move_up">Pindahkan ke atas</string>
+    <string name="kinetica_ui_move_down">Pindahkan ke bawah</string>
+    <string name="kinetica_ui_expanded">Diluaskan</string>
+    <string name="kinetica_ui_collapsed">Diciutkan</string>
+    <string name="kinetica_ui_confirmed">Dikonfirmasi</string>
+</resources>

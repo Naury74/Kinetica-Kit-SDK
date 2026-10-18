@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">返回</string>
+    <string name="kinetica_ui_page_state">第 %1$d 页，共 %2$d 页</string>
+    <string name="kinetica_ui_swipe_left">向左滑动</string>
+    <string name="kinetica_ui_swipe_right">向右滑动</string>
+    <string name="kinetica_ui_swipe_up">向上滑动</string>
+    <string name="kinetica_ui_swipe_undo">撤消上次滑动</string>
+    <string name="kinetica_ui_speed_dial">快捷操作</string>
+    <string name="kinetica_ui_speed_dial_expanded">已展开</string>
+    <string name="kinetica_ui_speed_dial_collapsed">已收起</string>
+</resources>

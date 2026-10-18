@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">Retour</string>
+    <string name="kinetica_ui_page_state">Page %1$d sur %2$d</string>
+    <string name="kinetica_ui_swipe_left">Balayer vers la gauche</string>
+    <string name="kinetica_ui_swipe_right">Balayer vers la droite</string>
+    <string name="kinetica_ui_swipe_up">Balayer vers le haut</string>
+    <string name="kinetica_ui_swipe_undo">Annuler le dernier balayage</string>
+    <string name="kinetica_ui_speed_dial">Actions rapides</string>
+    <string name="kinetica_ui_speed_dial_expanded">Développé</string>
+    <string name="kinetica_ui_speed_dial_collapsed">Réduit</string>
+</resources>

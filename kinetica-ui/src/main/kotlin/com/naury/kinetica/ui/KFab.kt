@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -84,7 +83,7 @@ public fun KFab(
 ) {
     val colors = tone.colors(surface)
     val ink = buttonInk(variant, tone, colors, surface, INK_GRAPHIC_CONTRAST)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     Box(
         modifier
             .jellyPress(JELLY)
@@ -126,7 +125,7 @@ public fun KExtendedFab(
 ) {
     val colors = tone.colors(surface)
     val ink = buttonInk(variant, tone, colors, surface)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val open = rememberExpandLevel(expanded)
     val collapsed = with(LocalDensity.current) { KFabSize.Regular.size.roundToPx() }
     Box(

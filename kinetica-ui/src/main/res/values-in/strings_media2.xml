@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_viewer">Penampil foto</string>
+    <string name="kinetica_ui_viewer_photo">Foto %1$d dari %2$d</string>
+    <string name="kinetica_ui_viewer_zoomed">%1$s, diperbesar %2$d%%</string>
+    <string name="kinetica_ui_viewer_zoom_in">Perbesar</string>
+    <string name="kinetica_ui_viewer_zoom_out">Perkecil</string>
+    <string name="kinetica_ui_viewer_next">Foto berikutnya</string>
+    <string name="kinetica_ui_viewer_previous">Foto sebelumnya</string>
+    <string name="kinetica_ui_compare">Perbandingan sebelum dan sesudah</string>
+    <string name="kinetica_ui_compare_before">Sebelum</string>
+    <string name="kinetica_ui_compare_after">Sesudah</string>
+    <string name="kinetica_ui_compare_state">%1$d%% sebelum, %2$d%% sesudah</string>
+    <string name="kinetica_ui_result_success">Selesai</string>
+    <string name="kinetica_ui_result_failure">Gagal</string>
+    <string name="kinetica_ui_result_warning">Peringatan</string>
+    <string name="kinetica_ui_result_ok">OK</string>
+    <string name="kinetica_ui_onboarding_next">Berikutnya</string>
+    <string name="kinetica_ui_onboarding_start">Mulai</string>
+    <string name="kinetica_ui_onboarding_skip">Lewati</string>
+</resources>

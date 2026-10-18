@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_calendar_previous_month">上個月</string>
+    <string name="kinetica_ui_calendar_next_month">下個月</string>
+    <string name="kinetica_ui_calendar_today">今天</string>
+    <string name="kinetica_ui_calendar_range_start">開始日期</string>
+    <string name="kinetica_ui_calendar_range_end">結束日期</string>
+    <string name="kinetica_ui_calendar_in_range">在範圍內</string>
+    <plurals name="kinetica_ui_calendar_events">
+        <item quantity="other">%d 個活動</item>
+    </plurals>
+    <string name="kinetica_ui_range_slider_start">最小值</string>
+    <string name="kinetica_ui_range_slider_end">最大值</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_loading">กำลังโหลด</string>
+    <string name="kinetica_ui_increase">เพิ่ม</string>
+    <string name="kinetica_ui_decrease">ลด</string>
+    <string name="kinetica_ui_badge_new">ใหม่</string>
+    <plurals name="kinetica_ui_badge_count">
+        <item quantity="other">รายการใหม่ %d รายการ</item>
+    </plurals>
+</resources>

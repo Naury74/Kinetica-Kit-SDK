@@ -42,7 +42,6 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -186,7 +185,7 @@ public fun SwipeActionsRow(
     content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val actionWidth = with(LocalDensity.current) { ACTION_WIDTH.toPx() }
     var width by remember { mutableIntStateOf(0) }

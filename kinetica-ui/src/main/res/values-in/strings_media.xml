@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">Rating</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="other">%1$s dari %2$d bintang</item>
+    </plurals>
+    <string name="kinetica_ui_like">Suka</string>
+    <string name="kinetica_ui_liked">Disukai</string>
+    <string name="kinetica_ui_not_liked">Belum disukai</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="other">%1$s dan %2$d lainnya</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">Sedang diputar</string>
+    <string name="kinetica_ui_player_expand">Buka pemutar</string>
+    <string name="kinetica_ui_player_collapse">Perkecil pemutar</string>
+</resources>

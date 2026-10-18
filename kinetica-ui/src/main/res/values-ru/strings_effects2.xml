@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_flip_action">Перевернуть</string>
+    <string name="kinetica_ui_flip_front">Лицевая сторона</string>
+    <string name="kinetica_ui_flip_back">Обратная сторона</string>
+</resources>

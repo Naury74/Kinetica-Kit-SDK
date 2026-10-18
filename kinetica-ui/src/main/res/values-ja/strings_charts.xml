@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="kinetica_ui_chart_line">
+        <item quantity="other">折れ線グラフ、%1$d個のデータ</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_bar">
+        <item quantity="other">棒グラフ、%1$d本の棒</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_donut">
+        <item quantity="other">ドーナツグラフ、%1$d項目、合計 %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_chart_stats">最小 %1$s、最大 %2$s、最新 %3$s</string>
+    <string name="kinetica_ui_chart_range">最小 %1$s、最大 %2$s</string>
+    <string name="kinetica_ui_chart_entry">%1$s: %2$s</string>
+    <string name="kinetica_ui_chart_point">%1$d番目のデータ</string>
+    <string name="kinetica_ui_chart_slice">%1$s: %2$s、%3$d%%</string>
+    <string name="kinetica_ui_chart_total">合計</string>
+    <string name="kinetica_ui_chart_trend">%1$sから%2$sへの推移、最小 %3$s、最大 %4$s</string>
+    <string name="kinetica_ui_chart_rings">アクティビティリング</string>
+    <string name="kinetica_ui_chart_ring">%1$s %2$d%%</string>
+    <string name="kinetica_ui_chart_ring_unnamed">リング %1$d</string>
+</resources>

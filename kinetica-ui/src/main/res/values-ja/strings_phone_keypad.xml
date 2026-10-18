@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_keypad_star">スター</string>
+    <string name="kinetica_ui_keypad_pound">シャープ</string>
+    <string name="kinetica_ui_keypad_plus">プラスを入力</string>
+</resources>

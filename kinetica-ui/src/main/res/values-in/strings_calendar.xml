@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_calendar_previous_month">Bulan sebelumnya</string>
+    <string name="kinetica_ui_calendar_next_month">Bulan berikutnya</string>
+    <string name="kinetica_ui_calendar_today">Hari ini</string>
+    <string name="kinetica_ui_calendar_range_start">Tanggal mulai</string>
+    <string name="kinetica_ui_calendar_range_end">Tanggal selesai</string>
+    <string name="kinetica_ui_calendar_in_range">Dalam rentang</string>
+    <plurals name="kinetica_ui_calendar_events">
+        <item quantity="other">%d acara</item>
+    </plurals>
+    <string name="kinetica_ui_range_slider_start">Minimum</string>
+    <string name="kinetica_ui_range_slider_end">Maksimum</string>
+</resources>

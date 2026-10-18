@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="kinetica_ui_chart_line">
+        <item quantity="one">Graphique en courbes, %1$d point</item>
+        <item quantity="many">Graphique en courbes, %1$d points</item>
+        <item quantity="other">Graphique en courbes, %1$d points</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_bar">
+        <item quantity="one">Graphique à barres, %1$d barre</item>
+        <item quantity="many">Graphique à barres, %1$d barres</item>
+        <item quantity="other">Graphique à barres, %1$d barres</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_donut">
+        <item quantity="one">Graphique en anneau, %1$d secteur, total %2$s</item>
+        <item quantity="many">Graphique en anneau, %1$d secteurs, total %2$s</item>
+        <item quantity="other">Graphique en anneau, %1$d secteurs, total %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_chart_stats">minimum %1$s, maximum %2$s, dernier %3$s</string>
+    <string name="kinetica_ui_chart_range">minimum %1$s, maximum %2$s</string>
+    <string name="kinetica_ui_chart_entry">%1$s : %2$s</string>
+    <string name="kinetica_ui_chart_point">Point %1$d</string>
+    <string name="kinetica_ui_chart_slice">%1$s : %2$s, %3$d %%</string>
+    <string name="kinetica_ui_chart_total">Total</string>
+    <string name="kinetica_ui_chart_trend">Évolution de %1$s à %2$s, minimum %3$s, maximum %4$s</string>
+    <string name="kinetica_ui_chart_rings">Anneaux d\'activité</string>
+    <string name="kinetica_ui_chart_ring">%1$s %2$d %%</string>
+    <string name="kinetica_ui_chart_ring_unnamed">Anneau %1$d</string>
+</resources>

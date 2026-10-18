@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_feedback_info">情報</string>
+    <string name="kinetica_ui_feedback_success">成功</string>
+    <string name="kinetica_ui_feedback_warning">警告</string>
+    <string name="kinetica_ui_feedback_error">エラー</string>
+    <string name="kinetica_ui_feedback_expand">すべての通知を表示</string>
+    <string name="kinetica_ui_feedback_collapse">通知をまとめる</string>
+    <string name="kinetica_ui_feedback_loading_text">読み込み中…</string>
+    <string name="kinetica_ui_feedback_step">ステップ %1$d / %2$d</string>
+</resources>

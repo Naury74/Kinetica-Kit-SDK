@@ -53,7 +53,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -82,7 +81,7 @@ public fun Modifier.kContextMenu(items: List<KMenuItem>, surface: SurfaceStyle =
     var open by remember { mutableStateOf(false) }
     var bounds by remember { mutableStateOf(Rect.Zero) }
     val layer = rememberGraphicsLayer()
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latestItems by rememberUpdatedState(items)
     KOverlay(open) { transition ->
         val progress by transition.animateFloat(

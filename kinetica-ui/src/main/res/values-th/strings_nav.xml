@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">ขยาย</string>
+    <string name="kinetica_ui_sheet_collapse">ยุบ</string>
+    <string name="kinetica_ui_sheet_expanded">ขยายแล้ว</string>
+    <string name="kinetica_ui_sheet_partial">ขยายบางส่วน</string>
+    <string name="kinetica_ui_sheet_collapsed">ยุบแล้ว</string>
+    <string name="kinetica_ui_tooltip_show">แสดงเคล็ดลับ</string>
+    <string name="kinetica_ui_coach_next">ถัดไป</string>
+    <string name="kinetica_ui_coach_done">เสร็จสิ้น</string>
+    <string name="kinetica_ui_coach_skip">ข้าม</string>
+    <string name="kinetica_ui_coach_step">ขั้นตอนที่ %1$d จาก %2$d</string>
+    <string name="kinetica_ui_drawer_title">เมนู</string>
+    <string name="kinetica_ui_drawer_close">ปิดเมนู</string>
+</resources>

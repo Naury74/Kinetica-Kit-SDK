@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -77,7 +76,7 @@ public fun KIconToggleButton(
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val diameter = size.coerceAtLeast(MIN_TOGGLE)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val on = tone.colors(surface)
     val neutral = KTone.Neutral.colors(surface)
     val offInk = buttonInk(variant, KTone.Neutral, neutral, surface, INK_GRAPHIC_CONTRAST)

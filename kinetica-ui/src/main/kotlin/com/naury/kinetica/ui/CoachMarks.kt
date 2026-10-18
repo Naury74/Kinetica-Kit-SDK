@@ -410,7 +410,7 @@ private fun CoachText(frame: CoachFrame) {
             Spacer(Modifier.height(6.dp))
             ThemedText(
                 step.body,
-                style = TextStyle(color = frame.surface.contentColor.copy(alpha = BODY_ALPHA), fontSize = 15.sp, lineHeight = 21.sp),
+                style = TextStyle(color = frame.surface.muted(BODY_ALPHA), fontSize = 15.sp, lineHeight = 21.sp),
             )
         }
     }
@@ -463,7 +463,7 @@ private fun CoachButton(text: String, filled: Boolean, surface: SurfaceStyle, on
         ThemedText(
             text,
             style = TextStyle(
-                color = if (filled) onInk else ink.copy(alpha = BODY_ALPHA),
+                color = if (filled) onInk else surface.muted(BODY_ALPHA),
                 fontSize = 15.sp,
                 fontWeight = KineticaTheme.design.label(FontWeight.SemiBold),
             ),

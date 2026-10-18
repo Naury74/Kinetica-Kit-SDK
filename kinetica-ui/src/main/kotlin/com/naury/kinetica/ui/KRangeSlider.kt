@@ -124,7 +124,7 @@ public fun KRangeSlider(
     }
     val finish: () -> Unit = { latestFinished?.invoke() }
     val fill = if (enabled) accent else surface.contentColor.copy(alpha = DISABLED_ALPHA)
-    val track = surface.contentColor.copy(alpha = TRACK_ALPHA)
+    val track = surface.raisedFill(TRACK_ALPHA)
     val startFraction = model.fraction(start)
     val endFraction = model.fraction(end)
     val paint = sliderPaint(fill, surface)

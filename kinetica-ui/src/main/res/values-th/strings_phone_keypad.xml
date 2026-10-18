@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_keypad_star">ดอกจัน</string>
+    <string name="kinetica_ui_keypad_pound">สี่เหลี่ยม</string>
+    <string name="kinetica_ui_keypad_plus">ป้อนเครื่องหมายบวก</string>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_feedback_info">Thông tin</string>
+    <string name="kinetica_ui_feedback_success">Thành công</string>
+    <string name="kinetica_ui_feedback_warning">Cảnh báo</string>
+    <string name="kinetica_ui_feedback_error">Lỗi</string>
+    <string name="kinetica_ui_feedback_expand">Hiện tất cả thông báo</string>
+    <string name="kinetica_ui_feedback_collapse">Xếp chồng thông báo</string>
+    <string name="kinetica_ui_feedback_loading_text">Đang tải…</string>
+    <string name="kinetica_ui_feedback_step">Bước %1$d/%2$d</string>
+</resources>

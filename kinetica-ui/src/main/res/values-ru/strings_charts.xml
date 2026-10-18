@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="kinetica_ui_chart_line">
+        <item quantity="one">Линейный график, %1$d точка</item>
+        <item quantity="few">Линейный график, %1$d точки</item>
+        <item quantity="many">Линейный график, %1$d точек</item>
+        <item quantity="other">Линейный график, %1$d точки</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_bar">
+        <item quantity="one">Столбчатая диаграмма, %1$d столбец</item>
+        <item quantity="few">Столбчатая диаграмма, %1$d столбца</item>
+        <item quantity="many">Столбчатая диаграмма, %1$d столбцов</item>
+        <item quantity="other">Столбчатая диаграмма, %1$d столбца</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_donut">
+        <item quantity="one">Кольцевая диаграмма, %1$d сектор, всего %2$s</item>
+        <item quantity="few">Кольцевая диаграмма, %1$d сектора, всего %2$s</item>
+        <item quantity="many">Кольцевая диаграмма, %1$d секторов, всего %2$s</item>
+        <item quantity="other">Кольцевая диаграмма, %1$d сектора, всего %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_chart_stats">минимум %1$s, максимум %2$s, последнее %3$s</string>
+    <string name="kinetica_ui_chart_range">минимум %1$s, максимум %2$s</string>
+    <string name="kinetica_ui_chart_entry">%1$s: %2$s</string>
+    <string name="kinetica_ui_chart_point">Точка %1$d</string>
+    <string name="kinetica_ui_chart_slice">%1$s: %2$s, %3$d%%</string>
+    <string name="kinetica_ui_chart_total">Всего</string>
+    <string name="kinetica_ui_chart_trend">Изменение с %1$s до %2$s, минимум %3$s, максимум %4$s</string>
+    <string name="kinetica_ui_chart_rings">Кольца активности</string>
+    <string name="kinetica_ui_chart_ring">%1$s %2$d%%</string>
+    <string name="kinetica_ui_chart_ring_unnamed">Кольцо %1$d</string>
+</resources>

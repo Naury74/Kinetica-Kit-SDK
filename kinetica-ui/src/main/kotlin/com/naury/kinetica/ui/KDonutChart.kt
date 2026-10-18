@@ -45,7 +45,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -207,7 +206,7 @@ private fun rememberPops(count: Int, selected: Int, still: Boolean): List<Animat
 
 @Composable
 private fun Modifier.donutTaps(plot: DonutPlot, arcs: DonutArcs, choose: (Int) -> Unit): Modifier {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latestArcs = rememberUpdatedState(arcs)
     val latestChoose = rememberUpdatedState(choose)
     return pointerInput(plot) {

@@ -37,7 +37,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -183,7 +182,7 @@ private class BarPlot {
 
 @Composable
 private fun BarPlotArea(frame: BarFrame, modifier: Modifier, toggle: (Int) -> Unit) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latestToggle = rememberUpdatedState(toggle)
     val plot = frame.plot
     val held = remember { BarScratch() }

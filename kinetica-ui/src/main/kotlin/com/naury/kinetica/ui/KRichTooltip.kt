@@ -206,7 +206,7 @@ private fun RichBubble(spec: RichTooltipSpec, geometry: RichGeometry, progress: 
             }
             ThemedText(
                 spec.text,
-                style = TextStyle(color = surface.contentColor.copy(alpha = TEXT_ALPHA), fontSize = 14.sp, lineHeight = 20.sp),
+                style = TextStyle(color = surface.muted(TEXT_ALPHA), fontSize = 14.sp, lineHeight = 20.sp),
             )
             spec.actionLabel?.let {
                 Box(Modifier.align(Alignment.End).padding(top = 6.dp)) {

@@ -35,7 +35,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -105,7 +104,7 @@ public fun KKeypad(
     extraKey: (@Composable () -> Unit)? = null,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latestDigit by rememberUpdatedState(onDigit)
     val press: (Char) -> Unit = { char ->
         haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
@@ -166,7 +165,7 @@ private fun PhoneRows(
     extraKey: (@Composable () -> Unit)?,
     outer: LayoutDirection,
 ) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val plusLabel = stringResource(R.string.kinetica_ui_keypad_plus)
     KeyRow(true) {
         SymbolKey('*', stringResource(R.string.kinetica_ui_keypad_star), spec, Modifier.weight(1f)) { press('*') }
@@ -242,7 +241,7 @@ private fun DigitKey(digit: Char, spec: KeySpec, modifier: Modifier, longPress: 
                     ThemedText(
                         letters,
                         style = TextStyle(
-                            color = ink.copy(alpha = MUTED),
+                            color = spec.surface.muted(MUTED),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 1.5.sp,
@@ -265,7 +264,7 @@ private fun TextKey(text: String, label: String, spec: KeySpec, modifier: Modifi
 
 @Composable
 private fun BackspaceKey(spec: KeySpec, onBackspace: () -> Unit, onClear: (() -> Unit)?) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val label = stringResource(R.string.kinetica_ui_keypad_backspace)
     KeySurface(
         spec,

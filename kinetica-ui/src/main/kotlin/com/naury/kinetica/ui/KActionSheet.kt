@@ -230,7 +230,6 @@ private class ActionHeader(val title: String?, val message: String?)
 
 @Composable
 private fun ActionGroup(actions: List<KDialogAction>, header: ActionHeader, surface: SurfaceStyle, onAction: (KDialogAction) -> Unit) {
-    val ink = surface.contentColor
     Column(
         Modifier
             .fillMaxWidth()
@@ -248,7 +247,7 @@ private fun ActionGroup(actions: List<KDialogAction>, header: ActionHeader, surf
                     ThemedText(
                         it,
                         style = TextStyle(
-                            color = ink.copy(alpha = HEADER_ALPHA),
+                            color = surface.muted(HEADER_ALPHA),
                             fontSize = 13.sp,
                             fontWeight = KineticaTheme.design.title(FontWeight.SemiBold),
                             textAlign = TextAlign.Center,
@@ -259,7 +258,7 @@ private fun ActionGroup(actions: List<KDialogAction>, header: ActionHeader, surf
                     ThemedText(
                         it,
                         Modifier.padding(top = 2.dp),
-                        style = TextStyle(color = ink.copy(alpha = HEADER_ALPHA), fontSize = 13.sp, textAlign = TextAlign.Center),
+                        style = TextStyle(color = surface.muted(HEADER_ALPHA), fontSize = 13.sp, textAlign = TextAlign.Center),
                     )
                 }
             }
@@ -328,7 +327,7 @@ private fun ActionPopover(
                         it,
                         Modifier.padding(horizontal = 18.dp, vertical = 8.dp).semantics { paneTitle = it },
                         style = TextStyle(
-                            color = surface.contentColor.copy(alpha = HEADER_ALPHA),
+                            color = surface.muted(HEADER_ALPHA),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                         ),
@@ -338,7 +337,7 @@ private fun ActionPopover(
                     ThemedText(
                         it,
                         Modifier.padding(start = 18.dp, end = 18.dp, bottom = 8.dp),
-                        style = TextStyle(color = surface.contentColor.copy(alpha = HEADER_ALPHA), fontSize = 13.sp),
+                        style = TextStyle(color = surface.muted(HEADER_ALPHA), fontSize = 13.sp),
                     )
                 }
                 actions.forEach { action ->

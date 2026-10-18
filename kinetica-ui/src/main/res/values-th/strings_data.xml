@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_data_series">ชุดข้อมูลที่ %1$d</string>
+    <string name="kinetica_ui_data_pair">%1$s %2$s</string>
+    <plurals name="kinetica_ui_chart_area">
+        <item quantity="other">แผนภูมิพื้นที่, %2$d ชุดข้อมูล, %1$d จุด</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_stacked_bar">
+        <item quantity="other">แผนภูมิแท่งแบบซ้อน, %2$d ชุดข้อมูล, %1$d แท่ง</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_grouped_bar">
+        <item quantity="other">แผนภูมิแท่งแบบกลุ่ม, %2$d ชุดข้อมูล, %1$d กลุ่ม</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_pie">
+        <item quantity="other">แผนภูมิวงกลม, %1$d ส่วน, รวม %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_heatmap_cell">%1$s, %2$s</string>
+    <string name="kinetica_ui_heatmap_empty">ไม่มีข้อมูล</string>
+    <string name="kinetica_ui_heatmap_less">น้อย</string>
+    <string name="kinetica_ui_heatmap_more">มาก</string>
+    <string name="kinetica_ui_stat_up">เพิ่มขึ้น %1$s</string>
+    <string name="kinetica_ui_stat_down">ลดลง %1$s</string>
+    <string name="kinetica_ui_stat_flat">ไม่เปลี่ยนแปลง</string>
+    <string name="kinetica_ui_step_done">เสร็จแล้ว</string>
+    <string name="kinetica_ui_step_current">กำลังดำเนินการ</string>
+    <string name="kinetica_ui_step_upcoming">ยังไม่เริ่ม</string>
+    <string name="kinetica_ui_step_error">มีปัญหา</string>
+    <string name="kinetica_ui_step_of">ขั้นตอนที่ %2$d จาก %1$d, %3$s</string>
+    <string name="kinetica_ui_step_name">ขั้นตอนที่ %1$d, %2$s</string>
+    <string name="kinetica_ui_step_count">%1$d/%2$d</string>
+    <string name="kinetica_ui_wizard_next">ถัดไป</string>
+    <string name="kinetica_ui_wizard_back">กลับ</string>
+    <string name="kinetica_ui_wizard_finish">เสร็จสิ้น</string>
+    <string name="kinetica_ui_price_original">ราคาปกติ %1$s</string>
+    <string name="kinetica_ui_price_discount">ลด %1$d%%</string>
+    <string name="kinetica_ui_billing_monthly">รายเดือน</string>
+    <string name="kinetica_ui_billing_yearly">รายปี</string>
+    <string name="kinetica_ui_quantity">จำนวน</string>
+    <string name="kinetica_ui_quantity_add">เพิ่ม</string>
+    <string name="kinetica_ui_keypad_decimal">จุดทศนิยม</string>
+    <string name="kinetica_ui_keypad_backspace">ลบ</string>
+    <string name="kinetica_ui_pin_state">ป้อนแล้ว %2$d จาก %1$d หลัก</string>
+    <string name="kinetica_ui_range_today">วันนี้</string>
+    <string name="kinetica_ui_range_last_days">%1$d วันที่ผ่านมา</string>
+    <string name="kinetica_ui_range_this_month">เดือนนี้</string>
+    <string name="kinetica_ui_range_last_month">เดือนที่แล้ว</string>
+    <string name="kinetica_ui_range_morning">ช่วงเช้า</string>
+    <string name="kinetica_ui_range_afternoon">ช่วงบ่าย</string>
+    <string name="kinetica_ui_range_work">เวลาทำงาน</string>
+    <string name="kinetica_ui_range_date_title">เลือกวันที่</string>
+    <string name="kinetica_ui_range_time_title">เลือกช่วงเวลา</string>
+    <string name="kinetica_ui_range_start">เริ่ม %1$s</string>
+    <string name="kinetica_ui_range_end">สิ้นสุด %1$s</string>
+    <string name="kinetica_ui_range_next_day">สิ้นสุดในวันถัดไป</string>
+    <string name="kinetica_ui_range_pick_start">เลือกวันที่เริ่มต้น</string>
+    <string name="kinetica_ui_range_pick_end">%1$s ~ เลือกวันที่สิ้นสุด</string>
+    <string name="kinetica_ui_range_summary">%1$s ~ %2$s</string>
+    <string name="kinetica_ui_range_cancel">ยกเลิก</string>
+    <string name="kinetica_ui_range_apply">ใช้</string>
+    <plurals name="kinetica_ui_range_days">
+        <item quantity="other">%1$d วัน</item>
+    </plurals>
+    <string name="kinetica_ui_week_previous">สัปดาห์ก่อนหน้า</string>
+    <string name="kinetica_ui_week_next">สัปดาห์ถัดไป</string>
+    <plurals name="kinetica_ui_week_events">
+        <item quantity="other">%1$d กิจกรรม</item>
+    </plurals>
+</resources>

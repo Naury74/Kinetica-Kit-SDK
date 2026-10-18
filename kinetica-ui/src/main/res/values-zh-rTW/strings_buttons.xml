@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_done">完成</string>
+    <string name="kinetica_ui_more_options">更多選項</string>
+    <string name="kinetica_ui_status_online">線上</string>
+    <string name="kinetica_ui_status_busy">忙碌</string>
+    <string name="kinetica_ui_status_away">離開</string>
+    <string name="kinetica_ui_status_offline">離線</string>
+    <string name="kinetica_ui_avatar_status">%1$s，%2$s</string>
+    <string name="kinetica_ui_chip_remove">移除%s</string>
+</resources>

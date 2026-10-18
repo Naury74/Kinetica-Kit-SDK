@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">Barre d\'onglets réduite</string>
+    <string name="kinetica_ui_tabbar_expand">Afficher tous les onglets</string>
+    <string name="kinetica_ui_tabbar_go_to">Aller à %1$s</string>
+</resources>

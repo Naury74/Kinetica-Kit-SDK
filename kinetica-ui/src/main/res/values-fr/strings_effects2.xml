@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_flip_action">Retourner</string>
+    <string name="kinetica_ui_flip_front">Recto</string>
+    <string name="kinetica_ui_flip_back">Verso</string>
+</resources>

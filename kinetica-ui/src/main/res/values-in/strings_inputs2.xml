@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_code_label">Kode verifikasi</string>
+    <plurals name="kinetica_ui_code_progress">
+        <item quantity="other">%2$d dari %1$d digit dimasukkan</item>
+    </plurals>
+    <string name="kinetica_ui_code_error">Kode salah</string>
+    <string name="kinetica_ui_tag_remove">Hapus %s</string>
+    <string name="kinetica_ui_tag_armed">%s dipilih. Tekan hapus sekali lagi untuk menghapusnya</string>
+    <string name="kinetica_ui_tag_suggestions">Saran</string>
+    <string name="kinetica_ui_color_picker">Pemilih warna</string>
+    <string name="kinetica_ui_color_opacity">Opasitas</string>
+    <string name="kinetica_ui_color_hex">Kode warna hex</string>
+    <string name="kinetica_ui_color_hue_next">Rona berikutnya</string>
+    <string name="kinetica_ui_color_hue_previous">Rona sebelumnya</string>
+    <string name="kinetica_ui_color_lighter">Lebih terang</string>
+    <string name="kinetica_ui_color_darker">Lebih gelap</string>
+    <string name="kinetica_ui_color_more_vivid">Lebih cerah</string>
+    <string name="kinetica_ui_color_more_muted">Lebih redup</string>
+    <string name="kinetica_ui_color_state">%1$s, %2$s</string>
+    <string name="kinetica_ui_color_light">%s muda</string>
+    <string name="kinetica_ui_color_dark">%s tua</string>
+    <string name="kinetica_ui_color_red">merah</string>
+    <string name="kinetica_ui_color_orange">oranye</string>
+    <string name="kinetica_ui_color_yellow">kuning</string>
+    <string name="kinetica_ui_color_green">hijau</string>
+    <string name="kinetica_ui_color_teal">hijau kebiruan</string>
+    <string name="kinetica_ui_color_blue">biru</string>
+    <string name="kinetica_ui_color_purple">ungu</string>
+    <string name="kinetica_ui_color_pink">merah muda</string>
+    <string name="kinetica_ui_color_white">putih</string>
+    <string name="kinetica_ui_color_gray">abu-abu</string>
+    <string name="kinetica_ui_color_black">hitam</string>
+    <string name="kinetica_ui_signature">Bidang tanda tangan</string>
+    <string name="kinetica_ui_signature_hint">Tanda tangan di sini</string>
+    <string name="kinetica_ui_signature_empty">Kosong</string>
+    <string name="kinetica_ui_signature_signed">Sudah ditandatangani</string>
+    <string name="kinetica_ui_signature_undo">Urungkan</string>
+    <string name="kinetica_ui_signature_clear">Hapus</string>
+    <string name="kinetica_ui_password_show">Tampilkan sandi</string>
+    <string name="kinetica_ui_password_hide">Sembunyikan sandi</string>
+    <string name="kinetica_ui_password_strength">Kekuatan sandi</string>
+    <string name="kinetica_ui_password_weak">Lemah</string>
+    <string name="kinetica_ui_password_medium">Sedang</string>
+    <string name="kinetica_ui_password_strong">Kuat</string>
+    <string name="kinetica_ui_password_rule_length">Minimal 8 karakter</string>
+    <string name="kinetica_ui_password_rule_upper">Huruf kapital</string>
+    <string name="kinetica_ui_password_rule_number">Angka</string>
+    <string name="kinetica_ui_password_rule_symbol">Simbol</string>
+    <string name="kinetica_ui_password_rule_met">Terpenuhi</string>
+    <string name="kinetica_ui_password_rule_unmet">Belum terpenuhi</string>
+</resources>

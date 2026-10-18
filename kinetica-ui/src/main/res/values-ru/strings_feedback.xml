@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_feedback_info">Информация</string>
+    <string name="kinetica_ui_feedback_success">Успешно</string>
+    <string name="kinetica_ui_feedback_warning">Предупреждение</string>
+    <string name="kinetica_ui_feedback_error">Ошибка</string>
+    <string name="kinetica_ui_feedback_expand">Показать все уведомления</string>
+    <string name="kinetica_ui_feedback_collapse">Сгруппировать уведомления</string>
+    <string name="kinetica_ui_feedback_loading_text">Загрузка…</string>
+    <string name="kinetica_ui_feedback_step">Шаг %1$d из %2$d</string>
+</resources>

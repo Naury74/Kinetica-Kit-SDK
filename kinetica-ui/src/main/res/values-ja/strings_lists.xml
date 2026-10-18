@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_move_up">上に移動</string>
+    <string name="kinetica_ui_move_down">下に移動</string>
+    <string name="kinetica_ui_expanded">展開</string>
+    <string name="kinetica_ui_collapsed">折りたたみ</string>
+    <string name="kinetica_ui_confirmed">確認済み</string>
+</resources>

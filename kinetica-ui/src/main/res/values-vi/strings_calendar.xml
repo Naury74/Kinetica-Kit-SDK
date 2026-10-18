@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_calendar_previous_month">Tháng trước</string>
+    <string name="kinetica_ui_calendar_next_month">Tháng sau</string>
+    <string name="kinetica_ui_calendar_today">Hôm nay</string>
+    <string name="kinetica_ui_calendar_range_start">Ngày bắt đầu</string>
+    <string name="kinetica_ui_calendar_range_end">Ngày kết thúc</string>
+    <string name="kinetica_ui_calendar_in_range">Trong khoảng thời gian</string>
+    <plurals name="kinetica_ui_calendar_events">
+        <item quantity="other">%d sự kiện</item>
+    </plurals>
+    <string name="kinetica_ui_range_slider_start">Tối thiểu</string>
+    <string name="kinetica_ui_range_slider_end">Tối đa</string>
+</resources>

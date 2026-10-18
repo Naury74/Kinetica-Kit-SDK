@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">戻る</string>
+    <string name="kinetica_ui_page_state">%1$d / %2$d ページ</string>
+    <string name="kinetica_ui_swipe_left">左にスワイプ</string>
+    <string name="kinetica_ui_swipe_right">右にスワイプ</string>
+    <string name="kinetica_ui_swipe_up">上にスワイプ</string>
+    <string name="kinetica_ui_swipe_undo">最後のスワイプを取り消す</string>
+    <string name="kinetica_ui_speed_dial">クイック操作</string>
+    <string name="kinetica_ui_speed_dial_expanded">展開</string>
+    <string name="kinetica_ui_speed_dial_collapsed">折りたたみ</string>
+</resources>

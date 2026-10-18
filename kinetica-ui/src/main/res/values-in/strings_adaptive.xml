@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">Bilah tab diciutkan</string>
+    <string name="kinetica_ui_tabbar_expand">Tampilkan semua tab</string>
+    <string name="kinetica_ui_tabbar_go_to">Buka %1$s</string>
+</resources>

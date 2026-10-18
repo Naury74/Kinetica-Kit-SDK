@@ -529,7 +529,7 @@ private fun ExpandedBody(content: KIslandContent, accent: Color, surface: Surfac
             content.subtitle?.let {
                 ThemedText(
                     it,
-                    style = TextStyle(color = surface.contentColor.copy(alpha = SUBTITLE_ALPHA), fontSize = 13.sp),
+                    style = TextStyle(color = surface.muted(SUBTITLE_ALPHA), fontSize = 13.sp),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )

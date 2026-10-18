@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_keypad_star">星号</string>
+    <string name="kinetica_ui_keypad_pound">井号</string>
+    <string name="kinetica_ui_keypad_plus">输入加号</string>
+</resources>

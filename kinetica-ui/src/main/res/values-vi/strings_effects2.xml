@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_flip_action">Lật</string>
+    <string name="kinetica_ui_flip_front">Mặt trước</string>
+    <string name="kinetica_ui_flip_back">Mặt sau</string>
+</resources>

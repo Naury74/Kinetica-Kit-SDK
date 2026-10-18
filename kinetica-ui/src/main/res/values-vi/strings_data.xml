@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_data_series">Chuỗi %1$d</string>
+    <string name="kinetica_ui_data_pair">%1$s %2$s</string>
+    <plurals name="kinetica_ui_chart_area">
+        <item quantity="other">Biểu đồ vùng, %2$d chuỗi, %1$d điểm</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_stacked_bar">
+        <item quantity="other">Biểu đồ cột chồng, %2$d chuỗi, %1$d cột</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_grouped_bar">
+        <item quantity="other">Biểu đồ cột nhóm, %2$d chuỗi, %1$d nhóm</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_pie">
+        <item quantity="other">Biểu đồ tròn, %1$d phần, tổng %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_heatmap_cell">%1$s, %2$s</string>
+    <string name="kinetica_ui_heatmap_empty">Không có dữ liệu</string>
+    <string name="kinetica_ui_heatmap_less">Ít hơn</string>
+    <string name="kinetica_ui_heatmap_more">Nhiều hơn</string>
+    <string name="kinetica_ui_stat_up">Tăng %1$s</string>
+    <string name="kinetica_ui_stat_down">Giảm %1$s</string>
+    <string name="kinetica_ui_stat_flat">Không thay đổi</string>
+    <string name="kinetica_ui_step_done">Đã hoàn tất</string>
+    <string name="kinetica_ui_step_current">Đang thực hiện</string>
+    <string name="kinetica_ui_step_upcoming">Chưa bắt đầu</string>
+    <string name="kinetica_ui_step_error">Có vấn đề</string>
+    <string name="kinetica_ui_step_of">Bước %2$d/%1$d, %3$s</string>
+    <string name="kinetica_ui_step_name">Bước %1$d, %2$s</string>
+    <string name="kinetica_ui_step_count">%1$d/%2$d</string>
+    <string name="kinetica_ui_wizard_next">Tiếp</string>
+    <string name="kinetica_ui_wizard_back">Quay lại</string>
+    <string name="kinetica_ui_wizard_finish">Xong</string>
+    <string name="kinetica_ui_price_original">giá gốc %1$s</string>
+    <string name="kinetica_ui_price_discount">Giảm %1$d%%</string>
+    <string name="kinetica_ui_billing_monthly">Hằng tháng</string>
+    <string name="kinetica_ui_billing_yearly">Hằng năm</string>
+    <string name="kinetica_ui_quantity">Số lượng</string>
+    <string name="kinetica_ui_quantity_add">Thêm</string>
+    <string name="kinetica_ui_keypad_decimal">Dấu thập phân</string>
+    <string name="kinetica_ui_keypad_backspace">Xóa</string>
+    <string name="kinetica_ui_pin_state">Đã nhập %2$d/%1$d chữ số</string>
+    <string name="kinetica_ui_range_today">Hôm nay</string>
+    <string name="kinetica_ui_range_last_days">%1$d ngày qua</string>
+    <string name="kinetica_ui_range_this_month">Tháng này</string>
+    <string name="kinetica_ui_range_last_month">Tháng trước</string>
+    <string name="kinetica_ui_range_morning">Buổi sáng</string>
+    <string name="kinetica_ui_range_afternoon">Buổi chiều</string>
+    <string name="kinetica_ui_range_work">Giờ làm việc</string>
+    <string name="kinetica_ui_range_date_title">Chọn ngày</string>
+    <string name="kinetica_ui_range_time_title">Chọn khoảng thời gian</string>
+    <string name="kinetica_ui_range_start">Bắt đầu %1$s</string>
+    <string name="kinetica_ui_range_end">Kết thúc %1$s</string>
+    <string name="kinetica_ui_range_next_day">Kết thúc vào ngày hôm sau</string>
+    <string name="kinetica_ui_range_pick_start">Chọn ngày bắt đầu</string>
+    <string name="kinetica_ui_range_pick_end">%1$s ~ chọn ngày kết thúc</string>
+    <string name="kinetica_ui_range_summary">%1$s ~ %2$s</string>
+    <string name="kinetica_ui_range_cancel">Hủy</string>
+    <string name="kinetica_ui_range_apply">Áp dụng</string>
+    <plurals name="kinetica_ui_range_days">
+        <item quantity="other">%1$d ngày</item>
+    </plurals>
+    <string name="kinetica_ui_week_previous">Tuần trước</string>
+    <string name="kinetica_ui_week_next">Tuần sau</string>
+    <plurals name="kinetica_ui_week_events">
+        <item quantity="other">%1$d sự kiện</item>
+    </plurals>
+</resources>

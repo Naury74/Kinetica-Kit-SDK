@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_code_label">验证码</string>
+    <plurals name="kinetica_ui_code_progress">
+        <item quantity="other">已输入 %2$d 位，共 %1$d 位</item>
+    </plurals>
+    <string name="kinetica_ui_code_error">验证码不正确</string>
+    <string name="kinetica_ui_tag_remove">移除%s</string>
+    <string name="kinetica_ui_tag_armed">已选择%s。再按一次删除键即可移除</string>
+    <string name="kinetica_ui_tag_suggestions">建议</string>
+    <string name="kinetica_ui_color_picker">颜色选择器</string>
+    <string name="kinetica_ui_color_opacity">不透明度</string>
+    <string name="kinetica_ui_color_hex">十六进制颜色代码</string>
+    <string name="kinetica_ui_color_hue_next">下一个色相</string>
+    <string name="kinetica_ui_color_hue_previous">上一个色相</string>
+    <string name="kinetica_ui_color_lighter">调亮</string>
+    <string name="kinetica_ui_color_darker">调暗</string>
+    <string name="kinetica_ui_color_more_vivid">更鲜艳</string>
+    <string name="kinetica_ui_color_more_muted">更柔和</string>
+    <string name="kinetica_ui_color_state">%1$s，%2$s</string>
+    <string name="kinetica_ui_color_light">浅%s</string>
+    <string name="kinetica_ui_color_dark">深%s</string>
+    <string name="kinetica_ui_color_red">红色</string>
+    <string name="kinetica_ui_color_orange">橙色</string>
+    <string name="kinetica_ui_color_yellow">黄色</string>
+    <string name="kinetica_ui_color_green">绿色</string>
+    <string name="kinetica_ui_color_teal">青色</string>
+    <string name="kinetica_ui_color_blue">蓝色</string>
+    <string name="kinetica_ui_color_purple">紫色</string>
+    <string name="kinetica_ui_color_pink">粉色</string>
+    <string name="kinetica_ui_color_white">白色</string>
+    <string name="kinetica_ui_color_gray">灰色</string>
+    <string name="kinetica_ui_color_black">黑色</string>
+    <string name="kinetica_ui_signature">签名板</string>
+    <string name="kinetica_ui_signature_hint">在此签名</string>
+    <string name="kinetica_ui_signature_empty">空白</string>
+    <string name="kinetica_ui_signature_signed">已签名</string>
+    <string name="kinetica_ui_signature_undo">撤消</string>
+    <string name="kinetica_ui_signature_clear">清除</string>
+    <string name="kinetica_ui_password_show">显示密码</string>
+    <string name="kinetica_ui_password_hide">隐藏密码</string>
+    <string name="kinetica_ui_password_strength">密码强度</string>
+    <string name="kinetica_ui_password_weak">弱</string>
+    <string name="kinetica_ui_password_medium">中</string>
+    <string name="kinetica_ui_password_strong">强</string>
+    <string name="kinetica_ui_password_rule_length">至少 8 个字符</string>
+    <string name="kinetica_ui_password_rule_upper">大写字母</string>
+    <string name="kinetica_ui_password_rule_number">数字</string>
+    <string name="kinetica_ui_password_rule_symbol">符号</string>
+    <string name="kinetica_ui_password_rule_met">已满足</string>
+    <string name="kinetica_ui_password_rule_unmet">未满足</string>
+</resources>

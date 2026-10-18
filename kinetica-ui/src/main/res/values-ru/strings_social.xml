@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">Отправка</string>
+    <string name="kinetica_ui_chat_sent">Отправлено</string>
+    <string name="kinetica_ui_chat_delivered">Доставлено</string>
+    <string name="kinetica_ui_chat_read">Прочитано</string>
+    <string name="kinetica_ui_chat_failed">Не отправлено</string>
+    <string name="kinetica_ui_chat_typing">Печатает</string>
+    <string name="kinetica_ui_chat_hint">Сообщение</string>
+    <string name="kinetica_ui_chat_attach">Прикрепить</string>
+    <string name="kinetica_ui_chat_send">Отправить</string>
+    <string name="kinetica_ui_chat_voice">Голосовое сообщение</string>
+    <string name="kinetica_ui_story_new">Новая история</string>
+    <string name="kinetica_ui_story_seen">Просмотрено</string>
+    <string name="kinetica_ui_story_position">История %1$d из %2$d</string>
+    <string name="kinetica_ui_story_next">Следующая история</string>
+    <string name="kinetica_ui_story_previous">Предыдущая история</string>
+    <string name="kinetica_ui_story_pause">Пауза</string>
+    <string name="kinetica_ui_story_resume">Продолжить</string>
+    <string name="kinetica_ui_story_paused">Приостановлено</string>
+    <string name="kinetica_ui_drop_title">Добавить файлы</string>
+    <string name="kinetica_ui_drop_release">Отпустите, чтобы добавить</string>
+    <string name="kinetica_ui_attach_uploading">Загрузка %d%%</string>
+    <string name="kinetica_ui_attach_uploading_plain">Загрузка</string>
+    <string name="kinetica_ui_attach_failed">Ошибка загрузки</string>
+    <string name="kinetica_ui_attach_cancel">Отменить загрузку</string>
+    <string name="kinetica_ui_attach_retry">Повторить</string>
+    <string name="kinetica_ui_attach_remove">Удалить</string>
+    <string name="kinetica_ui_index_bar">Указатель</string>
+    <string name="kinetica_ui_index_jump">Перейти к %s</string>
+    <string name="kinetica_ui_page_previous">Предыдущая страница</string>
+    <string name="kinetica_ui_page_next">Следующая страница</string>
+    <string name="kinetica_ui_page_number">Страница %d</string>
+    <string name="kinetica_ui_breadcrumb">Навигационная цепочка</string>
+    <string name="kinetica_ui_breadcrumb_current">Текущее расположение</string>
+    <string name="kinetica_ui_breadcrumb_more">Показать полный путь</string>
+    <string name="kinetica_ui_map_cluster">Мест: %d</string>
+    <string name="kinetica_ui_pin_selected">Выбрано</string>
+    <string name="kinetica_ui_hold_confirm">Удерживайте для подтверждения</string>
+    <string name="kinetica_ui_copy_action">Копировать</string>
+    <string name="kinetica_ui_copy_done">Скопировано</string>
+</resources>

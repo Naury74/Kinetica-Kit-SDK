@@ -251,7 +251,7 @@ public fun KBreadcrumb(
                     rememberVectorPainter(KGlyphs.ChevronForward),
                     null,
                     Modifier.size(SEPARATOR),
-                    colorFilter = ColorFilter.tint(ink.copy(alpha = FAINT)),
+                    colorFilter = ColorFilter.tint(surface.muted(FAINT)),
                 )
             }
             if (index == null) {

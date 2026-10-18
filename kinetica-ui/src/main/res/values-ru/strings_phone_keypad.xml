@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_keypad_star">Звёздочка</string>
+    <string name="kinetica_ui_keypad_pound">Решётка</string>
+    <string name="kinetica_ui_keypad_plus">Ввести плюс</string>
+</resources>

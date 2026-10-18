@@ -16,11 +16,13 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -45,12 +47,26 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
-/** 시스템의 '애니메이션 삭제' 접근성 설정이 켜져 있는지 확인한다. 켜져 있으면 반복 애니메이션과 기울기 효과를 멈춘다. */
+/**
+ * 움직임을 줄여야 하는지. 이 키트의 컴포넌트가 반복 애니메이션, 관성, 기울기 효과를 멈출 때 쓰는 기준과 같다.
+ * [LocalKineticaReducedMotion]에 값이 있으면 그 값을, 없으면 시스템의 '애니메이션 삭제' 접근성 설정을 따른다.
+ * 호스트가 직접 만든 애니메이션도 이 값을 따르면 키트와 같이 멈춘다.
+ */
 @Composable
-internal fun reducedMotion(): Boolean {
+public fun isReducedMotion(): Boolean {
+    LocalKineticaReducedMotion.current?.let { return it }
     val resolver = LocalContext.current.contentResolver
     return remember(resolver) { Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
 }
+
+/**
+ * 움직임을 줄일지 직접 정한다. 기본값 null이면 시스템의 '애니메이션 삭제' 설정을 따른다.
+ * 앱 설정에 '움직임 줄이기'가 따로 있으면 화면 루트에서 그 값을 넣는다. [isReducedMotion]과 이 키트의 모든 컴포넌트가 따른다.
+ */
+public val LocalKineticaReducedMotion: ProvidableCompositionLocal<Boolean?> = staticCompositionLocalOf { null }
+
+@Composable
+internal fun reducedMotion(): Boolean = isReducedMotion()
 
 /**
  * Siri나 Apple Intelligence처럼 가장자리를 따라 색이 회전하는 글로우 테두리를 그린다. 바깥쪽으로 [glow]만큼 은은하게 번진다.

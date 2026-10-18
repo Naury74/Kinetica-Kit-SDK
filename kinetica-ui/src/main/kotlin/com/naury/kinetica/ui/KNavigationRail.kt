@@ -112,7 +112,7 @@ public fun KNavigationRail(
                     val top = indicator.top.value
                     val bottom = indicator.bottom.value
                     if (target != null && bottom > top) {
-                        val color = surface.contentColor.copy(alpha = RAIL_INDICATOR_ALPHA)
+                        val color = surface.raisedFill(RAIL_INDICATOR_ALPHA)
                         drawShape(cell, color, Offset(0f, top), Size(size.width, bottom - top))
                     }
                 }
@@ -145,7 +145,7 @@ private fun RailItem(item: KTab, selected: Boolean, surface: SurfaceStyle, cell:
         spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "rail-item",
     )
-    val color = surface.contentColor.copy(alpha = if (selected) 1f else RAIL_UNSELECTED_ALPHA)
+    val color = if (selected) surface.contentColor else surface.muted(RAIL_UNSELECTED_ALPHA)
     Column(
         modifier
             .fillMaxWidth()

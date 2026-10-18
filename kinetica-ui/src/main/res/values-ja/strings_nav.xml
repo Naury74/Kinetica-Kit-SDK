@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">展開</string>
+    <string name="kinetica_ui_sheet_collapse">折りたたむ</string>
+    <string name="kinetica_ui_sheet_expanded">展開</string>
+    <string name="kinetica_ui_sheet_partial">一部展開</string>
+    <string name="kinetica_ui_sheet_collapsed">折りたたみ</string>
+    <string name="kinetica_ui_tooltip_show">ヒントを表示</string>
+    <string name="kinetica_ui_coach_next">次へ</string>
+    <string name="kinetica_ui_coach_done">完了</string>
+    <string name="kinetica_ui_coach_skip">スキップ</string>
+    <string name="kinetica_ui_coach_step">ステップ %1$d / %2$d</string>
+    <string name="kinetica_ui_drawer_title">メニュー</string>
+    <string name="kinetica_ui_drawer_close">メニューを閉じる</string>
+</resources>

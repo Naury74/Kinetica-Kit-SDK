@@ -112,8 +112,8 @@ public fun KSelect(
                 .padding(start = 16.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SelectValue(label, selected, placeholder, ink, Modifier.weight(1f))
-            Glyph(KGlyphs.ChevronDown, ink.copy(alpha = LABEL_ALPHA), Modifier.graphicsLayer { rotationZ = turn })
+            SelectValue(label, selected, placeholder, surface, Modifier.weight(1f))
+            Glyph(KGlyphs.ChevronDown, surface.muted(LABEL_ALPHA), Modifier.graphicsLayer { rotationZ = turn })
         }
         val widthDp = with(LocalDensity.current) { width.toDp() }
         AnchoredPopup(open, anchor, frame) { transition, geometry ->
@@ -131,15 +131,16 @@ public fun KSelect(
 
 /** 선택 상자 안 글자. 고른 값이 있으면 작은 이름 아래에 값을, 없으면 안내 글을 쓴다. */
 @Composable
-private fun SelectValue(label: String, selected: String?, placeholder: String?, ink: Color, modifier: Modifier) {
+private fun SelectValue(label: String, selected: String?, placeholder: String?, surface: SurfaceStyle, modifier: Modifier) {
+    val ink = surface.contentColor
     Column(modifier) {
         if (selected != null) {
-            ThemedText(label, style = TextStyle(color = ink.copy(alpha = LABEL_ALPHA), fontSize = 12.sp), maxLines = 1)
+            ThemedText(label, style = TextStyle(color = surface.muted(LABEL_ALPHA), fontSize = 12.sp), maxLines = 1)
             ThemedText(selected, style = TextStyle(color = ink, fontSize = 16.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
         } else {
             ThemedText(
                 placeholder ?: label,
-                style = TextStyle(color = ink.copy(alpha = FIELD_HINT_ALPHA), fontSize = 16.sp),
+                style = TextStyle(color = surface.muted(FIELD_HINT_ALPHA), fontSize = 16.sp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -260,7 +261,7 @@ public fun KAutocomplete(
                 )
                 Column(Modifier.heightIn(max = SUGGESTIONS_MAX_HEIGHT).verticalScroll(rememberScrollState())) {
                     suggestions.forEachIndexed { index, suggestion ->
-                        SuggestionRow(suggestion, query, index == state.highlight, surface.contentColor) {
+                        SuggestionRow(suggestion, query, index == state.highlight, surface) {
                             if (transition.targetState) pick(suggestion)
                         }
                     }
@@ -271,7 +272,8 @@ public fun KAutocomplete(
 }
 
 @Composable
-private fun SuggestionRow(text: String, query: String, highlighted: Boolean, ink: Color, onClick: () -> Unit) {
+private fun SuggestionRow(text: String, query: String, highlighted: Boolean, surface: SurfaceStyle, onClick: () -> Unit) {
+    val ink = surface.contentColor
     val styled = remember(text, query) { emphasize(text, query) }
     Row(
         Modifier
@@ -285,7 +287,7 @@ private fun SuggestionRow(text: String, query: String, highlighted: Boolean, ink
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Glyph(KGlyphs.Search, ink.copy(alpha = LABEL_ALPHA), size = 18.dp)
+        Glyph(KGlyphs.Search, surface.muted(LABEL_ALPHA), size = 18.dp)
         BasicText(
             styled,
             Modifier.padding(start = 12.dp).weight(1f),

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_flip_action">Balik</string>
+    <string name="kinetica_ui_flip_front">Sisi depan</string>
+    <string name="kinetica_ui_flip_back">Sisi belakang</string>
+</resources>

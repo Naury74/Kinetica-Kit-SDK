@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_feedback_info">Información</string>
+    <string name="kinetica_ui_feedback_success">Correcto</string>
+    <string name="kinetica_ui_feedback_warning">Advertencia</string>
+    <string name="kinetica_ui_feedback_error">Error</string>
+    <string name="kinetica_ui_feedback_expand">Mostrar todas las notificaciones</string>
+    <string name="kinetica_ui_feedback_collapse">Agrupar notificaciones</string>
+    <string name="kinetica_ui_feedback_loading_text">Cargando…</string>
+    <string name="kinetica_ui_feedback_step">Paso %1$d de %2$d</string>
+</resources>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">傳送中</string>
+    <string name="kinetica_ui_chat_sent">已傳送</string>
+    <string name="kinetica_ui_chat_delivered">已送達</string>
+    <string name="kinetica_ui_chat_read">已讀</string>
+    <string name="kinetica_ui_chat_failed">未傳送</string>
+    <string name="kinetica_ui_chat_typing">正在輸入</string>
+    <string name="kinetica_ui_chat_hint">訊息</string>
+    <string name="kinetica_ui_chat_attach">附加</string>
+    <string name="kinetica_ui_chat_send">傳送</string>
+    <string name="kinetica_ui_chat_voice">語音訊息</string>
+    <string name="kinetica_ui_story_new">新的限時動態</string>
+    <string name="kinetica_ui_story_seen">已看過</string>
+    <string name="kinetica_ui_story_position">第 %1$d 則限時動態，共 %2$d 則</string>
+    <string name="kinetica_ui_story_next">下一則限時動態</string>
+    <string name="kinetica_ui_story_previous">上一則限時動態</string>
+    <string name="kinetica_ui_story_pause">暫停</string>
+    <string name="kinetica_ui_story_resume">繼續</string>
+    <string name="kinetica_ui_story_paused">已暫停</string>
+    <string name="kinetica_ui_drop_title">新增檔案</string>
+    <string name="kinetica_ui_drop_release">放開即可新增</string>
+    <string name="kinetica_ui_attach_uploading">正在上傳 %d%%</string>
+    <string name="kinetica_ui_attach_uploading_plain">正在上傳</string>
+    <string name="kinetica_ui_attach_failed">上傳失敗</string>
+    <string name="kinetica_ui_attach_cancel">取消上傳</string>
+    <string name="kinetica_ui_attach_retry">重試</string>
+    <string name="kinetica_ui_attach_remove">移除</string>
+    <string name="kinetica_ui_index_bar">索引</string>
+    <string name="kinetica_ui_index_jump">跳至%s</string>
+    <string name="kinetica_ui_page_previous">上一頁</string>
+    <string name="kinetica_ui_page_next">下一頁</string>
+    <string name="kinetica_ui_page_number">第 %d 頁</string>
+    <string name="kinetica_ui_breadcrumb">階層導覽</string>
+    <string name="kinetica_ui_breadcrumb_current">目前位置</string>
+    <string name="kinetica_ui_breadcrumb_more">顯示完整路徑</string>
+    <string name="kinetica_ui_map_cluster">%d 個地點</string>
+    <string name="kinetica_ui_pin_selected">已選取</string>
+    <string name="kinetica_ui_hold_confirm">按住即可確認</string>
+    <string name="kinetica_ui_copy_action">複製</string>
+    <string name="kinetica_ui_copy_done">已複製</string>
+</resources>

@@ -194,7 +194,7 @@ internal fun sliderPaint(active: Color, surface: SurfaceStyle): ThumbPaint = Thu
     surface.fillColor.copy(alpha = 1f),
     surface.isDark,
     KineticaTheme.design.borderWidth,
-    surface.contentColor.copy(alpha = TRACK_ALPHA),
+    surface.raisedFill(TRACK_ALPHA),
 )
 
 /** 방향키를 값 변화 방향(+1 증가, -1 감소)으로 바꾼다. RTL에서는 좌우가 뒤집힌다. 슬라이더 키가 아니면 `null`. */

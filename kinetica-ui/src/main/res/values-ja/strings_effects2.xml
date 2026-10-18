@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_flip_action">裏返す</string>
+    <string name="kinetica_ui_flip_front">表面</string>
+    <string name="kinetica_ui_flip_back">裏面</string>
+</resources>

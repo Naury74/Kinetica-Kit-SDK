@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_picker_next">Suivant</string>
+    <string name="kinetica_ui_picker_previous">Précédent</string>
+    <string name="kinetica_ui_picker_year">Année</string>
+    <string name="kinetica_ui_picker_month">Mois</string>
+    <string name="kinetica_ui_picker_day">Jour</string>
+    <string name="kinetica_ui_picker_hour">Heure</string>
+    <string name="kinetica_ui_picker_minute">Minute</string>
+    <string name="kinetica_ui_picker_am_pm">AM/PM</string>
+    <string name="kinetica_ui_search">Rechercher</string>
+    <string name="kinetica_ui_search_cancel">Annuler</string>
+    <string name="kinetica_ui_clear_text">Effacer le texte</string>
+</resources>

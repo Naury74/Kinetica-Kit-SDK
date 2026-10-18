@@ -145,7 +145,7 @@ private fun DayCell(date: LocalDate, enabled: Boolean, look: WeekLook, modifier:
     ) {
         ThemedText(
             date.dayOfWeek.getDisplayName(JavaTextStyle.SHORT, look.locale),
-            style = TextStyle(color = ink.copy(alpha = if (enabled) MUTED else DISABLED), fontSize = 12.sp),
+            style = TextStyle(color = if (enabled) look.surface.muted(MUTED) else ink.copy(alpha = DISABLED), fontSize = 12.sp),
             maxLines = 1,
         )
         DayNumber(date.dayOfMonth, fill, dayInk(isSelected, isToday, enabled, ink), isSelected || isToday)

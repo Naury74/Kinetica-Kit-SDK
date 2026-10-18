@@ -39,7 +39,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -110,7 +109,7 @@ public fun KPieChart(
         plot.gap = SLICE_GAP.toPx()
     }
     val summary = pluralStringResource(R.plurals.kinetica_ui_chart_pie, slices.size, slices.size, valueFormatter(arcs.total))
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val outer = LocalLayoutDirection.current
     Column(modifier.chartSummary(summary), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_loading">Đang tải</string>
+    <string name="kinetica_ui_increase">Tăng</string>
+    <string name="kinetica_ui_decrease">Giảm</string>
+    <string name="kinetica_ui_badge_new">Mới</string>
+    <plurals name="kinetica_ui_badge_count">
+        <item quantity="other">%d mục mới</item>
+    </plurals>
+</resources>

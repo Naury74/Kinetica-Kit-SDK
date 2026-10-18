@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_refresh">Làm mới</string>
+    <string name="kinetica_ui_refreshing">Đang làm mới</string>
+    <string name="kinetica_ui_close">Đóng</string>
+</resources>

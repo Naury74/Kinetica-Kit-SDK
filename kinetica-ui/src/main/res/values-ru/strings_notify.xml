@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_notify_dismiss">Закрыть</string>
+    <string name="kinetica_ui_notify_expand">Развернуть</string>
+    <string name="kinetica_ui_notify_open">Открыть</string>
+</resources>

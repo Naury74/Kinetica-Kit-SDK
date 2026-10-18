@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_code_label">Código de verificação</string>
+    <plurals name="kinetica_ui_code_progress">
+        <item quantity="one">%2$d de %1$d dígito inserido</item>
+        <item quantity="many">%2$d de %1$d dígitos inseridos</item>
+        <item quantity="other">%2$d de %1$d dígitos inseridos</item>
+    </plurals>
+    <string name="kinetica_ui_code_error">Código incorreto</string>
+    <string name="kinetica_ui_tag_remove">Remover %s</string>
+    <string name="kinetica_ui_tag_armed">%s selecionada. Pressione Excluir de novo para remover</string>
+    <string name="kinetica_ui_tag_suggestions">Sugestões</string>
+    <string name="kinetica_ui_color_picker">Seletor de cores</string>
+    <string name="kinetica_ui_color_opacity">Opacidade</string>
+    <string name="kinetica_ui_color_hex">Código de cor hexadecimal</string>
+    <string name="kinetica_ui_color_hue_next">Próximo matiz</string>
+    <string name="kinetica_ui_color_hue_previous">Matiz anterior</string>
+    <string name="kinetica_ui_color_lighter">Mais claro</string>
+    <string name="kinetica_ui_color_darker">Mais escuro</string>
+    <string name="kinetica_ui_color_more_vivid">Mais vivo</string>
+    <string name="kinetica_ui_color_more_muted">Mais suave</string>
+    <string name="kinetica_ui_color_state">%1$s, %2$s</string>
+    <string name="kinetica_ui_color_light">%s claro</string>
+    <string name="kinetica_ui_color_dark">%s escuro</string>
+    <string name="kinetica_ui_color_red">vermelho</string>
+    <string name="kinetica_ui_color_orange">laranja</string>
+    <string name="kinetica_ui_color_yellow">amarelo</string>
+    <string name="kinetica_ui_color_green">verde</string>
+    <string name="kinetica_ui_color_teal">verde-azulado</string>
+    <string name="kinetica_ui_color_blue">azul</string>
+    <string name="kinetica_ui_color_purple">roxo</string>
+    <string name="kinetica_ui_color_pink">rosa</string>
+    <string name="kinetica_ui_color_white">branco</string>
+    <string name="kinetica_ui_color_gray">cinza</string>
+    <string name="kinetica_ui_color_black">preto</string>
+    <string name="kinetica_ui_signature">Área de assinatura</string>
+    <string name="kinetica_ui_signature_hint">Assine aqui</string>
+    <string name="kinetica_ui_signature_empty">Vazio</string>
+    <string name="kinetica_ui_signature_signed">Assinado</string>
+    <string name="kinetica_ui_signature_undo">Desfazer</string>
+    <string name="kinetica_ui_signature_clear">Limpar</string>
+    <string name="kinetica_ui_password_show">Mostrar senha</string>
+    <string name="kinetica_ui_password_hide">Ocultar senha</string>
+    <string name="kinetica_ui_password_strength">Força da senha</string>
+    <string name="kinetica_ui_password_weak">Fraca</string>
+    <string name="kinetica_ui_password_medium">Média</string>
+    <string name="kinetica_ui_password_strong">Forte</string>
+    <string name="kinetica_ui_password_rule_length">Pelo menos 8 caracteres</string>
+    <string name="kinetica_ui_password_rule_upper">Letra maiúscula</string>
+    <string name="kinetica_ui_password_rule_number">Número</string>
+    <string name="kinetica_ui_password_rule_symbol">Símbolo</string>
+    <string name="kinetica_ui_password_rule_met">Atendido</string>
+    <string name="kinetica_ui_password_rule_unmet">Não atendido</string>
+</resources>

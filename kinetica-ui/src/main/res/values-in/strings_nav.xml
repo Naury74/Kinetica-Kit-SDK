@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">Luaskan</string>
+    <string name="kinetica_ui_sheet_collapse">Ciutkan</string>
+    <string name="kinetica_ui_sheet_expanded">Diluaskan</string>
+    <string name="kinetica_ui_sheet_partial">Diluaskan sebagian</string>
+    <string name="kinetica_ui_sheet_collapsed">Diciutkan</string>
+    <string name="kinetica_ui_tooltip_show">Tampilkan tips</string>
+    <string name="kinetica_ui_coach_next">Berikutnya</string>
+    <string name="kinetica_ui_coach_done">Selesai</string>
+    <string name="kinetica_ui_coach_skip">Lewati</string>
+    <string name="kinetica_ui_coach_step">Langkah %1$d dari %2$d</string>
+    <string name="kinetica_ui_drawer_title">Menu</string>
+    <string name="kinetica_ui_drawer_close">Tutup menu</string>
+</resources>

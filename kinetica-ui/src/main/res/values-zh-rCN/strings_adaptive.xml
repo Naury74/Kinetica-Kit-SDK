@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">标签栏已收起</string>
+    <string name="kinetica_ui_tabbar_expand">显示所有标签</string>
+    <string name="kinetica_ui_tabbar_go_to">转到%1$s</string>
+</resources>

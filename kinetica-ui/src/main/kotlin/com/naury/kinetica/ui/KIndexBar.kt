@@ -29,7 +29,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -113,7 +112,7 @@ public fun KIndexBar(
 ) {
     require(labels.isNotEmpty()) { "labels가 비어 있으면 안 됩니다." }
     val touch = remember { IndexTouch() }
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latest = rememberUpdatedState(onSelect)
     val accent = KineticaTheme.colors.accent
     val ink = surface.contentColor
@@ -157,7 +156,9 @@ public fun KIndexBar(
                     .padding(vertical = BAR_PADDING),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                slots.forEach { slot -> IndexCell(slot?.let { labels[it] }, slot != null && slot == selected, cell, accent, ink) }
+                slots.forEach { slot ->
+                    IndexCell(slot?.let { labels[it] }, slot != null && slot == selected, cell, accent, surface.muted(DOT_ALPHA))
+                }
             }
             touch.active?.let { IndexBubble(labels[it], touch, surface, accent) }
         }
@@ -207,7 +208,7 @@ internal fun indexSlots(count: Int, fit: Int): List<Int?> {
 }
 
 @Composable
-private fun IndexCell(label: String?, selected: Boolean, cell: Dp, accent: Color, ink: Color) {
+private fun IndexCell(label: String?, selected: Boolean, cell: Dp, accent: Color, dot: Color) {
     Box(
         Modifier
             .size(BAR_WIDTH, cell)
@@ -215,7 +216,7 @@ private fun IndexCell(label: String?, selected: Boolean, cell: Dp, accent: Color
         contentAlignment = Alignment.Center,
     ) {
         if (label == null) {
-            Box(Modifier.size(DOT).background(ink.copy(alpha = DOT_ALPHA), CircleShape))
+            Box(Modifier.size(DOT).background(dot, CircleShape))
         } else {
             ThemedText(
                 label,

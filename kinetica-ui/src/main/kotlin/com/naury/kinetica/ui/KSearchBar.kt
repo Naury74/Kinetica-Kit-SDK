@@ -138,13 +138,13 @@ private fun SearchDecoration(
         Modifier.heightIn(min = SEARCH_HEIGHT).padding(start = SEARCH_PADDING, end = CLEAR_PADDING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Magnifier(surface.contentColor.copy(alpha = HINT_ALPHA), Modifier.size(ICON_SIZE))
+        Magnifier(surface.muted(HINT_ALPHA), Modifier.size(ICON_SIZE))
         Spacer(Modifier.width(ICON_GAP))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             FieldNameText(
                 placeholder,
                 query.isEmpty(),
-                TextStyle(color = surface.contentColor.copy(alpha = HINT_ALPHA), fontSize = SEARCH_FONT_SIZE),
+                TextStyle(color = surface.muted(HINT_ALPHA), fontSize = SEARCH_FONT_SIZE),
             )
             field()
         }

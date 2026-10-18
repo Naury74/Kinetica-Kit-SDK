@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">Quay lại</string>
+    <string name="kinetica_ui_page_state">Trang %1$d/%2$d</string>
+    <string name="kinetica_ui_swipe_left">Vuốt sang trái</string>
+    <string name="kinetica_ui_swipe_right">Vuốt sang phải</string>
+    <string name="kinetica_ui_swipe_up">Vuốt lên</string>
+    <string name="kinetica_ui_swipe_undo">Hoàn tác lần vuốt trước</string>
+    <string name="kinetica_ui_speed_dial">Thao tác nhanh</string>
+    <string name="kinetica_ui_speed_dial_expanded">Đã mở rộng</string>
+    <string name="kinetica_ui_speed_dial_collapsed">Đã thu gọn</string>
+</resources>

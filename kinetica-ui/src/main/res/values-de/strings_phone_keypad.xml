@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_keypad_star">Stern</string>
+    <string name="kinetica_ui_keypad_pound">Raute</string>
+    <string name="kinetica_ui_keypad_plus">Plus eingeben</string>
+</resources>

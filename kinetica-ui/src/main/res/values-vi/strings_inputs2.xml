@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_code_label">Mã xác minh</string>
+    <plurals name="kinetica_ui_code_progress">
+        <item quantity="other">Đã nhập %2$d/%1$d chữ số</item>
+    </plurals>
+    <string name="kinetica_ui_code_error">Mã không đúng</string>
+    <string name="kinetica_ui_tag_remove">Xóa %s</string>
+    <string name="kinetica_ui_tag_armed">Đã chọn %s. Nhấn xóa lần nữa để xóa thẻ</string>
+    <string name="kinetica_ui_tag_suggestions">Gợi ý</string>
+    <string name="kinetica_ui_color_picker">Bộ chọn màu</string>
+    <string name="kinetica_ui_color_opacity">Độ mờ đục</string>
+    <string name="kinetica_ui_color_hex">Mã màu hex</string>
+    <string name="kinetica_ui_color_hue_next">Sắc độ tiếp theo</string>
+    <string name="kinetica_ui_color_hue_previous">Sắc độ trước</string>
+    <string name="kinetica_ui_color_lighter">Sáng hơn</string>
+    <string name="kinetica_ui_color_darker">Tối hơn</string>
+    <string name="kinetica_ui_color_more_vivid">Rực rỡ hơn</string>
+    <string name="kinetica_ui_color_more_muted">Dịu hơn</string>
+    <string name="kinetica_ui_color_state">%1$s, %2$s</string>
+    <string name="kinetica_ui_color_light">%s nhạt</string>
+    <string name="kinetica_ui_color_dark">%s đậm</string>
+    <string name="kinetica_ui_color_red">đỏ</string>
+    <string name="kinetica_ui_color_orange">cam</string>
+    <string name="kinetica_ui_color_yellow">vàng</string>
+    <string name="kinetica_ui_color_green">xanh lá</string>
+    <string name="kinetica_ui_color_teal">xanh mòng két</string>
+    <string name="kinetica_ui_color_blue">xanh dương</string>
+    <string name="kinetica_ui_color_purple">tím</string>
+    <string name="kinetica_ui_color_pink">hồng</string>
+    <string name="kinetica_ui_color_white">trắng</string>
+    <string name="kinetica_ui_color_gray">xám</string>
+    <string name="kinetica_ui_color_black">đen</string>
+    <string name="kinetica_ui_signature">Khung chữ ký</string>
+    <string name="kinetica_ui_signature_hint">Ký tại đây</string>
+    <string name="kinetica_ui_signature_empty">Trống</string>
+    <string name="kinetica_ui_signature_signed">Đã ký</string>
+    <string name="kinetica_ui_signature_undo">Hoàn tác</string>
+    <string name="kinetica_ui_signature_clear">Xóa</string>
+    <string name="kinetica_ui_password_show">Hiện mật khẩu</string>
+    <string name="kinetica_ui_password_hide">Ẩn mật khẩu</string>
+    <string name="kinetica_ui_password_strength">Độ mạnh mật khẩu</string>
+    <string name="kinetica_ui_password_weak">Yếu</string>
+    <string name="kinetica_ui_password_medium">Trung bình</string>
+    <string name="kinetica_ui_password_strong">Mạnh</string>
+    <string name="kinetica_ui_password_rule_length">Ít nhất 8 ký tự</string>
+    <string name="kinetica_ui_password_rule_upper">Chữ hoa</string>
+    <string name="kinetica_ui_password_rule_number">Chữ số</string>
+    <string name="kinetica_ui_password_rule_symbol">Ký hiệu</string>
+    <string name="kinetica_ui_password_rule_met">Đã đáp ứng</string>
+    <string name="kinetica_ui_password_rule_unmet">Chưa đáp ứng</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_keypad_star">Asterisco</string>
+    <string name="kinetica_ui_keypad_pound">Cerquilha</string>
+    <string name="kinetica_ui_keypad_plus">Inserir mais</string>
+</resources>

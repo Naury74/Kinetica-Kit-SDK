@@ -214,7 +214,7 @@ public fun KTimeRangeDialog(
                     stringResource(R.string.kinetica_ui_range_next_day),
                     Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
                     style = TextStyle(
-                        color = surface.contentColor.copy(alpha = NOTE_ALPHA),
+                        color = surface.muted(NOTE_ALPHA),
                         fontSize = 13.sp,
                         textAlign = TextAlign.Center,
                     ),

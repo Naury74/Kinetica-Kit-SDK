@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">Tableiste minimiert</string>
+    <string name="kinetica_ui_tabbar_expand">Alle Tabs anzeigen</string>
+    <string name="kinetica_ui_tabbar_go_to">Zu %1$s wechseln</string>
+</resources>

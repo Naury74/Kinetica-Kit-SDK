@@ -153,7 +153,7 @@ internal fun DropZoneBody(
         val weight = KineticaTheme.design.label(FontWeight.SemiBold)
         ThemedText(title, style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = weight, textAlign = TextAlign.Center))
         subtitle?.let {
-            ThemedText(it, style = TextStyle(color = ink.copy(alpha = SUBTITLE_ALPHA), fontSize = 13.sp, textAlign = TextAlign.Center))
+            ThemedText(it, style = TextStyle(color = surface.muted(SUBTITLE_ALPHA), fontSize = 13.sp, textAlign = TextAlign.Center))
         }
     }
 }

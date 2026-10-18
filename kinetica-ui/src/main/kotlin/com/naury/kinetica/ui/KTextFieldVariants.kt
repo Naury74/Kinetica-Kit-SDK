@@ -281,7 +281,7 @@ private fun VariantDecoration(
         ) {
             config.slots.leading?.let {
                 Row(Modifier.onSizeChanged { geometry.leading = it.width.toFloat() }, verticalAlignment = Alignment.CenterVertically) {
-                    CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor.copy(alpha = VARIANT_ICON_ALPHA)) {
+                    CompositionLocalProvider(LocalKineticaContentColor provides surface.muted(VARIANT_ICON_ALPHA)) {
                         it()
                     }
                     Spacer(Modifier.width(LEADING_GAP))
@@ -331,7 +331,7 @@ private fun VariantPlaceholder(text: String, surface: SurfaceStyle, motion: Fiel
         text,
         Modifier.fillMaxWidth().graphicsLayer { alpha = if (inline) 1f else motion.levels.focus.value },
         style = TextStyle(
-            color = surface.contentColor.copy(alpha = VARIANT_PLACEHOLDER_ALPHA),
+            color = surface.muted(VARIANT_PLACEHOLDER_ALPHA),
             fontSize = VARIANT_FONT,
             textAlign = if (inline) TextAlign.End else TextAlign.Unspecified,
         ),
@@ -386,7 +386,7 @@ private fun BoxScope.FloatingVariantLabel(
             },
         style = TextStyle(fontSize = VARIANT_FONT),
         color = {
-            val idle = surface.contentColor.copy(alpha = FIELD_HINT_ALPHA)
+            val idle = surface.muted(FIELD_HINT_ALPHA)
             val focus = motion.levels.focus.value * motion.float.value
             lerp(lerp(idle, motion.accent, focus), motion.errorColor, motion.levels.error.value)
         },
@@ -449,7 +449,7 @@ internal fun FieldSupportRow(error: String?, helper: String?, surface: SurfaceSt
                 ThemedText(
                     text,
                     style = TextStyle(
-                        color = if (error != null) colors.destructive else surface.contentColor.copy(alpha = SUPPORT_ALPHA),
+                        color = if (error != null) colors.destructive else surface.muted(SUPPORT_ALPHA),
                         fontSize = SUPPORT_FONT,
                     ),
                 )
@@ -461,7 +461,7 @@ internal fun FieldSupportRow(error: String?, helper: String?, surface: SurfaceSt
                 "$count/$max",
                 Modifier.padding(start = AFFIX_GAP).semantics { contentDescription = label },
                 style = TextStyle(
-                    color = if (count > max) colors.destructive else surface.contentColor.copy(alpha = SUPPORT_ALPHA),
+                    color = if (count > max) colors.destructive else surface.muted(SUPPORT_ALPHA),
                     fontSize = SUPPORT_FONT,
                 ),
             )

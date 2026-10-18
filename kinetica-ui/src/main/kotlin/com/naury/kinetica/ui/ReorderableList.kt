@@ -39,7 +39,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -227,7 +226,7 @@ public fun rememberReorderableListState(lazyListState: LazyListState, onMove: (f
  */
 @Composable
 public fun Modifier.reorderable(state: ReorderableListState, key: Any, shape: Shape = RoundedCornerShape(16.dp)): Modifier {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val upLabel = stringResource(R.string.kinetica_ui_move_up)
     val downLabel = stringResource(R.string.kinetica_ui_move_down)
     DisposableEffect(state, key) {

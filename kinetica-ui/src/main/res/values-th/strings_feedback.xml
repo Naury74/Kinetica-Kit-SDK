@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_feedback_info">ข้อมูล</string>
+    <string name="kinetica_ui_feedback_success">สำเร็จ</string>
+    <string name="kinetica_ui_feedback_warning">คำเตือน</string>
+    <string name="kinetica_ui_feedback_error">ข้อผิดพลาด</string>
+    <string name="kinetica_ui_feedback_expand">แสดงการแจ้งเตือนทั้งหมด</string>
+    <string name="kinetica_ui_feedback_collapse">ซ้อนการแจ้งเตือน</string>
+    <string name="kinetica_ui_feedback_loading_text">กำลังโหลด…</string>
+    <string name="kinetica_ui_feedback_step">ขั้นตอนที่ %1$d จาก %2$d</string>
+</resources>

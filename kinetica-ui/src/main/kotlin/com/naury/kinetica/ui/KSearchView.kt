@@ -131,11 +131,11 @@ public fun KSearchView(
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Glyph(KGlyphs.Search, ink.copy(alpha = FIELD_HINT_ALPHA), size = 20.dp)
+        Glyph(KGlyphs.Search, surface.muted(FIELD_HINT_ALPHA), size = 20.dp)
         Spacer(Modifier.width(10.dp))
         ThemedText(
             query.ifEmpty { placeholder },
-            style = TextStyle(color = if (query.isEmpty()) ink.copy(alpha = FIELD_HINT_ALPHA) else ink, fontSize = 17.sp),
+            style = TextStyle(color = if (query.isEmpty()) surface.muted(FIELD_HINT_ALPHA) else ink, fontSize = 17.sp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -309,7 +309,7 @@ private fun SearchTopRow(frame: SearchFrame, field: SearchField) {
                     }),
                     decorationBox = { inner ->
                         Box(contentAlignment = Alignment.CenterStart) {
-                            val hint = TextStyle(color = surface.contentColor.copy(alpha = FIELD_HINT_ALPHA), fontSize = 18.sp)
+                            val hint = TextStyle(color = surface.muted(FIELD_HINT_ALPHA), fontSize = 18.sp)
                             FieldNameText(frame.placeholder, field.query.isEmpty(), hint)
                             inner()
                         }
@@ -335,7 +335,7 @@ private fun SearchSuggestions(field: SearchField, lists: SearchLists, surface: S
             ThemedText(
                 stringResource(R.string.kinetica_ui_search_recent),
                 Modifier.weight(1f).semantics { heading() },
-                style = TextStyle(color = ink.copy(alpha = SECTION_ALPHA), fontSize = 13.sp),
+                style = TextStyle(color = surface.muted(SECTION_ALPHA), fontSize = 13.sp),
             )
             lists.onClearRecent?.let {
                 KButton(
@@ -349,16 +349,16 @@ private fun SearchSuggestions(field: SearchField, lists: SearchLists, surface: S
         }
         lists.recent.forEach { text ->
             val remove = lists.onRemoveRecent
-            SearchRow(text, AnnotatedString(text), KGlyphs.Clock, ink, { pick(text) }) {
+            SearchRow(text, AnnotatedString(text), KGlyphs.Clock, surface, { pick(text) }) {
                 if (remove != null) {
-                    TrailingButton(KGlyphs.Close, stringResource(R.string.kinetica_ui_search_remove_recent, text), ink) { remove(text) }
+                    TrailingButton(KGlyphs.Close, stringResource(R.string.kinetica_ui_search_remove_recent, text), surface) { remove(text) }
                 }
             }
         }
     } else {
         lists.suggestions.forEach { text ->
-            SearchRow(text, emphasize(text, field.query), KGlyphs.Search, ink, { pick(text) }) {
-                TrailingButton(KGlyphs.ArrowInsert, stringResource(R.string.kinetica_ui_search_fill, text), ink) {
+            SearchRow(text, emphasize(text, field.query), KGlyphs.Search, surface, { pick(text) }) {
+                TrailingButton(KGlyphs.ArrowInsert, stringResource(R.string.kinetica_ui_search_fill, text), surface) {
                     field.onQueryChange(text)
                 }
             }
@@ -371,10 +371,11 @@ private fun SearchRow(
     label: String,
     text: AnnotatedString,
     icon: ImageVector,
-    ink: Color,
+    surface: SurfaceStyle,
     onClick: () -> Unit,
     trailing: @Composable () -> Unit,
 ) {
+    val ink = surface.contentColor
     Row(
         Modifier
             .fillMaxWidth()
@@ -384,7 +385,7 @@ private fun SearchRow(
             .padding(start = 14.dp, end = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Glyph(icon, ink.copy(alpha = ICON_ALPHA))
+        Glyph(icon, surface.muted(ICON_ALPHA))
         BasicText(
             text,
             Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 10.dp),
@@ -397,14 +398,14 @@ private fun SearchRow(
 }
 
 @Composable
-private fun TrailingButton(icon: ImageVector, label: String, ink: Color, onClick: () -> Unit) {
+private fun TrailingButton(icon: ImageVector, label: String, surface: SurfaceStyle, onClick: () -> Unit) {
     Box(
         Modifier
             .size(KMetrics.MinTouch)
             .kClickable(CircleShape, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
-    ) { Glyph(icon, ink.copy(alpha = ICON_ALPHA), size = 18.dp) }
+    ) { Glyph(icon, surface.muted(ICON_ALPHA), size = 18.dp) }
 }
 
 private val BAR_HEIGHT = 48.dp

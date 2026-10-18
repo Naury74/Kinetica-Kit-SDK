@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_code_label">รหัสยืนยัน</string>
+    <plurals name="kinetica_ui_code_progress">
+        <item quantity="other">ป้อนแล้ว %2$d จาก %1$d หลัก</item>
+    </plurals>
+    <string name="kinetica_ui_code_error">รหัสไม่ถูกต้อง</string>
+    <string name="kinetica_ui_tag_remove">นำ %s ออก</string>
+    <string name="kinetica_ui_tag_armed">เลือก %s แล้ว กดลบอีกครั้งเพื่อนำออก</string>
+    <string name="kinetica_ui_tag_suggestions">คำแนะนำ</string>
+    <string name="kinetica_ui_color_picker">ตัวเลือกสี</string>
+    <string name="kinetica_ui_color_opacity">ความทึบ</string>
+    <string name="kinetica_ui_color_hex">รหัสสีฐานสิบหก</string>
+    <string name="kinetica_ui_color_hue_next">เฉดสีถัดไป</string>
+    <string name="kinetica_ui_color_hue_previous">เฉดสีก่อนหน้า</string>
+    <string name="kinetica_ui_color_lighter">สว่างขึ้น</string>
+    <string name="kinetica_ui_color_darker">เข้มขึ้น</string>
+    <string name="kinetica_ui_color_more_vivid">สดขึ้น</string>
+    <string name="kinetica_ui_color_more_muted">หม่นลง</string>
+    <string name="kinetica_ui_color_state">%1$s, %2$s</string>
+    <string name="kinetica_ui_color_light">%sอ่อน</string>
+    <string name="kinetica_ui_color_dark">%sเข้ม</string>
+    <string name="kinetica_ui_color_red">สีแดง</string>
+    <string name="kinetica_ui_color_orange">สีส้ม</string>
+    <string name="kinetica_ui_color_yellow">สีเหลือง</string>
+    <string name="kinetica_ui_color_green">สีเขียว</string>
+    <string name="kinetica_ui_color_teal">สีเขียวหัวเป็ด</string>
+    <string name="kinetica_ui_color_blue">สีน้ำเงิน</string>
+    <string name="kinetica_ui_color_purple">สีม่วง</string>
+    <string name="kinetica_ui_color_pink">สีชมพู</string>
+    <string name="kinetica_ui_color_white">สีขาว</string>
+    <string name="kinetica_ui_color_gray">สีเทา</string>
+    <string name="kinetica_ui_color_black">สีดำ</string>
+    <string name="kinetica_ui_signature">ช่องลงชื่อ</string>
+    <string name="kinetica_ui_signature_hint">ลงชื่อที่นี่</string>
+    <string name="kinetica_ui_signature_empty">ว่าง</string>
+    <string name="kinetica_ui_signature_signed">ลงชื่อแล้ว</string>
+    <string name="kinetica_ui_signature_undo">เลิกทำ</string>
+    <string name="kinetica_ui_signature_clear">ล้าง</string>
+    <string name="kinetica_ui_password_show">แสดงรหัสผ่าน</string>
+    <string name="kinetica_ui_password_hide">ซ่อนรหัสผ่าน</string>
+    <string name="kinetica_ui_password_strength">ความรัดกุมของรหัสผ่าน</string>
+    <string name="kinetica_ui_password_weak">อ่อน</string>
+    <string name="kinetica_ui_password_medium">ปานกลาง</string>
+    <string name="kinetica_ui_password_strong">รัดกุม</string>
+    <string name="kinetica_ui_password_rule_length">อย่างน้อย 8 อักขระ</string>
+    <string name="kinetica_ui_password_rule_upper">ตัวพิมพ์ใหญ่</string>
+    <string name="kinetica_ui_password_rule_number">ตัวเลข</string>
+    <string name="kinetica_ui_password_rule_symbol">สัญลักษณ์</string>
+    <string name="kinetica_ui_password_rule_met">ตรงตามเงื่อนไข</string>
+    <string name="kinetica_ui_password_rule_unmet">ไม่ตรงตามเงื่อนไข</string>
+</resources>

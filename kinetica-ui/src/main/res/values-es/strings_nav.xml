@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">Desplegar</string>
+    <string name="kinetica_ui_sheet_collapse">Contraer</string>
+    <string name="kinetica_ui_sheet_expanded">Desplegado</string>
+    <string name="kinetica_ui_sheet_partial">Parcialmente desplegado</string>
+    <string name="kinetica_ui_sheet_collapsed">Contraído</string>
+    <string name="kinetica_ui_tooltip_show">Mostrar consejo</string>
+    <string name="kinetica_ui_coach_next">Siguiente</string>
+    <string name="kinetica_ui_coach_done">Listo</string>
+    <string name="kinetica_ui_coach_skip">Omitir</string>
+    <string name="kinetica_ui_coach_step">Paso %1$d de %2$d</string>
+    <string name="kinetica_ui_drawer_title">Menú</string>
+    <string name="kinetica_ui_drawer_close">Cerrar menú</string>
+</resources>

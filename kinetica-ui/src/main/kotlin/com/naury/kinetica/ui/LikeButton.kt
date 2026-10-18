@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -73,7 +72,7 @@ public fun LikeButton(
 ) {
     val motion = remember { LikeMotion(liked) }
     LaunchedEffect(motion, liked) { motion.animateTo(liked, this) }
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val content = LocalKineticaContentColor.current
     val label = stringResource(R.string.kinetica_ui_like)
     val state = stringResource(if (liked) R.string.kinetica_ui_liked else R.string.kinetica_ui_not_liked)

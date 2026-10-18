@@ -79,7 +79,7 @@ public fun KProgressBar(
     val still = reducedMotion()
     val flow = loopingFraction(progress == null && !still, FLOW_PERIOD_MS)
     val phase = loopingFraction(progress != null && wave && !still, WAVE_PERIOD_MS)
-    val track = surface.contentColor.copy(alpha = TRACK_ALPHA)
+    val track = surface.raisedFill(TRACK_ALPHA)
     Box(
         modifier
             .fillMaxWidth()
@@ -134,7 +134,7 @@ public fun KProgressRing(
     val still = reducedMotion()
     val spin = loopingFraction(progress == null && !still, SPIN_PERIOD_MS)
     val phase = loopingFraction(progress != null && wave && !still, WAVE_PERIOD_MS)
-    val track = surface.contentColor.copy(alpha = TRACK_ALPHA)
+    val track = surface.raisedFill(TRACK_ALPHA)
     Box(
         modifier
             .defaultMinSize(RING_SIZE, RING_SIZE)

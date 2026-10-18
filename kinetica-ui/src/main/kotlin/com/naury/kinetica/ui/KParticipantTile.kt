@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -258,7 +257,7 @@ private fun TileOverlay(spec: TileSpec, actions: TileActions, look: TileLook, pr
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Modifier.tileTouch(actions: TileActions, shape: Shape, interaction: MutableInteractionSource): Modifier {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val tap = actions.onClick ?: actions.onTogglePin ?: return this
     val longPress = actions.onTogglePin?.takeIf { actions.onClick != null }?.let { pin ->
         {

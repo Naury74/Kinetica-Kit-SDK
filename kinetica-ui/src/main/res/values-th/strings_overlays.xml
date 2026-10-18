@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_menu_back">กลับ</string>
+    <string name="kinetica_ui_menu_submenu">เมนูย่อย</string>
+    <string name="kinetica_ui_select_open">แสดงตัวเลือก</string>
+    <string name="kinetica_ui_select_none">ไม่ได้เลือก</string>
+    <string name="kinetica_ui_suggestions">คำแนะนำ %1$d รายการ</string>
+    <string name="kinetica_ui_action_cancel">ยกเลิก</string>
+    <string name="kinetica_ui_search_recent">การค้นหาล่าสุด</string>
+    <string name="kinetica_ui_search_clear_recent">ล้างทั้งหมด</string>
+    <string name="kinetica_ui_search_remove_recent">นำ %1$s ออก</string>
+    <string name="kinetica_ui_search_fill">กรอก %1$s</string>
+    <string name="kinetica_ui_search_close">ปิดการค้นหา</string>
+    <string name="kinetica_ui_toolbar_more">เพิ่มเติม</string>
+</resources>

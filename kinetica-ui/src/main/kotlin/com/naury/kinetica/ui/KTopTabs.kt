@@ -196,7 +196,7 @@ private class IndicatorLook(
 @Composable
 private fun RowScope.TopTab(tab: KTab, look: TopTabLook, activeness: () -> Float, modifier: Modifier, onClick: () -> Unit) {
     val surface = look.surface
-    val idle = surface.contentColor.copy(alpha = IDLE_ALPHA)
+    val idle = surface.muted(IDLE_ALPHA)
     Row(
         modifier
             .then(if (look.scrollable) Modifier.widthIn(min = SCROLL_MIN_WIDTH) else Modifier.weight(1f))
@@ -279,7 +279,7 @@ private fun DrawScope.drawTabIndicator(bounds: TabBounds, position: Float, look:
             bounds,
             position,
             look.shapes.pill,
-            look.surface.contentColor.copy(alpha = INDICATOR_ALPHA),
+            look.surface.raisedFill(INDICATOR_ALPHA),
         )
 
         KTabIndicator.Filled -> drawLiquidIndicator(bounds, position, look.shapes.pill, look.accent)
@@ -296,8 +296,7 @@ private fun DrawScope.drawTabIndicator(bounds: TabBounds, position: Float, look:
         }
 
         KTabIndicator.Segmented -> {
-            val ink = look.surface.contentColor
-            drawShape(look.shapes.track, ink.copy(alpha = TRACK_ALPHA), Offset.Zero, size)
+            drawShape(look.shapes.track, look.surface.raisedFill(TRACK_ALPHA), Offset.Zero, size)
             liquidSpan(bounds, position)?.let { (left, right) ->
                 val inset = INDICATOR_INSET.toPx() + 1.dp.toPx()
                 val height = size.height - inset * 2

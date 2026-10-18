@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_feedback_info">Info</string>
+    <string name="kinetica_ui_feedback_success">Berhasil</string>
+    <string name="kinetica_ui_feedback_warning">Peringatan</string>
+    <string name="kinetica_ui_feedback_error">Error</string>
+    <string name="kinetica_ui_feedback_expand">Tampilkan semua notifikasi</string>
+    <string name="kinetica_ui_feedback_collapse">Tumpuk notifikasi</string>
+    <string name="kinetica_ui_feedback_loading_text">Memuat…</string>
+    <string name="kinetica_ui_feedback_step">Langkah %1$d dari %2$d</string>
+</resources>

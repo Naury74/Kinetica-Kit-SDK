@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -224,7 +223,7 @@ public fun KBlobButton(
     contentColor: Color = KineticaTheme.colors.onAccent,
 ) {
     val interaction = remember { MutableInteractionSource() }
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     Box(
         modifier
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }

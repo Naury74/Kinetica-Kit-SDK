@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_viewer">โปรแกรมดูรูปภาพ</string>
+    <string name="kinetica_ui_viewer_photo">รูปภาพที่ %1$d จาก %2$d</string>
+    <string name="kinetica_ui_viewer_zoomed">%1$s, ซูม %2$d%%</string>
+    <string name="kinetica_ui_viewer_zoom_in">ซูมเข้า</string>
+    <string name="kinetica_ui_viewer_zoom_out">ซูมออก</string>
+    <string name="kinetica_ui_viewer_next">รูปภาพถัดไป</string>
+    <string name="kinetica_ui_viewer_previous">รูปภาพก่อนหน้า</string>
+    <string name="kinetica_ui_compare">การเปรียบเทียบก่อนและหลัง</string>
+    <string name="kinetica_ui_compare_before">ก่อน</string>
+    <string name="kinetica_ui_compare_after">หลัง</string>
+    <string name="kinetica_ui_compare_state">ก่อน %1$d%%, หลัง %2$d%%</string>
+    <string name="kinetica_ui_result_success">เสร็จสิ้น</string>
+    <string name="kinetica_ui_result_failure">ล้มเหลว</string>
+    <string name="kinetica_ui_result_warning">คำเตือน</string>
+    <string name="kinetica_ui_result_ok">ตกลง</string>
+    <string name="kinetica_ui_onboarding_next">ถัดไป</string>
+    <string name="kinetica_ui_onboarding_start">เริ่มต้นใช้งาน</string>
+    <string name="kinetica_ui_onboarding_skip">ข้าม</string>
+</resources>

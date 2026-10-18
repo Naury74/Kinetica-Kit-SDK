@@ -366,7 +366,7 @@ private fun RowScope.ToastBody(entry: ToastEntry, state: KToasterState, look: St
                 style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, lineHeight = 19.sp),
             )
             entry.description?.let {
-                ThemedText(it, style = TextStyle(color = ink.copy(alpha = DESCRIPTION_ALPHA), fontSize = 13.sp, lineHeight = 18.sp))
+                ThemedText(it, style = TextStyle(color = look.surface.muted(DESCRIPTION_ALPHA), fontSize = 13.sp, lineHeight = 18.sp))
             }
         }
     }
@@ -377,7 +377,7 @@ private fun RowScope.ToastBody(entry: ToastEntry, state: KToasterState, look: St
             Modifier
                 .padding(start = 10.dp)
                 .graphicsLayer { alpha = contentAlpha() }
-                .background(ink.copy(alpha = ACTION_BACK_ALPHA), actionShape)
+                .background(look.surface.raisedFill(ACTION_BACK_ALPHA), actionShape)
                 .clickable(null, KIndication(actionShape), role = Role.Button) {
                     action.onClick()
                     state.dismiss(entry.id)

@@ -136,13 +136,13 @@ public fun KAttachmentChip(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AttachmentThumb(thumbnail, colors.accent)
-        AttachmentTexts(name, line, status == KAttachmentStatus.Failed, ink, Modifier.weight(1f))
-        AttachmentAction(status, progress, level, onRemove, onRetry, ink)
+        AttachmentTexts(name, line, status == KAttachmentStatus.Failed, ink, surface.muted(DETAIL_ALPHA), Modifier.weight(1f))
+        AttachmentAction(status, progress, level, onRemove, onRetry, surface.muted(ACTION_ALPHA), surface.raisedFill(TRACK_ALPHA))
     }
 }
 
 @Composable
-private fun AttachmentTexts(name: String, line: String, failed: Boolean, ink: Color, modifier: Modifier) {
+private fun AttachmentTexts(name: String, line: String, failed: Boolean, ink: Color, detail: Color, modifier: Modifier) {
     Column(modifier) {
         ThemedText(
             name,
@@ -152,7 +152,7 @@ private fun AttachmentTexts(name: String, line: String, failed: Boolean, ink: Co
         )
         ThemedText(
             line,
-            style = TextStyle(color = if (failed) KineticaTheme.colors.destructive else ink.copy(alpha = DETAIL_ALPHA), fontSize = 12.sp),
+            style = TextStyle(color = if (failed) KineticaTheme.colors.destructive else detail, fontSize = 12.sp),
             maxLines = 2,
         )
     }
@@ -205,7 +205,8 @@ private fun AttachmentAction(
     level: State<Float>,
     onRemove: (() -> Unit)?,
     onRetry: (() -> Unit)?,
-    ink: Color,
+    iconInk: Color,
+    track: Color,
 ) {
     val retry = status == KAttachmentStatus.Failed && onRetry != null
     val action = if (retry) onRetry else onRemove
@@ -229,7 +230,7 @@ private fun AttachmentAction(
                 val stroke = RING_STROKE.toPx()
                 val inset = stroke / 2
                 val arc = Size(size.width - stroke, size.height - stroke)
-                drawCircle(ink.copy(alpha = TRACK_ALPHA), size.minDimension / 2 - inset, style = Stroke(stroke))
+                drawCircle(track, size.minDimension / 2 - inset, style = Stroke(stroke))
                 rotate(if (spinning) clock.seconds * SPIN else 0f) {
                     val sweep = if (spinning) SPIN_SWEEP else FULL_TURN * level.value
                     drawArc(accent, -QUARTER_TURN, sweep, false, Offset(inset, inset), arc, style = Stroke(stroke, cap = StrokeCap.Round))
@@ -241,7 +242,7 @@ private fun AttachmentAction(
         contentAlignment = Alignment.Center,
     ) {
         val icon: ImageVector = if (retry) SocialGlyphs.Retry else KGlyphs.Close
-        Image(rememberVectorPainter(icon), null, Modifier.size(SMALL_ICON), colorFilter = ColorFilter.tint(ink.copy(alpha = ACTION_ALPHA)))
+        Image(rememberVectorPainter(icon), null, Modifier.size(SMALL_ICON), colorFilter = ColorFilter.tint(iconInk))
     }
 }
 

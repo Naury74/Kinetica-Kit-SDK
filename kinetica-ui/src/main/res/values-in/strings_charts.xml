@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="kinetica_ui_chart_line">
+        <item quantity="other">Diagram garis, %1$d titik</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_bar">
+        <item quantity="other">Diagram batang, %1$d batang</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_donut">
+        <item quantity="other">Diagram donat, %1$d bagian, total %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_chart_stats">terendah %1$s, tertinggi %2$s, terakhir %3$s</string>
+    <string name="kinetica_ui_chart_range">terendah %1$s, tertinggi %2$s</string>
+    <string name="kinetica_ui_chart_entry">%1$s: %2$s</string>
+    <string name="kinetica_ui_chart_point">Titik %1$d</string>
+    <string name="kinetica_ui_chart_slice">%1$s: %2$s, %3$d%%</string>
+    <string name="kinetica_ui_chart_total">Total</string>
+    <string name="kinetica_ui_chart_trend">Tren dari %1$s ke %2$s, terendah %3$s, tertinggi %4$s</string>
+    <string name="kinetica_ui_chart_rings">Cincin aktivitas</string>
+    <string name="kinetica_ui_chart_ring">%1$s %2$d%%</string>
+    <string name="kinetica_ui_chart_ring_unnamed">Cincin %1$d</string>
+</resources>

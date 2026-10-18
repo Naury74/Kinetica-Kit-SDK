@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -66,7 +65,7 @@ public fun KSplitButton(
 ) {
     val colors = tone.colors(surface)
     val ink = buttonInk(variant, tone, colors, surface)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val open by animateFloatAsState(
         if (menuExpanded) 1f else 0f,
         spring(dampingRatio = OPEN_DAMPING, stiffness = OPEN_STIFFNESS),

@@ -129,7 +129,7 @@ public fun KCallStatusView(
                         maxLines = 2,
                     )
                 }
-                StatusMessage(message ?: status.defaultMessage(), ink)
+                StatusMessage(message ?: status.defaultMessage(), surface.muted(MESSAGE_ALPHA))
                 detail?.let { CallCaption(it, Modifier.padding(top = 4.dp), alpha = DETAIL_ALPHA) }
                 summary?.let {
                     Spacer(Modifier.height(SECTION))
@@ -151,14 +151,14 @@ public fun KCallStatusView(
 }
 
 @Composable
-private fun StatusMessage(text: String, ink: Color) {
+private fun StatusMessage(text: String, color: Color) {
     AnimatedContent(
         text,
         transitionSpec = { fadeIn(tween(FADE_IN_MS)) togetherWith fadeOut(tween(FADE_OUT_MS)) },
         label = "call-status",
         modifier = Modifier.padding(top = 6.dp).semantics { liveRegion = LiveRegionMode.Polite },
     ) { shown ->
-        ThemedText(shown, style = TextStyle(color = ink.copy(alpha = MESSAGE_ALPHA), fontSize = MESSAGE, textAlign = TextAlign.Center))
+        ThemedText(shown, style = TextStyle(color = color, fontSize = MESSAGE, textAlign = TextAlign.Center))
     }
 }
 

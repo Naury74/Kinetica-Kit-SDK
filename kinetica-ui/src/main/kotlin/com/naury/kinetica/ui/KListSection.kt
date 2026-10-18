@@ -166,7 +166,7 @@ internal fun ListSectionHeader(text: String, grouped: Boolean, surface: SurfaceS
             .padding(start = SECTION_TEXT_INSET, end = SECTION_TEXT_INSET, bottom = HEADER_BOTTOM, top = if (grouped) 0.dp else HEADER_TOP)
             .semantics { heading() },
         style = TextStyle(
-            color = surface.contentColor.copy(alpha = HEADER_ALPHA),
+            color = surface.muted(HEADER_ALPHA),
             fontSize = if (grouped) 13.sp else 14.sp,
             fontWeight = if (grouped) FontWeight.Medium else FontWeight.SemiBold,
         ),
@@ -178,7 +178,7 @@ internal fun ListSectionFooter(text: String, surface: SurfaceStyle) {
     ThemedText(
         text,
         Modifier.padding(start = SECTION_TEXT_INSET, end = SECTION_TEXT_INSET, top = FOOTER_TOP),
-        style = TextStyle(color = surface.contentColor.copy(alpha = FOOTER_ALPHA), fontSize = 13.sp, lineHeight = 18.sp),
+        style = TextStyle(color = surface.muted(FOOTER_ALPHA), fontSize = 13.sp, lineHeight = 18.sp),
     )
 }
 

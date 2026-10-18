@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_menu_back">Retour</string>
+    <string name="kinetica_ui_menu_submenu">Sous-menu</string>
+    <string name="kinetica_ui_select_open">Afficher les options</string>
+    <string name="kinetica_ui_select_none">Aucune sélection</string>
+    <string name="kinetica_ui_suggestions">%1$d suggestions</string>
+    <string name="kinetica_ui_action_cancel">Annuler</string>
+    <string name="kinetica_ui_search_recent">Recherches récentes</string>
+    <string name="kinetica_ui_search_clear_recent">Tout effacer</string>
+    <string name="kinetica_ui_search_remove_recent">Supprimer %1$s</string>
+    <string name="kinetica_ui_search_fill">Saisir %1$s</string>
+    <string name="kinetica_ui_search_close">Fermer la recherche</string>
+    <string name="kinetica_ui_toolbar_more">Plus</string>
+</resources>

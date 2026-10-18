@@ -100,7 +100,7 @@ public fun KAvatar(
                 if (avatar.image !=
                     null
                 ) {
-                    surface.contentColor.copy(alpha = PLACEHOLDER)
+                    surface.raisedFill(PLACEHOLDER)
                 } else {
                     avatar.backgroundColor()
                 },

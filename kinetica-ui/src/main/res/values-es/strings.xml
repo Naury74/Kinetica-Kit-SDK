@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_refresh">Actualizar</string>
+    <string name="kinetica_ui_refreshing">Actualizando</string>
+    <string name="kinetica_ui_close">Cerrar</string>
+</resources>

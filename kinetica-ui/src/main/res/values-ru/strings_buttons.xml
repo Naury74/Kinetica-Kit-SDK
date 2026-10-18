@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_done">Готово</string>
+    <string name="kinetica_ui_more_options">Другие параметры</string>
+    <string name="kinetica_ui_status_online">В сети</string>
+    <string name="kinetica_ui_status_busy">Занят</string>
+    <string name="kinetica_ui_status_away">Отошёл</string>
+    <string name="kinetica_ui_status_offline">Не в сети</string>
+    <string name="kinetica_ui_avatar_status">%1$s, %2$s</string>
+    <string name="kinetica_ui_chip_remove">Удалить %s</string>
+</resources>

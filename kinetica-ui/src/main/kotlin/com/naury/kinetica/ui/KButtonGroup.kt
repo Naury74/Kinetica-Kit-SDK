@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -115,7 +114,7 @@ public fun KButtonGroup(
 ) {
     val colors = tone.colors(surface)
     val ink = buttonInk(variant, tone, colors, surface)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val motion = rememberGroupMotion(items.size, null)
     val round = buttonRoundFraction(KineticaTheme.design.density.height(size.height))
     GroupLayout(motion, style, size.cellPadding, modifier) {
@@ -168,7 +167,7 @@ public fun KToggleGroup(
     val on = tone.colors(surface)
     val neutral = KTone.Neutral.colors(surface)
     val offInk = buttonInk(variant, KTone.Neutral, neutral, surface)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val motion = rememberGroupMotion(items.size, selected)
     val single = selection == KGroupSelection.Single
     val round = buttonRoundFraction(KineticaTheme.design.density.height(size.height))

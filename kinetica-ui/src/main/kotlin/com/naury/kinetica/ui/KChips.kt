@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -79,7 +78,7 @@ public fun KFilterChip(
     tone: KTone = KTone.Accent,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     FilterChipBody(
         ChipSpec(label, selected, enabled, tone.colors(surface).color, surface, variant),
         modifier,

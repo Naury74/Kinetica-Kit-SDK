@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="kinetica_ui_chart_line">
+        <item quantity="one">Liniendiagramm, %1$d Punkt</item>
+        <item quantity="other">Liniendiagramm, %1$d Punkte</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_bar">
+        <item quantity="one">Balkendiagramm, %1$d Balken</item>
+        <item quantity="other">Balkendiagramm, %1$d Balken</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_donut">
+        <item quantity="one">Ringdiagramm, %1$d Segment, gesamt %2$s</item>
+        <item quantity="other">Ringdiagramm, %1$d Segmente, gesamt %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_chart_stats">Minimum %1$s, Maximum %2$s, zuletzt %3$s</string>
+    <string name="kinetica_ui_chart_range">Minimum %1$s, Maximum %2$s</string>
+    <string name="kinetica_ui_chart_entry">%1$s: %2$s</string>
+    <string name="kinetica_ui_chart_point">Punkt %1$d</string>
+    <string name="kinetica_ui_chart_slice">%1$s: %2$s, %3$d %%</string>
+    <string name="kinetica_ui_chart_total">Gesamt</string>
+    <string name="kinetica_ui_chart_trend">Verlauf von %1$s bis %2$s, Minimum %3$s, Maximum %4$s</string>
+    <string name="kinetica_ui_chart_rings">Aktivitätsringe</string>
+    <string name="kinetica_ui_chart_ring">%1$s %2$d %%</string>
+    <string name="kinetica_ui_chart_ring_unnamed">Ring %1$d</string>
+</resources>

@@ -283,7 +283,7 @@ public fun KSignaturePad(
                 .padding(start = GUIDE_INSET + HINT_INDENT, bottom = HINT_BOTTOM)
                 .graphicsLayer { alpha = hintAlpha }
                 .then(if (empty) Modifier else Modifier.clearAndSetSemantics {}),
-            style = TextStyle(color = surface.contentColor.copy(alpha = HINT_ALPHA), fontSize = HINT_FONT_SIZE),
+            style = TextStyle(color = surface.muted(HINT_ALPHA), fontSize = HINT_FONT_SIZE),
             maxLines = 1,
         )
         Box(Modifier.matchParentSize().signatureInput(state, strokeWidth).inkLayer(state, inkColor, strokeWidth))

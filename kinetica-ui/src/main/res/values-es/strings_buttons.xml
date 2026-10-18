@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_done">Listo</string>
+    <string name="kinetica_ui_more_options">Más opciones</string>
+    <string name="kinetica_ui_status_online">En línea</string>
+    <string name="kinetica_ui_status_busy">Ocupado</string>
+    <string name="kinetica_ui_status_away">Ausente</string>
+    <string name="kinetica_ui_status_offline">Sin conexión</string>
+    <string name="kinetica_ui_avatar_status">%1$s, %2$s</string>
+    <string name="kinetica_ui_chip_remove">Quitar %s</string>
+</resources>

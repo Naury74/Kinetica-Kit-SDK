@@ -2,6 +2,18 @@
 
 장면 문서의 스키마 버전(`schemaVersion`)은 SDK 버전과 따로 올립니다. 지금 스키마 버전은 1입니다.
 
+## 1.0.0-alpha03 (개발 중)
+
+### 새 기능
+
+- `LocalKineticaReducedMotion`과 `isReducedMotion()`: 시스템 '애니메이션 삭제' 대신 호스트가 움직임 줄이기를 정하고, 직접 만든 애니메이션도 키트와 같은 기준을 따릅니다.
+- `LocalKineticaFillContrast`: 채운 버튼, 배지, 선택된 칩이 지킬 글자 명암비를 정합니다. 기본값 4.5에서 브랜드 색을 진하게 고치지 않으려면 3.0이나 1 이하를 줍니다.
+- `SurfaceStyle.Solid`의 `contentMuted`, `raised`: 호스트 팔레트의 보조 글자색과 한 단계 올라온 면의 색을 그대로 씁니다.
+
+### 바뀐 것
+
+- `LocalKineticaHaptics`가 `false`면 이제 버튼, 칩, 스테퍼, 휠 피커, 메뉴, 밀어서 동작 등 이 키트의 모든 컴포넌트가 진동을 내지 않습니다. 전에는 `KHaptics`, 토스트, 당겨서 새로 고침만 따랐습니다.
+
 ## 1.0.0-alpha02
 
 ### 새 기능

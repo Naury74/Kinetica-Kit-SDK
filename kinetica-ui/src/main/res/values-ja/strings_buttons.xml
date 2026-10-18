@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_done">完了</string>
+    <string name="kinetica_ui_more_options">その他のオプション</string>
+    <string name="kinetica_ui_status_online">オンライン</string>
+    <string name="kinetica_ui_status_busy">取り込み中</string>
+    <string name="kinetica_ui_status_away">退席中</string>
+    <string name="kinetica_ui_status_offline">オフライン</string>
+    <string name="kinetica_ui_avatar_status">%1$s、%2$s</string>
+    <string name="kinetica_ui_chip_remove">%sを削除</string>
+</resources>

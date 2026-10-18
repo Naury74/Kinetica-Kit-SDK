@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_menu_back">戻る</string>
+    <string name="kinetica_ui_menu_submenu">サブメニュー</string>
+    <string name="kinetica_ui_select_open">選択肢を表示</string>
+    <string name="kinetica_ui_select_none">未選択</string>
+    <string name="kinetica_ui_suggestions">候補 %1$d件</string>
+    <string name="kinetica_ui_action_cancel">キャンセル</string>
+    <string name="kinetica_ui_search_recent">最近の検索</string>
+    <string name="kinetica_ui_search_clear_recent">すべて消去</string>
+    <string name="kinetica_ui_search_remove_recent">%1$sを削除</string>
+    <string name="kinetica_ui_search_fill">%1$sを入力</string>
+    <string name="kinetica_ui_search_close">検索を閉じる</string>
+    <string name="kinetica_ui_toolbar_more">その他</string>
+</resources>

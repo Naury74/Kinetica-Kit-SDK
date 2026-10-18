@@ -133,6 +133,7 @@ val paper = SurfaceStyle.Solid(
 - `KineticaScaffold`는 단색과 톤 표면일 때 시스템 바 아이콘을 표면 밝기에 맞춘다(`systemBarIcons`). 글래스는 호스트 배경이 비치므로 아이콘을 호스트에 맡긴다.
 - 다이얼로그와 바텀 시트는 `surface.forPopup()`을 쓴다. 글래스는 블러를 더 강하게, 색을 더 진하게 덮고, 단색과 톤은 그림자를 키운다. 어두운 단색은 판을 조금 밝혀 바탕과 구분한다.
 - 다이얼로그나 시트 안에 놓인 표면(입력란, 칩)은 판과 같은 색으로 묻히지 않도록 판 위에 얹힌 옅은 한 겹으로 그린다.
+- `SurfaceStyle.Solid`에 `contentMuted`(부제와 안내 글 같은 보조 글자색)와 `raised`(빈 트랙, 선택된 세그먼트, 작은 버튼 바탕처럼 한 단계 올라온 면의 색)를 주면 컴포넌트가 그 색을 그대로 쓴다. 주지 않으면 `contentColor`를 자리마다 알맞게 옅게 쓴다. 호스트 팔레트를 옮길 때 쓴다.
 
 ### 특정 이미지 위에 글래스 올리기
 
@@ -286,6 +287,7 @@ val design = KineticaDesigns.Cupertino.copy(
 
 `KineticaTheme`과 `KineticaScaffold`는 `LocalIndication`에 `KIndication()`을 넣는다. 그래서 그 안에서 호스트가 쓴 일반 `Modifier.clickable`도 회색 사각 리플 대신 이 표시가 나온다.
 호스트 리플을 그대로 쓰려면 `KineticaTheme(indication = null)`을 넘긴다. 그 안의 `KineticaScaffold`도 테마를 따라 호스트 값을 둔다.
+`KIndication()`은 모양을 모르면 요소의 사각 영역 전체를 칠한다. 모양을 넘기지 않은 `clickable`이나 `selectable`은 둥근 요소라도 사각 오버레이가 보이므로, `kClickable(shape)`처럼 모양을 함께 넘기거나 `indication = null`로 호스트 값을 둔다.
 
 ```kotlin
 val shape = RoundedCornerShape(16.dp)
@@ -1108,6 +1110,26 @@ LazyVerticalGrid(GridCells.Fixed(window.columns(minCellWidth = 320.dp))) { items
   `MaterialTheme`은 늘 `KineticaTheme` 바깥에 두고, 화면 일부만 Material 색을 바꿀 때는 `MaterialTheme` 바로 안에 `KineticaTheme`을 한 번 더 감싼다.
 - Material `Card`에 `Modifier.glass()`를 붙이면 `Card`가 자기 배경색으로 덮어 글래스가 보이지 않는다. `CardDefaults.cardColors(containerColor = Color.Transparent)`를 주거나 `Box`에 붙인다.
 - `KineticaEditor`는 편집기 색을 쓰려고 안에서 `MaterialTheme`을 다시 감싸지만 바깥의 `LocalIndication`을 다시 넣는다. 그래서 `toolbarEnd`나 슬롯에 넣은 호스트 버튼은 편집기 밖과 같은 터치 피드백을 쓴다.
+
+### 다른 SDK 안에서 쓸 때
+
+Kinetica를 안에 넣어 배포하는 SDK는 호스트 앱이 준 설정을 아래 값으로 넘긴다. 모두 `CompositionLocalProvider`로 화면 루트에 넣는다.
+
+| 값 | 뜻 |
+| --- | --- |
+| `LocalKineticaHaptics` | `false`면 이 키트의 모든 컴포넌트와 `KHaptics`가 진동을 내지 않는다. 기본값은 `true` |
+| `LocalKineticaReducedMotion` | `true`나 `false`를 주면 시스템 '애니메이션 삭제' 설정 대신 이 값을 따른다. 기본값 `null`은 시스템 설정. 같은 기준은 `isReducedMotion()`으로 읽어 직접 만든 애니메이션에도 쓴다 |
+| `LocalKineticaFillContrast` | 채운 버튼, 배지, 선택된 칩이 지킬 글자 명암비. 기본값은 4.5이고, 못 미치면 강조색을 진하게 고친다. 브랜드 색을 그대로 써야 하면 3.0(굵은 큰 글자 기준)이나 1 이하(고치지 않음)를 준다 |
+
+```kotlin
+CompositionLocalProvider(
+    LocalKineticaHaptics provides config.enableHaptics,
+    LocalKineticaReducedMotion provides config.reduceMotion,   // 호스트가 정하지 않으면 null
+    LocalKineticaFillContrast provides 3f,
+) {
+    KineticaTheme(surface = hostSurface, colors = hostColors) { Editor() }
+}
+```
 
 ### `KineticaScaffold` 밖에서 부를 때
 

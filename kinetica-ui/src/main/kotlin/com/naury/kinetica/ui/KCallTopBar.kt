@@ -133,12 +133,17 @@ private fun StatusCapsule(info: StatusInfo, surface: SurfaceStyle, now: () -> Lo
     val ink = surface.contentColor
     val shape = roundedShapeFor(CAPSULE_RADIUS) { tabBar }
     Box(Modifier.kSurface(surface, shape).padding(horizontal = CAPSULE_PADDING_H, vertical = CAPSULE_PADDING_V)) {
-        CompositionLocalProvider(LocalKineticaContentColor provides ink) { StatusLines(info, ink, now) }
+        CompositionLocalProvider(LocalKineticaContentColor provides ink) { StatusLines(info, ink, surface.muted(META_ALPHA), now) }
     }
 }
 
 @Composable
-private fun StatusLines(info: StatusInfo, ink: androidx.compose.ui.graphics.Color, now: () -> Long) {
+private fun StatusLines(
+    info: StatusInfo,
+    ink: androidx.compose.ui.graphics.Color,
+    meta: androidx.compose.ui.graphics.Color,
+    now: () -> Long,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         info.title?.let {
             ThemedText(
@@ -154,14 +159,14 @@ private fun StatusLines(info: StatusInfo, ink: androidx.compose.ui.graphics.Colo
             info.startedAt?.let {
                 KCallTimer(it, style = TextStyle(fontSize = META_SIZE, fontWeight = FontWeight.Medium, color = ink), now = now)
             }
-            info.count?.let { PeopleCount(it, ink) }
+            info.count?.let { PeopleCount(it, meta) }
             if (info.recording) RecordingBadge()
             if (info.encrypted) {
                 Image(
                     rememberVectorPainter(KIcons.Lock),
                     stringResource(R.string.kinetica_ui_call_encrypted),
                     Modifier.size(META_ICON),
-                    colorFilter = ColorFilter.tint(ink.copy(alpha = META_ALPHA)),
+                    colorFilter = ColorFilter.tint(meta),
                 )
             }
         }
@@ -169,7 +174,7 @@ private fun StatusLines(info: StatusInfo, ink: androidx.compose.ui.graphics.Colo
 }
 
 @Composable
-private fun PeopleCount(count: Int, ink: androidx.compose.ui.graphics.Color) {
+private fun PeopleCount(count: Int, meta: androidx.compose.ui.graphics.Color) {
     val label = pluralStringResource(R.plurals.kinetica_ui_call_people, count, count)
     Row(
         Modifier.clearAndSetSemantics { contentDescription = label },
@@ -180,9 +185,9 @@ private fun PeopleCount(count: Int, ink: androidx.compose.ui.graphics.Color) {
             rememberVectorPainter(KIcons.Person),
             null,
             Modifier.size(META_ICON),
-            colorFilter = ColorFilter.tint(ink.copy(alpha = META_ALPHA)),
+            colorFilter = ColorFilter.tint(meta),
         )
-        RollingText("$count", style = themed(TextStyle(color = ink.copy(alpha = META_ALPHA), fontSize = META_SIZE)))
+        RollingText("$count", style = themed(TextStyle(color = meta, fontSize = META_SIZE)))
     }
 }
 

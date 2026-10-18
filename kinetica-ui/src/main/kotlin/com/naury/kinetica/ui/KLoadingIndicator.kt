@@ -125,7 +125,7 @@ public fun KLoadingIndicator(
 private fun StillLoading(text: String, color: Color, size: Dp, surface: SurfaceStyle, modifier: Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(KMetrics.IconTextGap), verticalAlignment = Alignment.CenterVertically) {
         BusyGlyph(size.coerceIn(MIN_SIZE, STILL_ICON_MAX), color, spinning = false)
-        val style = TextStyle(color = surface.contentColor.copy(alpha = STILL_TEXT_ALPHA), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        val style = TextStyle(color = surface.muted(STILL_TEXT_ALPHA), fontSize = 14.sp, fontWeight = FontWeight.Medium)
         ThemedText(text, style = style)
     }
 }

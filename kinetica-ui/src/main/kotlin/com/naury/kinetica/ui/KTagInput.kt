@@ -263,7 +263,7 @@ private fun TagTextField(model: TagInputModel, look: TagFieldLook, modifier: Mod
                 FieldNameText(
                     name,
                     model.text.isEmpty() && model.tags.isEmpty() && placeholder.isNotEmpty(),
-                    TextStyle(color = surface.contentColor.copy(alpha = PLACEHOLDER_ALPHA), fontSize = FIELD_FONT_SIZE),
+                    TextStyle(color = surface.muted(PLACEHOLDER_ALPHA), fontSize = FIELD_FONT_SIZE),
                 )
                 inner()
             }

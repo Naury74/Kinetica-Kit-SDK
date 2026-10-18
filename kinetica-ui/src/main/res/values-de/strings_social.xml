@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">Wird gesendet</string>
+    <string name="kinetica_ui_chat_sent">Gesendet</string>
+    <string name="kinetica_ui_chat_delivered">Zugestellt</string>
+    <string name="kinetica_ui_chat_read">Gelesen</string>
+    <string name="kinetica_ui_chat_failed">Nicht gesendet</string>
+    <string name="kinetica_ui_chat_typing">Schreibt</string>
+    <string name="kinetica_ui_chat_hint">Nachricht</string>
+    <string name="kinetica_ui_chat_attach">Anhängen</string>
+    <string name="kinetica_ui_chat_send">Senden</string>
+    <string name="kinetica_ui_chat_voice">Sprachnachricht</string>
+    <string name="kinetica_ui_story_new">Neue Story</string>
+    <string name="kinetica_ui_story_seen">Angesehen</string>
+    <string name="kinetica_ui_story_position">Story %1$d von %2$d</string>
+    <string name="kinetica_ui_story_next">Nächste Story</string>
+    <string name="kinetica_ui_story_previous">Vorherige Story</string>
+    <string name="kinetica_ui_story_pause">Pausieren</string>
+    <string name="kinetica_ui_story_resume">Fortsetzen</string>
+    <string name="kinetica_ui_story_paused">Pausiert</string>
+    <string name="kinetica_ui_drop_title">Dateien hinzufügen</string>
+    <string name="kinetica_ui_drop_release">Zum Hinzufügen loslassen</string>
+    <string name="kinetica_ui_attach_uploading">Wird hochgeladen, %d %%</string>
+    <string name="kinetica_ui_attach_uploading_plain">Wird hochgeladen</string>
+    <string name="kinetica_ui_attach_failed">Hochladen fehlgeschlagen</string>
+    <string name="kinetica_ui_attach_cancel">Hochladen abbrechen</string>
+    <string name="kinetica_ui_attach_retry">Erneut versuchen</string>
+    <string name="kinetica_ui_attach_remove">Entfernen</string>
+    <string name="kinetica_ui_index_bar">Index</string>
+    <string name="kinetica_ui_index_jump">Zu %s springen</string>
+    <string name="kinetica_ui_page_previous">Vorherige Seite</string>
+    <string name="kinetica_ui_page_next">Nächste Seite</string>
+    <string name="kinetica_ui_page_number">Seite %d</string>
+    <string name="kinetica_ui_breadcrumb">Navigationspfad</string>
+    <string name="kinetica_ui_breadcrumb_current">Aktueller Ort</string>
+    <string name="kinetica_ui_breadcrumb_more">Vollständigen Pfad anzeigen</string>
+    <string name="kinetica_ui_map_cluster">%d Orte</string>
+    <string name="kinetica_ui_pin_selected">Ausgewählt</string>
+    <string name="kinetica_ui_hold_confirm">Zum Bestätigen gedrückt halten</string>
+    <string name="kinetica_ui_copy_action">Kopieren</string>
+    <string name="kinetica_ui_copy_done">Kopiert</string>
+</resources>

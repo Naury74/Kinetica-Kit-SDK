@@ -302,7 +302,7 @@ private fun MenuEntryRow(
             Modifier
                 .padding(start = ROW_INSET + ROW_PADDING, end = ROW_INSET + ROW_PADDING, top = 10.dp, bottom = 4.dp)
                 .semantics { heading() },
-            style = TextStyle(color = surface.contentColor.copy(alpha = SECTION_ALPHA), fontSize = 13.sp, fontWeight = FontWeight.Medium),
+            style = TextStyle(color = surface.muted(SECTION_ALPHA), fontSize = 13.sp, fontWeight = FontWeight.Medium),
         )
 
         is KMenuEntry.Action -> MenuRow(

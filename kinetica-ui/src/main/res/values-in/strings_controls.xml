@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_loading">Memuat</string>
+    <string name="kinetica_ui_increase">Tambah</string>
+    <string name="kinetica_ui_decrease">Kurangi</string>
+    <string name="kinetica_ui_badge_new">Baru</string>
+    <plurals name="kinetica_ui_badge_count">
+        <item quantity="other">%d item baru</item>
+    </plurals>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">Expandir</string>
+    <string name="kinetica_ui_sheet_collapse">Recolher</string>
+    <string name="kinetica_ui_sheet_expanded">Expandido</string>
+    <string name="kinetica_ui_sheet_partial">Parcialmente expandido</string>
+    <string name="kinetica_ui_sheet_collapsed">Recolhido</string>
+    <string name="kinetica_ui_tooltip_show">Mostrar dica</string>
+    <string name="kinetica_ui_coach_next">Avançar</string>
+    <string name="kinetica_ui_coach_done">Concluído</string>
+    <string name="kinetica_ui_coach_skip">Pular</string>
+    <string name="kinetica_ui_coach_step">Etapa %1$d de %2$d</string>
+    <string name="kinetica_ui_drawer_title">Menu</string>
+    <string name="kinetica_ui_drawer_close">Fechar menu</string>
+</resources>

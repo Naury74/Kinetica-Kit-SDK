@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_sheet_expand">Развернуть</string>
+    <string name="kinetica_ui_sheet_collapse">Свернуть</string>
+    <string name="kinetica_ui_sheet_expanded">Развёрнуто</string>
+    <string name="kinetica_ui_sheet_partial">Частично развёрнуто</string>
+    <string name="kinetica_ui_sheet_collapsed">Свёрнуто</string>
+    <string name="kinetica_ui_tooltip_show">Показать подсказку</string>
+    <string name="kinetica_ui_coach_next">Далее</string>
+    <string name="kinetica_ui_coach_done">Готово</string>
+    <string name="kinetica_ui_coach_skip">Пропустить</string>
+    <string name="kinetica_ui_coach_step">Шаг %1$d из %2$d</string>
+    <string name="kinetica_ui_drawer_title">Меню</string>
+    <string name="kinetica_ui_drawer_close">Закрыть меню</string>
+</resources>

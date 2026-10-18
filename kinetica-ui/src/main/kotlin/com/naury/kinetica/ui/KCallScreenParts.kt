@@ -237,7 +237,7 @@ internal fun VoiceStage(state: KCallState, audioLevel: (String) -> Float, conten
                         ),
                     )
                     state.startedAtMillis?.let {
-                        KCallTimer(it, Modifier.padding(top = 6.dp), TextStyle(fontSize = 18.sp, color = ink.copy(alpha = 0.8f)))
+                        KCallTimer(it, Modifier.padding(top = 6.dp), TextStyle(fontSize = 18.sp, color = surface.muted(TIMER_ALPHA)))
                     }
                     (
                         state.statusText ?: focus.networkQuality.takeIf {
@@ -437,3 +437,4 @@ private const val RIPPLE_ROOM = 0.36f
 private const val SETTLE_MS = 1_500L
 private const val NOTICE_MS = 2_500L
 private const val MAX_NOTICES = 3
+private const val TIMER_ALPHA = 0.8f

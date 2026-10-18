@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_menu_back">返回</string>
+    <string name="kinetica_ui_menu_submenu">子菜单</string>
+    <string name="kinetica_ui_select_open">显示选项</string>
+    <string name="kinetica_ui_select_none">未选择</string>
+    <string name="kinetica_ui_suggestions">%1$d 条建议</string>
+    <string name="kinetica_ui_action_cancel">取消</string>
+    <string name="kinetica_ui_search_recent">最近搜索</string>
+    <string name="kinetica_ui_search_clear_recent">全部清除</string>
+    <string name="kinetica_ui_search_remove_recent">移除%1$s</string>
+    <string name="kinetica_ui_search_fill">填入%1$s</string>
+    <string name="kinetica_ui_search_close">关闭搜索</string>
+    <string name="kinetica_ui_toolbar_more">更多</string>
+</resources>

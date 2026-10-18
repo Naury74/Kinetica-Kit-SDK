@@ -291,7 +291,7 @@ internal fun FieldSupportText(error: String?, helper: String?, surface: SurfaceS
                     .padding(start = FIELD_PADDING, top = ERROR_GAP, end = FIELD_PADDING)
                     .then(if (error != null) Modifier.semantics { liveRegion = LiveRegionMode.Polite } else Modifier),
                 style = TextStyle(
-                    color = if (error != null) colors.destructive else surface.contentColor.copy(alpha = HELPER_ALPHA),
+                    color = if (error != null) colors.destructive else surface.muted(HELPER_ALPHA),
                     fontSize = ERROR_FONT_SIZE,
                 ),
             )
@@ -317,7 +317,7 @@ private fun FieldDecoration(parts: FieldParts, surface: SurfaceStyle, motion: Fi
         verticalAlignment = Alignment.CenterVertically,
     ) {
         parts.slots.leading?.let {
-            CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor.copy(alpha = ICON_ALPHA)) { it() }
+            CompositionLocalProvider(LocalKineticaContentColor provides surface.muted(ICON_ALPHA)) { it() }
             Spacer(Modifier.width(ICON_GAP))
         }
         Box(Modifier.weight(1f).padding(end = FIELD_PADDING - TRAILING_END)) {
@@ -357,7 +357,7 @@ private fun FloatingLabelArea(
             },
             style = TextStyle(fontSize = FIELD_FONT_SIZE),
             color = {
-                val idle = surface.contentColor.copy(alpha = FIELD_HINT_ALPHA)
+                val idle = surface.muted(FIELD_HINT_ALPHA)
                 val focus = motion.levels.focus.value * motion.float.value
                 lerp(lerp(idle, motion.accent, focus), motion.errorColor, motion.levels.error.value)
             },
@@ -374,7 +374,7 @@ private fun FloatingLabelArea(
                 ThemedText(
                     parts.placeholder,
                     Modifier.graphicsLayer { alpha = motion.levels.focus.value },
-                    style = TextStyle(color = surface.contentColor.copy(alpha = PLACEHOLDER_ALPHA), fontSize = FIELD_FONT_SIZE),
+                    style = TextStyle(color = surface.muted(PLACEHOLDER_ALPHA), fontSize = FIELD_FONT_SIZE),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

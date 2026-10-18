@@ -36,7 +36,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -160,7 +159,7 @@ internal fun Wheel(spec: WheelSpec, onSelect: (Int) -> Unit, modifier: Modifier,
 /** 항목을 지날 때 햅틱을 주고, 스크롤이 멈추면 가운데 항목을 [onSettle]로 알린다. */
 @Composable
 private fun WheelEffects(geometry: WheelGeometry, size: Int, onSettle: (Int) -> Unit) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val state = geometry.state
     LaunchedEffect(geometry) {
         snapshotFlow { geometry.centered() }.drop(1).collect {

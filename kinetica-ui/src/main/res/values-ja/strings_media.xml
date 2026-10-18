@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">評価</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="other">星%2$d個中%1$s個</item>
+    </plurals>
+    <string name="kinetica_ui_like">いいね</string>
+    <string name="kinetica_ui_liked">いいね済み</string>
+    <string name="kinetica_ui_not_liked">いいねしていません</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="other">%1$s、他%2$d人</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">再生中</string>
+    <string name="kinetica_ui_player_expand">プレーヤーを開く</string>
+    <string name="kinetica_ui_player_collapse">プレーヤーを最小化</string>
+</resources>

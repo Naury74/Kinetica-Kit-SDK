@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_data_series">數列 %1$d</string>
+    <string name="kinetica_ui_data_pair">%1$s %2$s</string>
+    <plurals name="kinetica_ui_chart_area">
+        <item quantity="other">區域圖，%2$d 個數列，%1$d 個資料點</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_stacked_bar">
+        <item quantity="other">堆疊長條圖，%2$d 個數列，%1$d 個長條</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_grouped_bar">
+        <item quantity="other">群組長條圖，%2$d 個數列，%1$d 個群組</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_pie">
+        <item quantity="other">圓餅圖，%1$d 個區塊，總計 %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_heatmap_cell">%1$s，%2$s</string>
+    <string name="kinetica_ui_heatmap_empty">沒有資料</string>
+    <string name="kinetica_ui_heatmap_less">少</string>
+    <string name="kinetica_ui_heatmap_more">多</string>
+    <string name="kinetica_ui_stat_up">上升 %1$s</string>
+    <string name="kinetica_ui_stat_down">下降 %1$s</string>
+    <string name="kinetica_ui_stat_flat">沒有變化</string>
+    <string name="kinetica_ui_step_done">已完成</string>
+    <string name="kinetica_ui_step_current">進行中</string>
+    <string name="kinetica_ui_step_upcoming">尚未開始</string>
+    <string name="kinetica_ui_step_error">發生問題</string>
+    <string name="kinetica_ui_step_of">第 %2$d 步，共 %1$d 步，%3$s</string>
+    <string name="kinetica_ui_step_name">第 %1$d 步，%2$s</string>
+    <string name="kinetica_ui_step_count">%1$d/%2$d</string>
+    <string name="kinetica_ui_wizard_next">下一步</string>
+    <string name="kinetica_ui_wizard_back">上一步</string>
+    <string name="kinetica_ui_wizard_finish">完成</string>
+    <string name="kinetica_ui_price_original">原價 %1$s</string>
+    <string name="kinetica_ui_price_discount">折扣 %1$d%%</string>
+    <string name="kinetica_ui_billing_monthly">按月</string>
+    <string name="kinetica_ui_billing_yearly">按年</string>
+    <string name="kinetica_ui_quantity">數量</string>
+    <string name="kinetica_ui_quantity_add">新增</string>
+    <string name="kinetica_ui_keypad_decimal">小數點</string>
+    <string name="kinetica_ui_keypad_backspace">刪除</string>
+    <string name="kinetica_ui_pin_state">已輸入 %2$d 位數，共 %1$d 位數</string>
+    <string name="kinetica_ui_range_today">今天</string>
+    <string name="kinetica_ui_range_last_days">過去 %1$d 天</string>
+    <string name="kinetica_ui_range_this_month">本月</string>
+    <string name="kinetica_ui_range_last_month">上個月</string>
+    <string name="kinetica_ui_range_morning">上午</string>
+    <string name="kinetica_ui_range_afternoon">下午</string>
+    <string name="kinetica_ui_range_work">上班時間</string>
+    <string name="kinetica_ui_range_date_title">選取日期</string>
+    <string name="kinetica_ui_range_time_title">選取時段</string>
+    <string name="kinetica_ui_range_start">開始 %1$s</string>
+    <string name="kinetica_ui_range_end">結束 %1$s</string>
+    <string name="kinetica_ui_range_next_day">隔天結束</string>
+    <string name="kinetica_ui_range_pick_start">請選取開始日期</string>
+    <string name="kinetica_ui_range_pick_end">%1$s ~ 請選取結束日期</string>
+    <string name="kinetica_ui_range_summary">%1$s ~ %2$s</string>
+    <string name="kinetica_ui_range_cancel">取消</string>
+    <string name="kinetica_ui_range_apply">套用</string>
+    <plurals name="kinetica_ui_range_days">
+        <item quantity="other">%1$d 天</item>
+    </plurals>
+    <string name="kinetica_ui_week_previous">上一週</string>
+    <string name="kinetica_ui_week_next">下一週</string>
+    <plurals name="kinetica_ui_week_events">
+        <item quantity="other">%1$d 個活動</item>
+    </plurals>
+</resources>

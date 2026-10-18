@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
@@ -59,7 +58,7 @@ public fun KChipGroup(
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val accent = tone.colors(surface).color
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val group = modifier.then(if (selection == KChipSelection.Single) Modifier.selectableGroup() else Modifier)
     val chipsContent: @Composable () -> Unit = {
         chips.forEachIndexed { index, label ->

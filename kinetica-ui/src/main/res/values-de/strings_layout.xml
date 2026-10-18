@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_large_title_back">Zurück</string>
+    <string name="kinetica_ui_page_state">Seite %1$d von %2$d</string>
+    <string name="kinetica_ui_swipe_left">Nach links wischen</string>
+    <string name="kinetica_ui_swipe_right">Nach rechts wischen</string>
+    <string name="kinetica_ui_swipe_up">Nach oben wischen</string>
+    <string name="kinetica_ui_swipe_undo">Letztes Wischen rückgängig machen</string>
+    <string name="kinetica_ui_speed_dial">Schnellaktionen</string>
+    <string name="kinetica_ui_speed_dial_expanded">Maximiert</string>
+    <string name="kinetica_ui_speed_dial_collapsed">Minimiert</string>
+</resources>

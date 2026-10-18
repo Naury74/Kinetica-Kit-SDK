@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_code_label">Код подтверждения</string>
+    <plurals name="kinetica_ui_code_progress">
+        <item quantity="one">Введено %2$d из %1$d цифры</item>
+        <item quantity="few">Введено %2$d из %1$d цифр</item>
+        <item quantity="many">Введено %2$d из %1$d цифр</item>
+        <item quantity="other">Введено %2$d из %1$d цифры</item>
+    </plurals>
+    <string name="kinetica_ui_code_error">Неверный код</string>
+    <string name="kinetica_ui_tag_remove">Удалить %s</string>
+    <string name="kinetica_ui_tag_armed">Выбрано: %s. Нажмите «Удалить» ещё раз, чтобы удалить</string>
+    <string name="kinetica_ui_tag_suggestions">Подсказки</string>
+    <string name="kinetica_ui_color_picker">Выбор цвета</string>
+    <string name="kinetica_ui_color_opacity">Непрозрачность</string>
+    <string name="kinetica_ui_color_hex">Шестнадцатеричный код цвета</string>
+    <string name="kinetica_ui_color_hue_next">Следующий оттенок</string>
+    <string name="kinetica_ui_color_hue_previous">Предыдущий оттенок</string>
+    <string name="kinetica_ui_color_lighter">Светлее</string>
+    <string name="kinetica_ui_color_darker">Темнее</string>
+    <string name="kinetica_ui_color_more_vivid">Ярче</string>
+    <string name="kinetica_ui_color_more_muted">Приглушённее</string>
+    <string name="kinetica_ui_color_state">%1$s, %2$s</string>
+    <string name="kinetica_ui_color_light">Светлый %s</string>
+    <string name="kinetica_ui_color_dark">Тёмный %s</string>
+    <string name="kinetica_ui_color_red">красный</string>
+    <string name="kinetica_ui_color_orange">оранжевый</string>
+    <string name="kinetica_ui_color_yellow">жёлтый</string>
+    <string name="kinetica_ui_color_green">зелёный</string>
+    <string name="kinetica_ui_color_teal">бирюзовый</string>
+    <string name="kinetica_ui_color_blue">синий</string>
+    <string name="kinetica_ui_color_purple">фиолетовый</string>
+    <string name="kinetica_ui_color_pink">розовый</string>
+    <string name="kinetica_ui_color_white">белый</string>
+    <string name="kinetica_ui_color_gray">серый</string>
+    <string name="kinetica_ui_color_black">чёрный</string>
+    <string name="kinetica_ui_signature">Поле для подписи</string>
+    <string name="kinetica_ui_signature_hint">Распишитесь здесь</string>
+    <string name="kinetica_ui_signature_empty">Пусто</string>
+    <string name="kinetica_ui_signature_signed">Подписано</string>
+    <string name="kinetica_ui_signature_undo">Отменить</string>
+    <string name="kinetica_ui_signature_clear">Очистить</string>
+    <string name="kinetica_ui_password_show">Показать пароль</string>
+    <string name="kinetica_ui_password_hide">Скрыть пароль</string>
+    <string name="kinetica_ui_password_strength">Надёжность пароля</string>
+    <string name="kinetica_ui_password_weak">Слабый</string>
+    <string name="kinetica_ui_password_medium">Средний</string>
+    <string name="kinetica_ui_password_strong">Надёжный</string>
+    <string name="kinetica_ui_password_rule_length">Не менее 8 символов</string>
+    <string name="kinetica_ui_password_rule_upper">Заглавная буква</string>
+    <string name="kinetica_ui_password_rule_number">Цифра</string>
+    <string name="kinetica_ui_password_rule_symbol">Символ</string>
+    <string name="kinetica_ui_password_rule_met">Выполнено</string>
+    <string name="kinetica_ui_password_rule_unmet">Не выполнено</string>
+</resources>

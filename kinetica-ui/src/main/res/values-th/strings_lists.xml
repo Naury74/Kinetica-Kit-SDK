@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_move_up">ย้ายขึ้น</string>
+    <string name="kinetica_ui_move_down">ย้ายลง</string>
+    <string name="kinetica_ui_expanded">ขยายแล้ว</string>
+    <string name="kinetica_ui_collapsed">ยุบแล้ว</string>
+    <string name="kinetica_ui_confirmed">ยืนยันแล้ว</string>
+</resources>

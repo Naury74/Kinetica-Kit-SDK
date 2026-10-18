@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_calendar_previous_month">เดือนก่อนหน้า</string>
+    <string name="kinetica_ui_calendar_next_month">เดือนถัดไป</string>
+    <string name="kinetica_ui_calendar_today">วันนี้</string>
+    <string name="kinetica_ui_calendar_range_start">วันที่เริ่มต้น</string>
+    <string name="kinetica_ui_calendar_range_end">วันที่สิ้นสุด</string>
+    <string name="kinetica_ui_calendar_in_range">อยู่ในช่วง</string>
+    <plurals name="kinetica_ui_calendar_events">
+        <item quantity="other">%d กิจกรรม</item>
+    </plurals>
+    <string name="kinetica_ui_range_slider_start">ต่ำสุด</string>
+    <string name="kinetica_ui_range_slider_end">สูงสุด</string>
+</resources>

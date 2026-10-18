@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_calendar_previous_month">Предыдущий месяц</string>
+    <string name="kinetica_ui_calendar_next_month">Следующий месяц</string>
+    <string name="kinetica_ui_calendar_today">Сегодня</string>
+    <string name="kinetica_ui_calendar_range_start">Дата начала</string>
+    <string name="kinetica_ui_calendar_range_end">Дата окончания</string>
+    <string name="kinetica_ui_calendar_in_range">В диапазоне</string>
+    <plurals name="kinetica_ui_calendar_events">
+        <item quantity="one">%d событие</item>
+        <item quantity="few">%d события</item>
+        <item quantity="many">%d событий</item>
+        <item quantity="other">%d события</item>
+    </plurals>
+    <string name="kinetica_ui_range_slider_start">Минимум</string>
+    <string name="kinetica_ui_range_slider_end">Максимум</string>
+</resources>

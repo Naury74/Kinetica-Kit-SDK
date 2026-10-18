@@ -114,7 +114,7 @@ public fun KCallBanner(
         }
         Column(Modifier.weight(1f).semantics(mergeDescendants = true) { this.liveRegion = liveRegion }) {
             ThemedText(text, style = TextStyle(color = readable, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
-            supporting?.let { ThemedText(it, style = TextStyle(color = ink.copy(alpha = SUPPORT_ALPHA), fontSize = 13.sp)) }
+            supporting?.let { ThemedText(it, style = TextStyle(color = surface.muted(SUPPORT_ALPHA), fontSize = 13.sp)) }
         }
         if (actionLabel != null && onAction != null) {
             KButton(

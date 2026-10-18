@@ -40,7 +40,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -287,7 +286,7 @@ private fun HeatmapGrid(
     picked: Pair<Int, Int>?,
     choose: (Pair<Int, Int>) -> Unit,
 ) {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latestChoose = rememberUpdatedState(choose)
     val ink = spec.surface.contentColor
     val ring by animateFloatAsState(if (picked != null) 1f else 0f, spring(), label = "heat-ring")
@@ -392,7 +391,7 @@ private fun DrawScope.drawHeatCells(spec: HeatmapSpec, geometry: HeatmapGeometry
         for (c in 0 until geometry.columns) {
             if (names[r][c].isEmpty()) continue
             val value = spec.values[r].getOrNull(c)
-            val color = if (value == null) ink.copy(alpha = EMPTY_ALPHA) else spec.colors[geometry.level(value, spec.colors.size)]
+            val color = if (value == null) spec.surface.raisedFill(EMPTY_ALPHA) else spec.colors[geometry.level(value, spec.colors.size)]
             drawRoundRect(color, Offset(c * step, r * step), size, radius)
         }
     }

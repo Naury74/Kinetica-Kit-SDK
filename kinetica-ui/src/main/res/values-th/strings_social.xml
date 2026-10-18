@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">กำลังส่ง</string>
+    <string name="kinetica_ui_chat_sent">ส่งแล้ว</string>
+    <string name="kinetica_ui_chat_delivered">ถึงแล้ว</string>
+    <string name="kinetica_ui_chat_read">อ่านแล้ว</string>
+    <string name="kinetica_ui_chat_failed">ส่งไม่สำเร็จ</string>
+    <string name="kinetica_ui_chat_typing">กำลังพิมพ์</string>
+    <string name="kinetica_ui_chat_hint">ข้อความ</string>
+    <string name="kinetica_ui_chat_attach">แนบ</string>
+    <string name="kinetica_ui_chat_send">ส่ง</string>
+    <string name="kinetica_ui_chat_voice">ข้อความเสียง</string>
+    <string name="kinetica_ui_story_new">สตอรี่ใหม่</string>
+    <string name="kinetica_ui_story_seen">ดูแล้ว</string>
+    <string name="kinetica_ui_story_position">สตอรี่ที่ %1$d จาก %2$d</string>
+    <string name="kinetica_ui_story_next">สตอรี่ถัดไป</string>
+    <string name="kinetica_ui_story_previous">สตอรี่ก่อนหน้า</string>
+    <string name="kinetica_ui_story_pause">หยุดชั่วคราว</string>
+    <string name="kinetica_ui_story_resume">เล่นต่อ</string>
+    <string name="kinetica_ui_story_paused">หยุดชั่วคราวแล้ว</string>
+    <string name="kinetica_ui_drop_title">เพิ่มไฟล์</string>
+    <string name="kinetica_ui_drop_release">ปล่อยเพื่อเพิ่ม</string>
+    <string name="kinetica_ui_attach_uploading">กำลังอัปโหลด %d%%</string>
+    <string name="kinetica_ui_attach_uploading_plain">กำลังอัปโหลด</string>
+    <string name="kinetica_ui_attach_failed">อัปโหลดไม่สำเร็จ</string>
+    <string name="kinetica_ui_attach_cancel">ยกเลิกการอัปโหลด</string>
+    <string name="kinetica_ui_attach_retry">ลองอีกครั้ง</string>
+    <string name="kinetica_ui_attach_remove">นำออก</string>
+    <string name="kinetica_ui_index_bar">ดัชนี</string>
+    <string name="kinetica_ui_index_jump">ข้ามไปที่ %s</string>
+    <string name="kinetica_ui_page_previous">หน้าก่อนหน้า</string>
+    <string name="kinetica_ui_page_next">หน้าถัดไป</string>
+    <string name="kinetica_ui_page_number">หน้า %d</string>
+    <string name="kinetica_ui_breadcrumb">เส้นทาง</string>
+    <string name="kinetica_ui_breadcrumb_current">ตำแหน่งปัจจุบัน</string>
+    <string name="kinetica_ui_breadcrumb_more">แสดงเส้นทางทั้งหมด</string>
+    <string name="kinetica_ui_map_cluster">%d สถานที่</string>
+    <string name="kinetica_ui_pin_selected">เลือกแล้ว</string>
+    <string name="kinetica_ui_hold_confirm">กดค้างไว้เพื่อยืนยัน</string>
+    <string name="kinetica_ui_copy_action">คัดลอก</string>
+    <string name="kinetica_ui_copy_done">คัดลอกแล้ว</string>
+</resources>

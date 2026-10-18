@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_keypad_star">Étoile</string>
+    <string name="kinetica_ui_keypad_pound">Dièse</string>
+    <string name="kinetica_ui_keypad_plus">Saisir plus</string>
+</resources>

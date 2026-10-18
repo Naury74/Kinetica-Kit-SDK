@@ -37,7 +37,6 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -187,7 +186,7 @@ internal class ChatCounterRule(private val always: Boolean, private val threshol
 
 @Composable
 private fun chatSend(onSend: () -> Unit): () -> Unit {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     return {
         haptic.performHapticFeedback(HapticFeedbackType.Confirm)
         onSend()
@@ -258,7 +257,7 @@ private fun ChatField(source: FieldSource, options: ChatOptions, surface: Surfac
             verticalAlignment = Alignment.Bottom,
         ) {
             Box(Modifier.weight(1f).padding(vertical = 11.dp), contentAlignment = Alignment.CenterStart) {
-                val hint = style.copy(color = ink.copy(alpha = PLACEHOLDER_ALPHA))
+                val hint = style.copy(color = surface.muted(PLACEHOLDER_ALPHA))
                 // 라벨이 안내 글과 다르면 라벨은 늘 이름으로 남기고, 안내 글은 비었을 때만 힌트로 읽게 한다.
                 if (name != placeholder) {
                     FieldNameText(name, showing = false, hint)
@@ -268,20 +267,20 @@ private fun ChatField(source: FieldSource, options: ChatOptions, surface: Surfac
                 }
                 inner()
             }
-            if (counter != null) ChatCounter(count, counter, ink)
+            if (counter != null) ChatCounter(count, counter, surface.muted(COUNTER_ALPHA))
         }
     }
 }
 
 /** 입력란 안 아래 끝의 글자 수. 최대를 넘으면 빨갛게 그린다. */
 @Composable
-private fun ChatCounter(count: Int, max: Int, ink: Color) {
+private fun ChatCounter(count: Int, max: Int, muted: Color) {
     val label = stringResource(R.string.kinetica_ui_char_count, count, max)
     ThemedText(
         "$count/$max",
         Modifier.padding(start = 8.dp, bottom = 13.dp).semantics { contentDescription = label },
         style = TextStyle(
-            color = if (count > max) KineticaTheme.colors.destructive else ink.copy(alpha = COUNTER_ALPHA),
+            color = if (count > max) KineticaTheme.colors.destructive else muted,
             fontSize = 12.sp,
             fontFeatureSettings = "tnum",
         ),

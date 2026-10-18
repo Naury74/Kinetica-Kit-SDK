@@ -36,7 +36,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -239,7 +238,7 @@ private fun DrawScope.drawPicked(series: List<ChartSeries>, morph: ChartMorph, p
 /** 가로로 끌면 [onScrub]으로 점을 따라가고 손을 떼면 -1을 넘긴다. 끌지 않고 떼면 [onTap]으로 그 점을 누른 것으로 본다. */
 @Composable
 private fun Modifier.lineScrub(plot: LinePlot, count: Int, onScrub: (Int) -> Unit, onTap: (Int) -> Unit): Modifier {
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latestCount = rememberUpdatedState(count)
     val latestPick = rememberUpdatedState(onScrub)
     val latestTap = rememberUpdatedState(onTap)

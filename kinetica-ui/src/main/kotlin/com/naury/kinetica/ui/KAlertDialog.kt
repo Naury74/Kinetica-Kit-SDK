@@ -117,7 +117,7 @@ public fun KAlertDialog(
                 ThemedText(
                     it,
                     style = TextStyle(
-                        color = surface.contentColor.copy(alpha = MESSAGE_ALPHA),
+                        color = surface.muted(MESSAGE_ALPHA),
                         fontSize = 15.sp,
                         lineHeight = 21.sp,
                         textAlign = TextAlign.Center,

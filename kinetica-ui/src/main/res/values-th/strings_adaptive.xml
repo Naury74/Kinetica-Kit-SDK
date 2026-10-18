@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">ยุบแถบแท็บแล้ว</string>
+    <string name="kinetica_ui_tabbar_expand">แสดงแท็บทั้งหมด</string>
+    <string name="kinetica_ui_tabbar_go_to">ไปที่ %1$s</string>
+</resources>

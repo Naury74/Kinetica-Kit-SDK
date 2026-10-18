@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">Xếp hạng</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="other">%1$s/%2$d sao</item>
+    </plurals>
+    <string name="kinetica_ui_like">Thích</string>
+    <string name="kinetica_ui_liked">Đã thích</string>
+    <string name="kinetica_ui_not_liked">Chưa thích</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="other">%1$s và %2$d người khác</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">Đang phát</string>
+    <string name="kinetica_ui_player_expand">Mở trình phát</string>
+    <string name="kinetica_ui_player_collapse">Thu nhỏ trình phát</string>
+</resources>

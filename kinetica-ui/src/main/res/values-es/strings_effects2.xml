@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_flip_action">Girar</string>
+    <string name="kinetica_ui_flip_front">Anverso</string>
+    <string name="kinetica_ui_flip_back">Reverso</string>
+</resources>

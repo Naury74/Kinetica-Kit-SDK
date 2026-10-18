@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_viewer">Visionneuse de photos</string>
+    <string name="kinetica_ui_viewer_photo">Photo %1$d sur %2$d</string>
+    <string name="kinetica_ui_viewer_zoomed">%1$s, zoom à %2$d %%</string>
+    <string name="kinetica_ui_viewer_zoom_in">Zoom avant</string>
+    <string name="kinetica_ui_viewer_zoom_out">Zoom arrière</string>
+    <string name="kinetica_ui_viewer_next">Photo suivante</string>
+    <string name="kinetica_ui_viewer_previous">Photo précédente</string>
+    <string name="kinetica_ui_compare">Comparaison avant/après</string>
+    <string name="kinetica_ui_compare_before">Avant</string>
+    <string name="kinetica_ui_compare_after">Après</string>
+    <string name="kinetica_ui_compare_state">%1$d %% avant, %2$d %% après</string>
+    <string name="kinetica_ui_result_success">Terminé</string>
+    <string name="kinetica_ui_result_failure">Échec</string>
+    <string name="kinetica_ui_result_warning">Avertissement</string>
+    <string name="kinetica_ui_result_ok">OK</string>
+    <string name="kinetica_ui_onboarding_next">Suivant</string>
+    <string name="kinetica_ui_onboarding_start">Commencer</string>
+    <string name="kinetica_ui_onboarding_skip">Ignorer</string>
+</resources>

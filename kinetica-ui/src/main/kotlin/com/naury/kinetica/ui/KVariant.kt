@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -65,12 +67,12 @@ public enum class KTone {
 
 /**
  * 색 역할을 푼 결과. [color]는 강조할 색(글자, 테두리, 옅은 칠), [onColor]는 채운 면 위 글자 색이다.
- * [fill]은 글자를 얹어 채우는 면의 색으로, [onColor]와 4.5:1이 안 되면 기준을 막 넘는 만큼만 어둡게(또는 밝게) 고친 [color]다.
- * 기본 강조색 #0A84FF는 흰 글자와 3.6:1이라 채운 버튼에서만 조금 진해진다.
+ * [fill]은 글자를 얹어 채우는 면의 색으로, [onColor]와 [minContrast]가 안 되면 기준을 막 넘는 만큼만 어둡게(또는 밝게) 고친 [color]다.
+ * 기본 기준 4.5:1에서 기본 강조색 #0A84FF는 흰 글자와 3.6:1이라 채운 버튼에서만 조금 진해진다.
  */
 @Immutable
-internal class ToneColors(val color: Color, val onColor: Color) {
-    val fill: Color = readableOn(color, onColor, INK_TEXT_CONTRAST)
+internal class ToneColors(val color: Color, val onColor: Color, minContrast: Float = INK_TEXT_CONTRAST) {
+    val fill: Color = if (minContrast > 1f) readableOn(color, onColor, minContrast) else color
 }
 
 /** [surface] 위에서 이 색 역할이 쓸 색. */
@@ -78,10 +80,11 @@ internal class ToneColors(val color: Color, val onColor: Color) {
 @ReadOnlyComposable
 internal fun KTone.colors(surface: SurfaceStyle): ToneColors {
     val colors = KineticaTheme.colors
+    val contrast = LocalKineticaFillContrast.current
     return when (this) {
-        KTone.Accent -> ToneColors(colors.accent, colors.onAccent)
-        KTone.Destructive -> ToneColors(colors.destructive, colors.onDestructive)
-        KTone.Positive -> ToneColors(colors.positive, colors.onPositive)
+        KTone.Accent -> ToneColors(colors.accent, colors.onAccent, contrast)
+        KTone.Destructive -> ToneColors(colors.destructive, colors.onDestructive, contrast)
+        KTone.Positive -> ToneColors(colors.positive, colors.onPositive, contrast)
         KTone.Neutral -> ToneColors(surface.contentColor, surface.fillColor.copy(alpha = 1f))
     }
 }
@@ -154,3 +157,14 @@ private const val DARK_TEXT_LIFT = 0.3f
 private const val OUTLINE_ALPHA = 0.55f
 private val OUTLINE_WIDTH: Dp = 1.dp
 private val ELEVATED_SHADOW: Dp = 14.dp
+
+/**
+ * 채운 버튼, 배지, 선택된 칩처럼 글자를 얹어 채우는 면이 지킬 글자 명암비. 기본값은 4.5다.
+ * 강조색이 [KineticaColors.onAccent]와 이 값에 못 미치면 기준을 막 넘는 만큼만 진하게(또는 밝게) 고쳐 칠한다.
+ * 브랜드 색을 그대로 써야 하면 굵은 큰 글자 기준인 3.0을 주거나, 1 이하를 주어 고치지 않게 한다.
+ *
+ * ```kotlin
+ * CompositionLocalProvider(LocalKineticaFillContrast provides 3f) { App() }
+ * ```
+ */
+public val LocalKineticaFillContrast: ProvidableCompositionLocal<Float> = staticCompositionLocalOf { INK_TEXT_CONTRAST }

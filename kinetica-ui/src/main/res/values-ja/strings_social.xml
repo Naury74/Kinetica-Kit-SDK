@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">送信中</string>
+    <string name="kinetica_ui_chat_sent">送信済み</string>
+    <string name="kinetica_ui_chat_delivered">配信済み</string>
+    <string name="kinetica_ui_chat_read">既読</string>
+    <string name="kinetica_ui_chat_failed">未送信</string>
+    <string name="kinetica_ui_chat_typing">入力中</string>
+    <string name="kinetica_ui_chat_hint">メッセージ</string>
+    <string name="kinetica_ui_chat_attach">添付</string>
+    <string name="kinetica_ui_chat_send">送信</string>
+    <string name="kinetica_ui_chat_voice">ボイスメッセージ</string>
+    <string name="kinetica_ui_story_new">新しいストーリー</string>
+    <string name="kinetica_ui_story_seen">閲覧済み</string>
+    <string name="kinetica_ui_story_position">ストーリー %1$d / %2$d</string>
+    <string name="kinetica_ui_story_next">次のストーリー</string>
+    <string name="kinetica_ui_story_previous">前のストーリー</string>
+    <string name="kinetica_ui_story_pause">一時停止</string>
+    <string name="kinetica_ui_story_resume">再開</string>
+    <string name="kinetica_ui_story_paused">一時停止中</string>
+    <string name="kinetica_ui_drop_title">ファイルを追加</string>
+    <string name="kinetica_ui_drop_release">離すと追加されます</string>
+    <string name="kinetica_ui_attach_uploading">アップロード中 %d%%</string>
+    <string name="kinetica_ui_attach_uploading_plain">アップロード中</string>
+    <string name="kinetica_ui_attach_failed">アップロードに失敗しました</string>
+    <string name="kinetica_ui_attach_cancel">アップロードをキャンセル</string>
+    <string name="kinetica_ui_attach_retry">再試行</string>
+    <string name="kinetica_ui_attach_remove">削除</string>
+    <string name="kinetica_ui_index_bar">インデックス</string>
+    <string name="kinetica_ui_index_jump">%sに移動</string>
+    <string name="kinetica_ui_page_previous">前のページ</string>
+    <string name="kinetica_ui_page_next">次のページ</string>
+    <string name="kinetica_ui_page_number">%dページ</string>
+    <string name="kinetica_ui_breadcrumb">パンくずリスト</string>
+    <string name="kinetica_ui_breadcrumb_current">現在の場所</string>
+    <string name="kinetica_ui_breadcrumb_more">パス全体を表示</string>
+    <string name="kinetica_ui_map_cluster">%d件の場所</string>
+    <string name="kinetica_ui_pin_selected">選択済み</string>
+    <string name="kinetica_ui_hold_confirm">長押しして確定</string>
+    <string name="kinetica_ui_copy_action">コピー</string>
+    <string name="kinetica_ui_copy_done">コピーしました</string>
+</resources>

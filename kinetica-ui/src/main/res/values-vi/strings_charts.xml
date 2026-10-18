@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="kinetica_ui_chart_line">
+        <item quantity="other">Biểu đồ đường, %1$d điểm</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_bar">
+        <item quantity="other">Biểu đồ cột, %1$d cột</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_donut">
+        <item quantity="other">Biểu đồ vành khuyên, %1$d phần, tổng %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_chart_stats">thấp nhất %1$s, cao nhất %2$s, gần nhất %3$s</string>
+    <string name="kinetica_ui_chart_range">thấp nhất %1$s, cao nhất %2$s</string>
+    <string name="kinetica_ui_chart_entry">%1$s: %2$s</string>
+    <string name="kinetica_ui_chart_point">Điểm %1$d</string>
+    <string name="kinetica_ui_chart_slice">%1$s: %2$s, %3$d%%</string>
+    <string name="kinetica_ui_chart_total">Tổng</string>
+    <string name="kinetica_ui_chart_trend">Xu hướng từ %1$s đến %2$s, thấp nhất %3$s, cao nhất %4$s</string>
+    <string name="kinetica_ui_chart_rings">Vòng hoạt động</string>
+    <string name="kinetica_ui_chart_ring">%1$s %2$d%%</string>
+    <string name="kinetica_ui_chart_ring_unnamed">Vòng %1$d</string>
+</resources>

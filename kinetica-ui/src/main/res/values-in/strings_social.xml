@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">Mengirim</string>
+    <string name="kinetica_ui_chat_sent">Terkirim</string>
+    <string name="kinetica_ui_chat_delivered">Diterima</string>
+    <string name="kinetica_ui_chat_read">Dibaca</string>
+    <string name="kinetica_ui_chat_failed">Tidak terkirim</string>
+    <string name="kinetica_ui_chat_typing">Mengetik</string>
+    <string name="kinetica_ui_chat_hint">Pesan</string>
+    <string name="kinetica_ui_chat_attach">Lampirkan</string>
+    <string name="kinetica_ui_chat_send">Kirim</string>
+    <string name="kinetica_ui_chat_voice">Pesan suara</string>
+    <string name="kinetica_ui_story_new">Story baru</string>
+    <string name="kinetica_ui_story_seen">Sudah dilihat</string>
+    <string name="kinetica_ui_story_position">Story %1$d dari %2$d</string>
+    <string name="kinetica_ui_story_next">Story berikutnya</string>
+    <string name="kinetica_ui_story_previous">Story sebelumnya</string>
+    <string name="kinetica_ui_story_pause">Jeda</string>
+    <string name="kinetica_ui_story_resume">Lanjutkan</string>
+    <string name="kinetica_ui_story_paused">Dijeda</string>
+    <string name="kinetica_ui_drop_title">Tambahkan file</string>
+    <string name="kinetica_ui_drop_release">Lepaskan untuk menambahkan</string>
+    <string name="kinetica_ui_attach_uploading">Mengupload %d%%</string>
+    <string name="kinetica_ui_attach_uploading_plain">Mengupload</string>
+    <string name="kinetica_ui_attach_failed">Upload gagal</string>
+    <string name="kinetica_ui_attach_cancel">Batalkan upload</string>
+    <string name="kinetica_ui_attach_retry">Coba lagi</string>
+    <string name="kinetica_ui_attach_remove">Hapus</string>
+    <string name="kinetica_ui_index_bar">Indeks</string>
+    <string name="kinetica_ui_index_jump">Lompat ke %s</string>
+    <string name="kinetica_ui_page_previous">Halaman sebelumnya</string>
+    <string name="kinetica_ui_page_next">Halaman berikutnya</string>
+    <string name="kinetica_ui_page_number">Halaman %d</string>
+    <string name="kinetica_ui_breadcrumb">Breadcrumb</string>
+    <string name="kinetica_ui_breadcrumb_current">Lokasi saat ini</string>
+    <string name="kinetica_ui_breadcrumb_more">Tampilkan jalur lengkap</string>
+    <string name="kinetica_ui_map_cluster">%d tempat</string>
+    <string name="kinetica_ui_pin_selected">Dipilih</string>
+    <string name="kinetica_ui_hold_confirm">Tahan untuk mengonfirmasi</string>
+    <string name="kinetica_ui_copy_action">Salin</string>
+    <string name="kinetica_ui_copy_done">Disalin</string>
+</resources>

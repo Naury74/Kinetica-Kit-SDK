@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="kinetica_ui_chart_line">
+        <item quantity="other">折線圖，%1$d 個資料點</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_bar">
+        <item quantity="other">長條圖，%1$d 個長條</item>
+    </plurals>
+    <plurals name="kinetica_ui_chart_donut">
+        <item quantity="other">環圈圖，%1$d 個區塊，總計 %2$s</item>
+    </plurals>
+    <string name="kinetica_ui_chart_stats">最低 %1$s，最高 %2$s，最新 %3$s</string>
+    <string name="kinetica_ui_chart_range">最低 %1$s，最高 %2$s</string>
+    <string name="kinetica_ui_chart_entry">%1$s：%2$s</string>
+    <string name="kinetica_ui_chart_point">第 %1$d 個資料點</string>
+    <string name="kinetica_ui_chart_slice">%1$s：%2$s，%3$d%%</string>
+    <string name="kinetica_ui_chart_total">總計</string>
+    <string name="kinetica_ui_chart_trend">從 %1$s 變化到 %2$s，最低 %3$s，最高 %4$s</string>
+    <string name="kinetica_ui_chart_rings">活動圓環</string>
+    <string name="kinetica_ui_chart_ring">%1$s %2$d%%</string>
+    <string name="kinetica_ui_chart_ring_unnamed">圓環 %1$d</string>
+</resources>

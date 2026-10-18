@@ -197,11 +197,13 @@ private class KIndicationNode(private val source: InteractionSource, private val
 
     // 설정은 앱 실행 중에도 바뀔 수 있으므로 누를 때마다 다시 읽는다.
     private fun readReducedMotion() {
-        reduced = Settings.Global.getFloat(
-            currentValueOf(LocalContext).contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f,
-        ) == 0f
+        reduced = currentValueOf(LocalKineticaReducedMotion) ?: (
+            Settings.Global.getFloat(
+                currentValueOf(LocalContext).contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            ) == 0f
+            )
     }
 
     private fun pressDown() {

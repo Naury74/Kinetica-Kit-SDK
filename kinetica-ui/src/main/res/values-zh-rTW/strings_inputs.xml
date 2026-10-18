@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_picker_next">下一個</string>
+    <string name="kinetica_ui_picker_previous">上一個</string>
+    <string name="kinetica_ui_picker_year">年</string>
+    <string name="kinetica_ui_picker_month">月</string>
+    <string name="kinetica_ui_picker_day">日</string>
+    <string name="kinetica_ui_picker_hour">時</string>
+    <string name="kinetica_ui_picker_minute">分</string>
+    <string name="kinetica_ui_picker_am_pm">上午/下午</string>
+    <string name="kinetica_ui_search">搜尋</string>
+    <string name="kinetica_ui_search_cancel">取消</string>
+    <string name="kinetica_ui_clear_text">清除文字</string>
+</resources>

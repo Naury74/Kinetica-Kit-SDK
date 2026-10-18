@@ -84,7 +84,7 @@ private class RowFlags(val muted: Boolean, val videoOff: Boolean, val handRaised
 
 @Composable
 private fun RowTrailing(flags: RowFlags, onPin: (() -> Unit)?, onMute: (() -> Unit)?, onRemove: (() -> Unit)?, surface: SurfaceStyle) {
-    val ink = surface.contentColor.copy(alpha = ICON_ALPHA)
+    val ink = surface.muted(ICON_ALPHA)
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(
             Modifier.clearAndSetSemantics {

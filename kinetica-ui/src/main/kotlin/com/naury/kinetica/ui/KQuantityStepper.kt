@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -89,7 +88,7 @@ public fun KQuantityStepper(
 ) {
     require(!range.isEmpty()) { "range가 비어 있습니다." }
     val shown = value.coerceIn(range)
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val latest by rememberUpdatedState(onValueChange)
     val change: (Int) -> Unit = { next ->
         val target = next.coerceIn(range)

@@ -187,7 +187,7 @@ private fun PasswordDecoration(
                 },
                 style = TextStyle(fontSize = FIELD_FONT_SIZE),
                 color = {
-                    val idle = surface.contentColor.copy(alpha = FIELD_HINT_ALPHA)
+                    val idle = surface.muted(FIELD_HINT_ALPHA)
                     lerp(lerp(idle, motion.accent, motion.focus.value * motion.float.value), motion.errorColor, motion.error.value)
                 },
                 maxLines = 1,
@@ -250,7 +250,7 @@ private fun StrengthMeter(value: String, surface: SurfaceStyle) {
     val colors = KineticaTheme.colors
     val weak = colors.destructive
     val strong = colors.positive
-    val track = surface.contentColor.copy(alpha = TRACK_ALPHA)
+    val track = surface.raisedFill(TRACK_ALPHA)
     val name = stringResource(
         when (strength) {
             PasswordStrength.Weak -> R.string.kinetica_ui_password_weak
@@ -332,7 +332,7 @@ private fun RuleItem(label: String, met: Boolean, surface: SurfaceStyle) {
     val level = remember { Animatable(if (met) 1f else 0f) }
     LaunchedEffect(met) { level.animateTo(if (met) 1f else 0f, spring(dampingRatio = METER_DAMPING)) }
     val positive = KineticaTheme.colors.positive
-    val idle = surface.contentColor.copy(alpha = RULE_IDLE_ALPHA)
+    val idle = surface.muted(RULE_IDLE_ALPHA)
     val state = stringResource(if (met) R.string.kinetica_ui_password_rule_met else R.string.kinetica_ui_password_rule_unmet)
     Row(
         Modifier.semantics(mergeDescendants = true) { stateDescription = state },
@@ -362,7 +362,7 @@ private fun RuleItem(label: String, met: Boolean, surface: SurfaceStyle) {
             label,
             Modifier.padding(start = RULE_LABEL_GAP),
             style = TextStyle(fontSize = SMALL_FONT_SIZE),
-            color = { lerp(surface.contentColor.copy(alpha = RULE_TEXT_ALPHA), surface.contentColor, level.value.coerceIn(0f, 1f)) },
+            color = { lerp(surface.muted(RULE_TEXT_ALPHA), surface.contentColor, level.value.coerceIn(0f, 1f)) },
             maxLines = 1,
         )
     }

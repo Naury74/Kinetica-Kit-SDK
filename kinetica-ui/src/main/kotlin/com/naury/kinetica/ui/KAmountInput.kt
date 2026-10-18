@@ -178,13 +178,13 @@ private fun AmountDisplay(text: AmountText, surface: SurfaceStyle) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        label?.let { ThemedText(it, style = TextStyle(color = ink.copy(alpha = MUTED), fontSize = 14.sp)) }
+        label?.let { ThemedText(it, style = TextStyle(color = surface.muted(MUTED), fontSize = 14.sp)) }
         Row(verticalAlignment = Alignment.CenterVertically) {
             RollingText(
                 shown,
                 style = themed(
                     TextStyle(
-                        color = if (text.empty) ink.copy(alpha = PLACEHOLDER) else ink,
+                        color = if (text.empty) surface.muted(PLACEHOLDER) else ink,
                         fontSize = 40.sp,
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
@@ -196,7 +196,7 @@ private fun AmountDisplay(text: AmountText, surface: SurfaceStyle) {
         val note = error ?: hint
         if (note != null) {
             val danger = readableOn(KineticaTheme.colors.destructive, surface.inkBackground())
-            val color = if (error != null) danger else ink.copy(alpha = MUTED)
+            val color = if (error != null) danger else surface.muted(MUTED)
             ThemedText(note, style = TextStyle(color = color, fontSize = 13.sp, textAlign = TextAlign.Center))
         }
     }

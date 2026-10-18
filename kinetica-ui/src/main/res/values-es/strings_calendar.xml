@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_calendar_previous_month">Mes anterior</string>
+    <string name="kinetica_ui_calendar_next_month">Mes siguiente</string>
+    <string name="kinetica_ui_calendar_today">Hoy</string>
+    <string name="kinetica_ui_calendar_range_start">Fecha de inicio</string>
+    <string name="kinetica_ui_calendar_range_end">Fecha de finalización</string>
+    <string name="kinetica_ui_calendar_in_range">Dentro del intervalo</string>
+    <plurals name="kinetica_ui_calendar_events">
+        <item quantity="one">%d evento</item>
+        <item quantity="many">%d eventos</item>
+        <item quantity="other">%d eventos</item>
+    </plurals>
+    <string name="kinetica_ui_range_slider_start">Mínimo</string>
+    <string name="kinetica_ui_range_slider_end">Máximo</string>
+</resources>

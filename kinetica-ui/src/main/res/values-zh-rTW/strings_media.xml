@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">評分</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="other">%1$s 顆星，滿分 %2$d 顆星</item>
+    </plurals>
+    <string name="kinetica_ui_like">按讚</string>
+    <string name="kinetica_ui_liked">已按讚</string>
+    <string name="kinetica_ui_not_liked">未按讚</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="other">%1$s 和其他 %2$d 人</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">正在播放</string>
+    <string name="kinetica_ui_player_expand">開啟播放器</string>
+    <string name="kinetica_ui_player_collapse">最小化播放器</string>
+</resources>

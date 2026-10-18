@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_rating">คะแนน</string>
+    <plurals name="kinetica_ui_rating_value">
+        <item quantity="other">%1$s จาก %2$d ดาว</item>
+    </plurals>
+    <string name="kinetica_ui_like">ถูกใจ</string>
+    <string name="kinetica_ui_liked">ถูกใจแล้ว</string>
+    <string name="kinetica_ui_not_liked">ยังไม่ได้ถูกใจ</string>
+    <plurals name="kinetica_ui_avatar_more">
+        <item quantity="other">%1$s และอีก %2$d คน</item>
+    </plurals>
+    <string name="kinetica_ui_player_now_playing">กำลังเล่น</string>
+    <string name="kinetica_ui_player_expand">เปิดเครื่องเล่น</string>
+    <string name="kinetica_ui_player_collapse">ย่อเครื่องเล่น</string>
+</resources>

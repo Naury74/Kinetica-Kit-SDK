@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_refresh">刷新</string>
+    <string name="kinetica_ui_refreshing">正在刷新</string>
+    <string name="kinetica_ui_close">关闭</string>
+</resources>

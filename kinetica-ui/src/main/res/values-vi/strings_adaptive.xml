@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tabbar_collapsed">Đã thu gọn thanh tab</string>
+    <string name="kinetica_ui_tabbar_expand">Hiện tất cả các tab</string>
+    <string name="kinetica_ui_tabbar_go_to">Chuyển đến %1$s</string>
+</resources>

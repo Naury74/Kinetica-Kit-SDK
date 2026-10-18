@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_chat_sending">正在发送</string>
+    <string name="kinetica_ui_chat_sent">已发送</string>
+    <string name="kinetica_ui_chat_delivered">已送达</string>
+    <string name="kinetica_ui_chat_read">已读</string>
+    <string name="kinetica_ui_chat_failed">未发送</string>
+    <string name="kinetica_ui_chat_typing">正在输入</string>
+    <string name="kinetica_ui_chat_hint">消息</string>
+    <string name="kinetica_ui_chat_attach">附件</string>
+    <string name="kinetica_ui_chat_send">发送</string>
+    <string name="kinetica_ui_chat_voice">语音消息</string>
+    <string name="kinetica_ui_story_new">新快拍</string>
+    <string name="kinetica_ui_story_seen">已看过</string>
+    <string name="kinetica_ui_story_position">第 %1$d 个快拍，共 %2$d 个</string>
+    <string name="kinetica_ui_story_next">下一个快拍</string>
+    <string name="kinetica_ui_story_previous">上一个快拍</string>
+    <string name="kinetica_ui_story_pause">暂停</string>
+    <string name="kinetica_ui_story_resume">继续</string>
+    <string name="kinetica_ui_story_paused">已暂停</string>
+    <string name="kinetica_ui_drop_title">添加文件</string>
+    <string name="kinetica_ui_drop_release">松开即可添加</string>
+    <string name="kinetica_ui_attach_uploading">正在上传 %d%%</string>
+    <string name="kinetica_ui_attach_uploading_plain">正在上传</string>
+    <string name="kinetica_ui_attach_failed">上传失败</string>
+    <string name="kinetica_ui_attach_cancel">取消上传</string>
+    <string name="kinetica_ui_attach_retry">重试</string>
+    <string name="kinetica_ui_attach_remove">移除</string>
+    <string name="kinetica_ui_index_bar">索引</string>
+    <string name="kinetica_ui_index_jump">跳转到%s</string>
+    <string name="kinetica_ui_page_previous">上一页</string>
+    <string name="kinetica_ui_page_next">下一页</string>
+    <string name="kinetica_ui_page_number">第 %d 页</string>
+    <string name="kinetica_ui_breadcrumb">路径导航</string>
+    <string name="kinetica_ui_breadcrumb_current">当前位置</string>
+    <string name="kinetica_ui_breadcrumb_more">显示完整路径</string>
+    <string name="kinetica_ui_map_cluster">%d 个地点</string>
+    <string name="kinetica_ui_pin_selected">已选择</string>
+    <string name="kinetica_ui_hold_confirm">长按以确认</string>
+    <string name="kinetica_ui_copy_action">复制</string>
+    <string name="kinetica_ui_copy_done">已复制</string>
+</resources>

@@ -303,7 +303,7 @@ internal fun ColorHexField(color: Color, onColor: (Color) -> Unit, surface: Surf
                 "#",
                 Modifier.padding(start = HEX_GAP),
                 style = TextStyle(
-                    color = surface.contentColor.copy(alpha = HASH_ALPHA),
+                    color = surface.muted(HASH_ALPHA),
                     fontSize = HEX_FONT_SIZE,
                     fontFamily = FontFamily.Monospace,
                 ),

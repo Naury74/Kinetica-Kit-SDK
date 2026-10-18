@@ -194,7 +194,7 @@ private fun fraction(value: Float): Float = if (value.isNaN()) 0f else value.coe
 private fun trackColor(color: Color, surface: SurfaceStyle): Color = if (contrast(color, surface.inkBackground()) <
     TRACK_CONTRAST
 ) {
-    surface.contentColor.copy(alpha = TRACK_ALPHA)
+    surface.raisedFill(TRACK_ALPHA)
 } else {
     color.copy(alpha = TRACK_ALPHA)
 }

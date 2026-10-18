@@ -44,7 +44,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -130,7 +129,7 @@ public fun KSlideToConfirm(
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     val scope = rememberCoroutineScope()
-    val haptic = LocalHapticFeedback.current
+    val haptic = kHapticFeedback()
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val slide = state
     val done = slide.isConfirmed
@@ -175,7 +174,7 @@ public fun KSlideToConfirm(
                 .padding(horizontal = HEIGHT)
                 .graphicsLayer { alpha = (1f - slide.position.value * TEXT_FADE).coerceIn(0f, 1f) },
             style = TextStyle(fontSize = 16.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
-            color = surface.contentColor.copy(alpha = TEXT_ALPHA),
+            color = surface.muted(TEXT_ALPHA),
         )
         Thumb(
             accent,
