@@ -48,7 +48,6 @@ import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
@@ -248,7 +247,7 @@ private fun Modifier.dialAction(expanded: Boolean, name: String, stateText: Stri
     clickable(interactionSource = null, indication = press, role = Role.Button, onClick = onClick)
         .semantics {
             contentDescription = name
-            stateDescription = stateText
+            expandedStateText(stateText)
             if (expanded) {
                 collapse {
                     onClick()

@@ -75,6 +75,24 @@ class ReadOnceTest {
         }
     }
 
+    private fun expandableState(): String? {
+        compose.setContent { KExpandable(false, {}, { androidx.compose.foundation.text.BasicText("배송 정보") }) { } }
+        val node = compose.onNode(androidx.compose.ui.test.hasText("배송 정보")).fetchSemanticsNode()
+        assertThat(node.config.contains(androidx.compose.ui.semantics.SemanticsActions.Expand)).isTrue()
+        return node.config.getOrNull(SemanticsProperties.StateDescription)
+    }
+
+    @Test
+    fun `Android 15까지는 펼침 상태를 문구로 알린다`() {
+        assertThat(expandableState()).isEqualTo("접힘")
+    }
+
+    @Test
+    @Config(sdk = [36])
+    fun `Android 16부터는 TalkBack이 펼침 동작에서 상태를 읽으므로 문구를 또 넣지 않는다`() {
+        assertThat(expandableState()).isNull()
+    }
+
     @Test
     fun `태그 칩은 태그 이름을 한 번만 읽는다`() {
         compose.setContent { KTagInput(listOf("디자인"), {}) }

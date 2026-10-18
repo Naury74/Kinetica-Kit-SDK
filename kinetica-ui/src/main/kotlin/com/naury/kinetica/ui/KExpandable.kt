@@ -1,5 +1,6 @@
 package com.naury.kinetica.ui
 
+import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
@@ -120,7 +122,7 @@ private fun ExpandableHeader(
                 onExpandedChange(!expanded)
             }
             .semantics {
-                stateDescription = state
+                expandedStateText(state)
                 if (expanded) {
                     collapse {
                         onExpandedChange(false)
@@ -265,3 +267,13 @@ private val CHEVRON_STROKE = 2.dp
 private const val CHEVRON_SIDE = 0.2f
 private const val CHEVRON_TOP = 0.35f
 private const val CHEVRON_ALPHA = 0.7f
+
+/**
+ * 펼침 상태 문구. Android 16(API 36)부터는 TalkBack이 expand, collapse 동작에서 상태를 직접 읽으므로("collapsed") 문구를 또 넣으면
+ * 두 번 읽는다. 그 전 버전은 동작만으로는 상태를 읽지 않으므로 [text]를 넣는다.
+ */
+internal fun SemanticsPropertyReceiver.expandedStateText(text: String) {
+    if (Build.VERSION.SDK_INT < EXPANDED_STATE_API) stateDescription = text
+}
+
+private const val EXPANDED_STATE_API = 36
