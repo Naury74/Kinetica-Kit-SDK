@@ -14,6 +14,7 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -60,13 +61,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.node.GlobalPositionAwareModifierNode
@@ -85,6 +90,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
@@ -120,7 +126,15 @@ import kotlinx.coroutines.launch
  *   화면 전체를 사진으로 본다. 열린 채 목록이 비면 애니메이션 없이 바로 닫는다.
  * @param contentDescriptions 사진마다 TalkBack이 읽을 설명. 짧으면 나머지는 설명 없이 둔다.
  * @param surface 위아래 바의 글래스 스타일. 사진 위에 어둡게 뜨는 [GlassStyles.Vision]이 기본값이다.
+ * @param closeIcon 위 바 시작 쪽 버튼 모양. [KImageViewerCloseIcon.Back]이면 RTL에서 뒤집히는 뒤로 화살표가 된다. 누르면 어느 쪽이든 뷰어를 닫는다.
+ * @param topActions 위 바 끝 쪽에 놓을 버튼(선택 토글 등). 지금 페이지를 받는다. 가운데 쪽수 표시는 양쪽 중 넓은 쪽을 피해 가운데에 남는다.
+ * @param bottomBar 아래쪽 화면 폭 전체에 놓을 내용(필름 줄, 완료 버튼 등). 지금 페이지를 받으며, 시스템 내비게이션 바는 피해서 놓는다.
+ *   주면 페이지 인디케이터는 놓지 않고, [caption]도 함께 주면 설명 카드를 그 위에 놓는다. 글자가 밝은 표면이면 밝은 사진 위에서도
+ *   보이도록 아래에서 위로 옅어지는 어두운 막을 깐다.
  * @param caption 아래 바에 놓을 설명. `null`이면 사진이 둘 이상일 때 페이지 인디케이터를 놓는다.
+ *
+ * [topActions]와 [bottomBar]는 한 번 탭으로 바를 숨기거나 끌어서 닫을 때 다른 바와 함께 옅어지고, 숨는 동안에는 터치와 TalkBack에서 빠진다.
+ * 안에서 [KImageViewerChromeScope.viewerChrome]을 쓰면 닫기 버튼과 같은 글래스 면과 밝은 사진 위 대비 처리를 받는다.
  */
 @Composable
 public fun KImageViewer(
@@ -129,9 +143,13 @@ public fun KImageViewer(
     modifier: Modifier = Modifier,
     contentDescriptions: List<String?> = emptyList(),
     surface: SurfaceStyle = SurfaceStyles.Vision,
+    closeIcon: KImageViewerCloseIcon = KImageViewerCloseIcon.Close,
+    topActions: (@Composable KImageViewerChromeScope.(page: Int) -> Unit)? = null,
+    bottomBar: (@Composable KImageViewerChromeScope.(page: Int) -> Unit)? = null,
     caption: (@Composable (page: Int) -> Unit)? = null,
 ) {
-    ViewerCore(state, images.size, { images.getOrNull(it)?.aspect() }, modifier, ViewerLook(surface, caption)) { page ->
+    val look = ViewerLook(surface, caption, closeIcon, topActions, bottomBar)
+    ViewerCore(state, images.size, { images.getOrNull(it)?.aspect() }, modifier, look) { page ->
         // 목록이 줄어든 뒤 뷰어가 닫히기 전에 페이지가 한 번 더 그려질 수 있다.
         val image = images.getOrNull(page)
         val description = contentDescriptions.getOrNull(page)
@@ -143,13 +161,48 @@ public fun KImageViewer(
     }
 }
 
+/** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KImageViewer(
+    state: KImageViewerState,
+    images: List<Painter>,
+    modifier: Modifier = Modifier,
+    contentDescriptions: List<String?> = emptyList(),
+    surface: SurfaceStyle = SurfaceStyles.Vision,
+    caption: (@Composable (page: Int) -> Unit)? = null,
+) {
+    KImageViewer(state, images, modifier, contentDescriptions, surface, caption = caption)
+}
+
 /**
  * 사진 대신 원하는 내용을 페이지로 그리는 [KImageViewer]. [content]는 화면 크기로 그린다.
  * 내용의 비율을 모르므로 열고 닫을 때 페이지 전체가 썸네일 크기로 맞춰진다. 사진 비율을 알면 [aspectRatio]로 알려 준다.
  *
  * @param pageCount 페이지 수. 0 이하이면 아무것도 그리지 않고, 열린 채 0 이하가 되면 애니메이션 없이 바로 닫는다.
  * @param aspectRatio 페이지 안 그림의 가로/세로 비율. `null`이면 화면 전체를 그림으로 본다. 확대 중 이동 범위와 열고 닫는 전환에 쓴다.
+ * @param closeIcon 위 바 시작 쪽 버튼 모양. Painter 목록 [KImageViewer]와 같다.
+ * @param topActions 위 바 끝 쪽 버튼. Painter 목록 [KImageViewer]와 같다.
+ * @param bottomBar 아래쪽 전폭 내용. Painter 목록 [KImageViewer]와 같다.
  */
+@Composable
+public fun KImageViewer(
+    state: KImageViewerState,
+    pageCount: Int,
+    modifier: Modifier = Modifier,
+    aspectRatio: (page: Int) -> Float? = { null },
+    surface: SurfaceStyle = SurfaceStyles.Vision,
+    caption: (@Composable (page: Int) -> Unit)? = null,
+    closeIcon: KImageViewerCloseIcon = KImageViewerCloseIcon.Close,
+    topActions: (@Composable KImageViewerChromeScope.(page: Int) -> Unit)? = null,
+    bottomBar: (@Composable KImageViewerChromeScope.(page: Int) -> Unit)? = null,
+    content: @Composable (page: Int) -> Unit,
+) {
+    ViewerCore(state, pageCount, aspectRatio, modifier, ViewerLook(surface, caption, closeIcon, topActions, bottomBar), content)
+}
+
+/** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
 @Composable
 public fun KImageViewer(
     state: KImageViewerState,
@@ -160,7 +213,7 @@ public fun KImageViewer(
     caption: (@Composable (page: Int) -> Unit)? = null,
     content: @Composable (page: Int) -> Unit,
 ) {
-    ViewerCore(state, pageCount, aspectRatio, modifier, ViewerLook(surface, caption), content)
+    KImageViewer(state, pageCount, modifier, aspectRatio, surface, caption, content = content)
 }
 
 /**
@@ -171,6 +224,9 @@ public fun KImageViewer(
  * ```kotlin
  * viewing?.let { KImageViewer(photos, startIndex = it, onDismiss = { viewing = null }) }
  * ```
+ *
+ * 이 판은 사진만 받는 가장 짧은 판이라 표면, 설명, 위아래 슬롯을 받지 않는다. 그런 것이 필요하면 [KImageViewerState]를 받는 판을 쓴다.
+ * 슬롯에 넣을 선택 토글이나 필름 줄은 어차피 지금 페이지와 선택 상태를 호출한 쪽이 들고 있어야 하므로 상태를 받는 판이 맞다.
  */
 @Composable
 public fun KImageViewer(images: List<Painter>, startIndex: Int, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
@@ -202,7 +258,13 @@ private fun SizelessImage(painter: Painter, description: String?) {
     )
 }
 
-private class ViewerLook(val surface: SurfaceStyle, val caption: (@Composable (page: Int) -> Unit)?)
+internal class ViewerLook(
+    val surface: SurfaceStyle,
+    val caption: (@Composable (page: Int) -> Unit)?,
+    val closeIcon: KImageViewerCloseIcon = KImageViewerCloseIcon.Close,
+    val topActions: (@Composable KImageViewerChromeScope.(page: Int) -> Unit)? = null,
+    val bottomBar: (@Composable KImageViewerChromeScope.(page: Int) -> Unit)? = null,
+)
 
 private fun Painter.aspect(): Float? {
     val size = intrinsicSize
@@ -294,7 +356,7 @@ private fun ViewerBarIcons(frame: ViewerFrame) {
 }
 
 /** 뷰어 안쪽에서 함께 쓰는 상태 묶음. */
-private class ViewerParts(
+internal class ViewerParts(
     val state: KImageViewerState,
     val pager: PagerState,
     val zoom: ViewerZoom,
@@ -306,7 +368,7 @@ private class ViewerParts(
  * 열림 정도와 끌어서 닫기 이동에 따라 사진이 놓일 자리를 계산한다. 썸네일([KImageViewerState.sources])에서 사진 영역으로 커지고,
  * 끄는 동안에는 손가락을 따라 내려가며 조금 작아진다. 썸네일이 없으면 제자리에서 살짝 커지며 나타난다. 값은 그리기 단계에서 읽는다.
  */
-private class ViewerFrame(
+internal class ViewerFrame(
     private val state: KImageViewerState,
     private val full: Rect,
     private val aspect: (Int) -> Float?,
@@ -338,7 +400,7 @@ private class ViewerFrame(
     }
 }
 
-private class FrameValues {
+internal class FrameValues {
     var scale = 1f
     var translation = Offset.Zero
     var clip = Rect.Zero
@@ -388,8 +450,9 @@ private fun ViewerBody(parts: ViewerParts, look: ViewerLook, content: @Composabl
             StatusBarScrim { parts.frame.level * (1f - parts.frame.dragged * BAR_DRAG_FADE).coerceAtLeast(0f) }
         }
         val barLevel = { bars * parts.frame.level * (1f - parts.frame.dragged * BAR_DRAG_FADE).coerceAtLeast(0f) }
-        TopBar(parts, look.surface, backdrop, barsShown, barLevel)
-        BottomBar(parts, look, backdrop, barLevel)
+        val chrome = remember(look.surface, backdrop) { ViewerChromeScopeImpl(look.surface, backdrop) }
+        TopBar(parts, look, ChromeContext(chrome, backdrop, barsShown, barLevel))
+        BottomBar(parts, look, ChromeContext(chrome, backdrop, barsShown, barLevel))
     }
 }
 
@@ -500,101 +563,6 @@ private fun Modifier.pageAccessibility(parts: ViewerParts, page: Int): Modifier 
     }
 }
 
-@Composable
-private fun BoxScope.TopBar(parts: ViewerParts, surface: SurfaceStyle, backdrop: GlassBackdrop, shown: Boolean, level: () -> Float) {
-    val ink = surface.contentColor
-    val closeLabel = stringResource(R.string.kinetica_ui_close)
-    Row(
-        Modifier
-            .align(Alignment.TopCenter)
-            .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-            .padding(BAR_PADDING)
-            .graphicsLayer {
-                alpha = level()
-                translationY = -BAR_SLIDE.toPx() * (1f - level())
-            },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val buttonShape = shapeFor { button }
-        Box(
-            Modifier
-                .size(BUTTON_SIZE)
-                .kSurface(surface, buttonShape, backdrop)
-                .then(
-                    if (shown) {
-                        Modifier.kClickable(buttonShape, onClickLabel = closeLabel) { parts.state.close() }
-                            .semantics { contentDescription = closeLabel }
-                    } else {
-                        Modifier.clearAndSetSemantics { }
-                    },
-                )
-                .lightInkScrim(buttonShape, ink)
-                .drawBehind {
-                    val arm = size.minDimension * CLOSE_ARM
-                    val stroke = CLOSE_STROKE.toPx()
-                    // 밝은 ×는 흰 사진 위에서 사라지므로 어두운 테두리를 먼저 그린다.
-                    if (ink.luminance() > LIGHT_INK) {
-                        val halo = Color.Black.copy(alpha = HALO_ALPHA)
-                        drawLine(halo, center - Offset(arm, arm), center + Offset(arm, arm), stroke + HALO.toPx(), StrokeCap.Round)
-                        drawLine(halo, center + Offset(arm, -arm), center + Offset(-arm, arm), stroke + HALO.toPx(), StrokeCap.Round)
-                    }
-                    drawLine(ink, center - Offset(arm, arm), center + Offset(arm, arm), stroke, StrokeCap.Round)
-                    drawLine(ink, center + Offset(arm, -arm), center + Offset(-arm, arm), stroke, StrokeCap.Round)
-                },
-        )
-        Spacer(Modifier.weight(1f))
-        if (parts.pager.pageCount > 1) {
-            val badge = shapeFor { badge }
-            val counter = Modifier.kSurface(surface, badge, backdrop).lightInkScrim(badge, ink)
-            Box(counter.clearAndSetSemantics { }.padding(horizontal = 14.dp, vertical = 8.dp)) {
-                ThemedText(
-                    "${parts.pager.currentPage + 1} / ${parts.pager.pageCount}",
-                    style = TextStyle(color = ink, fontSize = 15.sp, fontWeight = KineticaTheme.design.label(FontWeight.SemiBold)),
-                )
-            }
-        }
-        Spacer(Modifier.weight(1f))
-        Spacer(Modifier.size(BUTTON_SIZE))
-    }
-}
-
-/**
- * 글자가 밝은 표면이면 버튼 안쪽을 옅게 어둡게 칠한다. 글래스 버튼은 뒤 사진을 블러로 비추므로, 흰 사진 위에서는 버튼과 흰 글자가 함께 묻힌다.
- */
-private fun Modifier.lightInkScrim(shape: Shape, ink: Color): Modifier = if (ink.luminance() > LIGHT_INK) {
-    drawBehind { drawOutline(shape.createOutline(size, layoutDirection, this), Color.Black.copy(alpha = SCRIM_ALPHA)) }
-} else {
-    this
-}
-
-@Composable
-private fun BoxScope.BottomBar(parts: ViewerParts, look: ViewerLook, backdrop: GlassBackdrop, level: () -> Float) {
-    val caption = look.caption
-    if (caption == null && parts.pager.pageCount <= 1) return
-    val surface = look.surface
-    Box(
-        Modifier
-            .align(Alignment.BottomCenter)
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-            .padding(BAR_PADDING)
-            .graphicsLayer {
-                alpha = level()
-                translationY = BAR_SLIDE.toPx() * (1f - level())
-            },
-    ) {
-        if (caption != null) {
-            Box(Modifier.fillMaxWidth().kSurface(surface, shapeFor { card }, backdrop).padding(CAPTION_PADDING)) {
-                CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) { caption(parts.pager.currentPage) }
-            }
-        } else {
-            Box(Modifier.kSurface(surface, shapeFor { tabBar }, backdrop).padding(horizontal = 6.dp)) {
-                KPageIndicator(parts.pager, surface = surface)
-            }
-        }
-    }
-}
-
 private const val OPEN_DAMPING = 0.8f
 private const val FLY_AWAY = 0.3f
 private const val FALLBACK_SCALE = 0.86f
@@ -608,15 +576,5 @@ private const val PERCENT = 100
 private const val PERCENT_STEP = 10
 private const val ZOOM_STEP = 1.6f
 private val PAGE_SPACING = 16.dp
-private val BAR_PADDING = 12.dp
-private val BAR_SLIDE = 16.dp
-private val BUTTON_SIZE = KMetrics.IconButton
-private const val CLOSE_ARM = 0.17f
-private const val LIGHT_INK = 0.5f
 private const val STATUS_SCRIM_ALPHA = 0.45f
 private val STATUS_SCRIM_FADE = 24.dp
-private const val SCRIM_ALPHA = 0.32f
-private const val HALO_ALPHA = 0.35f
-private val HALO = 2.dp
-private val CLOSE_STROKE = 2.dp
-private val CAPTION_PADDING = 16.dp

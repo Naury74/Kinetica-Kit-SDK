@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_selection_on_order">Đã chọn, thứ %1$d</string>
+    <string name="kinetica_ui_selection_on">Đã chọn</string>
+    <string name="kinetica_ui_selection_off">Chưa chọn</string>
+</resources>

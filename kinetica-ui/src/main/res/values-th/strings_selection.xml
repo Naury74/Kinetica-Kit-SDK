@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_selection_on_order">เลือกแล้ว ลำดับที่ %1$d</string>
+    <string name="kinetica_ui_selection_on">เลือกแล้ว</string>
+    <string name="kinetica_ui_selection_off">ไม่ได้เลือก</string>
+</resources>

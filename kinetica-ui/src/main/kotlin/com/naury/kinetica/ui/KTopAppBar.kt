@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -160,14 +162,68 @@ public fun KTopAppBar(
     surface: SurfaceStyle = KineticaTheme.surface,
     windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
 ) {
+    TopAppBarLayout(BarTitle(title, null), modifier, variant, state, onBack, navigationIcon, subtitle, actions, surface, windowInsets)
+}
+
+/**
+ * 제목 자리에 직접 만든 내용을 놓는 [KTopAppBar]. 제목을 눌러 앨범이나 계정을 고르는 화면처럼 제목이 버튼인 경우에 쓴다.
+ * 그런 드롭다운 제목은 [KTopAppBarDropdownTitle]을 쓰면 글자 모양, 화살표, TalkBack 제목 표시가 바에 맞춰진다.
+ *
+ * [title]은 [KTopAppBarTitleScope] 안에서 그리며, 그 자리에서 String 제목이 쓰는 글자 모양을 [KTopAppBarTitleScope.textStyle]로 받는다.
+ * 제목 자리는 TalkBack에서 제목(heading)으로 읽힌다. 안에서 따로 `clickable`처럼 의미를 묶는 수정자를 쓰면 그 노드가 따로 읽히므로,
+ * 그때는 그 노드에 `semantics { heading() }`을 함께 붙인다.
+ *
+ * [KTopAppBarVariant.Medium]이면 [title]을 큰 제목 줄과 위 줄에 한 번씩 그린다. 둘 중 하나만 화면에 놓이며, 큰 제목이 70% 넘게 접히면
+ * 위 줄 쪽으로 바뀐다. 놓이지 않은 쪽은 터치와 TalkBack에서 빠지므로 제목이 두 번 읽히거나 보이지 않는 버튼이 눌리지 않는다.
+ * 두 곳에 그려지므로 [title] 안에서 `remember`한 상태는 서로 나뉜다. 펼침 여부 같은 상태는 바깥에서 넘긴다.
+ *
+ * ```kotlin
+ * KTopAppBar(
+ *     title = { KTopAppBarDropdownTitle(album.name, expanded = picking, onClick = { picking = !picking }) },
+ *     onBack = ::finish,
+ * )
+ * ```
+ *
+ * 그 밖의 파라미터는 String 제목 [KTopAppBar]와 같다.
+ */
+@Composable
+public fun KTopAppBar(
+    title: @Composable KTopAppBarTitleScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    variant: KTopAppBarVariant = KTopAppBarVariant.Small,
+    state: KTopAppBarState? = null,
+    onBack: (() -> Unit)? = null,
+    navigationIcon: (@Composable () -> Unit)? = null,
+    subtitle: String? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+    surface: SurfaceStyle = KineticaTheme.surface,
+    windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+) {
+    TopAppBarLayout(BarTitle(null, title), modifier, variant, state, onBack, navigationIcon, subtitle, actions, surface, windowInsets)
+}
+
+/** 글자 제목이나 제목 슬롯 가운데 하나. */
+private class BarTitle(val text: String?, val slot: (@Composable KTopAppBarTitleScope.() -> Unit)?)
+
+@Suppress("LongParameterList") // 두 공개 오버로드의 파라미터를 그대로 받는다.
+@Composable
+private fun TopAppBarLayout(
+    title: BarTitle,
+    modifier: Modifier,
+    variant: KTopAppBarVariant,
+    state: KTopAppBarState?,
+    onBack: (() -> Unit)?,
+    navigationIcon: (@Composable () -> Unit)?,
+    subtitle: String?,
+    actions: @Composable RowScope.() -> Unit,
+    surface: SurfaceStyle,
+    windowInsets: WindowInsets,
+) {
     val medium = variant == KTopAppBarVariant.Medium
-    if (state != null) {
-        state.fadeDistance = with(LocalDensity.current) { FADE_DISTANCE.toPx() }
-        if (!medium) state.range = 0f
-    }
-    // 배경은 몇 단계로만 바꿔, 스크롤하는 동안 바를 매 프레임 다시 그리지 않게 한다.
-    val level by remember(state) {
-        derivedStateOf { if (state == null) 1f else (state.overlappedFraction * LEVEL_STEPS).roundToInt() / LEVEL_STEPS }
+    val level by rememberBarLevel(state, medium)
+    // 제목 슬롯은 Medium에서 두 곳에 그려지므로, 한쪽만 놓아 터치와 TalkBack이 겹치지 않게 한다.
+    val smallActive = remember(state, medium) {
+        derivedStateOf { !medium || (state?.collapsedFraction ?: 0f) >= SMALL_TITLE_START }
     }
     var rowHeight by remember { mutableIntStateOf(0) }
     val nav: (@Composable () -> Unit)? = navigationIcon ?: onBack?.let { back -> { BackIconButton(surface, back) } }
@@ -175,14 +231,31 @@ public fun KTopAppBar(
         if (level > 0f) BarFill(surface, level) { rowHeight }
         Column(Modifier.fillMaxWidth()) {
             BarRow(
-                BarRowSpec(title, if (medium) null else subtitle, variant, surface),
+                BarRowSpec(title, if (medium) null else subtitle, variant, surface, slotHidden = !smallActive.value),
                 nav,
                 { if (medium) state?.let { smallTitleAlpha(it.collapsedFraction) } ?: 0f else 1f },
+                { title.slot == null || smallActive.value },
                 Modifier.onSizeChanged { rowHeight = it.height }.windowInsetsPadding(windowInsets),
                 actions,
             )
-            if (medium) MediumTitle(title, subtitle, surface, state, windowInsets)
+            if (medium) {
+                MediumTitle(MediumTitleSpec(title, subtitle, surface, state, windowInsets, slotHidden = smallActive.value)) {
+                    !smallActive.value
+                }
+            }
         }
+    }
+}
+
+/** [state]에 바 모양을 알리고, 바 배경이 보이는 정도를 몇 단계로만 바꿔 스크롤하는 동안 바를 매 프레임 다시 그리지 않게 한다. */
+@Composable
+private fun rememberBarLevel(state: KTopAppBarState?, medium: Boolean): State<Float> {
+    if (state != null) {
+        state.fadeDistance = with(LocalDensity.current) { FADE_DISTANCE.toPx() }
+        if (!medium) state.range = 0f
+    }
+    return remember(state) {
+        derivedStateOf { if (state == null) 1f else (state.overlappedFraction * LEVEL_STEPS).roundToInt() / LEVEL_STEPS }
     }
 }
 
@@ -212,11 +285,17 @@ private fun Modifier.layoutHeight(height: () -> Int): Modifier = layout { measur
 }
 
 /** 바 한 줄의 고정 값. 파라미터 수를 줄이려고 묶었다. */
-private class BarRowSpec(val title: String, val subtitle: String?, val variant: KTopAppBarVariant, val surface: SurfaceStyle)
+private class BarRowSpec(
+    val title: BarTitle,
+    val subtitle: String?,
+    val variant: KTopAppBarVariant,
+    val surface: SurfaceStyle,
+    val slotHidden: Boolean,
+)
 
 /**
  * 시작 버튼, 제목, 끝 버튼을 한 줄에 놓는다. 가운데 정렬이면 제목을 바 가운데에 두되 양쪽 버튼과 겹치지 않게 폭을 줄인다.
- * [titleAlpha]는 그리기 단계에서 읽는다.
+ * [titleAlpha]는 그리기 단계에서 읽고, [titlePlaced]는 배치 단계에서 읽는다. 놓지 않은 제목은 터치와 TalkBack에서 빠진다.
  */
 @Suppress("LongMethod") // 디자인 언어 토큰(모양, 밀도, 굵기)을 읽는 줄이 더해졌을 뿐 한 덩어리 배치라 나누면 오히려 읽기 어렵다.
 @Composable
@@ -224,11 +303,18 @@ private fun BarRow(
     spec: BarRowSpec,
     nav: (@Composable () -> Unit)?,
     titleAlpha: () -> Float,
+    titlePlaced: () -> Boolean,
     modifier: Modifier,
     actions: @Composable RowScope.() -> Unit,
 ) {
     val medium = spec.variant == KTopAppBarVariant.Medium
     val center = spec.variant == KTopAppBarVariant.CenterAligned
+    val slot = spec.title.slot
+    val titleStyle = TextStyle(
+        color = spec.surface.contentColor,
+        fontSize = 18.sp,
+        fontWeight = KineticaTheme.design.title(FontWeight.SemiBold),
+    )
     Layout(
         content = {
             Box(Modifier.layoutId(NAV)) { nav?.invoke() }
@@ -236,20 +322,29 @@ private fun BarRow(
                 Modifier
                     .layoutId(TITLE)
                     .graphicsLayer { alpha = titleAlpha() }
-                    // Medium의 작은 제목은 큰 제목과 같은 글이라 TalkBack이 두 번 읽지 않게 한다.
-                    .then(if (medium) Modifier.clearAndSetSemantics { } else Modifier.semantics { heading() }),
+                    .then(
+                        when {
+                            // 슬롯은 큰 제목과 이 줄 가운데 놓인 쪽만 TalkBack에 남긴다. 놓지 않아도 의미 트리에는 남기 때문이다.
+                            slot != null -> if (spec.slotHidden) Modifier.clearAndSetSemantics { } else Modifier
+
+                            // Medium의 작은 제목은 큰 제목과 같은 글이라 TalkBack이 두 번 읽지 않게 한다.
+                            medium -> Modifier.clearAndSetSemantics { }
+
+                            else -> Modifier.semantics { heading() }
+                        },
+                    ),
                 horizontalAlignment = if (center) Alignment.CenterHorizontally else Alignment.Start,
             ) {
-                ThemedText(
-                    spec.title,
-                    style = TextStyle(
-                        color = spec.surface.contentColor,
-                        fontSize = 18.sp,
-                        fontWeight = KineticaTheme.design.title(FontWeight.SemiBold),
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (slot != null) {
+                    TitleSlot(slot, TitleScope(isLarge = false, textStyle = titleStyle))
+                } else {
+                    ThemedText(
+                        spec.title.text.orEmpty(),
+                        style = titleStyle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 spec.subtitle?.let {
                     ThemedText(
                         it,
@@ -284,17 +379,32 @@ private fun BarRow(
                 navPlaceable.width > 0 -> navPlaceable.width + inset / 2
                 else -> inset
             }
-            titlePlaceable.placeRelative(titleX, (height - titlePlaceable.height) / 2)
+            if (titlePlaced()) titlePlaceable.placeRelative(titleX, (height - titlePlaceable.height) / 2)
         }
     }
 }
 
+/** Medium 큰 제목 줄의 고정 값. 파라미터 수를 줄이려고 묶었다. */
+private class MediumTitleSpec(
+    val title: BarTitle,
+    val subtitle: String?,
+    val surface: SurfaceStyle,
+    val state: KTopAppBarState?,
+    val insets: WindowInsets,
+    val slotHidden: Boolean,
+)
+
+/** [placed]는 배치 단계에서 읽는다. 제목 슬롯이 위 줄로 넘어가면 큰 쪽은 놓지 않고 의미도 지워 터치와 TalkBack에서 빠진다. */
 @Composable
-private fun MediumTitle(title: String, subtitle: String?, surface: SurfaceStyle, state: KTopAppBarState?, insets: WindowInsets) {
+private fun MediumTitle(spec: MediumTitleSpec, placed: () -> Boolean) {
+    val state = spec.state
+    val surface = spec.surface
+    val slot = spec.title.slot
+    val style = TextStyle(color = surface.contentColor, fontSize = 26.sp, fontWeight = KineticaTheme.design.title(FontWeight.SemiBold))
     Column(
         Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal))
+            .windowInsetsPadding(spec.insets.only(WindowInsetsSides.Horizontal))
             .onSizeChanged { size -> state?.range = size.height.toFloat() }
             .drawWithContent {
                 // 위로 올라가는 제목이 위 줄을 덮지 않게 위쪽만 자른다.
@@ -309,14 +419,19 @@ private fun MediumTitle(title: String, subtitle: String?, surface: SurfaceStyle,
             }
             .padding(start = EDGE + TITLE_INSET, end = EDGE + TITLE_INSET, bottom = 14.dp, top = 2.dp),
     ) {
-        ThemedText(
-            title,
-            Modifier.semantics { heading() },
-            style = TextStyle(color = surface.contentColor, fontSize = 26.sp, fontWeight = KineticaTheme.design.title(FontWeight.SemiBold)),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        subtitle?.let {
+        if (slot != null) {
+            val quiet = if (spec.slotHidden) Modifier.clearAndSetSemantics { } else Modifier
+            Box(Modifier.placedWhen(placed).then(quiet)) { TitleSlot(slot, TitleScope(isLarge = true, textStyle = style)) }
+        } else {
+            ThemedText(
+                spec.title.text.orEmpty(),
+                Modifier.semantics { heading() },
+                style = style,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        spec.subtitle?.let {
             ThemedText(
                 it,
                 Modifier.padding(top = 2.dp),
@@ -326,6 +441,23 @@ private fun MediumTitle(title: String, subtitle: String?, surface: SurfaceStyle,
             )
         }
     }
+}
+
+/**
+ * 제목 슬롯. 묶은 노드 하나로 제목(heading)이 되게 해 글자만 넣은 슬롯도 String 제목처럼 읽힌다.
+ * 안쪽 글자는 [LocalKineticaContentColor]로 바 글자 색을 받는다.
+ */
+@Composable
+private fun TitleSlot(slot: @Composable KTopAppBarTitleScope.() -> Unit, scope: KTopAppBarTitleScope) {
+    Box(Modifier.semantics(mergeDescendants = true) { heading() }) {
+        CompositionLocalProvider(LocalKineticaContentColor provides scope.textStyle.color) { scope.slot() }
+    }
+}
+
+/** 크기는 재되 [placed]가 false면 놓지 않는다. 놓지 않은 내용은 그려지지 않고 터치도 받지 않는다. 의미 트리에는 남으므로 따로 지운다. */
+private fun Modifier.placedWhen(placed: () -> Boolean): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    layout(placeable.width, placeable.height) { if (placed()) placeable.place(0, 0) }
 }
 
 /** 앱 바 시작 쪽 뒤로 버튼. 화살표는 RTL에서 뒤집힌다. */

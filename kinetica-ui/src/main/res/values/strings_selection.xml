@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_selection_on_order">Selected, number %1$d</string>
+    <string name="kinetica_ui_selection_on">Selected</string>
+    <string name="kinetica_ui_selection_off">Not selected</string>
+</resources>

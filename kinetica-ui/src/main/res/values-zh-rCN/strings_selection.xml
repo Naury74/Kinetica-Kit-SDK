@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_selection_on_order">已选择，第 %1$d 个</string>
+    <string name="kinetica_ui_selection_on">已选择</string>
+    <string name="kinetica_ui_selection_off">未选择</string>
+</resources>

@@ -2,6 +2,18 @@
 
 장면 문서의 스키마 버전(`schemaVersion`)은 SDK 버전과 따로 올립니다. 지금 스키마 버전은 1입니다.
 
+## 1.0.0-alpha04 (개발 중)
+
+### 새 기능
+
+- `SurfaceStyles.LiteGlass`, `LiteGlassDark`: 블러 없는 가벼운 유리 표면. 반투명 채움, 위쪽 광택, 테두리, 그림자만으로 그려 배경을 기록하지 않으므로 API 26부터 같은 모양입니다. 캔버스나 영상 위에 뜨는 작은 버튼과 묶음에 씁니다.
+- `SurfaceStyle.Solid`의 `sheen`: 위에서 아래로 옅어지는 광택 색. 기본값은 투명이라 전과 같고, 옛 생성자와 `copy`는 바이너리 호환을 위해 숨겨 남깁니다.
+- `KineticaTheme.typography`(`KineticaTypography`): 컴포넌트가 쓰는 글자 단계(`largeTitle`부터 `micro`, `label` 세 단계)를 읽기 전용으로 공개합니다. 호스트 글꼴과 디자인 언어의 굵기를 따릅니다.
+- `KLabeledIconButton`: 아이콘이 위, 이름이 아래인 작은 동작 버튼. 항목마다 `tint`를 정하고 `ImageVector`와 `Painter` 아이콘을 받습니다.
+- `KTopAppBar`에 제목 자리를 컴포저블로 받는 오버로드(`KTopAppBarTitleScope`)와 눌러서 목록을 펴는 제목 `KTopAppBarDropdownTitle`을 더했습니다. 슬롯도 TalkBack 제목으로 읽히고, `Medium`에서는 접힘에 따라 큰 제목 줄과 위 줄 가운데 한쪽만 터치와 TalkBack에 남습니다.
+- `KImageViewer`에 `closeIcon`(`KImageViewerCloseIcon.Close`, `Back`), 위 바 끝 쪽 슬롯 `topActions`, 아래 전폭 슬롯 `bottomBar`, 슬롯 안 버튼용 `KImageViewerChromeScope.viewerChrome`을 더했습니다. 슬롯은 바를 숨기거나 끌어서 닫을 때 함께 옅어지고 숨는 동안 터치와 TalkBack에서 빠집니다. Painter 목록 판에서는 새 파라미터가 `caption` 앞에, `pageCount` 판에서는 `content` 앞에 들어가며, 옛 시그니처는 바이너리 호환을 위해 숨긴 오버로드로 남깁니다. 기본값이면 전과 같습니다.
+- `KSelectionBadge`: 사진 썸네일 위에 놓는 원형 선택 표시. 고른 순서 번호(`order`)나 체크(`selected`)를 그리고, 밝고 어두운 사진 위 모두에서 보이며, TalkBack은 '선택됨, 3번째'처럼 읽습니다.
+
 ## 1.0.0-alpha03
 
 ### 새 기능

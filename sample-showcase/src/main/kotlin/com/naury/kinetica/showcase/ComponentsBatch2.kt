@@ -81,6 +81,7 @@ internal fun ButtonsChipsCardsTab(padding: PaddingValues, connection: NestedScro
         item { ProfileScene() }
         item { VariantMatrixCard() }
         item { IconButtonsCard() }
+        item { LiteGlassCard() }
         item { SplitAndGroupCard() }
         item { ChipsCard() }
         item { CardsCard() }

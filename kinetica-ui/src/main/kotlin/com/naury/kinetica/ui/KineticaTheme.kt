@@ -141,6 +141,15 @@ public object KineticaTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalKineticaTextStyle.current
+
+    /**
+     * 키트 컴포넌트가 쓰는 글자 단계. [textStyle]의 글꼴과 [design]의 굵기를 입힌 값이다.
+     * 직접 만든 글자를 컴포넌트와 같은 크기로 맞출 때 `KineticaTheme.typography.body.copy(color = ...)`처럼 읽는다.
+     */
+    public val typography: KineticaTypography
+        @Composable
+        @ReadOnlyComposable
+        get() = KineticaTypography.of(LocalKineticaTextStyle.current, LocalKineticaDesign.current)
 }
 
 /** 블러 효과가 기본으로 쓸 글래스 스타일. 글래스가 아닌 표면은 밝기에 맞춘 Liquid 스타일을 고른다. */

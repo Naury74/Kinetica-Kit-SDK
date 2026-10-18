@@ -60,6 +60,7 @@ internal fun MediaTab(padding: PaddingValues, connection: NestedScrollConnection
     val photos = remember { PHOTO_COLORS.map { GradientPhoto(it) } }
     ComponentTabList(padding, connection) {
         item { PhotoGridCard(viewer, photos) }
+        item { PhotoPickerCard() }
         item { CompareCard() }
         item {
             DemoCard("온보딩", "넘길 때마다 그림이 한 박자 늦게 따라오고 배경색이 섞이며 바뀝니다. 마지막 페이지에 가까워지면 버튼이 '시작하기'로 늘어납니다.") {

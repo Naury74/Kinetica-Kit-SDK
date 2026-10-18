@@ -104,6 +104,27 @@ MaterialTheme(colorScheme = scheme) {
 `destructive`는 배지, 삭제 메뉴, 입력 오류에 쓰인다. `onPositive`와 `onDestructive`는 그 색으로 채운 버튼 위의 글자 색이다.
 
 직접 만든 컴포넌트를 키트와 맞추려면 `KineticaTheme.surface`, `KineticaTheme.colors`, `KineticaTheme.textStyle`을 읽는다.
+글자 크기는 `KineticaTheme.typography`의 단계를 쓴다. Material Typography 없이도 키트 컴포넌트와 같은 크기와 굵기가 된다.
+
+| 단계 | 크기 | 쓰는 곳 |
+| --- | --- | --- |
+| `largeTitle` | 34sp, 제목 굵기 | 크게 접히는 제목 |
+| `titleLarge` | 26sp | 큰 상단 바 제목 |
+| `title` | 20sp | 다이얼로그, 시트, 빈 화면 제목 |
+| `titleSmall` | 17sp | 접힌 상단 바 제목, 작은 판 제목 |
+| `body` | 16sp | 목록 행 제목, 메뉴 항목, 입력란 |
+| `bodySmall` | 15sp, 줄 높이 21sp | 다이얼로그와 빈 화면 본문 |
+| `supporting` | 14sp, 줄 높이 19sp | 목록 보조 글, 툴팁, 스낵바 |
+| `caption` | 13sp, 줄 높이 18sp | 묶음 아래 설명, 오류 글 |
+| `captionSmall` | 12sp | 카드 머리말, 아이콘 아래 이름 |
+| `micro` | 11sp | 탭 바 이름, 배지 |
+| `labelLarge`, `label`, `labelSmall` | 18, 16, 14sp, 라벨 굵기 | 큰, 기본, 작은 버튼 글자 |
+
+```kotlin
+BasicText("내 프로젝트", style = KineticaTheme.typography.title.copy(color = KineticaTheme.surface.contentColor))
+```
+
+단계에는 `textStyle`의 글꼴과 디자인 언어의 `titleWeight`, `labelWeight`가 입혀 있고 색은 비어 있다. 지금은 읽기 전용이라 값을 바꿔도 키트 컴포넌트의 글자는 그대로다.
 `Modifier.glass`의 기본 스타일은 `KineticaTheme.glassStyle`이고, 표면이 글래스가 아니면 표면 밝기에 맞춘 Liquid 스타일이다.
 
 ### 표면 스타일 `SurfaceStyle`
@@ -111,7 +132,7 @@ MaterialTheme(colorScheme = scheme) {
 | 종류 | 그리는 방법 | 프리셋 |
 | --- | --- | --- |
 | `SurfaceStyle.Glass(style)` | 배경을 블러 처리해 비춘다. 블러 값은 `GlassStyle`이 정한다 | `SurfaceStyles.Liquid`, `LiquidDark`, `Acrylic`, `AcrylicDark`, `OneUiGlass`, `OneUiGlassDark`, `Vision`, `Frosted`, `Mica`, `MicaDark`, `MaterialGlass`, `MaterialGlassDark`, `HarmonyOs`, `Obsidian`, `Pastel` |
-| `SurfaceStyle.Solid(color, contentColor, background, border, borderWidth, elevation)` | 불투명한 단색 표면. 테두리와 그림자를 줄 수 있다 | `SurfaceStyles.CleanLight`, `CleanDark`, `OneUi`, `OneUiDark`, `Material`, `MaterialDark` |
+| `SurfaceStyle.Solid(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, sheen)` | 단색 표면. 테두리와 그림자, 위쪽 광택(`sheen`)을 줄 수 있다 | `SurfaceStyles.CleanLight`, `CleanDark`, `OneUi`, `OneUiDark`, `Material`, `MaterialDark`, `LiteGlass`, `LiteGlassDark` |
 | `SurfaceStyle.Tonal(accent, dark, elevation)` | 강조색을 옅게 섞은 표면. 톤 표면끼리 겹쳐도 경계가 보이도록 옅은 강조색 테두리를 두른다 | `SurfaceStyles.Tonal`, `TonalDark`, `SurfaceStyles.tonal(색, dark)` |
 
 ```kotlin
@@ -133,6 +154,7 @@ val paper = SurfaceStyle.Solid(
 - `KineticaScaffold`는 단색과 톤 표면일 때 시스템 바 아이콘을 표면 밝기에 맞춘다(`systemBarIcons`). 글래스는 호스트 배경이 비치므로 아이콘을 호스트에 맡긴다.
 - 다이얼로그와 바텀 시트는 `surface.forPopup()`을 쓴다. 글래스는 블러를 더 강하게, 색을 더 진하게 덮고, 단색과 톤은 그림자를 키운다. 어두운 단색은 판을 조금 밝혀 바탕과 구분한다.
 - 다이얼로그나 시트 안에 놓인 표면(입력란, 칩)은 판과 같은 색으로 묻히지 않도록 판 위에 얹힌 옅은 한 겹으로 그린다.
+- `SurfaceStyles.LiteGlass`와 `LiteGlassDark`는 블러 없는 가벼운 유리다. 반투명 채움, 위쪽 광택, 흰 테두리, 그림자만으로 그려 배경을 기록하지 않으므로 API 26부터 같은 모양이고 그리기 비용이 단색과 같다. 캔버스나 영상 위에 뜨는 되돌리기 묶음, 알약 버튼, 상단 바 버튼처럼 작은 요소에 쓴다. 밝은 캔버스 위에는 `LiteGlass`, 어두운 캔버스나 영상 위에는 `LiteGlassDark`를 쓴다. 직접 만들 때는 `SurfaceStyle.Solid`에 반투명 `color`와 `sheen`을 준다.
 - `SurfaceStyle.Solid`에 `contentMuted`(부제와 안내 글 같은 보조 글자색)와 `raised`(빈 트랙, 선택된 세그먼트, 작은 버튼 바탕처럼 한 단계 올라온 면의 색)를 주면 컴포넌트가 그 색을 그대로 쓴다. 주지 않으면 `contentColor`를 자리마다 알맞게 옅게 쓴다. 호스트 팔레트를 옮길 때 쓴다.
 
 ### 특정 이미지 위에 글래스 올리기
@@ -313,6 +335,7 @@ Box(Modifier.kToggleable(checked, shape, role = Role.Checkbox) { checked = it })
 | --- | --- | --- |
 | `KButton` | 누르면 젤리처럼 눌린다. `loading`이면 폭을 유지한 채 링이 돌고, `success`가 되면 원으로 줄며 체크 표시가 그려진다 | `variant`, `tone`, `size`(`Small`, `Medium`, `Large`), `icon`, `trailingIcon`, `loading`, `success`, `fullWidth`, `enabled` |
 | `KIconButton` | 아이콘만 있는 버튼. 기본 지름 44dp 원 안에 22dp 아이콘을 그린다 | `contentDescription`, `variant`, `tone`, `size`(`KIconButtonSizes.Small` 36dp, `Medium` 44dp, `Large` 56dp), `shape` |
+| `KLabeledIconButton` | 아이콘이 위, 이름이 아래인 작은 동작 버튼. 편집기 하단 도구 줄처럼 동작 여럿을 나란히 놓는다. 바탕 없이 눌림 표시만 덮이고, TalkBack은 이름을 읽는다. `ImageVector`와 `Painter` 아이콘을 받는다 | `tint`(항목마다 색), `enabled`, `iconSize`, `shape` |
 | `KIconToggleButton` | 켜질 때 색이 가운데에서 퍼지고 아이콘이 `checkedIcon`으로 바뀐다 | `checked`, `onCheckedChange`, `checkedIcon` |
 | `KFab`, `KExtendedFab` | 떠 있는 주 동작 버튼. 확장형에 `expanded = rememberFabExpanded(listState)`를 넘기면 목록을 내릴 때 아이콘만 남기고 접힌다 | `KFab`의 `size`(`KFabSize.Small`, `Regular`, `Large`), `KExtendedFab`의 `expanded` |
 | `KSplitButton` | 주 동작과 꺾쇠 버튼을 붙인 분할 버튼. 꺾쇠를 누르면 `onMenuClick`이 불리고, `menuExpanded`면 꺾쇠 버튼이 원으로 바뀐다. 메뉴는 호출한 쪽이 띄운다 | `onMenuClick`, `menuExpanded` |
@@ -324,6 +347,7 @@ KButton("장바구니에 담기", onClick = ::add, loading = adding, success = a
 KIconToggleButton(liked, { liked = it }, Icons.Rounded.Heart, "좋아요", checkedIcon = Icons.Rounded.HeartFilled)
 KExtendedFab("새 글", Icons.Rounded.Add, onClick = ::newPost, expanded = rememberFabExpanded(listState))
 KToggleGroup(listOf(KGroupItem("일"), KGroupItem("주"), KGroupItem("월")), setOf(period), { period = it.first() }, Modifier.fillMaxWidth())
+KLabeledIconButton(KIcons.Trash, "삭제", onClick = ::delete, tint = KineticaTheme.colors.destructive)
 ```
 
 '애니메이션 삭제' 설정에서는 성공 표시, 토글 채우기, 선택 카드 체크, 확장 FAB 접기가 바로 끝나고 버튼 묶음은 비켜 주지 않는다.
@@ -334,6 +358,7 @@ KToggleGroup(listOf(KGroupItem("일"), KGroupItem("주"), KGroupItem("월")), se
 | --- | --- | --- |
 | `KSwitch` | 기본 모양 `KSwitchVariant.Capsule`은 누르는 동안 손잡이가 늘어나고 출렁이며 넘어간다. `Check`는 켜지면 손잡이가 커지며 체크가 그려지고, `Slim`은 얇은 트랙에 테두리 두른 손잡이다. RTL에서는 켜진 손잡이가 왼쪽에 간다 | `variant`, `accent`(주지 않으면 `Capsule`은 `positive`, 나머지는 `accent` 색). `onCheckedChange`가 `null`이면 표시만 한다 |
 | `KCheckbox`, `KTriStateCheckbox` | 켜지면 상자가 튀듯 차오르고 체크 표시가 획 순서대로 그려진다. 미정 상태는 가로 막대다 | `shape`(`KCheckboxShape.Square`, `Circle`), 콜백이 `null`이면 표시만 |
+| `KSelectionBadge` | 사진 썸네일 구석에 놓는 원형 선택 표시. `order`를 주면 고른 순서 번호를, `selected` 오버로드는 체크를 그린다. 흰 테두리와 옅은 어두운 테두리를 함께 그려 밝은 사진과 어두운 사진 위 모두에서 보이고, 고를 때 튀며 차오른다(움직임 줄이기면 바로). TalkBack은 '선택됨, 3번째'처럼 읽는다 | `order`(null이나 0 이하면 고르지 않음), `onClick`(주면 48dp 체크박스), `size`, `tone` |
 | `KRadio`, `KRadioGroup` | 선택되면 가운데 점이 살짝 튀며 커진다. 묶음은 행 전체를 누를 수 있고 TalkBack이 한 묶음으로 읽는다 | `options`, `selectedIndex` |
 | `KSegmentedControl` | 선택한 칸의 인디케이터가 늘어났다 줄어들며 이동한다. `KSegment`로 아이콘 칸을 만든다. `selected: Set<Int>`를 받는 오버로드는 여러 칸을 함께 켜고, 켠 칸에는 체크 표시가 밀려 들어온다 | `tone`(`Neutral`은 옅은 표면 글자 색, 나머지는 그 색으로 채움), `role`(기본 `Role.RadioButton`, 탭처럼 쓰면 `Role.Tab`), `maxLines`(기본 2), `sizing`(`KSegmentSizing.Proportional`이면 이름 길이에 비례), `requireSelection` |
 | `KFilterChip`, `KInputChip`, `KAssistChip`, `KSuggestionChip` | 필터 칩은 켜면 체크가 그려지고, 입력 칩은 아바타와 지우기 버튼이 있다. 동작 칩은 앞 아이콘을 강조색으로, 제안 칩은 글자만 쓴다 | `variant`, `tone`, `leadingIcon` |
@@ -511,7 +536,7 @@ KStatusBadge("배송 중", KStatus.Info)
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `KTopAppBar` | 상단 앱 바. `rememberKTopAppBarState(listState)`를 넘기면 맨 위에서는 배경이 없다가 콘텐츠가 바 아래로 지나갈 때 배경과 경계선이 나타난다. 높이가 고정이라 콘텐츠 패딩이 바뀌지 않는다. `Medium`은 26sp 제목이 스크롤하면 접힌다 | `variant`(`Small`, `CenterAligned`, `Medium`), `state`, `onBack`, `actions` |
+| `KTopAppBar` | 상단 앱 바. `rememberKTopAppBarState(listState)`를 넘기면 맨 위에서는 배경이 없다가 콘텐츠가 바 아래로 지나갈 때 배경과 경계선이 나타난다. 높이가 고정이라 콘텐츠 패딩이 바뀌지 않는다. `Medium`은 26sp 제목이 스크롤하면 접힌다. 제목 자리에 컴포저블을 받는 오버로드가 있고, 눌러서 목록을 펴는 제목은 `KTopAppBarDropdownTitle`로 만든다 | `variant`(`Small`, `CenterAligned`, `Medium`), `state`, `onBack`, `actions`, `title` 슬롯 |
 | `KLargeTitleBar` | One UI와 iOS 스타일의 34sp 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀌고, 접힌 바의 배경은 아래로 옅어진다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다. `bottom`에 넣은 탭이나 검색창은 큰 제목과 함께 올라가 작은 바 밑에 붙는다 | `rememberKLargeTitleState()`, `bottom`, `contentMaxWidth` |
 | `KBottomAppBar` | 화면 아래 도구 막대 | `actions`, `floatingActionButton` |
 | `KFloatingToolbar` | 떠 있는 캡슐 도구 막대. `rememberKFloatingToolbarState()`의 `connection`을 목록에 붙이면 아래로 스크롤할 때 접히고 위로 스크롤하면 펼쳐진다. FAB는 캡슐 옆에 남는다 | `expanded`, `floatingActionButton` |
@@ -523,6 +548,7 @@ KStatusBadge("배송 중", KStatus.Info)
 ```kotlin
 val bar = rememberKTopAppBarState(listState)
 KTopAppBar("사진", state = bar, onBack = ::finish, actions = { KIconButton(Icons.Rounded.Share, "공유", onClick = ::share) })
+KTopAppBar(title = { KTopAppBarDropdownTitle(album.name, expanded = picking, onClick = { picking = !picking }, onClickLabel = "앨범 고르기") })
 
 val title = rememberKLargeTitleState()
 Column {
@@ -535,6 +561,8 @@ KTopTabs(listOf(KTab("추천"), KTab("인기"), KTab("새 글", badge = 3)), pag
 ```
 
 `KLargeTitleBar`는 iOS와 One UI 화면처럼 큰 제목이 필요한 목록 화면에, `KTopAppBar`는 상세 화면이나 편집 화면에 쓴다.
+
+`KTopAppBar`의 제목 슬롯은 TalkBack에서 제목(heading)으로 읽힌다. 슬롯 안에서 `clickable`처럼 의미를 묶는 노드를 만들면 그 노드에 `semantics { heading() }`을 함께 붙인다(`KTopAppBarDropdownTitle`은 이미 그렇게 한다). 슬롯은 `KTopAppBarTitleScope.textStyle`로 그 자리의 글자 모양을 받고, `Medium`에서는 큰 제목 줄과 위 줄에 한 번씩 그려지되 접힘 70%를 기준으로 한쪽만 놓이고 TalkBack에 남는다.
 
 ### 화면 이동
 
@@ -928,18 +956,32 @@ KPricingCard("프로", "₩9,900", selected = plan == "pro", onSelect = { plan =
 | `KMiniPlayer` | 아래에 떠 있는 재생 막대를 누르거나 위로 끌면 전체 화면 플레이어로 커지고, 앨범 아트가 이어지며 커진다. 아래로 끌거나 뒤로 가기로 접는다 | `rememberKMiniPlayerState()`, `artwork`, `collapsed`, `expanded`(진행도 `() -> Float`를 받음), `barBottomPadding` |
 | `KMiniPlayerBar`, `KMiniPlayerFullScreen` | 막대와 전체 화면을 나눈 미니 플레이어. 막대는 캡슐 없이 내용만 그리므로 `KFloatingTabBar`의 `accessory`처럼 다른 컴포넌트 안에 넣는다. 펼치면 막대가 놓인 자리에서 앨범 아트가 커지고, 접으면 그 자리로 돌아간다 | 같은 `KMiniPlayerState`를 함께 넘긴다 |
 | `PlayPauseIcon`, `MenuCloseIcon`, `PlusCloseIcon` | 모양이 매끄럽게 바뀌는 아이콘 | `playing`, `open` |
-| `KImageViewer` + `Modifier.imageViewerSource` | 전체 화면 사진 뷰어. 썸네일에서 커지며 열리고, 핀치로 1~5배 확대, 두 번 탭 확대, 위아래로 끌어 닫기를 지원한다. 확대한 사진이 가장자리에 닿은 뒤 바깥쪽으로 더 끌면 옆 사진으로 넘어간다 | `rememberKImageViewerState()`, `images: List<Painter>` 또는 `pageCount` + `content`, `caption` |
+| `KImageViewer` + `Modifier.imageViewerSource` | 전체 화면 사진 뷰어. 썸네일에서 커지며 열리고, 핀치로 1~5배 확대, 두 번 탭 확대, 위아래로 끌어 닫기를 지원한다. 확대한 사진이 가장자리에 닿은 뒤 바깥쪽으로 더 끌면 옆 사진으로 넘어간다 | `rememberKImageViewerState()`, `images: List<Painter>` 또는 `pageCount` + `content`, `caption`, `closeIcon`(`Close`, `Back`), `topActions`, `bottomBar` |
 | `BeforeAfterSlider` | 두 이미지를 겹쳐 놓고 가운데 손잡이를 끌어 비교한다. 가로 드래그만 받아 세로 스크롤을 막지 않는다 | `initial` 또는 `position`과 `onPositionChange`(호스트가 위치를 들고 있을 때) |
 | `KOnboarding` + `OnboardingPage` | 첫 실행 안내. 그림이 시차를 두고 따라오고 배경색이 섞이며, 마지막 페이지에서 버튼이 '시작하기'로 늘어난다 | `pages`, `onFinish` |
 | `LikeButton`, `KRating` | 하트 좋아요는 누르면 하트가 튀며 입자가 터지고 숫자가 굴러간다 | `liked`, `count` |
 
 `KImageViewer`의 Painter는 `intrinsicSize` 비율대로 맞춰 그리고, `BrushPainter`처럼 크기가 없으면 화면 전체를 채운다. 열린 채 목록이 비면 바로 닫히고, 상태 없는 버전(`KImageViewer(images, startIndex, onDismiss)`)은 `onDismiss`를 부른다.
+`topActions`는 위 바 끝 쪽(선택 토글 등), `bottomBar`는 아래쪽 화면 폭 전체(필름 줄, 완료 버튼 등) 슬롯이고 둘 다 지금 페이지를 받는다. `bottomBar`를 주면 페이지 인디케이터는 빠지고, `caption`도 주면 설명 카드가 그 위에 놓인다. 두 슬롯은 한 번 탭으로 바를 숨기거나 끌어서 닫을 때 다른 바와 함께 옅어지고, 숨는 동안 터치와 TalkBack에서 빠진다. 슬롯 안 버튼에 `Modifier.viewerChrome(shape)`을 쓰면 닫기 버튼과 같은 글래스 면과 흰 사진 위 대비 처리를 받는다. 상태 없는 판은 사진만 받는 짧은 판이라 이 슬롯이 없다.
 사진 뷰어, 펼친 미니 플레이어, 온보딩은 떠 있는 동안 시스템 바 아이콘을 배경에 맞게 바꾸고 닫으면 되돌린다.
 
 ```kotlin
 val viewer = rememberKImageViewerState()
 Row { photos.forEachIndexed { i, p -> Image(p, null, Modifier.size(96.dp).imageViewerSource(viewer, i).clickable { viewer.open(i) }) } }
 KImageViewer(viewer, photos)
+
+// 사진 고르기의 크게 보기: 뒤로 화살표, 위 바의 순서 표시, 아래 필름 줄과 완료 버튼
+KImageViewer(
+    viewer,
+    photos,
+    closeIcon = KImageViewerCloseIcon.Back,
+    topActions = { page ->
+        Box(Modifier.size(44.dp).viewerChrome(CircleShape), contentAlignment = Alignment.Center) {
+            KSelectionBadge(orderOf(page), onClick = { toggle(page) })
+        }
+    },
+    bottomBar = { page -> Filmstrip(page, onPick = viewer::open) },
+)
 
 val player = rememberKMiniPlayerState()
 Box(Modifier.fillMaxSize()) {

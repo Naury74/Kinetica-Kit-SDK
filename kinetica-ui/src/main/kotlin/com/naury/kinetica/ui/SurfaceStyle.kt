@@ -7,10 +7,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
@@ -84,6 +87,8 @@ public sealed interface SurfaceStyle {
      * @property elevation 그림자 반경. 0이면 그림자가 없다.
      * @property contentMuted 한 단계 낮춘 글자 색. 호스트 팔레트에 보조 글자 색이 있으면 넘긴다. 기본값은 [contentColor]를 자리마다 옅게 쓴다.
      * @property raised 한 단계 올라온 면의 색. 호스트 팔레트에 트랙이나 올라온 패널 색이 있으면 넘긴다. 기본값은 [contentColor]를 옅게 깐다.
+     * @property sheen 위쪽 광택 색. 모양 위 끝에서 이 색으로 시작해 아래 끝에서 투명해지는 세로 그라디언트를 채움 위에 덮는다.
+     *   투명하면(기본값) 그리지 않는다. 블러 없이 유리처럼 보이게 할 때 쓴다([SurfaceStyles.LiteGlass]).
      */
     @Immutable
     public data class Solid(
@@ -95,10 +100,38 @@ public sealed interface SurfaceStyle {
         val elevation: Dp = 0.dp,
         override val contentMuted: Color = Color.Unspecified,
         override val raised: Color = Color.Unspecified,
+        val sheen: Color = Color.Transparent,
     ) : SurfaceStyle {
         init {
             require(borderWidth >= 0.dp && elevation >= 0.dp) { "borderWidth와 elevation은 0 이상이어야 합니다." }
         }
+
+        /** 1.0.0-alpha03의 주 생성자. 컴파일된 호출자를 위해 남긴다. */
+        @Deprecated("sheen을 더한 주 생성자를 씁니다.", level = DeprecationLevel.HIDDEN)
+        public constructor(
+            color: Color,
+            contentColor: Color,
+            background: Color,
+            border: Color = Color.Transparent,
+            borderWidth: Dp = 0.dp,
+            elevation: Dp = 0.dp,
+            contentMuted: Color = Color.Unspecified,
+            raised: Color = Color.Unspecified,
+        ) : this(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, Color.Transparent)
+
+        /** 1.0.0-alpha03의 copy. 컴파일된 호출자를 위해 남긴다. 광택은 그대로 둔다. */
+        @Deprecated("sheen을 더한 copy를 씁니다.", level = DeprecationLevel.HIDDEN)
+        @Suppress("LongParameterList")
+        public fun copy(
+            color: Color = this.color,
+            contentColor: Color = this.contentColor,
+            background: Color = this.background,
+            border: Color = this.border,
+            borderWidth: Dp = this.borderWidth,
+            elevation: Dp = this.elevation,
+            contentMuted: Color = this.contentMuted,
+            raised: Color = this.raised,
+        ): Solid = Solid(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, sheen)
 
         override fun forPopup(): SurfaceStyle = copy(
             // 어두운 화면에서는 그림자가 잘 안 보이므로 떠 있는 판을 조금 밝혀 구분한다.
@@ -199,6 +232,34 @@ public object SurfaceStyles {
         border = Color.White.copy(alpha = 0.08f),
         borderWidth = 1.dp,
         elevation = 4.dp,
+    )
+
+    /**
+     * 블러 없이 채움, 광택, 테두리, 그림자로만 그리는 가벼운 유리 표면. 밝은 배경 위에 쓴다.
+     * 배경을 기록하지 않으므로 API 26부터 같은 모양이고 그리기 비용이 거의 없다. 캔버스나 영상 위에 뜨는
+     * 되돌리기 묶음, 알약 버튼, 상단 바 버튼처럼 작은 떠 있는 요소에 알맞다. 큰 판이나 다이얼로그에는 글래스나 단색 표면이 낫다.
+     */
+    @JvmField
+    public val LiteGlass: SurfaceStyle = SurfaceStyle.Solid(
+        color = Color.White.copy(alpha = 0.72f),
+        contentColor = Color(INK),
+        background = Color(0xFFF2F2F7),
+        border = Color.White.copy(alpha = 0.9f),
+        borderWidth = 0.75.dp,
+        elevation = 6.dp,
+        sheen = Color.White.copy(alpha = 0.35f),
+    )
+
+    /** [LiteGlass]의 어두운 판. 어두운 캔버스나 영상 위에서 흰 글자와 함께 쓴다. */
+    @JvmField
+    public val LiteGlassDark: SurfaceStyle = SurfaceStyle.Solid(
+        color = Color.White.copy(alpha = 0.12f),
+        contentColor = Color.White,
+        background = Color.Black,
+        border = Color.White.copy(alpha = 0.24f),
+        borderWidth = 0.75.dp,
+        elevation = 6.dp,
+        sheen = Color.White.copy(alpha = 0.10f),
     )
 
     /** One UI 단색 스타일. 테두리와 그림자 없이 흰 카드를 연회색 바탕에 놓는다. */
@@ -346,6 +407,7 @@ private fun Modifier.filledSurface(surface: SurfaceStyle, shape: Shape, intensit
         is SurfaceStyle.Tonal -> surface.elevation
         is SurfaceStyle.Glass -> 0.dp
     }
+    val sheen = surface.sheenColor
     val shadowAlpha = if (surface.isDark) DARK_SHADOW_ALPHA else LIGHT_SHADOW_ALPHA
     val ink = surface.contentColor
     return drawBehind {
@@ -358,6 +420,7 @@ private fun Modifier.filledSurface(surface: SurfaceStyle, shape: Shape, intensit
         }
         drawSoftShadow(outline, elevation.toPx() * level, shadowAlpha * level, cache)
         drawOutline(outline, fill.copy(alpha = fill.alpha * level))
+        drawSheen(outline, sheen, level)
         val stroke = borderWidth.toPx()
         if (border.alpha > 0f && stroke > 0f) {
             val path = cachedPath(outline, cache)
@@ -365,6 +428,16 @@ private fun Modifier.filledSurface(surface: SurfaceStyle, shape: Shape, intensit
             clipPath(path) { drawPath(path, border.copy(alpha = border.alpha * level), style = Stroke(stroke * 2)) }
         }
     }
+}
+
+/** 단색 표면의 광택 색. 그 밖의 표면은 광택이 없다. */
+private val SurfaceStyle.sheenColor: Color
+    get() = (this as? SurfaceStyle.Solid)?.sheen ?: Color.Transparent
+
+/** 위 끝에서 [sheen] 색으로 시작해 아래 끝에서 투명해지는 광택. 투명하면 그리지 않는다. */
+private fun DrawScope.drawSheen(outline: Outline, sheen: Color, level: Float) {
+    if (sheen.alpha <= 0f) return
+    drawOutline(outline, Brush.verticalGradient(listOf(sheen.copy(alpha = sheen.alpha * level), Color.Transparent)))
 }
 
 /**
