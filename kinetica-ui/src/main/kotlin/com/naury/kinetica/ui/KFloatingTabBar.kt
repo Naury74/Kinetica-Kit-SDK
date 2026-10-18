@@ -338,7 +338,7 @@ private fun CollapsedCapsule(
                                 state.expand()
                                 true
                             }
-                            customActions = actions
+                            customActions = actions.fitted()
                         }
                 } else {
                     Modifier.clearAndSetSemantics { }

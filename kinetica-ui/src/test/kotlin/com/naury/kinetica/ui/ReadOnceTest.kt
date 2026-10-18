@@ -9,6 +9,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -113,6 +114,24 @@ class ReadOnceTest {
         assertThat(info.stateDescription.toString()).isEqualTo("전 50%, 후 50%")
         // 안쪽 '전', '후' 표시는 상태 문구가 이미 말하므로 따로 읽지 않는다.
         assertThat(node.config.getOrNull(SemanticsProperties.Text)).isNull()
+    }
+
+    @Test
+    fun `글자가 32개를 넘는 색인 막대도 TalkBack 노드를 만들 수 있고 위아래 쓸기로 글자를 옮긴다`() {
+        // 노드 하나에 사용자 정의 동작이 32개를 넘으면 Compose가 노드 정보를 만들다 앱을 멈춘다.
+        val labels = ('A'..'Z').map { it.toString() } + listOf("ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "#")
+        var picked = -1
+        lateinit var view: android.view.View
+        compose.setContent {
+            view = androidx.compose.ui.platform.LocalView.current
+            KIndexBar(labels, { picked = it }, Modifier.size(24.dp, 600.dp), selected = 3)
+        }
+        val node = compose.onNodeWithContentDescription("색인", substring = true).fetchSemanticsNode()
+        val info = view.accessibilityNodeProvider.createAccessibilityNodeInfo(node.id)!!
+        assertThat(info.stateDescription.toString()).isEqualTo("D")
+        compose.onNodeWithContentDescription("색인", substring = true)
+            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(4f) }
+        assertThat(picked).isEqualTo(4)
     }
 
     @Test

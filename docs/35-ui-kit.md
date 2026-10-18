@@ -533,7 +533,7 @@ KTopTabs(listOf(KTab("추천"), KTab("인기"), KTab("새 글", badge = 3)), pag
 | `KWizard` | 단계 표시, 넘어가는 내용, 이전과 다음 버튼을 묶은 마법사. 첫 단계가 아니면 뒤로 가기가 앞 단계로 돌아간다 | `rememberKWizardState(stepCount)`, `nextEnabled`, `indicator` |
 | `KPagination` | `KPaginationStyle.Numbers`(칸 수가 늘 같아 폭이 바뀌지 않음)와 `Compact`(`5 / 20`). 폭이 모자라면 양옆 번호 수를 줄인다 | `style`, `siblings` |
 | `KBreadcrumb` | 이동 경로. 마지막 항목은 지금 위치라 누를 수 없고, 길면 사이를 '…'으로 접었다가 누르면 펼친다 | `maxVisible` |
-| `KIndexBar` | 연락처 색인 막대. 끌면 손가락 아래 글자마다 햅틱과 함께 `onSelect`가 불리고 큰 글자 말풍선이 따라온다. 자리가 모자라면 글자를 건너뛰고 점을 찍는다 | `KIndexBarDefaults.Hangul`, `Latin`, `HangulAndLatin`, `keyOf("김민지")`(초성) |
+| `KIndexBar` | 연락처 색인 막대. 끌면 손가락 아래 글자마다 햅틱과 함께 `onSelect`가 불리고 큰 글자 말풍선이 따라온다. 자리가 모자라면 글자를 건너뛰고 점을 찍는다. TalkBack은 위아래로 쓸어 글자를 옮기고(`selected`를 넘겨야 지금 글자를 읽는다), 글자가 32개 이하면 글자마다 이동 동작도 준다 | `KIndexBarDefaults.Hangul`, `Latin`, `HangulAndLatin`, `keyOf("김민지")`(초성) |
 
 ```kotlin
 var stack by rememberSaveable { mutableStateOf(listOf("home")) }

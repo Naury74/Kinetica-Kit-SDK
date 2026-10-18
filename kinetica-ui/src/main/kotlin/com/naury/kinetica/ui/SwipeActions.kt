@@ -211,7 +211,7 @@ public fun SwipeActionsRow(
                         perform(action, side, false)
                         true
                     }
-                }
+                }.fitted()
             }
             .draggable(
                 rememberDraggableState { delta ->

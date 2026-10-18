@@ -124,6 +124,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 고친 것
 
+- 글자가 32개를 넘는 `KIndexBar`(예: `HangulAndLatin`)에 TalkBack이 닿으면 앱이 멈추던 문제(Android는 노드 하나에 사용자 정의 동작을 32개까지만 받습니다). 이제 위아래 쓸기로 글자를 옮기고, 32개 이하일 때만 글자마다 이동 동작을 줍니다. 메뉴, 떠 있는 탭 바, 밀어서 동작도 32개를 넘지 않게 자릅니다
 - 차트(`KBarChart`, `KLineChart`, `KAreaChart`, `KMultiBarChart`, `KPieChart`, `KDonutChart`)의 요약, `KPinDots`, `KSignaturePad`, `KStepIndicator`, 누를 수 없는 `KMapPin`을 TalkBack이 쓸어 넘길 때 건너뛰던 문제. 이름만 붙이고 자식을 묶지 않아 멈추는 노드가 아니었습니다. 이제 차트는 요약과 축 이름을 한 번에 읽은 뒤 막대, 점, 조각 칸으로 넘어가고, 핀과 단계 막대, 파이 비율처럼 이름과 같은 말인 안쪽 글자는 따로 읽지 않습니다
 - `BeforeAfterSlider`를 TalkBack이 쓸어 넘길 때 건너뛰던 문제(자식이 남은 채 묶지 않아 멈추는 노드가 아니었습니다. 이제 "전후 비교, 전 50%, 후 50%" 슬라이더 하나로 읽습니다)
 - `KSearchBar`, `KSearchView`, `KTagInput`에서 TalkBack이 입력란 이름 없이 "편집 상자"만 읽던 문제. 이름을 편집 노드의 contentDescription 대신 입력란 안 글자로 내보내고, 글을 쓰면 투명하게 남겨 계속 읽게 합니다. `KChatInput`도 같은 방식으로 바꿔 이름이 빠지거나 두 번 읽히지 않습니다. 테스트에서 이 입력란들을 contentDescription으로 찾았다면 `hasSetTextAction()`이나 글자로 찾아야 합니다

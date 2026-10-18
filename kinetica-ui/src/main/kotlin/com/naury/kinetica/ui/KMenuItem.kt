@@ -105,7 +105,7 @@ public fun Modifier.kContextMenu(items: List<KMenuItem>, surface: SurfaceStyle =
                     item.onClick()
                     true
                 }
-            }
+            }.fitted()
         }
         .pointerInput(Unit) {
             awaitEachGesture {

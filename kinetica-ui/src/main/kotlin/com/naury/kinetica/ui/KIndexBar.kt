@@ -32,9 +32,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -88,7 +92,8 @@ public object KIndexBarDefaults {
  * 연락처 목록 옆에 세우는 색인 막대. 글자를 누르거나 막대를 위아래로 끌면 손가락 아래 글자가 바뀔 때마다 [onSelect]가 불리고 햅틱이 온다.
  * 끄는 동안 막대 시작 쪽에 큰 글자 말풍선이 손가락을 따라다닌다. RTL에서는 말풍선이 오른쪽에 뜬다.
  * 세로 공간이 모자라면(큰 글자, 가로 화면) 글자를 건너뛰고 사이에 점을 찍는다. 끌기는 그때도 모든 글자를 고를 수 있다.
- * TalkBack은 막대를 '색인' 하나로 읽고, 글자마다 '…(으)로 이동' 사용자 지정 동작을 제공한다.
+ * TalkBack은 막대를 '색인' 하나로 읽고 [selected] 글자를 상태로 알린다. 위아래로 쓸면 글자를 하나씩 옮기고, 글자가 32개 이하면
+ * 글자마다 '…(으)로 이동' 사용자 지정 동작도 준다(Android는 노드 하나에 동작을 32개까지만 받는다).
  *
  * ```kotlin
  * KIndexBar(KIndexBarDefaults.Hangul, onSelect = { i -> scope.launch { list.scrollToItem(firstIndexOf(KIndexBarDefaults.Hangul[i])) } })
@@ -131,7 +136,18 @@ public fun KIndexBar(
                 Modifier
                     .clearAndSetSemantics {
                         contentDescription = name
-                        customActions = actions
+                        selected?.let { stateDescription = labels[it] }
+                        if (labels.size > 1) {
+                            val at = selected ?: 0
+                            progressBarRangeInfo = ProgressBarRangeInfo(at.toFloat(), 0f..labels.lastIndex.toFloat(), labels.size - 2)
+                            setProgress { target ->
+                                val next = target.roundToInt().coerceIn(labels.indices)
+                                if (next == at) return@setProgress false
+                                latest.value(next)
+                                true
+                            }
+                        }
+                        if (actions.size <= MAX_CUSTOM_ACTIONS) customActions = actions
                     }
                     .background(ink.copy(alpha = if (touch.active != null) TOUCH_BACK else 0f), RoundedCornerShape(BAR_WIDTH / 2))
                     .indexGestures(labels.size, touch) { i ->
