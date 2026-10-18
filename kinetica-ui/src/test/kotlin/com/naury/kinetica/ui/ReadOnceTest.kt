@@ -48,6 +48,18 @@ class ReadOnceTest {
     }
 
     @Test
+    fun `채팅 입력은 라벨과 안내 글이 같으면 한 번만 읽는다`() {
+        compose.setContent {
+            KChatInput(androidx.compose.foundation.text.input.rememberTextFieldState(), onSend = {}, label = "메시지", placeholder = "메시지")
+        }
+        val field = compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText))
+        assertThat(field.fetchSemanticsNode().config[SemanticsProperties.ContentDescription]).containsExactly("메시지")
+        // 안내 글은 숨겨서 TalkBack이 이름 뒤에 힌트로 또 읽지 않는다.
+        val hint = compose.onNode(androidx.compose.ui.test.hasText("메시지"), useUnmergedTree = true).fetchSemanticsNode()
+        assertThat(hint.config.contains(SemanticsProperties.HideFromAccessibility)).isTrue()
+    }
+
+    @Test
     fun `태그 칩은 태그 이름을 한 번만 읽는다`() {
         compose.setContent { KTagInput(listOf("디자인"), {}) }
         assertThat(compose.onNodeWithContentDescription("디자인").mergedText()).isEmpty()

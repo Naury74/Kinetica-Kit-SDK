@@ -262,8 +262,8 @@ private fun ChatField(source: FieldSource, options: ChatOptions, surface: Surfac
                 if (source.text.isEmpty()) {
                     ThemedText(
                         placeholder,
-                        // 라벨이 따로 있으면 안내 글은 이름이 아니라 힌트이므로 TalkBack이 읽게 둔다.
-                        if (options.label == null) Modifier.fieldNameText() else Modifier,
+                        // 라벨이 따로 있으면 안내 글은 이름이 아니라 힌트이므로 TalkBack이 읽게 둔다. 라벨과 같은 말이면 두 번 읽지 않게 숨긴다.
+                        if (options.label == null || options.label == placeholder) Modifier.fieldNameText() else Modifier,
                         style = style.copy(color = ink.copy(alpha = PLACEHOLDER_ALPHA)),
                         maxLines = 1,
                     )
