@@ -18,9 +18,10 @@
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-delivery.png" width="220" alt="음식 배달 앱"><br><b>음식 배달</b><br>글래스 카드와 칩 필터</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-smarthome.png" width="220" alt="스마트 홈 앱"><br><b>스마트 홈</b><br>어두운 표면의 기기 스위치</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-tasks.png" width="220" alt="할 일 앱"><br><b>할 일</b><br>주간 달력과 진행 링</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-videocall.png" width="200" alt="영상 통화"><br><b>영상 통화</b><br>참가자 그리드와 컨트롤 바</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-bank.png" width="200" alt="송금 앱"><br><b>송금</b><br>카드 캐러셀과 예산 차트</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-music.png" width="200" alt="음악 앱"><br><b>음악</b><br>추천 앨범과 미니 플레이어</td>
+    <td align="center" width="25%"><img src="docs/images/showcase-health.png" width="200" alt="건강 앱"><br><b>건강</b><br>활동 링과 그려지는 차트</td>
   </tr>
 </table>
 
@@ -64,13 +65,13 @@
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-chat.png" width="220" alt="메신저 앱"><br><b>메신저</b><br>스토리 링과 대화 목록</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-travel.png" width="220" alt="여행 예약 앱"><br><b>여행 예약</b><br>항공권 검색 폼</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-videocall.png" width="220" alt="영상 통화"><br><b>영상 통화</b><br>참가자 그리드와 컨트롤 바</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-delivery.png" width="220" alt="음식 배달 앱"><br><b>음식 배달</b><br>글래스 카드와 칩 필터</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-smarthome.png" width="220" alt="스마트 홈 앱"><br><b>스마트 홈</b><br>어두운 표면의 기기 스위치</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-tasks.png" width="220" alt="할 일 앱"><br><b>할 일</b><br>주간 달력과 진행 링</td>
   </tr>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-music.png" width="220" alt="음악 앱"><br><b>음악</b><br>미니 플레이어와 떠 있는 탭 바</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-health.png" width="220" alt="건강 앱"><br><b>건강</b><br>활동 링과 그려지며 나타나는 차트</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-chat.png" width="220" alt="메신저 앱"><br><b>메신저</b><br>스토리 링과 대화 목록</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-travel.png" width="220" alt="여행 예약 앱"><br><b>여행 예약</b><br>항공권 검색 폼</td>
     <td align="center" width="33%"><img src="docs/images/showcase-settings.png" width="220" alt="설정 앱"><br><b>설정</b><br>섹션 목록과 스위치</td>
   </tr>
 </table>

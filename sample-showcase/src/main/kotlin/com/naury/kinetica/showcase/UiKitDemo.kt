@@ -3,6 +3,7 @@
 
 package com.naury.kinetica.showcase
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naury.kinetica.ui.GlassStyles
+import com.naury.kinetica.ui.KAlert
 import com.naury.kinetica.ui.KButton
 import com.naury.kinetica.ui.KButtonSize
 import com.naury.kinetica.ui.KCard
@@ -66,6 +68,7 @@ import com.naury.kinetica.ui.KSegmentedControl
 import com.naury.kinetica.ui.KShapeToken
 import com.naury.kinetica.ui.KSheet
 import com.naury.kinetica.ui.KSlider
+import com.naury.kinetica.ui.KStatus
 import com.naury.kinetica.ui.KSurface
 import com.naury.kinetica.ui.KSwitch
 import com.naury.kinetica.ui.KTab
@@ -90,7 +93,7 @@ import kotlinx.coroutines.launch
 /**
  * 표면과 디자인 데모. 같은 컴포넌트를 프리셋마다 나란히 그려 비교하고, 누른 프리셋을 앱 전체 모양으로 바로 적용한다.
  * 고른 값은 다른 모든 화면과 같은 [ShowcaseLook]에 들어가므로 이 화면에만 따로 있는 선택은 없다.
- * 아래쪽에서는 지금 모양으로 다이얼로그, 바텀 시트, 토스트, 탭 바, 컨트롤을 직접 눌러 본다.
+ * 아래 탭 바로 표면 비교, 컨트롤(다이얼로그, 바텀 시트, 토스트), 사진, 알림 화면을 오가며 지금 모양을 직접 눌러 본다.
  */
 @Composable
 internal fun UiKitDemo(onBack: () -> Unit) {
@@ -110,10 +113,10 @@ internal fun UiKitDemo(onBack: () -> Unit) {
         bottomBar = {
             KTabBar(
                 listOf(
-                    KTab("홈", KIcons.Home),
-                    KTab("효과", ShowcaseIcons.Sparkle),
-                    KTab("보드", KIcons.Grid),
-                    KTab("알림", KIcons.Bell),
+                    KTab("표면", KIcons.Home),
+                    KTab("컨트롤", KIcons.Settings),
+                    KTab("사진", KIcons.Image),
+                    KTab("알림", KIcons.Bell, badge = ALERTS.size),
                 ),
                 tab,
                 { tab = it },
@@ -121,22 +124,48 @@ internal fun UiKitDemo(onBack: () -> Unit) {
         },
     ) { padding ->
         // 맨 위에서 당기면 글래스 인디케이터가 물방울처럼 차오르고, 놓으면 새로 고침한다.
-        DemoRefresh(padding.calculateTopPadding(), { toast.show("새로 고쳤어요") }) {
-            DemoCardList(padding.calculateTopPadding() + 8.dp, padding.calculateBottomPadding() + 16.dp) {
-                item(span = StaggeredGridItemSpan.FullLine) { Intro(look.family) }
-                SurfaceFamily.entries.forEach { family ->
-                    item(span = StaggeredGridItemSpan.FullLine, key = family.name) { PresetRow(family, dark) }
+        // 탭마다 다른 내용을 보여 준다. 바뀔 때는 옅어졌다 나타나고, 탭마다 목록 위치는 처음부터다.
+        Crossfade(tab, label = "ui-kit-tab") { page ->
+            DemoRefresh(padding.calculateTopPadding(), { toast.show("새로 고쳤어요") }) {
+                DemoCardList(padding.calculateTopPadding() + 8.dp, padding.calculateBottomPadding() + 16.dp) {
+                    when (page) {
+                        0 -> {
+                            item(span = StaggeredGridItemSpan.FullLine) { Intro(look.family) }
+                            SurfaceFamily.entries.forEach { family ->
+                                item(span = StaggeredGridItemSpan.FullLine, key = family.name) { PresetRow(family, dark) }
+                            }
+                            item(span = StaggeredGridItemSpan.FullLine, key = "designs") { DesignRow(demoSurface(UI_KIT_LOOK)) }
+                        }
+
+                        1 -> {
+                            item {
+                                PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } }
+                            }
+                            item { ControlsCard() }
+                        }
+
+                        2 -> items(PHOTOS.size) { index -> Photo(PHOTOS[index], index) { scope.launch { toast.show(it) } } }
+
+                        else -> items(ALERTS.size) { index ->
+                            val (status, title, body) = ALERTS[index]
+                            KAlert(body, Modifier.fillMaxWidth(), status = status, title = title)
+                        }
+                    }
                 }
-                item(span = StaggeredGridItemSpan.FullLine, key = "designs") { DesignRow(demoSurface(UI_KIT_LOOK)) }
-                item { PopupCard({ origin = it }, { dialog = true }, { sheet = true }) { scope.launch { toast.show("저장했어요") } } }
-                item { ControlsCard() }
-                items(PHOTOS.size) { index -> Photo(PHOTOS[index], index) { scope.launch { toast.show(it) } } }
             }
         }
         DemoPopups(dialog, sheet, origin, { dialog = false }, { sheet = false }) { scope.launch { toast.show(it) } }
         KToastHost(toast)
     }
 }
+
+/** 알림 탭에 늘어놓는 상태별 알림 */
+private val ALERTS = listOf(
+    Triple(KStatus.Success, "백업 완료", "사진 1,284장을 클라우드에 안전하게 올렸어요."),
+    Triple(KStatus.Info, "새 기능", "이제 앨범을 친구와 함께 편집할 수 있어요."),
+    Triple(KStatus.Warning, "저장 공간 부족", "남은 공간이 1.2GB예요. 오래된 동영상을 정리해 보세요."),
+    Triple(KStatus.Error, "동기화 실패", "네트워크 연결을 확인한 뒤 다시 시도해 주세요."),
+)
 
 /** 1.5초 동안 새로 고침을 흉내 낸 뒤 [onDone]을 부른다. */
 @Composable

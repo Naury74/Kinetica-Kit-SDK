@@ -82,8 +82,9 @@ class WideNarrowStateTest {
         val restoration = StateRestorationTester(compose)
         restoration.setContent { UiKitDemo {} }
         compose.waitForIdle()
-        // 프리셋 비교 줄 아래에 있어 넓은 창에서도 스크롤해야 보인다.
-        compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText("팝업"))
+        // 팝업 버튼은 아래 탭 바의 '컨트롤' 탭에 있다.
+        compose.onNodeWithText("컨트롤").performClick()
+        compose.waitForIdle()
         compose.onNodeWithText("팝업").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("주문을 보낼까요?").assertExists()
