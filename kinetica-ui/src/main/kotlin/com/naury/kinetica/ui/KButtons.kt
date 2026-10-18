@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -126,6 +128,79 @@ public fun KButton(
     surface: SurfaceStyle = KineticaTheme.surface,
     shape: Shape = shapeFor { button },
 ) {
+    ButtonBody(
+        ButtonSpec(text, variant, tone, size, loading, success, enabled, fullWidth, surface, shape),
+        onClick,
+        modifier,
+        icon?.let { rememberVectorPainter(it) },
+        trailingIcon?.let { rememberVectorPainter(it) },
+    )
+}
+
+/**
+ * 아이콘으로 `painterResource`로 읽은 drawable 같은 [Painter]를 받는 [KButton]. 아이콘은 글자와 같은 색으로 칠하고, 그 밖의 규칙은 같다.
+ *
+ * ```kotlin
+ * KButton("자르기", onClick = ::crop, icon = painterResource(R.drawable.ic_crop), variant = KVariant.Tonal)
+ * ```
+ *
+ * @param icon 글자 앞에 놓을 아이콘
+ * @param trailingIcon 글자 뒤에 놓을 아이콘
+ */
+@Composable
+public fun KButton(
+    text: String,
+    onClick: () -> Unit,
+    icon: Painter,
+    modifier: Modifier = Modifier,
+    variant: KVariant = KVariant.Filled,
+    tone: KTone = KTone.Accent,
+    size: KButtonSize = KButtonSize.Medium,
+    trailingIcon: Painter? = null,
+    loading: Boolean = false,
+    success: Boolean = false,
+    enabled: Boolean = true,
+    fullWidth: Boolean = false,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { button },
+) {
+    ButtonBody(
+        ButtonSpec(text, variant, tone, size, loading, success, enabled, fullWidth, surface, shape),
+        onClick,
+        modifier,
+        icon,
+        trailingIcon,
+    )
+}
+
+/** [KButton] 두 오버로드가 함께 쓰는 값 */
+@Immutable
+@Suppress("LongParameterList") // 공개 KButton의 파라미터를 그대로 옮겨 담는다.
+private class ButtonSpec(
+    val text: String,
+    val variant: KVariant,
+    val tone: KTone,
+    val size: KButtonSize,
+    val loading: Boolean,
+    val success: Boolean,
+    val enabled: Boolean,
+    val fullWidth: Boolean,
+    val surface: SurfaceStyle,
+    val shape: Shape,
+)
+
+@Composable
+private fun ButtonBody(spec: ButtonSpec, onClick: () -> Unit, modifier: Modifier, icon: Painter?, trailingIcon: Painter?) {
+    val text = spec.text
+    val variant = spec.variant
+    val tone = spec.tone
+    val size = spec.size
+    val loading = spec.loading
+    val success = spec.success
+    val enabled = spec.enabled
+    val fullWidth = spec.fullWidth
+    val surface = spec.surface
+    val shape = spec.shape
     val haptic = kHapticFeedback()
     val design = KineticaTheme.design
     val height = design.density.height(size.height)
@@ -177,8 +252,8 @@ private fun KButtonSize.sidePadding(hasIcon: Boolean): Dp = if (hasIcon) padding
 @Suppress("LongParameterList") // 글자, 두 아이콘, 크기, 색, 굵기는 모두 버튼이 정해 넘기는 값이다.
 private fun ButtonLabel(
     text: String,
-    icon: ImageVector?,
-    trailing: ImageVector?,
+    icon: Painter?,
+    trailing: Painter?,
     size: KButtonSize,
     ink: Color,
     weight: FontWeight,
@@ -189,7 +264,7 @@ private fun ButtonLabel(
         horizontalArrangement = Arrangement.spacedBy(size.gap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        icon?.let { Image(rememberVectorPainter(it), null, Modifier.size(size.icon), colorFilter = ColorFilter.tint(ink)) }
+        icon?.let { Image(it, null, Modifier.size(size.icon), colorFilter = ColorFilter.tint(ink)) }
         ThemedText(
             text,
             Modifier.weight(1f, fill = false),
@@ -197,7 +272,7 @@ private fun ButtonLabel(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        trailing?.let { Image(rememberVectorPainter(it), null, Modifier.size(size.icon), colorFilter = ColorFilter.tint(ink)) }
+        trailing?.let { Image(it, null, Modifier.size(size.icon), colorFilter = ColorFilter.tint(ink)) }
     }
 }
 

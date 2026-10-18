@@ -346,10 +346,10 @@ private fun CollapsedCapsule(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        val icon = tab.icon
+        val icon = tab.iconPainter()
         if (icon != null) {
             Image(
-                rememberVectorPainter(icon),
+                icon,
                 contentDescription = null,
                 Modifier.size(24.dp),
                 colorFilter = ColorFilter.tint(surface.contentColor),

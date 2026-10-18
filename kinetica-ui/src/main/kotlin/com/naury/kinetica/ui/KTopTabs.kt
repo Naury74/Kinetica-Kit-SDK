@@ -208,8 +208,7 @@ private fun RowScope.TopTab(tab: KTab, look: TopTabLook, activeness: () -> Float
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        tab.icon?.let { icon ->
-            val painter = rememberVectorPainter(icon)
+        tab.iconPainter()?.let { painter ->
             val filters = remember(idle, look.activeColor) { ColorFilter.tint(idle) to ColorFilter.tint(look.activeColor) }
             // 두 색으로 겹쳐 그리고 투명도만 바꿔 프레임마다 ColorFilter를 만들지 않는다.
             Box(

@@ -110,7 +110,11 @@ internal fun Modifier.variantBackground(variant: KVariant, colors: ToneColors, s
     return when (variant) {
         KVariant.Filled -> solidFill(colors.fill, surface, shape, design)
 
-        KVariant.Tonal -> solidFill(colors.color.copy(alpha = TONAL_ALPHA), surface, shape, design)
+        // 표면 글자 색으로 칠하는 중립 톤은 호스트가 준 올라온 면 색을 쓴다.
+        KVariant.Tonal -> {
+            val tint = if (colors.color == surface.contentColor) surface.raisedFill(TONAL_ALPHA) else colors.color.copy(alpha = TONAL_ALPHA)
+            solidFill(tint, surface, shape, design)
+        }
 
         KVariant.Outlined -> border(
             if (design.depth == KDepth.Offset) design.borderWidth else design.borderWidth.coerceAtMost(OUTLINE_WIDTH * 2),

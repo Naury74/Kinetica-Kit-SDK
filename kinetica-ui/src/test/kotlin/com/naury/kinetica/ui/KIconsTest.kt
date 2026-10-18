@@ -40,7 +40,7 @@ class KIconsTest {
     @Test
     fun allListsEveryIconOnceWithItsPropertyName() {
         val all = KIcons.all
-        assertThat(all).hasSize(63)
+        assertThat(all).hasSize(69)
         assertThat(all.map { it.first }.toSet()).hasSize(all.size)
         assertThat(all.map { it.second }.toSet()).hasSize(all.size)
         all.forEach { (name, icon) ->
@@ -57,7 +57,7 @@ class KIconsTest {
     @Test
     fun onlyDirectionalIconsMirrorInRtl() {
         val mirrored = KIcons.all.filter { it.second.autoMirror }.map { it.first }
-        assertThat(mirrored).containsExactly("ChevronBack", "ChevronForward", "ArrowBack", "ArrowForward", "Send")
+        assertThat(mirrored).containsExactly("ChevronBack", "ChevronForward", "ArrowBack", "ArrowForward", "Send", "Undo", "Redo")
     }
 
     @Test

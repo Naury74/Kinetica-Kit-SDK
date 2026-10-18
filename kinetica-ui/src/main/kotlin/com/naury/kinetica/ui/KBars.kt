@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.onSizeChanged
@@ -74,13 +75,24 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * [KTabBar], [KFloatingTabBar], [KTopTabs]의 탭 항목. [icon]이 없으면 텍스트만 표시한다.
+ * [KTabBar], [KFloatingTabBar], [KTopTabs]의 탭 항목. [icon]과 [painter]가 모두 없으면 텍스트만 표시한다.
  *
+ * @property painter `painterResource`로 읽은 drawable 같은 아이콘. [icon]보다 우선하며 탭 글자 색으로 칠한다.
  * @property badge 탭에 붙일 배지 숫자. null이거나 0 이하면 배지가 없다. 아이콘이 있으면 아이콘 모서리에, 없으면 이름 옆에 붙는다.
  * @property dot true면 숫자 없이 작은 점 배지를 붙인다. [badge]보다 우선한다.
  */
 @Immutable
-public data class KTab(val label: String, val icon: ImageVector? = null, val badge: Int? = null, val dot: Boolean = false)
+public data class KTab(
+    val label: String,
+    val icon: ImageVector? = null,
+    val badge: Int? = null,
+    val dot: Boolean = false,
+    val painter: Painter? = null,
+)
+
+/** 탭 아이콘. [KTab.painter]가 있으면 그것을, 없으면 [KTab.icon]을 그린다. */
+@Composable
+internal fun KTab.iconPainter(): Painter? = painter ?: icon?.let { rememberVectorPainter(it) }
 
 /**
  * 화면 아래에 떠 있는 탭 바. 선택한 탭의 인디케이터가 이동할 때 앞쪽 가장자리가 먼저 가고 뒤쪽이 따라와,
@@ -212,13 +224,13 @@ internal fun compactHeight(): Boolean = LocalConfiguration.current.screenHeightD
 /** 탭 하나의 아이콘과 이름. 보통은 위아래로, [compact]면 가로 화면에 맞게 옆으로 놓는다. */
 @Composable
 internal fun TabContent(tab: KTab, color: Color, selected: Boolean, compact: Boolean) {
-    val icon = tab.icon
+    val icon = tab.iconPainter()
     val design = KineticaTheme.design
     val weight = if (selected) design.labelWeight else design.idleWeight
     if (compact && icon != null) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
-                rememberVectorPainter(icon),
+                icon,
                 contentDescription = null,
                 Modifier.size(COMPACT_TAB_ICON).kBadge(tab.badge, tab.dot),
                 colorFilter = ColorFilter.tint(color),
@@ -231,7 +243,7 @@ internal fun TabContent(tab: KTab, color: Color, selected: Boolean, compact: Boo
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         icon?.let {
             Image(
-                rememberVectorPainter(it),
+                it,
                 contentDescription = null,
                 Modifier.size(TAB_ICON).kBadge(tab.badge, tab.dot),
                 colorFilter = ColorFilter.tint(color),

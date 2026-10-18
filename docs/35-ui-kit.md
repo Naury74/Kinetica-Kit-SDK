@@ -166,7 +166,7 @@ Box(Modifier.fillMaxWidth().height(240.dp)) {
 
 ### 아이콘 `KIcons`
 
-앱 화면에서 자주 쓰는 선 아이콘 63개를 `ImageVector`로 제공한다. 24 격자에 1.8 굵기 선으로 그렸고 기본 크기는 24dp다. 색은 쓰는 쪽의 글자 색이나 `tint`를 따르므로 `KIconButton`, `KButton`의 `icon`, `KListLeading.Icon`, `Icon`에 그대로 넘긴다. 방향이 있는 `ChevronBack`, `ChevronForward`, `ArrowBack`, `ArrowForward`, `Send`는 RTL에서 좌우가 뒤집힌다. 아이콘은 처음 읽을 때 한 번만 만든다. Material Icons를 함께 써도 된다.
+앱 화면에서 자주 쓰는 선 아이콘 69개를 `ImageVector`로 제공한다. 24 격자에 1.8 굵기 선으로 그렸고 기본 크기는 24dp다. 색은 쓰는 쪽의 글자 색이나 `tint`를 따르므로 `KIconButton`, `KButton`의 `icon`, `KListLeading.Icon`, `Icon`에 그대로 넘긴다. 방향이 있는 `ChevronBack`, `ChevronForward`, `ArrowBack`, `ArrowForward`, `Send`, `Undo`, `Redo`는 RTL에서 좌우가 뒤집힌다. 아이콘은 처음 읽을 때 한 번만 만든다. Material Icons를 함께 써도 된다.
 
 | 묶음 | 아이콘 |
 | --- | --- |

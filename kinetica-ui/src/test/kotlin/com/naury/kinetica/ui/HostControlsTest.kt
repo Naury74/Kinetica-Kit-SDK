@@ -2,10 +2,12 @@ package com.naury.kinetica.ui
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.google.common.truth.Truth.assertThat
@@ -86,5 +88,31 @@ class HostControlsTest {
         compose.waitForIdle()
         assertThat(system).isFalse()
         assertThat(forced).isTrue()
+    }
+
+    @Test
+    fun `버튼, 아이콘 버튼, 탭은 drawable 같은 Painter 아이콘을 받는다`() {
+        var clicks = 0
+        val painter = ColorPainter(Color.Red)
+        compose.setContent {
+            androidx.compose.foundation.layout.Column {
+                KButton("자르기", { clicks++ }, icon = painter, variant = KVariant.Tonal)
+                KIconButton(painter, "실행 취소", { clicks++ })
+                KTabBar(listOf(KTab("홈", painter = painter), KTab("설정", KIcons.Settings)), 0, {})
+            }
+        }
+        compose.onNodeWithText("자르기").performClick()
+        compose.onNodeWithContentDescription("실행 취소").performClick()
+        compose.waitForIdle()
+        assertThat(clicks).isEqualTo(2)
+        compose.onNodeWithText("홈").assertExists()
+    }
+
+    @Test
+    fun `중립 톤 버튼 바탕은 표면의 올라온 면 색을 쓴다`() {
+        val raised = Color(0xFFEDEDF1)
+        val surface = SurfaceStyle.Solid(Color.White, Color(0xFF1B1E26), Color(0xFFF3F4F8), raised = raised)
+        assertThat(surface.raisedFill(0.16f)).isEqualTo(raised)
+        assertThat(SurfaceStyles.CleanLight.raisedFill(0.16f).alpha).isWithin(0.001f).of(0.16f)
     }
 }

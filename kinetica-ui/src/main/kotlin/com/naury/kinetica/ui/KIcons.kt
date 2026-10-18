@@ -15,10 +15,10 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * 앱 화면에서 자주 쓰는 선 아이콘 63개. 아이콘 라이브러리 없이 24 격자에 1.8 굵기 선으로 그렸고, 기본 크기는 24dp다.
+ * 앱 화면에서 자주 쓰는 선 아이콘 69개. 아이콘 라이브러리 없이 24 격자에 1.8 굵기 선으로 그렸고, 기본 크기는 24dp다.
  * 색은 `Icon`의 tint나 컴포넌트의 글자 색이 입히므로 그대로 [KIconButton], [KButton], `Icon`에 넘기면 된다.
  *
- * 방향이 있는 아이콘([ChevronBack], [ChevronForward], [ArrowBack], [ArrowForward], [Send])은 autoMirror라서
+ * 방향이 있는 아이콘([ChevronBack], [ChevronForward], [ArrowBack], [ArrowForward], [Send], [Undo], [Redo])은 autoMirror라서
  * RTL 레이아웃에서 좌우가 저절로 뒤집힌다. 아이콘은 처음 읽을 때 한 번만 만든다.
  *
  * ```
@@ -670,7 +670,73 @@ public object KIcons {
         close()
     }
 
-    /** 이름과 아이콘 짝 63개. 아이콘 고르기 화면이나 목록에 늘어놓을 때 쓴다. 이름은 속성 이름과 같다. */
+    /** 왼쪽으로 돌아가는 화살표. 실행 취소 */
+    public val Undo: ImageVector by icon("undo", mirrored = true) {
+        moveTo(9f, 14f)
+        lineTo(4f, 9f)
+        lineTo(9f, 4f)
+        moveTo(4f, 9f)
+        lineTo(14.5f, 9f)
+        arcTo(5.5f, 5.5f, 0f, false, true, 14.5f, 20f)
+        lineTo(11f, 20f)
+    }
+
+    /** 오른쪽으로 나아가는 화살표. 다시 실행 */
+    public val Redo: ImageVector by icon("redo", mirrored = true) {
+        moveTo(15f, 14f)
+        lineTo(20f, 9f)
+        lineTo(15f, 4f)
+        moveTo(20f, 9f)
+        lineTo(9.5f, 9f)
+        arcTo(5.5f, 5.5f, 0f, false, false, 9.5f, 20f)
+        lineTo(13f, 20f)
+    }
+
+    /** 반시계 방향으로 도는 사각형. 90도 회전 */
+    public val Rotate: ImageVector by icon("rotate") {
+        roundRect(9f, 9f, 20f, 20f, 2f)
+        moveTo(4f, 12f)
+        arcTo(8f, 8f, 0f, false, true, 12f, 4f)
+        moveTo(10f, 2f)
+        lineTo(12f, 4f)
+        lineTo(10f, 6f)
+    }
+
+    /** 가운데 선을 두고 마주 보는 삼각형. 좌우 뒤집기 */
+    public val Flip: ImageVector by icon("flip") {
+        moveTo(12f, 3f)
+        lineTo(12f, 21f)
+        moveTo(9f, 6f)
+        lineTo(3f, 18f)
+        lineTo(9f, 18f)
+        close()
+        moveTo(15f, 6f)
+        lineTo(21f, 18f)
+        lineTo(15f, 18f)
+        close()
+    }
+
+    /** 엇갈린 두 꺾쇠. 자르기 */
+    public val Crop: ImageVector by icon("crop") {
+        moveTo(6f, 2f)
+        lineTo(6f, 18f)
+        lineTo(22f, 18f)
+        moveTo(2f, 6f)
+        lineTo(18f, 6f)
+        lineTo(18f, 22f)
+    }
+
+    /** 가운데 선으로 나뉜 사각형. 전후 비교 */
+    public val Compare: ImageVector by icon("compare") {
+        roundRect(3f, 5f, 21f, 19f, 2.5f)
+        moveTo(12f, 2.5f)
+        lineTo(12f, 21.5f)
+        moveTo(15f, 9f)
+        lineTo(18f, 12f)
+        lineTo(15f, 15f)
+    }
+
+    /** 이름과 아이콘 짝 69개. 아이콘 고르기 화면이나 목록에 늘어놓을 때 쓴다. 이름은 속성 이름과 같다. */
     @JvmStatic
     public val all: List<Pair<String, ImageVector>>
         get() = listOf(
@@ -687,7 +753,8 @@ public object KIcons {
             "Video" to Video, "VideoOff" to VideoOff, "Speaker" to Speaker, "Camera" to Camera, "Image" to Image,
             "File" to File, "Calendar" to Calendar, "Clock" to Clock, "Location" to Location, "Person" to Person,
             "Users" to Users, "Cart" to Cart, "Bag" to Bag, "Card" to Card, "Grid" to Grid,
-            "Chart" to Chart, "Sun" to Sun, "Moon" to Moon,
+            "Chart" to Chart, "Sun" to Sun, "Moon" to Moon, "Undo" to Undo, "Redo" to Redo,
+            "Rotate" to Rotate, "Flip" to Flip, "Crop" to Crop, "Compare" to Compare,
         )
 }
 

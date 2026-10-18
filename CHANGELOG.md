@@ -9,9 +9,12 @@
 - `LocalKineticaReducedMotion`과 `isReducedMotion()`: 시스템 '애니메이션 삭제' 대신 호스트가 움직임 줄이기를 정하고, 직접 만든 애니메이션도 키트와 같은 기준을 따릅니다.
 - `LocalKineticaFillContrast`: 채운 버튼, 배지, 선택된 칩이 지킬 글자 명암비를 정합니다. 기본값 4.5에서 브랜드 색을 진하게 고치지 않으려면 3.0이나 1 이하를 줍니다.
 - `SurfaceStyle.Solid`의 `contentMuted`, `raised`: 호스트 팔레트의 보조 글자색과 한 단계 올라온 면의 색을 그대로 씁니다.
+- `KButton`, `KIconButton`에 `painterResource`로 읽은 drawable 같은 `Painter` 아이콘을 받는 오버로드, `KTab.painter`.
+- `KIcons`에 편집용 아이콘 `Undo`, `Redo`, `Rotate`, `Flip`, `Crop`, `Compare`를 더해 69개가 되었습니다.
 
 ### 바뀐 것
 
+- 표면에 `raised`를 주면 중립 톤(`KVariant.Tonal`, `KTone.Neutral`) 버튼 바탕도 그 색을 씁니다.
 - `LocalKineticaHaptics`가 `false`면 이제 버튼, 칩, 스테퍼, 휠 피커, 메뉴, 밀어서 동작 등 이 키트의 모든 컴포넌트가 진동을 내지 않습니다. 전에는 `KHaptics`, 토스트, 당겨서 새로 고침만 따랐습니다.
 
 ## 1.0.0-alpha02

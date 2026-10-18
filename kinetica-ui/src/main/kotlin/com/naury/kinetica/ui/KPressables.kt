@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.semantics.Role
@@ -54,6 +55,29 @@ public fun KIconButton(
     surface: SurfaceStyle = KineticaTheme.surface,
     shape: Shape = shapeFor { button },
 ) {
+    KIconButton(rememberVectorPainter(icon), contentDescription, onClick, modifier, variant, tone, size, enabled, surface, shape)
+}
+
+/**
+ * 아이콘으로 `painterResource`로 읽은 drawable 같은 [Painter]를 받는 [KIconButton]. 아이콘은 버튼 글자 색으로 칠하고, 그 밖의 규칙은 같다.
+ *
+ * ```kotlin
+ * KIconButton(painterResource(R.drawable.ic_undo), "실행 취소", onClick = ::undo)
+ * ```
+ */
+@Composable
+public fun KIconButton(
+    icon: Painter,
+    contentDescription: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    variant: KVariant = KVariant.Glass,
+    tone: KTone = KTone.Accent,
+    size: Dp = KMetrics.IconButton,
+    enabled: Boolean = true,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { button },
+) {
     val diameter = size.coerceAtLeast(MIN_ICON_BUTTON)
     val colors = tone.colors(surface)
     val ink = buttonInk(variant, tone, colors, surface, INK_GRAPHIC_CONTRAST)
@@ -69,7 +93,7 @@ public fun KIconButton(
             .then(if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Image(rememberVectorPainter(icon), null, Modifier.size(diameter / 2), colorFilter = ColorFilter.tint(ink))
+        Image(icon, null, Modifier.size(diameter / 2), colorFilter = ColorFilter.tint(ink))
     }
 }
 
