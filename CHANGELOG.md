@@ -124,6 +124,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 고친 것
 
+- `KParticipantGrid` 여러 쪽 격자에서 덜 찬 마지막 쪽만 칸이 커지던 문제(모든 쪽을 꽉 찬 쪽 기준 칸으로 짜고 가운데에 놓습니다. `columns`는 쪽이 여럿이면 한 쪽 최대 인원을 받습니다)
 - `KAlert`와 `KBanner`에서 TalkBack이 상태 아이콘, 제목, 본문에 따로따로 멈추던 문제(한 번에 읽습니다)
 - `KChatInput`에 같은 말을 `label`과 `placeholder`로 함께 넘기면 TalkBack이 두 번 읽던 문제
 - `KParticipantGrid` 띠와 여러 쪽 격자에서 TalkBack이 화면 밖 참가자에게 닿지 못하던 문제(스크롤 범위와 scrollBy를 알려, TalkBack이 끝에서 넘기고 초점 받은 칸을 화면에 보이게 합니다). 띠 칸은 띠만 담은 스크롤 상자로 옮겨, 왼쪽으로 넘길 때 큰 화면으로 건너뛰거나 오른쪽으로 넘길 때 큰 화면을 중간에 읽지 않습니다

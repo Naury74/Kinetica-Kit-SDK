@@ -136,6 +136,7 @@ public fun <K : Any> rememberKStableSpeaker(speakingKey: K?, delayMillis: Long =
  *   넓이를 비교하고, 차이가 25% 안쪽이면 행과 열이 고른 쪽을 고른다. 세로 폰은 2명 위아래, 3~4명 2×2, 5~6명 2×3, 가로 화면은 2명 좌우,
  *   6명 3×2다. 다르게 짜려면 [columns]를 넘긴다.
  *   마지막 줄이 덜 차면 가운데로 모은다. [maxPerPage]명이 넘으면 쪽을 나누고 옆으로 넘긴다. 아래 점이 쪽 위치를 보여 준다.
+ *   덜 찬 마지막 쪽도 꽉 찬 쪽과 같은 칸 크기로 가운데에 놓아, 넘길 때 칸 크기가 바뀌지 않는다.
  * - [selfKey]와 다른 한 명뿐이면 상대가 화면 전체를([KTileRole.Full]), 나는 모서리의 작은 창([KTileRole.Floating])이 된다.
  *   작은 창은 끌어서 놓으면 가까운 모서리에 붙는다.
  * - [focusKey]가 있으면 그 사람이 크게, 나머지는 한 줄 띠가 된다. 세로 화면은 아래 띠를 가로로, 가로 화면은 끝쪽 띠를 세로로 넘긴다.
@@ -155,7 +156,7 @@ public fun <K : Any> rememberKStableSpeaker(speakingKey: K?, delayMillis: Long =
  * @param contentPadding 무대 둘레 여백. 상단 바와 조작 막대 높이, 시스템 바 인셋을 넣는다. 1:1의 상대 화면은 이 여백을 무시하고 화면 끝까지 채운다.
  * @param spacing 타일 사이 간격
  * @param maxPerPage 갤러리 한 쪽의 최대 인원. 1 미만이면 [IllegalArgumentException]을 던진다.
- * @param columns 격자 열 수를 직접 정한다. 한 쪽 인원과 무대 폭, 높이(여백을 뺀 값)를 받는다. 결과는 1..인원으로 맞춘다.
+ * @param columns 격자 열 수를 직접 정한다. 한 쪽 인원(쪽이 여럿이면 [maxPerPage])과 무대 폭, 높이(여백을 뺀 값)를 받는다. 결과는 1..인원으로 맞춘다.
  *   `null`이면 위 규칙을 쓴다. 고정 보기와 1:1 배치에는 쓰지 않는다.
  * @param layer 그릴 층. [KCallLayer.Overlay]는 같은 [state]의 [KCallLayer.Video]와 함께 써야 타일이 움직인다.
  * @param tile 타일 하나. 받은 상자를 꽉 채워 그린다.
@@ -494,7 +495,8 @@ private fun pagedPlan(input: GridInput): GridPlan {
     val area = input.area
     val paged = Rect(area.left, area.top, area.right, area.bottom - input.pageDots)
     val pages = input.keys.chunked(input.pageSize)
-    val spots = pages.flatMapIndexed { page, chunk -> gridSpots(chunk, paged, input, page * input.full.width) }
+    // 모든 쪽을 꽉 찬 쪽 기준 칸으로 짠다. 덜 찬 마지막 쪽만 따로 짜면 넘길 때마다 칸 크기가 바뀌어 출렁여 보인다.
+    val spots = pages.flatMapIndexed { page, chunk -> gridSpots(chunk, paged, input, page * input.full.width, slots = input.pageSize) }
     return GridPlan(spots, input.full, paged, pages = pages.size)
 }
 
@@ -523,20 +525,23 @@ internal fun gridColumns(count: Int, width: Float, height: Float, gap: Float = 0
         .minWith(compareBy({ abs(rowsOf(it) - it) }, { it * rowsOf(it) - count }, { -it }))
 }
 
-private fun gridSpots(keys: List<Any>, area: Rect, input: GridInput, offsetX: Float): List<Spot> {
+/** [slots]명 기준 칸으로 [keys]를 놓는다. [keys]가 더 적으면 쓰는 줄을 위아래 가운데에, 덜 찬 줄은 좌우 가운데에 둔다. */
+private fun gridSpots(keys: List<Any>, area: Rect, input: GridInput, offsetX: Float, slots: Int = keys.size): List<Spot> {
     val gap = input.gap
-    val columns = input.columns?.invoke(keys.size, area.width, area.height)?.coerceIn(1, keys.size)
-        ?: gridColumns(keys.size, area.width, area.height, gap)
-    val rows = ceil(keys.size / columns.toFloat()).toInt()
+    val columns = input.columns?.invoke(slots, area.width, area.height)?.coerceIn(1, slots)
+        ?: gridColumns(slots, area.width, area.height, gap)
+    val rows = ceil(slots / columns.toFloat()).toInt()
     val cellW = (area.width - gap * (columns - 1)) / columns
     val cellH = (area.height - gap * (rows - 1)) / rows
+    val used = ceil(keys.size / columns.toFloat()).toInt()
+    val top = area.top + (rows - used) * (cellH + gap) / 2f
     return keys.mapIndexed { index, key ->
         val row = index / columns
         val col = index % columns
         val inRow = minOf(columns, keys.size - row * columns)
         val center = (columns - inRow) * (cellW + gap) / 2f
         val x = offsetX + area.left + center + col * (cellW + gap)
-        val y = area.top + row * (cellH + gap)
+        val y = top + row * (cellH + gap)
         Spot(key, Rect(x, y, x + cellW, y + cellH), KTileRole.Grid)
     }
 }

@@ -131,6 +131,35 @@ class KCallLayoutTest {
     }
 
     @Test
+    fun `덜 찬 마지막 쪽도 앞 쪽과 같은 칸 크기로 가운데에 놓는다`() {
+        val plan = planGrid(input(12))
+        val first = plan.spots.first { it.key == "p0" }.rect
+        val last = plan.spots.filter { it.rect.left >= phone.width }.map { it.rect }
+        assertThat(last).hasSize(3)
+        // 넘길 때마다 칸 크기가 바뀌면 출렁여 보인다.
+        last.forEach {
+            assertThat(it.width).isWithin(0.5f).of(first.width)
+            assertThat(it.height).isWithin(0.5f).of(first.height)
+        }
+        // 한 줄 3칸이 쪽 가운데 줄에 놓인다.
+        val middle = (plan.area.top + plan.area.bottom) / 2
+        assertThat((last[0].top + last[0].bottom) / 2).isWithin(0.5f).of(middle)
+        // 열 수를 정하는 람다는 한 쪽 최대 인원을 받는다.
+        val counts = mutableListOf<Int>()
+        planGrid(
+            input(12).copyColumns { count, _, _ ->
+                counts += count
+                3
+            },
+        )
+        assertThat(counts.distinct()).containsExactly(9)
+    }
+
+    private fun GridInput.copyColumns(columns: (Int, Float, Float) -> Int) = GridInput(
+        keys, focus, self, area, full, gap, strip, floatingWidth, margin, corner, pageSize, pageDots, columns,
+    )
+
+    @Test
     fun `가까운 모서리와 시계 방향 다음 모서리`() {
         assertThat(nearestCorner(Offset(10f, 10f), phone)).isEqualTo(KCorner.TopStart)
         assertThat(nearestCorner(Offset(390f, 790f), phone)).isEqualTo(KCorner.BottomEnd)
