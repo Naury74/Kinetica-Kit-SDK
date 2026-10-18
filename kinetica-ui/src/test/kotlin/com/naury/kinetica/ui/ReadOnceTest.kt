@@ -60,6 +60,22 @@ class ReadOnceTest {
     }
 
     @Test
+    fun `알림 상자와 배너는 상태, 제목, 본문을 한 번에 읽는다`() {
+        compose.setContent {
+            androidx.compose.foundation.layout.Column {
+                KAlert("테스트 전용 토큰입니다", status = KStatus.Warning, title = "토큰 출처")
+                KBanner(true, "연결이 끊겼어요", status = KStatus.Error, title = "오프라인")
+            }
+        }
+        listOf("토큰 출처" to "테스트 전용 토큰입니다", "오프라인" to "연결이 끊겼어요").forEach { (title, body) ->
+            val node = compose.onNode(androidx.compose.ui.test.hasText(title)).fetchSemanticsNode()
+            assertThat(node.config[SemanticsProperties.Text].map { it.text }).containsExactly(title, body).inOrder()
+            // 상태 아이콘의 이름도 같은 노드에 합쳐져 따로 멈추지 않는다.
+            assertThat(node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty()).isNotEmpty()
+        }
+    }
+
+    @Test
     fun `태그 칩은 태그 이름을 한 번만 읽는다`() {
         compose.setContent { KTagInput(listOf("디자인"), {}) }
         assertThat(compose.onNodeWithContentDescription("디자인").mergedText()).isEmpty()

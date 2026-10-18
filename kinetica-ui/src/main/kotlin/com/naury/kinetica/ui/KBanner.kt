@@ -104,7 +104,10 @@ public fun KBanner(
                 .fillMaxWidth()
                 .kSurface(surface, shape)
                 .background(tint.copy(alpha = BANNER_TINT), shape)
-                .semantics { liveRegion = if (status == KStatus.Error) LiveRegionMode.Assertive else LiveRegionMode.Polite }
+                // 상태 아이콘, 제목, 본문을 한 번에 읽는다. 닫기와 동작 버튼은 누를 수 있어 따로 멈춘다.
+                .semantics(mergeDescendants = true) {
+                    liveRegion = if (status == KStatus.Error) LiveRegionMode.Assertive else LiveRegionMode.Polite
+                }
                 .padding(
                     start = 16.dp,
                     end = if (onDismiss !=
@@ -172,6 +175,8 @@ public fun KAlert(
         modifier
             .fillMaxWidth()
             .alertBackground(variant, look.back, tint, surface, shape)
+            // 상태 아이콘, 제목, 본문을 한 번에 읽는다. 닫기와 동작 버튼은 누를 수 있어 따로 멈춘다.
+            .semantics(mergeDescendants = true) {}
             .padding(start = 14.dp, end = if (onDismiss != null) 4.dp else 14.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
