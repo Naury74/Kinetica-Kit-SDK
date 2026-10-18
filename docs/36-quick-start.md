@@ -6,9 +6,9 @@ Compose 앱에 Kinetica UI 키트와 효과를 붙이는 가장 빠른 방법을
 
 ```kotlin
 dependencies {
-    implementation("com.naurylab:kinetica-ui:1.0.0-alpha01")             // UI 컴포넌트와 효과 수정자. 보통은 이것만 있으면 됩니다
-    implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha01") // 필요하면: Modifier.kineticaEffects, 화면 전환, 숫자 애니메이션
-    implementation("com.naurylab:kinetica-presets:1.0.0-alpha01")        // 필요하면: EffectPresets
+    implementation("com.naurylab:kinetica-ui:1.0.0-alpha02")             // UI 컴포넌트와 효과 수정자. 보통은 이것만 있으면 됩니다
+    implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha02") // 필요하면: Modifier.kineticaEffects, 화면 전환, 숫자 애니메이션
+    implementation("com.naurylab:kinetica-presets:1.0.0-alpha02")        // 필요하면: EffectPresets
 }
 ```
 

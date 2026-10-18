@@ -29,7 +29,7 @@
 ## 시작하기
 
 ```kotlin
-implementation("com.naurylab:kinetica-ui:1.0.0-alpha01")
+implementation("com.naurylab:kinetica-ui:1.0.0-alpha02")
 ```
 
 Compose foundation 위에 만들었고 Material 3에는 의존하지 않는다. Material 3 앱에 함께 넣어도 된다. 폴더블 정보를 읽으려고 `androidx.window`를 함께 가져온다.
