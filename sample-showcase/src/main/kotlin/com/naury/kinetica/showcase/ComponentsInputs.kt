@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naury.kinetica.ui.KCodeInput
 import com.naury.kinetica.ui.KColorPicker
+import com.naury.kinetica.ui.KDialSlider
 import com.naury.kinetica.ui.KPasswordField
 import com.naury.kinetica.ui.KResult
 import com.naury.kinetica.ui.KResultMark
@@ -43,9 +46,10 @@ import com.naury.kinetica.ui.LocalKineticaContentColor
 import com.naury.kinetica.ui.PasswordStrength
 import com.naury.kinetica.ui.passwordStrength
 import com.naury.kinetica.ui.rememberSignaturePadState
+import java.util.Locale
 import kotlinx.coroutines.delay
 
-/** 입력 탭: 인증번호, 태그, 색 선택, 서명, 비밀번호. */
+/** 입력 탭: 인증번호, 태그, 색 선택, 눈금 다이얼, 서명, 비밀번호. */
 @Composable
 internal fun InputTab(padding: PaddingValues, connection: NestedScrollConnection) {
     ComponentTabList(padding, connection) {
@@ -53,6 +57,7 @@ internal fun InputTab(padding: PaddingValues, connection: NestedScrollConnection
         item { CodeCard() }
         item { TagCard() }
         item { ColorCard() }
+        item { DialCard() }
         item { SignatureCard() }
         item { PasswordCard() }
     }
@@ -113,6 +118,36 @@ private fun ColorCard() {
             }
         }
         KColorPicker(color, { color = it }, Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun DialCard() {
+    var exposure by rememberSaveable { mutableFloatStateOf(0f) }
+    var angle by rememberSaveable { mutableFloatStateOf(0f) }
+    var commits by rememberSaveable { mutableIntStateOf(0) }
+    DemoCard("눈금 다이얼", "눈금을 끌어 값을 고릅니다. 세게 밀면 미끄러지고, 0 근처에서 놓으면 0에 붙고, 두 번 탭하면 0으로 돌아갑니다.") {
+        KDialSlider(
+            exposure,
+            { exposure = it },
+            label = "노출",
+            showLabel = true,
+            onValueChangeFinished = { commits++ },
+        )
+        KDialSlider(
+            angle,
+            { angle = it },
+            label = "기울기",
+            showLabel = true,
+            valueRange = -45f..45f,
+            formatValue = { String.format(Locale.KOREA, "%.1f°", it) },
+            onValueChangeFinished = { commits++ },
+            spacing = 10.dp,
+            tickEvery = 1f,
+            majorEvery = 5f,
+            snapThreshold = 0.4f,
+        )
+        Label("값을 확정한 횟수 ${commits}번", 13, color = LocalKineticaContentColor.current.copy(alpha = 0.7f))
     }
 }
 

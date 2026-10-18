@@ -4,6 +4,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
@@ -33,6 +36,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -65,6 +69,7 @@ import kotlin.math.roundToInt
  * @param leadingIcon 꺼진 동안 앞에 놓을 아이콘. 켜지면 체크 표시가 그 자리를 대신한다.
  * @param variant 꺼진 칩의 모양. 기본값 [KVariant.Glass]는 [surface]로 그리고, [KVariant.Tonal]은 옅은 회색, [KVariant.Outlined]는 테두리 칩이다.
  *   [KVariant.Filled]는 [KVariant.Tonal]과 같게 그린다.
+ * @param colors 켜진 칩과 꺼진 칩의 색을 직접 정한다. 기본값은 [tone]과 [variant] 규칙을 따른다.
  */
 @Composable
 public fun KFilterChip(
@@ -77,10 +82,11 @@ public fun KFilterChip(
     variant: KVariant = KVariant.Glass,
     tone: KTone = KTone.Accent,
     surface: SurfaceStyle = KineticaTheme.surface,
+    colors: KChipColors = KChipColors(),
 ) {
     val haptic = kHapticFeedback()
     FilterChipBody(
-        ChipSpec(label, selected, enabled, tone.colors(surface).color, surface, variant),
+        ChipSpec(label, selected, enabled, tone.colors(surface).color, surface, variant, colors),
         modifier,
         leadingIcon,
     ) {
@@ -89,6 +95,22 @@ public fun KFilterChip(
             onSelectedChange(it)
         }
     }
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KFilterChip(
+    label: String,
+    selected: Boolean,
+    onSelectedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: ImageVector? = null,
+    enabled: Boolean = true,
+    variant: KVariant = KVariant.Glass,
+    tone: KTone = KTone.Accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+) {
+    KFilterChip(label, selected, onSelectedChange, modifier, leadingIcon, enabled, variant, tone, surface, KChipColors())
 }
 
 /**
@@ -233,25 +255,67 @@ public fun KSuggestionChip(
  * 화면 가장자리까지 스크롤되게 하려면 이 줄을 화면 폭에 두고 [contentPadding]에 본문 여백을 준다.
  *
  * ```kotlin
- * KChipRow(contentPadding = PaddingValues(horizontal = 20.dp)) { filters.forEach { KFilterChip(it.name, it.on, { … }) } }
+ * KChipRow(contentPadding = PaddingValues(horizontal = 20.dp), fadeEdges = true) { filters.forEach { KFilterChip(it.name, it.on, { … }) } }
  * ```
+ *
+ * @param state 줄의 스크롤 상태. 선택한 칩으로 스크롤하거나 끝에 닿았는지 볼 때 넘긴다.
+ * @param fadeEdges true면 화면 밖에 칩이 더 있는 쪽 끝을 흐리게 한다([horizontalFadingEdges]).
  */
 @Composable
 public fun KChipRow(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
+    state: ScrollState = rememberScrollState(),
+    fadeEdges: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
     Row(
         // 스크롤 영역은 내용을 잘라 그리므로, 칩 그림자가 경계에서 끊겨 띠처럼 보이지 않게 위아래 여유를 둔다.
-        modifier.horizontalScroll(rememberScrollState()).padding(contentPadding).padding(vertical = SHADOW_ROOM),
+        modifier
+            .then(if (fadeEdges) Modifier.horizontalFadingEdges(state) else Modifier)
+            .horizontalScroll(state)
+            .padding(contentPadding)
+            .padding(vertical = SHADOW_ROOM),
         horizontalArrangement = Arrangement.spacedBy(ChipRowGap),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
     )
 }
 
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KChipRow(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    content: @Composable RowScope.() -> Unit,
+) {
+    KChipRow(modifier, contentPadding, rememberScrollState(), false, content)
+}
+
+/**
+ * 필터 칩의 색을 직접 정한다. [Color.Unspecified]인 값은 기본 규칙(선택은 [KTone] 색으로 물들임, 미선택은 `variant` 모양)을 따른다.
+ *
+ * @property selected 선택된 칩을 채울 색. 주면 옅게 물들이지 않고 이 색으로 꽉 채운다.
+ * @property onSelected 선택된 칩의 글자와 체크 색. 지정하지 않으면 [selected] 위에서 읽히는 색을 고른다.
+ * @property unselected 선택되지 않은 칩의 바탕색. 주면 `variant` 모양 대신 이 색으로 채운다.
+ * @property onUnselected 선택되지 않은 칩의 글자 색
+ */
+@Immutable
+public class KChipColors(
+    public val selected: Color = Color.Unspecified,
+    public val onSelected: Color = Color.Unspecified,
+    public val unselected: Color = Color.Unspecified,
+    public val onUnselected: Color = Color.Unspecified,
+) {
+    override fun equals(other: Any?): Boolean = other is KChipColors && selected == other.selected &&
+        onSelected == other.onSelected && unselected == other.unselected && onUnselected == other.onUnselected
+
+    override fun hashCode(): Int =
+        ((selected.hashCode() * 31 + onSelected.hashCode()) * 31 + unselected.hashCode()) * 31 + onUnselected.hashCode()
+}
+
 /** 필터 칩 한 개를 그리는 데 필요한 값 */
+@Suppress("LongParameterList") // 칩 하나가 그려지는 데 필요한 값을 한데 묶어 넘긴다.
 internal class ChipSpec(
     val label: String,
     val selected: Boolean,
@@ -259,6 +323,7 @@ internal class ChipSpec(
     val accent: Color,
     val surface: SurfaceStyle,
     val variant: KVariant,
+    val colors: KChipColors? = null,
 )
 
 /**
@@ -306,18 +371,26 @@ internal fun FilterChipBody(
     }
     val variant = spec.variant.chipVariant()
     val neutral = KTone.Neutral.colors(spec.surface)
-    val ink = buttonInk(variant, KTone.Neutral, neutral, spec.surface)
-    val accent = spec.accent
-    // 글래스 위에서는 칩 뒤로 무엇이 비칠지 알 수 없어 옅은 강조색 바탕으로는 대비를 보장할 수 없다. 강조색으로 꽉 채우고 그 위에 흰 글자나 검은 글자를 쓴다.
-    val solid = spec.surface is SurfaceStyle.Glass
-    val fillAlpha = if (solid) 1f else SELECTED_FILL
-    val accentInk = if (solid) onFill(accent) else readableOn(accent, accent.copy(alpha = SELECTED_FILL).compositeOn(spec.surface))
+    val paint = chipPaint(spec, variant, neutral)
+    val ink = paint.ink
+    val accent = paint.accent
+    val fillAlpha = paint.fillAlpha
+    val accentInk = paint.accentInk
+    val idleFill = paint.idleFill
     val shape = chipShape
     Row(
         modifier
             .graphicsLayer { alpha = if (spec.enabled) 1f else DISABLED_ALPHA }
             .heightIn(min = chipHeight)
-            .variantBackground(variant, neutral, spec.surface, chipShape)
+            .then(
+                if (idleFill !=
+                    null
+                ) {
+                    Modifier.background(idleFill, chipShape)
+                } else {
+                    Modifier.variantBackground(variant, neutral, spec.surface, chipShape)
+                },
+            )
             .drawBehind {
                 val level = shown.value.coerceIn(0f, 1f)
                 if (level > 0f) {
@@ -338,6 +411,22 @@ internal fun FilterChipBody(
     ) {
         ChipContent(spec.label, icon, reserveCheck && icon == null, ink, accentInk) { shown.value }
     }
+}
+
+private class ChipPaint(val ink: Color, val accent: Color, val fillAlpha: Float, val accentInk: Color, val idleFill: Color?)
+
+/** 칩의 색. [ChipSpec.colors]로 준 색이 있으면 그 색을, 없으면 톤과 모양 규칙을 따른다. */
+private fun chipPaint(spec: ChipSpec, variant: KVariant, neutral: ToneColors): ChipPaint {
+    val custom = spec.colors
+    val ink = custom?.onUnselected?.takeIf { it.isSpecified } ?: buttonInk(variant, KTone.Neutral, neutral, spec.surface)
+    val pickedFill = custom?.selected?.takeIf { it.isSpecified }
+    val accent = pickedFill ?: spec.accent
+    // 글래스 위에서는 칩 뒤로 무엇이 비칠지 알 수 없어 옅은 강조색 바탕으로는 대비를 보장할 수 없다. 강조색으로 꽉 채우고 그 위에 흰 글자나 검은 글자를 쓴다.
+    // 호출한 쪽이 선택 색을 주었으면 그 색으로 꽉 채운다.
+    val solid = spec.surface is SurfaceStyle.Glass || pickedFill != null
+    val accentInk = custom?.onSelected?.takeIf { it.isSpecified }
+        ?: if (solid) onFill(accent) else readableOn(accent, accent.copy(alpha = SELECTED_FILL).compositeOn(spec.surface))
+    return ChipPaint(ink, accent, if (solid) 1f else SELECTED_FILL, accentInk, custom?.unselected?.takeIf { it.isSpecified })
 }
 
 /** 필터 칩 안쪽의 체크 자리와 글자. [reserve]면 폭은 그대로 두고, 꺼진 동안 글자를 가운데로 옮긴다. */

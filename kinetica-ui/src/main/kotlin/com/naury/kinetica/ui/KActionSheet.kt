@@ -79,7 +79,7 @@ public enum class KSheetPresentation {
 /**
  * 동작 시트. 아래에서 올라오는 판에 동작 목록을 놓고, 그 밑에 떨어진 판으로 취소 버튼을 둔다. 판을 아래로 끌면 닫히고,
  * 손을 떼면 가까운 쪽(닫힘 또는 제자리)으로 스프링처럼 정착한다. 바깥을 누르거나 뒤로 가기를 해도 닫힌다.
- * 동작을 누르면 [onDismissRequest]를 부른 뒤 그 동작을 실행한다.
+ * 동작을 누르면 [onDismissRequest]를 부른 뒤 그 동작을 실행한다. 고르면 끝나는 메뉴이므로 [KDialogAction.dismissOnClick]은 보지 않고 늘 닫는다.
  *
  * [KDialogActionStyle.Cancel] 동작이 있으면 그것을 취소 판에 쓰고, 없으면 '취소' 버튼을 만들어 [onDismissRequest]에 잇는다.
  * [KDialogActionStyle.Preferred]는 굵게, [KDialogActionStyle.Destructive]는 빨갛게 쓴다.

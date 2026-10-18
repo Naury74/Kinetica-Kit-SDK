@@ -119,9 +119,16 @@ public fun KDialog(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val design = KineticaTheme.design
+    val still = reducedMotion()
     KOverlay(visible) { transition ->
         val progress by transition.animateFloat(
-            transitionSpec = { if (targetState) design.motion.tuned(DIALOG_DAMPING, DIALOG_STIFFNESS) else tween(CLOSE_MS) },
+            transitionSpec = {
+                when {
+                    still -> tween(0)
+                    targetState -> design.motion.tuned(DIALOG_DAMPING, DIALOG_STIFFNESS)
+                    else -> tween(CLOSE_MS)
+                }
+            },
             label = "glass-dialog",
         ) { if (it) 1f else 0f }
         BackHandler(enabled = visible, onBack = onDismissRequest)
@@ -212,10 +219,15 @@ public fun KSheet(
     contentWindowInsets: @Composable () -> WindowInsets = { KSheetDefaults.windowInsets },
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val still = reducedMotion()
     KOverlay(visible) { transition ->
         val progress by transition.animateFloat(
             transitionSpec = {
-                if (targetState) spring(dampingRatio = SHEET_DAMPING, stiffness = Spring.StiffnessMediumLow) else tween(CLOSE_MS)
+                when {
+                    still -> tween(0)
+                    targetState -> spring(dampingRatio = SHEET_DAMPING, stiffness = Spring.StiffnessMediumLow)
+                    else -> tween(CLOSE_MS)
+                }
             },
             label = "glass-sheet",
         ) { if (it) 1f else 0f }

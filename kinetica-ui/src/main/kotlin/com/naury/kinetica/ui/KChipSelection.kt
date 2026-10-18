@@ -1,8 +1,10 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
@@ -42,6 +44,9 @@ public enum class KChipSelection {
  * @param wrap `false`면 줄을 넘기지 않고 가로로 스크롤한다. 줄을 넘기는 [KChipSelection.Multiple] 묶음은 칩을 켜고 꺼도 폭이 바뀌지 않아,
  *   연달아 누르는 동안 뒤 칩들이 다른 줄로 옮겨 가지 않는다. 하나만 고르는 묶음은 체크 자리만큼 폭이 늘었다 줄어든다.
  * @param contentPadding [wrap]이 `false`일 때 스크롤 영역 안쪽 여백. 화면 폭에 둔 줄에서 본문 여백을 맞출 때 쓴다.
+ * @param colors 선택과 미선택 칩의 색을 직접 정한다. 기본값은 [tone]과 [variant] 규칙을 따른다.
+ * @param scrollState [wrap]이 `false`일 때 줄의 스크롤 상태. 선택한 칩으로 스크롤하거나 끝에 닿았는지 볼 때 넘긴다.
+ * @param fadeEdges [wrap]이 `false`일 때 화면 밖에 칩이 더 있는 쪽 끝을 흐리게 한다.
  */
 @Composable
 public fun KChipGroup(
@@ -56,6 +61,9 @@ public fun KChipGroup(
     surface: SurfaceStyle = KineticaTheme.surface,
     wrap: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(0.dp),
+    colors: KChipColors = KChipColors(),
+    scrollState: ScrollState = rememberScrollState(),
+    fadeEdges: Boolean = false,
 ) {
     val accent = tone.colors(surface).color
     val haptic = kHapticFeedback()
@@ -90,8 +98,26 @@ public fun KChipGroup(
             verticalArrangement = Arrangement.spacedBy(ChipRowGap),
         ) { chipsContent() }
     } else {
-        KChipRow(group, contentPadding) { chipsContent() }
+        KChipRow(group, contentPadding, scrollState, fadeEdges) { chipsContent() }
     }
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KChipGroup(
+    chips: List<String>,
+    selected: Set<Int>,
+    onSelectedChange: (Set<Int>) -> Unit,
+    modifier: Modifier = Modifier,
+    selection: KChipSelection = KChipSelection.Single,
+    enabled: Boolean = true,
+    variant: KVariant = KVariant.Glass,
+    tone: KTone = KTone.Accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    wrap: Boolean = true,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+) {
+    KChipGroup(chips, selected, onSelectedChange, modifier, selection, enabled, variant, tone, surface, wrap, contentPadding, KChipColors())
 }
 
 /** 칩을 눌렀을 때의 새 선택 집합. 범위 밖 위치는 걸러 낸다. */

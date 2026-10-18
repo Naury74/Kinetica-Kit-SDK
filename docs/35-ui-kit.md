@@ -337,9 +337,10 @@ KToggleGroup(listOf(KGroupItem("일"), KGroupItem("주"), KGroupItem("월")), se
 | `KRadio`, `KRadioGroup` | 선택되면 가운데 점이 살짝 튀며 커진다. 묶음은 행 전체를 누를 수 있고 TalkBack이 한 묶음으로 읽는다 | `options`, `selectedIndex` |
 | `KSegmentedControl` | 선택한 칸의 인디케이터가 늘어났다 줄어들며 이동한다. `KSegment`로 아이콘 칸을 만든다. `selected: Set<Int>`를 받는 오버로드는 여러 칸을 함께 켜고, 켠 칸에는 체크 표시가 밀려 들어온다 | `tone`(`Neutral`은 옅은 표면 글자 색, 나머지는 그 색으로 채움), `role`(기본 `Role.RadioButton`, 탭처럼 쓰면 `Role.Tab`), `maxLines`(기본 2), `sizing`(`KSegmentSizing.Proportional`이면 이름 길이에 비례), `requireSelection` |
 | `KFilterChip`, `KInputChip`, `KAssistChip`, `KSuggestionChip` | 필터 칩은 켜면 체크가 그려지고, 입력 칩은 아바타와 지우기 버튼이 있다. 동작 칩은 앞 아이콘을 강조색으로, 제안 칩은 글자만 쓴다 | `variant`, `tone`, `leadingIcon` |
-| `KChipRow`, `KChipGroup` | `KChipRow`는 칩을 한 줄에 놓고 가로로 스크롤한다. `KChipGroup`은 이름 목록으로 필터 칩 묶음을 만든다. 고르면 체크가 그려지며 폭이 부드럽게 늘어난다 | `selection`(`KChipSelection.Single`, `Multiple`), `wrap`(`false`면 한 줄), `variant`(`Glass`, `Tonal`, `Outlined`) |
-| `KSlider` | 잡으면 트랙이 굵어지고 손잡이가 투명하게 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다. 가로로 움직여야 드래그로 보므로 세로 목록 스크롤을 막지 않는다. 방향키와 TalkBack으로도 조절한다 | `valueRange`, `steps`, `enabled`, `onValueChangeFinished`, `accent` |
+| `KChipRow`, `KChipGroup` | `KChipRow`는 칩을 한 줄에 놓고 가로로 스크롤한다. `KChipGroup`은 이름 목록으로 필터 칩 묶음을 만든다. 고르면 체크가 그려지며 폭이 부드럽게 늘어난다 | `selection`(`KChipSelection.Single`, `Multiple`), `wrap`(`false`면 한 줄), `variant`(`Glass`, `Tonal`, `Outlined`), `colors`(`KChipColors`로 선택과 미선택 칩 색을 직접 지정), `scrollState`와 `fadeEdges`(한 줄일 때 스크롤 상태와 끝 흐림) |
+| `KSlider` | 잡으면 트랙이 굵어지고 손잡이가 투명하게 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다. 가로로 움직여야 드래그로 보므로 세로 목록 스크롤을 막지 않는다. 방향키와 TalkBack으로도 조절한다. `snap = KSliderSnap(기준값, 거리)`를 주면 손으로 끈 값이 거리 안에서 기준값에 붙고 붙는 순간 햅틱이 한 번 난다. 두 번 탭하거나 TalkBack의 '초기화' 동작을 고르면 `resetValue`(없으면 스냅 기준값)로 돌아간다 | `valueRange`, `steps`, `enabled`, `onValueChangeFinished`, `accent`, `snap`, `resetValue`, `valueBadge`와 `badgePosition`(`AboveThumb`, `End`), `inactiveTrackColor`, `excludeSystemGestures`(가장자리 뒤로 가기와 겹치지 않게), `rubberBand`(`false`면 끝에서 늘어나지 않음) |
 | `KRangeSlider` | 손잡이 두 개짜리 범위 슬라이더. 잡으면 값 말풍선이 뜬다 | `valueRange`, `steps`, `valueLabel` |
+| `KDialSlider` | 사진 앱 보정처럼 가운데 기준선은 고정되고 눈금이 손가락을 따라 움직인다. 기준값부터 현재 값까지 강조색으로 칠하고, 세게 밀면 관성으로 미끄러진다. 눈금마다 톱니 햅틱이 나고, 기준값 근처에서 놓으면 붙고, 두 번 탭하면 기준값으로 돌아간다. `onValueChangeFinished`는 미끄러짐까지 끝난 뒤 한 번 불린다 | `label`, `resetValue`, `spacing`(값 1당 눈금 간격), `tickEvery`, `majorEvery`, `snapThreshold`, `formatValue` |
 | `KStepper` | −/+ 캡슐. 숫자가 굴러가며 바뀌고, 길게 누르면 점점 빨라진다. 끝에 닿으면 그쪽 버튼이 흐려진다 | `range`, `step` |
 | `KQuantityStepper` | 쇼핑 수량. `KQuantityStyle.Outlined`(테두리 칸)와 `Collapsible`(0이면 + 하나만, 1에서 빼기가 휴지통) | `style`, `range` |
 | `KRating` | 별점. `onRatingChange`가 `null`이면 표시만 | `max`, `allowHalf` |
@@ -348,11 +349,12 @@ KToggleGroup(listOf(KGroupItem("일"), KGroupItem("주"), KGroupItem("월")), se
 ```kotlin
 KSwitch(wifi, { wifi = it })
 KSegmentedControl(listOf("지도", "위성"), mode, { mode = it })
-KChipRow(contentPadding = PaddingValues(horizontal = 20.dp)) {
+KChipRow(contentPadding = PaddingValues(horizontal = 20.dp), fadeEdges = true) {
     tags.forEach { tag -> KFilterChip(tag, tag in picked, { on -> picked = if (on) picked + tag else picked - tag }) }
 }
 KSlider(volume, { volume = it }, Modifier.fillMaxWidth())
 KRangeSlider(price, { price = it }, valueRange = 0f..100f)
+KDialSlider(exposure, { exposure = it }, label = "노출", onValueChangeFinished = ::commitExposure)
 KQuantityStepper(count, { count = it }, style = KQuantityStyle.Collapsible)
 ```
 
@@ -649,7 +651,7 @@ AnimatedContent(step, transitionSpec = { kTransform(KNavTransitions.SharedAxisX,
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
 | `KDialog` | 누른 버튼에서 패널이 튀어나오듯 커지고, 배경은 서서히 흐려지며 어두워진다. 바깥을 누르거나 뒤로 가기로 닫는다. 너비는 280~420dp | `origin`(`Modifier.kOrigin { origin = it }`로 얻음), `title`(TalkBack이 읽는 창 이름), `contentWindowInsets` |
-| `KAlertDialog` | 제목, 본문, 아이콘, 버튼 1~3개. 짧은 두 버튼은 나란히 놓고(취소가 시작 쪽), 셋이거나 글자가 길면 세로로 쌓아 취소를 맨 아래에 둔다 | `actions: List<KDialogAction>`(`KDialogActionStyle.Default`, `Preferred`, `Destructive`, `Cancel`), `stacked` |
+| `KAlertDialog` | 제목, 본문, 아이콘, 버튼 1~3개. 짧은 두 버튼은 나란히 놓고(취소가 시작 쪽), 셋이거나 글자가 길면 세로로 쌓아 취소를 맨 아래에 둔다. 본문과 버튼 사이에 입력란 같은 내용을 넣을 수 있고, 아래에서 올라오는 시트로도 띄운다 | `actions: List<KDialogAction>`(`KDialogActionStyle.Default`, `Preferred`, `Destructive`, `Cancel`, `dismissOnClick`), `stacked`, `iconTint`, `presentation`(`KDialogPresentation.Card`, `Sheet`, `Auto`), `content` |
 | `KSheet` | iOS 시트처럼 아래에서 올라오고 뒤쪽 콘텐츠는 조금 물러나며 모서리가 둥글어진다. 아래로 끌어 닫고, 덜 끌고 놓으면 던진 속도를 이어받아 제자리로 돌아온다. 넓은 화면에서는 `KSheetDefaults.MaxWidth`(640dp)를 넘지 않고 가운데에 놓인다 | `title`(TalkBack이 읽는 창 이름), `contentWindowInsets` |
 | `KActionSheet` | iOS 동작 시트. 동작 판과 떨어진 취소 판이 있고, 아래로 끌어 닫는다. `KSheetPresentation.Auto`면 600dp 이상 창에서 버튼 옆 팝오버로 바뀐다(취소는 바깥 누르기로 대신) | `actions`, `title`, `message`, `presentation` |
 | `KDetentSheet` | Apple 지도처럼 여러 높이(`Detent.Peek`, `Fraction`, `Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 이어지고, 손을 떼면 던진 속도를 보고 가까운 높이로 정착한다. 폴더블을 접고 펴도 같은 높이 단계를 유지한다 | `rememberKDetentSheetState(detents, initialDetent, dismissible)`, `title`, `header` |
@@ -676,6 +678,29 @@ KDetentSheet(places, title = "주변 장소") { Text("카페 12곳") }
 `KSheet`와 `KDialog`의 `title`은 화면에 보이는 제목이 아니라 TalkBack이 읽는 창 이름이다. 보이는 제목은 내용에 직접 넣는다.
 
 `KAlertDialog`와 `KActionSheet`는 버튼을 누르면 `onDismissRequest`를 부른 뒤 그 버튼의 `onClick`을 실행한다. 닫기는 다이얼로그가 하므로 `onClick`에서 다시 닫지 않아도 되고, 닫기만 하는 취소 버튼은 `onClick`을 생략한다.
+
+`KAlertDialog`에서 `dismissOnClick = false`인 버튼은 `onDismissRequest`를 부르지 않고 `onClick`만 실행한다. 입력 검증에 실패해 창을 남기거나, 녹음 중지처럼 결과를 같은 창에 보여 줄 때 쓴다. 닫을 때는 호출한 쪽이 `visible`을 false로 바꾼다.
+`KActionSheet`는 고르면 끝나는 메뉴이므로 `dismissOnClick`과 상관없이 늘 닫는다.
+
+`KAlertDialog`의 `presentation` 기본값은 `Card`(가운데 카드)다. `Auto`면 창 폭 600dp 미만에서는 `KSheet`처럼 아래에서 올라오고(손잡이와 내용을 끌어 닫기, 내비게이션 바와 키보드 피하기), 600dp 이상에서는 카드로 뜬다. 열린 채 폴더블을 접거나 펴면 그 자리에서 모양이 바뀌므로 `content`의 입력값은 호출한 쪽 상태에 둔다.
+`content`를 주면 본문 전체가 세로로 스크롤되어, 키보드가 올라와 높이가 모자라도 입력란과 버튼이 가려지지 않는다. `iconTint`를 주지 않으면 아이콘은 위험 동작이 있을 때 빨강, 없으면 강조색이다.
+
+```kotlin
+var ratio by remember { mutableStateOf("") }
+KAlertDialog(
+    editing, { editing = false }, "비율 직접 입력",
+    listOf(
+        KDialogAction("취소", KDialogActionStyle.Cancel),
+        // 잘못된 값이면 창을 남기고 오류만 보여 준다
+        KDialogAction("적용", KDialogActionStyle.Preferred, dismissOnClick = false) {
+            if (apply(ratio)) editing = false else error = true
+        },
+    ),
+    presentation = KDialogPresentation.Auto,
+) {
+    KTextField(ratio, { ratio = it }, label = "가로:세로")
+}
+```
 
 ### 메뉴, 툴팁, 안내
 

@@ -10,12 +10,19 @@
 - `LocalKineticaFillContrast`: 채운 버튼, 배지, 선택된 칩이 지킬 글자 명암비를 정합니다. 기본값 4.5에서 브랜드 색을 진하게 고치지 않으려면 3.0이나 1 이하를 줍니다.
 - `SurfaceStyle.Solid`의 `contentMuted`, `raised`: 호스트 팔레트의 보조 글자색과 한 단계 올라온 면의 색을 그대로 씁니다.
 - `KButton`, `KIconButton`에 `painterResource`로 읽은 drawable 같은 `Painter` 아이콘을 받는 오버로드, `KTab.painter`.
+- `KSlider`에 기준값 스냅(`KSliderSnap`, 붙는 순간 햅틱 한 번), 두 번 탭과 TalkBack '초기화' 동작으로 돌아가기(`resetValue`), 값 배지 슬롯(`valueBadge`, `badgePosition`), `inactiveTrackColor`, `excludeSystemGestures`, `rubberBand`를 더했습니다. 모두 기본값이면 전과 같고, 옛 시그니처는 바이너리 호환을 위해 숨긴 오버로드로 남깁니다.
+- `KChipColors`로 `KFilterChip`과 `KChipGroup`의 선택, 미선택 칩 색을 직접 정합니다. `KChipRow`와 한 줄 `KChipGroup`은 스크롤 상태(`state`, `scrollState`)를 받고 `fadeEdges`로 화면 밖에 칩이 더 있는 쪽 끝을 흐리게 합니다.
+- `Modifier.horizontalFadingEdges`, `verticalFadingEdges`: 스크롤되는 줄이나 목록의 끝을 흐리게 해 내용이 더 있음을 알립니다. `ScrollState`와 `LazyListState`를 받고 RTL을 따릅니다.
 - `KIcons`에 편집용 아이콘 `Undo`, `Redo`, `Rotate`, `Flip`, `Crop`, `Compare`를 더해 69개가 되었습니다.
+- `KDialSlider`: 사진 앱 보정 다이얼처럼 눈금을 끌어 값을 고르는 가로 눈금 다이얼. 관성, 기준값 스냅, 두 번 탭 초기화, 눈금 햅틱, 방향키와 TalkBack 조절을 지원합니다.
+- `KAlertDialog`에 본문과 버튼 사이의 `content` 칸(입력란이 있어도 키보드에 가리지 않게 본문이 스크롤됨), 아이콘 색 `iconTint`, 표시 방식 `presentation`(`KDialogPresentation.Card`, `Sheet`, `Auto`)을 더했습니다. `Auto`면 600dp 미만 창에서는 끌어 닫는 바텀 시트로, 그 이상에서는 가운데 카드로 뜹니다. 기본값은 지금과 같은 카드이고, 옛 시그니처는 숨긴 오버로드로 남깁니다.
+- `KDialogAction.dismissOnClick`: false면 `KAlertDialog`가 버튼을 눌러도 닫지 않고 `onClick`만 부릅니다. `KActionSheet`는 이 값과 상관없이 늘 닫습니다. 새 필드는 `onClick` 앞에 들어가므로 `KDialogAction("삭제") { }`처럼 쓰던 코드는 그대로입니다. 옛 생성자, `copy`, `component5`(onClick)는 바이너리 호환을 위해 숨겨 남기고, 소스에서 구조 분해로 다섯 번째 값을 받던 코드는 이제 `dismissOnClick`을 받습니다.
 
 ### 바뀐 것
 
 - 표면에 `raised`를 주면 중립 톤(`KVariant.Tonal`, `KTone.Neutral`) 버튼 바탕도 그 색을 씁니다.
 - `LocalKineticaHaptics`가 `false`면 이제 버튼, 칩, 스테퍼, 휠 피커, 메뉴, 밀어서 동작 등 이 키트의 모든 컴포넌트가 진동을 내지 않습니다. 전에는 `KHaptics`, 토스트, 당겨서 새로 고침만 따랐습니다.
+- `KDialog`, `KSheet`(그리고 이를 쓰는 `KAlertDialog`)가 `LocalKineticaReducedMotion`을 따라, 움직임 줄이기면 열고 닫는 애니메이션 없이 바로 바뀝니다.
 
 ## 1.0.0-alpha02
 

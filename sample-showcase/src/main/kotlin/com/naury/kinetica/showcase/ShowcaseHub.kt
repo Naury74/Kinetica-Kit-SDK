@@ -138,7 +138,7 @@ internal fun kitSections(): List<HubSection> = listOf(
 
 private val COMPONENT_TAB_INFO = mapOf(
     "기본" to ("버튼, 검색, 휠 피커, 캐러셀, 카드 더미, 알림" to KIcons.Home),
-    "입력" to ("입력란 모양, 인증번호, 태그, 색 선택, 서명, 비밀번호" to KIcons.Edit),
+    "입력" to ("입력란 모양, 인증번호, 태그, 색 선택, 눈금 다이얼, 서명, 비밀번호" to KIcons.Edit),
     "미디어" to ("사진 뷰어, 전후 비교, 온보딩, 빈 화면" to KIcons.Download),
     "효과" to ("물결 왜곡, 파티클, 뒤집는 카드, 액체 버튼, 홀로그램" to ShowcaseIcons.Sparkle),
     "버튼·칩·카드" to ("버튼 변형과 색 역할, 칩, 카드, 배지와 아바타" to KIcons.Plus),

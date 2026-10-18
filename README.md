@@ -18,9 +18,9 @@
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-surface-glass.png" width="220" alt="글래스 표면의 송금 앱"><br><b>글래스</b><br>뒤 배경이 블러로 비칩니다</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-solid.png" width="220" alt="단색 표면의 송금 앱"><br><b>단색</b><br>같은 화면을 불투명한 면으로</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-tonal.png" width="220" alt="톤 표면의 송금 앱"><br><b>톤</b><br>브랜드 색을 옅게 입힌 면</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-delivery.png" width="220" alt="음식 배달 앱"><br><b>음식 배달</b><br>글래스 카드와 칩 필터</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-smarthome.png" width="220" alt="스마트 홈 앱"><br><b>스마트 홈</b><br>어두운 표면의 기기 스위치</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-tasks.png" width="220" alt="할 일 앱"><br><b>할 일</b><br>주간 달력과 진행 링</td>
   </tr>
 </table>
 
@@ -50,38 +50,39 @@
   </tr>
 </table>
 
-샘플 앱에서 볼 수 있는 화면들입니다.
+같은 화면을 표면 스타일만 바꿔 보면 이렇습니다.
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-kit.png" width="220" alt="UI 키트 허브"><br><b>UI 키트</b><br>종류별로 골라 들어가는 데모</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-components.png" width="220" alt="컴포넌트"><br><b>컴포넌트</b><br>버튼부터 통화 화면까지 탭 10개</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-apps.png" width="220" alt="앱 화면 예"><br><b>앱 예제</b><br>전화, 메신저, 쇼핑, 송금 등 14개</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-surface-glass.png" width="220" alt="글래스 표면의 송금 앱"><br><b>글래스</b><br>뒤 배경이 블러로 비칩니다</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-solid.png" width="220" alt="단색 표면의 송금 앱"><br><b>단색</b><br>같은 화면을 불투명한 면으로</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-tonal.png" width="220" alt="톤 표면의 송금 앱"><br><b>톤</b><br>브랜드 색을 옅게 입힌 면</td>
+  </tr>
+</table>
+
+샘플 앱에 들어 있는 앱 예제 14개 가운데 일부입니다. 모두 Kinetica 컴포넌트만으로 만들었습니다.
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/images/showcase-chat.png" width="220" alt="메신저 앱"><br><b>메신저</b><br>스토리 링과 대화 목록</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-travel.png" width="220" alt="여행 예약 앱"><br><b>여행 예약</b><br>항공권 검색 폼</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-videocall.png" width="220" alt="영상 통화"><br><b>영상 통화</b><br>참가자 그리드와 컨트롤 바</td>
   </tr>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-call.png" width="220" alt="전화 앱"><br><b>전화 앱</b><br>통화 기록, 키패드, 영상 통화</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-navigation.png" width="220" alt="CardStack 화면 전환"><br><b>화면 전환</b><br>뒤로 가면 전환이 거꾸로 돌아갑니다</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-motion.png" width="220" alt="모션 효과"><br><b>모션</b><br>글로우, 젤리, 자석, 숫자 롤링</td>
-  </tr>
-  <tr>
-    <td align="center" width="33%"><img src="docs/images/showcase-board.png" width="220" alt="위젯 보드"><br><b>위젯 보드</b><br>사용자가 직접 꾸미는 홈 화면</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-studio.png" width="220" alt="화면 에디터"><br><b>화면 에디터</b><br>앱 안에서 화면 만들기</td>
-    <td align="center" width="33%"><img src="docs/images/showcase-server.png" width="220" alt="서버 드리븐 UI"><br><b>서버 드리븐 UI</b><br>JSON만 바꿔 화면 교체</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-music.png" width="220" alt="음악 앱"><br><b>음악</b><br>미니 플레이어와 떠 있는 탭 바</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-health.png" width="220" alt="건강 앱"><br><b>건강</b><br>활동 링과 그려지며 나타나는 차트</td>
+    <td align="center" width="33%"><img src="docs/images/showcase-settings.png" width="220" alt="설정 앱"><br><b>설정</b><br>섹션 목록과 스위치</td>
   </tr>
 </table>
 
 ### 폴더블과 태블릿
 
-넓은 화면에서는 메일 목록과 본문이 나란히 놓이고, 음악 플레이어는 앨범 아트 옆에 컨트롤을 둡니다. 위젯 보드는 칸이 160dp보다 좁아지지 않는 선에서 열을 6개까지 늘립니다. 아래는 Pixel 9 Pro Fold 에뮬레이터를 펼친 상태로 찍었습니다.
+넓은 화면에서는 메일 목록과 본문이 나란히 놓이고, 음악 플레이어는 앨범 아트 옆에 컨트롤을 둡니다. 아래는 Pixel 9 Pro Fold 에뮬레이터를 펼친 상태로 찍었습니다.
 
 <table>
   <tr>
     <td align="center" width="50%"><img src="docs/images/showcase-fold-mail.png" width="360" alt="펼친 폴더블의 메일 앱"><br><b>메일</b><br>왼쪽에 목록, 오른쪽에 본문</td>
     <td align="center" width="50%"><img src="docs/images/showcase-fold-player.png" width="360" alt="펼친 폴더블의 음악 플레이어"><br><b>음악 플레이어</b><br>앨범 아트와 컨트롤을 나란히</td>
-  </tr>
-  <tr>
-    <td align="center" width="50%"><img src="docs/images/showcase-fold-home.png" width="360" alt="펼친 폴더블의 샘플 앱 첫 화면"><br><b>샘플 앱 첫 화면</b><br>넓어진 만큼 칸이 늘어납니다</td>
-    <td align="center" width="50%"><img src="docs/images/showcase-fold-board.png" width="360" alt="펼친 폴더블의 4열 위젯 보드"><br><b>위젯 보드</b><br>폭에 맞춰 4열로</td>
   </tr>
 </table>
 
