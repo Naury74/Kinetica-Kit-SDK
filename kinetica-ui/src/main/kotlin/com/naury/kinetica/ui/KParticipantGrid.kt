@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
@@ -35,6 +37,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -195,11 +200,28 @@ public fun <T> KParticipantGrid(
             derivedStateOf { plan.spots.filter { plan.isNearlyVisible(it, state.scroll.value) }.map { it.key }.toSet() }
         }
         // 크기를 주지 않으면 상자가 가장 큰 자식(고정 시 큰 화면)만 해져서, 그 밖에 놓인 띠와 다음 쪽 위 끌기를 받지 못한다.
+        val tiles = rememberMovableTiles(state)
+        SideEffect { tiles.retain(byKey.keys) }
+        val placeTiles = @Composable { strip: Boolean ->
+            plan.spots.forEachIndexed { index, spot ->
+                val item = byKey[spot.key] ?: return@forEachIndexed
+                if ((spot.role == KTileRole.Strip) != strip || spot.key !in visible) return@forEachIndexed
+                key(spot.key) { tiles.of(spot.key)(spot, plan, GridTileFlags(driver, touch, index)) { tile(item, spot.role) } }
+            }
+        }
+        // 띠 칸은 띠만 담은 상자에 둔다. 큰 화면과 같은 스크롤 노드에 있으면 TalkBack이 띠 끝에서 띠를 넘기지 않고 큰 화면으로 건너뛴다.
+        // 역할이 바뀌면 타일이 두 상자를 오가는데, movableContentOf로 옮기므로 다시 만들어지지 않는다.
+        // 띠 상자는 띠 자리만 차지해야 TalkBack이 상단 바, 큰 화면, 띠, 조작 막대처럼 화면 위치 순서로 읽는다.
         Box(Modifier.fillMaxSize().then(if (touch) Modifier.gridScroll(state, plan) else Modifier)) {
-            plan.spots.forEach { spot ->
-                val item = byKey[spot.key] ?: return@forEach
-                if (spot.key !in visible) return@forEach
-                key(spot.key) { GridTile(spot, state, plan, GridTileFlags(driver, touch)) { tile(item, spot.role) } }
+            placeTiles(false)
+            plan.strip?.let { strip ->
+                Box(
+                    Modifier
+                        .zIndex(KTileRole.Strip.z)
+                        .stripBox(strip.area)
+                        .semantics { isTraversalGroup = true }
+                        .then(if (touch) Modifier.stripScrollSemantics(state, plan) else Modifier),
+                ) { placeTiles(true) }
             }
         }
         if (touch && plan.pages > 1) PageDots(state, plan)
@@ -219,8 +241,36 @@ private class GridLayout(
     val columns: ((Int, Dp, Dp) -> Int)?,
 )
 
-/** 이 층이 움직임을 이끄는지([driver]), 터치를 받는지([touch]) */
-private class GridTileFlags(val driver: Boolean, val touch: Boolean)
+/** 이 층이 움직임을 이끄는지([driver]), 터치를 받는지([touch]), TalkBack이 몇 번째로 읽는지([order]) */
+private class GridTileFlags(val driver: Boolean, val touch: Boolean, val order: Int)
+
+/** 띠 자리([area], 논리 좌표)만 차지하는 상자. 칸은 이 상자 밖으로 넘쳐 그려질 수 있다. */
+private fun Modifier.stripBox(area: Rect): Modifier = this
+    .offset { IntOffset(area.left.roundToInt(), area.top.roundToInt()) }
+    .layout { measurable, _ ->
+        val w = area.width.roundToInt()
+        val h = area.height.roundToInt()
+        val placeable = measurable.measure(Constraints.fixed(w, h))
+        layout(w, h) { placeable.place(0, 0) }
+    }
+
+/** 참가자마다 하나씩 두는 옮길 수 있는 타일. 띠 상자와 바깥 상자를 오가도 상태와 영상이 그대로 남는다. */
+private class MovableTiles(private val state: KParticipantGridState) {
+    private val tiles = HashMap<Any, @Composable (Spot, GridPlan, GridTileFlags, @Composable BoxScope.() -> Unit) -> Unit>()
+
+    fun of(key: Any): @Composable (Spot, GridPlan, GridTileFlags, @Composable BoxScope.() -> Unit) -> Unit = tiles.getOrPut(key) {
+        movableContentOf { spot: Spot, plan: GridPlan, flags: GridTileFlags, content: @Composable BoxScope.() -> Unit ->
+            GridTile(spot, state, plan, flags, content)
+        }
+    }
+
+    fun retain(keys: Set<Any>) {
+        tiles.keys.retainAll(keys)
+    }
+}
+
+@Composable
+private fun rememberMovableTiles(state: KParticipantGridState): MovableTiles = remember(state) { MovableTiles(state) }
 
 /** [constraints]와 여백으로 배치를 계산한다. */
 private fun Density.gridPlan(
@@ -269,7 +319,12 @@ private fun GridTile(
     if (flags.driver) TileDriver(motion, spot.rect)
     val drag = if (flags.touch && spot.role == KTileRole.Floating) Modifier.floatingDrag(state, motion, plan.full) else Modifier
     val clip = if (spot.role == KTileRole.Strip) Modifier.clipToStrip(motion, state, plan) else Modifier
-    Box(Modifier.zIndex(spot.role.z).placeTile(motion, state, plan, spot.role).then(clip).then(drag)) {
+    // 띠 칸은 띠 상자 안에 놓이므로 띠 자리만큼 당겨 놓는다. 넘겨서 화면 밖에 걸친 칸은 자리가 엉뚱하게 잡혀
+    // TalkBack 읽는 순서가 뒤섞이므로, 띠 안에서는 배치 순서로 못 박는다.
+    val strip = spot.role == KTileRole.Strip && plan.strip != null
+    val origin = if (strip) plan.strip!!.area.topLeft else Offset.Zero
+    val order = if (strip) Modifier.semantics { traversalIndex = flags.order.toFloat() } else Modifier
+    Box(Modifier.zIndex(spot.role.z).placeTile(motion, state, plan, spot.role, origin).then(clip).then(drag).then(order)) {
         CompositionLocalProvider(LocalTilePress provides motion.press) { content() }
     }
 }
@@ -302,12 +357,18 @@ private fun TileDriver(motion: TileMotion, target: Rect) {
 }
 
 /** [motion]의 자리와 크기로 놓는다. 값은 배치와 그리기 단계에서 읽어 움직이는 동안 다시 구성하지 않는다. */
-private fun Modifier.placeTile(motion: TileMotion, state: KParticipantGridState, plan: GridPlan, role: KTileRole): Modifier = this
+private fun Modifier.placeTile(
+    motion: TileMotion,
+    state: KParticipantGridState,
+    plan: GridPlan,
+    role: KTileRole,
+    origin: Offset,
+): Modifier = this
     .offset {
         val r = motion.rect.value
         val shift = plan.shift(role, state.scroll.value)
         val drag = if (role == KTileRole.Floating) state.drag else Offset.Zero
-        IntOffset((r.left + shift.x + drag.x).roundToInt(), (r.top + shift.y + drag.y).roundToInt())
+        IntOffset((r.left + shift.x + drag.x - origin.x).roundToInt(), (r.top + shift.y + drag.y - origin.y).roundToInt())
     }
     .layout { measurable, _ ->
         val r = motion.rect.value

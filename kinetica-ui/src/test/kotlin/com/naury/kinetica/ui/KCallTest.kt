@@ -548,6 +548,36 @@ class KCallTest {
     }
 
     @Test
+    fun `띠 칸은 띠만 담은 스크롤 상자에 있고, 고정을 바꿔도 타일을 다시 만들지 않는다`() {
+        val focus = androidx.compose.runtime.mutableStateOf<String?>(null)
+        val created = mutableListOf<String>()
+        val people = (0 until 9).map { "p$it" }
+        compose.setContent {
+            Box(Modifier.size(400.dp, 800.dp)) {
+                KParticipantGrid(people, key = { it }, focusKey = focus.value) { p, role ->
+                    androidx.compose.runtime.DisposableEffect(Unit) {
+                        created += p
+                        onDispose {}
+                    }
+                    Box(Modifier.fillMaxSize().testTag("$p-$role"))
+                }
+            }
+        }
+        val before = created.toList()
+        focus.value = "p0"
+        compose.waitForIdle()
+        // 큰 화면으로 가는 p0와 띠로 가는 p1은 상자를 옮겨도 그대로다.
+        assertThat(created.count { it == "p0" }).isEqualTo(1)
+        assertThat(created.count { it == "p1" }).isEqualTo(1)
+        assertThat(before).contains("p1")
+        // TalkBack은 띠 끝에서 큰 화면으로 건너뛰지 않고 띠를 넘기려면, 스크롤 노드 안에 띠 칸만 있어야 한다.
+        val scroller = SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange)
+        val inScroller = androidx.compose.ui.test.hasAnyAncestor(scroller)
+        compose.onNodeWithTag("p1-Strip").assert(inScroller)
+        compose.onNodeWithTag("p0-Focus").assert(inScroller.not())
+    }
+
+    @Test
     fun `격자의 1대1 작은 창을 끌어 놓으면 가까운 모서리에 붙는다`() {
         val grid = KParticipantGridState(KCorner.BottomEnd)
         compose.setContent {

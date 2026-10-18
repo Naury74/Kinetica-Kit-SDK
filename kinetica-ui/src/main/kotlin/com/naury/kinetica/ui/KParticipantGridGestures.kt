@@ -70,7 +70,9 @@ internal fun Modifier.gridScroll(state: KParticipantGridState, plan: GridPlan): 
     val strip = plan.strip
     val horizontal = strip?.horizontal ?: true
     val zone = strip?.area ?: plan.area
-    scrollSemantics(state, plan, horizontal, rtl, scope).pointerInput(plan.maxScroll, zone, rtl) {
+    // 띠는 띠 칸만 담은 상자가 스크롤 노드여야 TalkBack이 띠 안에서 넘기므로, 여기서는 쪽 넘김만 알린다.
+    val paged = if (strip == null) scrollSemantics(state, plan, horizontal, rtl, scope) else this
+    paged.pointerInput(plan.maxScroll, zone, rtl) {
         val slop = viewConfiguration.touchSlop
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -95,6 +97,13 @@ internal fun Modifier.gridScroll(state: KParticipantGridState, plan: GridPlan): 
             }
         }
     }
+}
+
+/** 띠 칸만 담은 상자에 붙이는 TalkBack 스크롤 노드. 넘길 것이 없으면 아무것도 하지 않는다. */
+internal fun Modifier.stripScrollSemantics(state: KParticipantGridState, plan: GridPlan): Modifier = composed {
+    val strip = plan.strip
+    if (strip == null || plan.maxScroll <= 0f) return@composed this
+    scrollSemantics(state, plan, strip.horizontal, LocalLayoutDirection.current == LayoutDirection.Rtl, rememberCoroutineScope())
 }
 
 /**
