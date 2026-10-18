@@ -17,7 +17,10 @@ import androidx.compose.ui.unit.dp
  * [Outlined] 버튼을 쓸 수 있다. 컴포넌트마다 어울리는 변형만 받고, 받지 않는 변형은 가장 가까운 모양으로 그린다.
  */
 public enum class KVariant {
-    /** 색 역할의 색으로 꽉 채운다. 화면에서 가장 중요한 동작 하나에 쓴다. */
+    /**
+     * 색 역할의 색으로 꽉 채운다. 화면에서 가장 중요한 동작 하나에 쓴다. 채운 색과 그 위 글자 색([KineticaColors.onAccent] 등)이
+     * 4.5:1이 안 되면 채우는 색만 기준을 막 넘는 만큼 진하게(글자가 검으면 밝게) 고친다. 기본 강조색 #0A84FF는 #0975E2로 칠한다.
+     */
     Filled,
 
     /** 색 역할의 색을 옅게 깔고 글자를 그 색으로 쓴다. 두 번째로 중요한 동작에 쓴다. */
@@ -60,9 +63,15 @@ public enum class KTone {
     Positive,
 }
 
-/** 색 역할을 푼 결과. [color]는 채우거나 강조할 색, [onColor]는 [color]로 채운 면 위 글자 색이다. */
+/**
+ * 색 역할을 푼 결과. [color]는 강조할 색(글자, 테두리, 옅은 칠), [onColor]는 채운 면 위 글자 색이다.
+ * [fill]은 글자를 얹어 채우는 면의 색으로, [onColor]와 4.5:1이 안 되면 기준을 막 넘는 만큼만 어둡게(또는 밝게) 고친 [color]다.
+ * 기본 강조색 #0A84FF는 흰 글자와 3.6:1이라 채운 버튼에서만 조금 진해진다.
+ */
 @Immutable
-internal class ToneColors(val color: Color, val onColor: Color)
+internal class ToneColors(val color: Color, val onColor: Color) {
+    val fill: Color = readableOn(color, onColor, INK_TEXT_CONTRAST)
+}
 
 /** [surface] 위에서 이 색 역할이 쓸 색. */
 @Composable
@@ -96,7 +105,7 @@ private fun readableOnDark(color: Color, tone: KTone, surface: SurfaceStyle): Co
 internal fun Modifier.variantBackground(variant: KVariant, colors: ToneColors, surface: SurfaceStyle, shape: Shape): Modifier {
     val design = LocalKineticaDesign.current
     return when (variant) {
-        KVariant.Filled -> solidFill(colors.color, surface, shape, design)
+        KVariant.Filled -> solidFill(colors.fill, surface, shape, design)
 
         KVariant.Tonal -> solidFill(colors.color.copy(alpha = TONAL_ALPHA), surface, shape, design)
 

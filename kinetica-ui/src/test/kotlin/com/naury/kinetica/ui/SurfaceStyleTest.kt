@@ -190,9 +190,12 @@ class SurfaceStyleTest {
         val colors = KineticaColors()
         val destructive = compose.onNodeWithTag("destructive").captureToImage().toPixelMap()
         // 가운데는 글자가 있을 수 있어 왼쪽 가장자리 쪽을 본다.
-        assertThat(close(destructive[destructive.width / 6, destructive.height / 2], colors.destructive)).isTrue()
+        // 채운 면은 흰 글자와 4.5:1이 되도록 조금 진해진 색이다.
+        val red = ToneColors(colors.destructive, colors.onDestructive).fill
+        val green = ToneColors(colors.positive, colors.onPositive).fill
+        assertThat(close(destructive[destructive.width / 6, destructive.height / 2], red)).isTrue()
         val positive = compose.onNodeWithTag("positive").captureToImage().toPixelMap()
-        assertThat(close(positive[positive.width / 6, positive.height / 2], colors.positive)).isTrue()
+        assertThat(close(positive[positive.width / 6, positive.height / 2], green)).isTrue()
         // 테두리 모양은 안을 채우지 않는다.
         val outlined = compose.onNodeWithTag("outlined").captureToImage().toPixelMap()
         assertThat(close(outlined[outlined.width / 6, outlined.height / 2], colors.destructive)).isFalse()

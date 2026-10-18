@@ -135,7 +135,7 @@ public fun KBadge(
             }
             .semantics { description?.let { contentDescription = it } }
             .then(if (badge.drawn.isEmpty()) Modifier.size(DOT_SIZE) else Modifier.heightIn(min = BADGE_HEIGHT).widthIn(min = BADGE_HEIGHT))
-            .background(colors.color, shapeFor { this.badge })
+            .background(colors.fill, shapeFor { this.badge })
             .then(if (badge.drawn.isEmpty()) Modifier else Modifier.padding(horizontal = BADGE_PADDING)),
         contentAlignment = Alignment.Center,
     ) {

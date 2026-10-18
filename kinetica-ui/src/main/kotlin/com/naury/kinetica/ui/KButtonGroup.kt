@@ -207,7 +207,7 @@ public fun KToggleGroup(
                             style,
                             index,
                             items.size,
-                            on.color,
+                            on.fill,
                             round,
                             if (variant.surfaceDrawn) {
                                 null

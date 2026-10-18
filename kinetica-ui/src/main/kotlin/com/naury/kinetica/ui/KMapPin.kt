@@ -160,7 +160,7 @@ private fun ClusterPin(count: Int, colors: ToneColors, modifier: Modifier, onCli
                 onDrawBehind {
                     drawCircle(colors.color.copy(alpha = HALO_ALPHA), size.minDimension / 2)
                     drawCircle(Color.White, size.minDimension / 2 - halo)
-                    drawCircle(colors.color, size.minDimension / 2 - halo - BORDER.toPx())
+                    drawCircle(colors.fill, size.minDimension / 2 - halo - BORDER.toPx())
                 }
             }
             .pinClick(CircleShape, onClick)

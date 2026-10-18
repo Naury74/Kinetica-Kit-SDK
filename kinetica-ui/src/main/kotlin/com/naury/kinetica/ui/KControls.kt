@@ -295,7 +295,7 @@ private fun segmentInk(tone: KTone, surface: SurfaceStyle): SegmentInk {
 
         tone == KTone.Neutral && style != KTabIndicator.Filled -> SegmentInk(ink.copy(alpha = SEGMENT_ALPHA), ink, unselected, style, cell)
 
-        else -> SegmentInk(colors.color, colors.onColor, unselected, style, cell)
+        else -> SegmentInk(colors.fill, colors.onColor, unselected, style, cell)
     }
 }
 

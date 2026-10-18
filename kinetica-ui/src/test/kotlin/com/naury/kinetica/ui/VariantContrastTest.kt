@@ -21,7 +21,7 @@ class VariantContrastTest {
         "보라 강조" to KineticaColors(accent = Color(0xFF8E7CFF)),
         "노랑 강조" to KineticaColors(accent = Color(0xFFFFCC00)),
     )
-    private val inkVariants = listOf(KVariant.Tonal, KVariant.Outlined, KVariant.Text, KVariant.Glass, KVariant.Elevated)
+    private val inkVariants = listOf(KVariant.Filled, KVariant.Tonal, KVariant.Outlined, KVariant.Text, KVariant.Glass, KVariant.Elevated)
 
     /** [KTone.colors]와 같은 규칙. 컴포지션 밖에서 쓰려고 옮겼다. */
     private fun toneColors(tone: KTone, colors: KineticaColors, surface: SurfaceStyle): ToneColors = when (tone) {
@@ -67,6 +67,18 @@ class VariantContrastTest {
         }
         // 아이콘 버튼은 3:1이면 되므로 기본 강조색(3.6:1)을 그대로 쓴다.
         assertThat(buttonInk(KVariant.Text, KTone.Accent, accent, SurfaceStyles.CleanLight, INK_GRAPHIC_CONTRAST)).isEqualTo(accent.color)
+    }
+
+    @Test
+    fun `기본 강조색으로 채운 면만 흰 글자와 4점5대1이 되게 조금 진하게 하고 강조색 자체는 그대로 둔다`() {
+        val accent = ToneColors(Color(0xFF0A84FF), Color.White)
+        assertThat(contrast(Color.White, Color(0xFF0A84FF))).isLessThan(4.5f)
+        assertThat(contrast(Color.White, accent.fill)).isIn(com.google.common.collect.Range.closed(4.5f, 4.6f))
+        assertThat(variantInkBackground(KVariant.Filled, accent, SurfaceStyles.CleanLight)).isEqualTo(accent.fill)
+        assertThat(accent.color).isEqualTo(Color(0xFF0A84FF))
+        // 대비가 이미 충분한 색은 채울 때도 그대로다.
+        val brand = ToneColors(Color(0xFF1A3A8A), Color.White)
+        assertThat(brand.fill).isEqualTo(brand.color)
     }
 
     @Test

@@ -301,7 +301,7 @@ private fun Modifier.cardBackground(variant: KVariant, tone: KTone, surface: Sur
     KVariant.Filled -> if (tone == KTone.Neutral) {
         background(surface.contentColor.copy(alpha = FILLED_TINT).compositeOver(surface.inkBackground()), shape)
     } else {
-        background(tone.colors(surface).color, shape)
+        background(tone.colors(surface).fill, shape)
     }
 
     KVariant.Tonal -> background(tone.colors(surface).color.copy(alpha = if (tone == KTone.Neutral) FILLED_TINT else TONAL_TINT), shape)

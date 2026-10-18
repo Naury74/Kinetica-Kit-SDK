@@ -47,7 +47,7 @@ internal fun contrast(a: Color, b: Color): Float {
 
 /** [variant] 모양에서 글자가 실제로 놓이는 바탕색. 채운 모양은 그 색, 나머지는 표면 색이다. */
 internal fun variantInkBackground(variant: KVariant, colors: ToneColors, surface: SurfaceStyle): Color = when (variant) {
-    KVariant.Filled -> colors.color
+    KVariant.Filled -> colors.fill
     KVariant.Tonal -> colors.color.copy(alpha = TONAL_BACK).compositeOver(surface.inkBackground())
     else -> surface.inkBackground()
 }
