@@ -74,9 +74,8 @@ class ReadmeTest {
                 title = "사진을 삭제할까요?",
                 message = "삭제한 사진은 되돌릴 수 없습니다.",
                 actions = listOf(
-                    KDialogAction("취소") { confirm = false },
+                    KDialogAction("취소"),
                     KDialogAction("삭제", KDialogActionStyle.Destructive) {
-                        confirm = false
                         scope.launch { toast.show("삭제했어요") }
                     },
                 ),

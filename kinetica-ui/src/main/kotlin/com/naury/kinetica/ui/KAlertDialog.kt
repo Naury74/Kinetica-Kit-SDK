@@ -41,6 +41,7 @@ public enum class KDialogActionStyle {
 
 /**
  * [KAlertDialog]와 [KActionSheet]의 버튼 하나. 누르면 다이얼로그나 시트를 닫고 [onClick]을 부른다.
+ * 닫기는 다이얼로그가 하므로 [onClick]에서 다시 닫지 않아도 된다. 닫기만 하는 취소 버튼은 [onClick]을 생략한다.
  *
  * @property icon 글자 앞 아이콘. 동작 시트와 팝오버에서만 쓴다.
  * @property enabled false면 흐리게 그리고 누를 수 없다.
@@ -51,7 +52,7 @@ public data class KDialogAction(
     val style: KDialogActionStyle = KDialogActionStyle.Default,
     val icon: ImageVector? = null,
     val enabled: Boolean = true,
-    val onClick: () -> Unit,
+    val onClick: () -> Unit = {},
 )
 
 /**
@@ -66,7 +67,7 @@ public data class KDialogAction(
  * KAlertDialog(
  *     visible = asking, onDismissRequest = { asking = false }, title = "사진을 삭제할까요?", message = "휴지통에서 30일 뒤 지워집니다.",
  *     actions = listOf(
- *         KDialogAction("취소", KDialogActionStyle.Cancel) {},
+ *         KDialogAction("취소", KDialogActionStyle.Cancel),
  *         KDialogAction("삭제", KDialogActionStyle.Destructive) { delete() },
  *     ),
  * )

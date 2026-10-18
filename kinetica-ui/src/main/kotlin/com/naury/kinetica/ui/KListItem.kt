@@ -53,6 +53,12 @@ public sealed interface KListLeading {
     public data class Icon(val icon: ImageVector, val tint: Color = Color.Unspecified, val container: Color? = null) : KListLeading
 
     /**
+     * [Icon]과 같지만 `painterResource`로 읽은 drawable처럼 [Painter]를 받는다. 색과 크기 규칙은 [Icon]과 같다.
+     * 아이콘에 [tint]를 입히므로, 여러 색으로 된 그림을 원래 색대로 보이려면 [Thumbnail]이나 [Custom]을 쓴다.
+     */
+    public data class PainterIcon(val painter: Painter, val tint: Color = Color.Unspecified, val container: Color? = null) : KListLeading
+
+    /**
      * 40dp 원형 아바타. [image]가 없으면 [initials]를 [color] 원 위에 쓴다.
      *
      * @property initials 이름 첫 글자. 두 글자까지 보인다.
@@ -202,27 +208,31 @@ private fun ListText(text: String, color: Color, size: TextUnit, weight: FontWei
 }
 
 @Composable
+private fun LeadingIcon(painter: Painter, requestedTint: Color, container: Color?, ink: Color) {
+    val tint = when {
+        requestedTint.isSpecified -> requestedTint
+        container != null -> Color.White
+        else -> ink.copy(alpha = ink.alpha * ICON_ALPHA)
+    }
+    Box(
+        if (container != null) {
+            Modifier.size(ICON_CONTAINER).background(container, shapeFor { image })
+        } else {
+            Modifier.size(KMetrics.ListIcon)
+        },
+        contentAlignment = Alignment.Center,
+    ) {
+        val icon = if (container != null) ICON_IN_CONTAINER else KMetrics.ListIcon
+        Image(painter, null, Modifier.size(icon), colorFilter = ColorFilter.tint(tint))
+    }
+}
+
+@Composable
 private fun ListLeading(leading: KListLeading, ink: Color) {
     when (leading) {
-        is KListLeading.Icon -> {
-            val container = leading.container
-            val tint = when {
-                leading.tint.isSpecified -> leading.tint
-                container != null -> Color.White
-                else -> ink.copy(alpha = ink.alpha * ICON_ALPHA)
-            }
-            Box(
-                if (container != null) {
-                    Modifier.size(ICON_CONTAINER).background(container, shapeFor { image })
-                } else {
-                    Modifier.size(KMetrics.ListIcon)
-                },
-                contentAlignment = Alignment.Center,
-            ) {
-                val icon = if (container != null) ICON_IN_CONTAINER else KMetrics.ListIcon
-                Image(rememberVectorPainter(leading.icon), null, Modifier.size(icon), colorFilter = ColorFilter.tint(tint))
-            }
-        }
+        is KListLeading.Icon -> LeadingIcon(rememberVectorPainter(leading.icon), leading.tint, leading.container, ink)
+
+        is KListLeading.PainterIcon -> LeadingIcon(leading.painter, leading.tint, leading.container, ink)
 
         is KListLeading.Avatar -> ListAvatar(leading)
 

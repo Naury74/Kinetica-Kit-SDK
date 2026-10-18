@@ -201,9 +201,9 @@ private fun DialogsCard() {
                     sheet,
                     { sheet = false },
                     listOf(
-                        KDialogAction("링크 복사", icon = KIcons.Link) {},
-                        KDialogAction("앨범에 추가", KDialogActionStyle.Preferred, icon = KIcons.Plus) {},
-                        KDialogAction("삭제", KDialogActionStyle.Destructive, icon = KIcons.Trash) {},
+                        KDialogAction("링크 복사", icon = KIcons.Link),
+                        KDialogAction("앨범에 추가", KDialogActionStyle.Preferred, icon = KIcons.Plus),
+                        KDialogAction("삭제", KDialogActionStyle.Destructive, icon = KIcons.Trash),
                     ),
                     title = "사진 3장",
                     message = "선택한 사진으로 할 일을 고르세요.",
@@ -219,12 +219,12 @@ private fun DialogsCard() {
         { alert = 0 },
         if (alert == 1) "사진을 삭제할까요?" else "변경 사항을 저장할까요?",
         if (alert == 1) {
-            listOf(KDialogAction("취소", KDialogActionStyle.Cancel) {}, KDialogAction("삭제", KDialogActionStyle.Destructive) {})
+            listOf(KDialogAction("취소", KDialogActionStyle.Cancel), KDialogAction("삭제", KDialogActionStyle.Destructive) {})
         } else {
             listOf(
-                KDialogAction("저장", KDialogActionStyle.Preferred) {},
-                KDialogAction("저장하지 않음", KDialogActionStyle.Destructive) {},
-                KDialogAction("취소", KDialogActionStyle.Cancel) {},
+                KDialogAction("저장", KDialogActionStyle.Preferred),
+                KDialogAction("저장하지 않음", KDialogActionStyle.Destructive),
+                KDialogAction("취소", KDialogActionStyle.Cancel),
             )
         },
         message = if (alert == 1) "휴지통에서 30일 뒤 완전히 지워집니다." else "저장하지 않으면 지금까지 쓴 내용이 사라집니다.",

@@ -82,11 +82,14 @@ MaterialTheme(colorScheme = scheme) {
             accent = MaterialTheme.colorScheme.primary,
             onAccent = MaterialTheme.colorScheme.onPrimary,
             destructive = MaterialTheme.colorScheme.error,
+            onDestructive = MaterialTheme.colorScheme.onError,
         ),
         textStyle = MaterialTheme.typography.bodyLarge,
     ) { App() }
 }
 ```
+
+색은 짝이 되는 글자 색과 함께 넘긴다. Material 다크 테마의 `error`(기본 #FFB4AB)는 어두운 `onError`와 짝을 이루는 옅은 색이다. `destructive`만 넘기면 채운 버튼이 기본 흰 글자와 대비 4.5:1을 맞추려고 색을 진하게 바꾸면서 탁한 분홍이 된다. 짝을 맞출 수 없다면 다크 테마에서는 `destructive`를 넘기지 말고 기본값(#FF3B30)을 쓴다.
 
 | 파라미터 | 뜻 |
 | --- | --- |
@@ -420,7 +423,7 @@ XML 화면의 `NestedScrollView`, `ViewPager2`, `RecyclerView` 안에 `ComposeVi
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `KListItem` | 1~3줄 목록 행. 끝쪽이 스위치, 체크박스, 라디오면 행 전체가 그 컨트롤 하나가 된다. `KListTrailing.Value`는 `color`로 글자 색을 바꿀 수 있다 | `supporting`, `overline`, `leading`(`KListLeading.Icon`, `Avatar`, `Thumbnail`, `Custom`), `trailing`(`KListTrailing.Value`, `Switch`, `Checkbox`, `Radio`, `Disclosure`, `Custom`), `onClick` |
+| `KListItem` | 1~3줄 목록 행. 끝쪽이 스위치, 체크박스, 라디오면 행 전체가 그 컨트롤 하나가 된다. `KListTrailing.Value`는 `color`로 글자 색을 바꿀 수 있다 | `supporting`, `overline`, `leading`(`KListLeading.Icon`, drawable 같은 `Painter`를 받는 `PainterIcon`, `Avatar`, `Thumbnail`, `Custom`), `trailing`(`KListTrailing.Value`, `Switch`, `Checkbox`, `Radio`, `Disclosure`, `Custom`), `onClick` |
 | `KListSection` | 행 묶음. `InsetGrouped`는 표면 하나에 행을 담아 첫 행 위와 끝 행 아래만 둥글게 하고 터치 피드백도 그 모서리로 자른다. `Plain`은 표면 없이 놓는다. 행 사이 구분선은 행 글자가 시작하는 곳부터 긋는다 | `header`, `footer`, `style` |
 | `LazyListScope.kListSection` | 행이 많을 때 `LazyColumn` 안에서 쓰는 섹션. 머리글, 행, 꼬리글이 각각 지연 항목이 된다 | `items`, `key`, `sectionKey` |
 | `KSwitchRow`, `KCheckboxRow`, `KRadioRow`, `KValueRow`, `KDisclosureRow` | 설정 화면 행 프리셋. `KListItem` 위에 얹은 것이라 섹션 안에서 구분선과 모서리가 맞는다 | `subtitle`, `leading` |
@@ -558,7 +561,8 @@ KExpandHost(expand) { key -> Text("$key 상세", Modifier.statusBarsPadding()) }
 ```
 
 `PushNavigation`은 아래 화면의 `rememberSaveable` 상태(스크롤 위치 등)를 유지하고, 스택에서 빠진 화면의 상태는 지운다. 같은 화면을 두 번 쌓을 수 없고,
-호스트가 `onBack`에서 스택을 바꾸지 않으면 화면이 제자리로 돌아온다. RTL 언어에서는 방향이 반대다. 모든 화면이 같은 ViewModelStoreOwner를 쓰므로 화면별 ViewModel은 `viewModel(key = …)`로 나눈다.
+호스트가 `onBack`에서 스택을 바꾸지 않으면 화면이 제자리로 돌아온다. RTL 언어에서는 방향이 반대다.
+화면을 빼는 전환이 끝날 때까지 빠지는 화면도 `content`로 계속 그린다. 그래서 그 화면이 읽는 데이터를 스택에서 빼면서 함께 지우면, 빈 화면이 미끄러져 나간다. 화면에 필요한 값은 스택 항목에 담거나(`data class Screen.Detail(val photo: Photo)`), 마지막 값을 따로 기억해 두고 쓴다. 모든 화면이 같은 ViewModelStoreOwner를 쓰므로 화면별 ViewModel은 `viewModel(key = …)`로 나눈다.
 
 예측 뒤로 가기에서 손가락을 따라 움직이는 미리보기는 Android 14부터 동작한다. targetSdk 36 이상인 앱은 기본으로 켜져 있고, 그보다 낮으면 manifest에 `android:enableOnBackInvokedCallback="true"`를 넣는다. 꺼져 있으면 뒤로 가기를 눌렀을 때 닫히는 애니메이션만 나온다.
 
@@ -657,7 +661,7 @@ KDialog(confirm, { confirm = false }, origin = origin) {
     KButton("결제", onClick = { confirm = false }, fullWidth = true)
 }
 KAlertDialog(asking, { asking = false }, "삭제할까요?", listOf(
-    KDialogAction("취소", KDialogActionStyle.Cancel) { asking = false },
+    KDialogAction("취소", KDialogActionStyle.Cancel),
     KDialogAction("삭제", KDialogActionStyle.Destructive, onClick = ::delete),
 ))
 KSheet(sharing, { sharing = false }, title = "공유") { KListItem("링크 복사", onClick = { sharing = false }) }
@@ -668,6 +672,8 @@ KDetentSheet(places, title = "주변 장소") { Text("카페 12곳") }
 ```
 
 `KSheet`와 `KDialog`의 `title`은 화면에 보이는 제목이 아니라 TalkBack이 읽는 창 이름이다. 보이는 제목은 내용에 직접 넣는다.
+
+`KAlertDialog`와 `KActionSheet`는 버튼을 누르면 `onDismissRequest`를 부른 뒤 그 버튼의 `onClick`을 실행한다. 닫기는 다이얼로그가 하므로 `onClick`에서 다시 닫지 않아도 되고, 닫기만 하는 취소 버튼은 `onClick`을 생략한다.
 
 ### 메뉴, 툴팁, 안내
 

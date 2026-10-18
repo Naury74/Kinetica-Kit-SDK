@@ -40,7 +40,8 @@ public enum class KChipSelection {
  * @param variant 선택되지 않은 칩의 모양. 기본값 [KVariant.Glass]는 [surface]로 그리고, [KVariant.Tonal]은 옅은 회색 칩,
  *   [KVariant.Outlined]는 테두리 칩이다. [KVariant.Filled]는 [KVariant.Tonal]과 같게 그린다.
  * @param tone 선택된 칩을 물들일 색 역할. 기본값은 [KTone.Accent]다.
- * @param wrap `false`면 줄을 넘기지 않고 가로로 스크롤한다.
+ * @param wrap `false`면 줄을 넘기지 않고 가로로 스크롤한다. 줄을 넘기는 동안에는 칩을 켜고 꺼도 폭이 바뀌지 않아,
+ *   뒤 칩들이 다른 줄로 옮겨 가지 않는다.
  * @param contentPadding [wrap]이 `false`일 때 스크롤 영역 안쪽 여백. 화면 폭에 둔 줄에서 본문 여백을 맞출 때 쓴다.
  */
 @Composable
@@ -67,7 +68,7 @@ public fun KChipGroup(
                 haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
                 onSelectedChange(nextSelection(selection, selected, index, chips.size))
             }
-            FilterChipBody(ChipSpec(label, isSelected, enabled, accent, surface, variant), Modifier) {
+            FilterChipBody(ChipSpec(label, isSelected, enabled, accent, surface, variant), Modifier, reserveCheck = wrap) {
                 when (selection) {
                     KChipSelection.Single ->
                         Modifier.selectable(isSelected, null, KIndication(chipShape), enabled, Role.RadioButton, onTap)

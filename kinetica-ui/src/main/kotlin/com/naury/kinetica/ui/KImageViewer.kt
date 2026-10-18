@@ -53,9 +53,12 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -499,16 +502,24 @@ private fun BoxScope.TopBar(parts: ViewerParts, surface: SurfaceStyle, backdrop:
                         Modifier.clearAndSetSemantics { }
                     },
                 )
+                .lightInkScrim(buttonShape, ink)
                 .drawBehind {
                     val arm = size.minDimension * CLOSE_ARM
                     val stroke = CLOSE_STROKE.toPx()
+                    // 밝은 ×는 흰 사진 위에서 사라지므로 어두운 테두리를 먼저 그린다.
+                    if (ink.luminance() > LIGHT_INK) {
+                        val halo = Color.Black.copy(alpha = HALO_ALPHA)
+                        drawLine(halo, center - Offset(arm, arm), center + Offset(arm, arm), stroke + HALO.toPx(), StrokeCap.Round)
+                        drawLine(halo, center + Offset(arm, -arm), center + Offset(-arm, arm), stroke + HALO.toPx(), StrokeCap.Round)
+                    }
                     drawLine(ink, center - Offset(arm, arm), center + Offset(arm, arm), stroke, StrokeCap.Round)
                     drawLine(ink, center + Offset(arm, -arm), center + Offset(-arm, arm), stroke, StrokeCap.Round)
                 },
         )
         Spacer(Modifier.weight(1f))
         if (parts.pager.pageCount > 1) {
-            val counter = Modifier.kSurface(surface, shapeFor { badge }, backdrop)
+            val badge = shapeFor { badge }
+            val counter = Modifier.kSurface(surface, badge, backdrop).lightInkScrim(badge, ink)
             Box(counter.clearAndSetSemantics { }.padding(horizontal = 14.dp, vertical = 8.dp)) {
                 ThemedText(
                     "${parts.pager.currentPage + 1} / ${parts.pager.pageCount}",
@@ -519,6 +530,15 @@ private fun BoxScope.TopBar(parts: ViewerParts, surface: SurfaceStyle, backdrop:
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.size(BUTTON_SIZE))
     }
+}
+
+/**
+ * 글자가 밝은 표면이면 버튼 안쪽을 옅게 어둡게 칠한다. 글래스 버튼은 뒤 사진을 블러로 비추므로, 흰 사진 위에서는 버튼과 흰 글자가 함께 묻힌다.
+ */
+private fun Modifier.lightInkScrim(shape: Shape, ink: Color): Modifier = if (ink.luminance() > LIGHT_INK) {
+    drawBehind { drawOutline(shape.createOutline(size, layoutDirection, this), Color.Black.copy(alpha = SCRIM_ALPHA)) }
+} else {
+    this
 }
 
 @Composable
@@ -565,5 +585,9 @@ private val BAR_PADDING = 12.dp
 private val BAR_SLIDE = 16.dp
 private val BUTTON_SIZE = KMetrics.IconButton
 private const val CLOSE_ARM = 0.17f
+private const val LIGHT_INK = 0.5f
+private const val SCRIM_ALPHA = 0.32f
+private const val HALO_ALPHA = 0.35f
+private val HALO = 2.dp
 private val CLOSE_STROKE = 2.dp
 private val CAPTION_PADDING = 16.dp

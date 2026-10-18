@@ -326,7 +326,7 @@ private fun TaskDetail(task: Task, tasks: SnapshotStateList<String>, onBack: () 
         { confirm = false },
         "이 할 일을 지울까요?",
         listOf(
-            KDialogAction("취소") {},
+            KDialogAction("취소"),
             KDialogAction("지우기", KDialogActionStyle.Destructive) {
                 tasks.removeAll { decode(it).id == task.id }
                 onBack()

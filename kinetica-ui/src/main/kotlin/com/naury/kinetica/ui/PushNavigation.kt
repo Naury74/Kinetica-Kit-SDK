@@ -52,6 +52,9 @@ import kotlinx.coroutines.withContext
  * 모든 화면이 이 컴포저블을 부른 곳의 ViewModelStoreOwner와 Lifecycle을 함께 쓴다. 화면마다 따로 ViewModel이 필요하면
  * `viewModel(key = …)`로 화면별 키를 준다. 전환하는 동안 가려지는 화면은 터치를 받지 않고 TalkBack에도 드러나지 않는다.
  *
+ * 화면을 빼는 전환이 끝날 때까지 빠지는 화면도 content로 계속 그린다. 그 화면이 읽는 데이터를 스택에서 빼면서 함께 지우면
+ * 빈 화면이 미끄러져 나가므로, 화면에 필요한 값은 스택 항목에 담거나 마지막 값을 기억해 두고 쓴다.
+ *
  * ```kotlin
  * var stack by rememberSaveable { mutableStateOf(listOf("list")) }
  * PushNavigation(stack, onBack = { stack = stack.dropLast(1) }, transition = KTransitions.SheetStack) { screen -> ... }

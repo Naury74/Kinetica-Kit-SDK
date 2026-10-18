@@ -20,8 +20,9 @@ import androidx.compose.ui.text.style.TextOverflow
 /**
  * kinetica-ui 컴포넌트가 기본값으로 쓰는 색. [KineticaTheme]로 한 번에 바꾼다.
  *
- * Material 3 앱이라면 `KineticaColors(accent = colorScheme.primary, onAccent = colorScheme.onPrimary, destructive = colorScheme.error)`처럼
- * 호스트 색을 그대로 넘긴다.
+ * Material 3 앱이라면 `KineticaColors(accent = colorScheme.primary, onAccent = colorScheme.onPrimary, destructive = colorScheme.error,
+ * onDestructive = colorScheme.onError)`처럼 호스트 색을 짝으로 넘긴다. 다크 테마의 `error`는 어두운 글자와 짝을 이루는 옅은 색이라,
+ * 짝인 `onError` 없이 넘기면 채운 버튼이 흰 글자 대비를 맞추려고 색을 진하게 바꿔 탁해진다.
  *
  * @property accent 버튼, 칩, 슬라이더, 진행 표시, 입력란 포커스, 달력 선택처럼 선택되거나 활성인 상태를 칠하는 색
  * @property onAccent [accent] 위에 올리는 글자와 아이콘 색

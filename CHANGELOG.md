@@ -2,6 +2,23 @@
 
 장면 문서의 스키마 버전(`schemaVersion`)은 SDK 버전과 따로 올립니다. 지금 스키마 버전은 1입니다.
 
+## 1.0.0-alpha02 (개발 중)
+
+### 새 기능
+
+- `KListLeading.PainterIcon`: `painterResource`로 읽은 drawable처럼 `Painter`를 목록 앞 아이콘으로 씁니다. 색과 크기 규칙은 `KListLeading.Icon`과 같습니다.
+- `KDialogAction`의 `onClick`에 기본값이 생겼습니다. 다이얼로그는 버튼을 누르면 스스로 닫히므로, 닫기만 하는 취소 버튼은 `KDialogAction("취소", KDialogActionStyle.Cancel)`처럼 씁니다.
+
+### 고친 것
+
+- 줄을 넘기는 `KChipGroup`에서 칩을 켜고 끌 때 폭이 바뀌어, 뒤 칩들이 다른 줄로 옮겨 가던 문제. 연달아 누르면 손가락 아래 칩이 바뀌어 다른 칩이 눌렸습니다. 이제 체크 자리를 늘 확보하고, 꺼진 칩은 글자를 가운데에 둡니다.
+- 흰 사진 위에서 `KImageViewer`의 닫기 버튼과 페이지 번호가 잘 보이지 않던 문제. 글자가 밝은 표면이면 버튼 안쪽을 옅게 어둡게 칠하고 ×에 어두운 테두리를 둡니다.
+
+### 문서
+
+- `PushNavigation`은 빠지는 화면도 전환이 끝날 때까지 그린다는 점과, 그 화면의 데이터를 다루는 법을 적었습니다.
+- Material 3 색을 `KineticaColors`로 넘길 때는 짝이 되는 글자 색(`onError` 등)도 함께 넘기도록 예를 고쳤습니다. 다크 테마의 `error`만 넘기면 채운 버튼이 탁해집니다.
+
 ## 1.0.0-alpha01
 
 첫 공개 버전입니다. 알파 동안에는 공개 API가 바뀔 수 있습니다.

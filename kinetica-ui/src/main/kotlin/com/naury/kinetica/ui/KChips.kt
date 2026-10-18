@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
@@ -260,10 +262,16 @@ internal class ChipSpec(
     val variant: KVariant,
 )
 
-/** 필터 칩 앞 체크 표시. [icon]이 있으면 그 자리에서 아이콘과 체크가 바뀌고, 없으면 체크가 나타나며 자리가 늘어난다. */
+/**
+ * 필터 칩 앞 체크 표시. [icon]이 있으면 그 자리에서 아이콘과 체크가 바뀌고, 없으면 체크가 나타나며 자리가 늘어난다.
+ * [reserve]면 자리를 늘 차지해 칩 폭이 바뀌지 않는다.
+ */
 @Composable
-private fun CheckSlot(icon: ImageVector?, ink: Color, accentInk: Color, level: () -> Float) {
-    if (icon != null) {
+private fun CheckSlot(icon: ImageVector?, ink: Color, accentInk: Color, reserve: Boolean, level: () -> Float) {
+    if (reserve && icon == null) {
+        Box(Modifier.size(CHECK_SIZE).drawBehind { drawCheckStroke(accentInk, level(), Offset.Zero, size.width, CHECK_STROKE.toPx()) })
+        Box(Modifier.size(CHECK_GAP))
+    } else if (icon != null) {
         Box(contentAlignment = Alignment.Center) {
             ChipIcon(icon, ink, Modifier.graphicsLayer { alpha = 1f - level().coerceIn(0f, 1f) })
             Box(Modifier.size(CHECK_SIZE).drawBehind { drawCheckStroke(accentInk, level(), Offset.Zero, size.width, CHECK_STROKE.toPx()) })
@@ -274,9 +282,19 @@ private fun CheckSlot(icon: ImageVector?, ink: Color, accentInk: Color, level: (
     }
 }
 
-/** 필터 칩 본체. [pick]은 선택 방식에 맞춘 누르기 수정자를 돌려준다. [KChipGroup]과 [KFilterChip]이 함께 쓴다. */
+/**
+ * 필터 칩 본체. [pick]은 선택 방식에 맞춘 누르기 수정자를 돌려준다. [KChipGroup]과 [KFilterChip]이 함께 쓴다.
+ * [reserveCheck]면 체크 자리를 늘 확보해 켜고 끌 때 폭이 바뀌지 않는다. 꺼진 동안에는 글자를 가운데로 옮겨 빈 자리가 한쪽에 몰리지 않게 한다.
+ * 줄을 바꾸는 묶음에서 폭이 바뀌면 뒤 칩들이 다른 줄로 옮겨 가 연달아 누를 때 손가락 아래 칩이 바뀌므로 그때 쓴다.
+ */
 @Composable
-internal fun FilterChipBody(spec: ChipSpec, modifier: Modifier, icon: ImageVector? = null, pick: @Composable () -> Modifier) {
+internal fun FilterChipBody(
+    spec: ChipSpec,
+    modifier: Modifier,
+    icon: ImageVector? = null,
+    reserveCheck: Boolean = false,
+    pick: @Composable () -> Modifier,
+) {
     val shown = remember { Animatable(if (spec.selected) 1f else 0f) }
     val still = reducedMotion()
     LaunchedEffect(spec.selected, still) {
@@ -319,15 +337,31 @@ internal fun FilterChipBody(spec: ChipSpec, modifier: Modifier, icon: ImageVecto
             .padding(start = if (icon != null) ICON_START else CHIP_PADDING, end = CHIP_PADDING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CheckSlot(icon, ink, accentInk) { shown.value }
-        ThemedText(
-            spec.label,
-            style = TextStyle(fontSize = CHIP_FONT, fontWeight = KineticaTheme.design.label(FontWeight.Medium)),
-            color = { lerp(ink, accentInk, shown.value.coerceIn(0f, 1f)) },
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        ChipContent(spec.label, icon, reserveCheck && icon == null, ink, accentInk) { shown.value }
     }
+}
+
+/** 필터 칩 안쪽의 체크 자리와 글자. [reserve]면 폭은 그대로 두고, 꺼진 동안 글자를 가운데로 옮긴다. */
+@Composable
+private fun ChipContent(label: String, icon: ImageVector?, reserve: Boolean, ink: Color, accentInk: Color, level: () -> Float) {
+    val toStart = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1f else -1f
+    // 그리기 단계에서만 옮긴다. 꺼진 칩은 체크 자리의 절반만큼 시작 쪽으로 옮겨 글자가 가운데에 온다.
+    val center = if (reserve) {
+        Modifier.graphicsLayer { translationX = toStart * (CHECK_SIZE + CHECK_GAP).toPx() * (1f - level().coerceIn(0f, 1f)) / 2 }
+    } else {
+        Modifier
+    }
+    Row(center, verticalAlignment = Alignment.CenterVertically) {
+        CheckSlot(icon, ink, accentInk, reserve, level)
+    }
+    ThemedText(
+        label,
+        center,
+        style = TextStyle(fontSize = CHIP_FONT, fontWeight = KineticaTheme.design.label(FontWeight.Medium)),
+        color = { lerp(ink, accentInk, level().coerceIn(0f, 1f)) },
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 private class ActionLook(val enabled: Boolean, val variant: KVariant, val surface: SurfaceStyle, val ink: Color, val iconInk: Color)

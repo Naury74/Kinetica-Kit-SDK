@@ -303,7 +303,7 @@ private fun Conversation(chat: Chat, sent: SnapshotStateList<String>, onClose: (
         listOf(
             KDialogAction("사진", icon = KIcons.Image) { upload.start(scope, "IMG_2048.jpg", 'p') { send('p', "사진") } },
             KDialogAction("파일", icon = KIcons.File) { upload.start(scope, "회의록_10월.pdf", 'f') { send('f', "회의록_10월.pdf") } },
-            KDialogAction("취소", KDialogActionStyle.Preferred) {},
+            KDialogAction("취소", KDialogActionStyle.Preferred),
         ),
         title = "첨부",
     )
@@ -318,7 +318,7 @@ private fun MessageMenu(target: Message?, onDismiss: () -> Unit, onReply: (Messa
         onDismiss,
         listOfNotNull(
             KDialogAction("답장") { target?.let(onReply) },
-            KDialogAction("복사") {},
+            KDialogAction("복사"),
             target?.takeIf { it.key.startsWith("s") }?.let { KDialogAction("삭제", KDialogActionStyle.Destructive) { onDelete(it) } },
         ),
         title = target?.text?.take(40),
