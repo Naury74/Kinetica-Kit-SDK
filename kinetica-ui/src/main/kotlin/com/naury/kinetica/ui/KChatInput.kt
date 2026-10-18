@@ -250,8 +250,7 @@ private fun ChatField(source: FieldSource, options: ChatOptions, surface: Surfac
         source,
         modifier
             .heightIn(min = KMetrics.MinTouch)
-            .kSurface(surface.forField(), FIELD_SHAPE)
-            .fieldName(name),
+            .kSurface(surface.forField(), FIELD_SHAPE),
         basics,
     ) { inner ->
         Row(
@@ -259,14 +258,13 @@ private fun ChatField(source: FieldSource, options: ChatOptions, surface: Surfac
             verticalAlignment = Alignment.Bottom,
         ) {
             Box(Modifier.weight(1f).padding(vertical = 11.dp), contentAlignment = Alignment.CenterStart) {
-                if (source.text.isEmpty()) {
-                    ThemedText(
-                        placeholder,
-                        // 라벨이 따로 있으면 안내 글은 이름이 아니라 힌트이므로 TalkBack이 읽게 둔다. 라벨과 같은 말이면 두 번 읽지 않게 숨긴다.
-                        if (options.label == null || options.label == placeholder) Modifier.fieldNameText() else Modifier,
-                        style = style.copy(color = ink.copy(alpha = PLACEHOLDER_ALPHA)),
-                        maxLines = 1,
-                    )
+                val hint = style.copy(color = ink.copy(alpha = PLACEHOLDER_ALPHA))
+                // 라벨이 안내 글과 다르면 라벨은 늘 이름으로 남기고, 안내 글은 비었을 때만 힌트로 읽게 한다.
+                if (name != placeholder) {
+                    FieldNameText(name, showing = false, hint)
+                    if (source.text.isEmpty()) ThemedText(placeholder, style = hint, maxLines = 1)
+                } else {
+                    FieldNameText(name, source.text.isEmpty(), hint)
                 }
                 inner()
             }

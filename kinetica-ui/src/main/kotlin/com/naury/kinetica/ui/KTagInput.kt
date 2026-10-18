@@ -245,8 +245,7 @@ private fun TagTextField(model: TagInputModel, look: TagFieldLook, modifier: Mod
             .widthIn(min = FIELD_MIN_WIDTH)
             .padding(horizontal = FIELD_PADDING)
             .onFocusChanged { model.focused = it.isFocused }
-            .onPreviewKeyEvent { event -> event.type == KeyEventType.KeyDown && event.key == Key.Backspace && model.backspace() }
-            .fieldName(name),
+            .onPreviewKeyEvent { event -> event.type == KeyEventType.KeyDown && event.key == Key.Backspace && model.backspace() },
         singleLine = true,
         textStyle = themed(TextStyle(color = surface.contentColor, fontSize = FIELD_FONT_SIZE)),
         cursorBrush = SolidColor(KineticaTheme.colors.accent),
@@ -261,14 +260,11 @@ private fun TagTextField(model: TagInputModel, look: TagFieldLook, modifier: Mod
         ),
         decorationBox = { inner ->
             Box(contentAlignment = Alignment.CenterStart) {
-                if (model.text.isEmpty() && model.tags.isEmpty() && placeholder.isNotEmpty()) {
-                    ThemedText(
-                        placeholder,
-                        Modifier.fieldNameText(),
-                        style = TextStyle(color = surface.contentColor.copy(alpha = PLACEHOLDER_ALPHA), fontSize = FIELD_FONT_SIZE),
-                        maxLines = 1,
-                    )
-                }
+                FieldNameText(
+                    name,
+                    model.text.isEmpty() && model.tags.isEmpty() && placeholder.isNotEmpty(),
+                    TextStyle(color = surface.contentColor.copy(alpha = PLACEHOLDER_ALPHA), fontSize = FIELD_FONT_SIZE),
+                )
                 inner()
             }
         },

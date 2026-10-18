@@ -96,7 +96,7 @@ class KInputs2Test {
     fun `태그 입력란은 쉼표와 완료 키로 칩을 만들고 중복을 막으며 지우기 키를 두 번 눌러 마지막 칩을 지운다`() {
         val tags = mutableStateOf(listOf<String>())
         compose.setContent { KTagInput(tags.value, { tags.value = it }, Modifier.testTag("tags"), placeholder = "태그") }
-        val field = compose.onNodeWithContentDescription("태그")
+        val field = compose.onNode(hasSetTextAction())
         field.performTextInput("Kotlin, compose")
         compose.waitForIdle()
         assertThat(tags.value).containsExactly("Kotlin")
@@ -135,7 +135,7 @@ class KInputs2Test {
         compose.setContent {
             KTagInput(tags.value, { tags.value = it }, placeholder = "태그", suggestions = listOf("개발", "디자인"))
         }
-        val field = compose.onNodeWithContentDescription("태그")
+        val field = compose.onNode(hasSetTextAction())
         field.performClick()
         field.performTextInput("디")
         compose.waitForIdle()
@@ -162,7 +162,7 @@ class KInputs2Test {
             if (hosted) KineticaScaffold { body() } else body()
         }
         val before = compose.onNodeWithTag("below").getUnclippedBoundsInRoot().top
-        val field = compose.onNodeWithContentDescription("태그")
+        val field = compose.onNode(hasSetTextAction())
         field.performClick()
         field.performTextInput("디")
         compose.waitForIdle()

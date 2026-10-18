@@ -10,8 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -88,7 +88,7 @@ class InputNamesTest {
             { KChatInput("hello", {}, onSend = {}) },
             { KChatInput(TextFieldState("hello"), onSend = {}) },
         )
-        compose.onNodeWithContentDescription("Message").assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Message")).assertExists()
     }
 
     @Test
@@ -109,7 +109,7 @@ class InputNamesTest {
     fun `검색 화면 입력란도 검색어가 있을 때 이름이 있다`() {
         // 펼친 검색 화면은 다른 창에 그려지므로 semantics로 확인한다.
         compose.setContent { KSearchView(true, {}, "abc", {}, {}, placeholder = "Find") }
-        compose.onNode(hasSetTextAction()).assert(hasContentDescription("Find"))
+        compose.onNode(hasSetTextAction()).assert(hasText("Find"))
     }
 
     @Test

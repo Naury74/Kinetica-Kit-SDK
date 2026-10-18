@@ -294,15 +294,11 @@ private fun SearchTopRow(frame: SearchFrame, field: SearchField) {
             surface = surface,
         )
         Box(Modifier.weight(1f).padding(start = 4.dp), contentAlignment = Alignment.CenterStart) {
-            if (field.query.isEmpty()) {
-                val hint = TextStyle(color = surface.contentColor.copy(alpha = FIELD_HINT_ALPHA), fontSize = 18.sp)
-                ThemedText(frame.placeholder, Modifier.fieldNameText(), style = hint, maxLines = 1)
-            }
             ProvideFieldSelection(accent) {
                 BasicTextField(
                     field.query,
                     field.onQueryChange,
-                    Modifier.fillMaxWidth().focusRequester(requester).fieldName(frame.placeholder),
+                    Modifier.fillMaxWidth().focusRequester(requester),
                     singleLine = true,
                     textStyle = themed(TextStyle(color = surface.contentColor, fontSize = 18.sp)),
                     cursorBrush = SolidColor(accent),
@@ -311,6 +307,13 @@ private fun SearchTopRow(frame: SearchFrame, field: SearchField) {
                         field.onSearch(field.query)
                         keyboard?.hide()
                     }),
+                    decorationBox = { inner ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            val hint = TextStyle(color = surface.contentColor.copy(alpha = FIELD_HINT_ALPHA), fontSize = 18.sp)
+                            FieldNameText(frame.placeholder, field.query.isEmpty(), hint)
+                            inner()
+                        }
+                    },
                 )
             }
         }

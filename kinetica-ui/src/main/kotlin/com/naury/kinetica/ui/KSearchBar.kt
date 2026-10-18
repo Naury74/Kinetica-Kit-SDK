@@ -104,8 +104,7 @@ public fun KSearchBar(
                     }
                     .kSurface(surface.forField(), shapeFor { search })
                     .fieldFocusFrame(SEARCH_HEIGHT / 2, levels, accent, accent)
-                    .onFocusChanged { focused = it.isFocused }
-                    .fieldName(placeholder),
+                    .onFocusChanged { focused = it.isFocused },
                 singleLine = true,
                 textStyle = textStyle,
                 cursorBrush = SolidColor(accent),
@@ -142,15 +141,11 @@ private fun SearchDecoration(
         Magnifier(surface.contentColor.copy(alpha = HINT_ALPHA), Modifier.size(ICON_SIZE))
         Spacer(Modifier.width(ICON_GAP))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (query.isEmpty()) {
-                ThemedText(
-                    placeholder,
-                    Modifier.fieldNameText(),
-                    style = TextStyle(color = surface.contentColor.copy(alpha = HINT_ALPHA), fontSize = SEARCH_FONT_SIZE),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            FieldNameText(
+                placeholder,
+                query.isEmpty(),
+                TextStyle(color = surface.contentColor.copy(alpha = HINT_ALPHA), fontSize = SEARCH_FONT_SIZE),
+            )
             field()
         }
         FieldClearButton(query.isNotEmpty(), surface.contentColor, onClear)

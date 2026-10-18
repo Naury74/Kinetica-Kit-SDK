@@ -53,10 +53,7 @@ class ReadOnceTest {
             KChatInput(androidx.compose.foundation.text.input.rememberTextFieldState(), onSend = {}, label = "메시지", placeholder = "메시지")
         }
         val field = compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText))
-        assertThat(field.fetchSemanticsNode().config[SemanticsProperties.ContentDescription]).containsExactly("메시지")
-        // 안내 글은 숨겨서 TalkBack이 이름 뒤에 힌트로 또 읽지 않는다.
-        val hint = compose.onNode(androidx.compose.ui.test.hasText("메시지"), useUnmergedTree = true).fetchSemanticsNode()
-        assertThat(hint.config.contains(SemanticsProperties.HideFromAccessibility)).isTrue()
+        assertThat(field.mergedText()).containsExactly("메시지")
     }
 
     @Test
