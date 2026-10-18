@@ -50,11 +50,11 @@ Kinetica SDK 모듈 14개를 `com.naurylab:<모듈>:<버전>` 좌표로 Maven Ce
 3. 배포한 커밋에 태그를 달고 push합니다. README의 내려받기 링크가 `releases/latest/download/kinetica-showcase.apk`를 가리키므로, 샘플 앱 APK를 이 이름으로 GitHub Release에 함께 올립니다.
 
    ```bash
-   git tag v1.0.0-alpha03
-   git push origin main v1.0.0-alpha03
+   git tag v1.0.0-alpha04
+   git push origin main v1.0.0-alpha04
    cp sample-showcase/build/outputs/apk/release/sample-showcase-release.apk build/kinetica-showcase.apk
-   gh release create v1.0.0-alpha03 build/kinetica-showcase.apk --title "1.0.0-alpha03" \
-     --notes-file <(awk '/^## /{if (p) exit; if ($0 == "## 1.0.0-alpha03") {p = 1; next}} p' CHANGELOG.md)
+   gh release create v1.0.0-alpha04 build/kinetica-showcase.apk --title "1.0.0-alpha04" \
+     --notes-file <(awk '/^## /{if (p) exit; if ($0 == "## 1.0.0-alpha04") {p = 1; next}} p' CHANGELOG.md)
    ```
 
 올리지 않고 번들만 만들어 내용을 보려면 `./gradlew cleanCentralStaging centralBundle --no-configuration-cache`를 실행합니다.
@@ -68,7 +68,7 @@ Kinetica SDK 모듈 14개를 `com.naurylab:<모듈>:<버전>` 좌표로 Maven Ce
 ./gradlew publishDev -PallowDirty=true  # 커밋하지 않은 변경도 올린다
 ```
 
-- 14개 모듈을 `gradle.properties`의 `KINETICA_DEV_VERSION`(예: `1.0.0-alpha04-SNAPSHOT`)으로 `~/.naurylab/dev-repo`에 서명 없이 올립니다. 위치는 `-PnaurylabDevRepo=<경로>`로 바꿉니다.
+- 14개 모듈을 `gradle.properties`의 `KINETICA_DEV_VERSION`(예: `1.0.0-alpha05-SNAPSHOT`)으로 `~/.naurylab/dev-repo`에 서명 없이 올립니다. 위치는 `-PnaurylabDevRepo=<경로>`로 바꿉니다.
 - 어느 커밋에서 올렸는지 저장소 맨 위의 `kinetica-dev.txt`에 남습니다. 커밋하지 않은 변경을 올렸다면 커밋 뒤에 `-dirty`가 붙습니다.
 
 받는 쪽 프로젝트에는 한 번만 아래처럼 적어 둡니다. `-PnaurylabDev=true`를 줄 때만 개발 판 저장소를 보고, 그 저장소에서는 `com.naurylab` 묶음만 받습니다.
@@ -89,14 +89,14 @@ dependencyResolutionManagement {
 }
 
 // app/build.gradle.kts
-val kineticaVersion = providers.gradleProperty("kineticaVersion").getOrElse("1.0.0-alpha03")
+val kineticaVersion = providers.gradleProperty("kineticaVersion").getOrElse("1.0.0-alpha04")
 dependencies {
     implementation("com.naurylab:kinetica-ui:$kineticaVersion")
 }
 ```
 
 ```bash
-./gradlew :app:assembleDebug -PnaurylabDev=true -PkineticaVersion=1.0.0-alpha04-SNAPSHOT
+./gradlew :app:assembleDebug -PnaurylabDev=true -PkineticaVersion=1.0.0-alpha05-SNAPSHOT
 ```
 
 플래그를 빼면 Maven Central의 정식 판으로 돌아갑니다. 파일 저장소는 Gradle이 캐시하지 않으므로 `--refresh-dependencies` 없이도 새로 올린 판을 받습니다.
