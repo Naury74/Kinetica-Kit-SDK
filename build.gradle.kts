@@ -7,20 +7,20 @@ plugins {
 
 // SDK 모듈은 같은 좌표·POM으로 배포한다. 샘플·측정 도구는 배포하지 않는다.
 val sdkModules = mapOf(
-    "kinetica-core" to "불변 장면 문서, 좌표 계산, 명령·reducer, 검증 (Kotlin JVM)",
-    "kinetica-history" to "트랜잭션 실행 취소와 편집 세션",
-    "kinetica-motion" to "keyframe 평가, easing, 재생 제어, 장면 morph, 전환 진행률",
-    "kinetica-guides" to "옮길 때 안내선 스냅",
-    "kinetica-presets" to "모션 프리셋",
-    "kinetica-serialization" to "장면 JSON 읽기·쓰기, migration, 파일 저장소",
-    "kinetica-java" to "Java 호스트용 정적 입구(선택)",
-    "kinetica-render-compose" to "Compose Canvas 장면 그리기",
-    "kinetica-gestures" to "캔버스 포인터 상태 기계",
-    "kinetica-editor-compose" to "장면 편집 화면 KineticaEditor",
-    "kinetica-player-compose" to "읽기 전용 재생기와 전환",
-    "kinetica-board-compose" to "호스트 화면에 넣는 자유 배치·분할 보드와 제자리 편집",
-    "kinetica-export-android" to "PNG 내보내기",
-    "kinetica-ui" to "글래스 UI 키트: 뒤를 흐리게 비추는 표면·팝업·시트·탭바",
+    "kinetica-core" to "장면 문서 모델, 좌표 계산, 편집 명령과 검증 (Kotlin JVM)",
+    "kinetica-history" to "트랜잭션 단위 실행 취소와 편집 세션 (Kotlin JVM)",
+    "kinetica-motion" to "키프레임 평가, easing, 재생 제어, 장면 전환 진행률 (Kotlin JVM)",
+    "kinetica-guides" to "옮길 때 붙는 안내선 스냅 (Kotlin JVM)",
+    "kinetica-presets" to "효과 프리셋, 편집기 기본 UI 키트, 모션 프리셋",
+    "kinetica-serialization" to "장면 JSON 읽기와 쓰기, 마이그레이션, 파일 저장소, 서버 문서 받기",
+    "kinetica-java" to "Java 호스트용 정적 진입점",
+    "kinetica-render-compose" to "Compose 장면 렌더러와 누를 때, 등장, 반복 효과 Modifier.kineticaEffects",
+    "kinetica-gestures" to "캔버스 포인터 입력 처리",
+    "kinetica-editor-compose" to "앱 안에서 화면을 만드는 편집기 KineticaEditor",
+    "kinetica-player-compose" to "장면 재생기, 서버 주도 화면 RemoteKineticaPlayer, 장면 전환",
+    "kinetica-board-compose" to "사용자가 위젯을 옮기고 크기를 바꾸는 홈 화면 보드",
+    "kinetica-export-android" to "장면을 PNG로 내보내기",
+    "kinetica-ui" to "Compose UI와 모션 키트: 글래스, 단색, 톤 표면의 컴포넌트 200여 개와 효과",
 )
 
 val projectUrl = "https://github.com/Naury74/Kinetica-Kit-SDK"

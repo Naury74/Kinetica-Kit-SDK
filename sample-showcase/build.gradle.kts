@@ -13,7 +13,8 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "0.1.0"
+        // 샘플 앱은 SDK와 같은 버전으로 배포한다.
+        versionName = providers.gradleProperty("KINETICA_VERSION").get()
     }
 
     buildTypes {
