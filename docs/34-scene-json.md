@@ -1,12 +1,12 @@
 # 34 — 장면 JSON 형식 (스키마 버전 1)
 
 서버가 내려주는 화면(`RemoteSceneLoader`)과 저장 파일(`FileSceneRepository`)이 쓰는 형식이다. 서버에서 JSON을 직접 만들 때 이 문서를 따른다.
-가장 쉬운 방법은 앱의 편집기(`KineticaEditor`)로 화면을 만든 뒤 `SceneCodec().encode(document)` 결과를 서버에 올리는 것이다.
-코드로 문서를 만들 때는 `encode`가 읽을 수 없는 문서를 거부하고 어떤 규칙을 어겼는지 코드로 알려 준다. `SceneCodec.validate`로 미리 검사할 수도 있다.
+가장 쉬운 방법은 앱의 편집기 `KineticaEditor`로 화면을 만들고 `SceneCodec().encode(document)` 결과를 서버에 올리는 것이다.
+코드로 문서를 만들면 `encode`가 기기에서 읽지 못할 문서를 `IllegalArgumentException`으로 거부하고, 메시지에 위반 코드와 노드 id를 담는다. `SceneCodec.validate`로 미리 검사해도 된다.
 
 ## 짧은 예
 
-손으로 쓴 최소한의 예다. 기본값과 같은 항목은 빼도 된다. 이 예는 테스트(`SceneJsonDocTest`)가 실제로 읽어서 확인한다.
+손으로 쓴 작은 예다. 기본값과 같은 항목은 빼도 된다. `SceneJsonDocTest`가 이 예를 그대로 읽어 검사한다.
 
 ```json
 {
@@ -57,7 +57,7 @@
 }
 ```
 
-호스트 앱에서는 다음처럼 쓴다.
+호스트 앱에서는 이렇게 쓴다.
 
 ```kotlin
 RemoteKineticaPlayer(
@@ -72,9 +72,9 @@ RemoteKineticaPlayer(
 
 ## 단위와 좌표
 
-- 길이, 위치, 글자 크기는 모두 **문서 단위**다. 너비 1080인 artboard를 너비 약 393dp인 휴대폰에 맞추면 문서 단위 2.75가 약 1dp가 된다.
-  예를 들어 `fontSize: 44`는 16sp쯤이다. 재생기는 `SceneFit`에 따라 artboard를 화면에 맞춰 줄이거나 키운다.
-- `transform`의 `x`, `y`는 부모의 왼쪽 위를 기준으로 한다. 최상위 노드의 부모는 artboard다. 자동 레이아웃(`layout`)을 쓰는 Frame의 자식은 레이아웃이 위치를 정하므로 적지 않아도 된다.
+- 길이, 위치, 글자 크기는 모두 **문서 단위**다. 너비 1080인 artboard를 너비 약 393dp인 휴대폰에 맞추면 문서 단위 2.75가 약 1dp다.
+  그래서 `fontSize: 44`는 16sp쯤으로 보인다. 재생기는 `SceneFit`에 따라 artboard를 화면 크기에 맞춰 줄이거나 키운다.
+- `transform`의 `x`, `y`는 부모의 왼쪽 위가 기준이다. 최상위 노드의 부모는 artboard다. 자동 레이아웃(`layout`)을 쓰는 Frame의 자식은 레이아웃이 위치를 정하므로 적지 않아도 된다.
 - 색은 `#RRGGBB`나 `#AARRGGBB`로 쓴다.
 
 ## 문서
@@ -89,7 +89,7 @@ RemoteKineticaPlayer(
 | `animations` | | 타임라인 목록 |
 | `tokens` | | 색 토큰(이름 → 색). 노드의 `style.fillToken`이 참조한다 |
 | `extensions` | | 호스트가 따로 보관할 값(이름 → JSON). SDK는 읽지 않는다 |
-| `transition` | | 다른 화면에서 이 화면으로 바뀔 때의 전환. [장면 전환](#장면-전환-transition) 참고 |
+| `transition` | | 다른 화면에서 이 화면으로 넘어올 때의 전환. [장면 전환](#장면-전환-transition)을 보라 |
 
 ## 노드 공통
 
@@ -104,9 +104,9 @@ RemoteKineticaPlayer(
 | `visible` | | 기본값 `true` |
 | `bindings` | | 속성 → 데이터 키. 바인딩할 수 있는 속성은 `text` `visible` `imageUri` `fill` `opacity` `variant` |
 | `action` | | 누르면 호스트의 `onAction`에 넘길 문자열. `이름` 또는 `이름?키=값&키=값` 형태이며 URL에 안전한 문자만 쓴다 |
-| `effects` | | 움직임 효과. 아래 표 참고 |
+| `effects` | | 움직임 효과. [아래 표](#움직임-효과-effects)를 보라 |
 | `accessibility` | | `label`(스크린 리더가 읽을 이름) `role`(`button` `image` `heading`) `hidden`(장식용이라 읽지 않음) |
-| `constraints` | | 자동 레이아웃 밖에서 부모 크기가 바뀔 때 따르는 제약. `h`, `v` 각각 `start` `end` `both` `center` `scale` 중 하나 |
+| `constraints` | | 자동 레이아웃 밖에서 부모 크기가 바뀔 때 따르는 제약. `h`와 `v`에 각각 `start` `end` `both` `center` `scale` 가운데 하나를 쓴다 |
 | `fill` | | `true`면 자동 레이아웃 안에서 남는 공간을 채운다 |
 | `sizeLimits` | | `minWidth` `maxWidth` `minHeight` `maxHeight` |
 
@@ -131,14 +131,14 @@ RemoteKineticaPlayer(
 
 ## 장면 전환 `transition`
 
-문서 최상위의 `transition`은 다른 화면에서 이 화면으로 바뀔 때 쓰는 전환이다. 없으면 바로 바뀐다.
-재생기 `AnimatedScene`과 번들을 재생하는 `RemoteKineticaPlayer(bundle, sceneId)`가 이 값을 읽어, 화면이 바뀔 때 이전 화면에서 이 화면으로 전환한다.
-시스템의 '애니메이션 삭제' 설정이 켜져 있으면 전환 없이 바로 바뀐다.
+문서 최상위의 `transition`은 다른 화면에서 이 화면으로 넘어올 때 쓰는 전환이다. 없으면 바로 바뀐다.
+`AnimatedScene`과 번들을 재생하는 `RemoteKineticaPlayer(bundle, sceneId)`가 이 값을 읽고, 화면이 바뀔 때 이전 화면에서 이 화면으로 전환한다.
+시스템 설정의 '애니메이션 삭제'가 켜져 있으면 전환 없이 바로 바뀐다.
 
 | 키 | 필수 | 내용 |
 | --- | --- | --- |
 | `kind` | ○ | 아래 표의 전환 종류 |
-| `from` | | 들어오는 화면이 나오는 가장자리. `end`(기본) `start` `top` `bottom`. `start`와 `end`는 RTL 언어에서 좌우가 바뀐다. 방향이 없는 전환은 무시한다 |
+| `from` | | 새 화면이 들어오는 가장자리. `end`(기본) `start` `top` `bottom`. RTL 언어에서는 `start`와 `end`의 좌우가 바뀐다. 방향이 없는 전환에서는 무시한다 |
 | `durationMs` | | 전환 시간(ms). `0..10000`, 기본값 400 |
 | `easing` | | keyframe의 `easing`과 같은 형식. 기본값은 `cubicBezier`(0.42, 0, 0.58, 1)이다 |
 | `originX`, `originY` | | `iris`가 퍼지기 시작하는 점과 `zoom` 계열의 중심. 화면 크기에 대한 비율(0..1)이고 기본값은 0.5다 |
@@ -161,15 +161,15 @@ RemoteKineticaPlayer(
 | `flip` | 카드를 뒤집듯 3D로 돈다. 절반을 지나면 새 화면이 보인다 | ○ |
 | `cube` | 정육면체의 옆면으로 넘어가듯 3D로 돈다 | ○ |
 
-뒤로 가기로 이전 화면에 돌아갈 때는 재생기에 `forward = false`를 넘긴다. 같은 전환을 거꾸로 재생하므로 `push`면 위에 있던 화면이 원래 나왔던 쪽으로 빠지고,
-`cover`면 덮었던 화면이 걷힌다.
+뒤로 가기로 이전 화면에 돌아갈 때는 재생기에 `forward = false`를 넘긴다. 같은 전환을 거꾸로 재생하므로, `push`라면 위에 있던 화면이 들어왔던 쪽으로 빠지고
+`cover`라면 덮었던 화면이 걷힌다.
 
 ```json
 "transition": { "kind": "iris", "durationMs": 500, "originX": 0.85, "originY": 0.9 }
 ```
 
-동작 문자열에 `transition` 파라미터를 붙이면 문서의 전환 대신 쓸 수 있다. 예를 들어 `go?scene=promo&transition=wipe&from=bottom&durationMs=300`이다.
-호스트는 `SceneTransitionSpec.fromAction(SceneAction.parse(raw), 다음 화면.transition)`으로 전환을 얻어 재생기에 넘긴다. 알 수 없는 값은 무시한다.
+동작 문자열에 `transition` 파라미터를 붙이면 문서의 전환 대신 그 전환을 쓴다. 예를 들면 `go?scene=promo&transition=wipe&from=bottom&durationMs=300`이다.
+호스트는 `SceneTransitionSpec.fromAction(SceneAction.parse(raw), fallback)`으로 전환을 얻어 재생기에 넘긴다. `fallback`에 다음 화면 문서의 `transition`을 주면 파라미터로 준 값만 덮어쓴다. 알 수 없는 값이나 범위를 벗어난 값은 무시한다.
 
 ```kotlin
 var current by rememberSaveable { mutableStateOf("home") }
@@ -183,9 +183,9 @@ RemoteKineticaPlayer(bundle, current, transition = transition, onAction = { raw 
 })
 ```
 
-번들 하나에 화면 여러 개를 넣고 `sceneId`만 바꾸면 화면 문서의 `transition`대로 전환한다. 문서가 화면 id보다 한 프레임 늦게 도착해도 전환은 새 문서로 그린다.
-`sample-showcase`의 장면 전환 데모가 이 방식으로 홈, 상품, 결제 세 화면을 재생하고, 진행도 슬라이더로 `SceneTransition(from, to, spec, progress)`의 중간 프레임을 보여 준다.
-호스트 앱에서 쓰는 모습은 `consumer-check`의 `SceneBundleHostScreen`에 있다.
+번들 하나에 화면 여러 개를 넣고 `sceneId`만 바꾸면 각 화면 문서의 `transition`대로 전환한다. 문서가 화면 id보다 한 프레임 늦게 도착해도 전환은 새 문서로 그린다.
+`sample-showcase`의 장면 전환 데모가 이 방식으로 홈, 상품, 결제 세 화면을 재생하고, 진행률 슬라이더로 `SceneTransition(from, to, spec, progress)`의 중간 프레임을 보여 준다.
+호스트 앱 예는 `consumer-check`의 `SceneBundleHostScreen`에 있다.
 
 ## 타임라인 `animations`
 
@@ -199,7 +199,7 @@ RemoteKineticaPlayer(bundle, current, transition = transition, onAction = { raw 
 
 `property`는 `translationX` `translationY` `scaleX` `scaleY` `rotationDegrees` `opacity` `fill` `strokeWidth` `width` `height` `cornerRadius` `stroke` `blur` `shadowBlur` `shadowX` `shadowY` `shadowSpread` `shadowColor` `cornerTopLeft` `cornerTopRight` `cornerBottomRight` `cornerBottomLeft` `gradientStart` `gradientEnd` `gradientAngle` 중 하나다.
 
-keyframe의 키는 다음과 같다. 시각은 겹치지 않고 커지는 순서여야 한다.
+keyframe에 쓰는 키는 다음과 같다. 시각은 겹치지 않고 커지는 순서여야 한다.
 
 | 키 | 필수 | 내용 |
 | --- | --- | --- |
@@ -218,9 +218,9 @@ keyframe의 키는 다음과 같다. 시각은 겹치지 않고 커지는 순서
 
 ## 읽을 때의 규칙
 
-- 크기 상한(기본 10 MiB), JSON 문법, 스키마 버전, 필드 형식과 유한한 숫자, 문서 검증 순서로 확인한다. 하나라도 실패하면 문서 전체를 쓰지 않는다.
-  서버 화면은 이때 지금 보이는 문서를 그대로 두고, 실패 이유를 `RemoteSceneState.Ready.lastError`에 남긴다. 실패 정보에는 위치(`nodes[3].bounds`)와 코드가 들어 있다.
-- 모르는 키와 모르는 `accessibility.role`은 무시한다. 하지만 모르는 `type`, 효과 `kind`, `rotationDirection` 값이 있으면 실패로 처리한다.
-- `transition.kind`와 `transition.from`은 예외다. 전환은 화면 내용에 영향을 주지 않으므로, 이 버전이 모르는 값이면 실패로 처리하지 않고 `fade`와 `end`로 읽는다.
-  `transition`이 없는 예전 문서는 그대로 읽힌다.
-- 동작, 데이터 키, 호스트 뷰 키는 이름일 뿐이고 어떤 코드도 실행하지 않는다.
+- 크기 상한(기본 10 MiB), JSON 문법, 스키마 버전, 필드 형식과 유한한 숫자, 문서 검증 순으로 확인한다. 하나라도 실패하면 문서 전체를 버린다.
+  서버 화면은 이때 지금 보이는 문서를 그대로 두고 실패 이유를 `RemoteSceneState.Ready.lastError`에 남긴다. 실패 정보에는 위치(`nodes[3].bounds`)와 코드가 들어 있다.
+- 모르는 키와 모르는 `accessibility.role`은 무시한다. 모르는 `type`, 효과 `kind`, `rotationDirection` 값은 실패로 처리한다.
+- `transition.kind`와 `transition.from`만은 예외다. 전환은 화면 내용과 상관이 없으므로, 이 버전이 모르는 값이 와도 실패로 처리하지 않고 각각 `fade`와 `end`로 읽는다.
+  `transition`이 없는 예전 문서도 그대로 읽힌다.
+- 동작, 데이터 키, 호스트 뷰 키는 이름일 뿐이며 어떤 코드도 실행하지 않는다.

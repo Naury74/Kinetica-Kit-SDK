@@ -69,7 +69,7 @@ import androidx.compose.ui.unit.sp
  *   한도에 가까워졌을 때만 보이려면 [counterThreshold]를 쓴다.
  * @param imeSend `true`면 화면 키보드의 Enter 키가 보내기 키(`ImeAction.Send`)가 되어 누르면 보낸다. `false`면 줄 바꿈 키다.
  *   하드웨어 키보드의 Enter는 이 값과 관계없이 보낸다.
- * @param label TalkBack이 읽는 입력란 이름. 글자가 있든 없든 입력란 접근성 노드의 contentDescription으로 남는다.
+ * @param label TalkBack이 읽는 입력란 이름. 글을 쓰는 동안에도 입력란 안의 보이지 않는 글자로 남아 이름으로 읽힌다.
  *   null이면 [placeholder]를, 그것도 null이면 '메시지'를 이름으로 쓴다.
  * @param counterThreshold [maxLength]가 있을 때 남은 글자 수가 이 값 이하가 되어야 글자 수를 보여 준다. 예를 들어 최대 500자에
  *   50을 주면 450자부터 보인다. 이 값을 주면 [showCounter]와 관계없이 이 규칙을 따른다. 0이면 꽉 찼을 때만 보인다.
@@ -122,7 +122,7 @@ public fun KChatInput(
  *   한도에 가까워졌을 때만 보이려면 [counterThreshold]를 쓴다.
  * @param imeSend `true`면 화면 키보드의 Enter 키가 보내기 키(`ImeAction.Send`)가 되어 누르면 보낸다. `false`면 줄 바꿈 키다.
  *   하드웨어 키보드의 Enter는 이 값과 관계없이 보낸다.
- * @param label TalkBack이 읽는 입력란 이름. 글자가 있든 없든 입력란 접근성 노드의 contentDescription으로 남는다.
+ * @param label TalkBack이 읽는 입력란 이름. 글을 쓰는 동안에도 입력란 안의 보이지 않는 글자로 남아 이름으로 읽힌다.
  *   null이면 [placeholder]를, 그것도 null이면 '메시지'를 이름으로 쓴다.
  * @param counterThreshold [maxLength]가 있을 때 남은 글자 수가 이 값 이하가 되어야 글자 수를 보여 준다. 예를 들어 최대 500자에
  *   50을 주면 450자부터 보인다. 이 값을 주면 [showCounter]와 관계없이 이 규칙을 따른다. 0이면 꽉 찼을 때만 보인다.
