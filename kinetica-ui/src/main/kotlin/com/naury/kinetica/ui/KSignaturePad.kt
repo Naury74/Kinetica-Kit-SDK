@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -256,7 +257,8 @@ public fun KSignaturePad(
         modifier
             .heightIn(min = PAD_MIN_HEIGHT)
             .kSurface(surface, PAD_SHAPE)
-            .semantics {
+            // 묶지 않으면 자식이 있는 이 노드에 TalkBack이 멈추지 않는다. 지우기 버튼은 따로 누를 수 있게 남는다.
+            .semantics(mergeDescendants = true) {
                 contentDescription = title
                 stateDescription = status
                 if (!empty) {
@@ -279,7 +281,8 @@ public fun KSignaturePad(
             Modifier
                 .align(Alignment.BottomStart)
                 .padding(start = GUIDE_INSET + HINT_INDENT, bottom = HINT_BOTTOM)
-                .graphicsLayer { alpha = hintAlpha },
+                .graphicsLayer { alpha = hintAlpha }
+                .then(if (empty) Modifier else Modifier.clearAndSetSemantics {}),
             style = TextStyle(color = surface.contentColor.copy(alpha = HINT_ALPHA), fontSize = HINT_FONT_SIZE),
             maxLines = 1,
         )

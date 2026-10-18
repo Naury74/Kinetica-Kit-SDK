@@ -125,7 +125,7 @@ public fun KAreaChart(
     val outer = LocalLayoutDirection.current
     val frame = AreaFrame(data, series, names, labels, valueFormatter, surface)
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr, LocalChartTextDirection provides outer) {
-        Column(modifier.defaultMinSize(AREA_MIN_WIDTH, AREA_MIN_HEIGHT).semantics { contentDescription = summary }) {
+        Column(modifier.defaultMinSize(AREA_MIN_WIDTH, AREA_MIN_HEIGHT).chartSummary(summary)) {
             Box(Modifier.fillMaxWidth().weight(1f).onSizeChanged { plot.size = it }.areaGestures(plot, pick)) {
                 Spacer(
                     Modifier
@@ -297,7 +297,7 @@ private fun BoxScope.AreaTargets(frame: AreaFrame, selected: Int, choose: (Int) 
     Row(Modifier.matchParentSize().chartTable(count, 1)) {
         repeat(count) { i ->
             Box(
-                Modifier.weight(1f).fillMaxHeight().chartCell(i, 0).semantics {
+                Modifier.weight(1f).fillMaxHeight().chartCell(i, 0).semantics(mergeDescendants = true) {
                     contentDescription = descriptions[i]
                     this.selected = i == selected
                     onClick {

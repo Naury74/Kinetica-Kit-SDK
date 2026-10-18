@@ -112,7 +112,7 @@ public fun KMultiBarChart(
     val haptic = LocalHapticFeedback.current
     val outer = LocalLayoutDirection.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr, LocalChartTextDirection provides outer) {
-        Column(modifier.defaultMinSize(BARS_MIN_WIDTH, BARS_MIN_HEIGHT).semantics { contentDescription = summary }) {
+        Column(modifier.defaultMinSize(BARS_MIN_WIDTH, BARS_MIN_HEIGHT).chartSummary(summary)) {
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -313,7 +313,7 @@ private fun BoxScope.BarsTargets(frame: BarsFrame, selected: Int, toggle: (Int) 
     Row(Modifier.matchParentSize().chartTable(count, 1)) {
         repeat(count) { i ->
             Box(
-                Modifier.weight(1f).fillMaxHeight().chartCell(i, 0).semantics {
+                Modifier.weight(1f).fillMaxHeight().chartCell(i, 0).semantics(mergeDescendants = true) {
                     contentDescription = descriptions[i]
                     this.selected = i == selected
                     onClick {

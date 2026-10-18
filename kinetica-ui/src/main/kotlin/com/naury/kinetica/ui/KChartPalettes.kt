@@ -9,6 +9,7 @@ import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.CollectionItemInfo
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.collectionItemInfo
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -113,6 +114,12 @@ internal fun defaultChartColors(): List<Color> = KChartPalettes.categorical(Kine
 
 /** TalkBack이 표로 읽도록 행과 열 수를 알린다. */
 internal fun Modifier.chartTable(rows: Int, columns: Int): Modifier = semantics { collectionInfo = CollectionInfo(rows, columns) }
+
+/**
+ * 차트 전체 요약. 묶지 않으면 자식이 있는 이 노드에 TalkBack이 멈추지 않는다. 축 이름은 요약에 함께 읽히고,
+ * 막대, 점, 조각 칸은 스스로 묶어 따로 멈춘다.
+ */
+internal fun Modifier.chartSummary(summary: String): Modifier = semantics(mergeDescendants = true) { contentDescription = summary }
 
 /** 표의 한 칸. [chartTable] 안에서 행과 열 번호를 알린다. */
 internal fun Modifier.chartCell(row: Int, column: Int): Modifier = semantics { collectionItemInfo = CollectionItemInfo(row, 1, column, 1) }

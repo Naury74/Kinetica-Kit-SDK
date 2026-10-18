@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.onClick
@@ -126,7 +127,7 @@ public fun KDonutChart(
         modifier
             .defaultMinSize(DONUT_SIZE, DONUT_SIZE)
             .aspectRatio(1f)
-            .semantics { contentDescription = summary }
+            .chartSummary(summary)
             .onSizeChanged { plot.size = it }
             .donutTaps(plot, arcs, choose)
             .drawWithCache {
@@ -279,7 +280,7 @@ private fun BoxScope.SliceTargets(
                 val description =
                     stringResource(R.string.kinetica_ui_chart_slice, slice.label, valueFormatter(slice.value), arcs.percent(i))
                 Box(
-                    Modifier.size(thickness).semantics {
+                    Modifier.size(thickness).semantics(mergeDescendants = true) {
                         contentDescription = description
                         this.selected = i == selected
                         traversalIndex = i.toFloat()
@@ -315,6 +316,8 @@ private fun DonutCenter(slices: List<ChartSlice>, selected: Int?, valueFormatter
             (fadeIn(tween(CENTER_FADE_MS)) + scaleIn(initialScale = CENTER_SCALE)) togetherWith
                 fadeOut(tween(CENTER_FADE_MS))
         },
+        // 합계는 차트 요약이, 고른 조각은 조각 칸이 읽으므로 기본 가운데 글자는 차트 요약에 다시 합치지 않는다.
+        modifier = Modifier.clearAndSetSemantics {},
         label = "donut-center",
     ) { index ->
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {

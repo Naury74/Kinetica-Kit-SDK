@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -87,9 +88,15 @@ public fun KStepIndicator(
     )
     val state = stringResource(R.string.kinetica_ui_step_of, steps.size, at + 1, steps[at])
     val look = TimelineLook(KineticaTheme.colors.accent, KineticaTheme.colors.destructive, surface.contentColor, surface)
-    val semantics = Modifier.semantics {
+    val properties: SemanticsPropertyReceiver.() -> Unit = {
         stateDescription = state
         progressBarRangeInfo = ProgressBarRangeInfo((at + 1).toFloat(), 1f..steps.size.toFloat(), (steps.size - 2).coerceAtLeast(0))
+    }
+    // 자식이 있는 채로 묶지 않으면 TalkBack이 이 진행 상태에 멈추지 않는다. 막대형의 글자는 상태 문구와 같은 말이라 지운다.
+    val semantics = if (style == KStepStyle.Bar) {
+        Modifier.clearAndSetSemantics(properties)
+    } else {
+        Modifier.semantics(mergeDescendants = true, properties = properties)
     }
     when (style) {
         KStepStyle.Numbered -> NumberedSteps(steps, at, modifier.then(semantics), look, onStepClick)

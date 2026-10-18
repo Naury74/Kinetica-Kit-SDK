@@ -354,7 +354,7 @@ public fun KPinDots(
     Row(
         modifier
             .shake(shakes.intValue)
-            .semantics {
+            .semantics(mergeDescendants = true) {
                 stateDescription = state
                 liveRegion = LiveRegionMode.Polite
             },

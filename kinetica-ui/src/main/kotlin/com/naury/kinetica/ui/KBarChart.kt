@@ -114,7 +114,7 @@ public fun KBarChart(
     val direction = if (horizontal) outer else LayoutDirection.Ltr
     CompositionLocalProvider(LocalLayoutDirection provides direction, LocalChartTextDirection provides outer) {
         val frame = BarFrame(content, morph, plot, timing, BarMotion(reveal::value, dim, selected))
-        val chart = modifier.defaultMinSize(BAR_MIN_WIDTH, BAR_MIN_HEIGHT).semantics { contentDescription = summary }
+        val chart = modifier.defaultMinSize(BAR_MIN_WIDTH, BAR_MIN_HEIGHT).chartSummary(summary)
         if (horizontal) {
             Row(chart) {
                 BarLabels(content, horizontal = true)
@@ -313,7 +313,7 @@ private fun BoxScope.BarTargets(content: BarContent, horizontal: Boolean, select
     val descriptions = content.values.indices.map { barDescription(content, it) }
     val cell: @Composable (Modifier, Int) -> Unit = { cellModifier, index ->
         Box(
-            cellModifier.semantics {
+            cellModifier.semantics(mergeDescendants = true) {
                 contentDescription = descriptions[index]
                 this.selected = index == selected
                 onClick {

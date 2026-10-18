@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -109,7 +110,8 @@ public fun KMapPin(
             scaleX = scale
             scaleY = scale
         }
-        .semantics {
+        // 묶지 않으면 누를 수 없는 핀에 TalkBack이 멈추지 않는다. 핀 안 글자는 이름이 이미 말하므로 따로 지운다.
+        .semantics(mergeDescendants = true) {
             name?.let { this.contentDescription = it }
             this.selected = selected
             if (onClick != null) role = Role.Button
@@ -175,6 +177,7 @@ private fun ClusterPin(count: Int, colors: ToneColors, modifier: Modifier, onCli
             } else {
                 "$count"
             },
+            Modifier.clearAndSetSemantics {},
             style = TextStyle(color = colors.onColor, fontSize = 14.sp, fontWeight = FontWeight.Bold),
         )
     }
@@ -206,7 +209,12 @@ private fun TagPin(
             .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp + TAG_POINTER),
         contentAlignment = Alignment.Center,
     ) {
-        ThemedText(label, style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.Bold), maxLines = 1)
+        ThemedText(
+            label,
+            Modifier.clearAndSetSemantics {},
+            style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+            maxLines = 1,
+        )
     }
 }
 

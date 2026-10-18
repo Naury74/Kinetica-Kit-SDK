@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.selected
@@ -111,7 +112,7 @@ public fun KPieChart(
     val summary = pluralStringResource(R.plurals.kinetica_ui_chart_pie, slices.size, slices.size, valueFormatter(arcs.total))
     val haptic = LocalHapticFeedback.current
     val outer = LocalLayoutDirection.current
-    Column(modifier.semantics { contentDescription = summary }, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.chartSummary(summary), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
                 .widthIn(max = PIE_MAX)
@@ -244,7 +245,7 @@ private fun PieLabels(
                 val description =
                     stringResource(R.string.kinetica_ui_chart_slice, slice.label, spec.valueFormatter(slice.value), percent)
                 Box(
-                    Modifier.size(LABEL_BOX).chartCell(i, 0).semantics {
+                    Modifier.size(LABEL_BOX).chartCell(i, 0).semantics(mergeDescendants = true) {
                         contentDescription = description
                         selected = i == spec.selected
                         traversalIndex = i.toFloat()
@@ -257,7 +258,12 @@ private fun PieLabels(
                 ) {
                     if (spec.showPercent && percent >= MIN_LABEL_PERCENT) {
                         val ink = if (slice.color.luminance() > LIGHT_SLICE) Color.Black.copy(alpha = DARK_INK) else Color.White
-                        ThemedText("$percent%", style = TextStyle(color = ink, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+                        // 조각 이름에 비율이 이미 있어 두 번 읽지 않는다.
+                        ThemedText(
+                            "$percent%",
+                            Modifier.clearAndSetSemantics {},
+                            style = TextStyle(color = ink, fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                        )
                     }
                 }
             }

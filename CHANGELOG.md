@@ -124,6 +124,7 @@ UI·모션 키트(`kinetica-ui`)를 중심으로, 위젯 보드와 화면 편집
 
 ### 고친 것
 
+- 차트(`KBarChart`, `KLineChart`, `KAreaChart`, `KMultiBarChart`, `KPieChart`, `KDonutChart`)의 요약, `KPinDots`, `KSignaturePad`, `KStepIndicator`, 누를 수 없는 `KMapPin`을 TalkBack이 쓸어 넘길 때 건너뛰던 문제. 이름만 붙이고 자식을 묶지 않아 멈추는 노드가 아니었습니다. 이제 차트는 요약과 축 이름을 한 번에 읽은 뒤 막대, 점, 조각 칸으로 넘어가고, 핀과 단계 막대, 파이 비율처럼 이름과 같은 말인 안쪽 글자는 따로 읽지 않습니다
 - `BeforeAfterSlider`를 TalkBack이 쓸어 넘길 때 건너뛰던 문제(자식이 남은 채 묶지 않아 멈추는 노드가 아니었습니다. 이제 "전후 비교, 전 50%, 후 50%" 슬라이더 하나로 읽습니다)
 - `KSearchBar`, `KSearchView`, `KTagInput`에서 TalkBack이 입력란 이름 없이 "편집 상자"만 읽던 문제. 이름을 편집 노드의 contentDescription 대신 입력란 안 글자로 내보내고, 글을 쓰면 투명하게 남겨 계속 읽게 합니다. `KChatInput`도 같은 방식으로 바꿔 이름이 빠지거나 두 번 읽히지 않습니다. 테스트에서 이 입력란들을 contentDescription으로 찾았다면 `hasSetTextAction()`이나 글자로 찾아야 합니다
 - Android 16에서 `KExpandable`과 `KSpeedDial`의 펼침 상태를 TalkBack이 두 번 읽던 문제("collapsed, 접힘"). Android 16부터는 펼침 동작만 알리고, 그 전 버전은 상태 문구를 그대로 넣습니다

@@ -128,7 +128,7 @@ public fun KLineChart(
     val buffers = remember(series.size) { List(series.size) { ChartLineBuffer() } }
     val outer = LocalLayoutDirection.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr, LocalChartTextDirection provides outer) {
-        Column(modifier.defaultMinSize(LINE_MIN_WIDTH, LINE_MIN_HEIGHT).semantics { contentDescription = summary }) {
+        Column(modifier.defaultMinSize(LINE_MIN_WIDTH, LINE_MIN_HEIGHT).chartSummary(summary)) {
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -284,7 +284,7 @@ private fun BoxScope.PointTargets(
         repeat(count) { index ->
             val description = pointDescription(series, labels, index, valueFormatter)
             Box(
-                Modifier.weight(1f).fillMaxHeight().semantics {
+                Modifier.weight(1f).fillMaxHeight().semantics(mergeDescendants = true) {
                     contentDescription = description
                     onClick {
                         onToggle(index)
