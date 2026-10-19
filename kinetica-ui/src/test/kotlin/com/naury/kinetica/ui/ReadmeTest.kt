@@ -22,7 +22,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** README.md 사용법의 예가 지금 API로 컴파일되고 동작하는지 확인한다. README 예를 고치면 여기도 함께 고친다. */
+/** README.md 사용법의 예와 docs/35 다이얼로그 예가 지금 API로 컴파일되고 동작하는지 확인한다. README 예를 고치면 여기도 함께 고친다. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34])
