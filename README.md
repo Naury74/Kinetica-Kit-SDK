@@ -28,7 +28,7 @@
 ## 기능
 
 - **컴포넌트**: 입력란과 휠 피커, 여러 높이에 멈추는 바텀 시트, 쌓이는 토스트, 다이내믹 아일랜드 알림, 차트, 사진 뷰어처럼 앱에서 자주 만드는 UI를 바로 씁니다.
-- **표면 스타일**: 글래스 15종, 단색 6종, 브랜드 색으로 만드는 톤이 있습니다. 앱 전체에 하나를 정해 두고, 필요한 컴포넌트만 따로 바꿀 수도 있습니다.
+- **표면 스타일**: 글래스 17종, 단색 6종, 브랜드 색으로 만드는 톤이 있습니다. 앱 전체에 하나를 정해 두고, 필요한 컴포넌트만 따로 바꿀 수도 있습니다.
 - **디자인 언어**: Cupertino, Material, One UI, Fluent, Brutal, Soft 중 하나를 고르면 모서리, 그림자, 간격, 컨트롤 모양, 애니메이션 속도가 함께 바뀝니다.
 - **모션**: 젤리처럼 눌리는 버튼, 글로우 테두리, 기기를 기울이면 따라 움직이는 3D 카드, 숫자 롤링, 컨페티를 수정자 하나로 붙입니다.
 - **화면 전환**: 가장자리에서 밀어 뒤로 가는 push 내비게이션, 카드가 커지며 열리는 상세 화면, 공유 요소 전환까지 22가지 전환이 있습니다.
@@ -110,7 +110,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.naurylab:kinetica-ui:1.0.0-alpha04")
+    implementation("com.naurylab:kinetica-ui:1.0.0-alpha05")
 }
 ```
 
@@ -165,7 +165,7 @@ setContent {
 
 | 원하는 느낌 | `surface` 값 | 블러 |
 | --- | --- | --- |
-| 뒤가 비치는 글래스 | `SurfaceStyles.Liquid`, `LiquidDark`, `Acrylic`, `OneUiGlass`, `Vision`, `Frosted`, `Mica` 등 15종 | Android 12 이상에서만 보이고, 그 아래에서는 반투명한 색으로 그립니다 |
+| 뒤가 비치는 글래스 | `SurfaceStyles.Liquid`, `LiquidDark`, `Acrylic`, `OneUiGlass`, `Vision`, `Frosted`, `Mica`, 바 전용 `BarGlass` 등 17종 | Android 12 이상에서만 보이고, 그 아래에서는 반투명한 색으로 그립니다 |
 | 깔끔한 단색 | `SurfaceStyles.CleanLight`, `CleanDark`, `OneUi`, `OneUiDark`, `Material`, `MaterialDark`, 직접 만드는 `SurfaceStyle.Solid(…)` | 없음. 모든 버전에서 똑같이 보입니다 |
 | 브랜드 색을 입힌 톤 | `SurfaceStyles.tonal(brandColor, dark)`, `Tonal`, `TonalDark` | 없음 |
 

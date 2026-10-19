@@ -29,7 +29,7 @@
 ## 시작하기
 
 ```kotlin
-implementation("com.naurylab:kinetica-ui:1.0.0-alpha04")
+implementation("com.naurylab:kinetica-ui:1.0.0-alpha05")
 ```
 
 Compose foundation 위에 만들었고 Material 3에는 의존하지 않는다. Material 3 앱에 함께 넣어도 된다. 폴더블 정보를 읽으려고 `androidx.window`를 함께 가져온다.
@@ -65,6 +65,19 @@ KineticaScaffold(
   다이얼로그와 바텀 시트, 토스트는 화면 전체를 블러 처리해 비춘다. 그래서 글래스를 어디에 두어도 자기 자신을 비추지 않는다.
 - 단색이나 톤 표면이면 배경을 기록하지 않고 기록용 레이어도 만들지 않는다. 블러 비용이 없고, 표면의 `background` 색을 바탕에 칠한다.
 - 다이얼로그, 시트, 토스트는 `KineticaScaffold` 밖에서 불러도 동작한다. 차이는 [호스트 앱에서 쓸 때](#호스트-앱에서-쓸-때)에 있다.
+
+
+화면 폭 전체 바에는 `SurfaceStyles.BarGlass`(어두운 화면은 `BarGlassDark`)를 권한다. `Liquid`처럼 옅게 덮고 굴절과 글로우 테두리가 있는 프리셋은 사진 격자 같은 복잡한 내용 위에서 제목과 버튼이 잘 읽히지 않는다. `BarGlass`는 색을 진하게 덮고 테두리와 그림자 없이 화면 가장자리와 이어진다.
+
+바만 글래스로 블러하고 목록과 카드는 단색으로 두려면 `surface`에 글래스를, `contentSurface`에 단색을 준다. 콘텐츠 바탕은 단색 표면의 바탕색으로 칠하고, 위아래 바는 그 위로 지나가는 목록을 블러로 비춘다.
+
+```kotlin
+KineticaScaffold(
+    surface = SurfaceStyles.BarGlass,          // 바와 스캐폴드 위층은 글래스
+    contentSurface = SurfaceStyles.CleanLight, // 목록, 칩, 카드는 단색
+    topBar = { KTopAppBar("갤러리") },
+) { padding -> LazyColumn(contentPadding = padding) { … } }
+```
 
 ## 테마와 표면 스타일
 
@@ -131,7 +144,7 @@ BasicText("내 프로젝트", style = KineticaTheme.typography.title.copy(color 
 
 | 종류 | 그리는 방법 | 프리셋 |
 | --- | --- | --- |
-| `SurfaceStyle.Glass(style)` | 배경을 블러 처리해 비춘다. 블러 값은 `GlassStyle`이 정한다 | `SurfaceStyles.Liquid`, `LiquidDark`, `Acrylic`, `AcrylicDark`, `OneUiGlass`, `OneUiGlassDark`, `Vision`, `Frosted`, `Mica`, `MicaDark`, `MaterialGlass`, `MaterialGlassDark`, `HarmonyOs`, `Obsidian`, `Pastel` |
+| `SurfaceStyle.Glass(style)` | 배경을 블러 처리해 비춘다. 블러 값은 `GlassStyle`이 정한다 | `SurfaceStyles.Liquid`, `LiquidDark`, `Acrylic`, `AcrylicDark`, `OneUiGlass`, `OneUiGlassDark`, `Vision`, `Frosted`, `Mica`, `MicaDark`, `MaterialGlass`, `MaterialGlassDark`, `HarmonyOs`, `Obsidian`, `Pastel`, 화면 폭 바 전용 `BarGlass`, `BarGlassDark` |
 | `SurfaceStyle.Solid(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, sheen, borderEnd, shadowColor)` | 단색 표면. 테두리(`borderEnd`를 주면 위아래 두 색 그라디언트), 그림자(`shadowColor`로 색과 진하기), 위쪽 광택(`sheen`)을 줄 수 있다 | `SurfaceStyles.CleanLight`, `CleanDark`, `OneUi`, `OneUiDark`, `Material`, `MaterialDark`, `LiteGlass`, `LiteGlassDark` |
 | `SurfaceStyle.Tonal(accent, dark, elevation)` | 강조색을 옅게 섞은 표면. 톤 표면끼리 겹쳐도 경계가 보이도록 옅은 강조색 테두리를 두른다 | `SurfaceStyles.Tonal`, `TonalDark`, `SurfaceStyles.tonal(색, dark)` |
 
@@ -547,7 +560,7 @@ KStatusBadge("배송 중", KStatus.Info)
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `KTopAppBar` | 상단 앱 바. `rememberKTopAppBarState(listState)`를 넘기면 맨 위에서는 배경이 없다가 콘텐츠가 바 아래로 지나갈 때 배경과 경계선이 나타난다. 높이가 고정이라 콘텐츠 패딩이 바뀌지 않는다. `Medium`은 26sp 제목이 스크롤하면 접힌다. 제목 자리에 컴포저블을 받는 오버로드가 있고, 눌러서 목록을 펴는 제목은 `KTopAppBarDropdownTitle`로 만든다 | `variant`(`Small`, `CenterAligned`, `Medium`), `state`, `onBack`, `actions`, `title` 슬롯 |
+| `KTopAppBar` | 상단 앱 바. `rememberKTopAppBarState(listState)`(격자는 `LazyGridState`, `LazyStaggeredGridState`, 그 밖은 `ScrollState`)를 넘기면 맨 위에서는 배경이 없다가 콘텐츠가 바 아래로 지나갈 때 배경과 경계선이 나타난다. 높이가 고정이라 콘텐츠 패딩이 바뀌지 않는다. `Medium`은 26sp 제목이 스크롤하면 접힌다. 제목 자리에 컴포저블을 받는 오버로드가 있고, 눌러서 목록을 펴는 제목은 `KTopAppBarDropdownTitle`로 만든다 | `variant`(`Small`, `CenterAligned`, `Medium`), `state`, `onBack`, `actions`, `title` 슬롯 |
 | `KLargeTitleBar` | One UI와 iOS 스타일의 34sp 큰 제목. 목록을 스크롤하면 큰 제목이 줄어들며 위 바의 작은 제목으로 바뀌고, 접힌 바의 배경은 아래로 옅어진다. 목록에 `Modifier.nestedScroll(state.connection)`을 붙인다. `bottom`에 넣은 탭이나 검색창은 큰 제목과 함께 올라가 작은 바 밑에 붙는다 | `rememberKLargeTitleState()`, `bottom`, `contentMaxWidth` |
 | `KBottomAppBar` | 화면 아래 도구 막대 | `actions`, `floatingActionButton` |
 | `KFloatingToolbar` | 떠 있는 캡슐 도구 막대. `rememberKFloatingToolbarState()`의 `connection`을 목록에 붙이면 아래로 스크롤할 때 접히고 위로 스크롤하면 펼쳐진다. FAB는 캡슐 옆에 남는다 | `expanded`, `floatingActionButton` |

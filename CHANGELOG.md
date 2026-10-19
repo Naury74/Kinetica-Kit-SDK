@@ -13,7 +13,10 @@
 - `KDialog`, `KAlertDialog`의 `appearScale`: 카드가 열리기 시작할 때의 크기 배율. 기본값 `KSheetDefaults.DialogAppearScale`(0.6)이면 전과 같고, 1에 가까울수록 `origin`에서 커지기보다 미끄러져 들어오며 나타납니다.
 - `SurfaceStyle.Solid`의 `borderEnd`(지정하면 위 `border`에서 아래 `borderEnd`로 바뀌는 세로 그라디언트 테두리)와 `shadowColor`(그림자 색, 알파가 진하기). 기본값 `Color.Unspecified`면 전과 같습니다.
 
-- 바뀐 함수(`KChipRow`, `KChipGroup`, `KSlider`, `KDialSlider`, `KDialog`, `KSheet`, `KAlertDialog`)와 `SurfaceStyle.Solid`의 1.0.0-alpha04 시그니처는 바이너리 호환을 위해 숨긴 오버로드와 생성자로 남깁니다.
+- `KineticaScaffold`의 `contentSurface`: 바와 위층은 `surface`(예: 글래스)로 블러하고, 콘텐츠 안 컴포넌트의 기본 표면만 다른 표면(예: 단색)으로 둡니다. 기본값은 `surface`라 전과 같습니다.
+- `SurfaceStyles.BarGlass`, `BarGlassDark`(`GlassStyles.Bar`, `BarDark`): 화면 폭 전체 바용 글래스. 사진 격자 위에서도 제목과 버튼이 읽히도록 색을 진하게 덮고 테두리와 그림자가 없습니다.
+- `rememberKTopAppBarState(LazyGridState)`, `rememberKTopAppBarState(LazyStaggeredGridState)`: 사진 격자의 실제 스크롤 위치로 상단 바 배경과 접힘을 정합니다.
+- 바뀐 함수(`KineticaScaffold`, `KChipRow`, `KChipGroup`, `KSlider`, `KDialSlider`, `KDialog`, `KSheet`, `KAlertDialog`)와 `SurfaceStyle.Solid`의 1.0.0-alpha04 시그니처는 바이너리 호환을 위해 숨긴 오버로드와 생성자로 남깁니다.
 
 ### 바뀐 것
 
