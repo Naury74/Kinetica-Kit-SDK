@@ -32,11 +32,13 @@
 - **디자인 언어**: Cupertino, Material, One UI, Fluent, Brutal, Soft 중 하나를 고르면 모서리, 그림자, 간격, 컨트롤 모양, 애니메이션 속도가 함께 바뀝니다.
 - **모션**: 젤리처럼 눌리는 버튼, 글로우 테두리, 기기를 기울이면 따라 움직이는 3D 카드, 숫자 롤링, 컨페티를 수정자 하나로 붙입니다.
 - **화면 전환**: 가장자리에서 밀어 뒤로 가는 push 내비게이션, 카드가 커지며 열리는 상세 화면, 공유 요소 전환까지 22가지 전환이 있습니다.
+- **편집 도구 컨트롤**: 사진 앱 보정처럼 눈금을 끌어 값을 고르는 다이얼, 기준값에 붙고 두 번 탭하면 돌아가는 슬라이더, 사진 위에 고른 순서를 보여 주는 선택 표시, 캔버스 위에 떠 있는 블러 없는 가벼운 유리 버튼을 씁니다.
 - **영상 통화 화면**: 참가자 그리드, 발표자 고정, 컨트롤 바, 반응 이모지, 걸려 오는 전화 화면을 `KCallScreen` 하나로 띄웁니다. 부품만 가져다 직접 조립해도 됩니다.
 - **위젯 보드**: 사용자가 홈 화면 위젯을 옮기고, 크기를 바꾸고, 겹쳐서 스택으로 만듭니다. 배치는 저장됩니다.
 - **화면 에디터와 서버 드리븐 UI**: 운영자가 앱 안에서 화면을 만들고 애니메이션을 붙입니다. 서버에서 JSON만 바꾸면 앱을 업데이트하지 않고도 화면이 바뀝니다.
 - **접근성**: TalkBack, 키보드 조작, 아랍어 같은 RTL 언어, 큰 글꼴을 지원합니다. 시스템의 '애니메이션 삭제'를 켜면 움직임을 줄입니다.
 - **폴더블과 태블릿**: 넓은 화면에서는 목록과 상세를 나란히 놓고, 접고 펼쳐도 하던 상태가 그대로 남습니다.
+- **다른 SDK 안에 넣기**: 진동 끄기, 움직임 줄이기, 채운 버튼의 명암비 기준을 호스트 설정에 맞추고, 호스트 팔레트의 보조 글자색과 올라온 면 색을 그대로 씁니다. 컴포넌트 문구는 13개 언어로 나옵니다.
 - **XML 화면**: Compose를 쓰지 않는 화면에서도 시트, 다이얼로그, 토스트, 글래스 표면을 쓸 수 있습니다.
 
 ## 화면
@@ -195,6 +197,24 @@ KToastHost(toast)
 ```
 
 `KineticaScaffold` 밖에서 불러도 됩니다. 이때는 다이얼로그와 시트, 토스트가 각자 창을 띄우므로, Material `Scaffold`를 쓰는 화면에서도 그대로 동작합니다.
+
+### 다른 SDK나 앱 설정과 맞추기
+
+Kinetica를 SDK 안에 넣어 배포하거나 앱에 진동, 움직임 설정이 따로 있다면 화면 루트에서 이 값을 넘깁니다. 모든 컴포넌트가 따릅니다.
+
+```kotlin
+CompositionLocalProvider(
+    LocalKineticaHaptics provides settings.haptics,         // false면 모든 진동을 끕니다
+    LocalKineticaReducedMotion provides settings.reduceMotion, // null이면 시스템 '애니메이션 삭제'를 따릅니다
+    LocalKineticaFillContrast provides 3f,                  // 채운 버튼이 브랜드 색을 덜 고치게 합니다
+) {
+    KineticaTheme(
+        surface = SurfaceStyle.Solid(panel, onPanel, page, contentMuted = onPanelMuted, raised = panelRaised),
+    ) { Editor() }
+}
+```
+
+바만 블러로 두고 목록과 카드는 단색으로 쓰려면 `KineticaScaffold(surface = SurfaceStyles.BarGlass, contentSurface = SurfaceStyles.CleanLight)`처럼 나눠 줍니다. 자세한 내용은 [UI 키트](docs/35-ui-kit.md#다른-sdk-안에서-쓸-때) 문서에 있습니다.
 
 ### XML 화면
 

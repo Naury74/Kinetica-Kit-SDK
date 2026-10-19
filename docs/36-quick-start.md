@@ -119,6 +119,17 @@ var volume by remember { mutableFloatStateOf(0.4f) }
 KSlider(volume, onValueChange = { volume = it }, Modifier.fillMaxWidth())
 ```
 
+기준값이 있는 보정 슬라이더는 그 값에 붙게 하고 두 번 탭하면 돌아가게 합니다. 사진 앱처럼 눈금을 끄는 다이얼은 `KDialSlider`입니다.
+
+```kotlin
+KSlider(
+    brightness, { brightness = it }, Modifier.fillMaxWidth(), valueRange = -1f..1f,
+    snap = KSliderSnap(0f, range = 0.04f), resetValue = 0f, label = "밝기", badgePosition = KSliderBadgePosition.Top,
+    valueBadge = { Text("${(it * 100).roundToInt()}") },
+)
+KDialSlider(angle, { angle = it }, label = "기울기", valueRange = -45f..45f, formatValue = { "%.1f°".format(it) })
+```
+
 **차트.**
 
 ```kotlin
@@ -157,6 +168,10 @@ KCallScreen(
     audioLevel = { id -> levels.value[id] ?: 0f },
 )
 ```
+
+### 다른 SDK 안에서 쓰기
+
+Kinetica를 SDK 안에 넣어 배포한다면 호스트 설정을 이 값으로 넘깁니다. `LocalKineticaHaptics`(진동), `LocalKineticaReducedMotion`(움직임 줄이기, `isReducedMotion()`으로 읽음), `LocalKineticaFillContrast`(채운 버튼 명암비 기준), `SurfaceStyle.Solid(contentMuted, raised)`(호스트 팔레트의 보조 글자색과 올라온 면)입니다. 공개 API에 Kinetica 타입을 드러내지 않으려면 `implementation`으로 의존하세요. 앱이 지원하는 언어만 남기는 법과 함께 [35 UI 키트의 다른 SDK 안에서 쓸 때](35-ui-kit.md#다른-sdk-안에서-쓸-때)에 정리했습니다.
 
 ## 4. 권장 수정자 순서
 
