@@ -233,6 +233,11 @@ public object SurfaceStyles {
 
     @JvmField public val OneUiGlassDark: SurfaceStyle = SurfaceStyle.Glass(GlassStyles.OneUiDark)
 
+    /** 화면 폭 전체 바용 글래스. 사진 위에서도 제목과 버튼이 읽히도록 색을 진하게 덮는다. 바에만 주고 콘텐츠는 `contentSurface`로 따로 정한다. */
+    @JvmField public val BarGlass: SurfaceStyle = SurfaceStyle.Glass(GlassStyles.Bar)
+
+    @JvmField public val BarGlassDark: SurfaceStyle = SurfaceStyle.Glass(GlassStyles.BarDark)
+
     @JvmField public val Vision: SurfaceStyle = SurfaceStyle.Glass(GlassStyles.Vision)
 
     @JvmField public val Frosted: SurfaceStyle = SurfaceStyle.Glass(GlassStyles.Frosted)

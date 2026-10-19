@@ -1,5 +1,6 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -148,5 +149,41 @@ class HostControlsTest {
         }
         compose.onNodeWithTag("small").assertHeightIsAtLeast(30.dp)
         compose.onNodeWithTag("big").assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun `바만 글래스로 두고 콘텐츠 표면은 단색으로 정할 수 있다`() {
+        var bar: SurfaceStyle? = null
+        var content: SurfaceStyle? = null
+        compose.setContent {
+            KineticaScaffold(
+                surface = SurfaceStyles.Liquid,
+                contentSurface = SurfaceStyles.CleanLight,
+                topBar = { bar = KineticaTheme.surface },
+            ) { content = KineticaTheme.surface }
+        }
+        compose.waitForIdle()
+        assertThat(bar).isEqualTo(SurfaceStyles.Liquid)
+        assertThat(content).isEqualTo(SurfaceStyles.CleanLight)
+    }
+
+    @Test
+    fun `상단 바 상태는 사진 격자의 실제 스크롤 위치를 따른다`() {
+        val grid = androidx.compose.foundation.lazy.grid.LazyGridState()
+        lateinit var bar: KTopAppBarState
+        compose.setContent {
+            bar = rememberKTopAppBarState(grid)
+            androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),
+                androidx.compose.ui.Modifier.size(300.dp),
+                state = grid,
+            ) { items(90) { androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.size(100.dp)) } }
+        }
+        compose.waitForIdle()
+        val before = bar.overlappedFraction
+        compose.runOnIdle { kotlinx.coroutines.runBlocking { grid.scrollToItem(30) } }
+        compose.waitForIdle()
+        assertThat(before).isEqualTo(0f)
+        assertThat(bar.overlappedFraction).isEqualTo(1f)
     }
 }

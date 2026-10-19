@@ -125,6 +125,24 @@ public object GlassStyles {
         onGlass = Color.White,
     )
 
+    /**
+     * 화면 폭 전체 바(상단 앱 바, 탭 바, 도구 막대)용. 사진 격자처럼 복잡한 내용이 아래로 지나가도 제목과 버튼이 읽히도록
+     * [OneUi]보다 색을 진하게 덮고, 테두리와 굴절, 그림자 없이 화면 가장자리와 이어진다.
+     */
+    @JvmField
+    public val Bar: GlassStyle = OneUi.copy(
+        tint = Color(0xFFFCFCFC).copy(alpha = 0.86f),
+        shadow = 0.dp,
+        fallback = Color(0xF5FCFCFC),
+    )
+
+    @JvmField
+    public val BarDark: GlassStyle = Bar.copy(
+        tint = Color(0xFF141416).copy(alpha = 0.86f),
+        fallback = Color(0xF5141416),
+        onGlass = Color.White,
+    )
+
     /** visionOS 스타일. 어둡고 깊은 유리에 은은한 글로우 테두리를 둘러, 사진이나 영상 위 컨트롤 패널에 어울린다. */
     @JvmField
     public val Vision: GlassStyle = GlassStyle(

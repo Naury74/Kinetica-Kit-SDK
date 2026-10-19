@@ -78,6 +78,9 @@ import kotlinx.coroutines.flow.collectLatest
  * 테마가 없으면 [KIndication]이다. null이면 바깥(호스트) 값을 그대로 둔다.
  * @param systemBarIcons true면 상태 표시줄과 내비게이션 바 아이콘을 [surface] 밝기에 맞춘다(어두운 표면이면 밝은 아이콘).
  * 기본값은 단색과 톤 표면에서만 true다. 글래스는 호스트 배경이 비치므로 아이콘은 호스트가 정한다.
+ * @param contentSurface [content] 안 컴포넌트가 쓰는 기본 표면. 기본값은 [surface]다. 바만 글래스로 블러하고 목록과 카드는
+ * 단색으로 두려면 `surface`에 글래스를, 이 값에 단색을 준다. 이때 콘텐츠 바탕은 이 표면의 [SurfaceStyle.background]로 칠하고,
+ * 바와 [KineticaScaffold] 위층 오버레이는 그 위를 블러로 비춘다. 콘텐츠 안에서 띄운 다이얼로그와 시트는 부른 곳의 표면을 따른다.
  */
 @Composable
 public fun KineticaScaffold(
@@ -90,6 +93,7 @@ public fun KineticaScaffold(
     edgeFade: Boolean = true,
     indication: Indication? = LocalKineticaIndication.current,
     systemBarIcons: Boolean = surface !is SurfaceStyle.Glass,
+    contentSurface: SurfaceStyle = surface,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     SystemBarIcons(if (systemBarIcons) surface.isDark else null)
@@ -117,13 +121,13 @@ public fun KineticaScaffold(
             Box(Modifier.fillMaxSize().recordInto(layers?.screen).modalBackground(host.background, host.modalOpen)) {
                 Box(Modifier.fillMaxSize().recordInto(layers?.content).background(backdropColor)) {
                     PushBackBox(host) {
-                        ScaffoldBackground(host.takeIf { layers != null }, layers?.background, surface, background)
-                        CompositionLocalProvider(LocalGlassBackdrop provides layers?.background) {
+                        ScaffoldBackground(host.takeIf { layers != null }, layers?.background, contentSurface, background)
+                        ContentLocals(contentSurface, layers?.background) {
                             with(density) { content(PaddingValues(top = topHeight.toDp(), bottom = bottomHeight.toDp())) }
                         }
                     }
                 }
-                if (edgeFade) EdgeFade(host, layers?.content, surface.background, Modifier.align(Alignment.TopCenter))
+                if (edgeFade) EdgeFade(host, layers?.content, contentSurface.background, Modifier.align(Alignment.TopCenter))
                 CompositionLocalProvider(LocalGlassBackdrop provides layers?.content, LocalTopBarSlot provides true) {
                     Box(
                         Modifier.align(Alignment.TopCenter).onSizeChanged {
@@ -152,6 +156,38 @@ public fun KineticaScaffold(
             }
         }
     }
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KineticaScaffold(
+    modifier: Modifier = Modifier,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    background: @Composable BoxScope.() -> Unit = {},
+    topBar: @Composable BoxScope.() -> Unit = {},
+    bottomBar: @Composable BoxScope.() -> Unit = {},
+    backdropColor: Color = Color.Black,
+    edgeFade: Boolean = true,
+    indication: Indication? = LocalKineticaIndication.current,
+    systemBarIcons: Boolean = surface !is SurfaceStyle.Glass,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    KineticaScaffold(
+        modifier, surface, background, topBar, bottomBar, backdropColor, edgeFade, indication, systemBarIcons,
+        surface, content,
+    )
+}
+
+/** 콘텐츠 칸 안의 기본 표면과 글래스가 비출 배경을 정한다. */
+@Composable
+private fun ContentLocals(surface: SurfaceStyle, backdrop: GlassBackdrop?, content: @Composable () -> Unit) {
+    CompositionLocalProvider(
+        LocalGlassBackdrop provides backdrop,
+        LocalKineticaSurface provides surface,
+        LocalGlassStyle provides surface.glassStyle(),
+        LocalKineticaContentColor provides surface.contentColor,
+        content = content,
+    )
 }
 
 /**

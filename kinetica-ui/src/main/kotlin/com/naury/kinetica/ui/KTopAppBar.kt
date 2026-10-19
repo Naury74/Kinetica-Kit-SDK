@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
@@ -117,6 +119,22 @@ public fun rememberKTopAppBarState(): KTopAppBarState = rememberSaveable(saver =
 public fun rememberKTopAppBarState(listState: LazyListState): KTopAppBarState = remember(listState) {
     KTopAppBarState(0f) {
         if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset.toFloat() else Float.POSITIVE_INFINITY
+    }
+}
+
+/** [gridState]의 실제 스크롤 위치로 바 배경과 접힘을 정하는 상태를 만든다. 첫 줄이 지나가면 다 접힌 것으로 본다. 사진 격자에 쓴다. */
+@Composable
+public fun rememberKTopAppBarState(gridState: LazyGridState): KTopAppBarState = remember(gridState) {
+    KTopAppBarState(0f) {
+        if (gridState.firstVisibleItemIndex == 0) gridState.firstVisibleItemScrollOffset.toFloat() else Float.POSITIVE_INFINITY
+    }
+}
+
+/** [gridState]의 실제 스크롤 위치로 바 배경과 접힘을 정하는 상태를 만든다. 첫 항목이 지나가면 다 접힌 것으로 본다. */
+@Composable
+public fun rememberKTopAppBarState(gridState: LazyStaggeredGridState): KTopAppBarState = remember(gridState) {
+    KTopAppBarState(0f) {
+        if (gridState.firstVisibleItemIndex == 0) gridState.firstVisibleItemScrollOffset.toFloat() else Float.POSITIVE_INFINITY
     }
 }
 
