@@ -224,11 +224,12 @@ class KAlertDialogDismissedTest {
         // Color 값 클래스 파라미터 때문에 이름 뒤에 해시가 붙는다. 컴파일된 호출자는 이 이름으로 찾는다.
         val alert = Class.forName("com.naury.kinetica.ui.KAlertDialogKt").methods.map { it.name }.filter { it.startsWith("KAlertDialog") }
         assertThat(alert).containsAtLeast("KAlertDialog-mf-eAJQ", "KAlertDialog-Vi8xdGg")
-        assertThat(alert.distinct()).hasSize(3)
+        // 알파04 판과 지금 판까지 넷이다.
+        assertThat(alert.distinct()).hasSize(4)
         val components = Class.forName("com.naury.kinetica.ui.KComponentsKt").methods
         assertThat(components.map { it.name }).contains("KDialog-uB6I_Z0")
-        assertThat(components.count { it.name.startsWith("KDialog") }).isEqualTo(2)
-        assertThat(components.count { it.name == "KSheet" }).isEqualTo(2)
+        assertThat(components.count { it.name.startsWith("KDialog") }).isEqualTo(3)
+        assertThat(components.count { it.name == "KSheet" }).isEqualTo(3)
     }
 
     private fun tops(vararg labels: String): List<Float> = labels.map { compose.onNodeWithText(it).fetchSemanticsNode().boundsInRoot.top }

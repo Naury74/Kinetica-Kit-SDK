@@ -48,6 +48,9 @@ public enum class KChipSelection {
  * @param scrollState [wrap]이 `false`일 때 줄의 스크롤 상태. 선택한 칩으로 스크롤하거나 끝에 닿았는지 볼 때 넘긴다.
  * @param fadeEdges [wrap]이 `false`일 때 화면 밖에 칩이 더 있는 쪽 끝을 흐리게 한다.
  * @param minTouchTarget true면 칩마다 위아래 여유를 두어 차지하는 높이를 48dp 이상으로 만든다. 칩 모양은 그대로다.
+ * @param shadowRoom [wrap]이 `false`일 때 칩 그림자가 스크롤 영역 경계에서 잘리지 않게 위아래에 6dp씩 여유를 둔다([KChipRow]의 같은 이름
+ *   파라미터). false면 줄 높이가 칩 높이(minTouchTarget이면 48dp)와 같다. 줄을 넘기는 묶음은 내용을 잘라 그리지 않아 이 여유를 두지 않으므로
+ *   [wrap]이 `true`면 아무 일도 하지 않는다.
  */
 @Composable
 public fun KChipGroup(
@@ -66,6 +69,7 @@ public fun KChipGroup(
     scrollState: ScrollState = rememberScrollState(),
     fadeEdges: Boolean = false,
     minTouchTarget: Boolean = false,
+    shadowRoom: Boolean = true,
 ) {
     val accent = tone.colors(surface).color
     val haptic = kHapticFeedback()
@@ -101,8 +105,34 @@ public fun KChipGroup(
             verticalArrangement = Arrangement.spacedBy(ChipRowGap),
         ) { chipsContent() }
     } else {
-        KChipRow(group, contentPadding, scrollState, fadeEdges) { chipsContent() }
+        KChipRow(group, contentPadding, scrollState, fadeEdges, shadowRoom) { chipsContent() }
     }
+}
+
+/** 1.0.0-alpha04까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KChipGroup(
+    chips: List<String>,
+    selected: Set<Int>,
+    onSelectedChange: (Set<Int>) -> Unit,
+    modifier: Modifier = Modifier,
+    selection: KChipSelection = KChipSelection.Single,
+    enabled: Boolean = true,
+    variant: KVariant = KVariant.Glass,
+    tone: KTone = KTone.Accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    wrap: Boolean = true,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    colors: KChipColors = KChipColors(),
+    scrollState: ScrollState = rememberScrollState(),
+    fadeEdges: Boolean = false,
+    minTouchTarget: Boolean = false,
+) {
+    KChipGroup(
+        chips, selected, onSelectedChange, modifier, selection, enabled, variant, tone, surface, wrap, contentPadding, colors, scrollState,
+        fadeEdges, minTouchTarget, true,
+    )
 }
 
 @Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
@@ -125,7 +155,7 @@ public fun KChipGroup(
 ) {
     KChipGroup(
         chips, selected, onSelectedChange, modifier, selection, enabled, variant, tone, surface, wrap, contentPadding, colors, scrollState,
-        fadeEdges, false,
+        fadeEdges, false, true,
     )
 }
 

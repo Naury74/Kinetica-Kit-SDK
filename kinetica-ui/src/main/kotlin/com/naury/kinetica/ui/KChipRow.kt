@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
  *
  * @param state 줄의 스크롤 상태. 선택한 칩으로 스크롤하거나 끝에 닿았는지 볼 때 넘긴다.
  * @param fadeEdges true면 화면 밖에 칩이 더 있는 쪽 끝을 흐리게 한다([horizontalFadingEdges]).
+ * @param shadowRoom true면 칩 그림자가 스크롤 영역 경계에서 잘리지 않게 위아래에 6dp씩 여유를 둔다. 그림자 없는 칩(미선택 색 지정,
+ *   단색 표면)만 놓거나 칩마다 `minTouchTarget` 여유가 있으면 false로 꺼서 줄 높이를 칩 높이에 맞춘다.
  */
 @Composable
 public fun KChipRow(
@@ -32,6 +34,7 @@ public fun KChipRow(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     state: ScrollState = rememberScrollState(),
     fadeEdges: Boolean = false,
+    shadowRoom: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     Row(
@@ -40,11 +43,24 @@ public fun KChipRow(
             .then(if (fadeEdges) Modifier.horizontalFadingEdges(state) else Modifier)
             .horizontalScroll(state)
             .padding(contentPadding)
-            .padding(vertical = CHIP_SHADOW_ROOM),
+            .then(if (shadowRoom) Modifier.padding(vertical = CHIP_SHADOW_ROOM) else Modifier),
         horizontalArrangement = Arrangement.spacedBy(ChipRowGap),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
     )
+}
+
+/** 1.0.0-alpha04까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KChipRow(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    state: ScrollState = rememberScrollState(),
+    fadeEdges: Boolean = false,
+    content: @Composable RowScope.() -> Unit,
+) {
+    KChipRow(modifier, contentPadding, state, fadeEdges, true, content)
 }
 
 @Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
@@ -54,7 +70,7 @@ public fun KChipRow(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable RowScope.() -> Unit,
 ) {
-    KChipRow(modifier, contentPadding, rememberScrollState(), false, content)
+    KChipRow(modifier, contentPadding, rememberScrollState(), false, true, content)
 }
 
 /**

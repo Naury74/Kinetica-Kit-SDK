@@ -434,17 +434,17 @@ private fun DrawScope.drawOuterShadow(outline: Outline, style: GlassStyle, level
 }
 
 /**
- * [outline] 바깥에 반경 [radius](px)의 그림자를 [alpha] 진하기로 드리운다. 안쪽은 칠하지 않는다.
+ * [outline] 바깥에 반경 [radius](px)의 [color] 그림자를 [alpha] 진하기로 드리운다. [color]의 알파는 쓰지 않는다. 안쪽은 칠하지 않는다.
  * Paint와 Path는 [cache]에 두고 반경이나 모양이 바뀔 때만 새로 만든다.
  */
-internal fun DrawScope.drawSoftShadow(outline: Outline, radius: Float, alpha: Float, cache: EffectCache) {
+internal fun DrawScope.drawSoftShadow(outline: Outline, radius: Float, alpha: Float, cache: EffectCache, color: Color = Color.Black) {
     if (radius < MIN_PX || alpha <= 0f) return
     val path = cachedPath(outline, cache)
     if (cache.shadowRadius != radius) {
         cache.shadowRadius = radius
         cache.shadowPaint.maskFilter = BlurMaskFilter(radius, BlurMaskFilter.Blur.NORMAL)
     }
-    cache.shadowPaint.color = Color.Black.copy(alpha = alpha.coerceIn(0f, 1f)).toArgb()
+    cache.shadowPaint.color = color.copy(alpha = alpha.coerceIn(0f, 1f)).toArgb()
     clipPath(path, clipOp = ClipOp.Difference) {
         drawIntoCanvas { canvas ->
             canvas.nativeCanvas.save()

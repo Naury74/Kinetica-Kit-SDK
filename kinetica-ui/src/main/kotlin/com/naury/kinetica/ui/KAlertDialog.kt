@@ -74,7 +74,7 @@ public enum class KDialogPresentation {
     /** 화면 가운데 카드. [KDialog]와 같이 열린다. */
     Card,
 
-    /** 아래에서 올라오는 시트. [KSheet]와 같이 손잡이를 끌어 닫고, 내비게이션 바와 키보드를 피한다. */
+    /** 아래에서 올라오는 시트. [KSheet]와 같이 손잡이를 끌어 닫고(`dragToDismiss`로 끌 수 있다), 내비게이션 바와 키보드를 피한다. */
     Sheet,
 }
 
@@ -154,6 +154,11 @@ public data class KDialogAction(
  *   열린 채로 구성에서 빠지거나 [KDialogPresentation.Auto]가 열린 채 카드와 시트를 바꿀 때는 부르지 않는다.
  * @param keepActionOrder true면 취소를 옮기지 않고 [actions]를 넘긴 순서대로 놓는다. 세로로 쌓으면 위에서 아래로, 나란히 놓으면
  *   시작 쪽부터다. false면 취소를 나란히 놓을 때 시작 쪽, 쌓을 때 맨 아래로 옮긴다.
+ * @param dragToDismiss 시트로 뜰 때 끌어 닫기를 쓸지. false면 [KSheet]처럼 끌어도 닫히지 않고 손잡이를 그리지 않는다.
+ *   바깥 누름과 뒤로 가기로는 그대로 닫힌다. 카드로 뜰 때는 쓰지 않는다.
+ * @param appearScale 카드로 뜰 때 열리기 시작하는 카드 크기 배율. [KDialog]의 `appearScale`과 같고 기본값은
+ *   [KSheetDefaults.DialogAppearScale](0.6)이다. 1에 가까울수록 커지는 움직임이 줄고 [origin]에서 미끄러져 들어오며 나타나는 쪽에 가깝다.
+ *   시트로 뜰 때는 쓰지 않는다.
  * @param content 본문과 버튼 사이에 넣는 내용(입력란, 녹음 파형 등). 이 칸이 있으면 본문 전체가 세로로 스크롤되므로,
  *   키보드가 올라와 남은 높이가 모자라도 입력란과 버튼이 가려지지 않는다. 안에 세로 스크롤 목록을 넣으려면 높이를 정해 준다.
  */
@@ -173,6 +178,8 @@ public fun KAlertDialog(
     presentation: KDialogPresentation = KDialogPresentation.Card,
     onDismissed: (() -> Unit)? = null,
     keepActionOrder: Boolean = false,
+    dragToDismiss: Boolean = true,
+    appearScale: Float = KSheetDefaults.DialogAppearScale,
     content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     val sheet = when (presentation) {
@@ -182,15 +189,50 @@ public fun KAlertDialog(
     }
     val spec = AlertSpec(title, message, icon, iconTint, AlertButtons(actions, stacked, keepActionOrder))
     if (sheet) {
-        KSheet(visible, onDismissRequest, modifier, surface, title = title, onDismissed = onDismissed) {
+        KSheet(visible, onDismissRequest, modifier, surface, title = title, onDismissed = onDismissed, dragToDismiss = dragToDismiss) {
             Spacer(Modifier.height(SHEET_TOP_GAP))
             AlertBody(spec, surface, onDismissRequest, content)
         }
     } else {
-        KDialog(visible, onDismissRequest, modifier, surface, origin = origin, title = title, onDismissed = onDismissed) {
+        KDialog(
+            visible,
+            onDismissRequest,
+            modifier,
+            surface,
+            origin = origin,
+            title = title,
+            onDismissed = onDismissed,
+            appearScale = appearScale,
+        ) {
             AlertBody(spec, surface, onDismissRequest, content)
         }
     }
+}
+
+/** 1.0.0-alpha04의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KAlertDialog(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    title: String,
+    actions: List<KDialogAction>,
+    modifier: Modifier = Modifier,
+    message: String? = null,
+    icon: ImageVector? = null,
+    stacked: Boolean? = null,
+    origin: Offset? = null,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    iconTint: Color = Color.Unspecified,
+    presentation: KDialogPresentation = KDialogPresentation.Card,
+    onDismissed: (() -> Unit)? = null,
+    keepActionOrder: Boolean = false,
+    content: (@Composable ColumnScope.() -> Unit)? = null,
+) {
+    KAlertDialog(
+        visible, onDismissRequest, title, actions, modifier, message, icon, stacked, origin, surface, iconTint, presentation,
+        onDismissed, keepActionOrder, content = content,
+    )
 }
 
 /** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */

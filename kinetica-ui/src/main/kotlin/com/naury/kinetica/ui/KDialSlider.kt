@@ -88,7 +88,7 @@ import kotlinx.coroutines.launch
  * @param onValueChangeFinished 손을 떼고 관성으로 미끄러지는 것까지 끝난 뒤 한 번 호출된다. 미끄러지는 중에 다시 잡으면
  * 그때 한 번, 두 번 탭 초기화, 방향키, TalkBack으로 바꾼 뒤에도 한 번 호출된다.
  * @param resetValue 기준값. 이 값부터 현재 값까지를 강조색으로 칠하고, 두 번 탭하면 이 값으로 돌아간다.
- * [valueRange] 밖이면 가까운 끝으로 맞춰 그리고, 예외 없이 입력을 받지 않고 흐리게 그린다.
+ * [valueRange] 밖이면 가까운 끝으로 맞춰 그리고, [coerceResetValue]가 false면 예외 없이 입력을 받지 않고 흐리게 그린다.
  * @param spacing 값 1만큼의 눈금 간격(dp). 클수록 세밀하게 조절된다. 0보다 크지 않으면 [IllegalArgumentException]을 던진다.
  * @param tickEvery 작은 눈금을 그리는 값 간격. 0에서부터 이 간격의 배수 자리에 그린다. 방향키 한 번에 이만큼 움직인다.
  * 0보다 크지 않으면 [IllegalArgumentException]을 던진다.
@@ -104,6 +104,8 @@ import kotlinx.coroutines.launch
  *   반올림 폭(정수면 0.5)을 준다. 음수거나 NaN이면 [IllegalArgumentException]을 던진다.
  * @param valueTextStyle 값 글자 스타일. 기본 스타일(16sp, 굵게, 고정폭 숫자, 가운데 정렬) 위에 덮어쓴다. 색을 정하지 않으면
  *   바뀜 여부에 따라 [accent]나 표면 글자색을 쓰고, 색을 정하면 늘 그 색이다. null이면 기본 스타일 그대로다.
+ * @param coerceResetValue true면 [resetValue]가 [valueRange] 밖이어도 흐리게 막지 않고, 가까운 끝값을 기준값으로 삼아 조작하게 한다.
+ *   강조색 칠하기, 붙기, 두 번 탭 초기화 모두 그 끝값을 쓴다. NaN이면 이 값과 상관없이 입력을 받지 않는다. 기본값 false는 막는다.
  */
 @Composable
 public fun KDialSlider(
@@ -125,16 +127,17 @@ public fun KDialSlider(
     surface: SurfaceStyle = KineticaTheme.surface,
     changedThreshold: Float = 0f,
     valueTextStyle: TextStyle? = null,
+    coerceResetValue: Boolean = false,
 ) {
     require(changedThreshold >= 0f) { "changedThreshold는 0 이상이어야 합니다." }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     // 범위와 기준값은 데이터에서 오는 일이 많아, 잘못돼도 화면 전체를 죽이지 않고 입력만 막는다.
     val usableRange = isUsableRange(valueRange)
     val range = if (usableRange) valueRange else fallbackRange(valueRange)
-    val usable = usableRange && resetValue in range
-    val reset = if (resetValue.isFinite()) resetValue.coerceIn(range) else range.start
-    val active = enabled && usable
-    val dial = TickDialSpec(range, reset, spacing, tickEvery, majorEvery, snapThreshold, rtl, changedThreshold)
+    val reset = dialReset(resetValue, range, coerceResetValue)
+    val active = enabled && usableRange && reset != null
+    val shownReset = reset ?: fallbackReset(resetValue, range)
+    val dial = TickDialSpec(range, shownReset, spacing, tickEvery, majorEvery, snapThreshold, rtl, changedThreshold)
     val shown = value.coerceIn(range)
     val shownState = rememberUpdatedState(shown)
     val haptic = kHapticFeedback()
@@ -188,6 +191,35 @@ public fun KDialSlider(
     }
 }
 
+/** 1.0.0-alpha04까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KDialSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    valueRange: ClosedFloatingPointRange<Float> = DEFAULT_RANGE,
+    formatValue: (Float) -> String = { it.roundToInt().toString() },
+    onValueChangeFinished: (() -> Unit)? = null,
+    resetValue: Float = 0f,
+    spacing: Dp = 4.dp,
+    tickEvery: Float = 2f,
+    majorEvery: Float = 10f,
+    snapThreshold: Float = 1.5f,
+    enabled: Boolean = true,
+    showLabel: Boolean = false,
+    accent: Color = KineticaTheme.colors.accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    changedThreshold: Float = 0f,
+    valueTextStyle: TextStyle? = null,
+) {
+    KDialSlider(
+        value, onValueChange, label, modifier, valueRange, formatValue, onValueChangeFinished, resetValue, spacing, tickEvery,
+        majorEvery, snapThreshold, enabled, showLabel, accent, surface, changedThreshold, valueTextStyle, coerceResetValue = false,
+    )
+}
+
 /** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
 @Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
 @Composable
@@ -214,6 +246,17 @@ public fun KDialSlider(
         majorEvery, snapThreshold, enabled, showLabel, accent, surface, changedThreshold = 0f,
     )
 }
+
+/** 조작에 쓸 기준값. 범위 밖이면 [coerce]일 때만 가까운 끝으로 맞추고, 아니면 null이라 다이얼을 막는다. NaN은 늘 null이다. */
+private fun dialReset(resetValue: Float, range: ClosedFloatingPointRange<Float>, coerce: Boolean): Float? = when {
+    resetValue in range -> resetValue
+    coerce && !resetValue.isNaN() -> resetValue.coerceIn(range)
+    else -> null
+}
+
+/** 막힌 다이얼을 그릴 때 쓰는 기준값. 1.0.0-alpha04와 같게, 유한하면 가까운 끝, 아니면 범위 시작이다. */
+private fun fallbackReset(resetValue: Float, range: ClosedFloatingPointRange<Float>): Float =
+    if (resetValue.isFinite()) resetValue.coerceIn(range) else range.start
 
 /** 다이얼의 범위와 눈금 설정. 모양과 손맛을 함께 정한다. 범위와 기준값은 부르는 쪽에서 쓸 수 있는 값으로 맞춰 넘긴다. */
 private data class TickDialSpec(

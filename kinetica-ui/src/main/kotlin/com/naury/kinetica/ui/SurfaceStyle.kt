@@ -89,6 +89,12 @@ public sealed interface SurfaceStyle {
      * @property raised 한 단계 올라온 면의 색. 호스트 팔레트에 트랙이나 올라온 패널 색이 있으면 넘긴다. 기본값은 [contentColor]를 옅게 깐다.
      * @property sheen 위쪽 광택 색. 모양 위 끝에서 이 색으로 시작해 아래 끝에서 투명해지는 세로 그라디언트를 채움 위에 덮는다.
      *   투명하면(기본값) 그리지 않는다. 블러 없이 유리처럼 보이게 할 때 쓴다([SurfaceStyles.LiteGlass]).
+     * @property borderEnd 테두리 아래 끝 색. 지정하면 모양 위 끝의 [border]에서 아래 끝의 이 색으로 바뀌는 세로 그라디언트 테두리를 그린다.
+     *   [Color.Unspecified](기본값)면 [border] 한 색이다. [border]와 이 색이 모두 투명하거나 [borderWidth]가 0이면 그리지 않는다.
+     *   [KineticaDesign]의 깊이 표현이 [KDepth.Border]나 [KDepth.Offset]이면 디자인이 정한 한 색 테두리로 바뀌어 쓰이지 않는다.
+     * @property shadowColor 그림자 색. 알파가 그림자 진하기다. [Color.Unspecified](기본값)면 검정을 밝은 표면은 0.10, 어두운 표면은 0.45
+     *   진하기로 쓴다. 그림자 반경은 [elevation]이 정하고, [forPopup]으로 그림자를 키워도 이 색과 진하기를 그대로 쓴다.
+     *   [KDepth.Offset] 디자인은 부드러운 그림자 대신 글자 색으로 비낀 그림자를 그리므로 이 값을 쓰지 않는다.
      */
     @Immutable
     public data class Solid(
@@ -101,6 +107,8 @@ public sealed interface SurfaceStyle {
         override val contentMuted: Color = Color.Unspecified,
         override val raised: Color = Color.Unspecified,
         val sheen: Color = Color.Transparent,
+        val borderEnd: Color = Color.Unspecified,
+        val shadowColor: Color = Color.Unspecified,
     ) : SurfaceStyle {
         init {
             require(borderWidth >= 0.dp && elevation >= 0.dp) { "borderWidth와 elevation은 0 이상이어야 합니다." }
@@ -119,7 +127,21 @@ public sealed interface SurfaceStyle {
             raised: Color = Color.Unspecified,
         ) : this(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, Color.Transparent)
 
-        /** 1.0.0-alpha03의 copy. 컴파일된 호출자를 위해 남긴다. 광택은 그대로 둔다. */
+        /** 1.0.0-alpha04의 주 생성자. 컴파일된 호출자를 위해 남긴다. */
+        @Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+        public constructor(
+            color: Color,
+            contentColor: Color,
+            background: Color,
+            border: Color = Color.Transparent,
+            borderWidth: Dp = 0.dp,
+            elevation: Dp = 0.dp,
+            contentMuted: Color = Color.Unspecified,
+            raised: Color = Color.Unspecified,
+            sheen: Color = Color.Transparent,
+        ) : this(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, sheen, Color.Unspecified)
+
+        /** 1.0.0-alpha03의 copy. 컴파일된 호출자를 위해 남긴다. 광택, 아래 테두리 색, 그림자 색은 그대로 둔다. */
         @Deprecated("sheen을 더한 copy를 씁니다.", level = DeprecationLevel.HIDDEN)
         @Suppress("LongParameterList")
         public fun copy(
@@ -131,7 +153,24 @@ public sealed interface SurfaceStyle {
             elevation: Dp = this.elevation,
             contentMuted: Color = this.contentMuted,
             raised: Color = this.raised,
-        ): Solid = Solid(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, sheen)
+        ): Solid =
+            Solid(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, sheen, borderEnd, shadowColor)
+
+        /** 1.0.0-alpha04의 copy. 컴파일된 호출자를 위해 남긴다. 아래 테두리 색과 그림자 색은 그대로 둔다. */
+        @Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+        @Suppress("LongParameterList")
+        public fun copy(
+            color: Color = this.color,
+            contentColor: Color = this.contentColor,
+            background: Color = this.background,
+            border: Color = this.border,
+            borderWidth: Dp = this.borderWidth,
+            elevation: Dp = this.elevation,
+            contentMuted: Color = this.contentMuted,
+            raised: Color = this.raised,
+            sheen: Color = this.sheen,
+        ): Solid =
+            Solid(color, contentColor, background, border, borderWidth, elevation, contentMuted, raised, sheen, borderEnd, shadowColor)
 
         override fun forPopup(): SurfaceStyle = copy(
             // 어두운 화면에서는 그림자가 잘 안 보이므로 떠 있는 판을 조금 밝혀 구분한다.
@@ -236,6 +275,7 @@ public object SurfaceStyles {
 
     /**
      * 블러 없이 채움, 광택, 테두리, 그림자로만 그리는 가벼운 유리 표면. 밝은 배경 위에 쓴다.
+     * 테두리는 위쪽 흰색(0.95)에서 아래쪽 옅은 검정(0.08)으로 바뀌어, 흰 바탕 위에서도 아래 경계가 보인다.
      * 배경을 기록하지 않으므로 API 26부터 같은 모양이고 그리기 비용이 거의 없다. 캔버스나 영상 위에 뜨는
      * 되돌리기 묶음, 알약 버튼, 상단 바 버튼처럼 작은 떠 있는 요소에 알맞다. 큰 판이나 다이얼로그에는 글래스나 단색 표면이 낫다.
      */
@@ -244,22 +284,24 @@ public object SurfaceStyles {
         color = Color.White.copy(alpha = 0.72f),
         contentColor = Color(INK),
         background = Color(0xFFF2F2F7),
-        border = Color.White.copy(alpha = 0.9f),
+        border = Color.White.copy(alpha = 0.95f),
         borderWidth = 0.75.dp,
         elevation = 6.dp,
         sheen = Color.White.copy(alpha = 0.35f),
+        borderEnd = Color.Black.copy(alpha = 0.08f),
     )
 
-    /** [LiteGlass]의 어두운 판. 어두운 캔버스나 영상 위에서 흰 글자와 함께 쓴다. */
+    /** [LiteGlass]의 어두운 판. 어두운 캔버스나 영상 위에서 흰 글자와 함께 쓴다. 테두리는 위쪽 흰색 0.32에서 아래쪽 0.06으로 옅어진다. */
     @JvmField
     public val LiteGlassDark: SurfaceStyle = SurfaceStyle.Solid(
         color = Color.White.copy(alpha = 0.12f),
         contentColor = Color.White,
         background = Color.Black,
-        border = Color.White.copy(alpha = 0.24f),
+        border = Color.White.copy(alpha = 0.32f),
         borderWidth = 0.75.dp,
         elevation = 6.dp,
         sheen = Color.White.copy(alpha = 0.10f),
+        borderEnd = Color.White.copy(alpha = 0.06f),
     )
 
     /** One UI 단색 스타일. 테두리와 그림자 없이 흰 카드를 연회색 바탕에 놓는다. */
@@ -373,7 +415,8 @@ internal fun SurfaceStyle.withDepth(design: KineticaDesign): SurfaceStyle {
             ),
         )
 
-        is SurfaceStyle.Solid -> copy(elevation = elevation, border = border, borderWidth = width)
+        // 디자인이 정한 한 색 테두리로 바꾸므로 아래 끝 색은 버린다.
+        is SurfaceStyle.Solid -> copy(elevation = elevation, border = border, borderWidth = width, borderEnd = Color.Unspecified)
 
         is SurfaceStyle.Tonal -> SurfaceStyle.Solid(color, contentColor, background, border, width, elevation)
     }
@@ -397,6 +440,7 @@ private fun Modifier.filledSurface(surface: SurfaceStyle, shape: Shape, intensit
         is SurfaceStyle.Glass -> surface.style.fallback
     }
     val border = surface.edgeColor
+    val borderEnd = (surface as? SurfaceStyle.Solid)?.borderEnd ?: Color.Unspecified
     val borderWidth = when (surface) {
         is SurfaceStyle.Solid -> surface.borderWidth
         is SurfaceStyle.Tonal -> TONAL_BORDER_WIDTH
@@ -408,7 +452,8 @@ private fun Modifier.filledSurface(surface: SurfaceStyle, shape: Shape, intensit
         is SurfaceStyle.Glass -> 0.dp
     }
     val sheen = surface.sheenColor
-    val shadowAlpha = if (surface.isDark) DARK_SHADOW_ALPHA else LIGHT_SHADOW_ALPHA
+    val shadow = (surface as? SurfaceStyle.Solid)?.shadowColor?.takeIf { it.isSpecified }
+        ?: Color.Black.copy(alpha = if (surface.isDark) DARK_SHADOW_ALPHA else LIGHT_SHADOW_ALPHA)
     val ink = surface.contentColor
     return drawBehind {
         val level = intensity.coerceIn(0f, 1f)
@@ -418,14 +463,30 @@ private fun Modifier.filledSurface(surface: SurfaceStyle, shape: Shape, intensit
             drawOutline(outline, ink.copy(alpha = NESTED_FILL * level))
             return@drawBehind
         }
-        drawSoftShadow(outline, elevation.toPx() * level, shadowAlpha * level, cache)
+        drawSoftShadow(outline, elevation.toPx() * level, shadow.alpha * level, cache, shadow)
         drawOutline(outline, fill.copy(alpha = fill.alpha * level))
         drawSheen(outline, sheen, level)
-        val stroke = borderWidth.toPx()
-        if (border.alpha > 0f && stroke > 0f) {
-            val path = cachedPath(outline, cache)
-            // 경계선 안쪽 절반만 남겨 테두리가 모양 밖으로 번지지 않게 한다.
-            clipPath(path) { drawPath(path, border.copy(alpha = border.alpha * level), style = Stroke(stroke * 2)) }
+        drawBorder(outline, SurfaceBorder(border, borderEnd, borderWidth.toPx()), level, cache)
+    }
+}
+
+/** 테두리 색과 두께(px). [end]가 지정되면 [start]에서 [end]로 바뀌는 세로 그라디언트다. */
+private class SurfaceBorder(val start: Color, val end: Color, val stroke: Float)
+
+/** 모양 안쪽에 테두리를 그린다. 두 색이 모두 투명하거나 두께가 0이면 그리지 않는다. */
+private fun DrawScope.drawBorder(outline: Outline, border: SurfaceBorder, level: Float, cache: EffectCache) {
+    val end = border.end
+    val visible = border.start.alpha > 0f || (end.isSpecified && end.alpha > 0f)
+    if (!visible || border.stroke <= 0f) return
+    val path = cachedPath(outline, cache)
+    val start = border.start.copy(alpha = border.start.alpha * level)
+    // 경계선 안쪽 절반만 남겨 테두리가 모양 밖으로 번지지 않게 한다.
+    clipPath(path) {
+        if (end.isSpecified) {
+            val brush = Brush.verticalGradient(listOf(start, end.copy(alpha = end.alpha * level)))
+            drawPath(path, brush, style = Stroke(border.stroke * 2))
+        } else {
+            drawPath(path, start, style = Stroke(border.stroke * 2))
         }
     }
 }

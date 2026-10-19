@@ -2,6 +2,23 @@
 
 장면 문서의 스키마 버전(`schemaVersion`)은 SDK 버전과 따로 올립니다. 지금 스키마 버전은 1입니다.
 
+## 1.0.0-alpha05
+
+### 새 기능
+
+- `KChipRow`, `KChipGroup`의 `shadowRoom`: `false`면 한 줄 칩 줄 위아래의 그림자 여유(6dp씩)를 두지 않아, 그림자 없는 칩이나 `minTouchTarget` 칩 줄의 높이가 칩 높이(48dp)와 같습니다. 줄을 넘기는 `KChipGroup`에는 원래 이 여유가 없어 바뀌는 것이 없습니다. 기본값 `true`면 전과 같습니다.
+- `KSlider`의 `labelTextStyle`과 `labelSpacing`: `KSliderBadgePosition.Top` 줄 이름의 글자 스타일(기본 16sp SemiBold 위에 덮어씀)과 그 줄과 트랙 사이 간격(기본 4dp)을 정합니다.
+- `KDialSlider`의 `coerceResetValue`: `true`면 범위 밖 `resetValue`를 가까운 끝값으로 맞춰 흐리게 막지 않고 조작하게 합니다. 기본값 `false`면 전처럼 막습니다.
+- `KSheet`, `KAlertDialog`의 `dragToDismiss`: `false`면 시트를 끌어도 닫히지 않고 손잡이를 그리지 않습니다(자리는 비워 두어 내용 위치는 같음). 바깥 누름과 뒤로 가기로는 그대로 닫힙니다. `KAlertDialog`는 시트로 뜰 때 이 값을 `KSheet`에 넘깁니다. 기본값 `true`면 전과 같습니다.
+- `KDialog`, `KAlertDialog`의 `appearScale`: 카드가 열리기 시작할 때의 크기 배율. 기본값 `KSheetDefaults.DialogAppearScale`(0.6)이면 전과 같고, 1에 가까울수록 `origin`에서 커지기보다 미끄러져 들어오며 나타납니다.
+- `SurfaceStyle.Solid`의 `borderEnd`(지정하면 위 `border`에서 아래 `borderEnd`로 바뀌는 세로 그라디언트 테두리)와 `shadowColor`(그림자 색, 알파가 진하기). 기본값 `Color.Unspecified`면 전과 같습니다.
+
+- 바뀐 함수(`KChipRow`, `KChipGroup`, `KSlider`, `KDialSlider`, `KDialog`, `KSheet`, `KAlertDialog`)와 `SurfaceStyle.Solid`의 1.0.0-alpha04 시그니처는 바이너리 호환을 위해 숨긴 오버로드와 생성자로 남깁니다.
+
+### 바뀐 것
+
+- `SurfaceStyles.LiteGlass`의 테두리가 흰색 0.9 한 색에서 위쪽 흰색 0.95, 아래쪽 검정 0.08로 바뀌는 그라디언트가 되어 흰 바탕 위에서도 아래 경계가 보입니다. `LiteGlassDark`의 테두리는 흰색 0.24 한 색에서 위쪽 0.32, 아래쪽 0.06으로 바뀝니다.
+
 ## 1.0.0-alpha04
 
 ### 새 기능

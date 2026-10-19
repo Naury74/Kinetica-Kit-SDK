@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -108,6 +109,11 @@ public fun KSurface(
  * @param onDismissed [visible]이 false가 되어 닫힘 애니메이션이 끝나고 패널이 화면에서 사라진 뒤 한 번 부른다.
  *   어떻게 닫았는지(바깥 누름, 뒤로 가기, 호출한 쪽)와 상관없고, '애니메이션 삭제'가 켜져 있으면 닫은 바로 다음 프레임에 부른다.
  *   열린 채로 이 컴포저블이 구성에서 빠지면 부르지 않는다. 닫은 뒤 다음 화면으로 넘어가거나 상태를 비울 때 쓴다.
+ * @param appearScale 열리기 시작할 때 패널 크기 배율. 열리면서 1로 커지고, 닫힐 때는 이 배율로 줄어든다.
+ *   기본값은 [KSheetDefaults.DialogAppearScale](0.6)이다. 0..1 밖의 값은 0..1로 맞춘다.
+ *   배율은 패널 가운데를 기준으로 걸리고, 위치는 [origin]에서 가운데로 따로 옮겨 간다. 그래서 0.6처럼 작으면 [origin]에서 튀어나오듯 커지고,
+ *   0.94처럼 1에 가까우면 거의 제 크기로 [origin] 쪽에서 미끄러져 들어오며 서서히 나타난다. [origin]이 없으면 제자리에서 조금 커지며 나타난다.
+ *   용수철 애니메이션이라 열릴 때 1을 살짝 넘었다가 돌아올 수 있다.
  */
 @Composable
 public fun KDialog(
@@ -120,8 +126,10 @@ public fun KDialog(
     title: String? = null,
     contentWindowInsets: @Composable () -> WindowInsets = { WindowInsets.safeDrawing },
     onDismissed: (() -> Unit)? = null,
+    appearScale: Float = KSheetDefaults.DialogAppearScale,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val startScale = appearScale.coerceIn(0f, 1f)
     val design = KineticaTheme.design
     val still = reducedMotion()
     KOverlay(visible, onHidden = onDismissed) { transition ->
@@ -151,7 +159,7 @@ public fun KDialog(
                         .widthIn(min = DIALOG_MIN_WIDTH, max = DIALOG_MAX_WIDTH)
                         .onGloballyPositioned { panelCenter = it.boundsOnScreen().center }
                         .graphicsLayer {
-                            val scale = DIALOG_START_SCALE + (1f - DIALOG_START_SCALE) * progress
+                            val scale = startScale + (1f - startScale) * progress
                             scaleX = scale
                             scaleY = scale
                             alpha = level
@@ -179,6 +187,24 @@ public fun KDialog(
             }
         }
     }
+}
+
+/** 1.0.0-alpha04의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KDialog(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    shape: Shape = shapeFor { dialog },
+    origin: Offset? = null,
+    title: String? = null,
+    contentWindowInsets: @Composable () -> WindowInsets = { WindowInsets.safeDrawing },
+    onDismissed: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    KDialog(visible, onDismissRequest, modifier, surface, shape, origin, title, contentWindowInsets, onDismissed, content = content)
 }
 
 /** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
@@ -212,12 +238,15 @@ public object KSheetDefaults {
 
     /** 넓은 화면에서 바텀 시트가 넘지 않는 폭. 화면이 더 넓으면 가운데에 놓인다. */
     public val MaxWidth: Dp = 640.dp
+
+    /** [KDialog]와 카드로 뜨는 [KAlertDialog]가 열리기 시작할 때의 패널 크기 배율 */
+    public val DialogAppearScale: Float get() = DIALOG_APPEAR_SCALE
 }
 
 /**
  * 아래에서 올라오는 바텀 시트. [KineticaScaffold] 안에서 열면 뒤쪽 콘텐츠가 살짝 물러나며 모서리가 둥글어진다.
  * 핸들이나 시트 내용을 아래로 끌면 닫힌다. 높이의 30% 넘게 끌거나 빠르게 플링하면 [onDismissRequest]를 호출한다.
- * 안쪽 목록이 맨 위에 있을 때 더 끌어 내려도 시트가 따라 내려간다.
+ * 안쪽 목록이 맨 위에 있을 때 더 끌어 내려도 시트가 따라 내려간다. [dragToDismiss]가 false면 끌어도 움직이지 않는다.
  * [KineticaScaffold] 밖에서 부르면 전체 화면 대화 상자 창에 띄우므로 호출한 자리의 배치에는 끼어들지 않는다.
  *
  * 높이는 내용에 맞추되 위쪽 안전 영역 아래 [KSheetDefaults.TopGap]까지만 커진다. 그보다 길 수 있는 내용은 `LazyColumn`이나
@@ -232,6 +261,8 @@ public object KSheetDefaults {
  * @param onDismissed [visible]이 false가 되어 닫힘 애니메이션이 끝나고 시트가 화면에서 사라진 뒤 한 번 부른다.
  *   어떻게 닫았는지(끌어 내림, 바깥 누름, 뒤로 가기, 호출한 쪽)와 상관없고, '애니메이션 삭제'가 켜져 있으면 닫은 바로 다음 프레임에 부른다.
  *   열린 채로 이 컴포저블이 구성에서 빠지면 부르지 않는다.
+ * @param dragToDismiss false면 손잡이와 내용을 끌어도 시트가 움직이지 않고 닫히지 않으며, 손잡이를 그리지 않는다(그 자리는 같은 높이의 빈칸).
+ *   안쪽 목록을 맨 위에서 더 끌어도 시트는 그대로다. 바깥 누름, 뒤로 가기, TalkBack 닫기 동작으로는 전처럼 닫힌다.
  */
 @Composable
 public fun KSheet(
@@ -242,6 +273,7 @@ public fun KSheet(
     title: String? = null,
     contentWindowInsets: @Composable () -> WindowInsets = { KSheetDefaults.windowInsets },
     onDismissed: (() -> Unit)? = null,
+    dragToDismiss: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val still = reducedMotion()
@@ -272,7 +304,7 @@ public fun KSheet(
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 SheetPanel(
-                    SheetFrame(surface, title, contentWindowInsets(), onDismissRequest),
+                    SheetFrame(surface, title, contentWindowInsets(), onDismissRequest, dragToDismiss),
                     drag,
                     { height },
                     modifier.onSizeChanged {
@@ -283,6 +315,22 @@ public fun KSheet(
             }
         }
     }
+}
+
+/** 1.0.0-alpha04의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KSheet(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    title: String? = null,
+    contentWindowInsets: @Composable () -> WindowInsets = { KSheetDefaults.windowInsets },
+    onDismissed: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    KSheet(visible, onDismissRequest, modifier, surface, title, contentWindowInsets, onDismissed, content = content)
 }
 
 /** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
@@ -301,7 +349,13 @@ public fun KSheet(
 }
 
 /** 시트 패널의 고정 설정. 파라미터 수를 줄이려고 묶었다. */
-private class SheetFrame(val surface: SurfaceStyle, val title: String?, val insets: WindowInsets, val onDismiss: () -> Unit)
+private class SheetFrame(
+    val surface: SurfaceStyle,
+    val title: String?,
+    val insets: WindowInsets,
+    val onDismiss: () -> Unit,
+    val draggable: Boolean,
+)
 
 @Composable
 private fun SheetPanel(
@@ -328,22 +382,29 @@ private fun SheetPanel(
                     true
                 }
             }
-            .nestedScroll(connection)
-            .dragToDismiss(drag, height, frame.onDismiss)
-            .settleAfterRelease({ drag.value > 0f && !drag.isSettling }) {
-                scope.launch { settleSheet(drag, height(), 0f, frame.onDismiss) }
-            }
+            .then(
+                if (frame.draggable) {
+                    Modifier
+                        .nestedScroll(connection)
+                        .dragToDismiss(drag, height, frame.onDismiss)
+                        .settleAfterRelease({ drag.value > 0f && !drag.isSettling }) {
+                            scope.launch { settleSheet(drag, height(), 0f, frame.onDismiss) }
+                        }
+                } else {
+                    Modifier
+                },
+            )
             .blockTouches()
             .windowInsetsPadding(frame.insets)
             .padding(horizontal = design.density.padding(24.dp)),
     ) {
-        Box(
-            Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(vertical = 12.dp)
-                .size(40.dp, 5.dp)
-                .background(surface.contentColor.copy(alpha = 0.28f), RoundedCornerShape(3.dp)),
-        )
+        // 끌 수 없으면 손잡이가 잘못된 단서가 되므로 그리지 않는다. 내용 위치가 바뀌지 않게 같은 높이를 비워 둔다.
+        val handle = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 12.dp).size(40.dp, 5.dp)
+        if (frame.draggable) {
+            Box(handle.background(surface.contentColor.copy(alpha = 0.28f), RoundedCornerShape(3.dp)))
+        } else {
+            Spacer(handle)
+        }
         CompositionLocalProvider(LocalKineticaContentColor provides surface.contentColor) { KGlassLayer { content() } }
         Box(Modifier.padding(bottom = 16.dp))
     }
@@ -431,9 +492,9 @@ internal fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
 public fun Modifier.kOrigin(onOrigin: (Offset) -> Unit): Modifier = onGloballyPositioned { onOrigin(it.boundsOnScreen().center) }
 
 private val WINDOW_BLUR = 28.dp
+private const val DIALOG_APPEAR_SCALE = 0.6f
 private const val DIALOG_DAMPING = 0.72f
 private const val DIALOG_STIFFNESS = 420f
-private const val DIALOG_START_SCALE = 0.6f
 
 // 목록처럼 너비를 스스로 정하지 않는 내용도 너무 좁아지지 않게 한다. 화면이 더 좁으면 화면에 맞춘다.
 private val DIALOG_MIN_WIDTH = 280.dp

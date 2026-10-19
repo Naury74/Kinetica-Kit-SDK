@@ -55,6 +55,7 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -139,6 +140,9 @@ public enum class KSliderBadgePosition {
  * @param minHeight 트랙 줄의 최소 높이로, 터치 영역이 된다. 배지와 라벨 줄은 따로 더한다. 음수면 [IllegalArgumentException]을 던진다.
  * @param trackThickness 잡지 않았을 때 트랙 굵기. 잡으면 두 배가 된다. [KSliderThumb.Bar]는 자기 굵기를 쓰고,
  *   [KSliderThumb.Square]는 이 값과 10dp 가운데 큰 쪽을 쓴다. 0 이하면 [IllegalArgumentException]을 던진다.
+ * @param labelTextStyle [KSliderBadgePosition.Top] 줄에 보이는 [label] 글자 스타일. 기본 스타일(`KineticaTheme.typography.label`,
+ *   16sp SemiBold, 옅은 표면 글자색) 위에 덮어쓰므로 정하지 않은 값은 기본을 따른다. null이면 기본 스타일 그대로다.
+ * @param labelSpacing [KSliderBadgePosition.Top] 줄과 트랙 줄 사이 간격. 기본값은 4dp다. 음수면 [IllegalArgumentException]을 던진다.
  */
 @Composable
 public fun KSlider(
@@ -163,8 +167,11 @@ public fun KSlider(
     stateDescription: ((value: Float) -> String?)? = null,
     minHeight: Dp = 44.dp,
     trackThickness: Dp = 6.dp,
+    labelTextStyle: TextStyle? = null,
+    labelSpacing: Dp = 4.dp,
 ) {
     require(steps >= 0) { "steps는 0 이상이어야 합니다." }
+    require(labelSpacing.value >= 0f) { "labelSpacing은 0 이상이어야 합니다." }
     require(minHeight.value >= 0f) { "minHeight는 0 이상이어야 합니다." }
     require(trackThickness.value > 0f) { "trackThickness는 0보다 커야 합니다." }
     // 범위는 데이터에서 오는 일이 많아, 잘못된 범위로 화면 전체를 죽이지 않고 입력만 막는다.
@@ -207,7 +214,42 @@ public fun KSlider(
             drawSlider(SliderLook(model.glide.shown(fraction), grab.value, stretch.value, rtl, thumb, trackThickness), paint)
         }
     val header = if (badgePosition == KSliderBadgePosition.Top) label else null
-    SliderFrame(modifier, core, SliderDecor(valueBadge, badgePosition, header, surface), value) { model.glide.shown(fraction) }
+    SliderFrame(modifier, core, SliderDecor(valueBadge, badgePosition, header, surface, labelTextStyle, labelSpacing), value) {
+        model.glide.shown(fraction)
+    }
+}
+
+/** 1.0.0-alpha04까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    steps: Int = 0,
+    enabled: Boolean = true,
+    onValueChangeFinished: (() -> Unit)? = null,
+    accent: Color = KineticaTheme.colors.accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    thumb: KSliderThumb = KineticaTheme.design.controls.sliderThumb,
+    snap: KSliderSnap? = null,
+    resetValue: Float? = null,
+    valueBadge: (@Composable (value: Float) -> Unit)? = null,
+    badgePosition: KSliderBadgePosition = KSliderBadgePosition.AboveThumb,
+    inactiveTrackColor: Color = Color.Unspecified,
+    excludeSystemGestures: Boolean = false,
+    rubberBand: Boolean = true,
+    label: String? = null,
+    stateDescription: ((value: Float) -> String?)? = null,
+    minHeight: Dp = 44.dp,
+    trackThickness: Dp = 6.dp,
+) {
+    KSlider(
+        value, onValueChange, modifier, valueRange, steps, enabled, onValueChangeFinished, accent, surface, thumb, snap, resetValue,
+        valueBadge, badgePosition, inactiveTrackColor, excludeSystemGestures, rubberBand, label, stateDescription, minHeight,
+        trackThickness, labelTextStyle = null,
+    )
 }
 
 /** 1.0.0-alpha03까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
@@ -256,12 +298,17 @@ public fun KSlider(
     KSlider(value, onValueChange, modifier, valueRange, steps, enabled, onValueChangeFinished, accent, surface, thumb, snap = null)
 }
 
-/** 트랙 둘레에 놓을 것. [header]는 [KSliderBadgePosition.Top]일 때 위 줄 시작 쪽에 보일 이름이다. */
+/**
+ * 트랙 둘레에 놓을 것. [header]는 [KSliderBadgePosition.Top]일 때 위 줄 시작 쪽에 보일 이름이고, [headerStyle]은 그 기본 스타일에 덮어쓸 값,
+ * [headerSpacing]은 위 줄과 트랙 사이 간격이다.
+ */
 private class SliderDecor(
     val badge: (@Composable (Float) -> Unit)?,
     val position: KSliderBadgePosition,
     val header: String?,
     val surface: SurfaceStyle,
+    val headerStyle: TextStyle?,
+    val headerSpacing: Dp,
 )
 
 /** 배지가 없으면 슬라이더만, 있으면 배지 자리에 맞춰 함께 놓는다. [shownFraction]은 지금 손잡이가 그려진 비율이다. */
@@ -275,10 +322,11 @@ private fun SliderFrame(modifier: Modifier, core: Modifier, decor: SliderDecor, 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 val header = decor.header
                 if (header != null) {
+                    val base = KineticaTheme.typography.label.copy(color = decor.surface.muted(HEADER_ALPHA))
                     ThemedText(
                         header,
                         modifier = hidden.weight(1f),
-                        style = KineticaTheme.typography.label.copy(color = decor.surface.muted(HEADER_ALPHA)),
+                        style = decor.headerStyle?.let(base::merge) ?: base,
                     )
                 } else {
                     Spacer(Modifier.weight(1f))
@@ -288,7 +336,7 @@ private fun SliderFrame(modifier: Modifier, core: Modifier, decor: SliderDecor, 
                     Box(hidden) { badge(value) }
                 }
             }
-            Spacer(Modifier.height(BADGE_GAP))
+            Spacer(Modifier.height(decor.headerSpacing))
             Box(Modifier.fillMaxWidth().then(core))
         }
         return
