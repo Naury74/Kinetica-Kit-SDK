@@ -172,23 +172,24 @@ internal fun tabBarLook(surface: SurfaceStyle, inset: Dp): TabBarLook {
     )
 }
 
-/** 탭 바 인디케이터. 채운 모양은 강조색을 옅게, 밑줄 모양은 칸 아래 가운데에 짧은 선을 긋는다. */
-internal fun DrawScope.drawBarIndicator(look: TabBarLook, left: Float, right: Float) {
+/** 탭 바 인디케이터. 채운 모양은 강조색을 옅게, 밑줄 모양은 칸 아래 가운데에 짧은 선을 긋는다. [level](0..1)만큼의 진하기로 그린다. */
+internal fun DrawScope.drawBarIndicator(look: TabBarLook, left: Float, right: Float, level: Float = 1f) {
     when (look.style) {
         KTabIndicator.Underline -> {
             val w = BAR_UNDERLINE_WIDTH.toPx().coerceAtMost(right - left)
             val h = BAR_UNDERLINE_HEIGHT.toPx()
-            drawRoundRect(look.accent, Offset((left + right - w) / 2, size.height - h), Size(w, h), CornerRadius(h / 2))
+            val color = look.accent.copy(alpha = look.accent.alpha * level)
+            drawRoundRect(color, Offset((left + right - w) / 2, size.height - h), Size(w, h), CornerRadius(h / 2))
         }
 
         KTabIndicator.Filled -> drawShape(
             look.cell,
-            look.accent.copy(alpha = FILLED_ALPHA),
+            look.accent.copy(alpha = FILLED_ALPHA * level),
             Offset(left, 0f),
             Size(right - left, size.height),
         )
 
-        else -> drawShape(look.cell, look.idle.copy(alpha = INDICATOR_ALPHA), Offset(left, 0f), Size(right - left, size.height))
+        else -> drawShape(look.cell, look.idle.copy(alpha = INDICATOR_ALPHA * level), Offset(left, 0f), Size(right - left, size.height))
     }
 }
 

@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -65,6 +67,9 @@ public enum class KSwitchVariant(internal val width: Dp, internal val height: Dp
  * @param accent 켜진 트랙 색. [Color.Unspecified]면 [KSwitchVariant.Capsule]는 [KineticaColors.positive],
  *   나머지는 [KineticaColors.accent]를 쓴다.
  * @param surface 꺼진 트랙과 손잡이 색을 정하는 표면
+ * @param lens true면 누르고 있는 동안 손잡이가 유리 렌즈로 부풀어 아래 트랙을 확대하고 굴절시키며, 떼면 불투명 손잡이로 돌아온다([glassLens]).
+ *   [KSwitchVariant.Capsule]은 손잡이가 투명해져 렌즈가 그 자리를 맡고, 나머지 모양은 손잡이 위에 렌즈를 겹친다.
+ *   렌즈 확대는 Android 13(API 33)부터이고, 그 아래에서는 반투명 방울만 부푼다.
  */
 @Composable
 public fun KSwitch(
@@ -75,6 +80,7 @@ public fun KSwitch(
     accent: Color = Color.Unspecified,
     surface: SurfaceStyle = KineticaTheme.surface,
     variant: KSwitchVariant = KineticaTheme.design.controls.switch,
+    lens: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val motion = rememberSwitchMotion(checked, variant, interaction)
@@ -113,17 +119,59 @@ public fun KSwitch(
                 },
             )
             .graphicsLayer { alpha = if (enabled) 1f else CHOICE_DISABLED_ALPHA }
+            .then(if (lens) Modifier.switchLens(variant, motion) else Modifier)
             .drawBehind {
                 val position = motion.position.value
                 val press = motion.press.value
                 when (variant) {
-                    KSwitchVariant.Capsule -> drawCapsuleSwitch(position, press, paint)
+                    KSwitchVariant.Capsule -> drawCapsuleSwitch(position, press, paint, if (lens) press.coerceIn(0f, 1f) else 0f)
                     KSwitchVariant.Check -> drawCheckSwitch(position, press, paint)
                     KSwitchVariant.Slim -> drawSlimSwitch(position, press, paint)
                     KSwitchVariant.Outline -> drawOutlineSwitch(position, press, paint)
                     KSwitchVariant.Block -> drawBlockSwitch(position, press, paint)
                 }
             },
+    )
+}
+
+/** 1.0.0-alpha05까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KSwitch(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    accent: Color = Color.Unspecified,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    variant: KSwitchVariant = KineticaTheme.design.controls.switch,
+) {
+    KSwitch(checked, onCheckedChange, modifier, enabled, accent, surface, variant, lens = false)
+}
+
+/**
+ * 누르는 동안 손잡이 자리에 렌즈를 띄운다. 손잡이 가운데는 캡슐 모양이면 그 그리기와 같은 식으로, 나머지는 트랙 양 끝 반원 사이로 셈한다.
+ * 위치와 눌림은 그리기 단계에서만 읽는다.
+ */
+@Composable
+private fun Modifier.switchLens(variant: KSwitchVariant, motion: SwitchMotion): Modifier {
+    val inset = with(LocalDensity.current) { CAPSULE_THUMB_INSET.toPx() }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    return lens(
+        progress = { motion.press.value },
+        center = { size ->
+            val position = motion.position.value
+            val x = if (variant == KSwitchVariant.Capsule) {
+                val thumb = size.height - inset * 2
+                val width = thumb * (1f + CAPSULE_STRETCH * motion.press.value)
+                inset + (size.width - inset * 2 - width) * position + width / 2
+            } else {
+                size.height / 2 + (size.width - size.height) * position
+            }
+            Offset(if (rtl) size.width - x else x, size.height / 2)
+        },
+        lensSize = { size -> Size(size.height * LENS_WIDE, size.height * LENS_TALL) },
+        optics = SwitchOptics,
     )
 }
 
@@ -172,7 +220,8 @@ private fun rememberSwitchMotion(checked: Boolean, variant: KSwitchVariant, inte
 /** 왼쪽에서 잰 [x]를 레이아웃 방향에 맞춘다. 오른쪽에서 왼쪽 언어에서는 켜진 쪽이 왼쪽이다. */
 private fun DrawScope.mirrored(x: Float): Float = if (layoutDirection == LayoutDirection.Rtl) size.width - x else x
 
-private fun DrawScope.drawCapsuleSwitch(position: Float, press: Float, paint: SwitchPaint) {
+/** [clear]는 렌즈가 손잡이 자리를 맡은 정도(0..1)로, 그만큼 손잡이를 투명하게 그린다. */
+private fun DrawScope.drawCapsuleSwitch(position: Float, press: Float, paint: SwitchPaint, clear: Float) {
     val t = position.coerceIn(0f, 1f)
     drawRoundRect(lerp(paint.surface.raisedFill(CAPSULE_OFF_ALPHA), paint.on, t), cornerRadius = CornerRadius(size.height / 2))
     val inset = CAPSULE_THUMB_INSET.toPx()
@@ -182,8 +231,15 @@ private fun DrawScope.drawCapsuleSwitch(position: Float, press: Float, paint: Sw
     val start = inset + travel * position
     val left = if (layoutDirection == LayoutDirection.Rtl) size.width - start - thumbWidth else start
     val corner = CornerRadius(thumbHeight / 2)
-    drawRoundRect(Color.Black.copy(alpha = THUMB_SHADOW), Offset(left, inset + THUMB_DROP.toPx()), Size(thumbWidth, thumbHeight), corner)
-    drawRoundRect(Color.White, Offset(left, inset), Size(thumbWidth, thumbHeight), corner)
+    val shown = 1f - clear
+    if (shown <= 0f) return
+    drawRoundRect(
+        Color.Black.copy(alpha = THUMB_SHADOW * shown),
+        Offset(left, inset + THUMB_DROP.toPx()),
+        Size(thumbWidth, thumbHeight),
+        corner,
+    )
+    drawRoundRect(Color.White.copy(alpha = shown), Offset(left, inset), Size(thumbWidth, thumbHeight), corner)
 }
 
 private fun DrawScope.drawCheckSwitch(position: Float, press: Float, paint: SwitchPaint) {
@@ -243,6 +299,9 @@ private fun DrawScope.drawSlimSwitch(position: Float, press: Float, paint: Switc
     drawCircle(lerp(paint.ink.copy(alpha = SLIM_OFF_RING), paint.on, t), radius - ring / 2 - ring / 2, center, style = Stroke(ring))
 }
 
+private val SwitchOptics = LensOptics(KLensDefaults.ZOOM, 1f, KLensDefaults.Tint)
+private const val LENS_WIDE = 1.55f
+private const val LENS_TALL = 1.12f
 private val CAPSULE_THUMB_INSET = 3.dp
 private const val CAPSULE_STRETCH = 0.35f
 private const val CAPSULE_OFF_ALPHA = 0.18f

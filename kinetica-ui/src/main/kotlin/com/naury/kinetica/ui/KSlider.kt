@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
@@ -43,6 +44,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -143,6 +145,9 @@ public enum class KSliderBadgePosition {
  * @param labelTextStyle [KSliderBadgePosition.Top] 줄에 보이는 [label] 글자 스타일. 기본 스타일(`KineticaTheme.typography.label`,
  *   16sp SemiBold, 옅은 표면 글자색) 위에 덮어쓰므로 정하지 않은 값은 기본을 따른다. null이면 기본 스타일 그대로다.
  * @param labelSpacing [KSliderBadgePosition.Top] 줄과 트랙 줄 사이 간격. 기본값은 4dp다. 음수면 [IllegalArgumentException]을 던진다.
+ * @param lens true면 손잡이를 잡는 동안(키보드 초점을 받은 동안도) 손잡이가 유리 렌즈로 부풀어 아래 트랙을 확대하고 굴절시키며,
+ *   놓으면 불투명 손잡이로 돌아온다([glassLens]). 이때 손잡이는 [thumb]와 상관없이 캡슐로 그리고, 트랙은 [thumb]의 트랙을 쓴다.
+ *   렌즈 확대는 Android 13(API 33)부터이고, 그 아래에서는 반투명 방울만 부푼다.
  */
 @Composable
 public fun KSlider(
@@ -169,6 +174,7 @@ public fun KSlider(
     trackThickness: Dp = 6.dp,
     labelTextStyle: TextStyle? = null,
     labelSpacing: Dp = 4.dp,
+    lens: Boolean = false,
 ) {
     require(steps >= 0) { "steps는 0 이상이어야 합니다." }
     require(labelSpacing.value >= 0f) { "labelSpacing은 0 이상이어야 합니다." }
@@ -210,13 +216,52 @@ public fun KSlider(
         .focusable(active)
         .onKeyEvent { event -> active && event.type == KeyEventType.KeyDown && model.key(event.key, rtl) }
         .then(if (active) Modifier.sliderGesture(model, rtl, grab, stretch) else Modifier)
+        .then(if (lens) Modifier.sliderLens(rtl, { model.glide.shown(fraction) }, grab::value, stretch::value) else Modifier)
         .drawBehind {
-            drawSlider(SliderLook(model.glide.shown(fraction), grab.value, stretch.value, rtl, thumb, trackThickness), paint)
+            drawSlider(
+                SliderLook(model.glide.shown(fraction), grab.value, stretch.value, rtl, SliderForm(thumb, trackThickness, lens)),
+                paint,
+            )
         }
     val header = if (badgePosition == KSliderBadgePosition.Top) label else null
     SliderFrame(modifier, core, SliderDecor(valueBadge, badgePosition, header, surface, labelTextStyle, labelSpacing), value) {
         model.glide.shown(fraction)
     }
+}
+
+/** 1.0.0-alpha05까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    steps: Int = 0,
+    enabled: Boolean = true,
+    onValueChangeFinished: (() -> Unit)? = null,
+    accent: Color = KineticaTheme.colors.accent,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    thumb: KSliderThumb = KineticaTheme.design.controls.sliderThumb,
+    snap: KSliderSnap? = null,
+    resetValue: Float? = null,
+    valueBadge: (@Composable (value: Float) -> Unit)? = null,
+    badgePosition: KSliderBadgePosition = KSliderBadgePosition.AboveThumb,
+    inactiveTrackColor: Color = Color.Unspecified,
+    excludeSystemGestures: Boolean = false,
+    rubberBand: Boolean = true,
+    label: String? = null,
+    stateDescription: ((value: Float) -> String?)? = null,
+    minHeight: Dp = 44.dp,
+    trackThickness: Dp = 6.dp,
+    labelTextStyle: TextStyle? = null,
+    labelSpacing: Dp = 4.dp,
+) {
+    KSlider(
+        value, onValueChange, modifier, valueRange, steps, enabled, onValueChangeFinished, accent, surface, thumb, snap, resetValue,
+        valueBadge, badgePosition, inactiveTrackColor, excludeSystemGestures, rubberBand, label, stateDescription, minHeight,
+        trackThickness, labelTextStyle, labelSpacing, lens = false,
+    )
 }
 
 /** 1.0.0-alpha04까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
@@ -584,15 +629,18 @@ private fun keyStep(key: Key, rtl: Boolean): Int? = when (key) {
     else -> null
 }
 
-/** 그리기에 쓰는 슬라이더 상태. 채운 비율, 잡은 정도(0..1), 끝을 넘어 늘어난 정도(음수면 시작 쪽), RTL 여부, 트랙 굵기를 담는다. */
-private class SliderLook(
-    val fraction: Float,
-    val grab: Float,
-    val stretch: Float,
-    val rtl: Boolean,
-    val thumb: KSliderThumb,
-    val thickness: Dp,
-)
+/**
+ * 그리기에 쓰는 슬라이더 상태. 채운 비율, 잡은 정도(0..1), 끝을 넘어 늘어난 정도(음수면 시작 쪽), RTL 여부, 트랙 굵기,
+ * 렌즈 손잡이인지를 담는다.
+ */
+private class SliderLook(val fraction: Float, val grab: Float, val stretch: Float, val rtl: Boolean, form: SliderForm) {
+    val thumb = form.thumb
+    val thickness = form.thickness
+    val lens = form.lens
+}
+
+/** 손잡이 모양, 트랙 굵기, 렌즈 손잡이인지. 구성할 때 정해지는 값이다. */
+private class SliderForm(val thumb: KSliderThumb, val thickness: Dp, val lens: Boolean)
 
 private fun DrawScope.drawSlider(look: SliderLook, paint: ThumbPaint) {
     val fraction = look.fraction
@@ -608,9 +656,39 @@ private fun DrawScope.drawSlider(look: SliderLook, paint: ThumbPaint) {
         val filled = inset + (size.width - inset * 2) * fraction
         val center = if (rtl) size.width - filled else filled
         drawSliderTrack(look.thumb, center, trackHeight, paint, rtl)
-        drawSliderThumb(look.thumb, Offset(center, size.height / 2), grab, paint)
+        if (look.lens) {
+            val knob = if (paint.dark) Color(LENS_DARK_KNOB) else Color.White
+            val thumbSize = Size(KLensDefaults.ThumbSize.width.toPx(), KLensDefaults.ThumbSize.height.toPx())
+            drawLensKnob(Offset(center, size.height / 2), thumbSize, 1f - grab.coerceIn(0f, 1f), knob)
+        } else {
+            drawSliderThumb(look.thumb, Offset(center, size.height / 2), grab, paint)
+        }
     }
 }
+
+/**
+ * 손잡이 자리에 렌즈를 띄운다. 손잡이 위치는 [drawSlider]와 같은 식으로 셈하고, 고무줄처럼 늘어난 만큼도 따라간다.
+ * 비율, 잡은 정도, 늘어난 정도는 그리기 단계에서만 읽는다.
+ */
+@Composable
+private fun Modifier.sliderLens(rtl: Boolean, fraction: () -> Float, grab: () -> Float, stretch: () -> Float): Modifier {
+    val inset = with(LocalDensity.current) { THUMB_WIDTH.toPx() / 2 }
+    return lens(
+        progress = grab,
+        center = { size ->
+            val filled = inset + (size.width - inset * 2) * fraction()
+            val x = if (rtl) size.width - filled else filled
+            val s = stretch()
+            val pivot = if ((s < 0f) != rtl) size.width else 0f
+            Offset(pivot + (x - pivot) * (1f + abs(s) * RUBBER_MAX), size.height / 2)
+        },
+        lensSize = { Size(KLensDefaults.Size.width.toPx(), KLensDefaults.Size.height.toPx()) },
+        optics = SliderOptics,
+    )
+}
+
+private val SliderOptics = LensOptics(KLensDefaults.ZOOM, 1f, KLensDefaults.Tint)
+private const val LENS_DARK_KNOB = 0xFFF2F2F5
 
 private const val TRACK_GROW = 1f
 private const val TRACK_ALPHA = 0.16f

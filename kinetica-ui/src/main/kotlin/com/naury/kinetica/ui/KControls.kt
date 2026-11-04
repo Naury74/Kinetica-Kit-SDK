@@ -99,6 +99,9 @@ public enum class KSegmentSizing {
  *   읽히는 쪽이 설정 화면에 맞다. 컨트롤 아래 내용 영역을 통째로 바꾸는 탭처럼 쓰면 [Role.Tab]을 넘긴다.
  * @param maxLines 이름 한 칸의 최대 줄 수. 1보다 작으면 [IllegalArgumentException]을 던진다.
  * @param sizing 칸 폭을 나누는 방식
+ * @param lens true면 선택 인디케이터를 손가락으로 끌어 옮길 수 있다. 인디케이터를 누르는 동안 유리 렌즈로 부풀어 아래 이름을 확대하고,
+ *   떼면 가장 가까운 칸에 붙어 그 칸을 고른다. 렌즈 확대는 Android 13(API 33)부터이고, 그 아래에서는 반투명 방울만 부푼다.
+ *   탭, 키보드, TalkBack으로 고르는 방법은 그대로다.
  */
 @Composable
 public fun KSegmentedControl(
@@ -112,9 +115,28 @@ public fun KSegmentedControl(
     role: Role = Role.RadioButton,
     maxLines: Int = DEFAULT_MAX_LINES,
     sizing: KSegmentSizing = KSegmentSizing.Equal,
+    lens: Boolean = false,
 ) {
     require(options.size >= 2) { "options는 두 개 이상이어야 합니다." }
-    KSegmentedControl(options.map { KSegment(it) }, selectedIndex, onSelect, modifier, enabled, surface, tone, role, maxLines, sizing)
+    KSegmentedControl(options.map { KSegment(it) }, selectedIndex, onSelect, modifier, enabled, surface, tone, role, maxLines, sizing, lens)
+}
+
+/** 1.0.0-alpha05까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KSegmentedControl(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    tone: KTone = KTone.Neutral,
+    role: Role = Role.RadioButton,
+    maxLines: Int = DEFAULT_MAX_LINES,
+    sizing: KSegmentSizing = KSegmentSizing.Equal,
+) {
+    KSegmentedControl(options, selectedIndex, onSelect, modifier, enabled, surface, tone, role, maxLines, sizing, lens = false)
 }
 
 /**
@@ -127,6 +149,7 @@ public fun KSegmentedControl(
  *
  * @param segments 칸 목록. 두 개 미만이면 [IllegalArgumentException]을 던진다.
  * @param maxLines 이름 한 칸의 최대 줄 수. 1보다 작으면 [IllegalArgumentException]을 던진다.
+ * @param lens 글자만 받는 [KSegmentedControl]의 `lens`와 같다.
  */
 @JvmName("KSegmentedControlOfSegments")
 @Composable
@@ -141,6 +164,7 @@ public fun KSegmentedControl(
     role: Role = Role.RadioButton,
     maxLines: Int = DEFAULT_MAX_LINES,
     sizing: KSegmentSizing = KSegmentSizing.Equal,
+    lens: Boolean = false,
 ) {
     require(segments.size >= 2) { "segments는 두 개 이상이어야 합니다." }
     require(maxLines >= 1) { "maxLines는 1 이상이어야 합니다." }
@@ -149,7 +173,8 @@ public fun KSegmentedControl(
     val motion = KineticaTheme.design.motion
     LaunchedEffect(selectedIndex, edges, motion) { edges.of(selectedIndex)?.let { indicator.moveTo(it.first, it.second, motion) } }
     val paint = segmentInk(tone, surface)
-    Box(modifier.heightIn(min = segmentHeight).kSurface(surface, SegmentShape).padding(SEGMENT_INSET)) {
+    val drag = rememberIndicatorLens(lens && enabled, indicator, SEGMENT_INSET, { edges.cells() }, onSelect)
+    Box(modifier.heightIn(min = segmentHeight).then(drag.outer).kSurface(surface, SegmentShape).padding(SEGMENT_INSET).then(drag.inner)) {
         Box(
             Modifier
                 .matchParentSize()
@@ -157,7 +182,7 @@ public fun KSegmentedControl(
                     val left = indicator.left.value
                     val right = indicator.right.value
                     if (right > left) {
-                        drawSegmentIndicator(paint, left, right, 1f)
+                        drawSegmentIndicator(paint, left, right, 1f - drag.clear())
                     }
                 },
         )
@@ -178,10 +203,32 @@ public fun KSegmentedControl(
     }
 }
 
+/** 1.0.0-alpha05까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@JvmName("KSegmentedControlOfSegments")
+@Composable
+public fun KSegmentedControl(
+    segments: List<KSegment>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    tone: KTone = KTone.Neutral,
+    role: Role = Role.RadioButton,
+    maxLines: Int = DEFAULT_MAX_LINES,
+    sizing: KSegmentSizing = KSegmentSizing.Equal,
+) {
+    KSegmentedControl(segments, selectedIndex, onSelect, modifier, enabled, surface, tone, role, maxLines, sizing, lens = false)
+}
+
 /** 칸마다 물리 좌표(px)의 왼쪽과 오른쪽 끝. RTL에서도 화면 왼쪽에서 잰다. */
 @Immutable
 private class SegmentEdges(private val left: FloatArray, private val right: FloatArray) {
     fun of(index: Int): Pair<Float, Float>? = if (index in left.indices) left[index] to right[index] else null
+
+    /** 칸마다 왼쪽, 오른쪽 끝을 이어 둔 배열. 인디케이터 끌기가 붙을 칸을 고를 때 쓴다. */
+    fun cells(): FloatArray = FloatArray(left.size * 2) { if (it % 2 == 0) left[it / 2] else right[it / 2] }
 
     override fun equals(other: Any?): Boolean = other is SegmentEdges && left.contentEquals(other.left) && right.contentEquals(other.right)
 

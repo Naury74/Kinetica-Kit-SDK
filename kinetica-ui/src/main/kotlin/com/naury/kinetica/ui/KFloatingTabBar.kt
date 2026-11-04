@@ -152,6 +152,9 @@ public fun rememberKFloatingTabBarState(initiallyCollapsed: Boolean = false): KF
  * @param selectedIndex 선택된 탭의 위치(0부터). 접힌 캡슐은 이 탭의 아이콘을 보여 준다.
  * @param accessory 탭 바에 붙여 함께 움직일 내용. 캡슐 안에 그리며, 펼친 동안 높이는 56dp다.
  *   접히면 캡슐과 같은 높이로 줄어든다. [KMiniPlayerBar]를 넣으면 누를 때 이 자리에서 전체 화면 플레이어로 커진다.
+ * @param lens true면 펼친 탭 바의 선택 인디케이터를 손가락으로 끌어 옮길 수 있다. 끄는 동안 인디케이터가 유리 렌즈로 부풀어 아래 탭을
+ *   확대하고, 떼면 가장 가까운 탭에 붙어 그 탭을 고른다. 렌즈 확대는 Android 13(API 33)부터이고, 그 아래에서는 반투명 방울만 부푼다.
+ *   탭을 누르거나 TalkBack으로 고르는 방법은 그대로다.
  */
 @Composable
 public fun KFloatingTabBar(
@@ -162,6 +165,7 @@ public fun KFloatingTabBar(
     state: KFloatingTabBarState = rememberKFloatingTabBarState(),
     surface: SurfaceStyle = KineticaTheme.surface,
     accessory: (@Composable () -> Unit)? = null,
+    lens: Boolean = false,
 ) {
     require(tabs.isNotEmpty()) { "tabs가 비어 있으면 안 됩니다." }
     val density = LocalDensity.current
@@ -175,10 +179,11 @@ public fun KFloatingTabBar(
     val compact = compactHeight()
     val geometry = remember { FloatingGeometry() }
     val bar = shapeFor { tabBar }
+    val tabLens = rememberTabLens(lens && !state.isCollapsed, tabs.size, geometry, onSelect)
     Layout(
         content = {
-            Box(Modifier.layoutId(BAR_ID).kSurface(surface, bar).clip(bar)) {
-                ExpandedTabs(tabs, selectedIndex, onSelect, state, surface, geometry)
+            Box(Modifier.layoutId(BAR_ID).then(tabLens.parts.outer).kSurface(surface, bar).clip(bar)) {
+                ExpandedTabs(TabRow(tabs, selectedIndex, onSelect), state, surface, geometry, tabLens)
                 CollapsedCapsule(tabs, selectedIndex, onSelect, state, surface)
             }
             if (accessory != null) {
@@ -221,23 +226,62 @@ public fun KFloatingTabBar(
     }
 }
 
-/** 펼친 탭 줄을 측정할 크기(px). 바깥 레이아웃이 매번 정하고, 탭 줄은 탭 바가 줄어드는 동안에도 이 크기로 측정해 글자가 다시 줄 바꿈되지 않게 한다. */
-private class FloatingGeometry {
-    var fullWidth = 0
-    var fullHeight = 0
-}
-
+/** 1.0.0-alpha05까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
 @Composable
-private fun ExpandedTabs(
+public fun KFloatingTabBar(
     tabs: List<KTab>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
-    state: KFloatingTabBarState,
-    surface: SurfaceStyle,
-    geometry: FloatingGeometry,
+    modifier: Modifier = Modifier,
+    state: KFloatingTabBarState = rememberKFloatingTabBarState(),
+    surface: SurfaceStyle = KineticaTheme.surface,
+    accessory: (@Composable () -> Unit)? = null,
 ) {
-    var width by remember { mutableIntStateOf(0) }
+    KFloatingTabBar(tabs, selectedIndex, onSelect, modifier, state, surface, accessory, lens = false)
+}
+
+/**
+ * 펼친 탭 줄을 측정할 크기(px). 바깥 레이아웃이 매번 정하고, 탭 줄은 탭 바가 줄어드는 동안에도 이 크기로 측정해 글자가 다시 줄 바꿈되지 않게 한다.
+ * [rowWidth]는 안쪽 여백을 뺀 탭 줄 폭으로, 인디케이터가 칸을 나누는 기준이다.
+ */
+private class FloatingGeometry {
+    var fullWidth = 0
+    var fullHeight = 0
+    var rowWidth by mutableIntStateOf(0)
+}
+
+/** 탭 목록, 선택된 위치, 고를 때 부를 함수. */
+private class TabRow(val tabs: List<KTab>, val selectedIndex: Int, val onSelect: (Int) -> Unit)
+
+/** 선택 인디케이터와 그것을 끌어 옮기는 렌즈. */
+private class TabLens(val indicator: LiquidIndicator, val parts: IndicatorLensParts)
+
+/** 선택 인디케이터를 만들고, [on]이면 그것을 끌어 옮기는 렌즈를 붙인다. */
+@Composable
+private fun rememberTabLens(on: Boolean, count: Int, geometry: FloatingGeometry, onSelect: (Int) -> Unit): TabLens {
     val indicator = remember { LiquidIndicator() }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val parts = rememberIndicatorLens(on, indicator, TAB_INSET, { equalCells(count, geometry.rowWidth.toFloat(), rtl) }, onSelect)
+    return TabLens(indicator, parts)
+}
+
+/** [count]개 칸을 [width]에 같은 폭으로 나눈 칸 끝 배열(물리 좌표 px). RTL이면 0번 칸이 오른쪽 끝이다. */
+private fun equalCells(count: Int, width: Float, rtl: Boolean): FloatArray {
+    val cell = width / count
+    return FloatArray(count * 2) {
+        val index = it / 2
+        val left = cell * (if (rtl) count - 1 - index else index)
+        if (it % 2 == 0) left else left + cell
+    }
+}
+
+@Composable
+private fun ExpandedTabs(row: TabRow, state: KFloatingTabBarState, surface: SurfaceStyle, geometry: FloatingGeometry, lens: TabLens) {
+    val tabs = row.tabs
+    val selectedIndex = row.selectedIndex
+    val indicator = lens.indicator
+    val width = geometry.rowWidth
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val motion = KineticaTheme.design.motion
     LaunchedEffect(selectedIndex, width, tabs.size, rtl) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl, motion) }
@@ -254,17 +298,18 @@ private fun ExpandedTabs(
             }
             .graphicsLayer { alpha = (1f - state.progress.value * 2f).coerceIn(0f, 1f) }
             .padding(TAB_INSET)
-            .onSizeChanged { width = it.width }
+            .onSizeChanged { geometry.rowWidth = it.width }
+            .then(lens.parts.inner)
             .drawBehind {
                 val left = indicator.left.value
                 val right = indicator.right.value
-                if (right > left) drawBarIndicator(look, left, right)
+                if (right > left) drawBarIndicator(look, left, right, 1f - lens.parts.clear())
             }
             .then(if (state.isCollapsed) Modifier.clearAndSetSemantics { } else Modifier.selectableGroup()),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         tabs.forEachIndexed { index, tab ->
-            FloatingTabItem(tab, index == selectedIndex, look, enabled = !state.isCollapsed, Modifier.weight(1f)) { onSelect(index) }
+            FloatingTabItem(tab, index == selectedIndex, look, enabled = !state.isCollapsed, Modifier.weight(1f)) { row.onSelect(index) }
         }
     }
 }
