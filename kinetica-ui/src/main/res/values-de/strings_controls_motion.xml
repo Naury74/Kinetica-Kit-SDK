@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">Zum Aufdecken rubbeln</string>
+    <string name="kinetica_ui_stacked_expand">Alle Karten anzeigen</string>
+    <string name="kinetica_ui_stacked_open">Karte öffnen</string>
+    <string name="kinetica_ui_stacked_back">Zurück zu allen Karten</string>
+</resources>

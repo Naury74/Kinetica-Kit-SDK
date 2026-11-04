@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">Cào để mở</string>
+    <string name="kinetica_ui_stacked_expand">Hiện tất cả thẻ</string>
+    <string name="kinetica_ui_stacked_open">Mở thẻ</string>
+    <string name="kinetica_ui_stacked_back">Quay lại tất cả thẻ</string>
+</resources>

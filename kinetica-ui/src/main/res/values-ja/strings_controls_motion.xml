@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">削って表示</string>
+    <string name="kinetica_ui_stacked_expand">すべてのカードを表示</string>
+    <string name="kinetica_ui_stacked_open">カードを開く</string>
+    <string name="kinetica_ui_stacked_back">カード一覧に戻る</string>
+</resources>

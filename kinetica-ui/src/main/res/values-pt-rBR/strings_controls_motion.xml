@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">Raspe para revelar</string>
+    <string name="kinetica_ui_stacked_expand">Mostrar todos os cartões</string>
+    <string name="kinetica_ui_stacked_open">Abrir cartão</string>
+    <string name="kinetica_ui_stacked_back">Voltar para todos os cartões</string>
+</resources>

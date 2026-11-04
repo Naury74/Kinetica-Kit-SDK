@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">긁어서 열기</string>
+    <string name="kinetica_ui_stacked_expand">카드 모두 보기</string>
+    <string name="kinetica_ui_stacked_open">카드 열기</string>
+    <string name="kinetica_ui_stacked_back">카드 목록으로</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">ขูดเพื่อเปิด</string>
+    <string name="kinetica_ui_stacked_expand">แสดงบัตรทั้งหมด</string>
+    <string name="kinetica_ui_stacked_open">เปิดบัตร</string>
+    <string name="kinetica_ui_stacked_back">กลับไปที่บัตรทั้งหมด</string>
+</resources>

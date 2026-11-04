@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">Gosok untuk membuka</string>
+    <string name="kinetica_ui_stacked_expand">Tampilkan semua kartu</string>
+    <string name="kinetica_ui_stacked_open">Buka kartu</string>
+    <string name="kinetica_ui_stacked_back">Kembali ke semua kartu</string>
+</resources>

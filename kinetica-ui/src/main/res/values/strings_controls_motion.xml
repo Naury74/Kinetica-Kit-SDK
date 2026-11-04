@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">Scratch to reveal</string>
+    <string name="kinetica_ui_stacked_expand">Show all cards</string>
+    <string name="kinetica_ui_stacked_open">Open card</string>
+    <string name="kinetica_ui_stacked_back">Back to all cards</string>
+</resources>

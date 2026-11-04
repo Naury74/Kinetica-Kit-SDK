@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">Grattez pour découvrir</string>
+    <string name="kinetica_ui_stacked_expand">Afficher toutes les cartes</string>
+    <string name="kinetica_ui_stacked_open">Ouvrir la carte</string>
+    <string name="kinetica_ui_stacked_back">Retour à toutes les cartes</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_scratch_reveal">刮開查看</string>
+    <string name="kinetica_ui_stacked_expand">顯示所有卡片</string>
+    <string name="kinetica_ui_stacked_open">開啟卡片</string>
+    <string name="kinetica_ui_stacked_back">返回卡片列表</string>
+</resources>
