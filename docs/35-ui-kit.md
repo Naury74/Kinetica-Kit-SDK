@@ -538,7 +538,7 @@ LazyColumn(contentPadding = PaddingValues(16.dp)) { // verticalArrangement 간�
 | `KSurface` | 표면 하나. `onClick`을 주면 카드처럼 눌리고, 안쪽 글자 색은 `LocalKineticaContentColor`로 받는다 | `shape`, `variant`, `tone`, `backdrop` |
 | `KCard` | `Glass`(기본), `Elevated`, `Filled`, `Tonal`, `Outlined`, `Text` 카드. `Filled`에 `KTone.Accent`를 주면 강조색으로 채운 판이 된다 | `onClick`, `variant`, `tone`, `contentPadding` |
 | `KStackedCards` | 지갑 앱처럼 겹쳐 쌓였다가 누르면 펼쳐지고, 한 장을 고르면 그 카드만 앞으로 나오고 나머지는 아래로 접힌다. 뒤로 가기로 선택을 푼다 | `count`, `state = rememberKStackedCardsState()`, `cardHeight`, `peek`, `stackGap`, `maxStacked`, `content(index)` |
-| `KScratchCard` | 긁어서 아래 내용을 드러내는 카드. 긁은 비율이 `threshold`를 넘으면 나머지가 사라지며 다 열린다. TalkBack에서는 동작 하나로 바로 연다 | `state = rememberKScratchCardState()`, `threshold`, `brushSize`, `coverColor`, `coverBrush`, `cover`, `onRevealed` |
+| `KScratchCard` | 긁어서 아래 내용을 드러내는 카드. 긁은 비율이 `threshold`를 넘으면 나머지가 사라지며 다 열린다. 카드 위에서는 어느 방향으로 끌어도 긁히므로 목록을 스크롤하려면 카드 밖을 끈다. TalkBack에서는 동작 하나로 바로 연다 | `state = rememberKScratchCardState()`, `threshold`, `brushSize`, `coverColor`, `coverBrush`, `cover`, `onRevealed` |
 | `KSelectableCard` | 요금제, 배송 방법처럼 큰 선택지. 고르면 테두리가 굵어지고 위 끝 모서리에 체크 원이 튀어나온다. 하나만 고르면 `role = Role.RadioButton` | `selected`, `onSelectedChange`, `role` |
 | `KMediaCard` | 사진 위 글자 카드. 아래쪽 스크림으로 흰 글자의 대비를 확보한다 | `image`, `title`, `subtitle`, `eyebrow`, `aspectRatio` |
 | `KHorizontalCard` | 썸네일과 글자를 가로로 놓은 카드. 썸네일 모서리는 카드와 동심원으로 깎는다 | `thumbnail`, `trailing` |
@@ -1024,7 +1024,7 @@ KPricingCard("프로", "₩9,900", selected = plan == "pro", onSelect = { plan =
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
 | `KBentoGrid`, `KBentoCell` | 1x1, 2x1, 1x2, 2x2처럼 크기가 다른 칸을 앞쪽 빈 자리부터 채우고, 남은 구멍은 옆 칸을 늘려 메우는 소개 격자. 받은 폭에 맞춰 열 수가 늘고 RTL에서는 좌우가 바뀐다. 칸마다 높이를 한 번 재므로 칸 안에 게으른 목록을 바로 넣지 않는다 | `columns`(null이면 폭에 맞춤), `minCellWidth`, `maxColumns`, `rowHeight`, `spacing`, `fillGaps`, `animateAppear`, 칸의 `span`(`KBentoSpan.Small`, `Wide`, `Tall`, `Large`), `onClick` |
-| `KCommandPalette` | Ctrl+K로 여는 명령 검색 판. 묶음별 명령과 단축키 키캡, 최근 명령, 맞은 글자 강조, 방향키 이동과 Enter 실행, Esc 닫기, 결과 없음 화면이 있다. 넓은 창은 가운데, 좁은 창은 위쪽 판이다. TalkBack에는 결과 수를 알린다 | `state = rememberKCommandPaletteState()`, `sections: List<KCommandSection>`, `KCommand(id, title, onRun, subtitle, icon, shortcut, keywords, enabled)`, `Modifier.commandPaletteShortcut(state)`, `state.handleShortcut(event)` |
+| `KCommandPalette` | Ctrl+K로 여는 명령 검색 판. 묶음별 명령과 단축키 키캡, 최근 명령, 맞은 글자 강조, 한글 초성 검색(`ㅅㅈ`으로 `새 주문`), 방향키 이동과 Enter 실행, Esc 닫기, 결과 없음 화면이 있다. 넓은 창은 가운데, 좁은 창은 위쪽 판이다. TalkBack에는 결과 수를 알린다 | `state = rememberKCommandPaletteState()`, `sections: List<KCommandSection>`, `KCommand(id, title, onRun, subtitle, icon, shortcut, keywords, enabled)`, `Modifier.commandPaletteShortcut(state)`, `state.handleShortcut(event)` |
 | `KDataTable` | 열 머리를 눌러 정렬하고, 첫 열을 고정한 채 나머지를 머리와 함께 가로로 밀며, 체크박스로 행을 고르는 데이터 표. 행은 지연 구성하므로 높이가 정해진 곳에 둔다. TalkBack은 표로 읽고 정렬 상태도 읽는다 | `rows`, `columns: List<KTableColumn<T>>`(`KTableColumn.text(...)`, `width`, `weight`, `numeric`, `comparator`, `cell`), `key`, `state = rememberKDataTableState()`, `selectable`, `frozenFirstColumn`, `onRowClick` |
 
 ## 미디어와 소셜

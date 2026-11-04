@@ -146,6 +146,18 @@ class KLayoutsTest {
     }
 
     @Test
+    fun `한글 자음만 치면 초성으로 찾고 맞은 글자를 강조한다`() {
+        assertThat(matchCommand("새 주문 만들기", emptyList(), "ㅅㅈ")!!.ranges).containsExactly(0..0, 2..2).inOrder()
+        assertThat(matchCommand("새 주문 만들기", emptyList(), "ㅈㅁ")!!.ranges).containsExactly(2..3)
+        assertThat(matchCommand("주문 취소", emptyList(), "ㅈㅁ")!!.ranges).containsExactly(0..1)
+        assertThat(matchCommand("설정 열기", emptyList(), "ㅈㅁ")).isNull()
+        // 제목에 그대로 든 자음은 초성 검색보다 높게 친다.
+        val literal = matchCommand("ㅋㅋ 이모티콘", emptyList(), "ㅋㅋ")!!
+        val initials = matchCommand("크크 웃음", emptyList(), "ㅋㅋ")!!
+        assertThat(literal.score).isGreaterThan(initials.score)
+    }
+
+    @Test
     fun `검색어가 비면 최근 명령을 맨 위에 두고 검색어가 있으면 맞는 묶음만 남긴다`() {
         val sections = sampleSections {}
         val idle = paletteRows(sections, "", listOf("theme"), "최근")

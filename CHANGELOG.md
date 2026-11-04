@@ -27,7 +27,7 @@
 - `KDock`: 가까운 아이콘이 커지는 독. 훑다가 뗀 곳의 아이콘을 실행합니다.
 - `KOrbitingIcons`: 가운데 요소 둘레를 여러 궤도의 아이콘이 돕니다.
 - `KBentoGrid`와 `KBentoCell`: 크기가 다른 칸을 빈틈 없이 채우는 소개 격자. 폭에 따라 열 수가 늘어납니다.
-- `KCommandPalette`: Ctrl+K로 여는 명령 검색 판. 방향키, Enter, Esc로 다룹니다.
+- `KCommandPalette`: Ctrl+K로 여는 명령 검색 판. 방향키, Enter, Esc로 다루고, 한글 자음만 치면 초성으로 찾습니다.
 - `KDataTable`: 정렬, 첫 열 고정 가로 스크롤, 행 선택이 되는 데이터 표.
 - 바뀐 함수(`KSlider`, `KSwitch`, `KSegmentedControl`, `KFloatingTabBar`, `KDetentSheet`, `KChatInput`)의 1.0.0-alpha05 시그니처는 바이너리 호환을 위해 숨긴 오버로드로 남깁니다.
 
