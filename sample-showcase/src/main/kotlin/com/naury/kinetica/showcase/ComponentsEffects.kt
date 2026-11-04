@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -59,6 +60,7 @@ import com.naury.kinetica.ui.rippleDistortion
 /** 효과 탭: 물결 왜곡, 파티클, 뒤집는 카드, 액체 버튼과 방울 묶음, 홀로그램 카드. */
 @Composable
 internal fun EffectsTab(padding: PaddingValues, connection: NestedScrollConnection, notify: (String) -> Unit) {
+    val glassMode = rememberSaveable { mutableIntStateOf(0) }
     ComponentTabList(padding, connection) {
         item {
             DemoCard("물결 왜곡", "그림을 누르면 그 자리에서 물결이 퍼지며 그림이 일렁입니다. 여러 번 누르면 물결이 겹칩니다. Android 13보다 낮으면 빛 고리로 대신합니다.") {
@@ -68,6 +70,7 @@ internal fun EffectsTab(padding: PaddingValues, connection: NestedScrollConnecti
             }
         }
         item { ParticleCard() }
+        glassFxDemos(glassMode)
         motionDemos()
         item { FlipCardCard() }
         item { BlobCard(notify) }

@@ -140,7 +140,7 @@ private val COMPONENT_TAB_INFO = mapOf(
     "기본" to ("버튼, 검색, 휠 피커, 캐러셀, 카드 더미, 알림" to KIcons.Home),
     "입력" to ("물결 진행, 원형 슬라이더, 모양 바뀌는 버튼, 긁는 카드, 입력란, 서명" to KIcons.Edit),
     "미디어" to ("사진 뷰어, 전후 비교, 온보딩, 빈 화면" to KIcons.Download),
-    "효과" to ("물결 왜곡, 파티클, 흐림 글, 거품 고르기, 마키, 독, 홀로그램" to ShowcaseIcons.Sparkle),
+    "효과" to ("유리 렌즈, 녹아 붙는 글래스, 점진 블러, 흐림 글, 거품 고르기, 마키, 독" to ShowcaseIcons.Sparkle),
     "버튼·칩·카드" to ("버튼 변형과 색 역할, 칩, 카드, 배지와 아바타" to KIcons.Plus),
     "내비게이션·오버레이" to ("앱 바, 탭, 메뉴, 다이얼로그와 시트, 검색 화면, 서랍" to ShowcaseIcons.Layers),
     "피드백·로딩" to ("토스트, 스낵바, 라이브 활동, 음성 녹음, 파형, 스켈레톤" to KIcons.Bell),

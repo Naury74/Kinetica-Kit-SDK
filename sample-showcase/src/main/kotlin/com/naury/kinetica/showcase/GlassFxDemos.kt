@@ -20,11 +20,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -75,21 +77,18 @@ import kotlinx.coroutines.launch
  * iOS 26 Liquid Glass 계열 효과 묶음: 렌즈 손잡이, 탭 바 렌즈, 녹아 붙는 글래스, 점진 블러, 떠 있는 글래스 시트.
  * 맨 위 비교 칸에서 효과를 끄면 같은 화면을 기존 동작으로 그려, 같은 조작으로 프레임 시간을 번갈아 잴 수 있다.
  */
-@Composable
-internal fun GlassFxDemos() {
-    var mode by rememberSaveable { mutableIntStateOf(0) }
-    val fx = mode == 0
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+internal fun LazyListScope.glassFxDemos(mode: MutableIntState) {
+    item {
         DemoCard("효과 비교", "효과를 끄면 아래 카드가 모두 기존 동작으로 바뀝니다. 같은 조작을 번갈아 해 보며 차이를 비교하세요.") {
-            KSegmentedControl(listOf("효과 켜기", "효과 끄기"), mode, { mode = it }, Modifier.fillMaxWidth())
+            KSegmentedControl(listOf("효과 켜기", "효과 끄기"), mode.intValue, { mode.intValue = it }, Modifier.fillMaxWidth())
         }
-        LensControlsCard(fx)
-        LensRulerCard(fx)
-        LensTabBarCard(fx)
-        GlassGroupCard(fx)
-        EdgeBlurCard(fx)
-        FloatingSheetCard(fx)
     }
+    item { LensControlsCard(mode.intValue == 0) }
+    item { LensRulerCard(mode.intValue == 0) }
+    item { LensTabBarCard(mode.intValue == 0) }
+    item { GlassGroupCard(mode.intValue == 0) }
+    item { EdgeBlurCard(mode.intValue == 0) }
+    item { FloatingSheetCard(mode.intValue == 0) }
 }
 
 @Composable
