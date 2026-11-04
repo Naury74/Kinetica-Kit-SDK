@@ -783,6 +783,7 @@ KAlertDialog(
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
 | `KDropdownMenu` | 버튼에 붙는 메뉴. 앵커 아래 공간이 모자라거나 키보드가 올라와 있으면 위로 뒤집고, 화면 가장자리에서는 안으로 밀어 넣는다. 키보드로 열면 첫 항목에 초점이 가고 방향키로 옮기며, 끝 방향키로 하위 메뉴에 들어가고 시작 방향키나 Esc로 나온다 | `entries`: `KMenuEntry.Action`(아이콘, 끝 글자, `destructive`), `Check`(메뉴를 연 채 켜고 끔), `Submenu`(같은 판 안에서 넘어감), `Section`, `Divider` |
+| `KMorphMenu` | 칩 모양 메뉴 버튼. 누르면 칩이 그 자리에서 늘어나며 메뉴 판으로 모양이 바뀌고, 닫으면 같은 길로 칩으로 접힌다. 판 크기는 배치 단계에서만 바뀌어 애니메이션 동안 다시 구성하지 않는다. 항목과 키보드, TalkBack 동작은 `KDropdownMenu`와 같고 '애니메이션 삭제'면 바로 열고 닫는다 | `label`, `expanded`, `onExpandedChange`, `entries`, `icon`, `alignEnd`(화면 끝 쪽 칩) |
 | `Modifier.kContextMenu` | 길게 누르면 햅틱과 함께 요소가 떠오르고 배경이 흐려지며, 요소 위나 아래에 메뉴가 뜬다. `destructive` 항목은 빨간 글자다. TalkBack에서는 사용자 정의 동작으로 제공한다 | `items: List<KMenuItem>` |
 | `KSpeedDial` | 떠 있는 둥근 버튼. 누르면 +가 ×로 돌고 항목이 차례로 튀어 오르며 뒤가 흐려진다 | `items: List<KMenuItem>` |
 | `Modifier.kTooltip`, `tooltipOnLongPress` | 화살표가 달린 말풍선 | `placement`(`KTooltipPlacement.Auto`, `Above`, `Below`) |
@@ -798,6 +799,10 @@ Box {
         KMenuEntry.Action("삭제", destructive = true) { delete() },
     ))
 }
+KMorphMenu("정렬: $order", sorting, { sorting = it }, listOf(
+    KMenuEntry.Action("최신순") { order = "최신순" },
+    KMenuEntry.Action("인기순") { order = "인기순" },
+))
 KCard(Modifier.kContextMenu(listOf(KMenuItem("공유") { share() }, KMenuItem("삭제", destructive = true) { delete() }))) { Text("사진") }
 KIconButton(Icons.Rounded.Info, "도움말", onClick = {}, modifier = Modifier.tooltipOnLongPress("길게 누르면 설명이 보여요"))
 ```

@@ -252,7 +252,7 @@ internal fun placeAnchored(anchor: Rect, area: IntRect, panel: IntSize, gap: Flo
  * 키보드 초점은 받지 않고, TalkBack에는 '닫기' 동작으로 남는다.
  */
 @Composable
-private fun OutsideCatcher(onDismiss: () -> Unit) {
+internal fun OutsideCatcher(onDismiss: () -> Unit) {
     val label = stringResource(R.string.kinetica_ui_close)
     Box(
         Modifier

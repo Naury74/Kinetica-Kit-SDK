@@ -48,6 +48,7 @@ import com.naury.kinetica.ui.KFloatingToolbar
 import com.naury.kinetica.ui.KIconButton
 import com.naury.kinetica.ui.KIcons
 import com.naury.kinetica.ui.KMenuEntry
+import com.naury.kinetica.ui.KMorphMenu
 import com.naury.kinetica.ui.KSearchView
 import com.naury.kinetica.ui.KSegment
 import com.naury.kinetica.ui.KSegmentedControl
@@ -157,7 +158,32 @@ private fun MenusCard() {
     var sort by rememberSaveable { mutableStateOf("이름") }
     var city by rememberSaveable { mutableIntStateOf(-1) }
     var query by rememberSaveable { mutableStateOf("") }
-    DemoCard("메뉴와 선택", "메뉴는 아래 공간이 모자라면 위로 뒤집히고, 키보드 방향키로 항목을 옮깁니다. 하위 메뉴는 같은 판 안에서 넘어갑니다.") {
+    var morph by remember { mutableIntStateOf(-1) }
+    var order by rememberSaveable { mutableStateOf("최신순") }
+    var filter by rememberSaveable { mutableStateOf("전체") }
+    DemoCard("메뉴와 선택", "메뉴는 아래 공간이 모자라면 위로 뒤집히고, 키보드 방향키로 항목을 옮깁니다. 하위 메뉴는 같은 판 안에서 넘어갑니다. 아래 칩은 누르면 칩이 그대로 메뉴로 바뀝니다.") {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            KMorphMenu(
+                order,
+                morph == 0,
+                { morph = if (it) 0 else -1 },
+                listOf("최신순", "인기순", "가격 낮은순", "가격 높은순").map { KMenuEntry.Action(it) { order = it } },
+                icon = KIcons.Filter,
+            )
+            KMorphMenu(
+                filter,
+                morph == 1,
+                { morph = if (it) 1 else -1 },
+                listOf(
+                    KMenuEntry.Action("전체") { filter = "전체" },
+                    KMenuEntry.Action("사진", KIcons.Image) { filter = "사진" },
+                    KMenuEntry.Action("영상", KIcons.Video) { filter = "영상" },
+                    KMenuEntry.Divider,
+                    KMenuEntry.Action("필터 지우기", destructive = true) { filter = "전체" },
+                ),
+                alignEnd = true,
+            )
+        }
         Box {
             KButton("정렬: $sort", { menu = true }, variant = KVariant.Tonal)
             KDropdownMenu(
