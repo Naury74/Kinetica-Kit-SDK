@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -49,13 +50,10 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /** 화면 구성 묶음: 크기가 다른 칸을 맞춰 놓는 소개 격자, 단축키로 여는 명령 판, 정렬과 선택이 되는 데이터 표. */
-@Composable
-internal fun LayoutsDemos() {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        BentoCard()
-        PaletteCard()
-        TableCard()
-    }
+internal fun LazyListScope.layoutsDemos() {
+    item { BentoCard() }
+    item { PaletteCard() }
+    item { TableCard() }
 }
 
 @Composable

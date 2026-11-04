@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,16 +54,13 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /** 컨트롤 묶음 데모: 물결 진행 표시, 원형 슬라이더, 모양 바뀜 버튼, 쌓인 카드, 긁는 카드. */
-@Composable
-internal fun ControlsDemos() {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        WavyProgressCard()
-        CircularSliderCard()
-        SleepRangeCard()
-        ShapeMorphCard()
-        StackedCardsCard()
-        ScratchCardCard()
-    }
+internal fun LazyListScope.controlsDemos() {
+    item { WavyProgressCard() }
+    item { CircularSliderCard() }
+    item { SleepRangeCard() }
+    item { ShapeMorphCard() }
+    item { StackedCardsCard() }
+    item { ScratchCardCard() }
 }
 
 @Composable

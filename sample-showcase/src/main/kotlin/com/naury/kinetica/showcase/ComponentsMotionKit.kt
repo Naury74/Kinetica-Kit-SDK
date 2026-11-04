@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -52,16 +53,13 @@ import com.naury.kinetica.ui.LocalKineticaContentColor
 import kotlinx.coroutines.delay
 
 /** 움직임 묶음: 흐림 글, 거품 선택기, 마키, 빛줄기, 독, 궤도 아이콘. */
-@Composable
-internal fun MotionDemos() {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        BlurRevealCard()
-        BubbleCard()
-        MarqueeCard()
-        BeamCard()
-        DockCard()
-        OrbitCard()
-    }
+internal fun LazyListScope.motionDemos() {
+    item { BlurRevealCard() }
+    item { BubbleCard() }
+    item { MarqueeCard() }
+    item { BeamCard() }
+    item { DockCard() }
+    item { OrbitCard() }
 }
 
 private const val ANSWER = "오늘 서울은 오후부터 구름이 많아지고 저녁에는 비가 올 수 있어요. 우산을 챙기고, 퇴근길에는 대중교통을 타는 편이 좋겠어요."

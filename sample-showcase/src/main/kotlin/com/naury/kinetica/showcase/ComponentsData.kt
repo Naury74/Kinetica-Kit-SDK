@@ -76,6 +76,7 @@ import java.util.Currency
 @Composable
 internal fun DataDomainTab(padding: PaddingValues, connection: NestedScrollConnection) {
     ComponentTabList(padding, connection) {
+        layoutsDemos()
         item { DashboardScene() }
         item { GaugePieScene() }
         item { HeatmapScene() }

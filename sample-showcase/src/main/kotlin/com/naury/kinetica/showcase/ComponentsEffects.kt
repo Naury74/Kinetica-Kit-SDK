@@ -68,6 +68,7 @@ internal fun EffectsTab(padding: PaddingValues, connection: NestedScrollConnecti
             }
         }
         item { ParticleCard() }
+        motionDemos()
         item { FlipCardCard() }
         item { BlobCard(notify) }
         item { HoloCard() }
