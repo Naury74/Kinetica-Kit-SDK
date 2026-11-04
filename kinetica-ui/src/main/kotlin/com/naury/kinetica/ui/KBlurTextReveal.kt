@@ -15,8 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.layer.GraphicsLayer
@@ -256,6 +258,7 @@ private fun DrawScope.drawPiece(result: TextLayoutResult, piece: Rect, eased: Fl
  * 흐림 정도를 [BLUR_LEVELS]단계로 나눠 층마다 반지름을 고정한다. 층 크기는 그 단계 단어들을 감싸는 사각형만큼이다.
  */
 private class BlurLayers(private val layers: List<GraphicsLayer>) {
+    private val clip = Path()
     private val radii = FloatArray(BLUR_LEVELS) { -1f }
     private val members = List(BLUR_LEVELS) { ArrayList<Int>() }
     private val amounts = List(BLUR_LEVELS) { ArrayList<Float>() }
@@ -303,11 +306,17 @@ private class BlurLayers(private val layers: List<GraphicsLayer>) {
         val y = floor(top - margin).toInt()
         layer.topLeft = IntOffset(x, y)
         val area = IntSize(ceil(right + margin).toInt() - x, ceil(bottom + margin).toInt() - y)
+        // 같은 층 단어들은 나타난 정도가 비슷하므로 평균 하나로 한 번에 그린다. 단어마다 그리면 나타나는 단어 수만큼 문단 전체를 다시 그린다.
+        val eased = amounts[level].average().toFloat()
+        clip.reset()
+        members[level].forEach { word ->
+            boxes.boxes[word].forEach { piece ->
+                clip.addRect(Rect(piece.left - look.padPx, piece.top, piece.right + look.padPx, piece.bottom))
+            }
+        }
         layer.record(area) {
-            translate(-x.toFloat(), -y.toFloat()) {
-                members[level].forEachIndexed { k, word ->
-                    boxes.boxes[word].forEach { drawPiece(result, it, amounts[level][k], look) }
-                }
+            translate(-x.toFloat(), (1f - eased) * look.risePx - y) {
+                clipPath(clip) { drawText(result, alpha = eased) }
             }
         }
         drawLayer(layer)
