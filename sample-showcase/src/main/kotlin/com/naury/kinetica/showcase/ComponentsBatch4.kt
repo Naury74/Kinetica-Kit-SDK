@@ -80,6 +80,7 @@ internal fun FeedbackTab(padding: PaddingValues, connection: NestedScrollConnect
         ComponentTabList(padding, connection) {
             item { ToastCard(toaster, bottom, { bottom = it }, rich, { rich = it }) }
             item { SnackbarCard(snackbar) }
+            liveActivityDemos()
             item { BannerCard() }
             item { LoadingCard() }
             item { ProgressVariantsCard() }

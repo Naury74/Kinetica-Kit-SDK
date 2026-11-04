@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,14 +69,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** 오래 떠 있는 활동, 시간 캡슐, 음성 녹음 버튼, 파형 데모 카드들. */
-@Composable
-internal fun LiveActivityDemos() {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        LiveActivityCard()
-        TimePillsCard()
-        VoiceRecorderCard()
-        WaveformCard()
-    }
+internal fun LazyListScope.liveActivityDemos() {
+    item { LiveActivityCard() }
+    item { TimePillsCard() }
+    item { VoiceRecorderCard() }
+    item { WaveformCard() }
 }
 
 @Composable
