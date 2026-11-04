@@ -73,6 +73,8 @@ import androidx.compose.ui.unit.sp
  * @param counterThreshold [maxLength]가 있을 때 남은 글자 수가 이 값 이하가 되어야 글자 수를 보여 준다. 예를 들어 최대 500자에
  *   50을 주면 450자부터 보인다. 이 값을 주면 [showCounter]와 관계없이 이 규칙을 따른다. 0이면 꽉 찼을 때만 보인다.
  *   음수면 [IllegalArgumentException]을 던진다.
+ * @param voiceButton 글자가 없을 때 끝 버튼 자리에 둘 버튼. [KVoiceRecorderButton]처럼 길게 눌러 쓰는 녹음 버튼을 넣는다.
+ *   있으면 [onVoice]는 쓰지 않고, 글자를 치면 이 버튼 대신 보내기 버튼이 나온다. [enabled]가 false면 보이지 않는다.
  */
 @Composable
 public fun KChatInput(
@@ -91,9 +93,11 @@ public fun KChatInput(
     imeSend: Boolean = true,
     label: String? = null,
     counterThreshold: Int? = null,
+    voiceButton: (@Composable () -> Unit)? = null,
 ) {
     val counter = ChatCounterRule(showCounter, counterThreshold)
-    val options = ChatOptions(onAttach, onVoice, placeholder, enabled, ChatTyping(maxLines, maxLength, counter, imeSend), label)
+    val typing = ChatTyping(maxLines, maxLength, counter, imeSend)
+    val options = ChatOptions(onAttach, ChatVoice(onVoice, voiceButton), placeholder, enabled, typing, label)
     val send = chatSend(onSend)
     val canSend = enabled && value.isNotBlank()
     val source = FieldSource.Value(
@@ -126,6 +130,8 @@ public fun KChatInput(
  * @param counterThreshold [maxLength]가 있을 때 남은 글자 수가 이 값 이하가 되어야 글자 수를 보여 준다. 예를 들어 최대 500자에
  *   50을 주면 450자부터 보인다. 이 값을 주면 [showCounter]와 관계없이 이 규칙을 따른다. 0이면 꽉 찼을 때만 보인다.
  *   음수면 [IllegalArgumentException]을 던진다.
+ * @param voiceButton 글자가 없을 때 끝 버튼 자리에 둘 버튼. [KVoiceRecorderButton]처럼 길게 눌러 쓰는 녹음 버튼을 넣는다.
+ *   있으면 [onVoice]는 쓰지 않고, 글자를 치면 이 버튼 대신 보내기 버튼이 나온다. [enabled]가 false면 보이지 않는다.
  */
 @Composable
 public fun KChatInput(
@@ -143,9 +149,11 @@ public fun KChatInput(
     imeSend: Boolean = true,
     label: String? = null,
     counterThreshold: Int? = null,
+    voiceButton: (@Composable () -> Unit)? = null,
 ) {
     val counter = ChatCounterRule(showCounter, counterThreshold)
-    val options = ChatOptions(onAttach, onVoice, placeholder, enabled, ChatTyping(maxLines, maxLength, counter, imeSend), label)
+    val typing = ChatTyping(maxLines, maxLength, counter, imeSend)
+    val options = ChatOptions(onAttach, ChatVoice(onVoice, voiceButton), placeholder, enabled, typing, label)
     val send = chatSend(onSend)
     val canSend = enabled && state.text.isNotBlank()
     val source = FieldSource.State(
@@ -156,15 +164,67 @@ public fun KChatInput(
     ChatInputRow(source, canSend, send, options, surface, modifier)
 }
 
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KChatInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSend: () -> Unit,
+    modifier: Modifier = Modifier,
+    onAttach: (() -> Unit)? = null,
+    onVoice: (() -> Unit)? = null,
+    placeholder: String? = null,
+    maxLines: Int = 6,
+    enabled: Boolean = true,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    maxLength: Int? = null,
+    showCounter: Boolean = false,
+    imeSend: Boolean = true,
+    label: String? = null,
+    counterThreshold: Int? = null,
+) {
+    KChatInput(
+        value, onValueChange, onSend, modifier, onAttach, onVoice, placeholder, maxLines, enabled, surface, maxLength, showCounter, imeSend,
+        label, counterThreshold, null,
+    )
+}
+
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KChatInput(
+    state: TextFieldState,
+    onSend: () -> Unit,
+    modifier: Modifier = Modifier,
+    onAttach: (() -> Unit)? = null,
+    onVoice: (() -> Unit)? = null,
+    placeholder: String? = null,
+    maxLines: Int = 6,
+    enabled: Boolean = true,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    maxLength: Int? = null,
+    showCounter: Boolean = false,
+    imeSend: Boolean = true,
+    label: String? = null,
+    counterThreshold: Int? = null,
+) {
+    KChatInput(
+        state, onSend, modifier, onAttach, onVoice, placeholder, maxLines, enabled, surface, maxLength, showCounter, imeSend, label,
+        counterThreshold, null,
+    )
+}
+
 /** 두 오버로드가 같이 쓰는 설정 */
 private class ChatOptions(
     val onAttach: (() -> Unit)?,
-    val onVoice: (() -> Unit)?,
+    val voice: ChatVoice,
     val placeholder: String?,
     val enabled: Boolean,
     val typing: ChatTyping,
     val label: String?,
 )
+
+/** 끝 버튼의 음성 동작. [button]이 있으면 [onClick]보다 앞선다. */
+private class ChatVoice(val onClick: (() -> Unit)?, val button: (@Composable () -> Unit)?)
 
 /** 입력란 줄 수, 글자 수, 키보드 설정 */
 private class ChatTyping(val maxLines: Int, val maxLength: Int?, val counter: ChatCounterRule, val imeSend: Boolean) {
@@ -223,8 +283,13 @@ private fun ChatInputRow(
                 enter && canSend
             },
         )
-        val voice = if (enabled) options.onVoice else null
-        SendButton(canSend, voice, surface) { if (canSend) send() else voice?.invoke() }
+        val slot = if (enabled) options.voice.button else null
+        if (slot != null && !canSend) {
+            slot()
+        } else {
+            val voice = if (enabled && slot == null) options.voice.onClick else null
+            SendButton(canSend, voice, surface) { if (canSend) send() else voice?.invoke() }
+        }
     }
 }
 

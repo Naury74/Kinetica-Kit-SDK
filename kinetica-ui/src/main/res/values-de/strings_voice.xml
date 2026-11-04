@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_waveform_position">Wiedergabeposition</string>
+    <string name="kinetica_ui_voice_record">Sprachnachricht aufnehmen</string>
+    <string name="kinetica_ui_voice_start">Aufnahme starten</string>
+    <string name="kinetica_ui_voice_send">Sprachnachricht senden</string>
+    <string name="kinetica_ui_voice_cancel">Aufnahme abbrechen</string>
+    <string name="kinetica_ui_voice_recording">Aufnahme läuft</string>
+    <string name="kinetica_ui_voice_hold">Zum Aufnehmen gedrückt halten</string>
+    <string name="kinetica_ui_voice_slide_cancel">Zum Abbrechen wischen</string>
+</resources>

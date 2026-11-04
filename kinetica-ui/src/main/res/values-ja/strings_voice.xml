@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_waveform_position">再生位置</string>
+    <string name="kinetica_ui_voice_record">ボイスメッセージを録音</string>
+    <string name="kinetica_ui_voice_start">録音を開始</string>
+    <string name="kinetica_ui_voice_send">ボイスメッセージを送信</string>
+    <string name="kinetica_ui_voice_cancel">録音をキャンセル</string>
+    <string name="kinetica_ui_voice_recording">録音中</string>
+    <string name="kinetica_ui_voice_hold">長押しで録音</string>
+    <string name="kinetica_ui_voice_slide_cancel">スライドしてキャンセル</string>
+</resources>

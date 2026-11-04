@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_waveform_position">재생 위치</string>
+    <string name="kinetica_ui_voice_record">음성 메시지 녹음</string>
+    <string name="kinetica_ui_voice_start">녹음 시작</string>
+    <string name="kinetica_ui_voice_send">음성 메시지 보내기</string>
+    <string name="kinetica_ui_voice_cancel">녹음 취소</string>
+    <string name="kinetica_ui_voice_recording">녹음 중</string>
+    <string name="kinetica_ui_voice_hold">길게 눌러 녹음하세요</string>
+    <string name="kinetica_ui_voice_slide_cancel">밀어서 취소</string>
+</resources>

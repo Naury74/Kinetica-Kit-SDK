@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_waveform_position">播放位置</string>
+    <string name="kinetica_ui_voice_record">录制语音消息</string>
+    <string name="kinetica_ui_voice_start">开始录音</string>
+    <string name="kinetica_ui_voice_send">发送语音消息</string>
+    <string name="kinetica_ui_voice_cancel">取消录音</string>
+    <string name="kinetica_ui_voice_recording">正在录音</string>
+    <string name="kinetica_ui_voice_hold">按住录音</string>
+    <string name="kinetica_ui_voice_slide_cancel">滑动取消</string>
+</resources>
