@@ -7,6 +7,29 @@
 ### 새 기능
 
 - `KMorphMenu`: 누르면 칩이 그 자리에서 늘어나며 메뉴 판으로 모양이 바뀌는 메뉴. 칩의 캡슐 모양이 메뉴 판의 둥근 사각형으로 이어서 바뀌고, 항목은 판이 펴지는 동안 드러납니다. 판 크기와 모서리는 배치와 그리기 단계에서만 바뀌어 애니메이션 동안 다시 구성하지 않고, 글래스 블러도 새로 하지 않습니다. 항목은 `KDropdownMenu`와 같은 `KMenuEntry`를 씁니다.
+- 유리 렌즈 `Modifier.glassLens`와 `KLensThumb`: 손잡이를 잡는 동안 유리 방울이 아래 트랙과 글자를 확대하고 굴절시킵니다. `KSlider`, `KSwitch`, `KSegmentedControl`, `KFloatingTabBar`의 `lens = true`로 켜고, 세그먼트와 떠 있는 탭 바는 인디케이터를 끌어 옮길 수 있게 됩니다.
+- `KGlassGroup`과 `Modifier.glassId`: 가까운 글래스 판끼리 액체처럼 녹아 붙고 멀어지면 갈라집니다. 판은 8개까지이고, Android 13 아래에서는 판을 따로 그립니다.
+- `Modifier.scrollEdgeBlur`와 `KProgressiveBlur`: 바 아래나 목록 끝에서 내용이 점점 흐려지며 사라지는 점진 블러.
+- `KDetentSheet(floatingGlass = true)`: 낮은 높이에서는 떠 있는 유리 시트였다가 가장 높은 높이로 올리면 가장자리에 붙고 불투명해집니다.
+- `KLiveActivityHost`와 `rememberKLiveActivityState()`: 배달, 타이머, 녹음처럼 오래 떠 있는 활동을 캡슐로 띄웁니다. 활동이 둘이면 두 번째가 원으로 떨어져 나오고, 누르면 펼친 화면으로 모양이 이어서 바뀝니다. 화면 위와 아래 중 고릅니다.
+- `KCountdownPill`과 `KTimePill`: 남은 시간이나 흐른 시간을 굴러가는 숫자와 링, 막대로 보여 주는 캡슐.
+- `KVoiceRecorderButton`과 `KVoiceRecordingBar`: 길게 눌러 녹음하고 위로 밀어 잠그거나 시작 쪽으로 밀어 취소하는 녹음 버튼. `KChatInput(voiceButton = …)`으로 마이크 자리에 둡니다.
+- `KLiveWaveform`과 `KWaveform`: 실시간 소리 크기 막대와, 누르거나 끌어서 위치를 옮기는 재생 파형.
+- `KWavyProgressBar`와 `KWavyProgressRing`: 진행된 부분이 물결치는 Material 3 Expressive 진행 표시. 진행이 멈추면 물결이 잦아듭니다.
+- `KCircularSlider`와 `KCircularRangeSlider`: 원형 트랙 위 손잡이로 값과 범위(자정을 넘는 수면 시간 등)를 고릅니다.
+- `KShapeMorphButton`, `KShapeToggle`, `KMorphShape`: 누르거나 켜면 원에서 둥근 사각형이나 쿠키 모양으로 이어서 바뀌는 버튼.
+- `KStackedCards`: 지갑 앱처럼 쌓였다 펼쳐지고 고른 카드만 앞으로 나오는 카드 묶음.
+- `KScratchCard`: 긁어서 여는 카드. 긁은 비율이 문턱을 넘으면 다 열립니다.
+- `KBlurTextReveal`: 단어마다 블러가 풀리며 떠오르는 글. 글이 늘어나면 새 단어만 이어서 나타납니다.
+- `KBubblePicker`: 떠 있는 거품을 눌러 여러 개 고르는 선택기.
+- `KMarquee`: 아무 내용이나 끝없이 흐르는 띠.
+- `KAnimatedBeam`과 `Modifier.beamAnchor`: 두 요소 사이 곡선을 따라 빛이 흐릅니다.
+- `KDock`: 가까운 아이콘이 커지는 독. 훑다가 뗀 곳의 아이콘을 실행합니다.
+- `KOrbitingIcons`: 가운데 요소 둘레를 여러 궤도의 아이콘이 돕니다.
+- `KBentoGrid`와 `KBentoCell`: 크기가 다른 칸을 빈틈 없이 채우는 소개 격자. 폭에 따라 열 수가 늘어납니다.
+- `KCommandPalette`: Ctrl+K로 여는 명령 검색 판. 방향키, Enter, Esc로 다룹니다.
+- `KDataTable`: 정렬, 첫 열 고정 가로 스크롤, 행 선택이 되는 데이터 표.
+- 바뀐 함수(`KSlider`, `KSwitch`, `KSegmentedControl`, `KFloatingTabBar`, `KDetentSheet`, `KChatInput`)의 1.0.0-alpha05 시그니처는 바이너리 호환을 위해 숨긴 오버로드로 남깁니다.
 
 ## 1.0.0-alpha05
 

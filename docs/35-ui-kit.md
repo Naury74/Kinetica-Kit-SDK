@@ -196,6 +196,16 @@ Box(Modifier.fillMaxWidth().height(240.dp)) {
 
 `KineticaScaffold` 콘텐츠 안의 글래스는 배경 블러를 한 번만 하고 함께 쓴다. 굴절도 화면에 있는 글래스 32개까지는 셰이더 하나가 한 번에 걸고, 그보다 많으면 넘친 글래스만 따로 건다. 그래서 움직이는 배경 위에 카드와 버튼이 많아도 배경이 바뀌는 프레임의 GPU 비용은 글래스 수와 거의 상관없다. 상단 바, 탭 바, 사진마다 따로 둔 `GlassBackdrop` 위 글래스는 비추는 대상이 달라 각자 블러를 건다.
 
+### 글래스 효과
+
+iOS 26의 Liquid Glass처럼 움직이는 유리 효과입니다. 셰이더를 쓰는 효과는 Android 13부터 보이고, 그 아래에서는 같은 자리에 단순한 반투명 판을 그립니다.
+
+| 컴포넌트 | 하는 일 | 주요 파라미터 |
+| --- | --- | --- |
+| `Modifier.glassLens`, `KLensThumb` | 요소 위에 유리 방울 렌즈를 띄워 아래 트랙과 글자를 확대하고 가장자리를 굴절시킨다. 렌즈 크기 영역만 셰이더로 그리고, 진행이 0이면 아무것도 기록하지 않는다. 컨트롤에 붙일 때는 `KSlider`, `KSwitch`, `KSegmentedControl`, `KFloatingTabBar`의 `lens`를 쓴다 | `progress: () -> Float`, `center`, `size`, `zoom`, `refraction`, `tint` |
+| `KGlassGroup`, `Modifier.glassId` | 그룹 안의 가까운 글래스 판끼리 액체처럼 녹아 붙고 멀어지면 갈라진다. 판은 8개(`MAX_GLASS_PLATES`)까지이고, 판이 움직일 때만 셰이더 값을 새로 올린다 | `style`, `melt`, `backdrop`, `glassId(id, cornerRadius)` |
+| `Modifier.scrollEdgeBlur`, `KProgressiveBlur` | 스크롤 영역 끝에서 내용이 점점 흐려지며 사라지는 점진 블러. 띠만 절반 해상도로 3겹 블러하고, 더 스크롤할 수 없는 쪽은 흐리지 않는다. Android 12 아래에서는 투명도로만 사라진다. 바 아래에 쓸 때는 `top`을 위쪽 패딩과 띠 높이의 합으로 준다 | `state`, `top`, `bottom`, `blur` |
+
 ### 치수 기준
 
 | 항목 | 기준 |
@@ -357,6 +367,8 @@ Box(Modifier.kToggleable(checked, shape, role = Role.Checkbox) { checked = it })
 | `KIconButton` | 아이콘만 있는 버튼. 기본 지름 44dp 원 안에 22dp 아이콘을 그린다 | `contentDescription`, `variant`, `tone`, `size`(`KIconButtonSizes.Small` 36dp, `Medium` 44dp, `Large` 56dp), `shape` |
 | `KLabeledIconButton` | 아이콘이 위, 이름이 아래인 작은 동작 버튼. 편집기 하단 도구 줄처럼 동작 여럿을 나란히 놓는다. 바탕 없이 눌림 표시만 덮이고, TalkBack은 이름을 읽는다. `ImageVector`와 `Painter` 아이콘을 받는다 | `tint`(항목마다 색), `enabled`, `iconSize`, `shape` |
 | `KIconToggleButton` | 켜질 때 색이 가운데에서 퍼지고 아이콘이 `checkedIcon`으로 바뀐다 | `checked`, `onCheckedChange`, `checkedIcon` |
+| `KShapeMorphButton` | 누르는 동안 원이 둥근 사각형이나 쿠키 모양으로 이어서 바뀌는 아이콘 버튼 | `icon`, `contentDescription`, `onClick`, `shape`, `pressedShape`, `tone`, `size` |
+| `KShapeToggle` | 켜면 색과 모양이 함께 바뀌는 토글. 모양은 `KMorphShape`(Circle, Square, Cookie4, Cookie6, Cookie9, Clover, Flower, `squircle()`, `cookie()`) | `checked`, `onCheckedChange`, `icon`, `checkedIcon`, `uncheckedShape`, `checkedShape` |
 | `KFab`, `KExtendedFab` | 떠 있는 주 동작 버튼. 확장형에 `expanded = rememberFabExpanded(listState)`를 넘기면 목록을 내릴 때 아이콘만 남기고 접힌다 | `KFab`의 `size`(`KFabSize.Small`, `Regular`, `Large`), `KExtendedFab`의 `expanded` |
 | `KSplitButton` | 주 동작과 꺾쇠 버튼을 붙인 분할 버튼. 꺾쇠를 누르면 `onMenuClick`이 불리고, `menuExpanded`면 꺾쇠 버튼이 원으로 바뀐다. 메뉴는 호출한 쪽이 띄운다 | `onMenuClick`, `menuExpanded` |
 | `KButtonGroup`, `KToggleGroup` | 가로 버튼 묶음. 누르고 있는 칸이 넓어지고 양옆 칸이 비켜 주며, 묶음 전체 폭은 그대로다. `KToggleGroup`은 칸을 골라 켠다 | `style`(`KGroupStyle.Connected`, `Separated`), `KToggleGroup`의 `selection`(`KGroupSelection.Single`, `Multiple`) |
@@ -376,16 +388,18 @@ KLabeledIconButton(KIcons.Trash, "삭제", onClick = ::delete, tint = KineticaTh
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
 | --- | --- | --- |
-| `KSwitch` | 기본 모양 `KSwitchVariant.Capsule`은 누르는 동안 손잡이가 늘어나고 출렁이며 넘어간다. `Check`는 켜지면 손잡이가 커지며 체크가 그려지고, `Slim`은 얇은 트랙에 테두리 두른 손잡이다. RTL에서는 켜진 손잡이가 왼쪽에 간다 | `variant`, `accent`(주지 않으면 `Capsule`은 `positive`, 나머지는 `accent` 색). `onCheckedChange`가 `null`이면 표시만 한다 |
+| `KSwitch` | 기본 모양 `KSwitchVariant.Capsule`은 누르는 동안 손잡이가 늘어나고 출렁이며 넘어간다. `Check`는 켜지면 손잡이가 커지며 체크가 그려지고, `Slim`은 얇은 트랙에 테두리 두른 손잡이다. RTL에서는 켜진 손잡이가 왼쪽에 간다. `lens = true`면 누르는 동안 손잡이가 유리 렌즈로 부푼다 | `variant`, `accent`(주지 않으면 `Capsule`은 `positive`, 나머지는 `accent` 색). `onCheckedChange`가 `null`이면 표시만 한다 |
 | `KCheckbox`, `KTriStateCheckbox` | 켜지면 상자가 튀듯 차오르고 체크 표시가 획 순서대로 그려진다. 미정 상태는 가로 막대다 | `shape`(`KCheckboxShape.Square`, `Circle`), 콜백이 `null`이면 표시만 |
 | `KSelectionBadge` | 사진 썸네일 구석에 놓는 원형 선택 표시. `order`를 주면 고른 순서 번호를, `selected` 오버로드는 체크를 그린다. 흰 테두리와 옅은 어두운 테두리를 함께 그려 밝은 사진과 어두운 사진 위 모두에서 보이고, 고를 때 튀며 차오른다(움직임 줄이기면 바로). TalkBack은 '선택됨, 3번째'처럼 읽는다 | `order`(null이나 0 이하면 고르지 않음), `onClick`(주면 48dp 체크박스), `size`, `tone` |
 | `KRadio`, `KRadioGroup` | 선택되면 가운데 점이 살짝 튀며 커진다. 묶음은 행 전체를 누를 수 있고 TalkBack이 한 묶음으로 읽는다 | `options`, `selectedIndex` |
-| `KSegmentedControl` | 선택한 칸의 인디케이터가 늘어났다 줄어들며 이동한다. `KSegment`로 아이콘 칸을 만든다. `selected: Set<Int>`를 받는 오버로드는 여러 칸을 함께 켜고, 켠 칸에는 체크 표시가 밀려 들어온다 | `tone`(`Neutral`은 옅은 표면 글자 색, 나머지는 그 색으로 채움), `role`(기본 `Role.RadioButton`, 탭처럼 쓰면 `Role.Tab`), `maxLines`(기본 2), `sizing`(`KSegmentSizing.Proportional`이면 이름 길이에 비례), `requireSelection` |
+| `KSegmentedControl` | 선택한 칸의 인디케이터가 늘어났다 줄어들며 이동한다. `KSegment`로 아이콘 칸을 만든다. `selected: Set<Int>`를 받는 오버로드는 여러 칸을 함께 켜고, 켠 칸에는 체크 표시가 밀려 들어온다. `lens = true`면 선택 인디케이터를 잡아 끌 수 있고, 끄는 동안 유리 렌즈가 되며 떼면 가까운 칸을 고른다 | `tone`(`Neutral`은 옅은 표면 글자 색, 나머지는 그 색으로 채움), `role`(기본 `Role.RadioButton`, 탭처럼 쓰면 `Role.Tab`), `maxLines`(기본 2), `sizing`(`KSegmentSizing.Proportional`이면 이름 길이에 비례), `requireSelection` |
 | `KFilterChip`, `KInputChip`, `KAssistChip`, `KSuggestionChip` | 필터 칩은 켜면 체크가 그려지고, 입력 칩은 아바타와 지우기 버튼이 있다. 동작 칩은 앞 아이콘을 강조색으로, 제안 칩은 글자만 쓴다 | `variant`, `tone`, `leadingIcon` |
 | `KChipRow`, `KChipGroup` | `KChipRow`는 칩을 한 줄에 놓고 가로로 스크롤한다. `KChipGroup`은 이름 목록으로 필터 칩 묶음을 만든다. 고르면 체크가 그려지며 폭이 부드럽게 늘어난다 | `selection`(`KChipSelection.Single`, `Multiple`), `wrap`(`false`면 한 줄), `variant`(`Glass`, `Tonal`, `Outlined`), `colors`(`KChipColors`로 선택과 미선택 칩 색을 직접 지정), `scrollState`와 `fadeEdges`(한 줄일 때 스크롤 상태와 끝 흐림), `minTouchTarget`(칩마다 높이 48dp 이상), `shadowRoom`(한 줄일 때 그림자가 잘리지 않게 위아래에 6dp씩 두는 여유. 그림자 없는 칩이나 `minTouchTarget`과 함께 쓸 때 `false`로 끄면 줄 높이가 칩 높이와 같다. 줄을 넘기는 묶음에는 이 여유가 없다) |
-| `KSlider` | 잡으면 트랙이 굵어지고 손잡이가 투명하게 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다. 가로로 움직여야 드래그로 보므로 세로 목록 스크롤을 막지 않는다. 방향키와 TalkBack으로도 조절한다. `snap = KSliderSnap(기준값, 거리)`를 주면 손으로 끈 값이 거리 안에서 기준값에 붙고 붙는 순간 햅틱이 한 번 난다. 두 번 탭하거나 TalkBack의 '초기화' 동작을 고르면 `resetValue`(없으면 스냅 기준값)로 돌아간다. `label`은 TalkBack 이름이고, `stateDescription`을 주면 퍼센트 대신 그 글자를 읽는다. 범위가 비었거나 유한하지 않으면 예외 없이 흐리게 그리고 입력을 받지 않는다 | `valueRange`, `steps`, `enabled`, `onValueChangeFinished`, `accent`, `snap`, `resetValue`, `valueBadge`와 `badgePosition`(`AboveThumb`, `End`, `Top`은 트랙 위 한 줄에 시작 쪽 `label`과 끝 쪽 배지), `inactiveTrackColor`, `excludeSystemGestures`(가장자리 뒤로 가기와 겹치지 않게), `rubberBand`(`false`면 끝에서 늘어나지 않음), `label`, `stateDescription`, `minHeight`(기본 44dp), `trackThickness`(기본 6dp), `labelTextStyle`(`Top` 줄 이름 글자, 기본 16sp SemiBold 위에 덮어씀), `labelSpacing`(`Top` 줄과 트랙 사이, 기본 4dp) |
+| `KSlider` | 잡으면 트랙이 굵어지고 손잡이가 투명하게 커진다. 끝을 넘어 끌면 고무줄처럼 늘어났다가 튕겨 돌아온다. 가로로 움직여야 드래그로 보므로 세로 목록 스크롤을 막지 않는다. 방향키와 TalkBack으로도 조절한다. `snap = KSliderSnap(기준값, 거리)`를 주면 손으로 끈 값이 거리 안에서 기준값에 붙고 붙는 순간 햅틱이 한 번 난다. 두 번 탭하거나 TalkBack의 '초기화' 동작을 고르면 `resetValue`(없으면 스냅 기준값)로 돌아간다. `label`은 TalkBack 이름이고, `stateDescription`을 주면 퍼센트 대신 그 글자를 읽는다. 범위가 비었거나 유한하지 않으면 예외 없이 흐리게 그리고 입력을 받지 않는다. `lens = true`면 잡는 동안 손잡이가 아래 트랙을 확대하는 유리 렌즈로 부푼다 | `valueRange`, `steps`, `enabled`, `onValueChangeFinished`, `accent`, `snap`, `resetValue`, `valueBadge`와 `badgePosition`(`AboveThumb`, `End`, `Top`은 트랙 위 한 줄에 시작 쪽 `label`과 끝 쪽 배지), `inactiveTrackColor`, `excludeSystemGestures`(가장자리 뒤로 가기와 겹치지 않게), `rubberBand`(`false`면 끝에서 늘어나지 않음), `label`, `stateDescription`, `minHeight`(기본 44dp), `trackThickness`(기본 6dp), `labelTextStyle`(`Top` 줄 이름 글자, 기본 16sp SemiBold 위에 덮어씀), `labelSpacing`(`Top` 줄과 트랙 사이, 기본 4dp) |
 | `KRangeSlider` | 손잡이 두 개짜리 범위 슬라이더. 잡으면 값 말풍선이 뜬다 | `valueRange`, `steps`, `valueLabel` |
 | `KDialSlider` | 사진 앱 보정처럼 가운데 기준선은 고정되고 눈금이 손가락을 따라 움직인다. 기준값부터 현재 값까지 강조색으로 칠하고, 세게 밀면 관성으로 미끄러진다. 눈금마다 톱니 햅틱이 나고, 기준값 근처에서 놓으면 붙고, 두 번 탭하면 기준값으로 돌아간다. `onValueChangeFinished`는 미끄러짐까지 끝난 뒤 한 번 불린다. 범위가 비었거나 유한하지 않거나 기준값이 범위 밖이면 예외 없이 흐리게 그리고 입력을 받지 않는다 | `label`, `resetValue`, `spacing`(값 1당 눈금 간격), `tickEvery`, `majorEvery`, `snapThreshold`, `formatValue`, `changedThreshold`(기준값에서 이만큼 벗어나야 강조색, 반올림해 보여 주면 0.5), `valueTextStyle`, `coerceResetValue`(`true`면 범위 밖 기준값을 가까운 끝값으로 맞춰 막지 않음) |
+| `KCircularSlider` | 원형 트랙 위 손잡이 하나로 값을 고른다. 가운데에 큰 값을 두고, 눈금을 넘을 때 햅틱이 나며 끝에서 넘어가지 않는다. 방향키와 TalkBack으로도 조절한다. 시계 방향 고정이라 RTL에서도 뒤집지 않는다 | `value`, `onValueChange`, `label`, `valueRange`, `step`, `ticks`, `startAngle`, `sweepAngle`, `content` |
+| `KCircularRangeSlider` | 손잡이 둘로 시작과 끝을 고르는 원형 범위. 자정을 넘는 수면 시간도 고르고, 두 손잡이 사이 원호를 끌면 함께 옮겨 간다. TalkBack은 손잡이마다 따로 읽는다 | `start`, `end`, `onValueChange`, `startLabel`, `endLabel`, `step`, `ticks`, `startIcon`, `endIcon` |
 | `KStepper` | −/+ 캡슐. 숫자가 굴러가며 바뀌고, 길게 누르면 점점 빨라진다. 끝에 닿으면 그쪽 버튼이 흐려진다 | `range`, `step` |
 | `KQuantityStepper` | 쇼핑 수량. `KQuantityStyle.Outlined`(테두리 칸)와 `Collapsible`(0이면 + 하나만, 1에서 빼기가 휴지통) | `style`, `range` |
 | `KRating` | 별점. `onRatingChange`가 `null`이면 표시만 | `max`, `allowHalf` |
@@ -523,6 +537,8 @@ LazyColumn(contentPadding = PaddingValues(16.dp)) { // verticalArrangement 간�
 | --- | --- | --- |
 | `KSurface` | 표면 하나. `onClick`을 주면 카드처럼 눌리고, 안쪽 글자 색은 `LocalKineticaContentColor`로 받는다 | `shape`, `variant`, `tone`, `backdrop` |
 | `KCard` | `Glass`(기본), `Elevated`, `Filled`, `Tonal`, `Outlined`, `Text` 카드. `Filled`에 `KTone.Accent`를 주면 강조색으로 채운 판이 된다 | `onClick`, `variant`, `tone`, `contentPadding` |
+| `KStackedCards` | 지갑 앱처럼 겹쳐 쌓였다가 누르면 펼쳐지고, 한 장을 고르면 그 카드만 앞으로 나오고 나머지는 아래로 접힌다. 뒤로 가기로 선택을 푼다 | `count`, `state = rememberKStackedCardsState()`, `cardHeight`, `peek`, `stackGap`, `maxStacked`, `content(index)` |
+| `KScratchCard` | 긁어서 아래 내용을 드러내는 카드. 긁은 비율이 `threshold`를 넘으면 나머지가 사라지며 다 열린다. TalkBack에서는 동작 하나로 바로 연다 | `state = rememberKScratchCardState()`, `threshold`, `brushSize`, `coverColor`, `coverBrush`, `cover`, `onRevealed` |
 | `KSelectableCard` | 요금제, 배송 방법처럼 큰 선택지. 고르면 테두리가 굵어지고 위 끝 모서리에 체크 원이 튀어나온다. 하나만 고르면 `role = Role.RadioButton` | `selected`, `onSelectedChange`, `role` |
 | `KMediaCard` | 사진 위 글자 카드. 아래쪽 스크림으로 흰 글자의 대비를 확보한다 | `image`, `title`, `subtitle`, `eyebrow`, `aspectRatio` |
 | `KHorizontalCard` | 썸네일과 글자를 가로로 놓은 카드. 썸네일 모서리는 카드와 동심원으로 깎는다 | `thumbnail`, `trailing` |
@@ -565,7 +581,7 @@ KStatusBadge("배송 중", KStatus.Info)
 | `KBottomAppBar` | 화면 아래 도구 막대 | `actions`, `floatingActionButton` |
 | `KFloatingToolbar` | 떠 있는 캡슐 도구 막대. `rememberKFloatingToolbarState()`의 `connection`을 목록에 붙이면 아래로 스크롤할 때 접히고 위로 스크롤하면 펼쳐진다. FAB는 캡슐 옆에 남는다 | `expanded`, `floatingActionButton` |
 | `KTabBar` | 화면 아래에 떠 있는 탭 바. 선택한 탭의 인디케이터가 늘어났다 줄어들며 액체처럼 이동한다 | `tabs: List<KTab>`, `selectedIndex` |
-| `KFloatingTabBar` | 목록에 `state.nestedScrollConnection`을 붙이면 아래로 스크롤할 때 선택한 탭 아이콘만 남은 캡슐로 줄어든다. `accessory`는 펼친 동안 탭 바 위에 붙어 있다가 접히면 캡슐 옆으로 내려온다 | `state = rememberKFloatingTabBarState()`, `accessory` |
+| `KFloatingTabBar` | 목록에 `state.nestedScrollConnection`을 붙이면 아래로 스크롤할 때 선택한 탭 아이콘만 남은 캡슐로 줄어든다. `accessory`는 펼친 동안 탭 바 위에 붙어 있다가 접히면 캡슐 옆으로 내려온다. `lens = true`면 인디케이터를 손가락으로 끌어 옮기고, 끄는 동안 렌즈가 되며 떼면 가까운 탭에 붙는다 | `state = rememberKFloatingTabBarState()`, `accessory` |
 | `KTopTabs` | 페이저를 넘기는 동안 인디케이터가 손가락을 따라 늘어났다 줄어드는 상단 탭 | `pagerState`, `indicator`(`KTabIndicator.Pill`, `Underline`, `Segmented`), `scrollable` |
 | `KTab` | 탭 하나. 배지는 `KTabBar`와 `KFloatingTabBar`에서는 아이콘 모서리에, 아이콘 없는 탭과 `KTopTabs`에서는 이름 옆에 붙는다 | `label`, `icon`, `badge`, `dot` |
 
@@ -706,7 +722,7 @@ AnimatedContent(step, transitionSpec = { kTransform(KNavTransitions.SharedAxisX,
 | `KAlertDialog` | 제목, 본문, 아이콘, 버튼. 짧은 두 버튼은 나란히 놓고(취소가 시작 쪽), 셋이거나 글자가 길면 세로로 쌓아 취소를 맨 아래에 둔다. 넷 이상이면 늘 쌓고, 버튼이 없으면 버튼 줄 없이 그린다. 본문과 버튼 사이에 입력란 같은 내용을 넣을 수 있고, 아래에서 올라오는 시트로도 띄운다 | `actions: List<KDialogAction>`(`KDialogActionStyle.Default`, `Preferred`, `Destructive`, `DestructiveTonal`, `Text`, `Cancel`, `dismissOnClick`), `stacked`, `keepActionOrder`, `iconTint`, `presentation`(`KDialogPresentation.Card`, `Sheet`, `Auto`), `onDismissed`, `dragToDismiss`(시트), `appearScale`(카드), `content` |
 | `KSheet` | iOS 시트처럼 아래에서 올라오고 뒤쪽 콘텐츠는 조금 물러나며 모서리가 둥글어진다. 아래로 끌어 닫고, 덜 끌고 놓으면 던진 속도를 이어받아 제자리로 돌아온다. 넓은 화면에서는 `KSheetDefaults.MaxWidth`(640dp)를 넘지 않고 가운데에 놓인다 | `title`(TalkBack이 읽는 창 이름), `contentWindowInsets`, `onDismissed`, `dragToDismiss` |
 | `KActionSheet` | iOS 동작 시트. 동작 판과 떨어진 취소 판이 있고, 아래로 끌어 닫는다. `KSheetPresentation.Auto`면 600dp 이상 창에서 버튼 옆 팝오버로 바뀐다(취소는 바깥 누르기로 대신) | `actions`, `title`, `message`, `presentation` |
-| `KDetentSheet` | Apple 지도처럼 여러 높이(`Detent.Peek`, `Fraction`, `Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 이어지고, 손을 떼면 던진 속도를 보고 가까운 높이로 정착한다. 폴더블을 접고 펴도 같은 높이 단계를 유지한다 | `rememberKDetentSheetState(detents, initialDetent, dismissible)`, `title`, `header` |
+| `KDetentSheet` | Apple 지도처럼 여러 높이(`Detent.Peek`, `Fraction`, `Full`)에 멈추는 바텀 시트. 안의 목록 스크롤과 이어지고, 손을 떼면 던진 속도를 보고 가까운 높이로 정착한다. 폴더블을 접고 펴도 같은 높이 단계를 유지한다. `floatingGlass = true`면 낮은 높이에서는 가장자리에서 떨어져 떠 있는 유리 판이고, 가장 높은 높이로 올리면 가장자리에 붙고 불투명해진다 | `rememberKDetentSheetState(detents, initialDetent, dismissible)`, `title`, `header` |
 | `KFullScreenModal` | 아래에서 올라와 화면을 덮는 모달. 뒤 화면은 살짝 물러난다. 아래로 끌거나(안쪽 목록이 맨 위면 이어서) 던지면 닫히고, 덜 끌면 제자리로 정착한다 | `dragToDismiss`, `title` |
 
 ```kotlin
@@ -850,6 +866,8 @@ KIconButton(Icons.Rounded.Info, "도움말", onClick = {}, modifier = Modifier.t
 | `KToaster` + `rememberKToasterState()` | 종류별 아이콘이 붙은 토스트를 위나 아래에 쌓는다. 새 토스트가 앞에 오고 뒤 토스트는 작아지며 끝만 비친다. 쌓인 토스트를 누르면 펼치고, 펼친 동안에는 사라지기 타이머가 멈춘다. 옆으로 쓸면 닫힌다 | `position`(`KToastPosition.Top`, `Bottom`), `maxVisible`(기본 3, 넘으면 앞의 것이 닫힐 때까지 기다림), `richColors`(바탕에 종류 색을 옅게) |
 | `KSnackbarHost` + `rememberKSnackbarState()` | 아래에서 떠오르는 스낵바. 동작 버튼과 남은 시간을 보여 주는 링(닫기 버튼)이 있고 옆으로 쓸어 닫는다. 문구는 두 줄까지, 버튼 글자가 길거나 문구 자리가 좁으면 버튼을 아래 줄 끝으로 내린다. 결과를 `KSnackbarResult.Action`이나 `Dismissed`로 돌려준다 | `state.show(message, actionLabel, durationMs, status)`, `bottomOffset` |
 | `KIslandHost` + `rememberKIslandState()` | 다이내믹 아일랜드식 알림. 작은 캡슐이 부풀어 알림이 되고, `compactText`가 있으면 좁은 캡슐(예: 타이머)로 시작해 누르면 펼쳐진다. 위로 쓸어 닫는다. 결과는 `KIslandResult.Clicked`, `Dismissed`, `TimedOut`. 통화 시간처럼 보이는 알림의 내용만 바꿀 때는 코루틴 없이 `state.update(…)`를 부른다(보여 주는 알림이 없으면 `false`) | `state.show(KIslandContent(…))`, `state.update(…)`, `alwaysVisible` |
+| `KLiveActivityHost` + `rememberKLiveActivityState()` | 배달, 타이머, 녹음, 통화처럼 오래 떠 있는 활동. 하나면 좌우 슬롯으로 나뉜 캡슐이고, 둘이면 두 번째가 원으로 떨어져 나온다. 누르거나 길게 누르면 펼친 화면으로 모양이 이어서 바뀌고, 다시 누르거나 가장자리 쪽으로 밀면 접힌다. 화면 위(카메라 홀 자리)와 아래(Now Bar 같은 넓은 캡슐) 중 고르며, `KIslandHost`와 함께 쓸 때는 아래를 권한다. 세 번째 활동은 앞 활동이 끝나야 보인다 | `state.start(KLiveActivity(id, title, status, leading, trailing, expanded, minimal, progress))`, `update`, `end`, `expand`, `collapse`, `promote`, `position`, `edgePadding` |
+| `KCountdownPill`, `KTimePill` | 남은 시간이 줄어들거나 흐른 시간이 올라가는 캡슐. 초가 바뀔 때 숫자가 굴러가고, 링이나 막대가 줄어든다. 라이브 활동 슬롯에 그대로 넣는다 | `targetMillis`, `totalMillis`, `progress`(`Ring`, `Bar`, `None`), `startMillis`, `dotColor`, `onFinished` |
 | `KBanner` | 화면 위쪽에 머무는 배너. 저절로 사라지지 않고 레이아웃 안에 자리를 차지하며, `visible`이 바뀌면 높이가 펼쳐지고 접힌다 | `status`, `title`, `actions: List<KBannerAction>`, `onDismiss` |
 | `KAlert` | 본문 안 알림 상자. 제목은 TalkBack에서 제목으로, 아이콘은 상태 이름으로 읽힌다 | `variant`(`KVariant.Tonal` 기본, `Outlined`, `Filled`, `Glass`), `action` |
 | `KNoticeBar` | 한 줄 공지 막대. 글이 막대보다 길면 글의 방향으로 흘러가고 끝쪽 가장자리를 흐리게 지운다. 화면 밖에서는 멈춘다 | `scroll`(`false`거나 '애니메이션 삭제'면 줄을 바꿔 전부 보여 줌), `velocity` |
@@ -897,6 +915,7 @@ island.show(KIslandContent("민지", message, compactText = "새 메시지", lea
 | --- | --- | --- |
 | `KLoadingIndicator` | `KLoadingStyle.Dots`(점 튀기기), `Bars`(물결 막대), `Morph`(도형 모핑, 기본), `Orbit`(궤도), `Pulse`(퍼지는 고리). '애니메이션 삭제'면 멈춘 모래시계 아이콘과 "불러오는 중…" 글자로 바뀐다 | `style`, `contained`(표면 원판 위에 올림), `label` |
 | `KProgressBar`, `KProgressRing` | 용수철로 따라가는 진행 표시. `wave`를 켜면 액체가 차오르듯 출렁이고, `progress = null`이면 진행 정도를 모르는 상태를 보여 준다 | `progress`, `wave`, `thickness` |
+| `KWavyProgressBar`, `KWavyProgressRing` | 진행된 부분은 물결, 남은 트랙은 직선인 Material 3 Expressive 진행 표시. 진행이 1.5초 멈추거나 '애니메이션 삭제'면 물결이 잦아들어 평평해진다. 진행 값은 람다로 받아 그리기 단계에서만 읽고, 부드럽게 채우려면 `animateFloatAsState`로 넘긴다. `progress` 없는 오버로드는 진행 정도를 모를 때 쓴다 | `progress: () -> Float`, `color`, `trackColor`, `look = KWavyProgressLook`(`thickness`, `amplitude`, `wavelength`, `gap`), `stopIndicator` |
 | `KSegmentedProgressBar`, `KBufferProgressBar`, `KStepProgressBar` | 스토리식 칸 막대, 미리 받은 구간이 보이는 막대, 단계 점이 있는 막대. 단계 막대는 TalkBack에서 "5단계 중 2단계"처럼 읽힌다. 모두 RTL에서 오른쪽부터 찬다 | `segments`, `buffer`, `steps` |
 | `Modifier.borderSpinner` | 빛 한 줄기가 꼬리를 끌며 테두리를 따라 돈다. 둘레 길이를 따라 같은 속도로 움직여 긴 카드의 모서리에서 빨라지지 않는다. 꺼져 있으면 시계도 멈춘다 | `active`, `shape`, `periodMs` |
 | `Modifier.skeleton`, `KSkeletonText` | 불러오는 동안 빛이 흐르는 자리 표시 | `visible`, `style`(`KSkeletonStyle.Shimmer`, `Pulse`) |
@@ -1000,6 +1019,14 @@ KPricingCard("프로", "₩9,900", selected = plan == "pro", onSelect = { plan =
 '애니메이션 삭제' 설정에서는 차트가 처음부터 최종 모양을 그리고, 게이지와 단계 표시는 바로 옮겨 가며, 타임라인의 지금 단계 점과 금액 입력 커서는 움직이지 않는다. 마법사는 옅어지기만 한다.
 반복 애니메이션(타임라인 점, 커서)은 화면에 보이는 동안만 돈다.
 
+### 화면 구성과 데이터 표
+
+| 컴포넌트 | 하는 일 | 주요 파라미터 |
+| --- | --- | --- |
+| `KBentoGrid`, `KBentoCell` | 1x1, 2x1, 1x2, 2x2처럼 크기가 다른 칸을 앞쪽 빈 자리부터 채우고, 남은 구멍은 옆 칸을 늘려 메우는 소개 격자. 받은 폭에 맞춰 열 수가 늘고 RTL에서는 좌우가 바뀐다. 칸마다 높이를 한 번 재므로 칸 안에 게으른 목록을 바로 넣지 않는다 | `columns`(null이면 폭에 맞춤), `minCellWidth`, `maxColumns`, `rowHeight`, `spacing`, `fillGaps`, `animateAppear`, 칸의 `span`(`KBentoSpan.Small`, `Wide`, `Tall`, `Large`), `onClick` |
+| `KCommandPalette` | Ctrl+K로 여는 명령 검색 판. 묶음별 명령과 단축키 키캡, 최근 명령, 맞은 글자 강조, 방향키 이동과 Enter 실행, Esc 닫기, 결과 없음 화면이 있다. 넓은 창은 가운데, 좁은 창은 위쪽 판이다. TalkBack에는 결과 수를 알린다 | `state = rememberKCommandPaletteState()`, `sections: List<KCommandSection>`, `KCommand(id, title, onRun, subtitle, icon, shortcut, keywords, enabled)`, `Modifier.commandPaletteShortcut(state)`, `state.handleShortcut(event)` |
+| `KDataTable` | 열 머리를 눌러 정렬하고, 첫 열을 고정한 채 나머지를 머리와 함께 가로로 밀며, 체크박스로 행을 고르는 데이터 표. 행은 지연 구성하므로 높이가 정해진 곳에 둔다. TalkBack은 표로 읽고 정렬 상태도 읽는다 | `rows`, `columns: List<KTableColumn<T>>`(`KTableColumn.text(...)`, `width`, `weight`, `numeric`, `comparator`, `cell`), `key`, `state = rememberKDataTableState()`, `selectable`, `frozenFirstColumn`, `onRowClick` |
+
 ## 미디어와 소셜
 
 ### 미디어
@@ -1053,7 +1080,10 @@ Box(Modifier.fillMaxSize()) {
 | --- | --- | --- |
 | `KChatBubble` | 보낸 말풍선(`KChatSide.Sent`)은 강조색으로 채우고 끝 쪽에, 받은 말풍선은 표면 스타일로 시작 쪽에 붙는다. 묶음 안쪽 모서리를 작게 깎고 마지막 말풍선에만 꼬리를 단다(RTL에서는 반대). 폭은 받은 폭의 78%를 넘지 않아 글자를 키워도 비율이 그대로다. `time`, `status`(보내는 중, 보냄, 전달됨, 읽음, 실패)는 내용 아래에 작게 붙고 TalkBack은 상태로 읽는다 | `position = chatGroupPosition(앞과 같은 사람, 뒤와 같은 사람)`, `time`, `status`, `maxWidthFraction` |
 | `KTypingIndicator` | 받은 말풍선 모양 안에서 점 세 개가 차례로 튄다. 나타나면 TalkBack이 '입력 중'을 알린다 | `bubble` |
-| `KChatInput` | 첨부 버튼, `maxLines`줄까지 높아지는 입력란, 보내기 버튼. 글자가 없으면 마이크 버튼(`onVoice`)이고 글자를 치면 강조색 원이 차오르며 위 화살표로 바뀐다. 하드웨어 키보드에서는 Enter로 보내고 Shift+Enter로 줄을 바꾼다 | `onSend`, `onAttach`, `onVoice` |
+| `KChatInput` | 첨부 버튼, `maxLines`줄까지 높아지는 입력란, 보내기 버튼. 글자가 없으면 마이크 버튼(`onVoice`)이고 글자를 치면 강조색 원이 차오르며 위 화살표로 바뀐다. 하드웨어 키보드에서는 Enter로 보내고 Shift+Enter로 줄을 바꾼다. `voiceButton`을 주면 마이크 자리에 그 버튼(예: `KVoiceRecorderButton`)을 둔다 | `onSend`, `onAttach`, `onVoice` |
+| `KVoiceRecorderButton` + `rememberKVoiceRecorderState()` | 메신저식 녹음 버튼. 길게 눌러 녹음하고, 위로 밀면 잠그고, 시작 쪽으로 밀면 취소하고, 떼면 보낸다. 실제 녹음은 하지 않고 콜백만 부른다. 잠금 레일이 버튼 위 약 130dp까지 올라오므로 부모가 자르지 않게 둔다. TalkBack에서는 두 번 탭으로 시작과 보내기를 한다 | `onStart`, `onSend(durationMs)`, `onLock`, `onCancel`, `level`, `state` |
+| `KVoiceRecordingBar` | 녹음 중 입력란 자리에 겹쳐 놓는 줄. 깜박이는 점과 녹음 시간, 소리 막대, 밀어서 취소 안내 | `state`, `level` |
+| `KLiveWaveform`, `KWaveform` | 실시간 소리 크기 막대와 재생 위치 파형. 재생 파형은 누르거나 끌어서 위치를 옮기고 방향키로 5%씩 움직인다 | `level`, `active`, `samples`, `progress`, `onSeek`, `durationMillis`, `label` |
 | `KStoryRing` | 아바타 둘레 스토리 링. 안 본 스토리는 그라디언트, 본 스토리는 가는 회색 링이며, `loading`이면 점선으로 나뉘어 돈다 | `seen`, `loading`, `colors`(`KStoryRingDefaults.Colors`, `CloseFriends`) |
 | `KStoryViewer` | 전체 화면 스토리 뷰어. 분할 진행 막대, 시작 쪽 3분의 1을 누르면 이전, 나머지는 다음(RTL은 반대), 길게 누르면 멈춤, 아래로 끌거나 예측 뒤로 가기로 닫기 | `rememberKStoryViewerState(pageCount)`, `durationMs`, `header`, `footer` |
 | `KAttachmentChip` | 첨부 파일 한 개. 올리는 중이면 바탕이 진행률만큼 차고 끝 취소 버튼 둘레에 진행 링이 돈다. 실패하면 다시 시도 버튼으로 바뀐다. 긴 이름은 가운데를 줄여 확장자를 남긴다 | `status`(`KAttachmentStatus.Ready`, `Uploading`, `Failed`), `progress`, `onRemove`, `onRetry` |
@@ -1131,6 +1161,19 @@ Box(Modifier.glowBorder({ level }, RoundedCornerShape(24.dp)))
 | 뒤집는 카드 | `FlipCard(flipped, onFlippedChange, front = { … }, back = { … })`. 끌면 손을 따라 돌고, 놓으면 속도와 각도를 보고 가까운 면에 멈춘다. `axis`로 가로축, 세로축을 고른다. 기본으로는 보이지 않는 면을 컴포지션에서 빼므로 그 면의 상태가 뒤집을 때 처음으로 돌아간다. `keepBothFaces = true`면 두 면을 모두 남겨 상태를 유지하고, 보이지 않는 면은 그리지도 터치나 TalkBack에 드러내지도 않는다 |
 | 모핑 아이콘 | `MorphIcon(from, to, atEnd)`. `KMorphIcons`의 다섯 쌍(`Search`↔`Close`, `Plus`↔`Check`, `Menu`↔`ArrowBack`, `Heart`↔`HeartFilled`, `VolumeLow`↔`VolumeHigh`)과 직접 만든 `KMorphGlyph`를 쓴다. 진행을 직접 정하는 `progress` 오버로드도 있다 |
 | 복사 버튼 | `KCopyButton(text)`. 클립보드에 복사하고 아이콘이 체크로 바뀌며, TalkBack이 '복사됨'을 알린다 |
+
+### 움직이는 컴포넌트
+
+계속 움직이는 컴포넌트는 화면 밖에 있거나 '애니메이션 삭제'가 켜져 있으면 멈추거나 정지한 모양으로 그립니다.
+
+| 컴포넌트 | 하는 일 | 주요 파라미터 |
+| --- | --- | --- |
+| `KBlurTextReveal` | 단어마다 블러가 풀리며 떠오르듯 나타나는 글. 글이 늘어나면 새 단어만 이어서 나타나 스트리밍 답변에 쓴다. Android 12 아래에서는 투명도와 이동만 쓴다 | `text`, `wordDelayMs`, `wordDurationMs`, `blur`, `rise` |
+| `KBubblePicker` | 떠 있는 둥근 거품을 눌러 여러 개 고르는 선택기. 고른 거품이 커지며 둘레를 밀어내고, 다 자리를 잡으면 계산을 멈춘다. TalkBack은 체크박스로 읽는다 | `items`, `selected`, `onSelectedChange`, `bubbleSize`, `selectedScale`, `colors` |
+| `KMarquee` | 아무 내용이나 끝없이 흘려 보내는 띠. 반복해 그린 부분은 누를 수 없다 | `direction`(`KMarqueeDirection.Start`, `End`), `speed`(dp/s), `gap`, `edgeFade`, `pauseOnTouch`, `paused` |
+| `KAnimatedBeam` | `Modifier.beamAnchor(id)`로 등록한 두 요소 사이 곡선을 따라 빛이 흐른다 | `beams`(`KBeam(from, to, curvature, reverse, delayMs)`), `color`, `tailColor`, `periodMs`, `tail` |
+| `KDock` | 손가락이나 마우스가 가까운 아이콘이 커지는 독. 훑다가 뗀 곳의 아이콘을 실행하고, 실행 중인 앱에는 점을 찍는다 | `items`(`KDockItem(label, running, onClick, icon)`), `iconSize`, `magnification`, `reach`, `showLabels` |
+| `KOrbitingIcons` | 가운데 요소 둘레를 여러 궤도의 아이콘이 돈다. 장식이라 TalkBack은 가운데 요소만 읽는다 | `orbits`(`KOrbit(radius, periodMs, reverse, showPath, icons)`), `pathColor`, `center` |
 
 ### 화면 전환과 목록 모션
 
