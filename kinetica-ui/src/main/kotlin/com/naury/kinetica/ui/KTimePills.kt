@@ -1,12 +1,8 @@
 package com.naury.kinetica.ui
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -134,10 +130,11 @@ internal fun CountdownPill(spec: CountdownSpec, look: TimePillLook, label: Strin
     val still = reducedMotion()
     val fraction = rememberPillFraction(spec, still)
     val accent = if (look.accent.isSpecified) look.accent else KineticaTheme.colors.accent
-    val ink = LocalKineticaContentColor.current
     val text = countdownText(left)
-    val style = look.textStyle.merge(TextStyle(color = look.textStyle.color.takeIf { it.isSpecified } ?: ink))
     PillFrame(look.surface, label, text, modifier) {
+        // 캡슐 표면이 있으면 그 글자색이 안쪽에 들어오므로 여기서 읽는다.
+        val ink = LocalKineticaContentColor.current
+        val style = look.textStyle.merge(TextStyle(color = look.textStyle.color.takeIf { it.isSpecified } ?: ink))
         when (look.progress) {
             KPillProgress.Ring -> Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(RING_SIZE).drawBehind { drawPillRing(fraction.value, accent, ink) })
@@ -152,31 +149,29 @@ internal fun CountdownPill(spec: CountdownSpec, look: TimePillLook, label: Strin
     }
 }
 
+/**
+ * 글자 아래에 남은 몫 막대를 그린다. 막대 폭은 글자 폭을 따른다. 굴러가는 글자는 고유 폭을 알려 주지 않으므로
+ * `IntrinsicSize`로 맞추지 않고, 글자 아래 여백에 막대를 그린다.
+ */
 @Composable
 private fun PillBarColumn(fraction: PillFraction, accent: Color, ink: Color, text: @Composable () -> Unit) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    Column(
-        Modifier.width(IntrinsicSize.Max),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        text()
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(BAR_HEIGHT)
-                .drawBehind {
-                    val radius = CornerRadius(size.height / 2)
-                    drawRoundRect(ink.copy(alpha = TRACK_ALPHA), cornerRadius = radius)
-                    val w = size.width * fraction.value.coerceIn(0f, 1f)
-                    if (w > 0f) {
-                        // 남은 몫은 시작 쪽에 붙여 끝 쪽부터 줄어든다.
-                        val left = if (rtl) size.width - w else 0f
-                        drawRoundRect(accent, Offset(left, 0f), Size(w, size.height), radius)
-                    }
-                },
-        )
-    }
+    Box(
+        Modifier
+            .drawBehind {
+                val bar = BAR_HEIGHT.toPx()
+                val top = size.height - bar
+                val radius = CornerRadius(bar / 2)
+                drawRoundRect(ink.copy(alpha = TRACK_ALPHA), Offset(0f, top), Size(size.width, bar), radius)
+                val w = size.width * fraction.value.coerceIn(0f, 1f)
+                if (w > 0f) {
+                    // 남은 몫은 시작 쪽에 붙여 끝 쪽부터 줄어든다.
+                    val left = if (rtl) size.width - w else 0f
+                    drawRoundRect(accent, Offset(left, top), Size(w, bar), radius)
+                }
+            }
+            .padding(bottom = BAR_HEIGHT + BAR_GAP),
+    ) { text() }
 }
 
 @Composable
@@ -188,10 +183,10 @@ private fun TimePill(
     surface: SurfaceStyle?,
     modifier: Modifier,
 ) {
-    val ink = LocalKineticaContentColor.current
     val text = elapsedText(elapsed.value)
-    val style = textStyle.merge(TextStyle(color = textStyle.color.takeIf { it.isSpecified } ?: ink))
     PillFrame(surface, label, text, modifier) {
+        val ink = LocalKineticaContentColor.current
+        val style = textStyle.merge(TextStyle(color = textStyle.color.takeIf { it.isSpecified } ?: ink))
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (dotColor.isSpecified) {
                 BlinkDot(dotColor)
@@ -328,6 +323,7 @@ private const val BLINK_PERIOD_S = 2.0
 private val RING_SIZE = 16.dp
 private val RING_STROKE = 2.5.dp
 private val BAR_HEIGHT = 3.dp
+private val BAR_GAP = 3.dp
 private val DOT_SIZE = 8.dp
 private val PILL_GAP = 6.dp
 private val PILL_PADDING = 12.dp
