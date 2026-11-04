@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">명령</string>
+    <string name="kinetica_ui_palette_placeholder">명령 또는 검색어 입력</string>
+    <string name="kinetica_ui_palette_recent">최근</string>
+    <string name="kinetica_ui_palette_empty">결과 없음</string>
+    <string name="kinetica_ui_palette_empty_message">‘%1$s’에 맞는 명령이 없어요.</string>
+    <string name="kinetica_ui_palette_hint_move">이동</string>
+    <string name="kinetica_ui_palette_hint_run">실행</string>
+    <string name="kinetica_ui_palette_shortcut">단축키 %1$s</string>
+    <string name="kinetica_ui_table_sort">정렬</string>
+    <string name="kinetica_ui_table_sorted_ascending">오름차순 정렬됨</string>
+    <string name="kinetica_ui_table_sorted_descending">내림차순 정렬됨</string>
+    <string name="kinetica_ui_table_not_sorted">정렬 안 됨</string>
+    <string name="kinetica_ui_table_select_all">모든 행 선택</string>
+    <string name="kinetica_ui_table_select_row">%1$s 선택</string>
+    <string name="kinetica_ui_table_row">%1$d행</string>
+    <string name="kinetica_ui_table_empty">데이터 없음</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="other">결과 %1$d개</item>
+    </plurals>
+</resources>

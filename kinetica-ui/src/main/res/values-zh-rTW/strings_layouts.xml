@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">指令</string>
+    <string name="kinetica_ui_palette_placeholder">輸入指令或搜尋</string>
+    <string name="kinetica_ui_palette_recent">最近</string>
+    <string name="kinetica_ui_palette_empty">沒有結果</string>
+    <string name="kinetica_ui_palette_empty_message">沒有符合「%1$s」的指令。</string>
+    <string name="kinetica_ui_palette_hint_move">移動</string>
+    <string name="kinetica_ui_palette_hint_run">執行</string>
+    <string name="kinetica_ui_palette_shortcut">快速鍵 %1$s</string>
+    <string name="kinetica_ui_table_sort">排序</string>
+    <string name="kinetica_ui_table_sorted_ascending">已遞增排序</string>
+    <string name="kinetica_ui_table_sorted_descending">已遞減排序</string>
+    <string name="kinetica_ui_table_not_sorted">未排序</string>
+    <string name="kinetica_ui_table_select_all">選取所有列</string>
+    <string name="kinetica_ui_table_select_row">選取%1$s</string>
+    <string name="kinetica_ui_table_row">第 %1$d 列</string>
+    <string name="kinetica_ui_table_empty">沒有資料</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="other">%1$d 個結果</item>
+    </plurals>
+</resources>

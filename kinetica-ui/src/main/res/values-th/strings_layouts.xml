@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">คำสั่ง</string>
+    <string name="kinetica_ui_palette_placeholder">พิมพ์คำสั่งหรือค้นหา</string>
+    <string name="kinetica_ui_palette_recent">ล่าสุด</string>
+    <string name="kinetica_ui_palette_empty">ไม่พบผลลัพธ์</string>
+    <string name="kinetica_ui_palette_empty_message">ไม่มีคำสั่งที่ตรงกับ “%1$s”</string>
+    <string name="kinetica_ui_palette_hint_move">ย้าย</string>
+    <string name="kinetica_ui_palette_hint_run">เรียกใช้</string>
+    <string name="kinetica_ui_palette_shortcut">แป้นลัด %1$s</string>
+    <string name="kinetica_ui_table_sort">จัดเรียง</string>
+    <string name="kinetica_ui_table_sorted_ascending">เรียงจากน้อยไปมาก</string>
+    <string name="kinetica_ui_table_sorted_descending">เรียงจากมากไปน้อย</string>
+    <string name="kinetica_ui_table_not_sorted">ไม่ได้จัดเรียง</string>
+    <string name="kinetica_ui_table_select_all">เลือกทุกแถว</string>
+    <string name="kinetica_ui_table_select_row">เลือก %1$s</string>
+    <string name="kinetica_ui_table_row">แถว %1$d</string>
+    <string name="kinetica_ui_table_empty">ไม่มีข้อมูล</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="other">%1$d ผลลัพธ์</item>
+    </plurals>
+</resources>

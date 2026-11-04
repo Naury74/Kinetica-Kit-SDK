@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">Commands</string>
+    <string name="kinetica_ui_palette_placeholder">Type a command or search</string>
+    <string name="kinetica_ui_palette_recent">Recent</string>
+    <string name="kinetica_ui_palette_empty">No results</string>
+    <string name="kinetica_ui_palette_empty_message">No commands match “%1$s”.</string>
+    <string name="kinetica_ui_palette_hint_move">Move</string>
+    <string name="kinetica_ui_palette_hint_run">Run</string>
+    <string name="kinetica_ui_palette_shortcut">Shortcut %1$s</string>
+    <string name="kinetica_ui_table_sort">Sort</string>
+    <string name="kinetica_ui_table_sorted_ascending">Sorted ascending</string>
+    <string name="kinetica_ui_table_sorted_descending">Sorted descending</string>
+    <string name="kinetica_ui_table_not_sorted">Not sorted</string>
+    <string name="kinetica_ui_table_select_all">Select all rows</string>
+    <string name="kinetica_ui_table_select_row">Select %1$s</string>
+    <string name="kinetica_ui_table_row">Row %1$d</string>
+    <string name="kinetica_ui_table_empty">No data</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="one">%1$d result</item>
+        <item quantity="other">%1$d results</item>
+    </plurals>
+</resources>

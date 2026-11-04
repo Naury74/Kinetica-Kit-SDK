@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">Perintah</string>
+    <string name="kinetica_ui_palette_placeholder">Ketik perintah atau cari</string>
+    <string name="kinetica_ui_palette_recent">Terbaru</string>
+    <string name="kinetica_ui_palette_empty">Tidak ada hasil</string>
+    <string name="kinetica_ui_palette_empty_message">Tidak ada perintah yang cocok dengan “%1$s”.</string>
+    <string name="kinetica_ui_palette_hint_move">Pindah</string>
+    <string name="kinetica_ui_palette_hint_run">Jalankan</string>
+    <string name="kinetica_ui_palette_shortcut">Pintasan %1$s</string>
+    <string name="kinetica_ui_table_sort">Urutkan</string>
+    <string name="kinetica_ui_table_sorted_ascending">Diurutkan naik</string>
+    <string name="kinetica_ui_table_sorted_descending">Diurutkan turun</string>
+    <string name="kinetica_ui_table_not_sorted">Tidak diurutkan</string>
+    <string name="kinetica_ui_table_select_all">Pilih semua baris</string>
+    <string name="kinetica_ui_table_select_row">Pilih %1$s</string>
+    <string name="kinetica_ui_table_row">Baris %1$d</string>
+    <string name="kinetica_ui_table_empty">Tidak ada data</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="other">%1$d hasil</item>
+    </plurals>
+</resources>

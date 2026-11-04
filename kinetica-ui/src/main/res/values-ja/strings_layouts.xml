@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">コマンド</string>
+    <string name="kinetica_ui_palette_placeholder">コマンドを入力または検索</string>
+    <string name="kinetica_ui_palette_recent">最近</string>
+    <string name="kinetica_ui_palette_empty">結果なし</string>
+    <string name="kinetica_ui_palette_empty_message">“%1$s”に一致するコマンドはありません。</string>
+    <string name="kinetica_ui_palette_hint_move">移動</string>
+    <string name="kinetica_ui_palette_hint_run">実行</string>
+    <string name="kinetica_ui_palette_shortcut">ショートカット %1$s</string>
+    <string name="kinetica_ui_table_sort">並べ替え</string>
+    <string name="kinetica_ui_table_sorted_ascending">昇順で並べ替え済み</string>
+    <string name="kinetica_ui_table_sorted_descending">降順で並べ替え済み</string>
+    <string name="kinetica_ui_table_not_sorted">並べ替えなし</string>
+    <string name="kinetica_ui_table_select_all">すべての行を選択</string>
+    <string name="kinetica_ui_table_select_row">%1$sを選択</string>
+    <string name="kinetica_ui_table_row">%1$d行目</string>
+    <string name="kinetica_ui_table_empty">データなし</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="other">%1$d件の結果</item>
+    </plurals>
+</resources>

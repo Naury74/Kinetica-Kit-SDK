@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">Befehle</string>
+    <string name="kinetica_ui_palette_placeholder">Befehl eingeben oder suchen</string>
+    <string name="kinetica_ui_palette_recent">Zuletzt</string>
+    <string name="kinetica_ui_palette_empty">Keine Ergebnisse</string>
+    <string name="kinetica_ui_palette_empty_message">Keine Befehle passen zu „%1$s“.</string>
+    <string name="kinetica_ui_palette_hint_move">Bewegen</string>
+    <string name="kinetica_ui_palette_hint_run">Ausführen</string>
+    <string name="kinetica_ui_palette_shortcut">Tastenkürzel %1$s</string>
+    <string name="kinetica_ui_table_sort">Sortieren</string>
+    <string name="kinetica_ui_table_sorted_ascending">Aufsteigend sortiert</string>
+    <string name="kinetica_ui_table_sorted_descending">Absteigend sortiert</string>
+    <string name="kinetica_ui_table_not_sorted">Nicht sortiert</string>
+    <string name="kinetica_ui_table_select_all">Alle Zeilen auswählen</string>
+    <string name="kinetica_ui_table_select_row">%1$s auswählen</string>
+    <string name="kinetica_ui_table_row">Zeile %1$d</string>
+    <string name="kinetica_ui_table_empty">Keine Daten</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="one">%1$d Ergebnis</item>
+        <item quantity="other">%1$d Ergebnisse</item>
+    </plurals>
+</resources>

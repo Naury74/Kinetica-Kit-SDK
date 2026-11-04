@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">Lệnh</string>
+    <string name="kinetica_ui_palette_placeholder">Nhập lệnh hoặc tìm kiếm</string>
+    <string name="kinetica_ui_palette_recent">Gần đây</string>
+    <string name="kinetica_ui_palette_empty">Không có kết quả</string>
+    <string name="kinetica_ui_palette_empty_message">Không có lệnh nào khớp với “%1$s”.</string>
+    <string name="kinetica_ui_palette_hint_move">Di chuyển</string>
+    <string name="kinetica_ui_palette_hint_run">Chạy</string>
+    <string name="kinetica_ui_palette_shortcut">Phím tắt %1$s</string>
+    <string name="kinetica_ui_table_sort">Sắp xếp</string>
+    <string name="kinetica_ui_table_sorted_ascending">Đã sắp xếp tăng dần</string>
+    <string name="kinetica_ui_table_sorted_descending">Đã sắp xếp giảm dần</string>
+    <string name="kinetica_ui_table_not_sorted">Chưa sắp xếp</string>
+    <string name="kinetica_ui_table_select_all">Chọn tất cả các hàng</string>
+    <string name="kinetica_ui_table_select_row">Chọn %1$s</string>
+    <string name="kinetica_ui_table_row">Hàng %1$d</string>
+    <string name="kinetica_ui_table_empty">Không có dữ liệu</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="other">%1$d kết quả</item>
+    </plurals>
+</resources>

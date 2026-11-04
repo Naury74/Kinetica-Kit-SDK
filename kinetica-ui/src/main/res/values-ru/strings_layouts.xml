@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_palette_title">Команды</string>
+    <string name="kinetica_ui_palette_placeholder">Введите команду или выполните поиск</string>
+    <string name="kinetica_ui_palette_recent">Недавние</string>
+    <string name="kinetica_ui_palette_empty">Нет результатов</string>
+    <string name="kinetica_ui_palette_empty_message">Нет команд, соответствующих «%1$s».</string>
+    <string name="kinetica_ui_palette_hint_move">Перейти</string>
+    <string name="kinetica_ui_palette_hint_run">Выполнить</string>
+    <string name="kinetica_ui_palette_shortcut">Сочетание клавиш %1$s</string>
+    <string name="kinetica_ui_table_sort">Сортировать</string>
+    <string name="kinetica_ui_table_sorted_ascending">По возрастанию</string>
+    <string name="kinetica_ui_table_sorted_descending">По убыванию</string>
+    <string name="kinetica_ui_table_not_sorted">Без сортировки</string>
+    <string name="kinetica_ui_table_select_all">Выбрать все строки</string>
+    <string name="kinetica_ui_table_select_row">Выбрать %1$s</string>
+    <string name="kinetica_ui_table_row">Строка %1$d</string>
+    <string name="kinetica_ui_table_empty">Нет данных</string>
+    <plurals name="kinetica_ui_palette_results">
+        <item quantity="one">%1$d результат</item>
+        <item quantity="few">%1$d результата</item>
+        <item quantity="many">%1$d результатов</item>
+        <item quantity="other">%1$d результата</item>
+    </plurals>
+</resources>
