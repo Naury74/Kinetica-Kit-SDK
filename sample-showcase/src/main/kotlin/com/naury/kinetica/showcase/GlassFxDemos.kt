@@ -41,8 +41,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -167,7 +169,7 @@ private fun GlassGroupCard(fx: Boolean) {
     val backdrop = rememberGlassBackdrop()
     val toggle = {
         open = !open
-        scope.launch { spread.animateTo(if (open) 1f else 0f, spring(0.6f, Spring.StiffnessLow)) }
+        scope.launch { spread.animateTo(if (open) 1f else 0f, spring(0.7f, Spring.StiffnessVeryLow)) }
         Unit
     }
     DemoCard("녹아 붙는 글래스", "가운데 버튼을 누르면 버튼들이 펼쳐지며 갈라지고, 다시 누르면 하나로 녹아 붙습니다. 배경이 판을 통해 비칩니다.") {
@@ -200,9 +202,12 @@ private fun BoxScope.FabCluster(spread: () -> Float, open: Boolean, onToggle: ()
                 }
                 .plate(name)
                 .size(52.dp)
-                .semantics { contentDescription = name },
+                .then(if (open) Modifier.semantics { contentDescription = name } else Modifier.clearAndSetSemantics {}),
             contentAlignment = Alignment.Center,
-        ) { ShowcaseIcon(icon, color = Color.White) }
+        ) {
+            // 접혀 있으면 가운데 버튼 밑에 겹쳐 있으므로 펼친 만큼만 아이콘을 드러낸다.
+            Box(Modifier.graphicsLayer { alpha = (spread() * 2f - 0.6f).coerceIn(0f, 1f) }) { ShowcaseIcon(icon, color = Color.White) }
+        }
     }
     Box(
         Modifier
