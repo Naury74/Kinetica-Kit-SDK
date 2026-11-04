@@ -67,7 +67,7 @@ public fun Modifier.verticalFadingEdges(state: LazyListState, height: Dp = DEFAU
 }
 
 @Composable
-private fun Modifier.fadingEdges(start: Boolean, end: Boolean, width: Dp, vertical: Boolean): Modifier {
+internal fun Modifier.fadingEdges(start: Boolean, end: Boolean, width: Dp, vertical: Boolean): Modifier {
     val still = isReducedMotion()
     val startAmount by animateFloatAsState(if (start) 1f else 0f, tween(if (still) 0 else FADE_MS), label = "fade-start")
     val endAmount by animateFloatAsState(if (end) 1f else 0f, tween(if (still) 0 else FADE_MS), label = "fade-end")
