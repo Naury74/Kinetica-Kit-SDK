@@ -108,7 +108,8 @@ private fun HostedOverlay(host: KOverlayHost, kind: OverlayKind, edgeInsets: Win
     val latestBody = rememberUpdatedState(body)
     val latestInsets = rememberUpdatedState(edgeInsets)
     // content는 한 번만 정하고 최신 람다는 상태로 읽는다. 컴포지션 도중에 오버레이 상태를 다시 쓰지 않기 위해서다.
-    val entry = remember {
+    // 종류가 바뀌면(예: 라이브 활동을 화면 위에서 아래로) 정렬과 모달 여부가 달라지므로 새 항목으로 바꾼다.
+    val entry = remember(host, kind) {
         OverlayEntry(Any(), modal = kind == OverlayKind.Modal).also { entry ->
             entry.content = {
                 CompositionLocalProvider(LocalOverlayEntry provides entry) {

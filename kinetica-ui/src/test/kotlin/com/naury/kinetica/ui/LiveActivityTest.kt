@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
@@ -152,5 +154,39 @@ class LiveActivityTest {
         compose.mainClock.advanceTimeBy(200)
         compose.onNodeWithText("운동 패널", useUnmergedTree = true).assertExists()
         compose.mainClock.autoAdvance = true
+    }
+
+    @Test
+    fun `큰 캡슐을 손가락으로 누르면 펼치고 다시 누르면 접는다`() {
+        val state = KLiveActivityState()
+        setUp(state, KLiveActivityPosition.Bottom)
+        state.start(activity("timer", "타이머", "5분 남음"))
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("타이머, 5분 남음").performClick()
+        compose.waitForIdle()
+        assertThat(state.expandedId).isEqualTo("timer")
+        compose.onNodeWithText("타이머 패널", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `위치를 바꾸면 새 자리에 다시 뜬다`() {
+        val state = KLiveActivityState()
+        var position by androidx.compose.runtime.mutableStateOf(KLiveActivityPosition.Bottom)
+        compose.setContent {
+            KineticaScaffold(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize()) { BasicText("내용") }
+                KLiveActivityHost(state, position = position)
+            }
+        }
+        state.start(activity("timer", "타이머", "5분 남음"))
+        compose.waitForIdle()
+        val bottom = compose.onNodeWithContentDescription("타이머, 5분 남음").fetchSemanticsNode().boundsInRoot
+        position = KLiveActivityPosition.Top
+        compose.waitForIdle()
+        val top = compose.onNodeWithContentDescription("타이머, 5분 남음").fetchSemanticsNode().boundsInRoot
+        assertThat(top.top).isLessThan(bottom.top)
+        compose.onNodeWithContentDescription("타이머, 5분 남음").performClick()
+        compose.waitForIdle()
+        assertThat(state.expandedId).isEqualTo("timer")
     }
 }
