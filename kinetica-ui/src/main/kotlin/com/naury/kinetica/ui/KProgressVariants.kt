@@ -51,7 +51,7 @@ public fun KSegmentedProgressBar(
 ) {
     require(segments >= 1) { "segments는 1 이상이어야 합니다." }
     val level = fraction(progress)
-    val track = trackColor(color, surface)
+    val track = progressTrackColor(color, surface)
     Spacer(
         modifier
             .fillMaxWidth()
@@ -99,7 +99,7 @@ public fun KBufferProgressBar(
             if (still) snap() else spring(FOLLOW_DAMPING, Spring.StiffnessLow),
             label = "buffer",
         )
-    val track = trackColor(color, surface)
+    val track = progressTrackColor(color, surface)
     val bufferColor = color.copy(alpha = color.alpha * BUFFER_ALPHA)
     Spacer(
         modifier
@@ -143,7 +143,7 @@ public fun KStepProgressBar(
         if (still) snap() else spring(STEP_DAMPING, Spring.StiffnessMediumLow),
         label = "step-progress",
     )
-    val track = trackColor(color, surface)
+    val track = progressTrackColor(color, surface)
     val hole = surface.inkBackground()
     val description = stringResource(R.string.kinetica_ui_feedback_step, current, steps)
     Spacer(
@@ -191,7 +191,7 @@ private fun DrawScope.drawSteps(look: StepLook, bar: Float) {
 private fun fraction(value: Float): Float = if (value.isNaN()) 0f else value.coerceIn(0f, 1f)
 
 /** 트랙 색. 찬 색이 흰색처럼 밝은데 표면이 밝으면 트랙이 안 보이므로 표면 글자 색 쪽으로 옅게 깐다. */
-private fun trackColor(color: Color, surface: SurfaceStyle): Color = if (contrast(color, surface.inkBackground()) <
+internal fun progressTrackColor(color: Color, surface: SurfaceStyle): Color = if (contrast(color, surface.inkBackground()) <
     TRACK_CONTRAST
 ) {
     surface.raisedFill(TRACK_ALPHA)
