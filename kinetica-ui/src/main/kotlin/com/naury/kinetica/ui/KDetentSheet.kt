@@ -297,6 +297,10 @@ public fun rememberKDetentSheetState(
  * @param header 핸들 아래에 고정되어 스크롤되지 않는 영역
  * @param content 남은 높이를 채우는 본문. 스크롤 목록은 `fillMaxSize`로 둔다.
  * @param contentWindowInsets 시트가 피할 시스템 영역. 기본값은 [KSheetDefaults.windowInsets]다.
+ * @param floatingGlass true면 낮은 높이에서는 양옆과 아래에서 10dp 떨어져 떠 있는 둥근 유리 시트로 그리고, 가장 높은 높이로 올릴수록
+ *   여백이 줄고 아래 모서리가 펴지며 불투명해져 가장 높은 높이에서는 가장자리에 붙은 [surface] 색 시트가 된다. 바로 아래 높이에서
+ *   가장 높은 높이 사이를 끄는 만큼 이어서 바뀐다. 유리는 [surface]가 글래스면 그 스타일을, 아니면 [LocalGlassStyle]을 쓴다.
+ *   바뀌는 것은 그리기뿐이라 내용 배치는 그대로다. 기본값 false는 지금처럼 화면 아래에 붙은 [surface] 판이다.
  */
 @Composable
 public fun KDetentSheet(
@@ -306,6 +310,7 @@ public fun KDetentSheet(
     title: String? = null,
     header: @Composable ColumnScope.() -> Unit = {},
     contentWindowInsets: @Composable () -> WindowInsets = { KSheetDefaults.windowInsets },
+    floatingGlass: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val density = LocalDensity.current
@@ -344,7 +349,7 @@ public fun KDetentSheet(
                         layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                     }
                     .graphicsLayer { translationY = state.offset.takeUnless { it.isNaN() } ?: state.containerHeight }
-                    .kSurface(surface.forPopup(), SheetShape)
+                    .sheetSurface(state, surface, floatingGlass)
                     .sheetSemantics(state, title, scope)
                     .nestedScroll(remember(state) { SheetScrollConnection(state) })
                     .draggable(
@@ -367,6 +372,29 @@ public fun KDetentSheet(
             }
         }
     }
+}
+
+/** 1.0.0-alpha05까지의 시그니처. 컴파일된 호출자를 위해 남긴다. */
+@Deprecated("바이너리 호환용", level = DeprecationLevel.HIDDEN)
+@Composable
+public fun KDetentSheet(
+    state: KDetentSheetState,
+    modifier: Modifier = Modifier,
+    surface: SurfaceStyle = KineticaTheme.surface,
+    title: String? = null,
+    header: @Composable ColumnScope.() -> Unit = {},
+    contentWindowInsets: @Composable () -> WindowInsets = { KSheetDefaults.windowInsets },
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    KDetentSheet(state, modifier, surface, title, header, contentWindowInsets, floatingGlass = false, content = content)
+}
+
+/** 시트 판. [floatingGlass]면 떠 있다가 붙는 글래스 판, 아니면 화면 아래에 붙은 [surface] 판이다. */
+@Composable
+private fun Modifier.sheetSurface(state: KDetentSheetState, surface: SurfaceStyle, floatingGlass: Boolean): Modifier = if (floatingGlass) {
+    settlingGlassSheet(state, surface, currentShapes.radius(currentShapes.sheet))
+} else {
+    kSurface(surface.forPopup(), SheetShape)
 }
 
 @Composable
