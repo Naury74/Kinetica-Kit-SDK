@@ -9,8 +9,11 @@ import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellati
 import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -32,7 +35,15 @@ import kotlinx.coroutines.launch
 internal class IndicatorLens(val indicator: LiquidIndicator, val scope: CoroutineScope) {
     val grab = Animatable(0f)
     var motion: KineticaMotion = KineticaMotion.Bouncy
+    var still: Boolean = false
     var haptics: HapticFeedback? = null
+
+    /**
+     * 끌어 놓을 때마다 1씩 는다. 인디케이터를 선택 칸으로 옮기는 효과의 키로 쓴다.
+     * 호스트가 놓은 칸을 고르지 않으면 선택이 그대로라 그 효과가 다시 돌지 않으므로, 이 값으로 다시 돌려 선택 칸으로 되돌린다.
+     */
+    var drops by mutableIntStateOf(0)
+        private set
 
     /** 칸마다 물리 좌표 px의 왼쪽, 오른쪽 끝을 이어 둔 배열. 끌기를 시작할 때 한 번 읽는다. 구성할 때마다 새로 넣는다. */
     var cells: () -> FloatArray = { FloatArray(0) }
@@ -44,7 +55,8 @@ internal class IndicatorLens(val indicator: LiquidIndicator, val scope: Coroutin
     fun progress(): Float = grab.value.coerceIn(0f, 1f)
 
     fun press(down: Boolean) {
-        scope.launch { grab.animateTo(if (down) 1f else 0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
+        val target = if (down) 1f else 0f
+        scope.launch { if (still) grab.snapTo(target) else grab.animateTo(target, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
     }
 
     /** 인디케이터 왼쪽 끝을 [left]로, 폭은 [width]로 바로 옮긴다. */
@@ -59,6 +71,7 @@ internal class IndicatorLens(val indicator: LiquidIndicator, val scope: Coroutin
     fun settle(cells: FloatArray, index: Int) {
         scope.launch { indicator.moveTo(cells[index * 2], cells[index * 2 + 1], motion) }
         press(down = false)
+        drops++
     }
 }
 
@@ -133,6 +146,9 @@ internal fun Modifier.indicatorDrag(lens: IndicatorLens): Modifier = pointerInpu
 internal class IndicatorLensParts(val outer: Modifier, val inner: Modifier, private val lens: IndicatorLens?) {
     /** 렌즈가 부푼 만큼 인디케이터를 옅게 할 정도(0..1). 렌즈가 그 자리를 맡으므로 두 겹으로 보이지 않게 한다. */
     fun clear(): Float = (lens?.progress() ?: 0f) * INDICATOR_CLEAR
+
+    /** [IndicatorLens.drops]. 인디케이터를 선택 칸으로 옮기는 효과의 키에 넣는다. 렌즈가 꺼져 있으면 0이다. */
+    val drops: Int get() = lens?.drops ?: 0
 }
 
 private val NoIndicatorLens = IndicatorLensParts(Modifier, Modifier, null)
@@ -153,6 +169,7 @@ internal fun rememberIndicatorLens(
     val scope = rememberCoroutineScope()
     val lens = remember(indicator, scope) { IndicatorLens(indicator, scope) }
     lens.motion = KineticaTheme.design.motion
+    lens.still = isReducedMotion()
     lens.haptics = kHapticFeedback()
     lens.cells = cells
     lens.onSettle = onSelect

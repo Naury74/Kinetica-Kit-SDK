@@ -24,6 +24,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -44,6 +45,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -64,6 +67,22 @@ class GlassFxTest {
     val compose = createComposeRule()
 
     private val slider = SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo)
+    private val look = GlassStyle()
+    private val density = Density(2f)
+
+    /** [GroupUniforms]에 판을 한 번에 담는다. [how]는 스타일과 밀도다. */
+    private fun GroupUniforms.put(
+        plates: List<Rect>,
+        corners: List<Float>,
+        pad: Float,
+        size: Size,
+        melt: Float,
+        how: Pair<GlassStyle, Density> = look to density,
+    ): Boolean {
+        begin()
+        plates.forEachIndexed { i, rect -> add(rect, corners.getOrElse(i) { 0f }, pad) }
+        return commit(size, melt, how.first, how.second)
+    }
 
     @Test
     fun `렌즈 셰이더는 렌즈 크기와 광학 값을 받아 컴파일된다`() {
@@ -80,7 +99,7 @@ class GlassFxTest {
     fun `묶음 셰이더는 판 배열을 받아 컴파일된다`() {
         val shader = RuntimeShader(GROUP_SHADER.replace("content.eval(", "sample(content, "))
         val uniforms = GroupUniforms()
-        uniforms.update(listOf(Rect(0f, 0f, 40f, 40f)), listOf(20f), 10f, Size(200f, 100f), 16f)
+        uniforms.put(listOf(Rect(0f, 0f, 40f, 40f)), listOf(20f), 10f, Size(200f, 100f), 16f)
         shader.setFloatUniform("rects", uniforms.rects)
         shader.setFloatUniform("extra", uniforms.extra)
         shader.setFloatUniform("count", 1f)
@@ -92,23 +111,38 @@ class GlassFxTest {
         val uniforms = GroupUniforms()
         val plates = listOf(Rect(0f, 0f, 40f, 40f), Rect(50f, 0f, 90f, 40f))
         val size = Size(200f, 100f)
-        assertThat(uniforms.update(plates, listOf(20f, 20f), 8f, size, 16f)).isTrue()
-        assertThat(uniforms.update(plates, listOf(20f, 20f), 8f, size, 16f)).isFalse()
+        assertThat(uniforms.put(plates, listOf(20f, 20f), 8f, size, 16f)).isTrue()
+        assertThat(uniforms.put(plates, listOf(20f, 20f), 8f, size, 16f)).isFalse()
         val moved = listOf(Rect(0f, 0f, 40f, 40f), Rect(60f, 0f, 100f, 40f))
-        assertThat(uniforms.update(moved, listOf(20f, 20f), 8f, size, 16f)).isTrue()
+        assertThat(uniforms.put(moved, listOf(20f, 20f), 8f, size, 16f)).isTrue()
         // 레이어 좌표는 사방 여백만큼 밀리고, 모서리는 짧은 변 절반을 넘지 않는다.
         assertThat(uniforms.rects[4]).isEqualTo(80f + 8f)
-        assertThat(uniforms.update(moved, listOf(99f, 10f), 8f, size, 16f)).isTrue()
+        assertThat(uniforms.put(moved, listOf(99f, 10f), 8f, size, 16f)).isTrue()
         assertThat(uniforms.extra[0]).isEqualTo(20f)
+    }
+
+    @Test
+    fun `묶음 글래스 값은 판이 그대로여도 스타일이나 밀도가 바뀌면 다시 올린다`() {
+        val uniforms = GroupUniforms()
+        val plates = listOf(Rect(0f, 0f, 40f, 40f))
+        val size = Size(200f, 100f)
+        assertThat(uniforms.put(plates, listOf(20f), 8f, size, 16f)).isTrue()
+        assertThat(uniforms.put(plates, listOf(20f), 8f, size, 16f, look.copy(edgeLight = Color.Red) to density)).isTrue()
+        assertThat(uniforms.put(plates, listOf(20f), 8f, size, 16f, look.copy(edgeLight = Color.Red) to density)).isFalse()
+        assertThat(uniforms.put(plates, listOf(20f), 8f, size, 16f, look.copy(edgeLight = Color.Red, shadow = 0.dp) to density)).isTrue()
+        val bent = look.copy(edgeLight = Color.Red, shadow = 0.dp, refraction = look.refraction + 1f)
+        assertThat(uniforms.put(plates, listOf(20f), 8f, size, 16f, bent to density)).isTrue()
+        assertThat(uniforms.put(plates, listOf(20f), 8f, size, 16f, bent to Density(3f))).isTrue()
+        assertThat(uniforms.put(plates, listOf(20f), 8f, size, 16f, bent to Density(3f))).isFalse()
     }
 
     @Test
     fun `묶음 글래스는 판을 8개까지만 담고 배치되지 않은 판은 뺀다`() {
         val uniforms = GroupUniforms()
         val plates = List(11) { Rect(it * 10f, 0f, it * 10f + 8f, 8f) } + Rect.Zero
-        uniforms.update(plates, List(plates.size) { 4f }, 0f, Size(200f, 20f), 4f)
+        uniforms.put(plates, List(plates.size) { 4f }, 0f, Size(200f, 20f), 4f)
         assertThat(uniforms.count).isEqualTo(MAX_GLASS_PLATES)
-        uniforms.update(listOf(Rect.Zero, Rect(0f, 0f, 8f, 8f)), listOf(4f, 4f), 0f, Size(200f, 20f), 4f)
+        uniforms.put(listOf(Rect.Zero, Rect(0f, 0f, 8f, 8f)), listOf(4f, 4f), 0f, Size(200f, 20f), 4f)
         assertThat(uniforms.count).isEqualTo(1)
     }
 
@@ -134,6 +168,17 @@ class GlassFxTest {
         compose.onRoot().captureToImage()
         compose.onNodeWithText("열기").performClick()
         assertThat(taps).isEqualTo(1)
+    }
+
+    @Test
+    fun `애니메이션 삭제면 렌즈가 출렁이지 않고 바로 부풀고 줄어든다`() {
+        // 프레임 시계가 없는 범위라 스프링은 한 프레임도 돌지 못한다. 바로 바뀌는 길만 값이 닿는다.
+        val lens = IndicatorLens(LiquidIndicator(), CoroutineScope(Dispatchers.Unconfined))
+        lens.still = true
+        lens.press(down = true)
+        assertThat(lens.grab.value).isEqualTo(1f)
+        lens.press(down = false)
+        assertThat(lens.grab.value).isEqualTo(0f)
     }
 
     @Test
@@ -191,6 +236,60 @@ class GlassFxTest {
         assertThat(selected).isEqualTo(2)
         compose.onNodeWithText("한 주").performClick()
         assertThat(selected).isEqualTo(1)
+    }
+
+    @Test
+    fun `렌즈 세그먼트는 호스트가 선택을 바꾸지 않으면 인디케이터를 선택 칸으로 되돌린다`() {
+        var asked = -1
+        compose.setContent {
+            KineticaTheme(surface = SurfaceStyles.CleanLight) {
+                Box(Modifier.width(300.dp)) {
+                    KSegmentedControl(listOf("하루", "한 주", "한 달"), 0, { asked = it }, Modifier.testTag("seg"), lens = true)
+                }
+            }
+        }
+        compose.waitForIdle()
+        val before = compose.onNodeWithTag("seg").captureToImage().asAndroidBitmap()
+        compose.onNodeWithTag("seg").performTouchInput {
+            down(Offset(width / 6f, centerY))
+            repeat(10) { moveBy(Offset(width / 15f, 0f)) }
+            up()
+        }
+        compose.waitForIdle()
+        assertThat(asked).isEqualTo(2)
+        val after = compose.onNodeWithTag("seg").captureToImage().asAndroidBitmap()
+        // 글자를 피해 칸 위쪽을 본다. 인디케이터가 끌어 놓은 칸에 남아 있으면 그 칸 색이 달라진다.
+        val y = before.height / 5
+        for (cell in 0 until 3) {
+            val x = before.width * (cell * 2 + 1) / 6
+            assertThat(after.getPixel(x, y)).isEqualTo(before.getPixel(x, y))
+        }
+    }
+
+    @Test
+    fun `렌즈 탭 바는 호스트가 선택을 바꾸지 않으면 인디케이터를 선택 탭으로 되돌린다`() {
+        var asked = -1
+        val tabs = listOf(KTab("홈"), KTab("검색"), KTab("보관함"), KTab("설정"))
+        compose.setContent {
+            KineticaTheme(surface = SurfaceStyles.CleanLight) {
+                Box(Modifier.width(400.dp)) { KFloatingTabBar(tabs, 0, { asked = it }, Modifier.testTag("bar"), lens = true) }
+            }
+        }
+        compose.waitForIdle()
+        val before = compose.onNodeWithTag("bar").captureToImage().asAndroidBitmap()
+        compose.onNodeWithTag("bar").performTouchInput {
+            down(Offset(width * 0.14f, centerY))
+            repeat(9) { moveBy(Offset(width / 20f, 0f)) }
+            up()
+        }
+        compose.waitForIdle()
+        assertThat(asked).isEqualTo(2)
+        val after = compose.onNodeWithTag("bar").captureToImage().asAndroidBitmap()
+        val y = before.height / 4
+        for (cell in 0 until 4) {
+            val x = before.width * (cell * 2 + 1) / 8
+            assertThat(after.getPixel(x, y)).isEqualTo(before.getPixel(x, y))
+        }
     }
 
     @Test

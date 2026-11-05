@@ -52,6 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -122,7 +123,9 @@ public fun KMorphMenu(
             .graphicsLayer { alpha = if (anchor.showing) 0f else 1f }
             .semantics {
                 role = Role.DropdownList
-                if (expanded) {
+                if (!enabled) {
+                    disabled()
+                } else if (expanded) {
                     collapse {
                         change(false)
                         true

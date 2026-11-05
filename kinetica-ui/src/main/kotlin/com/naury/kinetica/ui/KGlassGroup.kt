@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -147,17 +148,21 @@ private class GlassGroupScope : KGlassGroupScope {
     }
 
     /**
-     * 판 모양 셰이더 효과. 판 위치, 크기, 모서리, 레이어 크기 가운데 하나라도 바뀌었을 때만 셰이더 값을 다시 올린다.
+     * 판 모양 셰이더 효과. 판 위치, 크기, 모서리, 레이어 크기, 스타일, 밀도 가운데 하나라도 바뀌었을 때만 셰이더 값을 다시 올린다.
      * 셰이더를 만들지 못하면 판마다 따로 그리도록 바꾼다.
      */
     fun effect(layer: GraphicsLayerScope, pad: Float, melt: Float): androidx.compose.ui.graphics.RenderEffect? {
-        val shown = plates.take(MAX_GLASS_PLATES)
-        if (!uniforms.update(shown.map { it.rect }, shown.map { with(layer) { it.corner.toPx() } }, pad, layer.size, melt)) return effect
+        uniforms.begin()
+        for (i in 0 until minOf(plates.size, MAX_GLASS_PLATES)) {
+            val plate = plates[i]
+            uniforms.add(plate.rect, with(layer) { plate.corner.toPx() }, pad)
+        }
+        if (!uniforms.commit(layer.size, melt, style, layer)) return effect
         GlassFxStats.groupBuilds++
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
         effect = runCatching {
             val program = shader ?: RuntimeShader(GROUP_SHADER).also { shader = it }
-            uniforms.apply(program, style, layer)
+            uniforms.apply(program)
             RenderEffect.createRuntimeShaderEffect(program, "content").asComposeRenderEffect()
         }.onFailure { broken = true }.getOrNull()
         return effect
@@ -165,8 +170,9 @@ private class GlassGroupScope : KGlassGroupScope {
 }
 
 /**
- * 묶음 셰이더에 올릴 판 값. [update]가 지난번과 같은지 가려, 판이 움직이지 않는 프레임에는 효과를 다시 만들지 않게 한다.
+ * 묶음 셰이더에 올릴 판 값. [commit]이 지난번과 같은지 가려, 판과 스타일이 그대로인 프레임에는 효과를 다시 만들지 않게 한다.
  * 판마다 (가운데 x, 가운데 y, 절반 폭, 절반 높이)와 (모서리 반경, 0, 0, 0)을 담는다. 길이는 모두 그룹 레이어 px다.
+ * 매 프레임 불리므로 [begin], [add], [commit] 사이에 객체를 만들지 않는다.
  */
 internal class GroupUniforms {
     val rects = FloatArray(MAX_GLASS_PLATES * VEC4)
@@ -177,53 +183,78 @@ internal class GroupUniforms {
         private set
     var melt = 0f
         private set
+    private var bend = 0f
+    private var band = 0f
+    private var spread = 0f
+    private var rim = Color.Unspecified
+    private var shade = 0f
     private val next = FloatArray(MAX_GLASS_PLATES * VEC4)
     private val nextExtra = FloatArray(MAX_GLASS_PLATES * VEC4)
+    private var nextCount = 0
 
-    /**
-     * [plates](그룹 기준 px)와 [corners](px)를 [pad]만큼 넓힌 레이어 좌표로 옮겨 담는다. 앞선 값과 같으면 false를 돌려준다.
-     * [MAX_GLASS_PLATES]개를 넘는 판은 버린다. 크기가 0인 판은 아직 배치되지 않은 것으로 보고 뺀다.
-     */
-    fun update(plates: List<Rect>, corners: List<Float>, pad: Float, size: Size, melt: Float): Boolean {
+    /** 새 판 값을 받기 시작한다. */
+    fun begin() {
         next.fill(0f)
         nextExtra.fill(0f)
-        var n = 0
-        for (i in plates.indices) {
-            val rect = plates[i]
-            if (n >= MAX_GLASS_PLATES || rect.width <= 0f || rect.height <= 0f) continue
-            val at = n * VEC4
-            next[at] = rect.center.x + pad
-            next[at + 1] = rect.center.y + pad
-            next[at + 2] = rect.width / 2f
-            next[at + HALF_HEIGHT] = rect.height / 2f
-            nextExtra[at] = minOf(corners.getOrElse(i) { 0f }, rect.minDimension / 2f)
-            n++
+        nextCount = 0
+    }
+
+    /**
+     * 판 하나([rect]는 그룹 기준 px, [corner]는 px)를 [pad]만큼 넓힌 레이어 좌표로 옮겨 담는다.
+     * [MAX_GLASS_PLATES]개를 넘는 판은 버린다. 크기가 0인 판은 아직 배치되지 않은 것으로 보고 뺀다.
+     */
+    fun add(rect: Rect, corner: Float, pad: Float) {
+        if (nextCount >= MAX_GLASS_PLATES || rect.width <= 0f || rect.height <= 0f) return
+        val at = nextCount * VEC4
+        next[at] = rect.center.x + pad
+        next[at + 1] = rect.center.y + pad
+        next[at + 2] = rect.width / 2f
+        next[at + HALF_HEIGHT] = rect.height / 2f
+        nextExtra[at] = minOf(corner, rect.minDimension / 2f)
+        nextCount++
+    }
+
+    /** [begin] 뒤에 담은 판과 레이어 [size], [melt], [style]의 굴절과 테두리 빛과 그림자, [density]를 확정한다. 앞선 값과 같으면 false다. */
+    fun commit(size: Size, melt: Float, style: GlassStyle, density: Density): Boolean {
+        val light = style.edgeLight
+        val nextBend: Float
+        val nextBand: Float
+        val nextSpread: Float
+        with(density) {
+            nextBend = GROUP_BEND.toPx() * style.refraction.coerceAtLeast(MIN_BEND)
+            nextBand = GROUP_BAND.toPx()
+            nextSpread = GROUP_SHADOW.toPx()
         }
-        val same = n == count && size == bounds && melt == this.melt && next.contentEquals(rects) && nextExtra.contentEquals(extra)
+        val nextShade = if (style.shadow > 0.dp) GROUP_SHADE else 0f
+        val same = nextCount == count && size == bounds && melt == this.melt && light == rim && nextBend == bend &&
+            nextBand == band && nextSpread == spread && nextShade == shade &&
+            next.contentEquals(rects) && nextExtra.contentEquals(extra)
         if (same) return false
         next.copyInto(rects)
         nextExtra.copyInto(extra)
-        count = n
+        count = nextCount
         bounds = size
         this.melt = melt
+        rim = light
+        bend = nextBend
+        band = nextBand
+        spread = nextSpread
+        shade = nextShade
         return true
     }
 
-    fun apply(shader: RuntimeShader, style: GlassStyle, density: GraphicsLayerScope) {
+    fun apply(shader: RuntimeShader) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         shader.setFloatUniform("bounds", bounds.width, bounds.height)
         shader.setFloatUniform("count", count.toFloat())
         shader.setFloatUniform("melt", melt)
         shader.setFloatUniform("rects", rects)
         shader.setFloatUniform("extra", extra)
-        with(density) {
-            shader.setFloatUniform("bend", GROUP_BEND.toPx() * style.refraction.coerceAtLeast(MIN_BEND))
-            shader.setFloatUniform("band", GROUP_BAND.toPx())
-            shader.setFloatUniform("spread", GROUP_SHADOW.toPx())
-        }
-        val light = style.edgeLight
-        shader.setFloatUniform("rim", light.red * light.alpha, light.green * light.alpha, light.blue * light.alpha, light.alpha)
-        shader.setFloatUniform("shade", if (style.shadow > 0.dp) GROUP_SHADE else 0f)
+        shader.setFloatUniform("bend", bend)
+        shader.setFloatUniform("band", band)
+        shader.setFloatUniform("spread", spread)
+        shader.setFloatUniform("rim", rim.red * rim.alpha, rim.green * rim.alpha, rim.blue * rim.alpha, rim.alpha)
+        shader.setFloatUniform("shade", shade)
     }
 }
 

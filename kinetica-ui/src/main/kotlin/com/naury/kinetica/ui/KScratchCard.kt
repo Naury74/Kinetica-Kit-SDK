@@ -22,7 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
@@ -114,12 +114,14 @@ public fun KScratchCard(
                         alpha = 1f - fade.value
                     }
                     .then(if (enabled) Modifier.scratchInput(state, brushSize, threshold) else Modifier)
-                    .drawWithContent {
-                        val strokes = state.path
-                        if (coverBrush != null) drawRect(coverBrush) else drawRect(coverColor)
-                        drawContent()
+                    .drawWithCache {
                         val stroke = Stroke(brushSize.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                        drawPath(strokes, Color.Black, style = stroke, blendMode = BlendMode.Clear)
+                        onDrawWithContent {
+                            val strokes = state.path
+                            if (coverBrush != null) drawRect(coverBrush) else drawRect(coverColor)
+                            drawContent()
+                            drawPath(strokes, Color.Black, style = stroke, blendMode = BlendMode.Clear)
+                        }
                     },
             ) { cover?.invoke(this) }
         }
@@ -148,25 +150,26 @@ private fun rememberRevealFade(state: KScratchCardState, onRevealed: (() -> Unit
     return fade
 }
 
-private fun Modifier.scratchInput(state: KScratchCardState, brushSize: Dp, threshold: Float): Modifier = pointerInput(state, threshold) {
-    awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false)
-        if (state.isRevealed) return@awaitEachGesture
-        val radius = brushSize.toPx() / 2
-        down.consume()
-        state.scratch(null, down.position, radius, size.toSize(), threshold)
-        var last = down.position
-        var change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
-        while (change != null && change.pressed) {
-            if (change.position != last) {
-                state.scratch(last, change.position, radius, size.toSize(), threshold)
-                last = change.position
+private fun Modifier.scratchInput(state: KScratchCardState, brushSize: Dp, threshold: Float): Modifier =
+    pointerInput(state, threshold, brushSize) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            if (state.isRevealed) return@awaitEachGesture
+            val radius = brushSize.toPx() / 2
+            down.consume()
+            state.scratch(null, down.position, radius, size.toSize(), threshold)
+            var last = down.position
+            var change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+            while (change != null && change.pressed) {
+                if (change.position != last) {
+                    state.scratch(last, change.position, radius, size.toSize(), threshold)
+                    last = change.position
+                }
+                change.consume()
+                change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
             }
-            change.consume()
-            change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
         }
     }
-}
 
 private val DEFAULT_COVER = Color(0xFFB8BDC6)
 private const val FADE_MS = 360

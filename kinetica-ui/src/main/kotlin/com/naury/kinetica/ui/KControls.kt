@@ -171,9 +171,11 @@ public fun KSegmentedControl(
     var edges by remember { mutableStateOf(SegmentEdges.Empty) }
     val indicator = remember { LiquidIndicator() }
     val motion = KineticaTheme.design.motion
-    LaunchedEffect(selectedIndex, edges, motion) { edges.of(selectedIndex)?.let { indicator.moveTo(it.first, it.second, motion) } }
     val paint = segmentInk(tone, surface)
     val drag = rememberIndicatorLens(lens && enabled, indicator, SEGMENT_INSET, { edges.cells() }, onSelect)
+    LaunchedEffect(selectedIndex, edges, motion, drag.drops) {
+        edges.of(selectedIndex)?.let { indicator.moveTo(it.first, it.second, motion) }
+    }
     Box(modifier.heightIn(min = segmentHeight).then(drag.outer).kSurface(surface, SegmentShape).padding(SEGMENT_INSET).then(drag.inner)) {
         Box(
             Modifier

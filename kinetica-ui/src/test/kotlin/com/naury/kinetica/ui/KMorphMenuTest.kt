@@ -8,7 +8,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -91,6 +94,17 @@ class KMorphMenuTest {
         // 닫는 스프링이면 수백 ms 동안 남아 있는다.
         compose.mainClock.advanceTimeBy(FEW_FRAMES)
         compose.onNodeWithText("최신순").assertDoesNotExist()
+    }
+
+    @Test
+    fun `꺼진 메뉴는 TalkBack 펼치기 동작이 없고 꺼짐으로 알린다`() {
+        compose.setContent {
+            Box(Modifier.padding(20.dp)) { KMorphMenu("보기", false, {}, entries {}, enabled = false) }
+        }
+        compose.onNodeWithText("보기")
+            .assertIsNotEnabled()
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.Expand))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.Collapse))
     }
 
     @Test(expected = IllegalArgumentException::class)

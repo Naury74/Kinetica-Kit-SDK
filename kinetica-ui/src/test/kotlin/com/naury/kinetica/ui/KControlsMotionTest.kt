@@ -372,6 +372,32 @@ class KControlsMotionTest {
     }
 
     @Test
+    fun `긁는 카드 붓 크기를 바꾸면 긁는 반지름도 바뀐다`() {
+        val state = KScratchCardState(false)
+        var brush by mutableStateOf(2.dp)
+        compose.setContent {
+            KScratchCard(Modifier.size(200.dp, 100.dp).testTag("card"), state = state, threshold = 0.5f, brushSize = brush) {
+                BasicText("당첨")
+            }
+        }
+        // 입력 처리는 첫 터치에서 시작하므로 작은 붓으로 한 번 긁어 둔 뒤 붓을 키운다.
+        compose.onNodeWithTag("card").performTouchInput {
+            down(Offset(width * 0.1f, height * 0.1f))
+            up()
+        }
+        compose.waitForIdle()
+        assertThat(state.isRevealed).isFalse()
+        brush = 600.dp
+        compose.waitForIdle()
+        compose.onNodeWithTag("card").performTouchInput {
+            down(center)
+            up()
+        }
+        compose.waitForIdle()
+        assertThat(state.isRevealed).isTrue()
+    }
+
+    @Test
     fun `긁은 비율은 새로 긁힌 칸만 세고 reset으로 처음으로 돌아간다`() {
         val state = KScratchCardState(false)
         val size = Size(240f, 240f)

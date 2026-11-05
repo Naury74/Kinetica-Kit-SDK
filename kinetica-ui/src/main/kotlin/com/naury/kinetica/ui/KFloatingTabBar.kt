@@ -284,7 +284,9 @@ private fun ExpandedTabs(row: TabRow, state: KFloatingTabBarState, surface: Surf
     val width = geometry.rowWidth
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val motion = KineticaTheme.design.motion
-    LaunchedEffect(selectedIndex, width, tabs.size, rtl) { indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl, motion) }
+    LaunchedEffect(selectedIndex, width, tabs.size, rtl, lens.parts.drops) {
+        indicator.moveTo(selectedIndex, tabs.size, width.toFloat(), rtl, motion)
+    }
     val look = tabBarLook(surface, TAB_INSET)
     Row(
         Modifier
