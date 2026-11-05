@@ -89,8 +89,21 @@ public fun KScratchCard(
     val fade = rememberRevealFade(state, onRevealed)
     val gone by remember(fade) { derivedStateOf { fade.value >= 1f } }
     val name = label ?: stringResource(R.string.kinetica_ui_scratch_reveal)
-    Box(modifier.clip(shape)) {
-        Box(Modifier.then(if (state.isRevealed) Modifier else Modifier.clearAndSetSemantics {})) { content() }
+    // 열리기 전에는 카드 전체가 '열기' 버튼 하나다. 호스트가 넘긴 수정자와 같은 노드에 두어야 호스트의 testTag와 semantics가 이 동작에 닿는다.
+    val revealAction = if (state.isRevealed) {
+        Modifier
+    } else {
+        Modifier.clearAndSetSemantics {
+            contentDescription = name
+            role = Role.Button
+            onClick(name) {
+                state.reveal()
+                true
+            }
+        }
+    }
+    Box(modifier.then(revealAction).clip(shape)) {
+        Box { content() }
         if (!gone) {
             Box(
                 Modifier
@@ -99,14 +112,6 @@ public fun KScratchCard(
                         // 긁은 자국을 지우기(Clear)로 그리려면 덮개가 자기 레이어에 따로 그려져야 아래 내용까지 지워지지 않는다.
                         compositingStrategy = CompositingStrategy.Offscreen
                         alpha = 1f - fade.value
-                    }
-                    .clearAndSetSemantics {
-                        contentDescription = name
-                        role = Role.Button
-                        onClick(name) {
-                            state.reveal()
-                            true
-                        }
                     }
                     .then(if (enabled) Modifier.scratchInput(state, brushSize, threshold) else Modifier)
                     .drawWithContent {

@@ -214,7 +214,8 @@ public fun KVoiceRecorderButton(
             LockRail(state, look, active)
             HintBubble(state, surface)
         },
-        modifier = modifier,
+        // 이름과 누르기 동작은 호스트가 넘긴 수정자와 같은 노드에 둔다. 그래야 호스트가 붙인 testTag나 semantics가 버튼 노드에 붙는다.
+        modifier = modifier.recorderSemantics(state, enabled),
     ) { measurables, constraints ->
         val loose = Constraints()
         val core = measurables[0].measure(constraints.copy(minWidth = 0, minHeight = 0))
@@ -251,7 +252,6 @@ private fun RecorderCore(
         Modifier
             .size(KMetrics.IconButton)
             .loopVisibility(clock)
-            .recorderSemantics(state, enabled)
             // 누르기는 움직이는 레이어보다 바깥에서 받아야 손가락 좌표가 버튼을 따라 흔들리지 않는다.
             .then(if (enabled) Modifier.recorderGesture(state, rtl, haptic, scope) else Modifier)
             .graphicsLayer {
