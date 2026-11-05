@@ -200,6 +200,8 @@ private fun BoxScope.FabCluster(spread: () -> Float, open: Boolean, onToggle: ()
                     val r = 78.dp.toPx() * spread()
                     IntOffset((cos(angle) * r).roundToInt(), (sin(angle) * r).roundToInt())
                 }
+                // 녹여 그리지 못하는 기기(Android 13 미만)에서는 판이 따로 그려져 겹친 만큼 진해지므로, 접혀 숨은 판은 그리지 않는다.
+                .graphicsLayer { alpha = if (spread() < HIDDEN_SPREAD) 0f else 1f }
                 .plate(name)
                 .size(52.dp)
                 .then(if (open) Modifier.semantics { contentDescription = name } else Modifier.clearAndSetSemantics {}),
@@ -274,3 +276,5 @@ private fun BoxScope.ColorfulBackdrop(backdrop: GlassBackdrop) {
 
 private val BackdropColors = listOf(Color(0xFFFF5F6D), Color(0xFF7B5CFF), Color(0xFF1FB6FF), Color(0xFF29D3A0))
 private val RowColors = listOf(Color(0xFFFF8A65), Color(0xFF7986CB), Color(0xFF4DB6AC), Color(0xFFFFD54F), Color(0xFFBA68C8))
+
+private const val HIDDEN_SPREAD = 0.02f
