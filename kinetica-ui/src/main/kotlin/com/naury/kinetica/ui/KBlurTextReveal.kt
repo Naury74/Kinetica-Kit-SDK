@@ -89,6 +89,7 @@ public fun KBlurTextReveal(
     var laidOut by remember { mutableStateOf<TextLayoutResult?>(null) }
     val boxes = remember { WordBoxCache() }
     val layers = rememberBlurLayers()
+    val look = remember { RevealLook() }
     Box(
         modifier
             .clearAndSetSemantics { this.text = AnnotatedString(text) }
@@ -108,7 +109,7 @@ public fun KBlurTextReveal(
                 }
                 // 앞부분이 바뀐 새 글은 시각을 정하기 전 한 프레임 동안 옛 시각으로 다 보일 수 있어 그리지 않는다.
                 if (!result.layoutInput.text.text.startsWith(plan.source)) return@drawBehind
-                val look = RevealLook(wordDurationMs, blur.toPx(), rise.toPx(), EDGE_PAD.toPx())
+                look.set(wordDurationMs, blur.toPx(), rise.toPx(), EDGE_PAD.toPx())
                 drawReveal(boxes.of(result), plan, now.longValue, look, layers)
             },
     )
@@ -122,8 +123,24 @@ private fun rememberBlurLayers(): BlurLayers? {
     return remember(layers) { BlurLayers(layers) }
 }
 
-/** 단어 하나가 나타나는 모양. 픽셀 값은 그리기 단계에서 정한다. */
-private class RevealLook(val durationMs: Int, val blurPx: Float, val risePx: Float, val padPx: Float)
+/** 단어 하나가 나타나는 모양. 픽셀 값은 그리기 단계에서 정하고, 프레임마다 값만 바꿔 다시 쓴다. */
+private class RevealLook {
+    var durationMs = 1
+        private set
+    var blurPx = 0f
+        private set
+    var risePx = 0f
+        private set
+    var padPx = 0f
+        private set
+
+    fun set(durationMs: Int, blurPx: Float, risePx: Float, padPx: Float) {
+        this.durationMs = durationMs
+        this.blurPx = blurPx
+        this.risePx = risePx
+        this.padPx = padPx
+    }
+}
 
 /**
  * 단어마다 나타나기 시작하는 시각(프레임 시계 ms). 글이 앞부분을 유지한 채 늘어나면 기존 단어의 시각은 그대로 두고 새 단어만 뒤에 붙인다.
@@ -178,7 +195,20 @@ private class WordBoxCache {
         return this
     }
 
+    private var paddedFor = Float.NaN
+    private var paddedLayout: TextLayoutResult? = null
+    private var padded: List<List<Rect>> = emptyList()
+
     fun layoutResult(): TextLayoutResult = checkNotNull(layout)
+
+    /** [boxes]를 좌우로 [pad](px)만큼 넓힌 사각형. 블러 층의 자르는 경로에 쓰며, 배치나 [pad]가 바뀔 때만 다시 만든다. */
+    fun padded(pad: Float): List<List<Rect>> {
+        if (pad == paddedFor && paddedLayout === layout) return padded
+        paddedFor = pad
+        paddedLayout = layout
+        padded = boxes.map { pieces -> pieces.map { Rect(it.left - pad, it.top, it.right + pad, it.bottom) } }
+        return padded
+    }
 }
 
 /** 글자 [start]..[end] 범위가 줄마다 차지하는 사각형. 줄 위아래 끝까지 덮어야 글자의 윗부분과 아랫부분이 잘리지 않는다. */
@@ -211,14 +241,15 @@ private fun DrawScope.drawReveal(boxes: WordBoxCache, plan: RevealSchedule, now:
         return
     }
     drawSettled(result, boxes, done, look.padPx)
-    layers?.begin()
+    layers?.begin(count)
     for (i in done until count) {
         val eased = FastOutSlowInEasing.transform(plan.progress(i, now, look.durationMs))
         if (eased <= 0f) break
         val haze = (1f - eased) * look.blurPx
         val level = if (layers == null || haze < MIN_BLUR_PX) -1 else ((1f - eased) * BLUR_LEVELS).toInt().coerceIn(0, BLUR_LEVELS - 1)
         if (level < 0) {
-            boxes.boxes[i].forEach { drawPiece(result, it, eased, look) }
+            val pieces = boxes.boxes[i]
+            for (p in pieces.indices) drawPiece(result, pieces[p], eased, look)
         } else {
             layers?.add(level, i, eased)
         }
@@ -260,22 +291,30 @@ private fun DrawScope.drawPiece(result: TextLayoutResult, piece: Rect, eased: Fl
 private class BlurLayers(private val layers: List<GraphicsLayer>) {
     private val clip = Path()
     private val radii = FloatArray(BLUR_LEVELS) { -1f }
-    private val members = List(BLUR_LEVELS) { ArrayList<Int>() }
-    private val amounts = List(BLUR_LEVELS) { ArrayList<Float>() }
 
-    fun begin() {
-        members.forEach { it.clear() }
-        amounts.forEach { it.clear() }
+    /** 단어마다 이번 프레임에 들어간 층. -1이면 층에 들지 않았다. 단어 수가 늘 때만 배열을 새로 만든다. */
+    private var levelOf = IntArray(0)
+    private var words = 0
+    private val sums = FloatArray(BLUR_LEVELS)
+    private val counts = IntArray(BLUR_LEVELS)
+
+    fun begin(wordCount: Int) {
+        if (levelOf.size < wordCount) levelOf = IntArray(wordCount)
+        levelOf.fill(-1, 0, wordCount)
+        words = wordCount
+        sums.fill(0f)
+        counts.fill(0)
     }
 
     fun add(level: Int, word: Int, eased: Float) {
-        members[level] += word
-        amounts[level] += eased
+        levelOf[word] = level
+        sums[level] += eased
+        counts[level]++
     }
 
     fun flush(scope: DrawScope, result: TextLayoutResult, boxes: WordBoxCache, look: RevealLook) {
         for (level in 0 until BLUR_LEVELS) {
-            if (members[level].isEmpty()) continue
+            if (counts[level] == 0) continue
             val radius = look.blurPx * (level + 1) / BLUR_LEVELS
             val layer = layers[level]
             if (radius != radii[level]) {
@@ -293,8 +332,11 @@ private class BlurLayers(private val layers: List<GraphicsLayer>) {
         var top = Float.POSITIVE_INFINITY
         var right = Float.NEGATIVE_INFINITY
         var bottom = Float.NEGATIVE_INFINITY
-        members[level].forEach { word ->
-            boxes.boxes[word].forEach { piece ->
+        for (word in 0 until words) {
+            if (levelOf[word] != level) continue
+            val pieces = boxes.boxes[word]
+            for (p in pieces.indices) {
+                val piece = pieces[p]
                 left = minOf(left, piece.left)
                 top = minOf(top, piece.top)
                 right = maxOf(right, piece.right)
@@ -307,12 +349,13 @@ private class BlurLayers(private val layers: List<GraphicsLayer>) {
         layer.topLeft = IntOffset(x, y)
         val area = IntSize(ceil(right + margin).toInt() - x, ceil(bottom + margin).toInt() - y)
         // 같은 층 단어들은 나타난 정도가 비슷하므로 평균 하나로 한 번에 그린다. 단어마다 그리면 나타나는 단어 수만큼 문단 전체를 다시 그린다.
-        val eased = amounts[level].average().toFloat()
+        val eased = sums[level] / counts[level]
+        val padded = boxes.padded(look.padPx)
         clip.reset()
-        members[level].forEach { word ->
-            boxes.boxes[word].forEach { piece ->
-                clip.addRect(Rect(piece.left - look.padPx, piece.top, piece.right + look.padPx, piece.bottom))
-            }
+        for (word in 0 until words) {
+            if (levelOf[word] != level) continue
+            val pieces = padded[word]
+            for (p in pieces.indices) clip.addRect(pieces[p])
         }
         layer.record(area) {
             translate(-x.toFloat(), (1f - eased) * look.risePx - y) {

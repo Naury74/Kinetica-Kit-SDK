@@ -30,20 +30,24 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -463,18 +467,28 @@ internal fun LayoutCoordinates.boundsOnScreen(): Rect = Rect(positionOnScreen(),
 /** 다이얼로그 뒤에 까는 스크림. 서서히 흐려지고 어두워지며, 누르면 닫는다. TalkBack에서는 "닫기" 버튼으로 읽힌다. */
 @Composable
 internal fun BoxScope.Scrim(level: Float, onDismiss: () -> Unit) {
+    Scrim({ level }, onDismiss)
+}
+
+/** [level]을 그리기 단계와 효과에서만 읽는 [Scrim]. 열고 닫는 동안 진행 값이 바뀌어도 부른 쪽을 다시 구성하지 않게 한다. */
+@Composable
+internal fun BoxScope.Scrim(level: () -> Float, onDismiss: () -> Unit) {
     // 별도 창이면 창 뒤를 시스템 블러로 흐린다(열리는 정도만큼).
     val windowBlur = LocalWindowBlur.current
     val blurPx = with(LocalDensity.current) { WINDOW_BLUR.roundToPx() }
-    SideEffect { windowBlur?.set((blurPx * level).roundToInt()) }
+    val current by rememberUpdatedState(level)
+    if (windowBlur != null) {
+        LaunchedEffect(windowBlur, blurPx) { snapshotFlow { (blurPx * current()).roundToInt() }.collect { windowBlur.set(it) } }
+    }
     val closeLabel = stringResource(R.string.kinetica_ui_close)
     // 단색과 톤 표면에서는 배경 기록이 없으므로 블러 없이 조금 더 어둡게 덮는다.
     val glassy = KineticaTheme.surface is SurfaceStyle.Glass
+    val shade = if (glassy) SCRIM_ALPHA else SOLID_SCRIM_ALPHA
     Box(
         Modifier
             .matchParentSize()
-            .then(if (glassy) Modifier.glass(GlassStyles.Clear, intensity = level) else Modifier)
-            .background(Color.Black.copy(alpha = (if (glassy) SCRIM_ALPHA else SOLID_SCRIM_ALPHA) * level))
+            .then(if (glassy) Modifier.glassOf(GlassStyles.Clear, RectangleShape, LocalGlassBackdrop.current) { current() } else Modifier)
+            .drawBehind { drawRect(Color.Black.copy(alpha = shade * current())) }
             // 키보드 사용자는 뒤로 가기(Esc)로 닫으므로 스크림은 Tab 순서에 넣지 않는다. TalkBack에는 "닫기" 버튼으로 남는다.
             .focusProperties { canFocus = false }
             .clickable(

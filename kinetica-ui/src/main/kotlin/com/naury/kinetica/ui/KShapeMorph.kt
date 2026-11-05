@@ -78,7 +78,7 @@ public fun KShapeMorphButton(
     val colors = tone.colors(surface)
     val interaction = remember { MutableInteractionSource() }
     val morph = rememberPressMorph(interaction)
-    val path = remember { Path() }
+    val look = remember(shape, pressedShape) { MorphLook(shape, pressedShape) }
     var focused by remember { mutableStateOf(false) }
     Box(
         modifier
@@ -86,9 +86,9 @@ public fun KShapeMorphButton(
             .size(side)
             .onFocusChanged { focused = it.isFocused }
             .drawBehind {
-                val look = MorphLook(shape, pressedShape, morph.value)
-                drawMorphShape(look, colors.color, path)
-                if (focused) drawMorphFocus(look, colors.color, path)
+                look.fraction = morph.value
+                drawMorphShape(look, colors.color)
+                if (focused) drawMorphFocus(look, colors.color)
             }
             .clickable(interaction, null, enabled, role = Role.Button) {
                 haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
@@ -139,7 +139,7 @@ public fun KShapeToggle(
     val interaction = remember { MutableInteractionSource() }
     val press = rememberPressMorph(interaction)
     val level = rememberCheckMorph(checked)
-    val path = remember { Path() }
+    val look = remember(uncheckedShape, checkedShape) { MorphLook(uncheckedShape, checkedShape) }
     var focused by remember { mutableStateOf(false) }
     Box(
         modifier
@@ -153,10 +153,10 @@ public fun KShapeToggle(
             .onFocusChanged { focused = it.isFocused }
             .drawBehind {
                 val v = level.value
-                val look = MorphLook(uncheckedShape, checkedShape, v)
+                look.fraction = v
                 val fill = lerp(offFill, on.color, v.coerceIn(0f, 1f))
-                drawMorphShape(look, fill, path)
-                if (focused) drawMorphFocus(look, on.color, path)
+                drawMorphShape(look, fill)
+                if (focused) drawMorphFocus(look, on.color)
             }
             .toggleable(checked, interaction, null, enabled, Role.Checkbox) {
                 haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
@@ -216,11 +216,19 @@ private fun rememberCheckMorph(checked: Boolean): Animatable<Float, *> {
     return level
 }
 
-/** 두 모양과 그 사이 위치. [fraction]은 용수철이 넘친 값(0 미만, 1 초과)도 받아 살짝 지나쳤다 돌아오는 모양을 그린다. */
-private class MorphLook(val from: KMorphShape, val to: KMorphShape, val fraction: Float)
+/**
+ * 두 모양과 그 사이 위치, 그것을 그릴 경로와 초점 선. [fraction]은 용수철이 넘친 값(0 미만, 1 초과)도 받아 살짝 지나쳤다 돌아오는 모양을 그린다.
+ * 그리기 단계에서 [fraction]만 바꿔 다시 쓴다.
+ */
+private class MorphLook(val from: KMorphShape, val to: KMorphShape) {
+    var fraction = 0f
+    val path = Path()
+    var focusStroke = Stroke(1f)
+}
 
-/** [look] 모양으로 경로를 다시 긋는다. 새 경로를 만들지 않고 [path]를 비워 다시 쓴다. */
-private fun DrawScope.traceMorph(look: MorphLook, path: Path) {
+/** [look] 모양으로 [MorphLook.path]를 비워 다시 긋는다. */
+private fun DrawScope.traceMorph(look: MorphLook) {
+    val path = look.path
     val f = look.fraction
     val half = size.minDimension / 2
     path.reset()
@@ -234,18 +242,20 @@ private fun DrawScope.traceMorph(look: MorphLook, path: Path) {
     path.close()
 }
 
-private fun DrawScope.drawMorphShape(look: MorphLook, color: Color, path: Path) {
-    traceMorph(look, path)
+private fun DrawScope.drawMorphShape(look: MorphLook, color: Color) {
+    traceMorph(look)
+    val path = look.path
     val turn = look.from.rotation + (look.to.rotation - look.from.rotation) * look.fraction
     rotate(turn) { drawPath(path, color) }
 }
 
 /** 키보드 초점 고리. 모양 바깥에 틈을 두고 같은 모양 선을 긋는다. */
-private fun DrawScope.drawMorphFocus(look: MorphLook, color: Color, path: Path) {
+private fun DrawScope.drawMorphFocus(look: MorphLook, color: Color) {
     val width = FOCUS_WIDTH.toPx()
     val grow = 1f + (FOCUS_GAP.toPx() + width / 2) * 2 / size.minDimension
     val turn = look.from.rotation + (look.to.rotation - look.from.rotation) * look.fraction
-    rotate(turn) { scale(grow) { drawPath(path, color, style = Stroke(width / grow)) } }
+    if (look.focusStroke.width != width / grow) look.focusStroke = Stroke(width / grow)
+    rotate(turn) { scale(grow) { drawPath(look.path, color, style = look.focusStroke) } }
 }
 
 private val MIN_SIDE = 32.dp

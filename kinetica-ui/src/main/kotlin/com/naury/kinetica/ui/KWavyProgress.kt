@@ -125,9 +125,9 @@ public fun KWavyProgressBar(
                     val level = wavyFraction(current.value())
                     active.bounds.setSegment(0, 0f, level)
                     active.count = 1
-                    val wave = WavyWave(px.amplitude * motion.amplitude * edgeRamp(level), motion.phase)
+                    px.wave.set(px.amplitude * motion.amplitude * edgeRamp(level), motion.phase)
                     active.stop = stopIndicator && level < 1f
-                    mirrorWavy { drawWavyBar(px, ink, wave, active) }
+                    mirrorWavy { drawWavyBar(px, ink, active) }
                 }
             },
     )
@@ -160,8 +160,8 @@ public fun KWavyProgressBar(
                 val px = WavyPx(look.thickness.toPx(), look.amplitude.toPx(), look.wavelength.toPx(), look.gap.toPx(), path)
                 onDrawBehind {
                     active.count = if (still) stillSegment(active.bounds) else flowingSegments(clock.seconds / BAR_PERIOD_S, active.bounds)
-                    val wave = WavyWave(if (still) 0f else px.amplitude, clock.seconds * WAVE_CYCLES_PER_S)
-                    mirrorWavy { drawWavyBar(px, ink, wave, active) }
+                    px.wave.set(if (still) 0f else px.amplitude, clock.seconds * WAVE_CYCLES_PER_S)
+                    mirrorWavy { drawWavyBar(px, ink, active) }
                 }
             },
     )
@@ -197,8 +197,9 @@ public fun KWavyProgressRing(
                 val px = WavyPx(look.thickness.toPx(), look.amplitude.toPx(), look.wavelength.toPx(), look.gap.toPx(), path)
                 onDrawBehind {
                     val level = wavyFraction(current.value())
-                    val wave = WavyWave(px.amplitude * motion.amplitude * edgeRamp(level), motion.phase)
-                    drawWavyRing(px, ink, wave, RingSpan(-QUARTER_TURN, FULL_TURN * level))
+                    px.wave.set(px.amplitude * motion.amplitude * edgeRamp(level), motion.phase)
+                    px.span.set(-QUARTER_TURN, FULL_TURN * level)
+                    drawWavyRing(px, ink)
                 }
             },
     )
@@ -228,8 +229,9 @@ public fun KWavyProgressRing(
                 val px = WavyPx(look.thickness.toPx(), look.amplitude.toPx(), look.wavelength.toPx(), look.gap.toPx(), path)
                 onDrawBehind {
                     val t = clock.seconds
-                    val span = if (still) RingSpan(-QUARTER_TURN, STILL_SWEEP) else spinningSpan(t / RING_PERIOD_S)
-                    drawWavyRing(px, ink, WavyWave(if (still) 0f else px.amplitude, t * WAVE_CYCLES_PER_S), span)
+                    if (still) px.span.set(-QUARTER_TURN, STILL_SWEEP) else spinningSpan(t / RING_PERIOD_S, px.span)
+                    px.wave.set(if (still) 0f else px.amplitude, t * WAVE_CYCLES_PER_S)
+                    drawWavyRing(px, ink)
                 }
             },
     )
@@ -295,8 +297,12 @@ private fun edgeRamp(level: Float): Float = minOf(1f, level / EDGE_RAMP, (1f - l
 
 private class WavyInk(val active: Color, val track: Color)
 
-/** 크기 값(px)과 프레임마다 비워 다시 쓰는 경로 */
-private class WavyPx(val stroke: Float, val amplitude: Float, val wavelength: Float, val gap: Float, val path: Path)
+/** 크기 값(px)과 프레임마다 값만 바꿔 다시 쓰는 경로, 선 모양, 물결, 원호. 크기가 바뀔 때만 새로 만든다. */
+private class WavyPx(val stroke: Float, val amplitude: Float, val wavelength: Float, val gap: Float, val path: Path) {
+    val line = Stroke(stroke, cap = StrokeCap.Round)
+    val wave = WavyWave()
+    val span = RingSpan()
+}
 
 /** 물결 토막들. [bounds]에 (시작, 끝 비율) 쌍이 왼쪽부터 들어 있고 앞 [count]쌍만 쓴다. 프레임마다 값만 바꿔 다시 쓴다. */
 private class WavySegments(slots: Int) {
@@ -306,10 +312,30 @@ private class WavySegments(slots: Int) {
 }
 
 /** [amplitude]는 이번 프레임의 물결 높이(px), [phase]는 흐른 주기 수다. */
-private class WavyWave(val amplitude: Float, val phase: Float)
+private class WavyWave {
+    var amplitude = 0f
+        private set
+    var phase = 0f
+        private set
+
+    fun set(amplitude: Float, phase: Float) {
+        this.amplitude = amplitude
+        this.phase = phase
+    }
+}
 
 /** 링에서 그릴 원호. 각도는 3시 방향에서 시계 방향으로 잰 도 단위다. */
-private class RingSpan(val start: Float, val sweep: Float)
+private class RingSpan {
+    var start = 0f
+        private set
+    var sweep = 0f
+        private set
+
+    fun set(start: Float, sweep: Float) {
+        this.start = start
+        this.sweep = sweep
+    }
+}
 
 private inline fun DrawScope.mirrorWavy(block: DrawScope.() -> Unit) {
     if (layoutDirection == LayoutDirection.Rtl) scale(-1f, 1f) { block() } else block()
@@ -337,18 +363,18 @@ private fun FloatArray.setSegment(index: Int, from: Float, to: Float) {
 
 private fun easeWavy(x: Float): Float = (1f - cos(x.coerceIn(0f, 1f) * PI.toFloat())) / 2f
 
-/** 늘었다 줄며 도는 원호 */
-private fun spinningSpan(cycle: Float): RingSpan {
+/** 늘었다 줄며 도는 원호를 [out]에 쓴다. */
+private fun spinningSpan(cycle: Float, out: RingSpan) {
     val f = cycle - floor(cycle)
     val sweep = SPIN_MIN_SWEEP + SPIN_EXTRA_SWEEP * sin(f * PI.toFloat())
-    return RingSpan(f * FULL_TURN * 2 - QUARTER_TURN, sweep)
+    out.set(f * FULL_TURN * 2 - QUARTER_TURN, sweep)
 }
 
 /**
  * 막대를 그린다. [active]의 앞 [count]쌍(시작, 끝 비율)이 물결 토막이고 나머지 자리는 틈을 두고 직선 트랙을 그린다.
  * 둥근 끝이 선 두께의 절반만큼 튀어나오므로 비율 0과 1은 그만큼 안쪽 자리다.
  */
-private fun DrawScope.drawWavyBar(px: WavyPx, ink: WavyInk, wave: WavyWave, segments: WavySegments) {
+private fun DrawScope.drawWavyBar(px: WavyPx, ink: WavyInk, segments: WavySegments) {
     val stop = segments.stop
     val active = segments.bounds
     val count = segments.count
@@ -363,7 +389,7 @@ private fun DrawScope.drawWavyBar(px: WavyPx, ink: WavyInk, wave: WavyWave, segm
         val b = x(active[i * 2 + 1])
         if (b - a <= 0f) continue
         if (a - room > trackFrom) drawTrackLine(ink.track, trackFrom, a - room, cy, px.stroke)
-        drawWaveLine(ink.active, a, b, px, wave)
+        drawWaveLine(ink.active, a, b, px)
         trackFrom = maxOf(trackFrom, b + room)
     }
     val end = x(1f)
@@ -375,8 +401,9 @@ private fun DrawScope.drawTrackLine(color: Color, from: Float, to: Float, cy: Fl
     drawLine(color, Offset(from, cy), Offset(to, cy), stroke, StrokeCap.Round)
 }
 
-private fun DrawScope.drawWaveLine(color: Color, from: Float, to: Float, px: WavyPx, wave: WavyWave) {
+private fun DrawScope.drawWaveLine(color: Color, from: Float, to: Float, px: WavyPx) {
     val path = px.path
+    val wave = px.wave
     val cy = size.height / 2
     if (wave.amplitude <= FLAT_PX) {
         drawLine(color, Offset(from, cy), Offset(to, cy), px.stroke, StrokeCap.Round)
@@ -392,12 +419,14 @@ private fun DrawScope.drawWaveLine(color: Color, from: Float, to: Float, px: Wav
         if (x >= to) break
         x = minOf(x + step, to)
     }
-    drawPath(path, color, style = Stroke(px.stroke, cap = StrokeCap.Round))
+    drawPath(path, color, style = px.line)
 }
 
-/** 링을 그린다. [span] 원호는 바깥쪽으로 출렁이고, 나머지는 틈을 두고 매끈한 트랙이다. */
-private fun DrawScope.drawWavyRing(px: WavyPx, ink: WavyInk, wave: WavyWave, span: RingSpan) {
+/** 링을 그린다. [WavyPx.span] 원호는 [WavyPx.wave]대로 바깥쪽으로 출렁이고, 나머지는 틈을 두고 매끈한 트랙이다. */
+private fun DrawScope.drawWavyRing(px: WavyPx, ink: WavyInk) {
     val path = px.path
+    val wave = px.wave
+    val span = px.span
     val radius = (size.minDimension - px.stroke) / 2 - px.amplitude
     if (radius <= 0f) return
     val gapDeg = (px.gap + px.stroke) / radius * DEG_PER_RAD
@@ -405,7 +434,7 @@ private fun DrawScope.drawWavyRing(px: WavyPx, ink: WavyInk, wave: WavyWave, spa
     val trackSweep = FULL_TURN - sweep - gapDeg * 2
     val topLeft = Offset(center.x - radius, center.y - radius)
     val arcSize = Size(radius * 2, radius * 2)
-    val trackStroke = Stroke(px.stroke, cap = StrokeCap.Round)
+    val trackStroke = px.line
     when {
         sweep <= 0f -> drawArc(ink.track, 0f, FULL_TURN, false, topLeft, arcSize, style = trackStroke)
         trackSweep > 0f -> drawArc(ink.track, span.start + sweep + gapDeg, trackSweep, false, topLeft, arcSize, style = trackStroke)

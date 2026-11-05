@@ -275,6 +275,15 @@ internal object GlassStats {
     var glassDraws: Int = 0
 }
 
+/**
+ * 강도 [level](0..1)에서 흐린 배경을 덮는 알파. 블러 반경을 키울 때는 반경이 절반만 되어도 거의 다 흐려 보이므로,
+ * 알파로 덮을 때도 앞쪽에서 빨리 짙어지게 해 그때와 비슷하게 보이게 한다.
+ */
+internal fun blurCover(level: Float): Float {
+    val rest = 1f - level.coerceIn(0f, 1f)
+    return 1f - rest * rest
+}
+
 private const val MAX_SHARED = 4
 private const val LAYERS = 4
 private const val LAYER_BUCKET = 32

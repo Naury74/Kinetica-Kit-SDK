@@ -177,7 +177,7 @@ public fun KCommandPalette(
     val spec =
         remember(state, sections, placeholder, surface, wide, empty) { PaletteSpec(state, sections, placeholder, surface, wide, empty) }
     KOverlay(state.isOpen) { transition ->
-        val progress by transition.animateFloat(
+        val progress = transition.animateFloat(
             transitionSpec = {
                 when {
                     still -> tween(0)
@@ -189,8 +189,8 @@ public fun KCommandPalette(
         ) { if (it) 1f else 0f }
         BackHandler(enabled = transition.targetState) { state.close() }
         Box(Modifier.fillMaxSize()) {
-            Scrim(progress.coerceIn(0f, 1f)) { state.close() }
-            PalettePanel(spec, { progress }, modifier)
+            Scrim({ progress.value.coerceIn(0f, 1f) }) { state.close() }
+            PalettePanel(spec, { progress.value }, modifier)
         }
     }
 }

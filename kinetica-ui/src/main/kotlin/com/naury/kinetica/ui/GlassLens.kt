@@ -12,7 +12,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ClipOp
@@ -123,15 +122,12 @@ internal fun Modifier.lens(progress: () -> Float, center: (Size) -> Offset, lens
             drawContent()
             return@drawWithContent
         }
-        renderer.draw(this, LensFrame(center(size), full, p), optics)
+        renderer.draw(this, center(size), full, p, optics)
     }
 }
 
 /** 요소 크기(px)를 받아 다 부푼 렌즈 크기(px)를 돌려주는 함수. 밀도를 쓰려고 [DrawScope]를 받는다. */
 internal typealias DpLens = DrawScope.(Size) -> Size
-
-/** 이번 프레임의 렌즈 가운데(px), 다 부푼 크기(px), 부푼 정도(0..1). */
-internal class LensFrame(val center: Offset, val full: Size, val progress: Float)
 
 /**
  * 렌즈를 그리는 레이어와 셰이더. 레이어 세 개를 쓴다. [content]는 요소 내용 기록, [sample]은 그것을 렌즈 자리만큼 옮겨 놓은 것,
@@ -141,7 +137,10 @@ internal class LensFrame(val center: Offset, val full: Size, val progress: Float
 internal class LensRenderer(private val content: GraphicsLayer, private val sample: GraphicsLayer, private val lens: GraphicsLayer) {
     private var shader: RuntimeShader? = null
     private var broken = false
-    private var key: Any? = null
+    private var keySize = IntSize.Zero
+    private var keyZoom = Float.NaN
+    private var keyRefraction = Float.NaN
+    private var keyTint = Color.Unspecified
     private val sampleRecord = RecordGuard()
     private val lensRecord = RecordGuard()
     private val hole = Path()
@@ -149,32 +148,35 @@ internal class LensRenderer(private val content: GraphicsLayer, private val samp
 
     private val canMagnify: Boolean get() = !broken && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
-    fun draw(scope: ContentDrawScope, frame: LensFrame, optics: LensOptics) = with(scope) {
-        val grow = lerp(LENS_START, 1f, frame.progress)
-        val w = frame.full.width * grow
-        val h = frame.full.height * grow
-        val rect = Rect(Offset(frame.center.x - w / 2, frame.center.y - h / 2), Size(w, h))
-        val corner = CornerRadius(minOf(w, h) / 2)
-        val alpha = (frame.progress * ALPHA_RAMP).coerceAtMost(1f)
-        if (canMagnify && prepare(frame.full, optics)) {
+    /** 가운데가 [center](px)이고 다 부풀면 [full](px)인 렌즈를 [progress](0..1)만큼 부풀려 그린다. */
+    fun draw(scope: ContentDrawScope, center: Offset, full: Size, progress: Float, optics: LensOptics) = with(scope) {
+        val grow = lerp(LENS_START, 1f, progress)
+        val shown = Size(full.width * grow, full.height * grow)
+        val topLeft = Offset(center.x - shown.width / 2, center.y - shown.height / 2)
+        val corner = CornerRadius(minOf(shown.width, shown.height) / 2)
+        val alpha = (progress * ALPHA_RAMP).coerceAtMost(1f)
+        if (canMagnify && prepare(full, optics)) {
             content.record { this@with.drawContent() }
             hole.reset()
-            hole.addRoundRect(RoundRect(rect, corner))
+            hole.addRoundRect(RoundRect(topLeft.x, topLeft.y, topLeft.x + shown.width, topLeft.y + shown.height, corner))
             clipPath(hole, ClipOp.Difference) { drawLayer(content) }
-            drawMagnified(frame, rect, grow, alpha)
+            drawMagnified(center, full, topLeft, grow, alpha)
         } else {
             drawContent()
-            drawRoundRect(Color.White.copy(alpha = BUBBLE_ALPHA * alpha), rect.topLeft, rect.size, corner)
+            drawRoundRect(Color.White.copy(alpha = BUBBLE_ALPHA * alpha), topLeft, shown, corner)
         }
-        drawRim(rect, corner, alpha)
+        drawRim(topLeft, shown, corner, alpha)
     }
 
     /** 렌즈 셰이더를 [full] 크기와 [optics]에 맞춘다. 셰이더를 만들지 못하면 false이고, 그 뒤로는 반투명 방울로 그린다. */
     private fun DrawScope.prepare(full: Size, optics: LensOptics): Boolean {
         val px = IntSize(ceil(full.width).toInt(), ceil(full.height).toInt())
-        val next = listOf(px, optics.zoom, optics.refraction, optics.tint)
-        if (key == next) return true
-        key = next
+        val same = keySize == px && keyZoom == optics.zoom && keyRefraction == optics.refraction && keyTint == optics.tint
+        if (same) return true
+        keySize = px
+        keyZoom = optics.zoom
+        keyRefraction = optics.refraction
+        keyTint = optics.tint
         GlassFxStats.lensBuilds++
         lens.renderEffect = runCatching {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
@@ -190,28 +192,28 @@ internal class LensRenderer(private val content: GraphicsLayer, private val samp
         return !broken
     }
 
-    private fun DrawScope.drawMagnified(frame: LensFrame, rect: Rect, grow: Float, alpha: Float) {
-        val px = IntSize(ceil(frame.full.width).toInt(), ceil(frame.full.height).toInt())
-        val left = frame.center.x - px.width / 2f
-        val top = frame.center.y - px.height / 2f
+    private fun DrawScope.drawMagnified(center: Offset, full: Size, topLeft: Offset, grow: Float, alpha: Float) {
+        val px = IntSize(ceil(full.width).toInt(), ceil(full.height).toInt())
+        val left = center.x - px.width / 2f
+        val top = center.y - px.height / 2f
         // 내용 기록은 같은 레이어 객체에 다시 하므로, 옮겨 놓는 레이어는 처음 한 번만 기록하고 이동량만 바꾼다.
         sampleRecord.record(this, sample, content, content.size)
         sample.translationX = -left
         sample.translationY = -top
         lensRecord.record(this, lens, sample, px)
         lens.alpha = alpha
-        translate(rect.left, rect.top) { scale(grow, grow, pivot = Offset.Zero) { drawLayer(lens) } }
+        translate(topLeft.x, topLeft.y) { scale(grow, grow, pivot = Offset.Zero) { drawLayer(lens) } }
     }
 
-    private fun DrawScope.drawRim(rect: Rect, corner: CornerRadius, alpha: Float) {
+    private fun DrawScope.drawRim(topLeft: Offset, size: Size, corner: CornerRadius, alpha: Float) {
         val width = RIM.toPx()
         if (rim.width != width) rim = Stroke(width)
-        drawRoundRect(Color.Black.copy(alpha = RIM_SHADE * alpha), rect.topLeft, rect.size, corner, style = rim)
+        drawRoundRect(Color.Black.copy(alpha = RIM_SHADE * alpha), topLeft, size, corner, style = rim)
         val inset = width
         drawRoundRect(
             Color.White.copy(alpha = RIM_LIGHT * alpha),
-            Offset(rect.left + inset, rect.top + inset),
-            Size(rect.width - inset * 2, rect.height - inset * 2),
+            Offset(topLeft.x + inset, topLeft.y + inset),
+            Size(size.width - inset * 2, size.height - inset * 2),
             CornerRadius((corner.x - inset).coerceAtLeast(0f)),
             style = rim,
         )

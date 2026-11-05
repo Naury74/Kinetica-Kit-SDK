@@ -155,7 +155,11 @@ public fun Modifier.glass(
     shape: Shape = RectangleShape,
     backdrop: GlassBackdrop? = LocalGlassBackdrop.current,
     intensity: Float = 1f,
-): Modifier {
+): Modifier = glassOf(style, shape, backdrop) { intensity }
+
+/** [glass]와 같고 강도를 그리기 단계에서 [intensity]로 읽는다. 열고 닫는 동안 강도가 바뀌어도 다시 구성하지 않게 한다. */
+@Composable
+internal fun Modifier.glassOf(style: GlassStyle, shape: Shape, backdrop: GlassBackdrop?, intensity: () -> Float): Modifier {
     val blurLayer = rememberGraphicsLayer()
     val sampleLayer = rememberGraphicsLayer()
     val view = LocalView.current
@@ -181,7 +185,7 @@ public fun Modifier.glass(
             GlassStats.glassDraws++
             position.region.used = false
             val outline = shape.createOutline(size, layoutDirection, this)
-            val level = intensity.coerceIn(0f, 1f)
+            val level = intensity().coerceIn(0f, 1f)
             drawOuterShadow(outline, style, level, effects)
             val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             clipOutline(outline) {
@@ -209,15 +213,6 @@ public fun Modifier.glass(
             if (!position.region.used) position.region.release()
             drawEdgeLight(outline, style, level)
         }
-}
-
-/**
- * 강도 [level](0..1)에서 흐린 배경을 덮는 알파. 블러 반경을 키울 때는 반경이 절반만 되어도 거의 다 흐려 보이므로,
- * 알파로 덮을 때도 앞쪽에서 빨리 짙어지게 해 그때와 비슷하게 보이게 한다.
- */
-internal fun blurCover(level: Float): Float {
-    val rest = 1f - level.coerceIn(0f, 1f)
-    return 1f - rest * rest
 }
 
 internal class PositionHolder {

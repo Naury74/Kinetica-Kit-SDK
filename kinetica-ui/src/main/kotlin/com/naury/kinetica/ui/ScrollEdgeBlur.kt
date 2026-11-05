@@ -67,21 +67,22 @@ public fun Modifier.scrollEdgeBlur(
     val topBand = rememberEdgeBand(atTop = true)
     val bottomBand = rememberEdgeBand(atTop = false)
     return drawWithContent {
-        val edges = EdgeAmounts(topAmount, bottomAmount)
-        if (edges.none) {
+        val topShown = topAmount.value
+        val bottomShown = bottomAmount.value
+        if (topShown <= 0f && bottomShown <= 0f) {
             drawContent()
             return@drawWithContent
         }
         content.record { this@drawWithContent.drawContent() }
-        val topPx = edges.height(top.toPx(), edges.top, size.height)
-        val bottomPx = edges.height(bottom.toPx(), edges.bottom, size.height)
+        val topPx = bandHeight(top.toPx(), topShown, size.height)
+        val bottomPx = bandHeight(bottom.toPx(), bottomShown, size.height)
         // 다 나타난 띠는 아래 원래 내용을 그리지 않는다. 띠 안 내용은 띠가 흐린 것으로 대신 그린다.
-        val clipTop = if (edges.top >= 1f) topPx else 0f
-        val clipBottom = if (edges.bottom >= 1f) bottomPx else 0f
+        val clipTop = if (topShown >= 1f) topPx else 0f
+        val clipBottom = if (bottomShown >= 1f) bottomPx else 0f
         clipRect(top = clipTop, bottom = size.height - clipBottom) { drawLayer(content) }
         val blurPx = blur.toPx()
-        if (topPx > 0f) topBand.draw(this, content, topPx, blurPx, edges.top)
-        if (bottomPx > 0f) bottomBand.draw(this, content, bottomPx, blurPx, edges.bottom)
+        if (topPx > 0f) topBand.draw(this, content, topPx, blurPx, topShown)
+        if (bottomPx > 0f) bottomBand.draw(this, content, bottomPx, blurPx, bottomShown)
     }
 }
 
@@ -110,15 +111,8 @@ public fun KProgressiveBlur(
     Box(modifier.scrollEdgeBlur(state, top, bottom, blur), content = content)
 }
 
-/** 이번 프레임의 위아래 띠가 나타난 정도(0..1). 그리기 단계에서만 읽는다. */
-private class EdgeAmounts(top: State<Float>, bottom: State<Float>) {
-    val top = top.value
-    val bottom = bottom.value
-    val none: Boolean get() = top <= 0f && bottom <= 0f
-
-    /** 나타난 정도가 [amount]인 띠의 높이(px). 영역 높이 [total]의 절반을 넘지 않고, 숨은 띠는 0이다. */
-    fun height(band: Float, amount: Float, total: Float): Float = if (amount > 0f) band.coerceAtMost(total / 2) else 0f
-}
+/** 나타난 정도가 [amount]인 띠의 높이(px). 영역 높이 [total]의 절반을 넘지 않고, 숨은 띠는 0이다. */
+private fun bandHeight(band: Float, amount: Float, total: Float): Float = if (amount > 0f) band.coerceAtMost(total / 2) else 0f
 
 @Composable
 private fun rememberEdgeBand(atTop: Boolean): EdgeBand {
@@ -134,13 +128,21 @@ private fun rememberEdgeBand(atTop: Boolean): EdgeBand {
  * 모든 레이어는 [GraphicsLayer] 하나(요소 내용 기록)만 참조하므로, 내용이 바뀌어도 띠 크기가 그대로면 다시 기록하지 않는다.
  */
 internal class EdgeBand(private val atTop: Boolean, private val composite: GraphicsLayer, private val levels: List<GraphicsLayer>) {
-    private var key: Any? = null
+    private var keyWidth = Float.NaN
+    private var keyHeight = Float.NaN
+    private var keyTop = Float.NaN
+    private var keyBlur = Float.NaN
+    private var keyContent: GraphicsLayer? = null
 
     fun draw(scope: DrawScope, content: GraphicsLayer, height: Float, blurPx: Float, alpha: Float) = with(scope) {
         val top = if (atTop) 0f else size.height - height
-        val next = listOf(size.width, height, top, blurPx, content)
-        if (key != next) {
-            key = next
+        val same = keyWidth == size.width && keyHeight == height && keyTop == top && keyBlur == blurPx && keyContent === content
+        if (!same) {
+            keyWidth = size.width
+            keyHeight = height
+            keyTop = top
+            keyBlur = blurPx
+            keyContent = content
             GlassFxStats.edgeBuilds++
             record(content, Size(size.width, height), top, blurPx)
         }
