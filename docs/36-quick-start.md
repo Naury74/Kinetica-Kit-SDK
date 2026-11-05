@@ -6,9 +6,9 @@ Compose 앱에 Kinetica UI 키트와 효과를 붙이는 가장 빠른 방법을
 
 ```kotlin
 dependencies {
-    implementation("com.naurylab:kinetica-ui:1.0.0-alpha05")             // UI 컴포넌트와 효과 수정자. 보통은 이것만 있으면 됩니다
-    implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha05") // 필요하면: Modifier.kineticaEffects, 화면 전환, 숫자 애니메이션
-    implementation("com.naurylab:kinetica-presets:1.0.0-alpha05")        // 필요하면: EffectPresets
+    implementation("com.naurylab:kinetica-ui:1.0.0-alpha06")             // UI 컴포넌트와 효과 수정자. 보통은 이것만 있으면 됩니다
+    implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha06") // 필요하면: Modifier.kineticaEffects, 화면 전환, 숫자 애니메이션
+    implementation("com.naurylab:kinetica-presets:1.0.0-alpha06")        // 필요하면: EffectPresets
 }
 ```
 
@@ -128,6 +128,38 @@ KSlider(
     valueBadge = { Text("${(it * 100).roundToInt()}") },
 )
 KDialSlider(angle, { angle = it }, label = "기울기", valueRange = -45f..45f, formatValue = { "%.1f°".format(it) })
+```
+
+**칩 메뉴.** 누르면 칩이 그 자리에서 메뉴 판으로 모양이 바뀝니다. 항목은 `KDropdownMenu`와 같은 `KMenuEntry`입니다.
+
+```kotlin
+var sorting by remember { mutableStateOf(false) }
+KMorphMenu("정렬: $order", sorting, { sorting = it }, listOf(
+    KMenuEntry.Action("최신순") { order = "최신순" },
+    KMenuEntry.Action("인기순") { order = "인기순" },
+))
+```
+
+**유리 렌즈 손잡이.** 슬라이더, 스위치, 세그먼트, 떠 있는 탭 바에 `lens = true`를 주면 잡는 동안 손잡이가 아래를 확대하는 유리 방울이 됩니다. 세그먼트와 탭 바는 인디케이터를 끌어 옮길 수도 있습니다.
+
+```kotlin
+KSlider(volume, { volume = it }, Modifier.fillMaxWidth(), lens = true)
+KSegmentedControl(listOf("일", "주", "월"), range, { range = it }, lens = true)
+```
+
+**라이브 활동.** 배달이나 타이머처럼 오래 이어지는 활동을 캡슐로 띄웁니다. 누르면 펼친 화면으로 모양이 바뀝니다. 다이내믹 아일랜드 알림(`KIslandHost`)과 함께 쓸 때는 화면 아래에 둡니다.
+
+```kotlin
+val live = rememberKLiveActivityState()
+KLiveActivityHost(live, position = KLiveActivityPosition.Bottom)
+KButton("타이머 시작", onClick = {
+    live.start(KLiveActivity(
+        "timer", "타이머", "5분",
+        leading = { Text("⏱") },
+        trailing = { KCountdownPill(endsAt, 5 * 60_000L) },
+        expanded = { Text("5분 타이머") },
+    ))
+})
 ```
 
 **차트.**

@@ -7,7 +7,7 @@ Kinetica가 무엇을 하는지, SDK로 쓸 만한지 직접 확인하는 순서
 
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-./gradlew check                                   # 테스트 1,300여 개, lint, 코드 형식, 공개 API 검사
+./gradlew check                                   # 테스트 1,400여 개, lint, 코드 형식, 공개 API 검사
 ./gradlew :sample-showcase:installDebug
 ```
 
@@ -156,13 +156,13 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 
 | 관점 | 확인 방법 | 지금 상태 |
 | --- | --- | --- |
-| 연동 난이도 | [README 사용법](../README.md#사용법)의 예를 새 앱에 붙여 보기 | 의존성 1줄과 코드 20줄 안팎. 같은 코드를 `ReadmeTest`가, docs/35의 예를 `UiKitDocExamplesTest`가 컴파일해 그려 봅니다. `consumer-check/`는 배포 artifact만으로 UI 키트, 보드, 재생기, 편집기를 쓰는 호스트 앱을 빌드하고, 기기에서 계측 테스트 100여 개를 돌립니다 |
+| 연동 난이도 | [README 사용법](../README.md#사용법)의 예를 새 앱에 붙여 보기 | 의존성 1줄과 코드 20줄 안팎. 같은 코드를 `ReadmeTest`가, docs/35의 예를 `UiKitDocExamplesTest`가 컴파일해 그려 봅니다. `consumer-check/`는 배포 artifact만으로 UI 키트, 보드, 재생기, 편집기를 쓰는 호스트 앱을 빌드하고, 기기에서 계측 테스트 110여 개를 돌립니다 |
 | 필요한 것만 쓰기 | `./gradlew :kinetica-player-compose:verifyReleaseClasspath` | `kinetica-ui`는 다른 Kinetica 모듈 없이 들어갑니다. 재생만 쓰면 core, motion, render, serialization, player 5개 모듈만 들어갑니다 |
 | 앱 크기 | `consumer-check` release APK | R8 적용. 재생기 예만 있던 2026-10-13에는 Compose 런타임을 포함해 약 680 KB였고, UI 키트, 보드, 편집기, Material 3 시나리오를 모두 넣은 지금은 약 3.7 MB입니다. Kinetica만 차지하는 크기는 따로 재지 않았습니다 |
 | R8, 난독화 | `./gradlew -p consumer-check :app:assembleRelease` | 리플렉션을 쓰지 않아 추가 keep 규칙 없이 빌드됩니다 |
 | 설계 문서 | [architecture.md](architecture.md), [integration.md](integration.md), [adr/](adr) | 모듈 경계, 좌표계, 데이터 흐름, 설계 결정 이유 |
 | 공개 API 관리 | `<모듈>/api/*.api` | JVM 모듈 7개는 자동으로 검사합니다. Android 모듈 7개는 아직 dump가 없습니다([ADR-0005](adr/0005-abi-dumps.md)) |
-| 안정성 | `./gradlew check` | 단위 테스트, Robolectric 화면 테스트, 적대적 입력 fuzz 테스트를 합쳐 1,300여 개 |
+| 안정성 | `./gradlew check` | 단위 테스트, Robolectric 화면 테스트, 적대적 입력 fuzz 테스트를 합쳐 1,400여 개 |
 | 안전 | [SECURITY.md](../SECURITY.md) | SDK는 네트워크를 직접 쓰지 않고, 서버 화면도 호스트가 받아 옵니다. 외부 문서는 크기 상한과 검증을 거치고, 웹 URL과 파일 URI 이미지는 열지 않습니다 |
 | 성능 | [performance.md](performance.md), [docs 35 성능](35-ui-kit.md#성능) | 실기기 쇼케이스 스크롤 끊김 0.5% 미만, 보드 스크롤 p50 5 ms, JVM에서 노드 2,000개 장면의 명령 처리 p95 약 0.4 ms |
 | Java | [integration.md#java](integration.md#java) | `kinetica-java`의 정적 진입점과 Java 테스트가 있습니다 |
