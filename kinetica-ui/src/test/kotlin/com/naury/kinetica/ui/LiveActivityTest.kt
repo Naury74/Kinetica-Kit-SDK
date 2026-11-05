@@ -16,6 +16,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
@@ -188,5 +189,21 @@ class LiveActivityTest {
         compose.onNodeWithContentDescription("타이머, 5분 남음").performClick()
         compose.waitForIdle()
         assertThat(state.expandedId).isEqualTo("timer")
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h640dp")
+    fun `좁은 화면에서 아래 위치 활동이 둘이어도 캡슐과 원이 화면 안에 든다`() {
+        val state = KLiveActivityState()
+        setUp(state, KLiveActivityPosition.Bottom, reduced = true)
+        state.start(activity("ride", "배차", "3분 뒤 도착"))
+        state.start(activity("rec", "녹음", "00:12"))
+        compose.waitForIdle()
+        val rootWidth = compose.onRoot().fetchSemanticsNode().size.width
+        listOf("배차, 3분 뒤 도착", "녹음, 00:12").forEach { name ->
+            val node = compose.onNodeWithContentDescription(name).fetchSemanticsNode()
+            assertThat(node.positionInRoot.x).isAtLeast(0f)
+            assertThat(node.positionInRoot.x + node.size.width).isAtMost(rootWidth.toFloat())
+        }
     }
 }

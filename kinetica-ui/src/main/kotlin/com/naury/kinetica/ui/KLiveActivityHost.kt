@@ -167,11 +167,14 @@ private fun LiveCluster(state: KLiveActivityState, look: LiveLook, modifier: Mod
  * 위 위치는 큰 캡슐이 카메라 홀 위에 머물도록 양쪽에 같은 자리를 둔다.
  */
 private fun clusterPolicy(top: Boolean, separation: () -> Float, neck: NeckGeometry) = MeasurePolicy { measurables, constraints ->
-    val capsule = measurables[0].measure(constraints.copy(minWidth = 0, minHeight = 0))
     val bubble = measurables[1].measure(Constraints())
     val s = separation().coerceIn(0f, 1f)
     val reach = ((BUBBLE_GAP.roundToPx() + bubble.width) * s).roundToInt()
-    val width = capsule.width + if (top) reach * 2 else reach
+    val reserved = if (top) reach * 2 else reach
+    // 원이 나올 자리를 빼고 재야 넓게 늘어나는 아래 캡슐과 원이 함께 화면 안에 든다.
+    val capsuleMax = if (constraints.hasBoundedWidth) (constraints.maxWidth - reserved).coerceAtLeast(0) else Constraints.Infinity
+    val capsule = measurables[0].measure(Constraints(maxWidth = capsuleMax, maxHeight = constraints.maxHeight))
+    val width = capsule.width + reserved
     val height = max(capsule.height, if (s > 0f) bubble.height else 0)
     layout(width, height) {
         val mainX = if (top) reach else 0
