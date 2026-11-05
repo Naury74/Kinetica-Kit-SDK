@@ -37,6 +37,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.naury.kinetica.ui.KIndication
 import com.naury.kinetica.ui.KineticaScaffold
@@ -157,6 +158,15 @@ class IndicationTest {
             automation.injectInputEvent(event, true)
             event.recycle()
         }
+        // 느린 기기(Android 8 에뮬레이터 등)에서는 창이 뜨는 전환이 끝나기 전 화면이 회색으로 찍힌다. 두 점이 모두 흰색이 될 때까지 기다린다.
+        val settleBy = SystemClock.uptimeMillis() + SETTLE_LIMIT_MS
+        while (SystemClock.uptimeMillis() < settleBy) {
+            val shot = automation.takeScreenshot() ?: continue
+            val white = luma(shot, near) >= WHITE && luma(shot, far) >= WHITE
+            shot.recycle()
+            if (white) break
+            Thread.sleep(SETTLE_STEP_MS)
+        }
         var rippleFrames = 0
         var darkened = false
         var uneven = 0
@@ -193,6 +203,7 @@ class IndicationTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = android.os.Build.VERSION_CODES.P)
     fun withoutThemeHostSeesRipple() {
         // 측정 방법이 리플을 알아보는지 먼저 확인한다(대조군).
         rule.setContent { MaterialTheme(lightColorScheme()) { HostTargets() } }
@@ -210,14 +221,25 @@ class IndicationTest {
         val listItem = pressLook("listItem")
         assertTrue("KineticaTheme 안 ListItem(clickable)은 고르게 덮여야 한다: $listItem", listItem == Look.Uniform)
         // Material3 Card(onClick)는 LocalIndication이 아니라 자기 ripple()을 직접 쓰므로 KineticaTheme과 상관없이 리플이다.
+        if (!rippleVisible()) return
         val card = pressLook("card")
         assertTrue("Card(onClick)는 Material 리플을 그대로 쓴다: $card", card == Look.Ripple)
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = android.os.Build.VERSION_CODES.P)
     fun themeWithNullIndicationKeepsRipple() {
         rule.setContent { MaterialTheme(lightColorScheme()) { KineticaTheme(darkTheme = false, indication = null) { HostTargets() } } }
         rule.waitForIdle()
         assertTrue("indication = null이면 호스트 리플이 남아야 한다", pressLook("plain") == Look.Ripple)
+    }
+
+    /** Android 9 미만은 플랫폼 리플이 화면 캡처에 잡히지 않아 리플 모양을 잴 수 없다. 테마 값 시험은 그 버전에서도 돈다. */
+    private fun rippleVisible(): Boolean = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P
+
+    private companion object {
+        const val WHITE = 250
+        const val SETTLE_LIMIT_MS = 3_000L
+        const val SETTLE_STEP_MS = 50L
     }
 }
