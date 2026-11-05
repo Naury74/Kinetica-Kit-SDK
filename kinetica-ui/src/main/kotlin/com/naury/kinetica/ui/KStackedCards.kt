@@ -29,8 +29,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.CollectionItemInfo
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.collectionItemInfo
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -96,7 +98,10 @@ public fun KStackedCards(
     Layout(
         content = {
             repeat(count) { i ->
-                key(i) { StackCard(i, i == selected, labels.of(mode), stackClick(state, mode, i), shape) { content(i) } }
+                key(i) {
+                    val card = StackCardSpec(i, i == selected, target.alpha[i] == 0f, labels.of(mode))
+                    StackCard(card, stackClick(state, mode, i), shape) { content(i) }
+                }
             }
         },
         modifier = modifier
@@ -124,25 +129,28 @@ public fun KStackedCards(
     }
 }
 
-/** 카드 한 장. TalkBack 목록 항목이고, 고른 카드는 맨 먼저 읽힌다. */
+/** 카드 한 장의 번호와 상태. [hidden]은 묶음 뒤에 숨어 보이지 않는 카드다. */
+private class StackCardSpec(val index: Int, val chosen: Boolean, val hidden: Boolean, val clickLabel: String)
+
+/** 카드 한 장. TalkBack 목록 항목이고, 고른 카드는 맨 먼저 읽힌다. 보이지 않는 카드는 TalkBack이 멈추지 않게 숨기고 누를 수 없게 한다. */
 @Composable
-private fun StackCard(
-    index: Int,
-    chosen: Boolean,
-    clickLabel: String,
-    onClick: () -> Unit,
-    shape: Shape,
-    content: @Composable BoxScope.() -> Unit,
-) {
+private fun StackCard(card: StackCardSpec, onClick: () -> Unit, shape: Shape, content: @Composable BoxScope.() -> Unit) {
     Box(
         Modifier
-            .semantics {
-                collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                traversalIndex = if (chosen) -1f else index.toFloat()
-                selected = chosen
-            }
+            .then(
+                if (card.hidden) {
+                    // 카드 안 글까지 함께 숨겨야 TalkBack이 보이지 않는 카드에 멈추지 않는다.
+                    Modifier.clearAndSetSemantics { hideFromAccessibility() }
+                } else {
+                    Modifier.semantics {
+                        collectionItemInfo = CollectionItemInfo(card.index, 1, 0, 1)
+                        traversalIndex = if (card.chosen) -1f else card.index.toFloat()
+                        selected = card.chosen
+                    }
+                },
+            )
             .clip(shape)
-            .clickable(onClickLabel = clickLabel, role = Role.Button, onClick = onClick),
+            .clickable(enabled = !card.hidden, onClickLabel = card.clickLabel, role = Role.Button, onClick = onClick),
         content = content,
     )
 }

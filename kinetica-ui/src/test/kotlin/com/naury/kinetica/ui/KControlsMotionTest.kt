@@ -299,7 +299,7 @@ class KControlsMotionTest {
                 }
             }
         }
-        compose.onNodeWithText("카드 2").performClick()
+        compose.onNodeWithText("카드 3").performClick()
         assertThat(state.expanded).isTrue()
         assertThat(state.selected).isNull()
 

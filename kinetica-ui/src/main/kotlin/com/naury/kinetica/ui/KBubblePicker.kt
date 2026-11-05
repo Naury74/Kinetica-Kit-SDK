@@ -9,6 +9,7 @@ import androidx.compose.runtime.IntState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,22 +85,26 @@ public fun KBubblePicker(
     Layout(
         content = {
             items.forEachIndexed { i, label ->
-                val on = label in selected
-                Bubble(label, on, colors[i % colors.size], surface, { physics.scaleOf(i, scale, frame) }) {
-                    haptic.performHapticFeedback(if (on) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn)
-                    onSelectedChange(if (label in latest) latest - label else latest + label)
+                // 이름으로 묶어야 가운데 항목을 지울 때 뒤 거품이 앞 거품의 누름 상태를 물려받지 않는다.
+                key(label) {
+                    val on = label in selected
+                    Bubble(label, on, colors[i % colors.size], surface, { physics.scaleOf(i, scale, frame) }) {
+                        haptic.performHapticFeedback(if (on) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn)
+                        onSelectedChange(if (label in latest) latest - label else latest + label)
+                    }
                 }
             }
         },
         modifier = modifier.onVisibilityChanged(minFractionVisible = 0f) { motion.onScreen = it },
     ) { measurables, constraints ->
         val base = bubbleSize.toPx() / 2f
-        physics.resize(measurables.size, base)
+        val itemsChanged = physics.sync(items, base)
         items.forEachIndexed { i, label -> physics.target(i, if (label in selected) base * scale else base) }
         val diameter = ceil(base * scale * 2f).toInt()
         val placeables = measurables.map { it.measure(Constraints.fixed(diameter, diameter)) }
         val size = pickerSize(constraints, physics, diameter)
-        if (motion.arrange(physics, size, selected, still)) frame.intValue++
+        // 항목이 바뀌면 거품 번호가 달라지므로 다음 물리 걸음을 기다리지 않고 크기를 새 번호로 다시 읽게 한다.
+        if (motion.arrange(physics, size, selected, itemsChanged, still) || itemsChanged) frame.intValue++
         layout(size.width, size.height) {
             // 위치는 여기서만 읽으므로 거품이 움직이는 동안 다시 구성하지 않고 배치만 다시 한다.
             frame.intValue
@@ -136,9 +141,9 @@ private class BubbleMotion {
     private var size = IntSize.Zero
     private var chosen: Set<String> = emptySet()
 
-    /** 크기나 선택이 바뀌었으면 물리를 깨운다. '애니메이션 삭제'면 그 자리에서 정착시키고 true를 돌려준다. */
-    fun arrange(physics: BubblePhysics, newSize: IntSize, selected: Set<String>, still: Boolean): Boolean {
-        val changed = newSize != size || selected != chosen
+    /** 크기, 선택, 항목이 바뀌었으면 물리를 깨운다. '애니메이션 삭제'면 그 자리에서 정착시키고 true를 돌려준다. */
+    fun arrange(physics: BubblePhysics, newSize: IntSize, selected: Set<String>, itemsChanged: Boolean, still: Boolean): Boolean {
+        val changed = itemsChanged || newSize != size || selected != chosen
         size = newSize
         chosen = selected
         physics.bounds(newSize.width.toFloat(), newSize.height.toFloat())
@@ -159,14 +164,24 @@ private fun BubbleLoop(physics: BubblePhysics, frame: MutableIntState, motion: B
     LaunchedEffect(running) {
         if (!running) return@LaunchedEffect
         var last = withFrameNanos { it }
+        var carry = 0f
+        var moving = true
         while (true) {
             val now = withFrameNanos { it }
-            var left = ((now - last) / NANOS_PER_SECOND).coerceAtMost(MAX_FRAME_SECONDS)
+            var left = ((now - last) / NANOS_PER_SECOND).coerceAtMost(MAX_FRAME_SECONDS) + carry
             last = now
-            var moving = false
+            carry = 0f
+            var stepped = false
             while (left > 0f) {
+                // 아주 짧은 나머지는 다음 프레임에 붙여 걸음 길이를 고르게 한다.
+                if (left < MIN_VELOCITY_SECONDS) {
+                    carry = left
+                    break
+                }
                 val dt = minOf(left, STEP_SECONDS)
+                if (!stepped) moving = false
                 moving = physics.step(dt) || moving
+                stepped = true
                 left -= dt
             }
             frame.intValue++

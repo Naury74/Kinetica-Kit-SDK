@@ -7,11 +7,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -87,11 +90,34 @@ public class KDataTableState(initialSort: KTableSort? = null, initialSelection: 
     public fun setSelected(key: Any, selected: Boolean) {
         selection = if (selected) selection + key else selection - key
     }
+
+    /** 목록에서 빠진 행의 키를 선택에서 뺀다. 남겨 두면 머리 체크박스는 모두 고른 것처럼 보이는데 숨은 행까지 함께 처리된다. */
+    internal fun retainSelection(present: Set<Any>) {
+        val now = selection
+        if (now.all { it in present }) return
+        selection = now.filterTo(HashSet()) { it in present }
+    }
 }
+
+/** 정렬과 함께, 번들에 담을 수 있는 선택 키만 저장한다. 담을 수 없는 키를 쓰면 회전 뒤 선택은 비고 정렬만 남는다. */
+private val TableStateSaver = Saver<KDataTableState, ArrayList<Any?>>(
+    save = { state ->
+        val sort = state.sort
+        arrayListOf(sort?.column ?: NO_SORT, sort?.ascending ?: true, ArrayList(state.selection.filter { canBeSaved(it) }))
+    },
+    restore = { saved ->
+        val column = saved[0] as Int
+        val sort = if (column == NO_SORT) null else KTableSort(column, saved[1] as Boolean)
+        KDataTableState(sort, (saved[2] as List<*>).filterNotNullTo(HashSet()))
+    },
+)
+
+private const val NO_SORT = -1
 
 /** [KDataTableState]를 만든다. */
 @Composable
-public fun rememberKDataTableState(initialSort: KTableSort? = null): KDataTableState = remember { KDataTableState(initialSort) }
+public fun rememberKDataTableState(initialSort: KTableSort? = null): KDataTableState =
+    rememberSaveable(saver = TableStateSaver) { KDataTableState(initialSort) }
 
 /**
  * 정렬과 행 선택이 되는 데이터 표. 행은 `LazyColumn`으로 보이는 것만 구성하므로 수천 행도 괜찮다.
@@ -142,10 +168,16 @@ public fun <T> KDataTable(
     val sort = state.sort
     val sorted = remember(rows, sort, columns) { sortRows(rows, columns, sort) }
     val keys = remember(sorted) { sorted.map(key) }
+    val present = remember(keys) { keys.toHashSet<Any>() }
+    DisposableEffect(state, present) {
+        state.retainSelection(present)
+        onDispose {}
+    }
     val scroll = rememberScrollState()
     val frozen = frozenFirstColumn && columns.size > 1
     val totalColumns = columns.size + if (selectable) 1 else 0
-    BoxWithConstraints(modifier.semantics { collectionInfo = CollectionInfo(sorted.size + 1, totalColumns) }) {
+    val tableInfo = CollectionInfo(sorted.size + 1, totalColumns)
+    BoxWithConstraints(modifier.semantics { collectionInfo = tableInfo }) {
         val layout = TableLayout(columns, frozen, selectable, maxWidth, scroll, surface)
         Column(Modifier.fillMaxWidth()) {
             TableHeader(layout, state, keys)
@@ -153,7 +185,8 @@ public fun <T> KDataTable(
             if (sorted.isEmpty()) {
                 TableEmpty(Modifier.weight(1f, fill = false), empty)
             } else {
-                LazyColumn(Modifier.weight(1f, fill = false).fillMaxWidth()) {
+                // 몸통 칸은 LazyColumn의 목록 정보에 묶이므로, 머리와 같은 표 크기로 덮어써 TalkBack이 몸통도 표로 읽게 한다.
+                LazyColumn(Modifier.weight(1f, fill = false).fillMaxWidth().semantics { collectionInfo = tableInfo }) {
                     itemsIndexed(sorted, key = { _, row -> key(row) }) { index, row ->
                         val rowKey = key(row)
                         TableBodyRow(

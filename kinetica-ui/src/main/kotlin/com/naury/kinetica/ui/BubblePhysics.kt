@@ -31,28 +31,53 @@ internal class BubblePhysics {
         private set
     private var height = 0f
 
-    /** 거품 수를 [size]로 맞춘다. 새 거품은 나선을 따라 상자 바깥쪽에 놓여 가운데로 모여든다. */
-    fun resize(size: Int, baseRadius: Float) {
+    private var keys: List<String> = emptyList()
+
+    /**
+     * 거품을 [newKeys] 순서로 맞춘다. 상태는 이름에 묶여 있어 가운데 거품을 지우거나 순서를 바꿔도 남은 거품은 제자리에 있다.
+     * 새 거품은 나선을 따라 상자 바깥쪽에 놓여 가운데로 모여든다. 목록이 바뀌었으면 true를 돌려준다.
+     */
+    fun sync(newKeys: List<String>, baseRadius: Float): Boolean {
         this.baseRadius = baseRadius
-        if (size == count) return
-        val old = count
-        x = x.copyOf(size)
-        y = y.copyOf(size)
-        vx = vx.copyOf(size)
-        vy = vy.copyOf(size)
-        px = px.copyOf(size)
-        py = py.copyOf(size)
-        radius = radius.copyOf(size)
-        goal = goal.copyOf(size)
-        for (i in old until size) {
-            val angle = i * GOLDEN_ANGLE
-            val distance = baseRadius * (SPAWN_BASE + SPAWN_STEP * sqrt(i.toFloat()))
-            x[i] = width / 2f + cos(angle).toFloat() * distance
-            y[i] = height / 2f + sin(angle).toFloat() * distance
-            radius[i] = baseRadius
-            goal[i] = baseRadius
+        if (newKeys == keys) return false
+        val oldIndex = HashMap<String, Int>(keys.size * 2)
+        keys.forEachIndexed { i, key -> oldIndex[key] = i }
+        val size = newKeys.size
+        val nx = FloatArray(size)
+        val ny = FloatArray(size)
+        val nvx = FloatArray(size)
+        val nvy = FloatArray(size)
+        val nr = FloatArray(size)
+        val ng = FloatArray(size)
+        newKeys.forEachIndexed { i, key ->
+            val o = oldIndex[key]
+            if (o != null) {
+                nx[i] = x[o]
+                ny[i] = y[o]
+                nvx[i] = vx[o]
+                nvy[i] = vy[o]
+                nr[i] = radius[o]
+                ng[i] = goal[o]
+            } else {
+                val angle = i * GOLDEN_ANGLE
+                val distance = baseRadius * (SPAWN_BASE + SPAWN_STEP * sqrt(i.toFloat()))
+                nx[i] = width / 2f + cos(angle).toFloat() * distance
+                ny[i] = height / 2f + sin(angle).toFloat() * distance
+                nr[i] = baseRadius
+                ng[i] = baseRadius
+            }
         }
+        x = nx
+        y = ny
+        vx = nvx
+        vy = nvy
+        radius = nr
+        goal = ng
+        px = FloatArray(size)
+        py = FloatArray(size)
+        keys = newKeys.toList()
         count = size
+        return true
     }
 
     /** 상자 크기. 처음 정해질 때는 거품을 새 가운데로 옮긴다. */
@@ -68,6 +93,8 @@ internal class BubblePhysics {
     }
 
     fun goalOf(index: Int): Float = goal[index]
+
+    fun speedOf(index: Int): Float = sqrt(vx[index] * vx[index] + vy[index] * vy[index])
 
     fun target(index: Int, value: Float) {
         goal[index] = value
@@ -100,11 +127,13 @@ internal class BubblePhysics {
             y[i] += vy[i] * dt
         }
         repeat(RELAX_PASSES) { separate() }
+        // 겹침을 푼 거리는 dt와 상관없이 정해지므로, 아주 짧은 걸음에서 dt로 나누면 속도가 터무니없이 커진다.
+        val inverse = 1f / dt.coerceAtLeast(MIN_VELOCITY_SECONDS)
         for (i in 0 until count) {
             x[i] = x[i].coerceIn(radius[i].coerceAtMost(cx), (width - radius[i]).coerceAtLeast(cx))
             y[i] = y[i].coerceIn(radius[i].coerceAtMost(cy), (height - radius[i]).coerceAtLeast(cy))
-            vx[i] = (x[i] - px[i]) / dt
-            vy[i] = (y[i] - py[i]) / dt
+            vx[i] = (x[i] - px[i]) * inverse
+            vy[i] = (y[i] - py[i]) * inverse
             if (vx[i] * vx[i] + vy[i] * vy[i] > SETTLED_SPEED * SETTLED_SPEED) moving = true
         }
         return moving
@@ -158,4 +187,7 @@ private const val SETTLED_SPEED = 4f
 
 /** 물리 한 걸음의 길이(초). 프레임이 길어도 이만큼씩 나눠 돌려야 거품이 서로 뚫고 지나가지 않는다. */
 internal const val STEP_SECONDS = 1f / 120f
+
+/** 이보다 짧은 걸음은 속도 계산에서 이 길이로 본다. 프레임 루프는 이보다 짧은 나머지를 다음 프레임으로 넘긴다. */
+internal const val MIN_VELOCITY_SECONDS = STEP_SECONDS / 2f
 private const val MAX_SETTLE_STEPS = 2_400

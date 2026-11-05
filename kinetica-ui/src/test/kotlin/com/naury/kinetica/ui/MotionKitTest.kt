@@ -143,7 +143,7 @@ class MotionKitTest {
     @Test
     fun `거품 물리는 정착하면 멈춘다`() {
         val physics = BubblePhysics()
-        physics.resize(6, 40f)
+        physics.sync(List(6) { "거품 $it" }, 40f)
         physics.bounds(400f, 300f)
         physics.target(2, 56f)
         physics.settle()

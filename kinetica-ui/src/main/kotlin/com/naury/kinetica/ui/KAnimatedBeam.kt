@@ -24,6 +24,9 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.sqrt
@@ -114,7 +117,45 @@ public fun KAnimatedBeam(
 private class BeamScope(box: BoxScope, private val anchors: BeamAnchors) :
     KAnimatedBeamScope,
     BoxScope by box {
-    override fun Modifier.beamAnchor(id: Any): Modifier = onGloballyPositioned { anchors.place(id, it) }
+    override fun Modifier.beamAnchor(id: Any): Modifier = this then BeamAnchorElement(anchors, id)
+}
+
+private data class BeamAnchorElement(val anchors: BeamAnchors, val id: Any) : ModifierNodeElement<BeamAnchorNode>() {
+    override fun create(): BeamAnchorNode = BeamAnchorNode(anchors, id)
+
+    override fun update(node: BeamAnchorNode) {
+        node.update(anchors, id)
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "beamAnchor"
+        properties["id"] = id
+    }
+}
+
+/** 요소가 컴포지션에서 빠지면 등록을 지워, 사라진 요소 자리로 빛이 그려지지 않게 한다. */
+private class BeamAnchorNode(private var anchors: BeamAnchors, private var id: Any) :
+    Modifier.Node(),
+    GlobalPositionAwareModifierNode {
+    private var coordinates: LayoutCoordinates? = null
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        this.coordinates = coordinates
+        anchors.place(id, this, coordinates)
+    }
+
+    fun update(newAnchors: BeamAnchors, newId: Any) {
+        if (newAnchors === anchors && newId == id) return
+        anchors.remove(id, this)
+        anchors = newAnchors
+        id = newId
+        coordinates?.takeIf { it.isAttached }?.let { anchors.place(id, this, it) }
+    }
+
+    override fun onDetach() {
+        anchors.remove(id, this)
+        coordinates = null
+    }
 }
 
 /** 등록된 끝점. 위치는 상태라 요소가 움직이면 그리기 단계만 다시 돈다. */
@@ -122,10 +163,20 @@ private class BeamAnchors {
     val container = mutableStateOf<LayoutCoordinates?>(null)
     private val rects = mutableStateMapOf<Any, Rect>()
 
-    fun place(id: Any, coordinates: LayoutCoordinates) {
+    // 같은 id를 두 요소가 쓰면 마지막으로 배치된 요소가 주인이다. 주인이 아닌 요소가 빠질 때는 등록을 남긴다.
+    private val owners = HashMap<Any, Any>()
+
+    fun place(id: Any, owner: Any, coordinates: LayoutCoordinates) {
         val origin = coordinates.positionInRoot()
         val rect = Rect(origin, Size(coordinates.size.width.toFloat(), coordinates.size.height.toFloat()))
+        owners[id] = owner
         if (rects[id] != rect) rects[id] = rect
+    }
+
+    fun remove(id: Any, owner: Any) {
+        if (owners[id] !== owner) return
+        owners.remove(id)
+        rects.remove(id)
     }
 
     fun centerOf(id: Any): Offset? {
