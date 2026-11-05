@@ -88,13 +88,14 @@ public fun KLiveWaveform(
         }
     }
     val interval = sampleIntervalMs.coerceAtLeast(MIN_INTERVAL_MS) / MILLIS
+    val bars = remember { BarGeometry() }
     Box(
         modifier
             .heightIn(min = MIN_HEIGHT)
             .loopVisibility(clock)
             .clearAndSetSemantics { }
             .drawBehind {
-                val bars = BarGeometry(barWidth.toPx(), barGap.toPx(), size)
+                bars.update(barWidth.toPx(), barGap.toPx(), size)
                 if (still) {
                     // stillTick을 읽어 두어야 0.25초마다 다시 그린다.
                     if (active && stillTick >= 0) ring.fill(latestLevel().coerceIn(0f, 1f))
@@ -145,13 +146,14 @@ public fun KWaveform(
     val scrub = remember { ScrubState() }
     val buckets = remember(samples) { WaveBuckets(samples) }
     val name = label ?: stringResource(R.string.kinetica_ui_waveform_position)
+    val bars = remember { BarGeometry() }
     Box(
         modifier
             .heightIn(min = MIN_HEIGHT)
             .waveSemantics(WaveA11y(name, durationMillis, onSeek), { latestProgress() })
             .then(if (onSeek != null) Modifier.waveInput(scrub, rtl, { latestProgress() }, onSeek) else Modifier)
             .drawBehind {
-                val bars = BarGeometry(barWidth.toPx(), barGap.toPx(), size)
+                bars.update(barWidth.toPx(), barGap.toPx(), size)
                 val values = buckets.forCount(bars.count)
                 val at = (if (scrub.value >= 0f) scrub.value else latestProgress()).coerceIn(0f, 1f)
                 flip(rtl) {
@@ -228,14 +230,27 @@ private class ScrubState {
     var value by mutableFloatStateOf(-1f)
 }
 
-/** 막대 폭과 간격, 그릴 수 있는 막대 수(px). */
-private class BarGeometry(val width: Float, gap: Float, val area: Size) {
-    val pitch: Float = max(width + gap, 1f)
-    val count: Int = ((area.width + gap) / pitch).toInt().coerceIn(0, MAX_BARS)
+/** 막대 폭과 간격, 그릴 수 있는 막대 수(px). 그리기마다 새로 만들지 않고 값만 바꿔 쓴다. */
+private class BarGeometry {
+    var width = 0f
+        private set
+    var area = Size.Zero
+        private set
+    var pitch = 1f
+        private set
+    var count = 0
+        private set
+
+    fun update(width: Float, gap: Float, area: Size) {
+        this.width = width
+        this.area = area
+        pitch = max(width + gap, 1f)
+        count = ((area.width + gap) / pitch).toInt().coerceIn(0, MAX_BARS)
+    }
 }
 
 /** 표본을 막대 수에 맞춰 줄인 값. 막대 수가 바뀔 때만 다시 계산하고 배열은 다시 쓴다. */
-private class WaveBuckets(private val samples: FloatArray) {
+internal class WaveBuckets(private val samples: FloatArray) {
     private val values = FloatArray(MAX_BARS)
     private var count = -1
     private val peak = samples.fold(0f) { acc, v -> max(acc, v) }
@@ -243,9 +258,11 @@ private class WaveBuckets(private val samples: FloatArray) {
     fun forCount(n: Int): FloatArray {
         if (n == count) return values
         count = n
+        val total = samples.size.toLong()
         for (i in 0 until n) {
-            val from = i * samples.size / n
-            val to = max(from + 1, (i + 1) * samples.size / n).coerceAtMost(samples.size)
+            // 표본이 아주 많으면 Int 곱이 넘치므로 Long으로 나눈다.
+            val from = (i * total / n).toInt()
+            val to = max(from + 1, ((i + 1) * total / n).toInt()).coerceAtMost(samples.size)
             var top = 0f
             for (j in from until to) top = max(top, samples[j])
             values[i] = if (peak > 0f) top / peak else 0f

@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -137,7 +138,9 @@ internal fun CountdownPill(spec: CountdownSpec, look: TimePillLook, label: Strin
         val style = look.textStyle.merge(TextStyle(color = look.textStyle.color.takeIf { it.isSpecified } ?: ink))
         when (look.progress) {
             KPillProgress.Ring -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(RING_SIZE).drawBehind { drawPillRing(fraction.value, accent, ink) })
+                val density = LocalDensity.current
+                val ring = remember(density) { PillRingStrokes(with(density) { RING_STROKE.toPx() }) }
+                Box(Modifier.size(RING_SIZE).drawBehind { drawPillRing(fraction.value, accent, ink, ring) })
                 Spacer(Modifier.width(PILL_GAP))
                 RollingText(text, style = style)
             }
@@ -290,11 +293,17 @@ internal fun elapsedText(elapsedMillis: Long): String =
 
 private fun countdownSeconds(left: Long): Long = (left + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND
 
-private fun DrawScope.drawPillRing(fraction: Float, accent: Color, ink: Color) {
-    val stroke = RING_STROKE.toPx()
+/** 진행 링의 선. 그리기마다 만들지 않도록 밀도가 바뀔 때만 만든다. */
+private class PillRingStrokes(val width: Float) {
+    val track = Stroke(width)
+    val sweep = Stroke(width, cap = StrokeCap.Round)
+}
+
+private fun DrawScope.drawPillRing(fraction: Float, accent: Color, ink: Color, ring: PillRingStrokes) {
+    val stroke = ring.width
     val inset = stroke / 2
     val arc = Size(size.width - stroke, size.height - stroke)
-    drawCircle(ink.copy(alpha = TRACK_ALPHA), radius = size.minDimension / 2 - inset, style = Stroke(stroke))
+    drawCircle(ink.copy(alpha = TRACK_ALPHA), radius = size.minDimension / 2 - inset, style = ring.track)
     val sweep = FULL_TURN * fraction.coerceIn(0f, 1f)
     if (sweep > 0f) {
         drawArc(
@@ -304,7 +313,7 @@ private fun DrawScope.drawPillRing(fraction: Float, accent: Color, ink: Color) {
             useCenter = false,
             topLeft = Offset(inset, inset),
             size = arc,
-            style = Stroke(stroke, cap = StrokeCap.Round),
+            style = ring.sweep,
         )
     }
 }

@@ -1,6 +1,7 @@
 package com.naury.kinetica.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -60,6 +63,8 @@ public fun KVoiceRecordingBar(
     val elapsed by rememberRecordingTime(state)
     Row(
         modifier
+            // 입력란 위에 겹쳐 놓으므로 녹음 중 터치가 아래 입력란에 닿아 키보드가 뜨지 않게 줄이 모두 받아 버린다.
+            .pointerInput(Unit) { awaitEachGesture { swallowGesture() } }
             .heightIn(min = KMetrics.MinTouch)
             .kSurface(surface.forField(), shape)
             .padding(horizontal = 14.dp),
@@ -116,6 +121,14 @@ private fun CancelText(state: KVoiceRecorderState, color: Color, shape: Shape) {
         style = TextStyle(color = color, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
         maxLines = 1,
     )
+}
+
+/** 손가락이 모두 떨어질 때까지 사건을 소비한다. 안쪽의 '녹음 취소'는 먼저 사건을 받으므로 그대로 눌린다. */
+private suspend fun AwaitPointerEventScope.swallowGesture() {
+    do {
+        val event = awaitPointerEvent()
+        event.changes.forEach { it.consume() }
+    } while (event.changes.any { it.pressed })
 }
 
 /** 녹음 시간(ms). 초가 바뀔 때만 값이 바뀐다. */

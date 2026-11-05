@@ -309,6 +309,8 @@ internal fun LiveBubble(state: KLiveActivityState, activity: KLiveActivity, visi
     val latestId by rememberUpdatedState(activity.id)
     val expandLabel = stringResource(R.string.kinetica_ui_notify_expand)
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val density = LocalDensity.current
+    val ring = remember(density) { Stroke(with(density) { LIVE_RING.toPx() }) }
     Box(
         Modifier
             .size(look.compactHeight)
@@ -345,7 +347,7 @@ internal fun LiveBubble(state: KLiveActivityState, activity: KLiveActivity, visi
             .kSurface(look.surface, CircleShape)
             .drawWithContent {
                 drawContent()
-                activity.progress?.let { drawBubbleRing(it().coerceIn(0f, 1f), accent, look.surface.contentColor) }
+                activity.progress?.let { drawBubbleRing(it().coerceIn(0f, 1f), accent, look.surface.contentColor, ring) }
             },
         contentAlignment = Alignment.Center,
     ) {
@@ -356,12 +358,12 @@ internal fun LiveBubble(state: KLiveActivityState, activity: KLiveActivity, visi
     }
 }
 
-private fun DrawScope.drawBubbleRing(progress: Float, accent: Color, ink: Color) {
-    val stroke = LIVE_RING.toPx()
-    val inset = stroke / 2 + LIVE_RING_INSET.toPx()
+/** [ring]은 그리기마다 만들지 않도록 밀도가 바뀔 때만 만든 선이다. */
+private fun DrawScope.drawBubbleRing(progress: Float, accent: Color, ink: Color, ring: Stroke) {
+    val inset = ring.width / 2 + LIVE_RING_INSET.toPx()
     val arc = Size(size.width - inset * 2, size.height - inset * 2)
-    drawArc(ink.copy(alpha = LIVE_TRACK_ALPHA), 0f, LIVE_FULL_TURN, false, Offset(inset, inset), arc, style = Stroke(stroke))
-    if (progress > 0f) drawArc(accent, LIVE_TWELVE, LIVE_FULL_TURN * progress, false, Offset(inset, inset), arc, style = Stroke(stroke))
+    drawArc(ink.copy(alpha = LIVE_TRACK_ALPHA), 0f, LIVE_FULL_TURN, false, Offset(inset, inset), arc, style = ring)
+    if (progress > 0f) drawArc(accent, LIVE_TWELVE, LIVE_FULL_TURN * progress, false, Offset(inset, inset), arc, style = ring)
 }
 
 private const val LIVE_MORPH_DAMPING = 0.7f

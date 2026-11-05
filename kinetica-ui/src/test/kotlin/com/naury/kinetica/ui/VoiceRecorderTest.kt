@@ -20,7 +20,9 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -47,7 +49,7 @@ class VoiceRecorderTest {
     private var now = 10_000L
     private val events = mutableListOf<String>()
 
-    private fun setUpRecorder(state: KVoiceRecorderState, rtl: Boolean = false) {
+    private fun setUpRecorder(state: KVoiceRecorderState, rtl: Boolean = false, enabled: () -> Boolean = { true }) {
         compose.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                 Box(Modifier.fillMaxSize().padding(top = 200.dp), contentAlignment = Alignment.Center) {
@@ -58,6 +60,7 @@ class VoiceRecorderTest {
                         onCancel = { events += "cancel" },
                         state = state,
                         modifier = Modifier.testTag("mic"),
+                        enabled = enabled(),
                     )
                 }
             }
@@ -255,5 +258,97 @@ class VoiceRecorderTest {
         compose.waitForIdle()
         compose.onNodeWithTag("voice").assertDoesNotExist()
         compose.onNodeWithContentDescription("Send").performClick()
+    }
+
+    @Test
+    fun `녹음 중 터치가 취소되면 보내지 않고 버린다`() {
+        val state = KVoiceRecorderState { now }
+        setUpRecorder(state)
+        compose.onNodeWithTag("mic").performTouchInput {
+            down(center)
+            advanceEventTime(viewConfiguration.longPressTimeoutMillis + 50)
+            move()
+        }
+        compose.waitForIdle()
+        assertThat(state.phase).isEqualTo(KVoiceRecorderPhase.Recording)
+        compose.onNodeWithTag("mic").performTouchInput { cancel() }
+        compose.waitForIdle()
+        assertThat(events).containsExactly("start", "cancel").inOrder()
+        assertThat(state.isActive).isFalse()
+    }
+
+    @Test
+    fun `녹음 중 버튼이 꺼지면 녹음을 버린다`() {
+        val state = KVoiceRecorderState { now }
+        var enabled by mutableStateOf(true)
+        setUpRecorder(state, enabled = { enabled })
+        compose.onNodeWithTag("mic").performTouchInput {
+            down(center)
+            advanceEventTime(viewConfiguration.longPressTimeoutMillis + 50)
+            move()
+        }
+        compose.waitForIdle()
+        assertThat(state.phase).isEqualTo(KVoiceRecorderPhase.Recording)
+        enabled = false
+        compose.waitForIdle()
+        assertThat(events).containsExactly("start", "cancel").inOrder()
+        assertThat(state.isActive).isFalse()
+    }
+
+    @Test
+    fun `잠긴 녹음 중에는 녹음 줄이 입력란 터치를 막고 글자가 들어와도 녹음을 버리지 않는다`() {
+        val state = KVoiceRecorderState { now }
+        var draft by mutableStateOf("")
+        compose.setContent {
+            Box(Modifier.fillMaxSize().padding(top = 200.dp)) {
+                Box {
+                    KChatInput(
+                        draft,
+                        { draft = it },
+                        onSend = { events += "text" },
+                        voiceButton = {
+                            KVoiceRecorderButton(
+                                onStart = { events += "start" },
+                                onSend = { events += "send:$it" },
+                                onCancel = { events += "cancel" },
+                                state = state,
+                                modifier = Modifier.testTag("mic"),
+                            )
+                        },
+                    )
+                    if (state.isActive) KVoiceRecordingBar(state, { 0.5f }, Modifier.matchParentSize().padding(end = 52.dp).testTag("bar"))
+                }
+            }
+        }
+        compose.onNodeWithTag("mic").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertThat(state.phase).isEqualTo(KVoiceRecorderPhase.Locked)
+
+        compose.onNodeWithTag("bar").performTouchInput { click(Offset(width * 0.3f, height / 2f)) }
+        compose.waitForIdle()
+        compose.onNode(hasSetTextAction()).assertIsNotFocused()
+
+        draft = "안녕"
+        compose.waitForIdle()
+        assertThat(state.phase).isEqualTo(KVoiceRecorderPhase.Locked)
+        compose.onNodeWithTag("mic").assertExists()
+        assertThat(events).containsExactly("start")
+
+        now += 2_000
+        compose.onNodeWithTag("mic").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertThat(events).containsExactly("start", "send:2000").inOrder()
+        // 녹음이 끝나면 글자를 보낼 버튼으로 돌아온다.
+        compose.onNodeWithTag("mic").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Send").assertExists()
+    }
+
+    @Test
+    fun `표본이 아주 많아도 막대 값을 범위 안에서 계산한다`() {
+        val samples = FloatArray(9_000_000) { 0.5f }
+        samples[samples.lastIndex] = 2f
+        val values = WaveBuckets(samples).forCount(256)
+        assertThat(values[0]).isEqualTo(0.25f)
+        assertThat(values[255]).isEqualTo(1f)
     }
 }

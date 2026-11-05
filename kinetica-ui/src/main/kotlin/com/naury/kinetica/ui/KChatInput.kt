@@ -18,8 +18,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -213,6 +218,9 @@ public fun KChatInput(
     )
 }
 
+/** 입력줄 끝 자리에 놓인 녹음 버튼이 녹음 중인지 알려 주는 자리. 입력줄 밖에서는 null이다. */
+internal val LocalChatVoiceHold = staticCompositionLocalOf<MutableState<Boolean>?> { null }
+
 /** 두 오버로드가 같이 쓰는 설정 */
 private class ChatOptions(
     val onAttach: (() -> Unit)?,
@@ -284,8 +292,10 @@ private fun ChatInputRow(
             },
         )
         val slot = if (enabled) options.voice.button else null
-        if (slot != null && !canSend) {
-            slot()
+        val holding = remember { mutableStateOf(false) }
+        // 녹음 중에 글자가 들어와도 버튼을 빼면 녹음이 말없이 버려지므로, 녹음이 끝날 때까지 녹음 버튼을 둔다.
+        if (slot != null && (!canSend || holding.value)) {
+            CompositionLocalProvider(LocalChatVoiceHold provides holding) { slot() }
         } else {
             val voice = if (enabled && slot == null) options.voice.onClick else null
             SendButton(canSend, voice, surface) { if (canSend) send() else voice?.invoke() }

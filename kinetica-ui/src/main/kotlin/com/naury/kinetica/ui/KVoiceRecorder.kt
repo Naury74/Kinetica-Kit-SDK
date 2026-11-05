@@ -195,6 +195,14 @@ public fun KVoiceRecorderButton(
     val callbacks = RecorderCallbacks(onStart, onLock, onCancel, onSend)
     SideEffect { state.callbacks = callbacks }
     DisposableEffect(state) { onDispose { state.cancel() } }
+    // 꺼지면 누르기 수정자가 빠져 손가락 추적이 끊기므로, 남은 녹음은 여기서 버린다.
+    if (!enabled) SideEffect { state.cancel() }
+    val hold = LocalChatVoiceHold.current
+    if (hold != null) {
+        val active = state.isActive
+        SideEffect { hold.value = active }
+        DisposableEffect(hold) { onDispose { hold.value = false } }
+    }
     val density = LocalDensity.current
     state.cancelDistance = with(density) { CANCEL_DISTANCE.toPx() }
     state.lockDistance = with(density) { LOCK_DISTANCE.toPx() }
@@ -385,7 +393,11 @@ private suspend fun AwaitPointerEventScope.trackHold(
         if (!decided) decided = followHold(state, change.position - start, rtl, haptic)
         change = awaitPointerEvent().changes.firstOrNull { it.id == id }
     }
-    if (!decided && state.phase == KVoiceRecorderPhase.Recording) {
+    if (decided || state.phase != KVoiceRecorderPhase.Recording) return
+    // 부모가 터치를 가로채거나 시스템이 제스처를 가져가면 Compose는 이미 소비된 놓기 사건을 보낸다. 손가락을 뗀 것이 아니므로 버린다.
+    if (change == null || change.isConsumed) {
+        state.cancel()
+    } else {
         haptic.performHapticFeedback(HapticFeedbackType.Confirm)
         state.send()
     }
