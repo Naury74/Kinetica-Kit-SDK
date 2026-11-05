@@ -34,5 +34,8 @@
         <activity android:name=".recent.IslandKeypadHostActivity" android:exported="false" />
         <activity android:name=".recent.CallHostActivity" android:exported="false" android:supportsPictureInPicture="true" />
         <activity android:name=".recent.CallPartsActivity" android:exported="false" />
+        <activity android:name=".recent.NewKitM3Activity" android:exported="false" />
+        <activity android:name=".recent.NewKitScaffoldActivity" android:exported="false" />
+        <activity android:name=".recent.NewKitXmlActivity" android:exported="false" />
     </application>
 </manifest>
