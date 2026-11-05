@@ -34,9 +34,12 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.setProgress
@@ -327,7 +330,9 @@ private fun Modifier.singleCircleDrag(control: SingleCircleControl, thickness: D
         val dial = control.dial
         if (!m.onBand(position)) return@circleDrag false
         val rel = dial.relAt(position, m.center)
-        control.rel = dial.follow(rel, if (rel <= dial.sweep) rel else dial.relOf(control.value))
+        val current = dial.relOf(control.value)
+        // 손잡이를 잡았으면 지금 값에서 이어 간다. 한 바퀴짜리 원에서는 끝값과 처음 값의 손잡이가 같은 자리라 각도만 보면 반대 끝으로 튄다.
+        control.rel = if (angleGap(rel, current) <= GRAB_DEGREES) current else dial.follow(rel, if (rel <= dial.sweep) rel else current)
         control.ticker.reset(dial, control.value)
         control.emit(dial.snap(dial.valueOfRel(control.rel)))
         true
@@ -446,6 +451,9 @@ private fun CircleHandleNode(spec: CircleHandleSpec, index: Int, name: String, v
     val shown = value.value
     val text = spec.format(shown)
     val range = spec.dial.range
+    // 범위는 한 바퀴 이어지지만 TalkBack의 올리고 내리기는 범위 끝에서 멈추므로, 끝을 넘어 도는 동작을 따로 둔다.
+    val increase = stringResource(R.string.kinetica_ui_increase)
+    val decrease = stringResource(R.string.kinetica_ui_decrease)
     Box(
         Modifier
             .circleHandlePlacement(spec.dial, value, spec.thickness)
@@ -461,7 +469,15 @@ private fun CircleHandleNode(spec: CircleHandleSpec, index: Int, name: String, v
                 contentDescription = name
                 stateDescription = text
                 progressBarRangeInfo = ProgressBarRangeInfo(shown, range, stepsOf(spec.dial))
-                if (spec.enabled) setProgress { spec.control.jump(index, it) } else disabled()
+                if (spec.enabled) {
+                    setProgress { spec.control.jump(index, it) }
+                    customActions = listOf(
+                        CustomAccessibilityAction(increase) { spec.control.jump(index, shown + spec.dial.keyStep) },
+                        CustomAccessibilityAction(decrease) { spec.control.jump(index, shown - spec.dial.keyStep) },
+                    )
+                } else {
+                    disabled()
+                }
             }
             .onKeyEvent { event ->
                 val direction = if (spec.enabled && event.type == KeyEventType.KeyDown) circleKey(event.key) else null
@@ -494,3 +510,12 @@ private const val DISABLED_ALPHA = 0.4f
 private const val TRACK_ALPHA = 0.12f
 private const val TICK_ALPHA = 0.45f
 private const val MUTED_ALPHA = 0.6f
+
+/** 두 각도(도) 사이의 가까운 쪽 차이(0..180). */
+private fun angleGap(a: Float, b: Float): Float {
+    val d = ((a - b) % FULL_CIRCLE + FULL_CIRCLE) % FULL_CIRCLE
+    return minOf(d, FULL_CIRCLE - d)
+}
+
+private const val GRAB_DEGREES = 10f
+private const val FULL_CIRCLE = 360f

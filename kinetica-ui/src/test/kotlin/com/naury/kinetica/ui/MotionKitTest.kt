@@ -266,6 +266,25 @@ class MotionKitTest {
     }
 
     @Test
+    fun `독을 누른 채 터치가 취소되면 아무것도 실행하지 않는다`() {
+        var opened = ""
+        compose.setContent {
+            KDock(
+                listOf("하나", "둘").map { name ->
+                    KDockItem(name, onClick = { opened = name }) { Box(Modifier.background(Color.Gray)) }
+                },
+                Modifier.testTag("dock"),
+            )
+        }
+        compose.onNodeWithTag("dock").performTouchInput {
+            down(center)
+            cancel()
+        }
+        compose.waitForIdle()
+        assertThat(opened).isEmpty()
+    }
+
+    @Test
     fun `궤도 아이콘은 TalkBack에서 숨고 돌며 애니메이션 삭제면 멈춘다`() {
         var reduced by mutableStateOf(false)
         var where = Offset.Zero

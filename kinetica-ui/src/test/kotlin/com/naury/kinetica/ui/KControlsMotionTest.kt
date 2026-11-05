@@ -220,6 +220,29 @@ class KControlsMotionTest {
     }
 
     @Test
+    fun `끝값에 있는 원형 슬라이더 손잡이를 잡아도 반대쪽 끝으로 튀지 않는다`() {
+        var value by mutableFloatStateOf(100f)
+        compose.setContent { KCircularSlider(value, { value = it }, "볼륨", Modifier.size(200.dp).testTag("dial")) }
+        compose.onNodeWithTag("dial").performTouchInput {
+            // 12시 손잡이의 시계 방향 쪽 절반을 누른다.
+            val r = width * 0.44f
+            val a = Math.toRadians(-90.0 + 2.0)
+            down(Offset(center.x + r * Math.cos(a).toFloat(), center.y + r * Math.sin(a).toFloat()))
+            up()
+        }
+        assertThat(value).isEqualTo(100f)
+    }
+
+    @Test
+    fun `원형 범위 슬라이더는 TalkBack 동작으로 범위 처음을 넘어 내려간다`() {
+        var end by mutableFloatStateOf(0f)
+        compose.setContent { KCircularRangeSlider(23f, end, { _, e -> end = e }, "취침", "기상", step = 0.25f) }
+        val actions = compose.onNodeWithContentDescription("기상").fetchSemanticsNode().config[SemanticsActions.CustomActions]
+        actions.last().action()
+        assertThat(end).isEqualTo(23.75f)
+    }
+
+    @Test
     fun `원형 범위 슬라이더의 값은 한 바퀴 돌려 범위 안으로 맞춘다`() {
         val dial = CircleDial(0f..24f, -90f, 360f, 0.25f, 24, periodic = true)
         assertThat(dial.wrap(25f)).isEqualTo(1f)

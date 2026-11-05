@@ -27,6 +27,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
@@ -110,5 +111,55 @@ class QuickStartTest {
                 .clickable {}
                 .padding(16.dp),
         ) { Text("항목") }
+    }
+
+    @Test
+    fun `빠른 시작의 칩 메뉴, 렌즈 손잡이, 라이브 활동 예제가 그려지고 동작한다`() {
+        var order = "최신순"
+        val live = KLiveActivityState()
+        val endsAt = System.currentTimeMillis() + 5 * 60_000L
+        compose.setContent {
+            KineticaTheme {
+                KineticaScaffold {
+                    Column {
+                        var sorting by remember { mutableStateOf(false) }
+                        KMorphMenu(
+                            "정렬: $order",
+                            sorting,
+                            { sorting = it },
+                            listOf(
+                                KMenuEntry.Action("최신순") { order = "최신순" },
+                                KMenuEntry.Action("인기순") { order = "인기순" },
+                            ),
+                        )
+                        var volume by remember { mutableFloatStateOf(0.4f) }
+                        var range by remember { mutableIntStateOf(0) }
+                        KSlider(volume, { volume = it }, Modifier.fillMaxWidth(), lens = true)
+                        KSegmentedControl(listOf("일", "주", "월"), range, { range = it }, lens = true)
+                        KButton("타이머 시작", onClick = {
+                            live.start(
+                                KLiveActivity(
+                                    "timer",
+                                    "타이머",
+                                    "5분",
+                                    leading = { Text("⏱") },
+                                    trailing = { KCountdownPill(endsAt, 5 * 60_000L) },
+                                    expanded = { Text("5분 타이머") },
+                                ),
+                            )
+                        })
+                    }
+                    KLiveActivityHost(live, position = KLiveActivityPosition.Bottom)
+                }
+            }
+        }
+        compose.onNodeWithText("정렬: 최신순").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("인기순").performClick()
+        compose.waitForIdle()
+        assertThat(order).isEqualTo("인기순")
+        compose.onNodeWithText("타이머 시작").performClick()
+        compose.waitForIdle()
+        assertThat(live.activities.map { it.id }).containsExactly("timer")
     }
 }

@@ -25,6 +25,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
@@ -161,7 +162,9 @@ private fun Modifier.dockPointer(model: DockModel, onLaunch: (Int) -> Unit): Mod
         while (true) {
             val event = awaitPointerEvent()
             val change = event.changes.firstOrNull() ?: continue
-            val inside = change.position.y >= -slop && change.position.y <= size.height + slop
+            // 부모가 터치를 가로채면 Compose는 이미 소비된 놓기 사건을 보낸다. 이것은 손가락을 뗀 것이 아니라 취소이므로 실행하지 않는다.
+            val cancelled = event.type == PointerEventType.Release && change.isConsumed
+            val inside = !cancelled && change.position.y >= -slop && change.position.y <= size.height + slop
             val launch = model.follow(event.type, change.position.x, inside, change.type == PointerType.Mouse)
             if (launch >= 0) onLaunch(launch)
             if (model.pressed) change.consume()
