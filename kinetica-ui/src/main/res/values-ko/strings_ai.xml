@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_ai_thinking">생각 중</string>
+    <string name="kinetica_ui_ai_thinking_for">생각 중 %1$s</string>
+    <string name="kinetica_ui_ai_thought_for">%1$s 동안 생각함</string>
+    <string name="kinetica_ui_ai_seconds">%1$d초</string>
+    <string name="kinetica_ui_ai_minutes">%1$d분 %2$d초</string>
+    <string name="kinetica_ui_ai_step_done">완료</string>
+    <string name="kinetica_ui_ai_step_running">진행 중</string>
+    <string name="kinetica_ui_ai_step_stopped">멈춤</string>
+    <string name="kinetica_ui_ai_code">코드</string>
+    <string name="kinetica_ui_ai_code_in">%1$s 코드</string>
+    <string name="kinetica_ui_ai_prompt_hint">무엇이든 물어보세요</string>
+    <string name="kinetica_ui_ai_stop">생성 멈추기</string>
+</resources>

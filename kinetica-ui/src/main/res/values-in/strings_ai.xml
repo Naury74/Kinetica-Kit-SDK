@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_ai_thinking">Berpikir</string>
+    <string name="kinetica_ui_ai_thinking_for">Berpikir %1$s</string>
+    <string name="kinetica_ui_ai_thought_for">Berpikir selama %1$s</string>
+    <string name="kinetica_ui_ai_seconds">%1$d dtk</string>
+    <string name="kinetica_ui_ai_minutes">%1$d mnt %2$d dtk</string>
+    <string name="kinetica_ui_ai_step_done">Selesai</string>
+    <string name="kinetica_ui_ai_step_running">Sedang berjalan</string>
+    <string name="kinetica_ui_ai_step_stopped">Dihentikan</string>
+    <string name="kinetica_ui_ai_code">Kode</string>
+    <string name="kinetica_ui_ai_code_in">Kode %1$s</string>
+    <string name="kinetica_ui_ai_prompt_hint">Tanyakan apa saja</string>
+    <string name="kinetica_ui_ai_stop">Hentikan pembuatan</string>
+</resources>

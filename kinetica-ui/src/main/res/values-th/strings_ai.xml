@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_ai_thinking">กำลังคิด</string>
+    <string name="kinetica_ui_ai_thinking_for">กำลังคิด %1$s</string>
+    <string name="kinetica_ui_ai_thought_for">คิดเป็นเวลา %1$s</string>
+    <string name="kinetica_ui_ai_seconds">%1$d วินาที</string>
+    <string name="kinetica_ui_ai_minutes">%1$d นาที %2$d วินาที</string>
+    <string name="kinetica_ui_ai_step_done">เสร็จแล้ว</string>
+    <string name="kinetica_ui_ai_step_running">กำลังดำเนินการ</string>
+    <string name="kinetica_ui_ai_step_stopped">หยุดแล้ว</string>
+    <string name="kinetica_ui_ai_code">โค้ด</string>
+    <string name="kinetica_ui_ai_code_in">โค้ด %1$s</string>
+    <string name="kinetica_ui_ai_prompt_hint">ถามอะไรก็ได้</string>
+    <string name="kinetica_ui_ai_stop">หยุดสร้าง</string>
+</resources>

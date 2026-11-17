@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_ai_thinking">Thinking</string>
+    <string name="kinetica_ui_ai_thinking_for">Thinking %1$s</string>
+    <string name="kinetica_ui_ai_thought_for">Thought for %1$s</string>
+    <string name="kinetica_ui_ai_seconds">%1$ds</string>
+    <string name="kinetica_ui_ai_minutes">%1$dm %2$ds</string>
+    <string name="kinetica_ui_ai_step_done">Done</string>
+    <string name="kinetica_ui_ai_step_running">In progress</string>
+    <string name="kinetica_ui_ai_step_stopped">Stopped</string>
+    <string name="kinetica_ui_ai_code">Code</string>
+    <string name="kinetica_ui_ai_code_in">%1$s code</string>
+    <string name="kinetica_ui_ai_prompt_hint">Ask anything</string>
+    <string name="kinetica_ui_ai_stop">Stop generating</string>
+</resources>

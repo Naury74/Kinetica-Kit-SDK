@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_ai_thinking">Думает</string>
+    <string name="kinetica_ui_ai_thinking_for">Думает %1$s</string>
+    <string name="kinetica_ui_ai_thought_for">Думал %1$s</string>
+    <string name="kinetica_ui_ai_seconds">%1$d с</string>
+    <string name="kinetica_ui_ai_minutes">%1$d мин %2$d с</string>
+    <string name="kinetica_ui_ai_step_done">Готово</string>
+    <string name="kinetica_ui_ai_step_running">Выполняется</string>
+    <string name="kinetica_ui_ai_step_stopped">Остановлено</string>
+    <string name="kinetica_ui_ai_code">Код</string>
+    <string name="kinetica_ui_ai_code_in">Код %1$s</string>
+    <string name="kinetica_ui_ai_prompt_hint">Спросите что угодно</string>
+    <string name="kinetica_ui_ai_stop">Остановить генерацию</string>
+</resources>

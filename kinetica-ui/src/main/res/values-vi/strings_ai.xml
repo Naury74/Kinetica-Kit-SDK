@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_ai_thinking">Đang suy nghĩ</string>
+    <string name="kinetica_ui_ai_thinking_for">Đang suy nghĩ %1$s</string>
+    <string name="kinetica_ui_ai_thought_for">Đã suy nghĩ %1$s</string>
+    <string name="kinetica_ui_ai_seconds">%1$d giây</string>
+    <string name="kinetica_ui_ai_minutes">%1$d phút %2$d giây</string>
+    <string name="kinetica_ui_ai_step_done">Xong</string>
+    <string name="kinetica_ui_ai_step_running">Đang thực hiện</string>
+    <string name="kinetica_ui_ai_step_stopped">Đã dừng</string>
+    <string name="kinetica_ui_ai_code">Mã</string>
+    <string name="kinetica_ui_ai_code_in">Mã %1$s</string>
+    <string name="kinetica_ui_ai_prompt_hint">Hỏi bất cứ điều gì</string>
+    <string name="kinetica_ui_ai_stop">Dừng tạo</string>
+</resources>

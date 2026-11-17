@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_ai_thinking">Réflexion</string>
+    <string name="kinetica_ui_ai_thinking_for">Réflexion %1$s</string>
+    <string name="kinetica_ui_ai_thought_for">A réfléchi %1$s</string>
+    <string name="kinetica_ui_ai_seconds">%1$d s</string>
+    <string name="kinetica_ui_ai_minutes">%1$d min %2$d s</string>
+    <string name="kinetica_ui_ai_step_done">Terminé</string>
+    <string name="kinetica_ui_ai_step_running">En cours</string>
+    <string name="kinetica_ui_ai_step_stopped">Arrêté</string>
+    <string name="kinetica_ui_ai_code">Code</string>
+    <string name="kinetica_ui_ai_code_in">Code %1$s</string>
+    <string name="kinetica_ui_ai_prompt_hint">Posez votre question</string>
+    <string name="kinetica_ui_ai_stop">Arrêter la génération</string>
+</resources>
