@@ -87,7 +87,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.naurylab:kinetica-ui:1.0.0-alpha07")
+    implementation("com.naurylab:kinetica-ui:1.0.0-alpha06")
 }
 ```
 
