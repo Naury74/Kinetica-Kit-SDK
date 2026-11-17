@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tree_expanded">展開</string>
+    <string name="kinetica_ui_tree_collapsed">折りたたみ</string>
+    <string name="kinetica_ui_tree_position">レベル %1$d、%3$d 件中 %2$d 件目</string>
+    <string name="kinetica_ui_tree_select">選択</string>
+    <string name="kinetica_ui_kanban_to_left">左の列へ移動</string>
+    <string name="kinetica_ui_kanban_to_right">右の列へ移動</string>
+    <string name="kinetica_ui_kanban_position">%1$s、%3$d 件中 %2$d 件目</string>
+    <string name="kinetica_ui_kanban_empty">カードなし</string>
+    <string name="kinetica_ui_day_event">%1$s、%2$s〜%3$s</string>
+    <string name="kinetica_ui_day_new_event">%1$s に新しい予定</string>
+    <string name="kinetica_ui_mention_field">メッセージ</string>
+    <plurals name="kinetica_ui_kanban_count">
+        <item quantity="other">%1$s、カード %2$d 枚</item>
+    </plurals>
+    <plurals name="kinetica_ui_mention_suggestions">
+        <item quantity="other">候補 %1$d 件</item>
+    </plurals>
+</resources>

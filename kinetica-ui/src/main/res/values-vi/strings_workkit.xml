@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tree_expanded">Đã mở rộng</string>
+    <string name="kinetica_ui_tree_collapsed">Đã thu gọn</string>
+    <string name="kinetica_ui_tree_position">Cấp %1$d, %2$d trong %3$d</string>
+    <string name="kinetica_ui_tree_select">Chọn</string>
+    <string name="kinetica_ui_kanban_to_left">Chuyển sang cột bên trái</string>
+    <string name="kinetica_ui_kanban_to_right">Chuyển sang cột bên phải</string>
+    <string name="kinetica_ui_kanban_position">%1$s, %2$d trong %3$d</string>
+    <string name="kinetica_ui_kanban_empty">Không có thẻ</string>
+    <string name="kinetica_ui_day_event">%1$s, từ %2$s đến %3$s</string>
+    <string name="kinetica_ui_day_new_event">Sự kiện mới lúc %1$s</string>
+    <string name="kinetica_ui_mention_field">Tin nhắn</string>
+    <plurals name="kinetica_ui_kanban_count">
+        <item quantity="other">%1$s, %2$d thẻ</item>
+    </plurals>
+    <plurals name="kinetica_ui_mention_suggestions">
+        <item quantity="other">%1$d gợi ý</item>
+    </plurals>
+</resources>

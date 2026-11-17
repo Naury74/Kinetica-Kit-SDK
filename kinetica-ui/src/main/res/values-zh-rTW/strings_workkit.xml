@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tree_expanded">已展開</string>
+    <string name="kinetica_ui_tree_collapsed">已收合</string>
+    <string name="kinetica_ui_tree_position">第 %1$d 層，第 %2$d 項，共 %3$d 項</string>
+    <string name="kinetica_ui_tree_select">選取</string>
+    <string name="kinetica_ui_kanban_to_left">移到左側欄</string>
+    <string name="kinetica_ui_kanban_to_right">移到右側欄</string>
+    <string name="kinetica_ui_kanban_position">%1$s，第 %2$d 項，共 %3$d 項</string>
+    <string name="kinetica_ui_kanban_empty">沒有卡片</string>
+    <string name="kinetica_ui_day_event">%1$s，%2$s至%3$s</string>
+    <string name="kinetica_ui_day_new_event">%1$s 新增行程</string>
+    <string name="kinetica_ui_mention_field">訊息</string>
+    <plurals name="kinetica_ui_kanban_count">
+        <item quantity="other">%1$s，%2$d 張卡片</item>
+    </plurals>
+    <plurals name="kinetica_ui_mention_suggestions">
+        <item quantity="other">%1$d 個建議</item>
+    </plurals>
+</resources>

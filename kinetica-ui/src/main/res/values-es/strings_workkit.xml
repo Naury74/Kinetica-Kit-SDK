@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tree_expanded">Expandido</string>
+    <string name="kinetica_ui_tree_collapsed">Contraído</string>
+    <string name="kinetica_ui_tree_position">Nivel %1$d, %2$d de %3$d</string>
+    <string name="kinetica_ui_tree_select">Seleccionar</string>
+    <string name="kinetica_ui_kanban_to_left">Mover a la columna izquierda</string>
+    <string name="kinetica_ui_kanban_to_right">Mover a la columna derecha</string>
+    <string name="kinetica_ui_kanban_position">%1$s, %2$d de %3$d</string>
+    <string name="kinetica_ui_kanban_empty">Sin tarjetas</string>
+    <string name="kinetica_ui_day_event">%1$s, de %2$s a %3$s</string>
+    <string name="kinetica_ui_day_new_event">Nuevo evento a las %1$s</string>
+    <string name="kinetica_ui_mention_field">Mensaje</string>
+    <plurals name="kinetica_ui_kanban_count">
+        <item quantity="one">%1$s, %2$d tarjeta</item>
+        <item quantity="many">%1$s, %2$d tarjetas</item>
+        <item quantity="other">%1$s, %2$d tarjetas</item>
+    </plurals>
+    <plurals name="kinetica_ui_mention_suggestions">
+        <item quantity="one">%1$d sugerencia</item>
+        <item quantity="many">%1$d sugerencias</item>
+        <item quantity="other">%1$d sugerencias</item>
+    </plurals>
+</resources>

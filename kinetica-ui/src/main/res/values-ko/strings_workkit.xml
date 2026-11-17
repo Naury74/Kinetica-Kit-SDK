@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_tree_expanded">펼침</string>
+    <string name="kinetica_ui_tree_collapsed">접힘</string>
+    <string name="kinetica_ui_tree_position">수준 %1$d, %3$d개 중 %2$d번째</string>
+    <string name="kinetica_ui_tree_select">선택</string>
+    <string name="kinetica_ui_kanban_to_left">왼쪽 열로 이동</string>
+    <string name="kinetica_ui_kanban_to_right">오른쪽 열로 이동</string>
+    <string name="kinetica_ui_kanban_position">%1$s, %3$d개 중 %2$d번째</string>
+    <string name="kinetica_ui_kanban_empty">카드 없음</string>
+    <string name="kinetica_ui_day_event">%1$s, %2$s부터 %3$s까지</string>
+    <string name="kinetica_ui_day_new_event">%1$s에 새 일정</string>
+    <string name="kinetica_ui_mention_field">메시지</string>
+    <plurals name="kinetica_ui_kanban_count">
+        <item quantity="other">%1$s, 카드 %2$d개</item>
+    </plurals>
+    <plurals name="kinetica_ui_mention_suggestions">
+        <item quantity="other">추천 %1$d개</item>
+    </plurals>
+</resources>
