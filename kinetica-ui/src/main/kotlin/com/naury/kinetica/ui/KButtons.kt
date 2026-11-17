@@ -15,6 +15,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -228,7 +229,7 @@ public fun KButton(
 /** [KButton] 두 오버로드가 함께 쓰는 값 */
 @Immutable
 @Suppress("LongParameterList") // 공개 KButton의 파라미터를 그대로 옮겨 담는다.
-private class ButtonSpec(
+internal class ButtonSpec(
     val text: String,
     val variant: KVariant,
     val tone: KTone,
@@ -242,8 +243,29 @@ private class ButtonSpec(
     val contentColor: Color,
 )
 
+/**
+ * [KButton]을 바탕으로 한 변형이 더하는 것. [interactionSource]가 있으면 젤리 눌림 대신 그 출처로 눌림을 그리는 쪽에 맡기고,
+ * [surface]는 버튼 모양으로 자른 배경 위, 글자 아래에 그린다.
+ */
+internal class ButtonExtras(val interactionSource: MutableInteractionSource?, val surface: Modifier) {
+    /** 누를 수 있을 때의 눌림 효과. 출처를 받았으면 그쪽이 눌림을 그리므로 아무것도 더하지 않는다. */
+    @Composable
+    fun press(active: Boolean, amount: Float): Modifier = if (active && interactionSource == null) Modifier.jellyPress(amount) else Modifier
+
+    companion object {
+        val Default: ButtonExtras = ButtonExtras(null, Modifier)
+    }
+}
+
 @Composable
-private fun ButtonBody(spec: ButtonSpec, onClick: () -> Unit, modifier: Modifier, icon: Painter?, trailingIcon: Painter?) {
+internal fun ButtonBody(
+    spec: ButtonSpec,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    icon: Painter?,
+    trailingIcon: Painter?,
+    extras: ButtonExtras = ButtonExtras.Default,
+) {
     val text = spec.text
     val variant = spec.variant
     val tone = spec.tone
@@ -266,7 +288,7 @@ private fun ButtonBody(spec: ButtonSpec, onClick: () -> Unit, modifier: Modifier
     val positive = KineticaTheme.colors
     Box(
         modifier
-            .then(if (active) Modifier.jellyPress(design.motion.press) else Modifier)
+            .then(extras.press(active, design.motion.press))
             .graphicsLayer { alpha = if (enabled) 1f else DISABLED_ALPHA }
             .successMorph(morph, positive.positive, positive.onPositive)
             .then(if (fullWidth) Modifier.fillMaxWidth() else Modifier)
@@ -275,7 +297,7 @@ private fun ButtonBody(spec: ButtonSpec, onClick: () -> Unit, modifier: Modifier
             .variantBackground(variant, colors, surface, shape)
             .clip(shape)
             .clickable(
-                interactionSource = null,
+                interactionSource = extras.interactionSource,
                 // Text와 Outlined는 채운 배경이 없으므로 누르는 동안 깔리는 옅은 배경이 눌린 걸 알리는 유일한 표시다.
                 indication = KIndication(shape, content, if (variant.bare) PLAIN_PRESS_ALPHA else PRESS_ALPHA),
                 enabled = active,
@@ -284,6 +306,7 @@ private fun ButtonBody(spec: ButtonSpec, onClick: () -> Unit, modifier: Modifier
                 haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                 onClick()
             }
+            .then(extras.surface)
             .semantics { if (loading || success) stateDescription = busyLabel }
             // 앞 아이콘은 글자보다 시각적 무게가 가벼워, 그쪽 여백을 조금 줄여야 내용이 가운데로 보인다.
             .padding(

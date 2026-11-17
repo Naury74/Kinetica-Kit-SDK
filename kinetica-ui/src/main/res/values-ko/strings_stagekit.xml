@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_nstack_show_less">간단히</string>
+    <string name="kinetica_ui_nstack_clear_all">모두 지우기</string>
+    <string name="kinetica_ui_nstack_dismiss">지우기</string>
+    <string name="kinetica_ui_nstack_expand">펼치기</string>
+    <plurals name="kinetica_ui_nstack_summary">
+        <item quantity="other">%1$s 알림 %2$d개</item>
+    </plurals>
+    <plurals name="kinetica_ui_nstack_more">
+        <item quantity="other">%d개 더</item>
+    </plurals>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_nstack_show_less">Ẩn bớt</string>
+    <string name="kinetica_ui_nstack_clear_all">Xóa tất cả</string>
+    <string name="kinetica_ui_nstack_dismiss">Bỏ qua</string>
+    <string name="kinetica_ui_nstack_expand">Mở rộng</string>
+    <plurals name="kinetica_ui_nstack_summary">
+        <item quantity="other">%1$s, %2$d thông báo</item>
+    </plurals>
+    <plurals name="kinetica_ui_nstack_more">
+        <item quantity="other">%d thông báo khác</item>
+    </plurals>
+</resources>

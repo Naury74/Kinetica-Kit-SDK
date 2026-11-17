@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_nstack_show_less">Tampilkan lebih sedikit</string>
+    <string name="kinetica_ui_nstack_clear_all">Hapus semua</string>
+    <string name="kinetica_ui_nstack_dismiss">Tutup</string>
+    <string name="kinetica_ui_nstack_expand">Luaskan</string>
+    <plurals name="kinetica_ui_nstack_summary">
+        <item quantity="other">%1$s, %2$d notifikasi</item>
+    </plurals>
+    <plurals name="kinetica_ui_nstack_more">
+        <item quantity="other">%d lainnya</item>
+    </plurals>
+</resources>

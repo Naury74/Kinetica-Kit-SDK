@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_nstack_show_less">Свернуть</string>
+    <string name="kinetica_ui_nstack_clear_all">Очистить все</string>
+    <string name="kinetica_ui_nstack_dismiss">Закрыть</string>
+    <string name="kinetica_ui_nstack_expand">Развернуть</string>
+    <plurals name="kinetica_ui_nstack_summary">
+        <item quantity="one">%1$s, %2$d уведомление</item>
+        <item quantity="few">%1$s, %2$d уведомления</item>
+        <item quantity="many">%1$s, %2$d уведомлений</item>
+        <item quantity="other">%1$s, %2$d уведомления</item>
+    </plurals>
+    <plurals name="kinetica_ui_nstack_more">
+        <item quantity="one">Ещё %d</item>
+        <item quantity="few">Ещё %d</item>
+        <item quantity="many">Ещё %d</item>
+        <item quantity="other">Ещё %d</item>
+    </plurals>
+</resources>

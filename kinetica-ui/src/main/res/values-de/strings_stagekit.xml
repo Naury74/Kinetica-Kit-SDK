@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_nstack_show_less">Weniger anzeigen</string>
+    <string name="kinetica_ui_nstack_clear_all">Alle löschen</string>
+    <string name="kinetica_ui_nstack_dismiss">Schließen</string>
+    <string name="kinetica_ui_nstack_expand">Maximieren</string>
+    <plurals name="kinetica_ui_nstack_summary">
+        <item quantity="one">%1$s, %2$d Benachrichtigung</item>
+        <item quantity="other">%1$s, %2$d Benachrichtigungen</item>
+    </plurals>
+    <plurals name="kinetica_ui_nstack_more">
+        <item quantity="one">%d weitere</item>
+        <item quantity="other">%d weitere</item>
+    </plurals>
+</resources>

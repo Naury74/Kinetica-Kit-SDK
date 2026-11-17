@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_nstack_show_less">表示を減らす</string>
+    <string name="kinetica_ui_nstack_clear_all">すべて消去</string>
+    <string name="kinetica_ui_nstack_dismiss">消去</string>
+    <string name="kinetica_ui_nstack_expand">展開</string>
+    <plurals name="kinetica_ui_nstack_summary">
+        <item quantity="other">%1$sの通知 %2$d件</item>
+    </plurals>
+    <plurals name="kinetica_ui_nstack_more">
+        <item quantity="other">他%d件</item>
+    </plurals>
+</resources>

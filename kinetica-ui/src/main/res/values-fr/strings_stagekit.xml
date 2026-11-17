@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_nstack_show_less">Afficher moins</string>
+    <string name="kinetica_ui_nstack_clear_all">Tout effacer</string>
+    <string name="kinetica_ui_nstack_dismiss">Ignorer</string>
+    <string name="kinetica_ui_nstack_expand">Développer</string>
+    <plurals name="kinetica_ui_nstack_summary">
+        <item quantity="one">%1$s, %2$d notification</item>
+        <item quantity="many">%1$s, %2$d notifications</item>
+        <item quantity="other">%1$s, %2$d notifications</item>
+    </plurals>
+    <plurals name="kinetica_ui_nstack_more">
+        <item quantity="one">%d de plus</item>
+        <item quantity="many">%d de plus</item>
+        <item quantity="other">%d de plus</item>
+    </plurals>
+</resources>
