@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">valor más alto %1$s</string>
+    <string name="kinetica_ui_candle_open">Apertura</string>
+    <string name="kinetica_ui_candle_high">Máximo</string>
+    <string name="kinetica_ui_candle_low">Mínimo</string>
+    <string name="kinetica_ui_candle_close">Cierre</string>
+    <string name="kinetica_ui_candle_volume">Volumen</string>
+    <string name="kinetica_ui_candle_previous">Elemento anterior</string>
+    <string name="kinetica_ui_candle_next">Elemento siguiente</string>
+    <string name="kinetica_ui_review_average">Media de %1$s estrellas</string>
+    <string name="kinetica_ui_review_filter">Mostrar solo esta puntuación</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="one">%1$s reseña</item>
+        <item quantity="many">%1$s reseñas</item>
+        <item quantity="other">%1$s reseñas</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="one">%1$d estrella</item>
+        <item quantity="many">%1$d estrellas</item>
+        <item quantity="other">%1$d estrellas</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="one">Gráfico radial, %1$d eje, %2$d series</item>
+        <item quantity="many">Gráfico radial, %1$d ejes, %2$d series</item>
+        <item quantity="other">Gráfico radial, %1$d ejes, %2$d series</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="one">Mapa de árbol, %1$d elemento, total %2$s</item>
+        <item quantity="many">Mapa de árbol, %1$d elementos, total %2$s</item>
+        <item quantity="other">Mapa de árbol, %1$d elementos, total %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="one">Gráfico de velas, %1$d periodo, de %2$s a %3$s</item>
+        <item quantity="many">Gráfico de velas, %1$d periodos, de %2$s a %3$s</item>
+        <item quantity="other">Gráfico de velas, %1$d periodos, de %2$s a %3$s</item>
+    </plurals>
+</resources>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">höchster Wert %1$s</string>
+    <string name="kinetica_ui_candle_open">Eröffnung</string>
+    <string name="kinetica_ui_candle_high">Hoch</string>
+    <string name="kinetica_ui_candle_low">Tief</string>
+    <string name="kinetica_ui_candle_close">Schluss</string>
+    <string name="kinetica_ui_candle_volume">Volumen</string>
+    <string name="kinetica_ui_candle_previous">Vorheriger Eintrag</string>
+    <string name="kinetica_ui_candle_next">Nächster Eintrag</string>
+    <string name="kinetica_ui_review_average">Durchschnitt %1$s Sterne</string>
+    <string name="kinetica_ui_review_filter">Nur diese Bewertung anzeigen</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="one">%1$s Bewertung</item>
+        <item quantity="other">%1$s Bewertungen</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="one">%1$d Stern</item>
+        <item quantity="other">%1$d Sterne</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="one">Netzdiagramm, %1$d Achse, %2$d Reihen</item>
+        <item quantity="other">Netzdiagramm, %1$d Achsen, %2$d Reihen</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="one">Treemap, %1$d Eintrag, gesamt %2$s</item>
+        <item quantity="other">Treemap, %1$d Einträge, gesamt %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="one">Kerzendiagramm, %1$d Zeitraum, %2$s bis %3$s</item>
+        <item quantity="other">Kerzendiagramm, %1$d Zeiträume, %2$s bis %3$s</item>
+    </plurals>
+</resources>

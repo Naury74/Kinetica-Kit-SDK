@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">가장 높은 축 %1$s</string>
+    <string name="kinetica_ui_candle_open">시가</string>
+    <string name="kinetica_ui_candle_high">고가</string>
+    <string name="kinetica_ui_candle_low">저가</string>
+    <string name="kinetica_ui_candle_close">종가</string>
+    <string name="kinetica_ui_candle_volume">거래량</string>
+    <string name="kinetica_ui_candle_previous">이전 항목</string>
+    <string name="kinetica_ui_candle_next">다음 항목</string>
+    <string name="kinetica_ui_review_average">평균 %1$s점</string>
+    <string name="kinetica_ui_review_filter">이 점수만 보기</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="other">리뷰 %1$s개</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="other">%1$d점</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="other">방사형 차트, 축 %1$d개, 계열 %2$d개</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="other">트리맵, 항목 %1$d개, 합계 %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="other">캔들 차트, %1$d개 기간, %2$s부터 %3$s까지</item>
+    </plurals>
+</resources>

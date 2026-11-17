@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">наибольшее значение %1$s</string>
+    <string name="kinetica_ui_candle_open">Открытие</string>
+    <string name="kinetica_ui_candle_high">Максимум</string>
+    <string name="kinetica_ui_candle_low">Минимум</string>
+    <string name="kinetica_ui_candle_close">Закрытие</string>
+    <string name="kinetica_ui_candle_volume">Объём</string>
+    <string name="kinetica_ui_candle_previous">Предыдущий элемент</string>
+    <string name="kinetica_ui_candle_next">Следующий элемент</string>
+    <string name="kinetica_ui_review_average">Средняя оценка %1$s</string>
+    <string name="kinetica_ui_review_filter">Показать только эту оценку</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="one">%1$s отзыв</item>
+        <item quantity="few">%1$s отзыва</item>
+        <item quantity="many">%1$s отзывов</item>
+        <item quantity="other">%1$s отзыва</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="one">%1$d звезда</item>
+        <item quantity="few">%1$d звезды</item>
+        <item quantity="many">%1$d звёзд</item>
+        <item quantity="other">%1$d звезды</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="one">Лепестковая диаграмма, осей: %1$d, рядов: %2$d</item>
+        <item quantity="few">Лепестковая диаграмма, осей: %1$d, рядов: %2$d</item>
+        <item quantity="many">Лепестковая диаграмма, осей: %1$d, рядов: %2$d</item>
+        <item quantity="other">Лепестковая диаграмма, осей: %1$d, рядов: %2$d</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="one">Древовидная карта, элементов: %1$d, всего %2$s</item>
+        <item quantity="few">Древовидная карта, элементов: %1$d, всего %2$s</item>
+        <item quantity="many">Древовидная карта, элементов: %1$d, всего %2$s</item>
+        <item quantity="other">Древовидная карта, элементов: %1$d, всего %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="one">Свечной график, периодов: %1$d, с %2$s по %3$s</item>
+        <item quantity="few">Свечной график, периодов: %1$d, с %2$s по %3$s</item>
+        <item quantity="many">Свечной график, периодов: %1$d, с %2$s по %3$s</item>
+        <item quantity="other">Свечной график, периодов: %1$d, с %2$s по %3$s</item>
+    </plurals>
+</resources>

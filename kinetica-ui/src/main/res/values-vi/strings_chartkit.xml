@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">cao nhất %1$s</string>
+    <string name="kinetica_ui_candle_open">Mở cửa</string>
+    <string name="kinetica_ui_candle_high">Cao nhất</string>
+    <string name="kinetica_ui_candle_low">Thấp nhất</string>
+    <string name="kinetica_ui_candle_close">Đóng cửa</string>
+    <string name="kinetica_ui_candle_volume">Khối lượng</string>
+    <string name="kinetica_ui_candle_previous">Mục trước</string>
+    <string name="kinetica_ui_candle_next">Mục tiếp theo</string>
+    <string name="kinetica_ui_review_average">Trung bình %1$s sao</string>
+    <string name="kinetica_ui_review_filter">Chỉ hiện điểm này</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="other">%1$s đánh giá</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="other">%1$d sao</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="other">Biểu đồ radar, %1$d trục, %2$d chuỗi</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="other">Biểu đồ dạng cây, %1$d mục, tổng %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="other">Biểu đồ nến, %1$d kỳ, từ %2$s đến %3$s</item>
+    </plurals>
+</resources>

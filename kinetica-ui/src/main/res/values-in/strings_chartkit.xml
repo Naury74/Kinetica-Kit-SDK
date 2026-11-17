@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">nilai tertinggi %1$s</string>
+    <string name="kinetica_ui_candle_open">Buka</string>
+    <string name="kinetica_ui_candle_high">Tertinggi</string>
+    <string name="kinetica_ui_candle_low">Terendah</string>
+    <string name="kinetica_ui_candle_close">Tutup</string>
+    <string name="kinetica_ui_candle_volume">Volume</string>
+    <string name="kinetica_ui_candle_previous">Item sebelumnya</string>
+    <string name="kinetica_ui_candle_next">Item berikutnya</string>
+    <string name="kinetica_ui_review_average">Rata-rata %1$s bintang</string>
+    <string name="kinetica_ui_review_filter">Tampilkan rating ini saja</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="other">%1$s ulasan</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="other">%1$d bintang</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="other">Diagram radar, %1$d sumbu, %2$d seri</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="other">Treemap, %1$d item, total %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="other">Diagram candlestick, %1$d periode, %2$s sampai %3$s</item>
+    </plurals>
+</resources>

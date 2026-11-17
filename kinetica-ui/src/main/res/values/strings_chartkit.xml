@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">highest %1$s</string>
+    <string name="kinetica_ui_candle_open">Open</string>
+    <string name="kinetica_ui_candle_high">High</string>
+    <string name="kinetica_ui_candle_low">Low</string>
+    <string name="kinetica_ui_candle_close">Close</string>
+    <string name="kinetica_ui_candle_volume">Volume</string>
+    <string name="kinetica_ui_candle_previous">Previous item</string>
+    <string name="kinetica_ui_candle_next">Next item</string>
+    <string name="kinetica_ui_review_average">Average %1$s stars</string>
+    <string name="kinetica_ui_review_filter">Show only this rating</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="one">%1$s review</item>
+        <item quantity="other">%1$s reviews</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="one">%1$d star</item>
+        <item quantity="other">%1$d stars</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="one">Radar chart, %1$d axis, %2$d series</item>
+        <item quantity="other">Radar chart, %1$d axes, %2$d series</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="one">Treemap, %1$d item, total %2$s</item>
+        <item quantity="other">Treemap, %1$d items, total %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="one">Candlestick chart, %1$d period, %2$s to %3$s</item>
+        <item quantity="other">Candlestick chart, %1$d periods, %2$s to %3$s</item>
+    </plurals>
+</resources>

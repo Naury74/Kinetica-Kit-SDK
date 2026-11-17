@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">valor mais alto %1$s</string>
+    <string name="kinetica_ui_candle_open">Abertura</string>
+    <string name="kinetica_ui_candle_high">Máxima</string>
+    <string name="kinetica_ui_candle_low">Mínima</string>
+    <string name="kinetica_ui_candle_close">Fechamento</string>
+    <string name="kinetica_ui_candle_volume">Volume</string>
+    <string name="kinetica_ui_candle_previous">Item anterior</string>
+    <string name="kinetica_ui_candle_next">Próximo item</string>
+    <string name="kinetica_ui_review_average">Média de %1$s estrelas</string>
+    <string name="kinetica_ui_review_filter">Mostrar só esta nota</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="one">%1$s avaliação</item>
+        <item quantity="many">%1$s avaliações</item>
+        <item quantity="other">%1$s avaliações</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="one">%1$d estrela</item>
+        <item quantity="many">%1$d estrelas</item>
+        <item quantity="other">%1$d estrelas</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="one">Gráfico de radar, %1$d eixo, %2$d séries</item>
+        <item quantity="many">Gráfico de radar, %1$d eixos, %2$d séries</item>
+        <item quantity="other">Gráfico de radar, %1$d eixos, %2$d séries</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="one">Mapa de árvore, %1$d item, total %2$s</item>
+        <item quantity="many">Mapa de árvore, %1$d itens, total %2$s</item>
+        <item quantity="other">Mapa de árvore, %1$d itens, total %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="one">Gráfico de velas, %1$d período, de %2$s a %3$s</item>
+        <item quantity="many">Gráfico de velas, %1$d períodos, de %2$s a %3$s</item>
+        <item quantity="other">Gráfico de velas, %1$d períodos, de %2$s a %3$s</item>
+    </plurals>
+</resources>

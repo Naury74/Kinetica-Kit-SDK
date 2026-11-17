@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">最高的轴 %1$s</string>
+    <string name="kinetica_ui_candle_open">开盘</string>
+    <string name="kinetica_ui_candle_high">最高</string>
+    <string name="kinetica_ui_candle_low">最低</string>
+    <string name="kinetica_ui_candle_close">收盘</string>
+    <string name="kinetica_ui_candle_volume">成交量</string>
+    <string name="kinetica_ui_candle_previous">上一项</string>
+    <string name="kinetica_ui_candle_next">下一项</string>
+    <string name="kinetica_ui_review_average">平均 %1$s 星</string>
+    <string name="kinetica_ui_review_filter">只看此评分</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="other">%1$s 条评价</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="other">%1$d 星</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="other">雷达图，%1$d 个轴，%2$d 个系列</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="other">矩形树图，%1$d 项，合计 %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="other">K 线图，%1$d 个周期，%2$s 至 %3$s</item>
+    </plurals>
+</resources>

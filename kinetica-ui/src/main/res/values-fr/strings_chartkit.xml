@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">valeur la plus haute %1$s</string>
+    <string name="kinetica_ui_candle_open">Ouverture</string>
+    <string name="kinetica_ui_candle_high">Plus haut</string>
+    <string name="kinetica_ui_candle_low">Plus bas</string>
+    <string name="kinetica_ui_candle_close">Clôture</string>
+    <string name="kinetica_ui_candle_volume">Volume</string>
+    <string name="kinetica_ui_candle_previous">Élément précédent</string>
+    <string name="kinetica_ui_candle_next">Élément suivant</string>
+    <string name="kinetica_ui_review_average">Moyenne de %1$s étoiles</string>
+    <string name="kinetica_ui_review_filter">Afficher seulement cette note</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="one">%1$s avis</item>
+        <item quantity="many">%1$s avis</item>
+        <item quantity="other">%1$s avis</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="one">%1$d étoile</item>
+        <item quantity="many">%1$d étoiles</item>
+        <item quantity="other">%1$d étoiles</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="one">Graphique radar, %1$d axe, %2$d séries</item>
+        <item quantity="many">Graphique radar, %1$d axes, %2$d séries</item>
+        <item quantity="other">Graphique radar, %1$d axes, %2$d séries</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="one">Treemap, %1$d élément, total %2$s</item>
+        <item quantity="many">Treemap, %1$d éléments, total %2$s</item>
+        <item quantity="other">Treemap, %1$d éléments, total %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="one">Graphique en chandeliers, %1$d période, de %2$s à %3$s</item>
+        <item quantity="many">Graphique en chandeliers, %1$d périodes, de %2$s à %3$s</item>
+        <item quantity="other">Graphique en chandeliers, %1$d périodes, de %2$s à %3$s</item>
+    </plurals>
+</resources>

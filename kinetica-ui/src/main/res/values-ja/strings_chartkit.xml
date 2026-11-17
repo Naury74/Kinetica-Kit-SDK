@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">最も高い軸 %1$s</string>
+    <string name="kinetica_ui_candle_open">始値</string>
+    <string name="kinetica_ui_candle_high">高値</string>
+    <string name="kinetica_ui_candle_low">安値</string>
+    <string name="kinetica_ui_candle_close">終値</string>
+    <string name="kinetica_ui_candle_volume">出来高</string>
+    <string name="kinetica_ui_candle_previous">前の項目</string>
+    <string name="kinetica_ui_candle_next">次の項目</string>
+    <string name="kinetica_ui_review_average">平均 %1$s</string>
+    <string name="kinetica_ui_review_filter">この評価だけ表示</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="other">レビュー%1$s件</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="other">星%1$d</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="other">レーダーチャート、軸%1$d個、系列%2$d個</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="other">ツリーマップ、項目%1$d個、合計 %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="other">ローソク足チャート、%1$d期間、%2$sから%3$sまで</item>
+    </plurals>
+</resources>

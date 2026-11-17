@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kinetica_ui_radar_best">ค่าสูงสุด %1$s</string>
+    <string name="kinetica_ui_candle_open">ราคาเปิด</string>
+    <string name="kinetica_ui_candle_high">ราคาสูงสุด</string>
+    <string name="kinetica_ui_candle_low">ราคาต่ำสุด</string>
+    <string name="kinetica_ui_candle_close">ราคาปิด</string>
+    <string name="kinetica_ui_candle_volume">ปริมาณซื้อขาย</string>
+    <string name="kinetica_ui_candle_previous">รายการก่อนหน้า</string>
+    <string name="kinetica_ui_candle_next">รายการถัดไป</string>
+    <string name="kinetica_ui_review_average">เฉลี่ย %1$s ดาว</string>
+    <string name="kinetica_ui_review_filter">แสดงเฉพาะคะแนนนี้</string>
+    <plurals name="kinetica_ui_review_count">
+        <item quantity="other">%1$s รีวิว</item>
+    </plurals>
+    <plurals name="kinetica_ui_review_stars">
+        <item quantity="other">%1$d ดาว</item>
+    </plurals>
+    <plurals name="kinetica_ui_radar_summary">
+        <item quantity="other">แผนภูมิเรดาร์ %1$d แกน %2$d ชุดข้อมูล</item>
+    </plurals>
+    <plurals name="kinetica_ui_treemap_summary">
+        <item quantity="other">แผนภูมิทรีแมป %1$d รายการ รวม %2$s</item>
+    </plurals>
+    <plurals name="kinetica_ui_candle_summary">
+        <item quantity="other">แผนภูมิแท่งเทียน %1$d ช่วง ตั้งแต่ %2$s ถึง %3$s</item>
+    </plurals>
+</resources>
