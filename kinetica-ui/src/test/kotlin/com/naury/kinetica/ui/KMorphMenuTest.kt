@@ -7,12 +7,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
@@ -114,5 +116,24 @@ class KMorphMenuTest {
 
     private companion object {
         const val FEW_FRAMES = 80L
+    }
+
+    @Test
+    fun `메뉴 판은 칩 밑에 따로 뜨지 않고 칩 자리를 덮으며 커진다`() {
+        var open by mutableStateOf(false)
+        compose.setContent {
+            KineticaScaffold(surface = SurfaceStyles.CleanLight) {
+                Box(Modifier.padding(40.dp)) {
+                    KMorphMenu("정렬", open, { open = it }, entries {}, Modifier.testTag("chip"))
+                }
+            }
+        }
+        val chip = compose.onNodeWithTag("chip").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("chip").performClick()
+        compose.mainClock.advanceTimeBy(800)
+        val first = compose.onNodeWithText("최신순").fetchSemanticsNode().boundsInRoot
+        // 첫 항목이 칩이 있던 줄에서 시작한다. 칩 밑에 띄워 놓으면 칩 아래 끝보다 아래에서 시작한다.
+        assertThat(first.top).isLessThan(chip.bottom)
+        assertThat(first.left).isWithin(24f).of(chip.left)
     }
 }

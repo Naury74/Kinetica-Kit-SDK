@@ -234,27 +234,44 @@ private fun MorphLayer(
                 constraints.maxHeight - insets.bottom - margin,
             )
             val chipRect = anchor.bounds.translate(-origin)
-            val gap = GAP.toPx()
-            val content = measurables[2].measure(
-                Constraints(maxWidth = area.width.coerceAtLeast(0), maxHeight = anchoredRoom(chipRect, area, gap)),
+            // 판은 칩 자리를 덮고 칩의 위 끝(위로 열면 아래 끝)과 시작 끝을 그대로 둔 채 커진다. 칩 밑에 따로 띄우면 칩이 커지는 것이 아니라 팝업이 겹쳐 뜨는 것처럼 보인다.
+            val roomDown = (area.bottom - chipRect.top).roundToInt()
+            val roomUp = (chipRect.bottom - area.top).roundToInt()
+            val chipWidth = chipRect.width.roundToInt().coerceIn(0, area.width.coerceAtLeast(0))
+            val content = measurables[MORPH_CONTENT].measure(
+                Constraints(minWidth = chipWidth, maxWidth = area.width.coerceAtLeast(0), maxHeight = maxOf(roomDown, roomUp, 0)),
             )
-            val place = placeAnchored(chipRect, area, IntSize(content.width, content.height), gap, geometry.alignRight)
-            val current = geometry.update(chipRect, IntOffset(place.x, place.y), content, progress.value, this)
-            val background = measurables[0].measure(Constraints.fixed(current.width.toPx(), current.height.toPx()))
-            val ghost = measurables[1].measure(Constraints.fixed(chipRect.width.roundToInt(), chipRect.height.roundToInt()))
+            val down = content.height <= roomDown || roomDown >= roomUp
+            val at = morphTarget(chipRect, area, IntSize(content.width, content.height), down, geometry.alignRight)
+            val current = geometry.update(chipRect, at, content, progress.value, this)
+            val size = Constraints.fixed(current.width.toPx(), current.height.toPx())
+            val chipFill = measurables[MORPH_CHIP_FILL].measure(size)
+            val panelFill = measurables[MORPH_PANEL_FILL].measure(size)
+            val ghost = measurables[MORPH_GHOST].measure(Constraints.fixed(chipRect.width.roundToInt(), chipRect.height.roundToInt()))
             layout(constraints.maxWidth, constraints.maxHeight) {
-                background.place(current.left.roundToInt(), current.top.roundToInt())
+                chipFill.place(current.left.roundToInt(), current.top.roundToInt())
+                panelFill.place(current.left.roundToInt(), current.top.roundToInt())
                 // 잔상은 판과 같은 쪽 가장자리에 붙어 판과 함께 움직인다.
                 val ghostX = if (geometry.alignRight) current.right - chipRect.width else current.left
-                val ghostY = if (place.below) current.top else current.bottom - chipRect.height
+                val ghostY = if (down) current.top else current.bottom - chipRect.height
                 ghost.place(ghostX.roundToInt(), ghostY.roundToInt())
-                content.place(place.x, place.y)
+                content.place(at.x, at.y)
             }
         }
     }
 }
 
-/** [MorphLayer]의 세 겹: 0 판 배경, 1 칩 잔상, 2 메뉴 내용 */
+/** 다 펴진 판의 왼쪽 위. 칩의 위 끝([down]이 아니면 아래 끝)과 시작 끝에 맞추고, [area] 밖으로 나가지 않게 안으로 민다. */
+private fun morphTarget(chip: Rect, area: IntRect, panel: IntSize, down: Boolean, alignRight: Boolean): IntOffset {
+    val x = if (alignRight) chip.right.roundToInt() - panel.width else chip.left.roundToInt()
+    val y = if (down) chip.top.roundToInt() else chip.bottom.roundToInt() - panel.height
+    return IntOffset(
+        x.coerceIn(area.left, maxOf(area.left, area.right - panel.width)),
+        y.coerceIn(area.top, maxOf(area.top, area.bottom - panel.height)),
+    )
+}
+
+/** [MorphLayer]의 네 겹: 칩 표면, 팝업 표면, 칩 잔상, 메뉴 내용 */
 @Composable
 private fun MorphSlots(
     progress: () -> Float,
@@ -266,7 +283,9 @@ private fun MorphSlots(
 ) {
     val clip = remember { Path() }
     // 크기는 배치 단계에서 매 프레임 바뀌고, 모서리는 그 크기에서 정해진다.
-    Box(Modifier.kSurface(look.surface.forPopup(), geometry.shape))
+    // 처음에는 칩과 같은 표면이고, 그 위에 팝업 표면이 차오른다. 아래 겹은 위 겹이 다 찰 때까지 불투명하게 두어야 반투명 두 겹 사이로 뒤가 비치지 않는다.
+    Box(Modifier.graphicsLayer { alpha = if (surfaceBlend(progress()) < 1f) 1f else 0f }.kSurface(chip.surface, geometry.shape))
+    Box(Modifier.graphicsLayer { alpha = surfaceBlend(progress()) }.kSurface(look.surface.forPopup(), geometry.shape))
     // 열리기 시작할 때 원래 칩과 같은 모습으로 있다가 옅어진다.
     Row(
         Modifier
@@ -361,17 +380,24 @@ private class MenuMorphShape : Shape {
     }
 }
 
+/** 칩 표면 위에 팝업 표면이 차오른 정도(0..1). 판이 [SURFACE_BLEND]만큼 펴지면 다 찬다. */
+private fun surfaceBlend(progress: Float): Float = (progress / SURFACE_BLEND).coerceIn(0f, 1f)
+
 /** 판이 [CONTENT_DELAY]만큼 펴진 뒤부터 항목이 드러나는 정도(0~1) */
 private fun reveal(progress: Float): Float = ((progress - CONTENT_DELAY) / (1f - CONTENT_DELAY)).coerceIn(0f, 1f)
 
 private val MORPH_CHIP_HEIGHT = 36.dp
 private val EDGE = 12.dp
-private val GAP = 6.dp
 private const val OPEN_DAMPING = 0.78f
 private const val OPEN_STIFFNESS = 420f
 private const val CLOSE_DAMPING = 1f
 private const val CLOSE_STIFFNESS = 700f
 private const val CHIP_FADE = 3f
 private const val CONTENT_DELAY = 0.25f
+private const val SURFACE_BLEND = 0.6f
+private const val MORPH_CHIP_FILL = 0
+private const val MORPH_PANEL_FILL = 1
+private const val MORPH_GHOST = 2
+private const val MORPH_CONTENT = 3
 private const val DISABLED_ALPHA = 0.4f
 private const val MORPH_THRESHOLD = 0.001f
