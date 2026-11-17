@@ -77,6 +77,8 @@ import java.util.Currency
 internal fun DataDomainTab(padding: PaddingValues, connection: NestedScrollConnection) {
     ComponentTabList(padding, connection) {
         layoutsDemos()
+        chartKitDemos()
+        workKitDemos()
         item { DashboardScene() }
         item { GaugePieScene() }
         item { HeatmapScene() }

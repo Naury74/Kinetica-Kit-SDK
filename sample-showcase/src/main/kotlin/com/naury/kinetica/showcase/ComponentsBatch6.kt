@@ -96,6 +96,7 @@ import kotlinx.coroutines.launch
 internal fun SocialMotionTab(padding: PaddingValues, connection: NestedScrollConnection) {
     ComponentTabList(padding, connection) {
         item { ChatScene() }
+        aiKitDemos()
         item { StoriesCard() }
         item { FilesCard() }
         item { ContactsCard() }

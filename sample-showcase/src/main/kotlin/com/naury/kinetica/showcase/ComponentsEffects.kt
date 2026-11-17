@@ -72,6 +72,7 @@ internal fun EffectsTab(padding: PaddingValues, connection: NestedScrollConnecti
         item { ParticleCard() }
         glassFxDemos(glassMode)
         motionDemos()
+        stageKitDemos()
         item { FlipCardCard() }
         item { BlobCard(notify) }
         item { HoloCard() }

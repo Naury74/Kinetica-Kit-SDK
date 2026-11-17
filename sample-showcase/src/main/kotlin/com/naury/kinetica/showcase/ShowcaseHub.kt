@@ -140,12 +140,12 @@ private val COMPONENT_TAB_INFO = mapOf(
     "기본" to ("버튼, 검색, 휠 피커, 캐러셀, 카드 더미, 알림" to KIcons.Home),
     "입력" to ("물결 진행, 원형 슬라이더, 모양 바뀌는 버튼, 긁는 카드, 입력란, 서명" to KIcons.Edit),
     "미디어" to ("사진 뷰어, 전후 비교, 온보딩, 빈 화면" to KIcons.Download),
-    "효과" to ("유리 렌즈, 녹아 붙는 글래스, 점진 블러, 흐림 글, 거품 고르기, 마키, 독" to ShowcaseIcons.Sparkle),
+    "효과" to ("유리 렌즈, 녹아 붙는 글래스, 늘어나는 헤더, 알림 묶음, 흐림 글, 마키, 독" to ShowcaseIcons.Sparkle),
     "버튼·칩·카드" to ("버튼 변형과 색 역할, 칩, 카드, 배지와 아바타" to KIcons.Plus),
     "내비게이션·오버레이" to ("앱 바, 탭, 메뉴, 다이얼로그와 시트, 검색 화면, 서랍" to ShowcaseIcons.Layers),
     "피드백·로딩" to ("토스트, 스낵바, 라이브 활동, 음성 녹음, 파형, 스켈레톤" to KIcons.Bell),
-    "데이터·도메인" to ("소개 격자, 명령 판, 데이터 표, 대시보드, 배송 추적, 송금" to KIcons.Grid),
-    "소셜·모션" to ("채팅, 스토리, 연락처 색인, 지도 핀, 마이크로 인터랙션" to KIcons.Message),
+    "데이터·도메인" to ("데이터 표, 캔들 차트, 트리맵, 파일 트리, 칸반 보드, 하루 일정" to KIcons.Grid),
+    "소셜·모션" to ("채팅, AI 답변과 코드 블록, 프롬프트 입력, 스토리, 지도 핀" to KIcons.Message),
     "통화" to ("조작 도크, 참가자 타일과 격자, 상태 화면, 수신 화면, 입장 화면" to KIcons.Call),
 )
 
