@@ -6,9 +6,9 @@ Compose 앱에 Kinetica UI 키트와 효과를 붙이는 가장 빠른 방법을
 
 ```kotlin
 dependencies {
-    implementation("com.naurylab:kinetica-ui:1.0.0-alpha06")             // UI 컴포넌트와 효과 수정자. 보통은 이것만 있으면 됩니다
-    implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha06") // 필요하면: Modifier.kineticaEffects, 화면 전환, 숫자 애니메이션
-    implementation("com.naurylab:kinetica-presets:1.0.0-alpha06")        // 필요하면: EffectPresets
+    implementation("com.naurylab:kinetica-ui:1.0.0-alpha07")             // UI 컴포넌트와 효과 수정자. 보통은 이것만 있으면 됩니다
+    implementation("com.naurylab:kinetica-render-compose:1.0.0-alpha07") // 필요하면: Modifier.kineticaEffects, 화면 전환, 숫자 애니메이션
+    implementation("com.naurylab:kinetica-presets:1.0.0-alpha07")        // 필요하면: EffectPresets
 }
 ```
 
@@ -160,6 +160,14 @@ KButton("타이머 시작", onClick = {
         expanded = { Text("5분 타이머") },
     ))
 })
+```
+
+**AI 답변.** 받은 글을 그대로 넘기면 마크다운과 코드 블록으로 그립니다. 생성 중에는 `streaming = true`를 넘기고, 입력창은 생성 중 멈춤 버튼으로 바뀝니다.
+
+```kotlin
+KThinkingIndicator(thinking = thinking, steps = steps)
+KMarkdownText(answer, streaming = generating, onLinkClick = ::openUrl)
+KPromptInput(prompt, onSend = ::ask, generating = generating, onStop = ::cancel)
 ```
 
 **차트.**

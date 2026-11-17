@@ -162,4 +162,21 @@ class QuickStartTest {
         compose.waitForIdle()
         assertThat(live.activities.map { it.id }).containsExactly("timer")
     }
+
+    @Test
+    fun `빠른 시작의 AI 답변 예제가 그려지고 보낸다`() {
+        var asked = 0
+        compose.setContent {
+            KineticaTheme {
+                Column {
+                    val prompt = androidx.compose.foundation.text.input.rememberTextFieldState("질문")
+                    KThinkingIndicator(thinking = false, steps = listOf(KThinkingStep("a", "찾기", true)))
+                    KMarkdownText("**굵게** 답변", streaming = false, onLinkClick = {})
+                    KPromptInput(prompt, onSend = { asked++ }, generating = false, onStop = {})
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText("굵게", substring = true, useUnmergedTree = true).assertExists()
+    }
 }
