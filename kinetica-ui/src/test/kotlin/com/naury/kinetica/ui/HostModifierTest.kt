@@ -46,6 +46,9 @@ class HostModifierTest {
                 KScratchCard(Modifier.size(200.dp, 100.dp).testTag("scratch")) { BasicText("쿠폰") }
                 KMorphMenu("정렬", false, {}, listOf(KMenuEntry.Action("최신순") {}), Modifier.testTag("menu"))
                 KBentoGrid(columns = 2) { KBentoCell(Modifier.testTag("cell"), onClick = {}) { BasicText("칸") } }
+                KShineButton("시작", {}, Modifier.testTag("shine"))
+                KCodeBlock("val x = 1", Modifier.testTag("code"), language = "kotlin")
+                KMentionInput(rememberKMentionInputState(), { _, _ -> emptyList() }, Modifier.testTag("mentionField"))
             }
         }
         compose.waitForIdle()
@@ -57,5 +60,8 @@ class HostModifierTest {
         compose.onNodeWithTag("scratch").assert(clickable)
         compose.onNodeWithTag("menu").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
         compose.onNodeWithTag("cell").assert(clickable)
+        compose.onNodeWithTag("shine").assert(clickable)
+        compose.onNodeWithTag("code").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions))
+        compose.onNodeWithTag("mentionField").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.SetText))
     }
 }

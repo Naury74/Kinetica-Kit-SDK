@@ -37,5 +37,9 @@
         <activity android:name=".recent.NewKitM3Activity" android:exported="false" />
         <activity android:name=".recent.NewKitScaffoldActivity" android:exported="false" />
         <activity android:name=".recent.NewKitXmlActivity" android:exported="false" />
+        <activity android:name=".recent.NewKit2M3Activity" android:exported="false" />
+        <activity android:name=".recent.NewKit2ScaffoldActivity" android:exported="false" />
+        <activity android:name=".recent.NewKit2HeaderActivity" android:exported="false" />
+        <activity android:name=".recent.NewKit2XmlActivity" android:exported="false" />
     </application>
 </manifest>

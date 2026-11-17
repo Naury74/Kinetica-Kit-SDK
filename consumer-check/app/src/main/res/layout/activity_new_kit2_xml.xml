@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 세로로 스크롤되는 XML 화면 안 ComposeView에 캔들 차트와 칸반 보드를 끼운 화면 -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/newKit2Label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="옮김: 없음" />
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/newKit2Compose"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1200dp"
+            android:background="#DDE3EA" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
