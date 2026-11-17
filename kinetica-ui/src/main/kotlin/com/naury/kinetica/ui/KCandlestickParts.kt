@@ -24,8 +24,8 @@ import kotlinx.coroutines.Job
 
 /** 기간 목록과 전체 최고가, 최저가 */
 internal class CandleContent(val candles: List<Candle>, val hasVolume: Boolean) {
-    val highest: Float = candles.maxOfOrNull { it.high } ?: 0f
-    val lowest: Float = candles.minOfOrNull { it.low } ?: 0f
+    val highest: Float = candles.maxOfOrNull { it.top } ?: 0f
+    val lowest: Float = candles.minOfOrNull { it.bottom } ?: 0f
 }
 
 internal class CandleNames(val open: String, val high: String, val low: String, val close: String, val volume: String)
@@ -119,8 +119,8 @@ internal class CandlePlot {
         var hi = Float.NEGATIVE_INFINITY
         var peak = 0f
         for (i in range) {
-            lo = minOf(lo, candles[i].low)
-            hi = maxOf(hi, candles[i].high)
+            lo = minOf(lo, candles[i].bottom)
+            hi = maxOf(hi, candles[i].top)
             peak = maxOf(peak, candles[i].volume)
         }
         peakVolume = peak
@@ -152,7 +152,7 @@ internal class CandlePlot {
         updateRange(candles, frame.state.visibleIndices(candles.size))
         val x = centerX(index, frame.state, candles.size)
         val volume = frame.content.hasVolume
-        return ChartBubbleAnchor(x, priceY(candles[index].high, volume), priceY(candles[index].low, volume), sideways = true)
+        return ChartBubbleAnchor(x, priceY(candles[index].top, volume), priceY(candles[index].bottom, volume), sideways = true)
     }
 }
 
@@ -304,7 +304,7 @@ private fun DrawScope.drawCandle(frame: CandleFrame, index: Int, reveal: Float) 
     fun grown(value: Float): Float = mid + (plot.priceY(value, volume) - mid) * grow
     val bodyWidth = (slot * BODY_SHARE).coerceAtMost(plot.bodyMax).coerceAtLeast(1f)
     val wick = minOf(WICK_WIDTH.toPx(), bodyWidth)
-    drawLine(color, Offset(x, grown(candle.high)), Offset(x, grown(candle.low)), wick)
+    drawLine(color, Offset(x, grown(candle.top)), Offset(x, grown(candle.bottom)), wick)
     val bodyTop = grown(maxOf(candle.open, candle.close))
     val bodyHeight = (grown(minOf(candle.open, candle.close)) - bodyTop).coerceAtLeast(plot.minBody)
     val corner = CornerRadius(minOf(BODY_CORNER.toPx(), bodyWidth / 2f, bodyHeight / 2f))

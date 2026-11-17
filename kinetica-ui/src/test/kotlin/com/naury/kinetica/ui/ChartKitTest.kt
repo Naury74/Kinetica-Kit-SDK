@@ -244,7 +244,10 @@ class ChartKitTest {
     fun `캔들 차트는 빈 목록에서도 그리고 잘못된 캔들은 거부한다`() {
         compose.setContent { KCandlestickChart(emptyList(), Modifier.size(300.dp, 200.dp)) }
         compose.onNodeWithContentDescription("No data").assertExists()
-        assertThrows(IllegalArgumentException::class.java) { Candle(10f, 9f, 8f, 11f) }
+        // 고가와 저가가 시가, 종가를 감싸지 않는 줄은 거부하지 않고 네 값을 감싸게 그린다.
+        val odd = Candle(10f, 9f, 8f, 11f)
+        assertThat(odd.top).isEqualTo(11f)
+        assertThat(odd.bottom).isEqualTo(8f)
         assertThrows(IllegalArgumentException::class.java) { Candle(10f, 12f, 8f, 11f, volume = -1f) }
     }
 
@@ -299,5 +302,13 @@ class ChartKitTest {
         firstFrame { modifier -> KReviewSummary(1f, 3, listOf(0, 0, 0, 0, 3), modifier.width(150.dp), color = red) }
         // 별 하나는 두 쪽 모두 같게 그리므로 막대만큼 차이가 난다.
         assertThat(count("still", red) - count("moving", red)).isGreaterThan(300)
+    }
+
+    @Test
+    fun `고가와 저가 순서가 어긋난 시세가 섞여도 차트가 그려진다`() {
+        compose.setContent {
+            KCandlestickChart(List(30) { Candle(10f + it % 5, 12f + it % 5, 9f, 11f + it % 3, 100f) }, Modifier.size(300.dp, 200.dp))
+        }
+        compose.waitForIdle()
     }
 }

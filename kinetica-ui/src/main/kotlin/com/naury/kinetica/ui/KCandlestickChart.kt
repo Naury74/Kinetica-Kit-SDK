@@ -40,8 +40,8 @@ import kotlin.math.floor
 /**
  * [KCandlestickChart]의 기간 하나(시가, 고가, 저가, 종가).
  *
- * 생성할 때 값이 NaN이나 무한대이거나, [high]가 [open], [close], [low]보다 작거나, [low]가 [open], [close]보다 크거나,
- * [volume]이 음수이면 [IllegalArgumentException]을 던진다.
+ * 생성할 때 값이 NaN이나 무한대이거나 [volume]이 음수이면 [IllegalArgumentException]을 던진다.
+ * [high]와 [low]가 시가와 종가를 감싸지 않는 줄(반올림한 시세 등)은 거부하지 않고, 네 값 가운데 가장 큰 값과 가장 작은 값으로 그린다.
  *
  * @property volume 거래량. 0이면 거래량 막대를 그리지 않는다.
  * @property label 기간 이름(예: "11/3"). 아래 축, 십자선 말풍선, TalkBack이 읽는다. `null`이면 순서로 읽는다.
@@ -59,7 +59,6 @@ public data class Candle(
         require(open.isFinite() && high.isFinite() && low.isFinite() && close.isFinite() && volume.isFinite()) {
             "값에 NaN이나 무한대를 넣을 수 없습니다."
         }
-        require(high >= maxOf(open, close, low) && low <= minOf(open, close)) { "high는 가장 크고 low는 가장 작아야 합니다." }
         require(volume >= 0f) { "volume은 0 이상이어야 합니다." }
     }
 
@@ -289,8 +288,8 @@ private fun CandleBubble(content: CandleContent, cross: CandleCrosshair, format:
     ChartBubbleColumn {
         ChartBubbleTitle(candle.label ?: stringResource(R.string.kinetica_ui_chart_point, shown.value + 1))
         ChartBubbleRow(null, format.names.open, format.price(candle.open))
-        ChartBubbleRow(null, format.names.high, format.price(candle.high))
-        ChartBubbleRow(null, format.names.low, format.price(candle.low))
+        ChartBubbleRow(null, format.names.high, format.price(candle.top))
+        ChartBubbleRow(null, format.names.low, format.price(candle.bottom))
         ChartBubbleRow(null, format.names.close, format.price(candle.close))
         if (content.hasVolume) ChartBubbleRow(null, format.names.volume, format.volume(candle.volume))
     }
@@ -320,7 +319,7 @@ private fun candleSummary(content: CandleContent, format: CandleFormat): String 
 private fun candleDescription(candles: List<Candle>, index: Int, format: CandleFormat): String {
     val candle = candles[index]
     val name = candle.label ?: stringResource(R.string.kinetica_ui_chart_point, index + 1)
-    val parts = CandleStats(candle.open, candle.high, candle.low, candle.close).parts(format).toMutableList()
+    val parts = CandleStats(candle.open, candle.top, candle.bottom, candle.close).parts(format).toMutableList()
     if (candle.volume > 0f) parts += format.pair(format.names.volume, format.volume(candle.volume))
     return stringResource(R.string.kinetica_ui_chart_entry, name, joinChartParts(parts))
 }
@@ -331,3 +330,9 @@ private const val END_SNAP = 0.01f
 private const val CANDLE_REVEAL_MS = 900
 private val CANDLE_MIN_WIDTH = 280.dp
 private val CANDLE_MIN_HEIGHT = 200.dp
+
+/** 그리는 위 끝. 순서가 맞지 않는 시세도 네 값을 모두 감싸게 한다. */
+internal val Candle.top: Float get() = maxOf(open, high, low, close)
+
+/** 그리는 아래 끝 */
+internal val Candle.bottom: Float get() = minOf(open, high, low, close)
