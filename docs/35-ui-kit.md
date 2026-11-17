@@ -996,6 +996,26 @@ RTL에서의 방향은 다음과 같다.
 - 단계의 흐름(`KTimeline` 가로, `KStepIndicator`, `KWizard`)과 달력(`KWeekStrip`, 기간 다이얼로그의 달력)은 읽는 방향을 따라 RTL에서 오른쪽부터 놓고, 마법사는 진행 방향 반대로 밀려 들어온다.
 - 키패드 숫자 배치는 전화 키패드 관례대로 바꾸지 않고, 지우기 키 화살표만 뒤집는다.
 
+### 차트 더 보기
+
+| 컴포넌트 | 하는 일 | 주요 파라미터 |
+| --- | --- | --- |
+| `KRadarChart` | 축 3~12개 방사형 차트. 계열마다 반투명 채움과 선, 눈금 고리, 축 이름. 축을 누르면 값 말풍선 | `axes`, `series: List<RadarSeries>`, `maxValue`, `minValue`, `rings`, `onSelectAxis` |
+| `KTreemap` | 값에 비례한 squarified 사각형 분할. 들어갈 때만 이름과 값, 누르기와 선택 강조 | `items: List<TreemapItem>`, `selectedKey`, `onItemClick`, `colors`, `valueFormatter` |
+| `KCandlestickChart` | 시가, 고가, 저가, 종가 캔들과 거래량. 가로로 옮기기, 두 손가락 확대, 길게 눌러 십자선 | `candles: List<Candle>`, `state = rememberKCandlestickState()`, `showVolume`, `risingColor`, `fallingColor`, `priceFormatter` |
+| `KReviewSummary` | 평균 별점, 리뷰 수, 점수별 분포 막대. 막대를 눌러 점수로 거르기 | `average`, `reviewCount`, `distribution`(높은 점수부터), `selectedStars`, `onFilter` |
+
+- `KRadarChart`: 12시 방향부터 시계 방향으로 축을 놓는다(RTL에서도 같음). `maxValue`를 비우면 데이터 최댓값을 덮는 깔끔한 값으로 정한다.
+  처음 보일 때 계열이 차례로 가운데에서 펼쳐지고, 값이 바뀌면 이전 모양에서 부드럽게 바뀐다. TalkBack은 요약 뒤에 계열마다 축별 값과 가장 높은 축을 읽는다.
+- `KTreemap`: 항목은 `TreemapItem(key, label, value, color)`. 선택은 키로 넘긴다(`selectedKey`). 0인 항목은 그리지도 읽지도 않는다.
+  칸에 이름과 값이 다 들어가지 않으면 작은 이름만, 그것도 안 되면 비운다. RTL에서는 큰 항목이 오른쪽 위에 온다. TalkBack은 큰 항목부터 목록으로 '이름: 값, 비율'을 읽는다.
+- `KCandlestickChart`: `KCandlestickState`가 보이는 범위를 기억한다(회전 뒤에도 유지, `scrollToEnd()`, `isAtEnd`). 처음에는 최근 기간이 오른쪽 끝에 붙고 새 기간이 오면 따라간다.
+  그리기 비용은 보이는 기간 수에 비례하므로 수천 개도 괜찮다. 가격 눈금은 보이는 범위로 자동으로 고른다.
+  TalkBack은 기간 요약을 읽고, 다음 칸의 '이전 항목', '다음 항목' 동작으로 기간을 하나씩 옮긴다(화면에도 십자선을 띄움).
+  국내 주식처럼 오르면 빨강, 내리면 파랑으로 하려면 `risingColor`, `fallingColor`를 바꾼다(기본은 초록과 빨강).
+- `KReviewSummary`: `distribution`은 높은 점수부터. 비율은 합이 100%가 되게 반올림한다. `onFilter`가 없으면 TalkBack이 한 번에 요약을 읽고,
+  있으면 점수 줄마다 따로 읽으며 두 번 탭으로 거른다. 폭 300dp 미만이면 위아래, 넘으면 나란히 놓는다.
+
 ### 그 밖의 데이터 블록
 
 | 컴포넌트 | 하는 일 | 주요 파라미터 |
@@ -1026,6 +1046,28 @@ KPricingCard("프로", "₩9,900", selected = plan == "pro", onSelect = { plan =
 | `KBentoGrid`, `KBentoCell` | 1x1, 2x1, 1x2, 2x2처럼 크기가 다른 칸을 앞쪽 빈 자리부터 채우고, 남은 구멍은 옆 칸을 늘려 메우는 소개 격자. 받은 폭에 맞춰 열 수가 늘고 RTL에서는 좌우가 바뀐다. 칸마다 높이를 한 번 재므로 칸 안에 게으른 목록을 바로 넣지 않는다 | `columns`(null이면 폭에 맞춤), `minCellWidth`, `maxColumns`, `rowHeight`, `spacing`, `fillGaps`, `animateAppear`, 칸의 `span`(`KBentoSpan.Small`, `Wide`, `Tall`, `Large`), `onClick` |
 | `KCommandPalette` | Ctrl+K로 여는 명령 검색 판. 묶음별 명령과 단축키 키캡, 최근 명령, 맞은 글자 강조, 한글 초성 검색(`ㅅㅈ`으로 `새 주문`), 방향키 이동과 Enter 실행, Esc 닫기, 결과 없음 화면이 있다. 넓은 창은 가운데, 좁은 창은 위쪽 판이다. TalkBack에는 결과 수를 알린다 | `state = rememberKCommandPaletteState()`, `sections: List<KCommandSection>`, `KCommand(id, title, onRun, subtitle, icon, shortcut, keywords, enabled)`, `Modifier.commandPaletteShortcut(state)`, `state.handleShortcut(event)` |
 | `KDataTable` | 열 머리를 눌러 정렬하고, 첫 열을 고정한 채 나머지를 머리와 함께 가로로 밀며, 체크박스로 행을 고르는 데이터 표. 행은 지연 구성하므로 높이가 정해진 곳에 둔다. TalkBack은 표로 읽고 정렬 상태도 읽는다 | `rows`, `columns: List<KTableColumn<T>>`(`KTableColumn.text(...)`, `width`, `weight`, `numeric`, `comparator`, `cell`), `key`, `state = rememberKDataTableState()`, `selectable`, `frozenFirstColumn`, `onRowClick` |
+
+### 업무 도구
+
+| 컴포넌트 | 하는 일 | 주요 파라미터 |
+| --- | --- | --- |
+| `KTreeView` + `rememberKTreeState` | 파일 탐색기 같은 계층 목록. 펼친 노드만 LazyColumn에 늘어놓고, 세 상태 체크박스와 키보드 탐색을 지원한다 | `roots`, `key`, `children`, `label`, `state`, `checkable`, `guides`, `toggleOnClick`, `onSelect`, `leading`, `trailing` |
+| `KKanbanBoard` | 열을 가로로 늘어놓고 카드를 길게 눌러 같은 열 안이나 다른 열로 옮기는 칸반 보드 | `columns`(`KKanbanColumn`), `cardKey`, `onMove(cardKey, toColumn, toIndex)`, `columnWidth`, `onCardClick`, `cardShape`, `card` |
+| `KDayTimeline` | 하루 일정 보기. 시간 눈금, 겹침 일정 나란히 놓기, 지금 시각 선, 빈 시간 길게 눌러 새 일정 | `events`(`KDayEvent`), `startHour`, `endHour`, `hourHeight`, `showNow`, `scrollToNow`, `onEventClick`, `onLongPressTime`, `clock` |
+| `KMentionInput` + `rememberKMentionInputState` | @ 같은 트리거로 사람이나 주제 제안 팝업을 띄우고, 고른 멘션을 한 덩어리 토큰으로 넣는 입력란 | `state`, `suggestions(trigger, query)`, `triggers`, `placeholder`, `onMentionsChange`, `maxLines`, `maxSuggestions` |
+
+**KTreeView.** 노드 타입은 자유롭다. `key`와 `children` 람다로 키와 자식을 꺼낸다. 펼침, 선택, 체크는 `KTreeState`가 키로 기억하고 회전 뒤에도 남으며, 트리에서 사라진 키는 다음 구성에서 지운다. 체크는 잎 노드 키만 저장하고 부모 상태(켜짐, 꺼짐, 일부)는 계산한다. 하드웨어 키보드는 목록에 초점을 두고 위아래로 옮기며, 오른쪽은 펼치기 또는 첫 자식, 왼쪽은 접기 또는 부모, Enter는 선택, 스페이스는 체크다(RTL에서는 좌우가 바뀐다). TalkBack은 행마다 '펼침, 수준 2, 3개 중 1번째'처럼 읽고 펼치기, 접기 동작을 준다. 높이가 정해진 곳에 둔다.
+
+```kotlin
+val tree = rememberKTreeState()
+KTreeView(files, key = { it.path }, children = { it.children }, label = { it.name }, Modifier.height(400.dp), tree, onSelect = { open(it) })
+```
+
+**KKanbanBoard.** 보드는 데이터를 바꾸지 않는다. 놓으면 `onMove`를 한 번 부르고, `toIndex`는 옮긴 뒤 그 열 목록의 번호다. 끄는 동안 데이터는 그대로이고 떠 있는 사본과 강조색 놓을 자리 선만 그린다. 보드와 열 가장자리 가까이 끌면 자동 스크롤하고, 터치가 취소되면 원래 자리로 돌아간다. 카드마다 TalkBack 동작(왼쪽 열로, 오른쪽 열로, 위로, 아래로)과 Alt+방향키가 있다. 모든 열이 `columnWidth` 이상 들어가는 넓은 화면에서는 폭을 나눠 열을 다 보인다. 높이가 무한하면 480dp로 그린다.
+
+**KDayTimeline.** 시간이 겹치는 일정은 겹침 묶음마다 열을 나눈다. 아주 짧은 일정도 최소 높이로 그리므로 겹침은 그려지는 높이로 판단한다. 지금 시각 선은 1분마다 옮기고 화면 밖이면 멈춘다. 빈 시간을 길게 누르면 15분 단위로 내린 시각을 주고, TalkBack에서는 시간 눈금마다 '9:00 AM에 새 일정' 동작이 있다. 자정을 넘는 일정은 그날 끝까지로 자르고, 0분 일정은 최소 높이로 그린다. 블록은 '제목, 오전 9:00부터 오전 10:30까지'처럼 읽으며 기기의 12시간, 24시간 설정을 따른다.
+
+**KMentionInput.** 트리거는 글 맨 앞이나 공백 뒤에서만 열린다. 고른 멘션은 `@이름` 뒤에 공백을 붙여 넣고, 강조색 글과 옅은 바탕으로 칠한다. 지우기 키로 멘션을 건드리면 통째로 지워지고 안에 글을 넣으면 평범한 글이 된다. 팝업은 입력란 초점을 가져가지 않으며 키보드에서 위아래, Enter나 Tab, Esc가 된다. `modifier`는 입력란 자체에 붙는다.
 
 ## 미디어와 소셜
 
@@ -1114,6 +1156,44 @@ KChatInput(draft, { draft = it }, onSend = { draft = "" }, placeholder = "메시
 
 다이얼로그나 바텀 시트 안에서 받은 말풍선은 그림자 없이 옅게 그린다. 판 위에서도 떠 보이게 하려면 `variant = KVariant.Elevated`를 넘긴다.
 
+### AI 채팅
+
+| 컴포넌트 | 하는 일 | 주요 파라미터 |
+| --- | --- | --- |
+| `KMarkdownText` | 마크다운 일부(제목, 강조, 인라인 코드, 링크, 목록 2단계, 인용, 수평선, 코드 블록)를 그린다. 스트리밍 중에도 깨지지 않고 끝난 앞 블록은 다시 파싱하지 않는다 | `markdown`, `streaming`(생성 중일 때만 true), `onLinkClick`, `style`, `color`, `codeDark`, `codeLineNumbers` |
+| `KCodeBlock` | 언어 이름, 복사 버튼, 구문 강조(Kotlin, Java, JS, TS, JSON, Python, Shell), 줄 번호, 가로 스크롤이나 줄 접기가 있는 코드 블록 | `code`, `language`, `showLineNumbers`, `wrapLines`, `dark`, `copyable`, `onCopy`, `fontSize` |
+| `KPromptInput` | 첨부 칩 줄, 여러 줄 입력란, 앞쪽 도구 슬롯, 보내기와 멈춤 사이를 모핑하는 버튼이 있는 AI 프롬프트 입력창. 생성 중에는 테두리에 빛이 돈다 | `state` 또는 `value`, `onSend`, `generating`, `onStop`, `attachments`, `onRemoveAttachment`, `leading`, `maxLines`, `imeSend` |
+| `KThinkingIndicator` | '생각 중'과 경과 시간을 반짝이는 글자로 보여 주고, 끝나면 '12초 동안 생각함'으로 접힌다. 눌러 추론 단계 목록을 펼친다 | `thinking`, `steps`(`KThinkingStep`), `elapsedSeconds`, `initiallyExpanded` |
+
+AI 답변 화면은 네 부품으로 만든다. 질문을 보내면 `KThinkingIndicator(thinking = true, steps = …)`를 먼저 두고, 답이 오기 시작하면
+`KMarkdownText(answer)`에 받은 글을 그대로 넘긴다. 글이 뒤로만 늘어나면 앞에서 끝난 블록은 다시 파싱하지 않고 마지막 블록만 다시 그리므로,
+조각이 올 때마다 전체 문자열을 넘겨도 된다. 생성 중에는 `streaming = true`를 넘긴다. 그동안 마지막 블록의 닫히지 않은 코드 울타리와 `**`는 끝까지 열린 것으로 그리고, 다 받은 글에서는 짝 없는 기호를 글자 그대로 둔다.
+
+```kotlin
+val prompt = rememberTextFieldState()
+LazyColumn {
+    items(turns, key = { it.id }) { turn ->
+        KThinkingIndicator(thinking = turn.thinking, steps = turn.steps)
+        KMarkdownText(turn.answer, streaming = turn.generating, onLinkClick = ::openUrl)
+    }
+}
+KPromptInput(
+    prompt,
+    onSend = { ask(prompt.text.toString()); prompt.clearText() },
+    generating = busy,
+    onStop = ::cancel,
+    attachments = files,
+    onRemoveAttachment = { files.remove(it) },
+    leading = { KMorphMenu(model, open, { open = it }, models) },
+)
+```
+
+- `KMarkdownText`는 `Column`이라 `LazyColumn`의 `item` 하나에 넣어도 된다. 글을 고르게 하려면 `SelectionContainer`로 감싼다.
+- 링크는 `LinkAnnotation`으로 붙어 TalkBack이 링크로 읽는다. `onLinkClick`이 null이면 시스템이 주소를 연다.
+- `KCodeBlock`은 TalkBack이 '언어 코드'와 코드 전체를 한 번에 읽고, 복사는 사용자 정의 동작으로 한다. 코드는 RTL 화면에서도 왼쪽에서 오른쪽이다.
+- `KPromptInput`은 하드웨어 키보드 Enter로 보내고 Shift+Enter로 줄을 바꾼다. 생성 중에는 Enter로 보내지 않는다.
+- `KThinkingIndicator`는 `elapsedSeconds`를 주지 않으면 생각하는 동안 스스로 1초씩 센다. 반짝임은 화면 밖이거나 '애니메이션 삭제'면 멈춘다.
+
 ## 효과와 모션
 
 여기 있는 효과는 키트 컴포넌트뿐 아니라 Material `Button`, `Card`, `Image`, `LazyColumn` 항목 같은 호스트 Composable에도 그대로 붙는다. 터치를 소비하지 않으므로 클릭, 리플, TalkBack 역할은 그대로다.
@@ -1174,6 +1254,28 @@ Box(Modifier.glowBorder({ level }, RoundedCornerShape(24.dp)))
 | `KAnimatedBeam` | `Modifier.beamAnchor(id)`로 등록한 두 요소 사이 곡선을 따라 빛이 흐른다 | `beams`(`KBeam(from, to, curvature, reverse, delayMs)`), `color`, `tailColor`, `periodMs`, `tail` |
 | `KDock` | 손가락이나 마우스가 가까운 아이콘이 커지는 독. 훑다가 뗀 곳의 아이콘을 실행하고, 실행 중인 앱에는 점을 찍는다 | `items`(`KDockItem(label, running, onClick, icon)`), `iconSize`, `magnification`, `reach`, `showLabels` |
 | `KOrbitingIcons` | 가운데 요소 둘레를 여러 궤도의 아이콘이 돈다. 장식이라 TalkBack은 가운데 요소만 읽는다 | `orbits`(`KOrbit(radius, periodMs, reverse, showPath, icons)`), `pathColor`, `center` |
+
+### 화면 연출
+
+| 컴포넌트 | 하는 일 | 주요 파라미터 |
+| --- | --- | --- |
+| `KStretchyHeader` | 목록 맨 위 대표 이미지 헤더. 당기면 위쪽 고정으로 늘어나며 확대, 올리면 패럴랙스로 사라지고 제목이 바로 넘어감 | `state`, `title`, `subtitle`, `height`, `parallax`, `scrim`, `image` |
+| `KStretchyHeaderBar` | 헤더 위에 겹치는 상단 바. 헤더가 다 접히면 배경이 차오르고 제목이 나타남 | `state`, `title`, `onBack`, `actions(contentColor)`, `overImageColor`, `windowInsets` |
+| `KNotificationStack` | 같은 앱 알림을 겹쳐 쌓은 묶음. 눌러 펼치기, '간단히'로 접기, 밀어 지우기, 모두 지우기 | `appName`, `notifications`, `onDismiss`, `onDismissAll`, `onClick`, `state`, `icon` |
+| `KWordRotate` | 문장 속 한 단어가 주기적으로 바뀌는 머리글. 아래에서 올라오며 흐림이 풀리고 폭이 부드럽게 변함 | `words`, `prefix`, `suffix`, `style`, `wordColor`, `interval`, `description` |
+| `KShineButton` | 빛 띠가 주기적으로 지나가고 테두리가 은은히 빛나는 주 동작 버튼. KButton과 같은 크기와 톤 | `text`, `onClick`, `tone`, `size`, `loading`, `success`, `period`, `shineColor` |
+
+**늘어나는 헤더.** `rememberKStretchyHeaderState(listState)`나 `rememberKStretchyHeaderState(scrollState)`로 상태를 만들고, 목록 부모에 `Modifier.nestedScroll(state.connection)`을 붙인다.
+헤더는 `LazyColumn`의 첫 항목이나 `Column(verticalScroll)`의 맨 위에 두고, `KStretchyHeaderBar`는 목록과 같은 `Box`에서 목록 위에 겹친다.
+바는 `KTopAppBar`를 바탕으로 하며, 이미지 위에서는 `overImageColor`로 버튼을 그리다가 배경이 반쯤 차면 표면 글자 색으로 바뀐다. `actions`는 지금 쓸 글자 색을 받는다.
+제목은 접힘 0.8을 넘으면 바로 넘어가며, TalkBack 제목(heading)도 그때 바 쪽으로 옮겨 한 번만 읽힌다.
+
+**알림 묶음.** `KNotification(id, title, text, time)` 목록을 넘긴다. 첫 항목이 맨 앞 카드다. 지우기는 카드가 날아간 뒤 `onDismiss(id)`나 `onDismissAll()`로 알리므로 목록에서 빼는 일은 호스트가 한다.
+접힌 묶음을 밀면 묶음 전체를, 펼친 카드를 밀면 그 알림만 지운다. 취소된 끌기는 지우지 않는다. 펼침은 `rememberKNotificationStackState()`로 회전 뒤에도 유지되고 알림이 하나 이하로 줄면 저절로 접힌다.
+TalkBack: 접힌 묶음은 '메시지 알림 5개. 맨 앞 알림'으로 읽고 두 번 탭은 '펼치기', 사용자 정의 동작 '모두 지우기'. 펼친 목록은 CollectionInfo, 카드마다 '지우기' 동작.
+
+**단어 회전 문구와 빛나는 버튼.** 둘 다 LoopClock 기반이라 화면 밖이면 멈추고, '애니메이션 삭제'면 단어는 첫 단어에 멈추고 버튼은 빛 띠 없이 테두리 빛만 고정한다.
+KWordRotate는 live region을 쓰지 않고 앞 글, 단어 목록, 뒤 글을 한 번에 읽는다. KShineButton은 Filled 변형 하나이며 누르면 `KIndication.BUTTON_PRESSED_SCALE`로 눌린다. KButton의 젤리 눌림과는 조금 다르다.
 
 ### 화면 전환과 목록 모션
 

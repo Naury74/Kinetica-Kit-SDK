@@ -4,6 +4,25 @@
 
 ## 1.0.0-alpha07 (개발 중)
 
+### 새 기능
+
+- `KMarkdownText`: AI 답변용 마크다운 렌더러. `streaming`일 때 닫히지 않은 코드 울타리와 강조를 끝까지 열린 것으로 그리고, 끝난 앞 블록은 다시 파싱하지 않는다.
+- `KCodeBlock`: 언어 이름, 복사 버튼, 줄 번호, 가로 스크롤이나 줄 접기, Kotlin, Java, JS, TS, JSON, Python, Shell 구문 강조가 있는 코드 블록.
+- `KPromptInput`: 첨부 칩과 모델 선택 슬롯이 있는 AI 프롬프트 입력창. 생성 중에는 보내기 버튼이 멈춤 버튼으로 모핑하고 테두리에 빛이 돈다.
+- `KThinkingIndicator`: 반짝이는 '생각 중' 글자와 경과 시간, 펼치면 보이는 추론 단계 목록. 끝나면 생각한 시간으로 접힌다.
+- `KTreeView`와 `rememberKTreeState`: 펼친 노드만 늘어놓는 계층 목록. 세 상태 체크박스, 들여쓰기 안내선, 방향키 탐색, TalkBack 수준과 펼침 동작을 지원한다.
+- `KKanbanBoard`: 카드를 길게 눌러 열 안 순서를 바꾸거나 다른 열로 옮기는 칸반 보드. 가장자리 자동 스크롤과 TalkBack, 키보드 이동 동작이 있다.
+- `KDayTimeline`: 겹치는 일정을 나란히 놓는 하루 일정 보기. 1분마다 움직이는 지금 시각 선과 빈 시간 길게 눌러 새 일정 만들기를 지원한다.
+- `KMentionInput`과 `rememberKMentionInputState`: @나 # 같은 트리거로 제안 팝업을 띄우고 고른 멘션을 지우기 한 번에 사라지는 토큰으로 넣는 입력란.
+- `KRadarChart`, `RadarSeries`: 여러 계열을 겹쳐 보는 방사형 차트. 축을 누르면 계열별 값을 보이고, TalkBack은 계열마다 요약을 읽는다.
+- `KTreemap`, `TreemapItem`: 값에 비례한 squarified 트리맵. 들어가는 칸에만 이름을 적고, 키로 선택을 강조한다.
+- `KCandlestickChart`, `Candle`, `KCandlestickState`: 거래량이 있는 캔들 차트. 옮기기, 두 손가락 확대, 길게 눌러 십자선을 지원하고 보이는 기간만 그린다.
+- `KReviewSummary`: 평균 별점, 리뷰 수, 점수별 분포 막대를 보이고 막대를 눌러 점수로 거른다.
+- `KStretchyHeader`와 `KStretchyHeaderBar`: 당기면 늘어나 확대되고 올리면 패럴랙스로 사라지며 제목이 상단 바로 넘어가는 대표 이미지 헤더. `LazyListState`와 `ScrollState`를 모두 받는다.
+- `KNotificationStack`: 같은 앱 알림을 겹쳐 쌓고, 눌러 펼치며, 밀어 지우는 잠금 화면식 알림 묶음. 카드 상태는 id에 묶이고 TalkBack 요약과 지우기 동작이 있다.
+- `KWordRotate`: 문장 속 한 단어가 주기적으로 올라오며 바뀌는 랜딩 머리글. 폭이 단어에 맞춰 부드럽게 변한다.
+- `KShineButton`: 빛 띠가 지나가는 주 동작 버튼. `KButton`과 같은 크기, 톤, 불러오기와 완료 표시를 쓴다.
+
 ### 바뀐 것
 
 - `KMorphMenu`: 메뉴 판이 칩 밑에 따로 뜨지 않고 칩 자리를 덮으며 칩의 시작 끝과 위 끝(위로 열면 아래 끝)을 그대로 둔 채 커집니다. 판은 칩 표면으로 시작해 팝업 표면으로 이어서 바뀌고, 칩보다 좁아지지 않습니다.
