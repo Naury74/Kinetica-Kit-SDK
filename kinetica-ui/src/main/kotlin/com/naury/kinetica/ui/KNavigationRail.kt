@@ -154,7 +154,7 @@ private fun RailItem(item: KTab, selected: Boolean, surface: SurfaceStyle, cell:
                 scaleX = scale
                 scaleY = scale
             }
-            .selectable(selected, interaction, KIndication(cell), role = Role.Tab, onClick = onClick)
+            .selectable(selected, interaction, SelectionIndication(cell), role = Role.Tab, onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

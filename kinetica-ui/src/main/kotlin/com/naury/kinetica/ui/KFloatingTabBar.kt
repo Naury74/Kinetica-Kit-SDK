@@ -336,7 +336,7 @@ private fun FloatingTabItem(tab: KTab, selected: Boolean, look: TabBarLook, enab
             .selectable(
                 selected,
                 interactionSource = interaction,
-                indication = KIndication(look.cell),
+                indication = SelectionIndication(look.cell),
                 enabled = enabled,
                 role = Role.Tab,
                 onClick = onClick,

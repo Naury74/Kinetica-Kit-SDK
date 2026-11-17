@@ -201,7 +201,7 @@ private fun RowScope.TopTab(tab: KTab, look: TopTabLook, activeness: () -> Float
         modifier
             .then(if (look.scrollable) Modifier.widthIn(min = SCROLL_MIN_WIDTH) else Modifier.weight(1f))
             .heightIn(min = TAB_HEIGHT)
-            .selectable(look.selected, null, KIndication(InsetShape(look.shape, vertical = INDICATOR_INSET)), role = Role.Tab) {
+            .selectable(look.selected, null, SelectionIndication(InsetShape(look.shape, vertical = INDICATOR_INSET)), role = Role.Tab) {
                 onClick()
             }
             .padding(horizontal = TAB_PADDING, vertical = 8.dp),

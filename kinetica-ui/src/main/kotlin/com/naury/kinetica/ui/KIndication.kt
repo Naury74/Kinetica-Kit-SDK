@@ -165,7 +165,20 @@ public fun Modifier.kToggleable(
     onValueChange: (Boolean) -> Unit,
 ): Modifier = toggleable(value, interactionSource, KIndication(shape), enabled, role, onValueChange)
 
-private class KIndicationNode(private val source: InteractionSource, private val spec: KIndication) :
+/**
+ * 선택 인디케이터가 미끄러져 오는 탭과 세그먼트 칸의 눌림 표시. 누른 칸에 덮개를 칠하면 오는 인디케이터와 같은 모양 두 개가 잠깐 겹쳐 보이므로
+ * 눌림 덮개는 그리지 않고, 키보드 초점과 마우스 올림 표시만 [KIndication]과 같게 그린다.
+ */
+internal class SelectionIndication(private val shape: Shape) : IndicationNodeFactory {
+    override fun create(interactionSource: InteractionSource): DelegatableNode =
+        KIndicationNode(interactionSource, KIndication(shape), pressFill = false)
+
+    override fun equals(other: Any?): Boolean = other is SelectionIndication && shape == other.shape
+
+    override fun hashCode(): Int = shape.hashCode()
+}
+
+private class KIndicationNode(private val source: InteractionSource, private val spec: KIndication, private val pressFill: Boolean = true) :
     Modifier.Node(),
     DrawModifierNode,
     CompositionLocalConsumerModifierNode {
@@ -249,7 +262,7 @@ private class KIndicationNode(private val source: InteractionSource, private val
 
     override fun ContentDrawScope.draw() {
         val pressed = press.value
-        val level = (pressed + highlight.value).coerceAtMost(1f)
+        val level = ((if (pressFill) pressed else 0f) + highlight.value).coerceAtMost(1f)
         val scale = if (reduced) 1f else 1f - (1f - spec.pressedScale.coerceIn(MIN_SCALE, 1f)) * pressed
         if (scale == 1f) {
             drawContent()

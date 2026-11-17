@@ -194,7 +194,7 @@ public fun KSegmentedControl(
                 val ink by animateColorAsState(paint.content(selected, enabled), tween(COLOR_MS), label = "segment-ink")
                 Box(
                     Modifier
-                        .selectable(selected, null, KIndication(paint.cell), enabled, role) { onSelect(index) }
+                        .selectable(selected, null, SelectionIndication(paint.cell), enabled, role) { onSelect(index) }
                         .describe(segment),
                     contentAlignment = Alignment.Center,
                 ) {

@@ -213,7 +213,7 @@ private fun TabItem(tab: KTab, selected: Boolean, ink: TabBarLook, modifier: Mod
                 scaleX = scale
                 scaleY = scale
             }
-            .selectable(selected, interaction, KIndication(ink.cell), role = Role.Tab, onClick = onClick),
+            .selectable(selected, interaction, SelectionIndication(ink.cell), role = Role.Tab, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { TabContent(tab, color, selected, compactHeight()) }
 }
