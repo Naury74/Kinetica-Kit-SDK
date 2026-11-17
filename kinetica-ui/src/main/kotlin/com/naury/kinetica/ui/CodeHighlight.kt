@@ -38,13 +38,55 @@ internal fun codeLanguageOf(name: String?): CodeLanguage? = when (name?.trim()?.
  */
 internal fun highlightCode(code: String, language: CodeLanguage?): List<CodeToken> {
     if (language == null || code.isEmpty()) return emptyList()
-    val grammar = grammarOf(language)
     val tokens = ArrayList<CodeToken>()
-    for (match in grammar.pattern.findAll(code)) {
-        val kind = if (match.range.isEmpty()) null else tokenKind(match, code, grammar)
-        if (kind != null) tokens += CodeToken(match.range.first, match.range.last + 1, kind)
-    }
+    scanTokens(code, grammarOf(language), 0, tokens)
     return tokens
+}
+
+private fun scanTokens(code: String, grammar: Grammar, from: Int, out: MutableList<CodeToken>) {
+    for (match in grammar.pattern.findAll(code, from)) {
+        val kind = if (match.range.isEmpty()) null else tokenKind(match, code, grammar)
+        if (kind != null) out += CodeToken(match.range.first, match.range.last + 1, kind)
+    }
+}
+
+/**
+ * 스트리밍으로 뒤에 코드가 붙을 때 앞부분 조각을 다시 쓰는 강조 캐시. 결과는 늘 [highlightCode]와 같다.
+ * 마지막 줄 바꿈 앞에서 끝난 조각은 뒤에 글이 붙어도 바뀌지 않으므로 두고, 그 뒤부터 다시 찾는다.
+ * 여러 줄에 걸친 주석과 문자열은 닫히지 않으면 코드 끝까지 가므로 그 조각은 두지 않는다.
+ */
+internal class CodeHighlightCache {
+    private var code = ""
+    private var language: CodeLanguage? = null
+    private var tokens: List<CodeToken> = emptyList()
+
+    /** 마지막으로 다시 찾기 시작한 글자 위치. 테스트가 캐시를 썼는지 확인할 때 본다. */
+    var lastScanFrom: Int = 0
+        private set
+
+    fun update(code: String, language: CodeLanguage?): List<CodeToken> {
+        if (code == this.code && language == this.language) return tokens
+        val grows = language != null && language == this.language && this.code.isNotEmpty() && code.startsWith(this.code)
+        tokens = if (grows && language != null) grow(code, grammarOf(language)) else highlightCode(code, language).also { lastScanFrom = 0 }
+        this.code = code
+        this.language = language
+        return tokens
+    }
+
+    private fun grow(code: String, grammar: Grammar): List<CodeToken> {
+        val old = this.code
+        var limit = old.lastIndexOf('\n')
+        // JSON 문자열은 뒤의 공백 너머 콜론을 보고 키인지 정하므로 공백만 남은 끝에 닿은 조각은 다시 본다.
+        if (grammar.language == CodeLanguage.Json) limit = minOf(limit, old.indexOfLast { !it.isWhitespace() })
+        var keep = 0
+        while (keep < tokens.size && tokens[keep].end <= limit) keep++
+        val from = if (keep == 0) 0 else tokens[keep - 1].end
+        lastScanFrom = from
+        val next = ArrayList<CodeToken>(tokens.size + RESERVE)
+        next.addAll(tokens.subList(0, keep))
+        scanTokens(code, grammar, from, next)
+        return next
+    }
 }
 
 /** 맞은 조각의 종류. 강조하지 않는 낱말이면 null이다. */
@@ -106,6 +148,7 @@ private fun pattern(comment: String, strings: String): Regex = Regex("($comment)
 private val GRAMMARS = java.util.concurrent.ConcurrentHashMap<CodeLanguage, Grammar>()
 
 private const val GROUP_COMMENT = 1
+private const val RESERVE = 16
 private const val GROUP_STRING = 2
 private const val GROUP_NUMBER = 3
 

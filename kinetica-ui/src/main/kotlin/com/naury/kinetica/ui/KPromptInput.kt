@@ -224,8 +224,8 @@ private fun PromptField(source: FieldSource, action: PromptAction, text: PromptT
         .onPreviewKeyEvent { event ->
             val enter = event.type == KeyEventType.KeyDown && event.key == Key.Enter && !event.isShiftPressed
             if (enter && action.canSend) action.send()
-            // 생성 중에 Enter를 누르면 보내지 않고, 줄도 바꾸지 않는다.
-            enter && source.text.isNotBlank()
+            // 보낼 수 없을 때도, 빈 글이어도 Enter로 줄을 바꾸지 않는다. 줄 바꿈은 Shift+Enter다.
+            enter
         }
     SourceTextField(source, fieldModifier, basics) { inner ->
         Box(Modifier.fillMaxWidth().padding(horizontal = FIELD_PADDING_H, vertical = FIELD_PADDING_V)) {

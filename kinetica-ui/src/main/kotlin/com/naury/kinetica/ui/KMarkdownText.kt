@@ -45,7 +45,8 @@ import androidx.compose.ui.unit.sp
  *
  * 아는 문법은 제목(#에서 ###까지, 더 깊은 제목은 ### 모양), 문단, 굵게, 기울임, 취소선, 인라인 코드, 링크, 순서 목록과 비순서 목록(2단계까지),
  * 인용, 수평선, 코드 블록이다. 코드 블록은 [KCodeBlock]으로 그린다. 문단 안 줄 바꿈은 그대로 줄을 바꾼다.
- * 닫히지 않은 코드 울타리와 강조 기호는 글 끝까지 열린 것으로 보므로 스트리밍 도중에도 모양이 깨지지 않는다.
+ * 닫히지 않은 코드 울타리는 글 끝까지 코드로 본다. [streaming]인 동안에는 마지막 블록의 닫히지 않은 강조 기호와 인라인 코드도
+ * 글 끝까지 열린 것으로 보므로 생성 도중에도 모양이 깨지지 않는다. 완성된 글에서 짝이 없는 기호는 글자 그대로 보인다.
  *
  * 글이 뒤로만 늘어나면 이미 끝난 앞 블록은 다시 파싱하지 않고, 블록마다 따로 구성해 바뀐 마지막 블록만 다시 그린다.
  * 그래서 긴 답변도 `LazyColumn`의 `item` 하나에 그대로 넣을 수 있다. 앞부분이 바뀌면 처음부터 다시 파싱한다.
@@ -53,7 +54,7 @@ import androidx.compose.ui.unit.sp
  * 글을 고를 수 있게 하려면 호출한 쪽에서 `SelectionContainer`로 감싼다.
  *
  * ```kotlin
- * KMarkdownText(answer, onLinkClick = { url -> openInBrowser(url) })
+ * KMarkdownText(answer, streaming = generating, onLinkClick = { url -> openInBrowser(url) })
  * ```
  *
  * @param markdown 그릴 마크다운
@@ -62,6 +63,7 @@ import androidx.compose.ui.unit.sp
  * @param color 글자 색. 지정하지 않으면 [LocalKineticaContentColor]다.
  * @param codeDark 코드 블록을 어두운 색으로 그릴지. 기본값은 지금 표면이 어두운지다.
  * @param codeLineNumbers 코드 블록에 줄 번호를 둔다.
+ * @param streaming 글이 아직 생성되는 중인지. 생성이 끝나면 false로 바꿔야 `O(n*m)`의 별표 같은 짝 없는 기호가 글자로 보인다.
  */
 @Composable
 public fun KMarkdownText(
@@ -72,6 +74,7 @@ public fun KMarkdownText(
     color: Color = Color.Unspecified,
     codeDark: Boolean = KineticaTheme.surface.isDark,
     codeLineNumbers: Boolean = false,
+    streaming: Boolean = false,
 ) {
     val cache = remember { MarkdownCache() }
     val blocks = remember(markdown) { cache.update(markdown) }
@@ -85,7 +88,7 @@ public fun KMarkdownText(
         MdContext(body, ink, accent, handler, MdCodeOptions(codeDark, codeLineNumbers))
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(BLOCK_GAP)) {
-        for (block in blocks) MdBlockView(block, context)
+        blocks.forEachIndexed { index, block -> MdBlockView(block, context, streaming && index == blocks.lastIndex) }
     }
 }
 
@@ -110,16 +113,17 @@ internal class MdContext(val body: TextStyle, val ink: Color, val accent: Color,
 }
 
 @Composable
-private fun MdBlockView(block: MdBlock, context: MdContext) {
+private fun MdBlockView(block: MdBlock, context: MdContext, streaming: Boolean) {
     when (block) {
         is MdBlock.Heading -> MdInlineText(
             block.text,
             context.body.merge(headingStyle(block.level)),
             context,
+            streaming,
             Modifier.padding(top = HEADING_TOP).semantics { heading() },
         )
 
-        is MdBlock.Paragraph -> MdInlineText(block.text, context.body, context)
+        is MdBlock.Paragraph -> MdInlineText(block.text, context.body, context, streaming)
 
         is MdBlock.Code -> KCodeBlock(
             block.code,
@@ -129,9 +133,9 @@ private fun MdBlockView(block: MdBlock, context: MdContext) {
             dark = context.code.dark,
         )
 
-        is MdBlock.Quote -> MdQuote(block, context)
+        is MdBlock.Quote -> MdQuote(block, context, streaming)
 
-        is MdBlock.Bullets -> MdBullets(block, context)
+        is MdBlock.Bullets -> MdBullets(block, context, streaming)
 
         MdBlock.Rule -> Box(
             Modifier.fillMaxWidth().padding(vertical = RULE_GAP).height(RULE).background(context.ink.copy(alpha = RULE_ALPHA)),
@@ -140,13 +144,13 @@ private fun MdBlockView(block: MdBlock, context: MdContext) {
 }
 
 @Composable
-private fun MdInlineText(text: String, style: TextStyle, context: MdContext, modifier: Modifier = Modifier) {
-    val annotated = remember(text, context) { buildInline(parseInline(text), context.inline, context.handler) }
+private fun MdInlineText(text: String, style: TextStyle, context: MdContext, streaming: Boolean, modifier: Modifier = Modifier) {
+    val annotated = remember(text, context, streaming) { buildInline(parseInline(text, streaming), context.inline, context.handler) }
     BasicText(annotated, modifier, style = style)
 }
 
 @Composable
-private fun MdQuote(block: MdBlock.Quote, context: MdContext) {
+private fun MdQuote(block: MdBlock.Quote, context: MdContext, streaming: Boolean) {
     val inner = remember(context) { context.quoted() }
     val bar = context.ink.copy(alpha = QUOTE_BAR_ALPHA)
     Column(
@@ -160,22 +164,23 @@ private fun MdQuote(block: MdBlock.Quote, context: MdContext) {
             .padding(start = QUOTE_INDENT),
         verticalArrangement = Arrangement.spacedBy(BLOCK_GAP),
     ) {
-        for (child in block.blocks) MdBlockView(child, inner)
+        block.blocks.forEachIndexed { index, child -> MdBlockView(child, inner, streaming && index == block.blocks.lastIndex) }
     }
 }
 
 @Composable
-private fun MdBullets(block: MdBlock.Bullets, context: MdContext) {
+private fun MdBullets(block: MdBlock.Bullets, context: MdContext, streaming: Boolean) {
     val items = block.items
     Column(
         Modifier.fillMaxWidth().semantics { collectionInfo = CollectionInfo(items.size, 1) },
         verticalArrangement = Arrangement.spacedBy(ITEM_GAP),
     ) {
         items.forEachIndexed { index, item ->
+            // 번호와 글을 한 항목으로 읽도록 묶는다. 링크는 따로 누를 수 있는 노드로 남는다.
             Row(
                 Modifier
                     .padding(start = NEST * item.level)
-                    .semantics { collectionItemInfo = CollectionItemInfo(index, 1, 0, 1) },
+                    .semantics(mergeDescendants = true) { collectionItemInfo = CollectionItemInfo(index, 1, 0, 1) },
             ) {
                 val marker = if (item.ordered) {
                     "${item.number}."
@@ -192,7 +197,7 @@ private fun MdBullets(block: MdBlock.Bullets, context: MdContext) {
                         .then(if (item.ordered) Modifier else Modifier.clearAndSetSemantics { }),
                     style = context.body.copy(color = if (item.ordered) context.ink else context.muted),
                 )
-                MdInlineText(item.text, context.body, context, Modifier.weight(1f))
+                MdInlineText(item.text, context.body, context, streaming && index == items.lastIndex, Modifier.weight(1f))
             }
         }
     }

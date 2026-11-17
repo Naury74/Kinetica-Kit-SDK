@@ -157,18 +157,18 @@ class MarkdownParserTest {
 
     @Test
     fun `닫히지 않은 굵게와 인라인 코드는 끝까지 열려 있다`() {
-        assertThat(parseInline("앞 **굵은 글")).containsExactly(
+        assertThat(parseInline("앞 **굵은 글", streaming = true)).containsExactly(
             MdInline.Text("앞 "),
             MdInline.Styled(MdEmphasis.Bold, listOf(MdInline.Text("굵은 글"))),
         ).inOrder()
-        assertThat(parseInline("앞 `코드")).containsExactly(MdInline.Text("앞 "), MdInline.Code("코드")).inOrder()
+        assertThat(parseInline("앞 `코드", streaming = true)).containsExactly(MdInline.Text("앞 "), MdInline.Code("코드")).inOrder()
     }
 
     @Test
     fun `글 끝에 막 시작한 기호와 덜 온 링크 주소는 그리지 않는다`() {
-        assertThat(parseInline("앞 **").plainText()).isEqualTo("앞 ")
-        assertThat(parseInline("앞 `").plainText()).isEqualTo("앞 ")
-        assertThat(parseInline("[문서](https://exa")).containsExactly(MdInline.Text("문서"))
+        assertThat(parseInline("앞 **", streaming = true).plainText()).isEqualTo("앞 ")
+        assertThat(parseInline("앞 `", streaming = true).plainText()).isEqualTo("앞 ")
+        assertThat(parseInline("[문서](https://exa", streaming = true)).containsExactly(MdInline.Text("문서"))
     }
 
     @Test
@@ -215,5 +215,73 @@ class MarkdownParserTest {
         assertThat(opened).containsExactly("https://k.io")
         val system = buildInline(parseInline("[열기](https://k.io)"), styles, null)
         assertThat((system.getLinkAnnotations(0, system.length).single().item as LinkAnnotation.Url).url).isEqualTo("https://k.io")
+    }
+
+    @Test
+    fun `완성된 글에서 짝이 없는 기호는 글자 그대로 둔다`() {
+        for (text in listOf("O(n*m) 시간", "*.kt 파일", "앞 **굵은 글", "앞 `코드", "끝에 **", "[이름](주소가 끝나지 않음 뒤 글")) {
+            assertThat(parseInline(text)).containsExactly(MdInline.Text(text))
+        }
+        assertThat(parseInline("*.kt 파일과 *.java 파일")).containsExactly(MdInline.Text("*.kt 파일과 *.java 파일"))
+        assertThat(parseInline("a *b **c* d")).containsExactly(
+            MdInline.Text("a "),
+            MdInline.Styled(MdEmphasis.Italic, listOf(MdInline.Text("b **c"))),
+            MdInline.Text(" d"),
+        ).inOrder()
+        // 스트리밍 중에는 이어질 글을 기다리며 열린 강조로 본다.
+        assertThat(parseInline("O(n*m) 시간", streaming = true).any { it is MdInline.Styled }).isTrue()
+    }
+
+    @Test
+    fun `짝 없는 기호가 많아도 빨리 끝난다`() {
+        val text = "`" + "*a _b ~~c ".repeat(5_000)
+        assertThat(parseInline(text).plainText()).isEqualTo(text)
+    }
+
+    @Test
+    fun `맨 주소는 강조 기호와 짝 없는 괄호와 뒤에 붙은 한국어를 빼고 링크한다`() {
+        assertThat(parseInline("**https://a.com**")).containsExactly(
+            MdInline.Styled(MdEmphasis.Bold, listOf(MdInline.Link("https://a.com", listOf(MdInline.Text("https://a.com"))))),
+        )
+        assertThat(parseInline("https://developer.android.com에서 받기")).containsExactly(
+            MdInline.Link("https://developer.android.com", listOf(MdInline.Text("https://developer.android.com"))),
+            MdInline.Text("에서 받기"),
+        ).inOrder()
+        assertThat(parseInline("(https://a.com/x) 참고")[1]).isEqualTo(
+            MdInline.Link("https://a.com/x", listOf(MdInline.Text("https://a.com/x"))),
+        )
+        val wiki = "https://en.wikipedia.org/wiki/Foo_(bar)"
+        assertThat(parseInline("$wiki.")).containsExactly(MdInline.Link(wiki, listOf(MdInline.Text(wiki))), MdInline.Text(".")).inOrder()
+    }
+
+    @Test
+    fun `목록 항목 안 들여쓴 코드 울타리는 빈 줄이 있어도 코드 블록이다`() {
+        val text = "1. 설치\n   ```bash\n   ./gradlew build\n\n   echo 끝\n   ```\n2. 실행\n    ```\n    중첩\n    ```\n\n뒤 문단"
+        assertThat(parseMarkdown(text)).containsExactly(
+            MdBlock.Bullets(listOf(MdListItem(0, ordered = true, number = 1, text = "설치"))),
+            MdBlock.Code("bash", "./gradlew build\n\necho 끝", closed = true),
+            MdBlock.Bullets(listOf(MdListItem(0, ordered = true, number = 2, text = "실행"))),
+            MdBlock.Code(null, "중첩", closed = true),
+            MdBlock.Paragraph("뒤 문단"),
+        ).inOrder()
+        val cache = MarkdownCache()
+        for (end in 1..text.length) {
+            val partial = text.substring(0, end)
+            assertThat(cache.update(partial)).isEqualTo(parseMarkdown(partial))
+        }
+    }
+
+    @Test
+    fun `CRLF와 CR 줄 끝도 LF와 같게 파싱한다`() {
+        val lf = "# 제목\n- 하나\n- 둘\n```kt\nval a = 1\n```\n> 인용\n---\n끝"
+        assertThat(parseMarkdown(lf.replace("\n", "\r\n"))).isEqualTo(parseMarkdown(lf))
+        assertThat(parseMarkdown(lf.replace("\n", "\r"))).isEqualTo(parseMarkdown(lf))
+        val crlf = lf.replace("\n", "\r\n")
+        val cache = MarkdownCache()
+        for (end in 1..crlf.length) {
+            val partial = crlf.substring(0, end)
+            assertThat(cache.update(partial)).isEqualTo(parseMarkdown(partial))
+        }
+        assertThat(cache.update(crlf)).isEqualTo(parseMarkdown(lf))
     }
 }

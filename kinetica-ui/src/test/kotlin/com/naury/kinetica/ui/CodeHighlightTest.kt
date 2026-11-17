@@ -97,4 +97,38 @@ class CodeHighlightTest {
         assertThat(text.spanStyles.map { code.substring(it.start, it.end) }).containsExactly("val", "1").inOrder()
         assertThat(text.spanStyles.first().item.color).isEqualTo(CodePalette.Light.spanOf(CodeTokenKind.Keyword).color)
     }
+
+    @Test
+    fun `늘어나는 코드의 이어 하는 강조는 처음부터 한 강조와 같다`() {
+        val samples = mapOf(
+            CodeLanguage.Kotlin to
+                "/* 블록\n주석 */\nfun main() {\n    val s = \"\"\"여러\n줄\"\"\"\n    println(\"x\" + 0x1F) // 끝\n    val c = 'a'\n}\n",
+            CodeLanguage.JavaScript to "const a = `템플릿\n\${b}`;\nfunction f(x) { return x * 2.5e3 }\n// 주석\n",
+            CodeLanguage.Json to "{\n  \"key\"\n  : \"value\",\n  \"n\": 12,\n  \"ok\": true\n}\n",
+            CodeLanguage.Python to "def f(x):\n    '''문서\n    문자열'''\n    return x # 주석\n",
+            CodeLanguage.Shell to "echo \"a#b\" # 주석\nexport X=1\n",
+        )
+        for ((language, code) in samples) {
+            for (step in listOf(1, 3, 7)) {
+                val cache = CodeHighlightCache()
+                var end = 0
+                while (end < code.length) {
+                    end = minOf(code.length, end + step)
+                    val partial = code.substring(0, end)
+                    assertThat(cache.update(partial, language)).isEqualTo(highlightCode(partial, language))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `강조 캐시는 끝난 줄을 다시 찾지 않고 앞이 바뀌면 처음부터 찾는다`() {
+        val cache = CodeHighlightCache()
+        cache.update("val a = 1\nval b", CodeLanguage.Kotlin)
+        cache.update("val a = 1\nval b = 2", CodeLanguage.Kotlin)
+        assertThat(cache.lastScanFrom).isGreaterThan(0)
+        cache.update("var a = 1\nval b = 2", CodeLanguage.Kotlin)
+        assertThat(cache.lastScanFrom).isEqualTo(0)
+        assertThat(cache.update("x", null)).isEmpty()
+    }
 }

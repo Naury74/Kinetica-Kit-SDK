@@ -32,9 +32,13 @@ internal data class MdListItem(val level: Int, val ordered: Boolean, val number:
 internal class MdEntry(val block: MdBlock, val endOffset: Int)
 
 /** 마크다운 전체를 블록으로 나눈다. 닫히지 않은 코드 울타리는 글 끝까지 코드다. */
-internal fun parseMarkdown(text: String): List<MdBlock> = parseMarkdownEntries(text, 0).map { it.block }
+internal fun parseMarkdown(text: String): List<MdBlock> = parseMarkdownEntries(normalizeLineBreaks(text), 0).map { it.block }
 
-/** [text]의 [from] 위치(줄 시작)부터 블록으로 나눈다. 돌려주는 위치는 [text] 기준이다. */
+/** CRLF와 CR 줄 끝을 LF로 바꾼다. 줄 끝 \r이 남으면 줄 끝을 `$`로 맞추는 블록 문법이 맞지 않는다. */
+internal fun normalizeLineBreaks(text: String): String =
+    if (text.indexOf('\r') < 0) text else text.replace("\r\n", "\n").replace('\r', '\n')
+
+/** [text]의 [from] 위치(줄 시작)부터 블록으로 나눈다. [text]는 줄 끝을 LF로 맞춘 글이고 돌려주는 위치는 [text] 기준이다. */
 internal fun parseMarkdownEntries(text: String, from: Int): List<MdEntry> {
     val lines = ArrayList<String>()
     val starts = ArrayList<Int>()
@@ -67,7 +71,8 @@ internal class MarkdownCache {
     var lastParseFrom: Int = 0
         private set
 
-    fun update(text: String): List<MdBlock> {
+    fun update(raw: String): List<MdBlock> {
+        val text = normalizeLineBreaks(raw)
         if (text != source || entries.isEmpty()) {
             val keep = if (source.isNotEmpty() && text.startsWith(source)) stableCount() else 0
             val from = if (keep == 0) 0 else entries[keep - 1].endOffset
@@ -104,7 +109,8 @@ private class BlockParser(private val lines: List<String>, private val depth: In
     }
 
     private fun fence(line: String): MdBlock? {
-        val open = fenceOf(line) ?: return null
+        // 목록 항목 안에서 들여쓴 울타리도 코드 블록으로 받는다. 목록은 그런 줄에서 끝난다.
+        val open = fenceOf(line, anyIndent = true) ?: return null
         i++
         val body = ArrayList<String>()
         var closed = false
@@ -162,7 +168,8 @@ private class BlockParser(private val lines: List<String>, private val depth: In
             items += MdListItem(level, marker.ordered, marker.number, marker.text)
             return true
         }
-        if (indentOf(line) < NEST_INDENT && startsBlock(line)) return false
+        // 항목 안 들여쓴 코드 울타리를 항목 글로 붙이면 코드 안 빈 줄에서 목록이 끝나고 닫는 울타리가 새 코드를 연다.
+        if (fenceOf(line, anyIndent = true) != null || (indentOf(line) < NEST_INDENT && startsBlock(line))) return false
         val last = items.removeAt(items.lastIndex)
         items += last.copy(text = last.text + "\n" + line.trim())
         return true
@@ -186,18 +193,18 @@ private fun startsBlock(line: String): Boolean = fenceOf(line) != null || HEADIN
 
 private class Fence(val char: Char, val length: Int, val indent: Int, val language: String?)
 
-private fun fenceOf(line: String): Fence? {
-    val match = FENCE.matchEntire(line) ?: return null
+private fun fenceOf(line: String, anyIndent: Boolean = false): Fence? {
+    val match = (if (anyIndent) INDENTED_FENCE else FENCE).matchEntire(line) ?: return null
     val (indent, run, rest) = match.destructured
     val info = rest.trim()
     // 백틱 울타리의 정보 문자열에는 백틱이 들어갈 수 없다.
     if (run[0] == '`' && info.contains('`')) return null
-    return Fence(run[0], run.length, indent.length, info.substringBefore(' ').ifEmpty { null })
+    return Fence(run[0], run.length, indentOf(indent), info.substringBefore(' ').ifEmpty { null })
 }
 
 private fun closesFence(line: String, open: Fence): Boolean {
     val trimmed = line.trim()
-    return trimmed.length >= open.length && trimmed.all { it == open.char } && indentOf(line) < CODE_INDENT
+    return trimmed.length >= open.length && trimmed.all { it == open.char } && indentOf(line) < open.indent + CODE_INDENT
 }
 
 private fun isPartialFence(line: String, open: Fence): Boolean {
@@ -227,13 +234,23 @@ private fun indentOf(line: String): Int {
     return width
 }
 
+/** 앞 공백을 폭 [count]까지 뗀다. 탭은 4칸으로 센다. */
 private fun String.dropIndent(count: Int): String {
     var k = 0
-    while (k < count && k < length && this[k] == ' ') k++
+    var width = 0
+    while (k < length && width < count) {
+        width += when (this[k]) {
+            ' ' -> 1
+            '\t' -> TAB_WIDTH
+            else -> break
+        }
+        k++
+    }
     return substring(k)
 }
 
 private val FENCE = Regex("^( {0,3})(`{3,}|~{3,})(.*)$")
+private val INDENTED_FENCE = Regex("^([ \\t]*)(`{3,}|~{3,})(.*)$")
 private val HEADING = Regex("^ {0,3}(#{1,6})(?:[ \\t]+(.*?))??(?:[ \\t]+#+)?[ \\t]*$")
 private val RULE = Regex("^ {0,3}([-*_])(?:[ \\t]*\\1){2,}[ \\t]*$")
 private val QUOTE = Regex("^ {0,3}> ?(.*)$")

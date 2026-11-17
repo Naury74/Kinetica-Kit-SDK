@@ -29,9 +29,10 @@ internal enum class MdEmphasis { Bold, Italic, Strike }
 
 /**
  * 블록 안 글을 조각으로 나눈다. 굵게, 기울임, 취소선, 인라인 코드, 링크, `<주소>`와 맨 http 주소를 안다.
- * 닫히지 않은 강조와 인라인 코드는 글 끝까지 열린 것으로 본다. 글 끝에 홀로 남은 강조 기호는 스트리밍 중 아직 다 오지 않은 것이라 뺀다.
+ * 닫는 짝이 없는 기호는 글자 그대로 둔다. [streaming]이면 글이 아직 오는 중이므로 닫히지 않은 강조와 인라인 코드를
+ * 글 끝까지 열린 것으로 보고, 글 끝에 홀로 남은 기호와 주소가 덜 온 링크의 나머지는 그리지 않는다.
  */
-internal fun parseInline(text: String): List<MdInline> = InlineParser(text).parse(null, 0)
+internal fun parseInline(text: String, streaming: Boolean = false): List<MdInline> = InlineParser(text, streaming).parse(null, 0)
 
 /** 링크를 누를 때 받을 주소 */
 internal fun interface MdLinkHandler {
@@ -108,8 +109,17 @@ private class InlineFrame {
     }
 }
 
-private class InlineParser(private val s: String) {
+private class InlineParser(private val s: String, private val streaming: Boolean) {
     private var i = 0
+
+    /** 마지막으로 끝난 [parse]가 닫는 기호를 만났는지 */
+    private var closedLast = false
+
+    /** 닫는 짝을 찾지 못한 강조 기호와 그 여는 위치. 그 뒤 같은 기호도 짝이 없다고 보고 다시 찾지 않는다. */
+    private val unclosedFrom = HashMap<String, Int>()
+
+    /** 짝을 찾지 못한 인라인 코드 백틱 묶음 길이 */
+    private val unclosedCode = HashSet<Int>()
 
     /** [closer]를 만날 때까지 파싱한다. 만나지 못하면 글 끝까지가 이 단계다. */
     fun parse(closer: String?, depth: Int): List<MdInline> {
@@ -117,6 +127,7 @@ private class InlineParser(private val s: String) {
         var closed = false
         while (!closed && i < s.length) closed = step(frame, closer, depth)
         frame.flush()
+        closedLast = closed
         return frame.nodes
     }
 
@@ -129,7 +140,7 @@ private class InlineParser(private val s: String) {
                 i += 2
             }
 
-            c == '`' -> code()?.let(frame::add)
+            c == '`' -> code(frame)
 
             c in DELIMITERS -> return delimiter(frame, c, closer, depth)
 
@@ -148,14 +159,33 @@ private class InlineParser(private val s: String) {
             return true
         }
         val opener = if (depth < MAX_DEPTH) openerAt(c, run) else null
-        if (opener != null) {
+        if (opener != null && (streaming || mayClose(opener))) {
+            val start = i
             i += opener.length
-            frame.add(MdInline.Styled(emphasisOf(opener), parse(opener, depth + 1)))
+            val children = parse(opener, depth + 1)
+            if (closedLast || streaming) {
+                frame.add(MdInline.Styled(emphasisOf(opener), children))
+                return false
+            }
+            // 완성된 글에서 짝이 없는 여는 기호는 강조가 아니라 글자다. 그 뒤부터 다시 읽는다.
+            unclosedFrom.putIfAbsent(opener, start)
+            frame.buf.append(opener)
+            i = start + opener.length
+        } else if (opener != null) {
+            frame.buf.append(opener)
+            i += opener.length
         } else {
-            if (!danglingAtEnd(run)) frame.buf.append(s, i, i + run)
+            if (!(streaming && danglingAtEnd(run))) frame.buf.append(s, i, i + run)
             i += run
         }
         return false
+    }
+
+    /** 뒤에 [opener]를 닫을 수 있는 기호가 남아 있는지 대강 본다. 짝을 찾지 못한 적이 있는 기호는 다시 찾지 않는다. */
+    private fun mayClose(opener: String): Boolean {
+        val failed = unclosedFrom[opener]
+        if (failed != null && failed < i) return false
+        return s.indexOf(opener, i + opener.length) >= 0
     }
 
     private fun runLength(c: Char): Int {
@@ -186,12 +216,17 @@ private class InlineParser(private val s: String) {
     private fun danglingAtEnd(run: Int): Boolean = i + run == s.length && (i == 0 || s[i - 1].isWhitespace())
 
     /**
-     * 백틱 묶음에서 시작하는 인라인 코드. 닫는 묶음이 없으면 끝까지 코드다.
-     * 글 끝의 백틱뿐이면 스트리밍 중 막 시작된 것이라 그리지 않고 null을 돌려준다.
+     * 백틱 묶음에서 시작하는 인라인 코드. 닫는 묶음이 없으면 백틱을 글자로 둔다.
+     * 스트리밍 중이면 닫는 묶음이 없을 때 끝까지 코드로 보고, 글 끝의 백틱뿐이면 막 시작된 것이라 그리지 않는다.
      */
-    private fun code(): MdInline? {
+    private fun code(frame: InlineFrame) {
         val run = runLength('`')
         val open = i + run
+        if (!streaming && run in unclosedCode) {
+            frame.buf.append(s, i, open)
+            i = open
+            return
+        }
         var j = open
         while (j < s.length) {
             if (s[j] == '`') {
@@ -199,15 +234,22 @@ private class InlineParser(private val s: String) {
                 while (k < s.length && s[k] == '`') k++
                 if (k - j == run) {
                     i = k
-                    return MdInline.Code(trimCode(s.substring(open, j)))
+                    frame.add(MdInline.Code(trimCode(s.substring(open, j))))
+                    return
                 }
                 j = k
             } else {
                 j++
             }
         }
-        i = s.length
-        return if (open >= s.length) null else MdInline.Code(s.substring(open))
+        if (streaming) {
+            i = s.length
+            if (open < s.length) frame.add(MdInline.Code(s.substring(open)))
+        } else {
+            unclosedCode += run
+            frame.buf.append(s, i, open)
+            i = open
+        }
     }
 
     private fun link(c: Char, depth: Int): MdInline? = when (c) {
@@ -222,7 +264,8 @@ private class InlineParser(private val s: String) {
         val close = matching(i, '[', ']') ?: return null
         if (close + 1 >= s.length || s[close + 1] != '(') return null
         val end = matching(close + 1, '(', ')')
-        val label = InlineParser(s.substring(i + 1, close)).parse(null, depth + 1)
+        if (end == null && !streaming) return null
+        val label = InlineParser(s.substring(i + 1, close), streaming = false).parse(null, depth + 1)
         if (end == null) {
             // 주소가 아직 다 오지 않았다. 이름만 글자로 보여 주고 나머지는 닫힐 때까지 숨긴다.
             i = s.length
@@ -247,7 +290,7 @@ private class InlineParser(private val s: String) {
         if (i > 0 && s[i - 1].isLetterOrDigit()) return null
         var end = i
         while (end < s.length && isUrlChar(s[end])) end++
-        while (end > i && s[end - 1] in TRAILING_PUNCTUATION) end--
+        end = trimUrlEnd(s, i, end)
         val url = s.substring(i, end)
         if (url.length <= url.indexOf("//") + 2) return null
         i = end
@@ -270,6 +313,30 @@ private class InlineParser(private val s: String) {
     }
 }
 
+/** 주소 끝의 문장부호, 강조 기호, 짝 없는 닫는 괄호를 뺀 끝 위치. GFM 확장 자동 링크 규칙을 따른다. */
+private fun trimUrlEnd(s: String, start: Int, from: Int): Int {
+    var end = from
+    while (end > start) {
+        val last = s[end - 1]
+        val drop = last in TRAILING_PUNCTUATION || (last == ')' && unbalancedClose(s, start, end))
+        if (!drop) break
+        end--
+    }
+    return end
+}
+
+private fun unbalancedClose(s: String, start: Int, end: Int): Boolean {
+    var open = 0
+    var close = 0
+    for (k in start until end) {
+        when (s[k]) {
+            '(' -> open++
+            ')' -> close++
+        }
+    }
+    return close > open
+}
+
 private fun emphasisOf(opener: String): MdEmphasis = when {
     opener[0] == '~' -> MdEmphasis.Strike
     opener.length == 2 -> MdEmphasis.Bold
@@ -286,12 +353,14 @@ private fun textOnly(label: List<MdInline>): MdInline = MdInline.Text(label.plai
 
 private fun isWebAddress(text: String, at: Int): Boolean = text.startsWith("http://", at) || text.startsWith("https://", at)
 
-private fun isUrlChar(c: Char): Boolean = !c.isWhitespace() && c != '<' && c != '>'
+/** 주소에 쓰는 ASCII 글자인지. 주소 뒤에 붙은 한국어 조사 같은 글자는 주소가 아니다. */
+private fun isUrlChar(c: Char): Boolean = c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c in URL_SYMBOLS
 
 private val BOLD = SpanStyle(fontWeight = FontWeight.Bold)
 private val ITALIC = SpanStyle(fontStyle = FontStyle.Italic)
 private val STRIKE = SpanStyle(textDecoration = TextDecoration.LineThrough)
 private const val DELIMITERS = "*_~"
 private const val ESCAPABLE = "\\`*_{}[]()#+-.!~>|<"
-private const val TRAILING_PUNCTUATION = ".,;:!?)'\""
+private const val TRAILING_PUNCTUATION = ".,;:!?'*_~"
+private const val URL_SYMBOLS = "-._~:/?#@!\$&'()*+,;=%"
 private const val MAX_DEPTH = 8

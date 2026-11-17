@@ -1,5 +1,6 @@
 package com.naury.kinetica.ui
 
+import android.os.SystemClock
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -21,10 +22,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -89,11 +93,13 @@ public fun KThinkingIndicator(
     val counted = countedSeconds(thinking, counting = elapsedSeconds == null)
     val seconds = (elapsedSeconds ?: counted).coerceAtLeast(0)
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
+    var announce by finishAnnouncement(thinking)
     val expandable = steps.isNotEmpty()
     val still = reducedMotion()
     val clock = rememberLoopClock(running = thinking && !still)
     Column(modifier.loopVisibility(clock)) {
-        ThinkingHeader(ThinkingHeaderState(thinking, seconds, expandable, expandable && expanded, still), clock, surface) {
+        ThinkingHeader(ThinkingHeaderState(thinking, seconds, expandable, expandable && expanded, still, announce), clock, surface) {
+            announce = false
             expanded = it
         }
         AnimatedVisibility(
@@ -106,24 +112,52 @@ public fun KThinkingIndicator(
     }
 }
 
-/** 컴포넌트가 직접 센 경과 시간. 회전 같은 구성 변경에도 이어 센다. */
+/**
+ * 컴포넌트가 직접 센 경과 시간. 초를 하나씩 더하면 목록 밖으로 스크롤되어 구성에서 빠진 동안 멈추므로,
+ * 시작과 끝 시각을 저장해 두고 지금 시각과의 차이로 센다. 회전 같은 구성 변경에도 이어 센다.
+ */
 @Composable
 private fun countedSeconds(thinking: Boolean, counting: Boolean): Int {
-    var seconds by rememberSaveable { mutableIntStateOf(0) }
-    var running by rememberSaveable { mutableStateOf(false) }
+    var startMs by rememberSaveable { mutableLongStateOf(NOT_SET) }
+    var endMs by rememberSaveable { mutableLongStateOf(NOT_SET) }
+    var nowMs by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
     LaunchedEffect(thinking, counting) {
-        if (!thinking) running = false
-        if (!thinking || !counting) return@LaunchedEffect
-        if (!running) {
-            seconds = 0
-            running = true
+        nowMs = SystemClock.elapsedRealtime()
+        if (!thinking) {
+            if (startMs != NOT_SET && endMs == NOT_SET) endMs = nowMs
+            return@LaunchedEffect
+        }
+        if (!counting) return@LaunchedEffect
+        if (startMs == NOT_SET || endMs != NOT_SET) {
+            startMs = nowMs
+            endMs = NOT_SET
         }
         while (true) {
-            delay(SECOND_MS)
-            seconds++
+            delay(SECOND_MS - (nowMs - startMs).mod(SECOND_MS))
+            nowMs = SystemClock.elapsedRealtime()
         }
     }
-    return seconds
+    if (startMs == NOT_SET) return 0
+    val until = if (endMs == NOT_SET) nowMs else endMs
+    return ((until - startMs) / SECOND_MS).toInt()
+}
+
+/**
+ * 생각이 막 끝났을 때만 true. 끝난 문구를 live region으로 한 번 알리고 곧 끈다.
+ * 계속 켜 두면 펼치고 접을 때마다 바뀐 상태와 함께 문구 전체를 다시 읽는다.
+ */
+@Composable
+private fun finishAnnouncement(thinking: Boolean): MutableState<Boolean> {
+    val previous = remember { booleanArrayOf(thinking) }
+    val announce = remember(thinking) { mutableStateOf(previous[0] && !thinking) }
+    SideEffect { previous[0] = thinking }
+    LaunchedEffect(announce, announce.value) {
+        if (announce.value) {
+            delay(ANNOUNCE_MS)
+            announce.value = false
+        }
+    }
+    return announce
 }
 
 private class ThinkingHeaderState(
@@ -132,6 +166,7 @@ private class ThinkingHeaderState(
     val expandable: Boolean,
     val expanded: Boolean,
     val still: Boolean,
+    val announce: Boolean,
 )
 
 @Composable
@@ -175,7 +210,7 @@ private fun ThinkingHeader(state: ThinkingHeaderState, clock: LoopClock, surface
                     Modifier
                 },
             )
-            .semantics(mergeDescendants = true) { if (!state.thinking) liveRegion = LiveRegionMode.Polite }
+            .semantics(mergeDescendants = true) { if (state.announce) liveRegion = LiveRegionMode.Polite }
             .padding(horizontal = HEADER_PADDING),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HEADER_GAP),
@@ -331,6 +366,8 @@ private fun StepIcon(phase: StepPhase, clock: LoopClock, still: Boolean, surface
 }
 
 private const val SECOND_MS = 1_000L
+private const val NOT_SET = -1L
+private const val ANNOUNCE_MS = 3_000L
 private const val MINUTE = 60
 private const val HALF_TURN = 180f
 private const val FULL_TURN = 360f

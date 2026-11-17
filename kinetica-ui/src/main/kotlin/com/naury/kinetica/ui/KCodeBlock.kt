@@ -51,7 +51,8 @@ import kotlinx.coroutines.launch
 /**
  * 코드 블록. 머리줄에 언어 이름과 복사 버튼을 두고, 본문은 고정폭 글꼴로 간단한 구문 강조를 입혀 그린다.
  * 강조하는 언어는 Kotlin, Java, JavaScript, TypeScript, JSON, Python, Shell이고 키워드, 문자열, 숫자, 주석, 타입, 함수 이름 정도를 칠한다.
- * 모르는 언어는 강조 없이 그린다. 강조 결과는 [code]나 [language]가 바뀔 때만 다시 계산하므로 스트리밍으로 코드가 늘어나도 된다.
+ * 모르는 언어는 강조 없이 그린다. 강조 결과는 [code]나 [language]가 바뀔 때만 다시 계산하고, 코드가 뒤로만 늘어나면
+ * 앞에서 끝난 줄의 강조는 다시 하지 않으므로 스트리밍으로 코드가 늘어나도 된다.
  *
  * 줄을 바꾸지 않으면 긴 줄은 블록 안에서 가로로 스크롤한다. 코드는 RTL 화면에서도 왼쪽에서 오른쪽으로 그린다.
  * TalkBack은 블록 전체를 한 번에 '언어 코드'와 코드 내용으로 읽고, 복사는 사용자 정의 동작으로 한다.
@@ -143,7 +144,8 @@ private fun CodeHeader(title: String, code: String, palette: CodePalette, copyab
 
 @Composable
 private fun CodeBody(code: String, language: CodeLanguage?, palette: CodePalette, layout: CodeLayout) {
-    val tokens = remember(code, language) { highlightCode(code, language) }
+    val cache = remember { CodeHighlightCache() }
+    val tokens = remember(code, language) { cache.update(code, language) }
     val highlighted = remember(code, tokens, palette) { buildHighlighted(code, tokens, palette) }
     val style = remember(palette, layout.fontSize) {
         TextStyle(
@@ -154,12 +156,14 @@ private fun CodeBody(code: String, language: CodeLanguage?, palette: CodePalette
             textDirection = TextDirection.Ltr,
         )
     }
-    var visualStarts by remember(code, layout.wrap) { mutableStateOf<IntArray?>(null) }
+    // 코드가 바뀔 때 비우면 새 배치가 오기 전 한 프레임 동안 번호가 접힌 줄을 무시해 깜빡인다. 다음 배치까지 이전 값을 쓴다.
+    var visualStarts by remember(layout.wrap) { mutableStateOf<IntArray?>(null) }
     // 코드는 언어와 관계없이 왼쪽에서 오른쪽으로 읽으므로 본문 배치 방향을 고정한다.
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(Modifier.fillMaxWidth().padding(vertical = PADDING)) {
             if (layout.lineNumbers) {
-                val gutter = remember(code, visualStarts) { gutterText(code, visualStarts) }
+                val lineCount = remember(code) { code.count { it == '\n' } + 1 }
+                val gutter = remember(lineCount, visualStarts) { gutterText(lineCount, visualStarts) }
                 BasicText(
                     gutter,
                     Modifier.padding(start = GUTTER_START, end = GUTTER_END),
@@ -179,7 +183,10 @@ private fun CodeBody(code: String, language: CodeLanguage?, palette: CodePalette
                     style = style,
                     softWrap = layout.wrap,
                     onTextLayout = if (layout.wrap && layout.lineNumbers) {
-                        { result: TextLayoutResult -> visualStarts = visualLineStarts(code, result) }
+                        { result: TextLayoutResult ->
+                            val starts = visualLineStarts(result.layoutInput.text.text, result)
+                            if (!starts.contentEquals(visualStarts)) visualStarts = starts
+                        }
                     } else {
                         null
                     },
@@ -202,16 +209,16 @@ private fun visualLineStarts(code: String, layout: TextLayoutResult): IntArray {
 }
 
 /** 줄 번호 글. [visualStarts]가 있으면 접힌 화면 줄만큼 빈 줄을 끼워 번호를 원래 줄의 첫 화면 줄에 맞춘다. */
-internal fun gutterText(code: String, visualStarts: IntArray?): String {
-    val lines = code.count { it == '\n' } + 1
-    return buildString {
-        for (index in 0 until lines) {
-            if (index > 0) {
-                val gap = if (visualStarts != null && index < visualStarts.size) visualStarts[index] - visualStarts[index - 1] else 1
-                repeat(gap.coerceAtLeast(1)) { append('\n') }
-            }
-            append(index + 1)
+internal fun gutterText(code: String, visualStarts: IntArray?): String = gutterText(code.count { it == '\n' } + 1, visualStarts)
+
+/** [lines]줄짜리 코드의 줄 번호 글 */
+internal fun gutterText(lines: Int, visualStarts: IntArray?): String = buildString {
+    for (index in 0 until lines) {
+        if (index > 0) {
+            val gap = if (visualStarts != null && index < visualStarts.size) visualStarts[index] - visualStarts[index - 1] else 1
+            repeat(gap.coerceAtLeast(1)) { append('\n') }
         }
+        append(index + 1)
     }
 }
 

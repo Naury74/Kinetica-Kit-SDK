@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -37,11 +38,13 @@ import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.text.LinkAnnotation
 import com.google.common.truth.Truth.assertThat
+import java.time.Duration
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowSystemClock
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -75,7 +78,7 @@ class AiKitTest {
     @Test
     fun `스트리밍으로 늘어나는 글도 깨지지 않고 마지막 블록만 바뀐다`() {
         var text by mutableStateOf("")
-        compose.setContent { LazyColumn(Modifier.fillMaxSize()) { item { KMarkdownText(text) } } }
+        compose.setContent { LazyColumn(Modifier.fillMaxSize()) { item { KMarkdownText(text, streaming = true) } } }
         val full = "## 단계\n1. 설치\n2. 설정\n\n```json\n{\"a\": 1}\n```\n끝 **굵게"
         for (end in 1..full.length step 3) {
             text = full.substring(0, end)
@@ -197,7 +200,7 @@ class AiKitTest {
         compose.mainClock.autoAdvance = false
         compose.setContent { KThinkingIndicator(thinking = thinking) }
         compose.onNodeWithText("Thinking").assertExists()
-        compose.mainClock.advanceTimeBy(3_100)
+        advanceBoth(3_100)
         compose.onNodeWithText("Thinking 3s").assertExists()
         thinking = false
         compose.waitForIdle()
@@ -232,5 +235,96 @@ class AiKitTest {
         compose.onNodeWithText("Thought for 0s")
             .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.Expand))
             .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
+    }
+
+    /** 컴포넌트는 시스템 시계로 시간을 재고 화면은 테스트 시계로 갱신하므로 둘을 함께 옮긴다. */
+    private fun advanceBoth(ms: Long) {
+        ShadowSystemClock.advanceBy(Duration.ofMillis(ms))
+        compose.mainClock.advanceTimeBy(ms)
+    }
+
+    @Test
+    fun `순서 목록 번호와 글을 한 번에 읽는다`() {
+        compose.setContent { KMarkdownText("1. 설치\n2. 실행") }
+        compose.onNodeWithText("설치").assert(hasText("1."))
+        compose.onNodeWithText("실행").assert(hasText("2."))
+    }
+
+    @Test
+    fun `완성된 마크다운의 짝 없는 별표는 그대로 보이고 생성 중에는 열린 강조로 본다`() {
+        var streaming by mutableStateOf(true)
+        compose.setContent { KMarkdownText("앞 문단\n\nO(n*m) 시간", streaming = streaming) }
+        compose.onNodeWithText("O(nm) 시간").assertExists()
+        streaming = false
+        compose.waitForIdle()
+        compose.onNodeWithText("O(n*m) 시간").assertExists()
+    }
+
+    @Test
+    fun `빈 글에서 하드웨어 Enter는 보내지도 줄을 바꾸지도 않는다`() {
+        val state = TextFieldState()
+        var sent = 0
+        compose.setContent { KPromptInput(state, onSend = { sent++ }) }
+        val field = compose.onNode(hasSetTextAction())
+        field.requestFocus()
+        field.performKeyInput { pressKey(Key.Enter) }
+        compose.runOnIdle { assertThat(state.text.toString()).isEmpty() }
+        assertThat(sent).isEqualTo(0)
+    }
+
+    @Test
+    fun `생각이 끝나면 한 번만 알리고 펼치고 접을 때는 다시 알리지 않는다`() {
+        val live = SemanticsMatcher.keyIsDefined(SemanticsProperties.LiveRegion)
+        val quiet = SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion)
+        var thinking by mutableStateOf(true)
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            KThinkingIndicator(thinking = thinking, steps = listOf(KThinkingStep("q", "질문", done = true)), elapsedSeconds = 2)
+        }
+        compose.onNodeWithText("Thinking 2s").assert(quiet)
+        thinking = false
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        val header = compose.onNodeWithText("Thought for 2s")
+        header.assert(live)
+        header.performClick()
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        compose.onNodeWithText("Thought for 2s").assert(quiet)
+        thinking = true
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        thinking = false
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        compose.onNodeWithText("Thought for 2s").assert(live)
+        compose.mainClock.advanceTimeBy(3_500)
+        compose.onNodeWithText("Thought for 2s").assert(quiet)
+    }
+
+    @Test
+    fun `처음부터 끝난 생각은 알리지 않는다`() {
+        compose.setContent { KThinkingIndicator(thinking = false, elapsedSeconds = 5) }
+        compose.onNodeWithText("Thought for 5s").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+    }
+
+    @Test
+    fun `직접 센 시간은 구성에서 빠져 있던 동안에도 흐른다`() {
+        var shown by mutableStateOf(true)
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            val holder = rememberSaveableStateHolder()
+            if (shown) holder.SaveableStateProvider("think") { KThinkingIndicator(thinking = true) }
+        }
+        advanceBoth(2_100)
+        compose.onNodeWithText("Thinking 2s").assertExists()
+        shown = false
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        ShadowSystemClock.advanceBy(Duration.ofSeconds(5))
+        shown = true
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        compose.onNodeWithText("Thinking 7s").assertExists()
     }
 }

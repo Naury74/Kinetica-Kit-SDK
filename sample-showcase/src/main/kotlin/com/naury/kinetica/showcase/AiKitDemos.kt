@@ -124,7 +124,9 @@ private fun ChatTurnView(turn: ChatTurn) {
         KChatBubble(turn.question, KChatSide.Sent)
         val steps = THINKING_STEPS.mapIndexed { index, title -> KThinkingStep("s$index", title, done = index < turn.stepsDone) }
         KThinkingIndicator(thinking = turn.phase == ReplyPhase.Thinking, steps = steps)
-        if (turn.answer.isNotEmpty()) KMarkdownText(turn.answer, Modifier.fillMaxWidth())
+        if (turn.answer.isNotEmpty()) {
+            KMarkdownText(turn.answer, Modifier.fillMaxWidth(), streaming = turn.phase == ReplyPhase.Answering)
+        }
         if (turn.phase == ReplyPhase.Stopped) {
             Note("답변을 멈췄습니다.")
         }
