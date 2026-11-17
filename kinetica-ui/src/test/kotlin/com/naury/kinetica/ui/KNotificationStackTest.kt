@@ -178,4 +178,20 @@ class KNotificationStackTest {
         compose.waitForIdle()
         assertThat(state.expanded).isTrue()
     }
+
+    @Test
+    fun `넓은 카드에서도 시각은 카드 끝에 붙는다`() {
+        compose.setContent {
+            KineticaScaffold(surface = SurfaceStyles.CleanLight) {
+                Box(Modifier.width(700.dp)) {
+                    KNotificationStack("메시지", listOf(KNotification("a", "지수", "안녕", "지금")), onDismiss = {
+                    }, modifier = Modifier.testTag("stack"))
+                }
+            }
+        }
+        val card = compose.onNodeWithTag("stack").fetchSemanticsNode().boundsInRoot
+        val time = compose.onNodeWithText("지금", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        // 카드 안쪽 여백만큼만 떨어져 있어야 한다. 이름과 빈칸에 폭을 나눠 주면 시각이 카드 가운데쯤에 놓였다.
+        assertThat(card.right - time.right).isLessThan(card.width * 0.15f)
+    }
 }

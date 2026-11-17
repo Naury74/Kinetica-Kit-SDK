@@ -120,12 +120,13 @@ internal fun NotificationBody(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ThemedText(
                     appName,
-                    Modifier.weight(1f, fill = false),
+                    // 이름이 남은 폭을 다 차지해야 시각이 늘 끝에 붙는다. 이름과 빈칸에 나눠 주면 이름이 짧을 때 시각이 가운데로 온다.
+                    Modifier.weight(1f),
                     style = TextStyle(color = muted, fontSize = 13.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
                 if (more != null) {
                     ThemedText(more, style = TextStyle(color = muted, fontSize = 13.sp, fontWeight = FontWeight.Medium), maxLines = 1)
                     Spacer(Modifier.width(8.dp))
