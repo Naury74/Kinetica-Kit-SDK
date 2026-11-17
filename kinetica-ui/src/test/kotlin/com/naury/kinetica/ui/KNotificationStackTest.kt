@@ -136,6 +136,20 @@ class KNotificationStackTest {
     }
 
     @Test
+    fun `onDismissAll이 없으면 같은 목록에서 하나씩 지워도 크래시 없이 모두 지운다`() {
+        val items = sample()
+        compose.setContent {
+            CompositionLocalProvider(LocalKineticaReducedMotion provides true) {
+                KNotificationStack("메시지", items, onDismiss = { id -> items.removeAll { it.id == id } })
+            }
+        }
+        val front = compose.onNodeWithContentDescription("메시지 알림 3개", substring = true)
+        front.fetchSemanticsNode().config[SemanticsActions.CustomActions].first { it.label == "모두 지우기" }.action()
+        compose.waitForIdle()
+        assertThat(items).isEmpty()
+    }
+
+    @Test
     fun `빈 목록이면 아무것도 그리지 않는다`() {
         setStack(mutableStateListOf())
         compose.onNodeWithTag("stack").assertDoesNotExist()

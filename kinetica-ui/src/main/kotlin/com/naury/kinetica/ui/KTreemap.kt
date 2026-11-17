@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -86,7 +88,8 @@ public fun KTreemap(
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
     require(colors.isNotEmpty()) { "colors는 하나 이상이어야 합니다." }
-    val model = remember(items) { TreemapModel(items) }
+    // 호스트가 같은 SnapshotStateList를 고쳐도 참조가 그대로라 remember 키로는 모르므로, 목록 읽기를 추적한다.
+    val model by remember(items) { derivedStateOf { TreemapModel(items) } }
     val reveal = rememberChartReveal(TREEMAP_REVEAL_MS)
     val selectedRank = model.rankOf(selectedKey)
     val dim = animateFloatAsState(if (selectedRank >= 0) 1f else 0f, spring(), label = "treemap-dim")

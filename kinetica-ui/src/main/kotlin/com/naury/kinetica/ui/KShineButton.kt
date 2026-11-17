@@ -27,7 +27,7 @@ import kotlin.math.sin
  * 안쪽 테두리가 은은하게 숨 쉬듯 빛난다. 누르면 [KIndication.BUTTON_PRESSED_SCALE] 배율로 살짝 눌린다.
  *
  * 빛은 버튼이 화면에 보이고 누를 수 있을 때만 돈다. 화면 밖으로 나가면 멈췄다가 돌아오면 이어 가고, [loading], [success],
- * `enabled = false`이면 멈춘다. '애니메이션 삭제'가 켜져 있으면 빛 띠를 그리지 않고 테두리 빛만 고정해 그린다.
+ * `enabled = false`이면 빛 띠를 거두고 테두리 빛만 고정해 그린다. '애니메이션 삭제'가 켜져 있으면 빛 띠를 그리지 않고 테두리 빛만 고정해 그린다.
  * 화면에 하나만 두는 시작하기, 결제하기 같은 버튼에 쓴다. 여러 개를 나란히 두면 서로 시선을 다툰다.
  *
  * ```kotlin
@@ -58,10 +58,11 @@ public fun KShineButton(
 ) {
     require(period >= MIN_PERIOD_MS) { "period는 $MIN_PERIOD_MS 이상이어야 합니다." }
     val still = isReducedMotion()
-    val clock = rememberLoopClock(running = enabled && !loading && !success && !still)
+    val moving = enabled && !loading && !success && !still
+    val clock = rememberLoopClock(running = moving)
     val interaction = remember { MutableInteractionSource() }
     val press = remember(shape) { KIndication(shape, Color.Transparent, 0f, KIndication.BUTTON_PRESSED_SCALE) }
-    val glow = Modifier.shine(ShineSpec(shape, shineColor, period / MS_PER_SECOND, still), clock)
+    val glow = Modifier.shine(ShineSpec(shape, shineColor, period / MS_PER_SECOND, !moving), clock)
     ButtonBody(
         ButtonSpec(text, KVariant.Filled, tone, size, loading, success, enabled, fullWidth, surface, shape, Color.Unspecified),
         onClick,
@@ -72,7 +73,7 @@ public fun KShineButton(
     )
 }
 
-/** 빛 띠 그리기에 쓰는 고정 값 */
+/** 빛 띠 그리기에 쓰는 고정 값. [still]이면 띠 없이 테두리 빛만 고정해 그린다. */
 private class ShineSpec(val shape: Shape, val color: Color, val periodSeconds: Float, val still: Boolean)
 
 /**
@@ -95,7 +96,8 @@ private fun Modifier.shine(spec: ShineSpec, clock: LoopClock): Modifier = drawWi
     val bandTop = -size.height * (BAND_OVERSHOOT - 1f) / 2f
     val travel = size.width + band * 2f
     onDrawBehind {
-        val seconds = clock.seconds
+        // 멈춘 시계 값으로 띠를 그리면 지나가던 띠가 버튼 위에 얼어붙으므로, 시계가 서는 상태에서는 시계를 읽지 않는다.
+        val seconds = if (spec.still) 0f else clock.seconds
         val phase = if (spec.still) 0f else (seconds % spec.periodSeconds) / spec.periodSeconds
         val breathe = if (spec.still) 1f else HALF + HALF * sin(seconds * BREATHE_SPEED * PI.toFloat() * 2f)
         drawOutline(outline, edge, alpha = EDGE_MIN + EDGE_RANGE * breathe, style = stroke)

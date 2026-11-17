@@ -162,7 +162,11 @@ internal class CandlePlot {
  */
 internal class CandleTextCache(private val measurer: TextMeasurer) {
     private val keys = LongArray(CACHE_SIZE)
+    private val texts = arrayOfNulls<String>(CACHE_SIZE)
     private val values = arrayOfNulls<TextLayoutResult>(CACHE_SIZE)
+    private var crossBits = 0L
+    private var crossText: String? = null
+    private var crossLayout: TextLayoutResult? = null
     private var next = 0
     var style: TextStyle = TextStyle.Default
         private set
@@ -179,14 +183,44 @@ internal class CandleTextCache(private val measurer: TextMeasurer) {
     fun cached(key: Long): TextLayoutResult? {
         for (i in 0 until CACHE_SIZE) {
             val hit = values[i]
-            if (hit != null && keys[i] == key) return hit
+            if (hit != null && texts[i] == null && keys[i] == key) return hit
         }
         return null
     }
 
-    fun put(key: Long, text: String): TextLayoutResult {
-        val made = measurer.measure(text, style)
+    fun put(key: Long, text: String): TextLayoutResult = store(key, null, measurer.measure(text, style))
+
+    /**
+     * 기간 이름 배치 결과. 데이터가 바뀌면 같은 순번에 다른 이름이 오므로 순번이 아니라 글 자체로 찾는다.
+     */
+    fun label(text: String): TextLayoutResult {
+        for (i in 0 until CACHE_SIZE) {
+            val hit = values[i]
+            if (hit != null && texts[i] == text) return hit
+        }
+        return store(0L, text, measurer.measure(text, style))
+    }
+
+    /**
+     * 십자선 가격. 손가락 y마다 가격이 달라 나눠 쓰는 칸을 밀어내지 않도록 전용 칸 하나에 두고,
+     * 형식을 거친 글이 같으면 다시 재지 않는다.
+     */
+    fun crossLabel(price: Float): TextLayoutResult {
+        val bits = price.toRawBits().toLong()
+        val held = crossLayout
+        if (held != null && bits == crossBits) return held
+        crossBits = bits
+        val text = format.price(price)
+        if (held != null && text == crossText) return held
+        return measurer.measure(text, style).also {
+            crossText = text
+            crossLayout = it
+        }
+    }
+
+    private fun store(key: Long, text: String?, made: TextLayoutResult): TextLayoutResult {
         keys[next] = key
+        texts[next] = text
         values[next] = made
         next = (next + 1) % CACHE_SIZE
         return made
@@ -196,6 +230,9 @@ internal class CandleTextCache(private val measurer: TextMeasurer) {
 
     private fun clear() {
         values.fill(null)
+        texts.fill(null)
+        crossLayout = null
+        crossText = null
         next = 0
     }
 }
@@ -290,7 +327,7 @@ private fun DrawScope.drawTimeLabels(frame: CandleFrame, texts: CandleTextCache,
     for (i in range) {
         val name = candles[i].label
         if (i % stride != 0 || name == null) continue
-        val label = texts.cached(TIME_KEY or i.toLong()) ?: texts.put(TIME_KEY or i.toLong(), name)
+        val label = texts.label(name)
         val x = (plot.centerX(i, frame.state, candles.size) - label.size.width / 2f)
             .coerceIn(0f, (plot.plotWidth - label.size.width).coerceAtLeast(0f))
         if (x >= lastEnd + plot.gap) {
@@ -313,9 +350,7 @@ private fun DrawScope.drawCrosshair(frame: CandleFrame, texts: CandleTextCache) 
     val line = GRID_WIDTH.toPx()
     drawLine(ink.copy(alpha = CROSS_ALPHA), Offset(x, 0f), Offset(x, plot.volumeBottom()), line)
     drawLine(ink.copy(alpha = CROSS_ALPHA), Offset(0f, y), Offset(plot.plotWidth, y), line)
-    val price = plot.priceAt(y, volume)
-    val key = CROSS_KEY or (price.toRawBits().toLong() and PRICE_BITS)
-    val label = texts.cached(key) ?: texts.put(key, texts.format.price(price))
+    val label = texts.crossLabel(plot.priceAt(y, volume))
     val pad = plot.gap / 2f
     val top = (y - label.size.height / 2f - pad).coerceIn(0f, (size.height - label.size.height - pad * 2).coerceAtLeast(0f))
     drawRoundRect(
@@ -338,8 +373,6 @@ private const val REVEAL_SPAN = 0.55f
 private const val VOLUME_SHARE = 0.18f
 private const val VOLUME_ALPHA = 0.35f
 private const val CROSS_ALPHA = 0.5f
-private const val TIME_KEY = 1L shl 40
-private const val CROSS_KEY = 1L shl 41
 private const val PRICE_BITS = 0xFFFFFFFFL
 private val AXIS_GAP = 6.dp
 private val TICK_SPACING = 40.dp

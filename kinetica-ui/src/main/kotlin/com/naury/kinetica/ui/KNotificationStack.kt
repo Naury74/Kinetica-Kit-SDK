@@ -83,7 +83,8 @@ public fun KNotificationStack(
     // 접는 움직임이 끝나야 뒤 카드와 위 줄을 구성에서 뺀다. 접힌 동안 TalkBack과 터치에 남지 않게 한다.
     val unfolding by remember(progress) { derivedStateOf { progress.value > 0f } }
     val dismissOne by rememberUpdatedState(onDismiss)
-    val dismissAll by rememberUpdatedState(onDismissAll ?: { notifications.forEach { onDismiss(it.id) } })
+    // 호스트가 onDismiss 안에서 같은 목록을 지우므로 id를 먼저 복사해 두고 부른다.
+    val dismissAll by rememberUpdatedState(onDismissAll ?: { notifications.map { it.id }.forEach(onDismiss) })
     val actions = StackActions(
         expand = { state.expand() },
         collapse = { state.collapse() },

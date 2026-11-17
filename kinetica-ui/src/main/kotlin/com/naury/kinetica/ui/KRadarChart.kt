@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -80,7 +81,8 @@ public fun KRadarChart(
     require(rings in 1..MAX_RINGS) { "rings는 1..${MAX_RINGS}여야 합니다." }
     require(minValue.isFinite()) { "minValue는 유한한 값이어야 합니다." }
     require(maxValue == null || (maxValue.isFinite() && maxValue > minValue)) { "maxValue는 minValue보다 큰 유한한 값이어야 합니다." }
-    val arrays = remember(series) { series.map { it.values.toFloatArray() } }
+    // 호스트가 같은 SnapshotStateList를 고쳐도 참조가 그대로라 remember 키로는 모르므로, 목록 읽기를 추적한다.
+    val arrays by remember(series) { derivedStateOf { series.map { it.values.toFloatArray() } } }
     val rangeOf = remember(maxValue, minValue, rings) { { data: List<FloatArray> -> radarRange(data, minValue, maxValue, rings) } }
     val still = reducedMotion()
     val reveal = rememberChartReveal(RADAR_REVEAL_MS)

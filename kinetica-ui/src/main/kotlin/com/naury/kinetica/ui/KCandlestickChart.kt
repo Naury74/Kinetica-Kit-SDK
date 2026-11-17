@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
@@ -198,7 +200,10 @@ public fun KCandlestickChart(
     volumeFormatter: (Float) -> String = KChartDefaults::formatValue,
     surface: SurfaceStyle = KineticaTheme.surface,
 ) {
-    val content = remember(candles, showVolume) { CandleContent(candles, showVolume && candles.any { it.volume > 0f }) }
+    // 실시간 시세처럼 같은 SnapshotStateList에 기간을 더해도 최고가, 최저가, 거래량 유무가 따라오도록 목록 읽기를 추적한다.
+    val content by remember(candles, showVolume) {
+        derivedStateOf { CandleContent(candles, showVolume && candles.any { it.volume > 0f }) }
+    }
     val format = CandleFormat(priceFormatter, volumeFormatter, candleNames(), stringResource(R.string.kinetica_ui_data_pair))
     val measurer = rememberTextMeasurer()
     val ink = surface.contentColor
@@ -241,11 +246,22 @@ private fun BoxScope.CandleInspector(frame: CandleFrame, format: CandleFormat) {
     var focus by rememberSaveable { mutableIntStateOf(-1) }
     val at = focus.takeIf { it in candles.indices } ?: candles.lastIndex
     val description = candleDescription(candles, at, format)
+    // 시세가 바뀔 때마다 읽지 않도록, 동작으로 옮긴 직후의 설명일 때만 바뀐 내용을 알린다.
+    var moved by remember { mutableStateOf(false) }
+    var spoken by remember { mutableStateOf<String?>(null) }
+    if (moved) {
+        SideEffect {
+            spoken = description
+            moved = false
+        }
+    }
+    val announce = moved || description == spoken
     val previous = stringResource(R.string.kinetica_ui_candle_previous)
     val next = stringResource(R.string.kinetica_ui_candle_next)
     val move: (Int) -> Boolean = { target ->
         if (target in candles.indices) {
             focus = target
+            moved = true
             frame.state.reveal(target, candles.size)
             frame.cross.show(target)
             true
@@ -256,7 +272,7 @@ private fun BoxScope.CandleInspector(frame: CandleFrame, format: CandleFormat) {
     Box(
         Modifier.matchParentSize().semantics(mergeDescendants = true) {
             contentDescription = description
-            liveRegion = LiveRegionMode.Polite
+            if (announce) liveRegion = LiveRegionMode.Polite
             customActions = listOf(
                 CustomAccessibilityAction(previous) { move(at - 1) },
                 CustomAccessibilityAction(next) { move(at + 1) },

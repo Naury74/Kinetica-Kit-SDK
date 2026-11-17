@@ -79,8 +79,15 @@ private fun classify(event: PointerEvent, down: PointerInputChange, slop: Float)
     val moved = change?.let { it.position - down.position }
     return when {
         change == null || !change.pressed || change.isConsumed || moved == null -> CandleGesture.None
-        abs(moved.x) > slop && abs(moved.x) > abs(moved.y) -> CandleGesture.Pan
+
+        abs(moved.x) > slop && abs(moved.x) > abs(moved.y) -> {
+            // 정한 사건을 소비해야 HorizontalPager 같은 부모가 같은 사건으로 끌기를 시작하지 않는다.
+            change.consume()
+            CandleGesture.Pan
+        }
+
         abs(moved.y) > slop -> CandleGesture.None
+
         else -> null
     }
 }

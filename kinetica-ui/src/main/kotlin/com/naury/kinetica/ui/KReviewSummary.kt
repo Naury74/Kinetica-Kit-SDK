@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,7 +90,10 @@ public fun KReviewSummary(
     require(reviewCount >= 0) { "reviewCount는 0 이상이어야 합니다." }
     require(average.isFinite() && average in 0f..distribution.size.toFloat()) { "average는 0..${distribution.size} 안의 값이어야 합니다." }
     val stars = distribution.size
-    val percents = remember(distribution) { roundedPercents(DoubleArray(stars) { distribution[it].toDouble() }) }
+    // 호스트가 같은 SnapshotStateList를 고쳐도 참조가 그대로라 remember 키로는 모르므로, 목록 읽기를 추적한다.
+    val percents by remember(distribution) {
+        derivedStateOf { roundedPercents(DoubleArray(distribution.size) { distribution[it].toDouble() }) }
+    }
     val picked = selectedStars?.takeIf { it in 1..stars }
     val reveal = rememberChartReveal(REVIEW_REVEAL_MS)
     val dim = animateFloatAsState(if (picked != null) 1f else 0f, spring(), label = "review-dim")
