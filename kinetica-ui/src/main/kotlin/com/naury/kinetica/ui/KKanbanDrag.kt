@@ -60,8 +60,11 @@ internal class KanbanDragState<T>(private val scope: CoroutineScope) {
     val lift = Animatable(0f)
 
     var onMove: (Any, Any, Int) -> Unit = { _, _, _ -> }
-    var columnIds: List<Any> = emptyList()
-    var columnCards: Map<Any, List<Any>> = emptyMap()
+    var columns: List<KKanbanColumn<T>> = emptyList()
+    var cardKey: (T) -> Any = { it as Any }
+
+    // 지연 목록 항목 key는 호스트 키를 바꾼 값일 수 있으므로 보이는 항목과 비교할 때는 이것으로 바꿔 비교한다.
+    var itemKeys = LazyItemKeys(null)
     var horizontal: ScrollState? = null
     var boardBounds = Rect.Zero
     var edgePx = 0f
@@ -111,9 +114,11 @@ internal class KanbanDragState<T>(private val scope: CoroutineScope) {
             settle(grab.topLeft)
             return
         }
-        val to = finalIndex(target.before, grab.index, target.column == grab.column)
+        // 끄는 동안 같은 열에 카드가 더해지거나 빠졌을 수 있으므로 시작할 때 번호가 아니라 지금 번호로 계산한다.
+        val from = kanbanCurrentIndex(columns, cardKey, grab)
+        val to = finalIndex(target.before, from, target.column == grab.column)
         val destination = slotTopLeft(target, grab)
-        if (target.column != grab.column || to != grab.index) onMove(grab.key, target.column, to)
+        if (target.column != grab.column || to != from) onMove(grab.key, target.column, to)
         settle(destination ?: grab.topLeft)
     }
 
@@ -152,12 +157,13 @@ internal class KanbanDragState<T>(private val scope: CoroutineScope) {
     private fun retarget() {
         val grab = grab ?: return
         val center = pointer - grab.pointer + grab.topLeft + Offset(grab.size.width / 2f, grab.size.height / 2f)
-        val column = kanbanColumnAt(center.x, columnIds, listBounds) ?: return
+        val column = kanbanColumnAt(center.x, columns, listBounds) ?: return
         val bounds = listBounds[column] ?: return
         val list = lists[column] ?: return
         val layout = list.layoutInfo
         val y = center.y - bounds.top + layout.viewportStartOffset
-        val slots = layout.visibleItemsInfo.filter { it.key != grab.key }.map { KanbanSlot(it.index, it.offset, it.size) }
+        val dragged = itemKeys.of(grab.key)
+        val slots = layout.visibleItemsInfo.filter { it.key != dragged }.map { KanbanSlot(it.index, it.offset, it.size) }
         val before = kanbanDropIndex(slots, layout.totalItemsCount, y)
         val next = KanbanTarget(column, before)
         if (next != target) target = next
@@ -168,7 +174,7 @@ internal class KanbanDragState<T>(private val scope: CoroutineScope) {
         val target = target ?: return null
         if (target.column != column) return null
         val layout = list.layoutInfo
-        val dragged = grab?.key
+        val dragged = grab?.key?.let { itemKeys.of(it) }
         val visible = layout.visibleItemsInfo
         val before = visible.firstOrNull { it.index == target.before && it.key != dragged }
         val after = visible.lastOrNull { it.index < target.before && it.key != dragged }
@@ -232,11 +238,21 @@ internal fun kanbanEdgeSpeed(at: Float, start: Float, end: Float, edge: Float, m
     }
 }
 
-/** 가로 위치 [x]에 있는 열. 열 사이 틈이면 가까운 열이다. */
-internal fun kanbanColumnAt(x: Float, ids: List<Any>, bounds: Map<Any, Rect>): Any? = ids
-    .mapNotNull { id -> bounds[id]?.let { id to it } }
-    .minByOrNull { (_, r) -> if (x in r.left..r.right) 0f else minOf(kotlin.math.abs(x - r.left), kotlin.math.abs(x - r.right)) }
-    ?.first
+/** 가로 위치 [x]에 있는 열. 열 사이 틈이면 가까운 열이다. 손가락이 움직일 때마다 부르므로 목록을 새로 만들지 않는다. */
+internal fun kanbanColumnAt(x: Float, columns: List<KKanbanColumn<*>>, bounds: Map<Any, Rect>): Any? {
+    var best: Any? = null
+    var bestDistance = Float.POSITIVE_INFINITY
+    for (i in columns.indices) {
+        val id = columns[i].id
+        val r = bounds[id] ?: continue
+        val distance = if (x in r.left..r.right) 0f else minOf(kotlin.math.abs(x - r.left), kotlin.math.abs(x - r.right))
+        if (distance < bestDistance) {
+            best = id
+            bestDistance = distance
+        }
+    }
+    return best
+}
 
 /** 보이는 카드 하나의 목록 안 위치(px). */
 internal class KanbanSlot(val index: Int, val offset: Int, val size: Int)
@@ -249,6 +265,13 @@ internal fun kanbanDropIndex(slots: List<KanbanSlot>, total: Int, y: Float): Int
     if (slots.isEmpty()) return if (total <= 1) 0 else total
     slots.firstOrNull { it.offset + it.size / 2f > y }?.let { return it.index }
     return (slots.last().index + 1).coerceAtMost(total)
+}
+
+/** 잡은 카드의 원래 열 안 지금 번호. 열이나 카드를 찾지 못하면 시작할 때 번호다. */
+internal fun <T> kanbanCurrentIndex(columns: List<KKanbanColumn<T>>, cardKey: (T) -> Any, grab: KanbanGrab<T>): Int {
+    val cards = columns.firstOrNull { it.id == grab.column }?.cards ?: return grab.index
+    val index = cards.indexOfFirst { cardKey(it) == grab.key }
+    return if (index >= 0) index else grab.index
 }
 
 /** 원래 목록의 [before]번 앞에 놓을 때 옮긴 뒤 목록에서의 번호. 같은 열에서 아래로 옮기면 자기 자리가 빠지므로 하나 줄어든다. */

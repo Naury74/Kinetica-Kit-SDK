@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
@@ -130,6 +131,82 @@ class KKanbanBoardTest {
         compose.onNodeWithText("No cards").assertExists()
     }
 
+    @Test
+    @Config(qualifiers = "w1200dp-h800dp")
+    fun `같은 SnapshotStateList에 더한 열로도 끌어 놓는다`() {
+        val moves = mutableListOf<Move>()
+        val columns = mutableStateListOf(board[0], board[1])
+        compose.setContent {
+            KKanbanBoard(columns, { it }, { key, column, index -> moves += Move(key, column, index) }, Modifier.height(500.dp)) { card, _ ->
+                Box(Modifier.fillMaxWidth().height(60.dp)) { ThemedText(card) }
+            }
+        }
+        columns.add(KKanbanColumn("done", "Done", emptyList()))
+        compose.waitForIdle()
+        val target = compose.onNodeWithText("No cards").fetchSemanticsNode().boundsInRoot.center
+        val card = compose.onNodeWithText("A").fetchSemanticsNode().boundsInRoot.center
+        compose.onNodeWithText("A").performTouchInput {
+            down(center)
+            advanceEventTime(LONG_PRESS)
+            val step = (target - card) / 4f
+            repeat(4) { moveBy(step) }
+            up()
+        }
+        compose.waitForIdle()
+        assertThat(moves.map { Triple(it.key, it.column, it.index) }).containsExactly(Triple("A", "done", 0))
+    }
+
+    private class PlainCard(val id: String)
+
+    @Test
+    fun `Bundle에 담을 수 없는 카드 키를 써도 그리고 끌어 옮긴다`() {
+        val moves = mutableListOf<Move>()
+        val a = PlainCard("A")
+        val columns = listOf(KKanbanColumn("todo", "To do", listOf(a, PlainCard("B"), PlainCard("C"))))
+        compose.setContent {
+            KKanbanBoard(columns, { it }, { key, column, index -> moves += Move(key, column, index) }, Modifier.height(500.dp)) { card, _ ->
+                Box(Modifier.fillMaxWidth().height(60.dp)) { ThemedText(card.id) }
+            }
+        }
+        val step = with(compose.density) { 50.dp.toPx() }
+        compose.onNodeWithText("A").performTouchInput {
+            down(center)
+            advanceEventTime(LONG_PRESS)
+            moveBy(Offset(0f, step))
+            moveBy(Offset(0f, step))
+            up()
+        }
+        compose.waitForIdle()
+        assertThat(moves.map { Triple(it.key, it.column, it.index) }).containsExactly(Triple(a, "todo", 1))
+    }
+
+    @Test
+    fun `끄는 도중 같은 열 위에 카드가 더해져도 지금 자리로 놓을 번호를 계산한다`() {
+        val moves = mutableListOf<Move>()
+        val columns = mutableStateListOf(board[0])
+        compose.setContent {
+            KKanbanBoard(columns, { it }, { key, column, index -> moves += Move(key, column, index) }, Modifier.height(500.dp)) { card, _ ->
+                Box(Modifier.fillMaxWidth().height(60.dp)) { ThemedText(card) }
+            }
+        }
+        val dp = with(compose.density) { 1.dp.toPx() }
+        // 끄는 동안은 자동 스크롤이 프레임마다 돌아 유휴 상태가 오지 않으므로 시계를 손으로 돌린다.
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithText("B").performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(LONG_PRESS)
+        compose.onNodeWithText("B").performTouchInput { moveBy(Offset(0f, -5 * dp)) }
+        compose.mainClock.advanceTimeBy(FRAMES)
+        columns[0] = board[0].copy(cards = listOf("Z") + board[0].cards)
+        compose.mainClock.advanceTimeBy(FRAMES)
+        // B는 이제 2번이고, Z와 A 사이(1번 앞)에 놓는다.
+        compose.onNodeWithText("Z").performTouchInput {
+            moveBy(Offset(0f, -25 * dp))
+            up()
+        }
+        compose.mainClock.advanceTimeBy(SETTLE)
+        assertThat(moves.map { Triple(it.key, it.column, it.index) }).containsExactly(Triple("B", "todo", 1))
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `열 폭이 0이면 거부한다`() {
         compose.setContent { KKanbanBoard(board, { it }, { _, _, _ -> }, columnWidth = 0.dp) { card, _ -> ThemedText(card) } }
@@ -137,5 +214,7 @@ class KKanbanBoardTest {
 
     private companion object {
         const val LONG_PRESS = 800L
+        const val FRAMES = 100L
+        const val SETTLE = 2_000L
     }
 }

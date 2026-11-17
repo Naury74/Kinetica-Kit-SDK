@@ -51,7 +51,7 @@ public data class KKanbanColumn<T>(val id: Any, val title: String, val cards: Li
  * 칸반 보드. 열을 가로로 늘어놓고, 카드를 길게 눌러 들어 올린 뒤 같은 열 안 다른 자리나 다른 열로 끌어 옮긴다.
  * 끄는 동안 카드는 그림자와 함께 살짝 기울어 떠 있고, 놓을 자리에는 강조색 선이 그어진다. 보드나 열 가장자리 가까이 끌면
  * 그쪽으로 자동 스크롤한다. 놓으면 [onMove]를 한 번 부르고, 자리가 그대로이거나 터치가 취소되면 부르지 않고 원래 자리로 돌아간다.
- * 보드는 데이터를 직접 바꾸지 않으므로 [onMove]에서 [columns]를 고쳐 넘겨야 한다.
+ * 보드는 데이터를 직접 바꾸지 않으므로 [onMove]에서 [columns]를 고친다. 새 목록을 넘기거나 `SnapshotStateList`를 제자리에서 고쳐도 된다.
  *
  * 열은 [columnWidth] 폭이고 넘치면 가로로 스크롤한다. 펼친 폴더블이나 태블릿처럼 모든 열이 [columnWidth] 이상으로 들어가면
  * 남는 폭을 나눠 열을 나란히 다 보인다. TalkBack과 하드웨어 키보드에서는 카드마다 왼쪽 열로, 오른쪽 열로, 위로, 아래로 이동하는
@@ -67,7 +67,7 @@ public data class KKanbanColumn<T>(val id: Any, val title: String, val cards: Li
  * ) { task, dragging -> TaskCard(task) }
  * ```
  *
- * @param cardKey 카드를 가리는 키. 보드 전체에서 달라야 한다.
+ * @param cardKey 카드를 가리는 키. 보드 전체에서 달라야 한다. Bundle에 담을 수 없는 타입이어도 된다.
  * @param onMove 카드를 옮길 때. `toIndex`는 옮긴 뒤 [toColumn] 열 목록에서의 번호(0부터)다.
  * @param columnWidth 열의 기본 폭. 0보다 커야 하며 아니면 [IllegalArgumentException]을 던진다.
  * @param onCardClick 카드를 눌렀을 때. `null`이면 카드는 키보드 초점만 받는다.
@@ -90,11 +90,15 @@ public fun <T> KKanbanBoard(
     val scope = rememberCoroutineScope()
     val drag = remember(scope) { KanbanDragState<T>(scope) }
     val scroll = rememberScrollState()
+    val itemKeys = rememberLazyItemKeys()
     val density = LocalDensity.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     SideEffect {
         drag.onMove = onMove
-        drag.columnIds = columns.map { it.id }
+        // 목록을 그대로 넘겨 호스트가 SnapshotStateList에 열을 더해도 끄는 동안 새 열을 찾게 한다.
+        drag.columns = columns
+        drag.cardKey = cardKey
+        drag.itemKeys = itemKeys
         drag.horizontal = scroll
         drag.horizontalSign = if (rtl) -1f else 1f
         with(density) {
@@ -104,7 +108,7 @@ public fun <T> KKanbanBoard(
         }
     }
     DisposableEffect(drag) { onDispose { drag.reset() } }
-    val context = KanbanContext(drag, columns, KanbanCards(cardKey, onCardClick, card), onMove, surface)
+    val context = KanbanContext(drag, columns, KanbanCards(cardKey, onCardClick, card), onMove, surface, itemKeys)
     BoxWithConstraints(modifier) {
         val bounded = if (constraints.hasBoundedHeight) Modifier else Modifier.height(DEFAULT_HEIGHT)
         val width = kanbanColumnWidth(maxWidth, columns.size, columnWidth)
@@ -124,6 +128,7 @@ internal class KanbanContext<T>(
     val cards: KanbanCards<T>,
     val onMove: (Any, Any, Int) -> Unit,
     val surface: SurfaceStyle,
+    val itemKeys: LazyItemKeys,
 )
 
 /** 카드 키, 누르기, 내용. */

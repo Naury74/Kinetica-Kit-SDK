@@ -1,9 +1,14 @@
 package com.naury.kinetica.ui
 
+import android.os.Parcel
+import android.os.Parcelable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
+import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -41,12 +46,23 @@ public class KTreeState(initialExpanded: Set<Any> = emptySet(), initialSelected:
         if (key in expanded) collapse(key) else expand(key)
     }
 
-    /** 트리에 없는 키를 펼침, 선택, 체크에서 뺀다. 남겨 두면 같은 키로 다시 나타난 노드가 엉뚱하게 펼쳐지거나 체크된 채 나온다. */
+    // 직전에 트리에 있던 키. 한 번도 보지 못한 키는 지우지 않는다.
+    private var seen: Set<Any> = emptySet()
+
+    /**
+     * 트리에서 사라진 키를 펼침, 선택, 체크에서 뺀다. 남겨 두면 같은 키로 다시 나타난 노드가 엉뚱하게 펼쳐지거나 체크된 채 나온다.
+     * 직전에 트리에 있다가 빠진 키만 지운다. 회전 뒤 데이터를 다시 불러오는 동안 트리가 비어 있거나 자식이 아직 오지 않아도
+     * 복원한 상태가 남아 있다가 노드가 나타나면 그대로 쓰인다.
+     */
     internal fun retain(present: Set<Any>) {
-        if (expanded.any { it !in present }) expanded = expanded.filterTo(HashSet()) { it in present }
-        if (checked.any { it !in present }) checked = checked.filterTo(HashSet()) { it in present }
-        if (selected != null && selected !in present) selected = null
-        if (active != null && active !in present) active = null
+        if (present.isEmpty()) return
+        val gone = seen.filterTo(HashSet()) { it !in present }
+        seen = present
+        if (gone.isEmpty()) return
+        if (expanded.any { it in gone }) expanded = expanded.filterTo(HashSet()) { it !in gone }
+        if (checked.any { it in gone }) checked = checked.filterTo(HashSet()) { it !in gone }
+        if (selected in gone) selected = null
+        if (active in gone) active = null
     }
 }
 
@@ -72,6 +88,47 @@ private val TreeStateSaver = Saver<KTreeState, ArrayList<Any?>>(
 @Composable
 public fun rememberKTreeState(initialExpanded: Set<Any> = emptySet()): KTreeState =
     rememberSaveable(saver = TreeStateSaver) { KTreeState(initialExpanded) }
+
+/**
+ * 호스트 키를 지연 목록 항목 key로 바꾼다. 지연 목록은 Android에서 key를 Bundle에 저장하므로 저장할 수 있는 키는 그대로 쓰고,
+ * 아니면 키마다 번호를 매긴 [LazyKeyAlias]를 쓴다. 번호는 이 객체가 살아 있는 동안 같은 키에 같게 남는다.
+ */
+internal class LazyItemKeys(private val registry: SaveableStateRegistry?) {
+    private val aliases = HashMap<Any, LazyKeyAlias>()
+
+    fun of(key: Any): Any {
+        if (registry == null || registry.canBeSaved(key)) return key
+        return aliases.getOrPut(key) { LazyKeyAlias(aliases.size.toLong()) }
+    }
+}
+
+@Composable
+internal fun rememberLazyItemKeys(): LazyItemKeys {
+    val registry = LocalSaveableStateRegistry.current
+    return remember(registry) { LazyItemKeys(registry) }
+}
+
+/** Bundle에 담을 수 없는 호스트 키 대신 쓰는 항목 key. 호스트가 쓸 수 없는 타입이라 호스트 키와 겹치지 않는다. */
+internal class LazyKeyAlias(val id: Long) : Parcelable {
+    override fun equals(other: Any?): Boolean = other is LazyKeyAlias && other.id == id
+
+    override fun hashCode(): Int = id.hashCode()
+
+    override fun describeContents(): Int = 0
+
+    override fun writeToParcel(dest: Parcel, flags: Int) {
+        dest.writeLong(id)
+    }
+
+    companion object {
+        @JvmField
+        val CREATOR: Parcelable.Creator<LazyKeyAlias> = object : Parcelable.Creator<LazyKeyAlias> {
+            override fun createFromParcel(source: Parcel): LazyKeyAlias = LazyKeyAlias(source.readLong())
+
+            override fun newArray(size: Int): Array<LazyKeyAlias?> = arrayOfNulls(size)
+        }
+    }
+}
 
 /** 행의 자리. [depth]는 0부터 센 수준, [position]은 형제 [siblings]개 가운데 1부터 센 순번이다. */
 internal class TreePlace(val depth: Int, val position: Int, val siblings: Int)

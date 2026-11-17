@@ -1,5 +1,6 @@
 package com.naury.kinetica.ui
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
@@ -77,8 +78,78 @@ class KMentionInputTest {
         val before = applyMentionEdit(old, listOf(kim, lee), TextFieldValue("hi! @Kim @Lee", TextRange(3)))
         assertThat(before.mentions.map { it.start }).containsExactly(4, 9).inOrder()
 
-        val caret = applyMentionEdit(old, listOf(kim, lee), old.copy(selection = TextRange(5)))
+        val caret = applyMentionEdit(old.copy(selection = TextRange(3)), listOf(kim, lee), old.copy(selection = TextRange(5)))
         assertThat(caret.value.selection).isEqualTo(TextRange(7))
+    }
+
+    @Test
+    fun `멘션 밖을 고치면 멘션은 그대로 두고 커서 자리를 고친 것으로 본다`() {
+        val bob = KMention("u9", "Bob", '@', 2, 6)
+        // "x @Bob"의 @ 앞에 '@'를 넣는다. 멘션은 한 칸 밀릴 뿐 그대로다.
+        val typed = applyMentionEdit(TextFieldValue("x @Bob", TextRange(2)), listOf(bob), TextFieldValue("x @@Bob", TextRange(3)))
+        assertThat(typed.value.text).isEqualTo("x @@Bob")
+        assertThat(typed.mentions).containsExactly(bob.copy(start = 3, end = 7))
+
+        // "@Bobb"에서 멘션 끝 글자를 지우면 뒤 b가 아니라 멘션이 통째로 지워진다.
+        val head = KMention("u9", "Bob", '@', 0, 4)
+        val erased = applyMentionEdit(TextFieldValue("@Bobb", TextRange(4)), listOf(head), TextFieldValue("@Bob", TextRange(3)))
+        assertThat(erased.value.text).isEqualTo("b")
+        assertThat(erased.value.selection).isEqualTo(TextRange(0))
+        assertThat(erased.mentions).isEmpty()
+    }
+
+    @Test
+    fun `커서를 왼쪽으로 옮겨 멘션에 들어가면 멘션 앞으로 넘어간다`() {
+        val kim = KMention("u1", "Kim", '@', 3, 7)
+        val old = TextFieldValue("hi @Kim", TextRange(7))
+        assertThat(applyMentionEdit(old, listOf(kim), old.copy(selection = TextRange(6))).value.selection).isEqualTo(TextRange(3))
+        val fromLeft = TextFieldValue("hi @Kim", TextRange(3))
+        assertThat(applyMentionEdit(fromLeft, listOf(kim), fromLeft.copy(selection = TextRange(4))).value.selection).isEqualTo(TextRange(7))
+    }
+
+    @Test
+    fun `나중에 도착한 후보도 팝업에 보인다`() {
+        val state = KMentionInputState()
+        val loaded = mutableStateListOf<KMentionCandidate>()
+        compose.setContent {
+            KMentionInput(state, { _, q -> loaded.filter { it.label.startsWith(q, ignoreCase = true) } }, Modifier.testTag("field"))
+        }
+        val field = compose.onNodeWithTag("field")
+        field.requestFocus()
+        field.performTextInput("@k")
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Kim, Design").assertDoesNotExist()
+        loaded.addAll(people)
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Kim, Design").assertExists()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun `Esc로 닫은 뒤 글을 지우거나 골뱅이를 다시 치면 다시 뜬다`() {
+        val state = KMentionInputState()
+        compose.setContent { KMentionInput(state, suggest, Modifier.testTag("field")) }
+        val field = compose.onNodeWithTag("field")
+        field.requestFocus()
+        field.performTextInput("@l")
+        compose.waitForIdle()
+        field.performKeyInput { pressKey(Key.Escape) }
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Lee, Data").assertDoesNotExist()
+        compose.runOnIdle { state.clear() }
+        field.performTextInput("@l")
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Lee, Data").assertExists()
+
+        field.performKeyInput { pressKey(Key.Escape) }
+        compose.waitForIdle()
+        field.performKeyInput {
+            pressKey(Key.Backspace)
+            pressKey(Key.Backspace)
+        }
+        field.performTextInput("@l")
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Lee, Data").assertExists()
     }
 
     @Test

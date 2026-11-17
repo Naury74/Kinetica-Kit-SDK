@@ -3,6 +3,7 @@ package com.naury.kinetica.ui
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -14,6 +15,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -21,6 +23,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.pressKey
@@ -137,11 +140,72 @@ class KTreeViewTest {
         compose.setContent {
             KTreeView(tree, { it.id }, { it.kids }, { it.id }, Modifier.height(600.dp), state, checkable = true)
         }
-        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("App.kt"))).performClick()
+        compose.onNodeWithText("App.kt").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         assertThat(state.checked).containsExactly("App.kt")
-        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("src")))
+        compose.onNodeWithText("src")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.ToggleableState, ToggleableState.Indeterminate))
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun `체크할 수 있는 행은 행 하나가 이름과 체크 상태를 읽고 고르기는 따로 동작으로 둔다`() {
+        val state = KTreeState(initialExpanded = setOf("src"))
+        compose.setContent {
+            KTreeView(tree, { it.id }, { it.kids }, { it.id }, Modifier.height(600.dp), state, checkable = true)
+        }
+        // 체크 상태를 가진 노드는 보이는 행 수와 같고, 체크박스가 이름을 따로 읽지 않는다.
+        compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ToggleableState)).assertCountEquals(4)
+        compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("README.md"))).assertCountEquals(0)
+        compose.onNodeWithText("README.md")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ToggleableState, ToggleableState.Off))
+            .performCustomAccessibilityActionWithLabel("Select")
+        compose.waitForIdle()
+        assertThat(state.selected).isEqualTo("README.md")
+        assertThat(state.checked).isEmpty()
+    }
+
+    @Test
+    fun `같은 SnapshotStateList에 노드를 더해도 보인다`() {
+        val roots = mutableStateListOf(Node("a"))
+        compose.setContent { KTreeView(roots, { it.id }, { it.kids }, { it.id }, Modifier.height(400.dp)) }
+        compose.onNodeWithText("a").assertIsDisplayed()
+        roots.add(Node("b"))
+        compose.waitForIdle()
+        compose.onNodeWithText("b").assertIsDisplayed()
+    }
+
+    private class PlainKey(val id: String) {
+        override fun equals(other: Any?) = other is PlainKey && other.id == id
+
+        override fun hashCode() = id.hashCode()
+    }
+
+    @Test
+    fun `Bundle에 담을 수 없는 키를 써도 그린다`() {
+        val state = KTreeState()
+        compose.setContent { KTreeView(tree, { PlainKey(it.id) }, { it.kids }, { it.id }, Modifier.height(400.dp), state) }
+        compose.onNodeWithText("src").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("main").assertIsDisplayed()
+        assertThat(state.selected).isEqualTo(PlainKey("src"))
+    }
+
+    @Test
+    fun `복원 직후 트리가 비어 있거나 자식이 아직 없어도 펼침과 선택을 지우지 않는다`() {
+        val state = KTreeState(initialExpanded = setOf("src", "main"), initialSelected = "App.kt", initialChecked = setOf("Theme.kt"))
+        var roots by mutableStateOf(emptyList<Node>())
+        compose.setContent { KTreeView(roots, { it.id }, { it.kids }, { it.id }, Modifier.height(600.dp), state) }
+        compose.waitForIdle()
+        // 맨 위 노드만 먼저 오고 자식은 나중에 온다.
+        roots = listOf(Node("src"), Node("build.gradle"))
+        compose.waitForIdle()
+        roots = tree
+        compose.waitForIdle()
+        assertThat(state.expanded).containsExactly("src", "main")
+        assertThat(state.selected).isEqualTo("App.kt")
+        assertThat(state.checked).containsExactly("Theme.kt")
+        compose.onNodeWithText("App.kt").assertIsDisplayed()
     }
 
     @Test

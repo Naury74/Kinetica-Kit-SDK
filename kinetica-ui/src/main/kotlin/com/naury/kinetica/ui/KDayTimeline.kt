@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +37,8 @@ import kotlinx.coroutines.flow.first
 /**
  * [KDayTimeline]의 일정 하나.
  *
- * 자정에 끝나는 일정은 [end]에 `LocalTime.MAX`를 준다. [end]가 [start]보다 늦지 않으면 [IllegalArgumentException]을 던진다.
+ * 달력 데이터를 그대로 넘겨도 되도록 시각을 검사하지 않는다. [end]가 [start]와 같은 0분 일정은 최소 높이로 그리고,
+ * [end]가 [start]보다 이른 일정은 자정을 넘는 일정으로 보고 그날 자정까지만 그린다. [end]가 `LocalTime.MAX`이면 자정까지로 읽는다.
  *
  * @property id 일정을 가리는 키. 일정마다 달라야 한다.
  * @property color 블록 색. 지정하지 않으면 강조색이다.
@@ -50,11 +52,7 @@ public data class KDayEvent(
     val end: LocalTime,
     val color: Color = Color.Unspecified,
     val subtitle: String? = null,
-) {
-    init {
-        require(end > start) { "end는 start보다 늦어야 합니다." }
-    }
-}
+)
 
 /**
  * 하루 일정 보기. 왼쪽에 시간 눈금을, 오른쪽에 일정 블록을 시각에 맞춰 놓는다. 시간이 겹치는 일정은 겹치는 묶음마다 열을 나눠 나란히 놓는다.
@@ -76,7 +74,7 @@ public data class KDayEvent(
  * )
  * ```
  *
- * @param events 일정 목록. 바뀐 것은 목록이 같은지(equals)로 알아보므로 `SnapshotStateList`에 더하기보다 새 목록을 넘긴다.
+ * @param events 일정 목록. 새 목록을 넘기거나 `SnapshotStateList`를 제자리에서 고쳐도 반영한다.
  * @param startHour 맨 위 시각(시). 0..23이어야 한다.
  * @param endHour 맨 아래 시각(시). [startHour]보다 크고 24 이하여야 한다. 범위 밖 일정은 잘라서 보이거나 빠진다.
  * @param hourHeight 한 시간의 높이. 0보다 커야 한다.
@@ -105,7 +103,8 @@ public fun KDayTimeline(
     val range = DayRange(startHour * DAY_MINUTES_PER_HOUR, endHour * DAY_MINUTES_PER_HOUR)
     val pxPerMinute = with(LocalDensity.current) { hourHeight.toPx() } / DAY_MINUTES_PER_HOUR
     val minMinutes = with(LocalDensity.current) { DAY_MIN_BLOCK_HEIGHT.toPx() } / pxPerMinute
-    val slots = remember(events, range, minMinutes) { arrangeDayEvents(events, range, minMinutes) }
+    // 호스트가 같은 SnapshotStateList에 일정을 더해도 다시 배치하도록 목록 읽기를 derivedStateOf로 추적한다.
+    val slots by remember(events, range, minMinutes) { derivedStateOf { arrangeDayEvents(events, range, minMinutes) } }
     val formats = rememberTimeFormats()
     BoxWithConstraints(modifier) {
         val bounded = constraints.hasBoundedHeight
@@ -114,7 +113,7 @@ public fun KDayTimeline(
             HourGutter(range, formats, onLongPressTime, surface)
             DayGrid(
                 slots,
-                DayGridSpec(range, pxPerMinute, minuteClock, formats, surface),
+                DayGridSpec(range, pxPerMinute, minuteClock, formats, surface, showNow),
                 onEventClick,
                 onLongPressTime,
                 Modifier.weight(1f),

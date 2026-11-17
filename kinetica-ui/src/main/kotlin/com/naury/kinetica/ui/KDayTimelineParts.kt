@@ -51,10 +51,13 @@ internal class DayEventSlot(val event: KDayEvent, val start: Int, val end: Int, 
 internal fun arrangeDayEvents(events: List<KDayEvent>, range: DayRange, minMinutes: Float): List<DayEventSlot> {
     class Item(val event: KDayEvent, val start: Int, val end: Int, val shown: Float)
     val items = events.mapNotNull { event ->
-        val start = (event.start.toSecondOfDay() / DAY_SECONDS_PER_MINUTE).coerceAtLeast(range.start)
-        val rawEnd = (event.end.toSecondOfDay() + DAY_SECONDS_PER_MINUTE - 1) / DAY_SECONDS_PER_MINUTE
+        val rawStart = event.start.toSecondOfDay() / DAY_SECONDS_PER_MINUTE
+        val rawEnd = dayEventEndMinute(event)
+        val start = rawStart.coerceAtLeast(range.start)
         val end = rawEnd.coerceAtMost(range.end)
-        if (end <= start) null else Item(event, start, end, maxOf(end.toFloat(), start + minMinutes))
+        // 0분 일정은 시작이 범위 안일 때만 남긴다.
+        val keep = if (rawEnd == rawStart) rawStart in range.start until range.end else end > start
+        if (!keep) null else Item(event, start, maxOf(end, start), maxOf(end.toFloat(), start + minMinutes))
     }.sortedWith(compareBy<Item> { it.start }.thenByDescending { it.end })
     val out = ArrayList<DayEventSlot>(items.size)
     val group = ArrayList<Pair<Item, Int>>()
@@ -79,6 +82,16 @@ internal fun arrangeDayEvents(events: List<KDayEvent>, range: DayRange, minMinut
     }
     close()
     return out
+}
+
+/**
+ * 일정이 끝나는 시각(하루 시작부터 분, 올림). [KDayEvent.end]가 시작보다 이르면 자정을 넘는 일정이므로 자정(1440)까지로 자른다.
+ * 시작과 같으면 0분 일정이라 시작 시각을 돌려준다.
+ */
+internal fun dayEventEndMinute(event: KDayEvent): Int {
+    if (event.end < event.start) return DAY_MINUTES
+    if (event.end == event.start) return event.start.toSecondOfDay() / DAY_SECONDS_PER_MINUTE
+    return (event.end.toSecondOfDay() + DAY_SECONDS_PER_MINUTE - 1) / DAY_SECONDS_PER_MINUTE
 }
 
 /** 시간 눈금 글 열. 글 폭에 맞춰 열 폭을 정하므로 큰 글꼴에서도 잘리지 않는다. */
@@ -135,6 +148,7 @@ internal class DayGridSpec(
     val clock: MinuteClock,
     val formats: TimeFormats,
     val surface: SurfaceStyle,
+    val showNow: Boolean,
 )
 
 @Composable
@@ -158,7 +172,7 @@ internal fun DayGrid(
         modifier = modifier
             .onVisibilityChanged(minFractionVisible = 0f, callback = spec.clock.visibility)
             .hourLines(spec.range, spec.pxPerMinute, ink)
-            .nowLine(spec, accent)
+            .then(if (spec.showNow) Modifier.nowLine(spec, accent) else Modifier)
             .pointerInput(onLongPressTime != null) {
                 if (onLongPressTime == null) return@pointerInput
                 detectTapGestures(
@@ -207,7 +221,8 @@ private fun EventBlock(slot: DayEventSlot, spec: DayGridSpec, onClick: ((KDayEve
     val color = if (event.color == Color.Unspecified) KineticaTheme.colors.accent else event.color
     val ink = spec.surface.contentColor
     val from = spec.formats.time.format(event.start)
-    val to = spec.formats.time.format(event.end)
+    // LocalTime.MAX로 준 자정 종료는 11:59가 아니라 자정으로 읽는다.
+    val to = spec.formats.time.format(if (event.end == LocalTime.MAX) LocalTime.MIDNIGHT else event.end)
     val description = stringResource(R.string.kinetica_ui_day_event, event.title, from, to)
     val compact = (slot.end - slot.start) * spec.pxPerMinute < with(LocalDensity.current) { COMPACT_HEIGHT.toPx() }
     val shape = shapeFor { KShapeToken.Small }
@@ -278,6 +293,7 @@ private fun Modifier.nowLine(spec: DayGridSpec, color: Color): Modifier = drawWi
 }
 
 private const val SNAP_MINUTES = 15
+private const val DAY_MINUTES = 24 * 60
 private const val HALF_HOUR = 30
 private const val GUTTER_ALPHA = 0.6f
 private const val LINE_ALPHA = 0.12f

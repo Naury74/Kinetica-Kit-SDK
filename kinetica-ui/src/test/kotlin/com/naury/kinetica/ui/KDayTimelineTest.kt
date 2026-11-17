@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
@@ -133,9 +137,72 @@ class KDayTimelineTest {
         compose.onNodeWithTag("day").assertExists()
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun `끝이 시작보다 이르면 거부한다`() {
-        event("bad", "10:00", "09:00")
+    @Test
+    fun `0분 일정과 자정을 넘는 일정은 거부하지 않고 하루 안으로 잘라 놓는다`() {
+        val zero = event("zero", "09:00", "09:00")
+        val overnight = event("overnight", "23:00", "01:00")
+        val midnight = KDayEvent("midnight", "midnight", LocalTime.of(22, 0), LocalTime.MAX)
+        val slots = arrangeDayEvents(listOf(zero, overnight, midnight, event("outside", "05:00", "05:00")), DayRange(8 * 60, 24 * 60), 20f)
+        assertThat(slots.map { it.event.id }).containsExactly("zero", "overnight", "midnight")
+        val zeroSlot = slots.first { it.event.id == "zero" }
+        assertThat(zeroSlot.start to zeroSlot.end).isEqualTo(9 * 60 to 9 * 60)
+        assertThat(slots.first { it.event.id == "overnight" }.end).isEqualTo(24 * 60)
+        assertThat(slots.first { it.event.id == "midnight" }.end).isEqualTo(24 * 60)
+    }
+
+    @Test
+    fun `자정에 끝나는 일정은 자정까지로 읽는다`() {
+        compose.setContent {
+            KDayTimeline(
+                listOf(KDayEvent("late", "Late", LocalTime.of(22, 0), LocalTime.MAX), event("ping", "21:00", "21:00")),
+                Modifier.height(400.dp),
+                startHour = 20,
+                scrollToNow = false,
+            )
+        }
+        val description = compose.onNode(
+            contentStartsWith("Late, "),
+        ).fetchSemanticsNode().config[SemanticsProperties.ContentDescription].first()
+        assertThat(description).contains("12:00")
+        assertThat(description).doesNotContain("11:59")
+        compose.onNode(contentStartsWith("ping, ")).assertExists()
+    }
+
+    private fun contentStartsWith(prefix: String) = SemanticsMatcher("$prefix…") { node ->
+        SemanticsProperties.ContentDescription in node.config &&
+            node.config[SemanticsProperties.ContentDescription].firstOrNull()?.startsWith(prefix) == true
+    }
+
+    @Test
+    fun `같은 SnapshotStateList에 일정을 더해도 보인다`() {
+        val events = mutableStateListOf(event("a", "09:00", "10:00"))
+        compose.setContent { KDayTimeline(events, Modifier.height(400.dp), startHour = 8, endHour = 12, scrollToNow = false) }
+        compose.onNode(contentStartsWith("a, ")).assertExists()
+        events.add(event("b", "10:00", "11:00"))
+        compose.waitForIdle()
+        compose.onNode(contentStartsWith("b, ")).assertExists()
+    }
+
+    @Test
+    fun `시간 높이가 바뀐 뒤 길게 누르면 새 높이로 시각을 정한다`() {
+        val times = mutableListOf<LocalTime>()
+        var height by mutableStateOf(60.dp)
+        compose.setContent {
+            KDayTimeline(
+                emptyList(),
+                Modifier.height(400.dp).testTag("day"),
+                startHour = 8,
+                endHour = 14,
+                hourHeight = height,
+                scrollToNow = false,
+                onLongPressTime = { times += it },
+            )
+        }
+        height = 30.dp
+        compose.waitForIdle()
+        val hour = with(compose.density) { 30.dp.toPx() }
+        compose.onNodeWithTag("day").performTouchInput { longClick(Offset(right - 20f, hour * 1.6f)) }
+        assertThat(times).containsExactly(LocalTime.of(9, 30))
     }
 
     @Test(expected = IllegalArgumentException::class)

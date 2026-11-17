@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -32,6 +35,7 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -61,12 +65,21 @@ public class KMentionInputState(initialText: String = "", initialMentions: List<
     public fun clear() {
         value = TextFieldValue()
         mentions = emptyList()
+        dismissedAt = -1
     }
 
-    /** Esc로 닫은 제안 팝업의 트리거 위치. 같은 자리에서 다시 열지 않는다. */
+    /**
+     * Esc로 닫은 제안 팝업의 트리거 위치. 그 트리거 뒤로 계속 치는 동안은 다시 열지 않는다.
+     * 트리거나 그 앞 글이 바뀌거나, 커서가 그 멘션 입력을 벗어나면 잊는다.
+     */
     internal var dismissedAt by mutableIntStateOf(-1)
 
-    internal fun edit(new: TextFieldValue) = apply(applyMentionEdit(value, mentions, new))
+    internal fun edit(new: TextFieldValue) {
+        val before = value.text
+        apply(applyMentionEdit(value, mentions, new))
+        val at = dismissedAt
+        if (at >= 0 && !value.text.regionMatches(0, before, 0, at + 1)) dismissedAt = -1
+    }
 
     internal fun pick(query: MentionQuery, candidate: KMentionCandidate) = apply(insertMention(value, mentions, query, candidate))
 
@@ -133,6 +146,7 @@ public fun rememberKMentionInputState(initialText: String = ""): KMentionInputSt
  * ```
  *
  * @param suggestions 트리거 문자와 그 뒤 글(빈 글일 수 있다)로 후보를 돌려준다. 입력이 바뀔 때마다 부르므로 가볍게 만든다.
+ *   Compose 상태에서 후보를 읽으면 그 상태가 바뀔 때도 다시 불러 비동기로 도착한 후보를 바로 보인다.
  * @param modifier 입력란 자체에 붙는다. `testTag`나 `focusRequester`를 여기에 준다.
  * @param triggers 제안을 여는 문자. 비어 있거나 공백 문자가 있으면 [IllegalArgumentException]을 던진다.
  * @param placeholder 비어 있을 때의 안내 글이자 TalkBack이 읽는 입력란 이름. 비어 있으면 이름은 '메시지'다.
@@ -161,10 +175,15 @@ public fun KMentionInput(
         if (value.selection.collapsed) findMentionQuery(value.text, value.selection.start, triggers, state.mentions) else null
     }
     val currentSuggestions by rememberUpdatedState(suggestions)
-    val candidates = remember(query) { query?.let { currentSuggestions(it.trigger, it.query).take(maxSuggestions) }.orEmpty() }
+    // 후보를 상태(예: 비동기로 채우는 SnapshotStateList)에서 읽으면 그 상태가 바뀔 때도 다시 계산하도록 derivedStateOf로 추적한다.
+    val candidates by remember(query, maxSuggestions) {
+        derivedStateOf { query?.let { currentSuggestions(it.trigger, it.query).take(maxSuggestions) }.orEmpty() }
+    }
     val popup = remember { MentionPopupModel() }
     popup.sync(candidates)
-    val open = focused && query != null && candidates.isNotEmpty() && state.dismissedAt != query.start
+    val dismissed = state.dismissedAt
+    if (dismissed >= 0 && query?.start != dismissed) SideEffect { state.dismissedAt = -1 }
+    val open = focused && query != null && candidates.isNotEmpty() && dismissed != query.start
     val notify by rememberUpdatedState(onMentionsChange)
     val change: (() -> Unit) -> Unit = { edit ->
         val before = state.mentions
@@ -240,8 +259,8 @@ private fun MentionField(
                     Box {
                         val hint = TextStyle(color = surface.muted(HINT_ALPHA), fontSize = FONT_SIZE)
                         FieldNameText(name, value.text.isEmpty() && look.placeholder.isNotEmpty(), hint)
-                        inner()
-                        MentionPopupAnchor(layout, session.query?.start ?: 0) {
+                        Box(Modifier.onSizeChanged { layout.viewport = it }) { inner() }
+                        MentionPopupAnchor(layout, session.query?.start ?: 0, value.selection.end) {
                             val content = MentionPopupContent(session.popup, session.query?.trigger ?: look.defaultTrigger, surface)
                             MentionPopup(session.open, content, session.pick, session.dismiss)
                         }
@@ -256,6 +275,9 @@ private fun MentionField(
 @Stable
 internal class TextLayoutHolder {
     var result: TextLayoutResult? by mutableStateOf(null)
+
+    /** 입력란에서 글이 보이는 영역의 크기(px). 글이 이보다 길면 입력란 안이 스크롤된다. */
+    var viewport: IntSize by mutableStateOf(IntSize.Zero)
 }
 
 /** 멘션 자리에 강조색 글과 옅은 바탕을 입힌다. 글자 수는 바꾸지 않는다. */

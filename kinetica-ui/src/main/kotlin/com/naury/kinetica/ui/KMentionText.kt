@@ -59,17 +59,23 @@ internal fun findMentionQuery(
 /**
  * 입력란이 보낸 새 값 [new]를 멘션에 맞춰 고친다.
  *
- * 바뀐 부분은 앞뒤에서 같은 글을 걷어 내고 남은 구간으로 본다. 그 구간이 멘션을 지우면(한 글자라도) 멘션 전체를 한 번에 지운다.
- * 멘션 안에 글을 넣거나 바꾸면 그 멘션은 평범한 글이 된다. 바뀐 곳 뒤의 멘션은 늘거나 준 만큼 위치를 옮긴다.
- * 글은 그대로이고 커서만 움직였으면 멘션 안에 놓인 커서를 멘션 끝으로 보낸다.
+ * 바뀐 부분은 앞뒤에서 같은 글을 걷어 내고 남은 구간으로 본다. 같은 글자가 이어지면 어느 쪽을 고쳤는지 글만으로는 알 수 없으므로
+ * 앞에서 걷어 내는 양을 고치기 전후 커서 가운데 앞쪽 위치까지로 제한해 커서 자리를 고친 것으로 본다.
+ * 그 구간이 멘션을 지우면(한 글자라도) 멘션 전체를 한 번에 지운다. 멘션 안에 글을 넣거나 바꾸면 그 멘션은 평범한 글이 된다.
+ * 바뀐 곳 뒤의 멘션은 늘거나 준 만큼 위치를 옮긴다.
+ * 글은 그대로이고 커서만 움직였으면 멘션 안에 놓인 커서를 움직인 방향의 멘션 끝으로 보낸다. 왼쪽으로 움직였으면 멘션 앞이다.
  */
 internal fun applyMentionEdit(old: TextFieldValue, mentions: List<KMention>, new: TextFieldValue): MentionEdit {
-    if (old.text == new.text) return MentionEdit(new.copy(selection = snapOutOfMentions(new.selection, mentions)), mentions)
+    if (old.text == new.text) {
+        val left = new.selection.start < old.selection.start
+        return MentionEdit(new.copy(selection = snapOutOfMentions(new.selection, mentions, left)), mentions)
+    }
     val a = old.text
     val b = new.text
-    var prefix = 0
     val shorter = minOf(a.length, b.length)
-    while (prefix < shorter && a[prefix] == b[prefix]) prefix++
+    val prefixLimit = minOf(old.selection.min, new.selection.min, shorter).coerceAtLeast(0)
+    var prefix = 0
+    while (prefix < prefixLimit && a[prefix] == b[prefix]) prefix++
     var suffix = 0
     while (suffix < shorter - prefix && a[a.length - 1 - suffix] == b[b.length - 1 - suffix]) suffix++
     val oldEnd = a.length - suffix
@@ -81,7 +87,7 @@ internal fun applyMentionEdit(old: TextFieldValue, mentions: List<KMention>, new
     if (touched.isNotEmpty() && inserted == 0) return deleteWhole(a, mentions, touched, prefix, oldEnd)
     val delta = inserted - removed
     val kept = mentions.filter { it !in touched }.map { if (it.start >= oldEnd) it.shift(delta) else it }
-    return MentionEdit(new.copy(selection = snapOutOfMentions(new.selection, kept)), kept)
+    return MentionEdit(new.copy(selection = snapOutOfMentions(new.selection, kept, left = false)), kept)
 }
 
 /** 지운 구간 [from]..[to]가 멘션에 걸치면 그 멘션까지 넓혀 지운다. 커서는 지운 자리에 둔다. */
@@ -121,11 +127,11 @@ internal fun insertMention(
 
 private fun KMention.shift(delta: Int): KMention = copy(start = start + delta, end = end + delta)
 
-/** 접힌 커서가 멘션 안에 있으면 멘션 끝으로 보낸다. 범위 선택은 그대로 둔다. */
-private fun snapOutOfMentions(selection: TextRange, mentions: List<KMention>): TextRange {
+/** 접힌 커서가 멘션 안에 있으면 [left]면 멘션 앞으로, 아니면 멘션 끝으로 보낸다. 범위 선택은 그대로 둔다. */
+private fun snapOutOfMentions(selection: TextRange, mentions: List<KMention>, left: Boolean): TextRange {
     if (!selection.collapsed) return selection
     val inside = mentions.firstOrNull { selection.start > it.start && selection.start < it.end } ?: return selection
-    return TextRange(inside.end)
+    return TextRange(if (left) inside.start else inside.end)
 }
 
 private const val MAX_QUERY_LENGTH = 40

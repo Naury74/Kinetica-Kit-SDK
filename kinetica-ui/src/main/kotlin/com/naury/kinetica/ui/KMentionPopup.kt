@@ -77,17 +77,39 @@ private val PopupKeys = setOf(Key.DirectionDown, Key.DirectionUp, Key.Enter, Key
 /**
  * 글 [offset] 위치의 커서 사각형에 크기와 위치를 맞춘 상자. 안에서 부른 앵커 팝업이 이 상자를 기준으로 뜬다.
  * 배치 결과는 배치 단계에서만 읽는다.
+ *
+ * 글이 입력란보다 길면 입력란 안이 스크롤되는데 그 양은 밖에서 읽을 수 없다. 입력란은 커서 [caret]이 보이도록 스크롤하므로
+ * 커서가 보이는 영역 끝에 붙어 있다고 보고 그만큼 옮긴 뒤, 보이는 영역 밖으로 나가지 않게 자른다.
  */
 @Composable
-internal fun MentionPopupAnchor(layout: TextLayoutHolder, offset: Int, content: @Composable () -> Unit) {
+internal fun MentionPopupAnchor(layout: TextLayoutHolder, offset: Int, caret: Int, content: @Composable () -> Unit) {
     Box(
         Modifier.layout { measurable, _ ->
             val result = layout.result
-            val rect = result?.getCursorRect(offset.coerceIn(0, result.layoutInput.text.length)) ?: Rect.Zero
-            val placeable = measurable.measure(
-                Constraints.fixed(rect.width.roundToInt().coerceAtLeast(1), rect.height.roundToInt().coerceAtLeast(1)),
-            )
-            layout(0, 0) { placeable.place(rect.left.roundToInt(), rect.top.roundToInt()) }
+            val length = result?.layoutInput?.text?.length ?: 0
+            val rect = result?.getCursorRect(offset.coerceIn(0, length)) ?: Rect.Zero
+            val width = rect.width.roundToInt().coerceAtLeast(1)
+            val height = rect.height.roundToInt().coerceAtLeast(1)
+            val placeable = measurable.measure(Constraints.fixed(width, height))
+            var x = rect.left
+            var y = rect.top
+            val viewport = layout.viewport
+            if (result != null && viewport.width > 0 && viewport.height > 0) {
+                val cursor = result.getCursorRect(caret.coerceIn(0, length))
+                x =
+                    (
+                        x - (cursor.right - viewport.width).coerceAtLeast(
+                            0f,
+                        )
+                        ).coerceIn(0f, (viewport.width - width).coerceAtLeast(0).toFloat())
+                y =
+                    (
+                        y - (cursor.bottom - viewport.height).coerceAtLeast(
+                            0f,
+                        )
+                        ).coerceIn(0f, (viewport.height - height).coerceAtLeast(0).toFloat())
+            }
+            layout(0, 0) { placeable.place(x.roundToInt(), y.roundToInt()) }
         },
     ) { content() }
 }

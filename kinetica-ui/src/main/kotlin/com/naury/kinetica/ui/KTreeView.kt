@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,14 +43,17 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CollectionItemInfo
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.collectionItemInfo
-import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.expand
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -84,8 +88,9 @@ import androidx.compose.ui.unit.sp
  * )
  * ```
  *
- * @param roots 맨 위 노드. 바뀐 것은 목록이 같은지(equals)로 알아보므로 트리를 고치면 새 목록을 넘긴다.
+ * @param roots 맨 위 노드. 새 목록을 넘기거나 `SnapshotStateList`를 제자리에서 고쳐도 반영한다. 자식 목록도 마찬가지다.
  * @param key 노드를 가리는 키. 트리 전체에서 달라야 하며, 같은 키가 다시 나오면 두 번째부터는 건너뛴다.
+ *   Bundle에 담을 수 없는 타입이어도 되지만, 그런 키의 펼침, 선택, 체크는 회전 뒤에 남지 않는다.
  * @param children 노드의 자식. 빈 목록이면 잎이다. [roots]가 바뀌면 사라진 키를 정리하려고 트리 전체에 대해 부른다.
  * @param label 행 글. TalkBack도 이 글을 읽는다.
  * @param state 펼침, 선택, 체크 상태
@@ -117,14 +122,16 @@ public fun <T> KTreeView(
 ) {
     val access = remember(key, children) { TreeAccess(key, children) }
     val currentAccess by rememberUpdatedState(access)
-    val present = remember(roots) { allTreeKeys(roots, currentAccess) }
+    // 호스트가 같은 SnapshotStateList를 제자리에서 고쳐도 다시 계산하도록 목록 읽기를 derivedStateOf로 추적한다.
+    val present by remember(roots) { derivedStateOf { allTreeKeys(roots, currentAccess) } }
     DisposableEffect(state, present) {
         state.retain(present)
         onDispose {}
     }
-    val expanded = state.expanded
-    val rows = remember(roots, expanded) { flattenTree(roots, currentAccess, expanded) }
-    val checks = if (checkable) remember(roots, state.checked) { treeCheckStates(roots, currentAccess, state.checked) } else emptyMap()
+    val rows by remember(roots, state) { derivedStateOf { flattenTree(roots, currentAccess, state.expanded) } }
+    val checkStates by remember(roots, state) { derivedStateOf { treeCheckStates(roots, currentAccess, state.checked) } }
+    val checks = if (checkable) checkStates else emptyMap()
+    val itemKeys = rememberLazyItemKeys()
     val select by rememberUpdatedState(onSelect)
     var focused by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -146,7 +153,7 @@ public fun <T> KTreeView(
             .focusable(),
         state = listState,
     ) {
-        itemsIndexed(rows, key = { _, row -> row.key }) { index, row ->
+        itemsIndexed(rows, key = { _, row -> itemKeys.of(row.key) }) { index, row ->
             Box(Modifier.animateItem(fadeInSpec = rowFade(), placementSpec = rowPlacement(), fadeOutSpec = rowFade())) {
                 TreeRowView(row, TreeRowStatus(index, checks[row.key], focused && state.active == row.key), label(row.item), look, actions)
             }
@@ -180,6 +187,10 @@ private fun <T> TreeRowView(row: TreeRow<T>, status: TreeRowStatus, text: String
     val shape = shapeFor { KShapeToken.Small }
     val description = treeRowDescription(row, open)
     val selectLabel = stringResource(R.string.kinetica_ui_tree_select)
+    val choose = {
+        actions.onSelect(row)
+        if (row.hasChildren && look.toggleOnClick) state.toggle(row.key)
+    }
     Row(
         Modifier
             .fillMaxWidth()
@@ -187,10 +198,17 @@ private fun <T> TreeRowView(row: TreeRow<T>, status: TreeRowStatus, text: String
             .treeGuides(row.depth, look.indent, if (look.guides) ink.copy(alpha = GUIDE_ALPHA) else Color.Transparent)
             // 키보드 초점은 목록 하나가 받고 행 사이는 방향키로 옮기므로 행은 Tab 순서에 넣지 않는다.
             .focusProperties { canFocus = false }
-            .kClickable(shape, onClickLabel = selectLabel, role = null) {
-                actions.onSelect(row)
-                if (row.hasChildren && look.toggleOnClick) state.toggle(row.key)
-            }
+            // 같은 노드에서는 바깥 수정자의 클릭 동작이 남으므로 체크 동작을 고르기보다 먼저 둔다.
+            .then(
+                if (look.checkable) {
+                    Modifier.checkSemantics(status.check, selectLabel, choose) {
+                        actions.onToggleCheck(row)
+                    }
+                } else {
+                    Modifier
+                },
+            )
+            .kClickable(shape, onClickLabel = selectLabel, role = null, onClick = choose)
             .treeRowSemantics(row, status, selected, description, state)
             .treeHighlight(selected, status.keyboardActive, accent, shape)
             .padding(end = ROW_PADDING),
@@ -202,7 +220,8 @@ private fun <T> TreeRowView(row: TreeRow<T>, status: TreeRowStatus, text: String
             KTriStateCheckbox(
                 status.check ?: ToggleableState.Off,
                 onClick = { actions.onToggleCheck(row) },
-                modifier = Modifier.focusProperties { canFocus = false }.semantics { contentDescription = text },
+                // 체크 상태와 바꾸기는 행이 읽으므로 체크박스는 따로 읽지 않는다.
+                modifier = Modifier.focusProperties { canFocus = false }.clearAndSetSemantics {},
                 surface = look.surface,
             )
         }
@@ -239,6 +258,24 @@ private fun Modifier.treeRowSemantics(row: TreeRow<*>, status: TreeRowStatus, se
             }
         }
     }
+
+/**
+ * 체크할 수 있는 행은 TalkBack에서 체크 상태를 읽고 두 번 탭하면 체크를 바꾼다. 고르기는 사용자 정의 동작으로 옮긴다.
+ * 행을 누르는 손가락 동작은 그대로 고르기다.
+ */
+private fun Modifier.checkSemantics(check: ToggleableState?, selectLabel: String, onSelect: () -> Unit, onToggle: () -> Unit) = semantics {
+    toggleableState = check ?: ToggleableState.Off
+    onClick {
+        onToggle()
+        true
+    }
+    customActions = listOf(
+        CustomAccessibilityAction(selectLabel) {
+            onSelect()
+            true
+        },
+    )
+}
 
 @Composable
 private fun treeRowDescription(row: TreeRow<*>, open: Boolean): String {

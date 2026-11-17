@@ -103,7 +103,7 @@ internal fun <T> KanbanColumnView(column: KKanbanColumn<T>, index: Int, context:
                 contentPadding = PaddingValues(start = KANBAN_COLUMN_PADDING, end = KANBAN_COLUMN_PADDING, bottom = KANBAN_COLUMN_PADDING),
                 verticalArrangement = Arrangement.spacedBy(KANBAN_CARD_GAP),
             ) {
-                itemsIndexed(column.cards, key = { _, item -> context.cards.key(item) }) { position, item ->
+                itemsIndexed(column.cards, key = { _, item -> context.itemKeys.of(context.cards.key(item)) }) { position, item ->
                     KanbanCard(item, CardPlace(index, position), context)
                 }
             }
